@@ -1,5 +1,6 @@
 import LeftPanel from "@/components/Auth/LeftPanel";
 import VerifyEmailForm from "@/components/Auth/VerifyEmailForm";
+import { Suspense } from "react";
 
 export default function VerifyEmailPage() {
   return (
@@ -13,7 +14,9 @@ export default function VerifyEmailPage() {
           </div>
 
           <div className="w-full max-w-[55%] flex-1 h-full">
-            <VerifyEmailForm />
+            <Suspense fallback={null}>
+              <VerifyEmailForm />
+            </Suspense>
           </div>
         </div>
       </div>

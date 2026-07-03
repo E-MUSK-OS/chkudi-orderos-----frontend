@@ -1,15 +1,9 @@
 "use client";
 
-import {
-  forwardRef,
-  InputHTMLAttributes,
-  ReactNode,
-  useId,
-} from "react";
+import { forwardRef, InputHTMLAttributes, ReactNode, useId } from "react";
 import { cn } from "@/lib/utils";
 
-interface InputProps
-  extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
 
@@ -45,9 +39,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
       ...props
     },
-    ref
+    ref,
   ) => {
-    const inputId = id || useId();
+    const generatedId = useId();
+    const inputId = id || generatedId;
 
     return (
       <div className={cn("space-y-2", containerClassName)}>
@@ -105,7 +100,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               focus:ring-[#C89B3C]/10
             `,
               inputClassName,
-              className
+              className,
             )}
             {...props}
           />
@@ -144,7 +139,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 peer-[:not(:placeholder-shown)]:text-[11px]
                 peer-[:not(:placeholder-shown)]:text-slate-500
               `,
-                labelClassName
+                labelClassName,
               )}
             >
               {label}
@@ -166,18 +161,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error && (
-          <p
-            className={cn(
-              "text-sm text-red-500",
-              errorClassName
-            )}
-          >
-            {error}
-          </p>
+          <p className={cn("text-sm text-red-500", errorClassName)}>{error}</p>
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";
