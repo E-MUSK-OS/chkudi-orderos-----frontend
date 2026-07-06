@@ -60,7 +60,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
       handleTrackingId(result.trackingId);
 
-      setTrackingId("");
+      // setTrackingId("");
     } finally {
       // setIsProcessing(false);
 
