@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { ChevronDown, LogOut, UserRound, Wallet } from "lucide-react";
 
 import type { User } from "@/services/auth/auth.types";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Props {
   setLogoutOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -33,7 +34,13 @@ function getStoredUser(): User | null {
 export default function ProfileDropdown({ setLogoutOpen }: Props) {
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const [user] = useState<User | null>(getStoredUser);
+  // const [user] = useState<User | null>(getStoredUser);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const storedUser = getStoredUser();
+    setUser(storedUser);
+  }, []);
 
   const openLogoutModal = () => {
     setProfileOpen(false);
@@ -62,56 +69,85 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
             </p>
           </div>
 
-          <ChevronDown
-            size={16}
-            className={`ml-auto hidden transition-transform sm:block ${
-              profileOpen ? "rotate-180" : ""
-            }`}
-          />
+          <motion.div
+            animate={{
+              rotate: profileOpen ? 180 : 0,
+            }}
+            transition={{
+              duration: 0.25,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="ml-auto hidden sm:block"
+          >
+            <ChevronDown size={16} />
+          </motion.div>
         </button>
 
-        {profileOpen && (
-          <div className="absolute right-0 top-14 z-30 w-72 border border-[#E7E0D2] bg-white p-3 shadow-lg">
-            <div className="border-b border-[#E7E0D2] px-2 pb-3">
-              <p className="truncate text-sm font-bold text-[#0A0E1A]">
-                {user?.fullName || "User"}
-              </p>
-
-              <p className="mt-1 truncate text-xs text-slate-500">
-                {user?.email || "No email found"}
-              </p>
-            </div>
-
-            <Link
-              href="/dashboard/profile"
-              onClick={() => setProfileOpen(false)}
-              className="mt-3 flex h-11 w-full items-center gap-3 px-3 text-sm font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0]"
+        <AnimatePresence>
+          {profileOpen && (
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: -10,
+                scale: 0.96,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: -10,
+                scale: 0.96,
+              }}
+              transition={{
+                duration: 0.22,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="absolute right-0 top-14 z-30 w-72 origin-top-right border border-[#E7E0D2] bg-white p-3 shadow-xl"
             >
-              <UserRound size={17} />
-              Profile
-            </Link>
+              <div className="border-b border-[#E7E0D2] px-2 pb-3">
+                <p className="truncate text-sm font-bold text-[#0A0E1A]">
+                  {user?.fullName || "User"}
+                </p>
 
-            <Link
-              href="/dashboard/wallet"
-              onClick={() => setProfileOpen(false)}
-              className="mt-1 flex h-11 w-full items-center gap-3 px-3 text-sm font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0]"
-            >
-              <Wallet size={17} />
-              Wallet
-            </Link>
+                <p className="mt-1 truncate text-xs text-slate-500">
+                  {user?.email || "No email found"}
+                </p>
+              </div>
 
-            <div className="my-2 border-t border-[#E7E0D2]" />
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setProfileOpen(false)}
+                className="mt-3 flex h-11 w-full items-center gap-3 px-3 text-sm font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0]"
+              >
+                <UserRound size={17} />
+                Profile
+              </Link>
 
-            <button
-              type="button"
-              onClick={openLogoutModal}
-              className="mt-1 flex h-11 w-full items-center gap-3 px-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-            >
-              <LogOut size={17} />
-              Logout
-            </button>
-          </div>
-        )}
+              <Link
+                href="/dashboard/wallet"
+                onClick={() => setProfileOpen(false)}
+                className="mt-1 flex h-11 w-full items-center gap-3 px-3 text-sm font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0]"
+              >
+                <Wallet size={17} />
+                Wallet
+              </Link>
+
+              <div className="my-2 border-t border-[#E7E0D2]" />
+
+              <button
+                type="button"
+                onClick={openLogoutModal}
+                className="mt-1 flex h-11 w-full items-center gap-3 px-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+              >
+                <LogOut size={17} />
+                Logout
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </>
     </div>
   );

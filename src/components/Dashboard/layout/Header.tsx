@@ -25,32 +25,39 @@ export default function Header({
   setSidebarOpen,
   setLogoutOpen,
 }: HeaderProps) {
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const updateTime = () => {
       setCurrentDateTime(new Date());
-    }, 1000);
+    };
+
+    updateTime();
+
+    const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const formattedDate = currentDateTime.toLocaleDateString("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = currentDateTime
+    ? currentDateTime.toLocaleDateString("en-US", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "";
 
-  const formattedTime = currentDateTime.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const formattedTime = currentDateTime
+    ? currentDateTime.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : "";
   return (
     <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-4 py-4 backdrop-blur md:px-8">
       <div className="flex items-center gap-4">
-        {/* Mobile Menu */}
 
         <button
           type="button"
@@ -60,8 +67,6 @@ export default function Header({
         >
           <Menu size={21} />
         </button>
-
-        {/* Collapse */}
 
         <button
           type="button"
@@ -75,8 +80,6 @@ export default function Header({
             <PanelLeftClose size={19} />
           )}
         </button>
-
-        {/* Search */}
 
         <div className="hidden h-11 max-w-md flex-1 items-center gap-3 bg-white px-4 shadow-sm md:flex">
           <Search size={18} className="text-slate-400" />
@@ -95,8 +98,6 @@ export default function Header({
 
           <span className="text-sm text-slate-500">{formattedTime}</span>
         </div>
-
-        {/* Right */}
 
         <div className="ml-auto flex items-center gap-3">
           <button

@@ -26,7 +26,7 @@ export default function WalletTable({
   rows,
 }: WalletTableProps) {
   return (
-    <section className="mt-6 overflow-hidden rounded-xl border border-[#E7E0D2] bg-white shadow-sm">
+    <section className="mt-6 overflow-hidden border border-[#E7E0D2] bg-white shadow-sm">
       {/* Header */}
 
       <div className="flex items-center justify-between border-b border-[#E7E0D2] px-6 py-4">

@@ -1,40 +1,35 @@
 "use client";
 
-import {
-  Wallet,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Clock3,
-} from "lucide-react";
+import { Wallet, ArrowDownCircle, ArrowUpCircle, Clock3 } from "lucide-react";
 
 const cards = [
   {
-    title: "Available Balance",
-    value: "₹ 15,420",
-    icon: Wallet,
-    color: "bg-[#0A0E1A] text-white",
-    text: "Current wallet balance",
-  },
-  {
-    title: "Total Added",
+    title: "Total Recharge",
     value: "₹ 28,450",
     icon: ArrowDownCircle,
     color: "bg-emerald-50 text-emerald-700",
-    text: "Money credited",
+    text: "Total wallet recharge",
   },
   {
-    title: "Total Used",
+    title: "Current Balance",
+    value: "₹ 15,420",
+    icon: Wallet,
+    color: "bg-[#0A0E1A] text-white",
+    text: "Available wallet balance",
+  },
+  {
+    title: "Orders Processed",
     value: "₹ 13,030",
     icon: ArrowUpCircle,
     color: "bg-red-50 text-red-600",
-    text: "Money spent",
+    text: "Processed using wallet",
   },
   {
-    title: "Pending",
+    title: "Total Deduction",
     value: "₹ 1,250",
     icon: Clock3,
     color: "bg-amber-50 text-amber-700",
-    text: "Pending settlements",
+    text: "Total usage charges",
   },
 ];
 
@@ -59,9 +54,7 @@ export default function WalletSummary() {
                   {card.value}
                 </h2>
 
-                <p className="mt-2 text-xs text-slate-500">
-                  {card.text}
-                </p>
+                <p className="mt-2 text-xs text-slate-500">{card.text}</p>
               </div>
 
               <div

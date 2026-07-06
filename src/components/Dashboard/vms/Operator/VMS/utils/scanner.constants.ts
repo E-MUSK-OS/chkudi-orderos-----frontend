@@ -1,0 +1,7 @@
+export const SCANNER_CONFIG = {
+  MIN_LENGTH: 5,
+
+  DUPLICATE_DELAY: 1500,
+
+  SCAN_TIMEOUT: 100,
+};

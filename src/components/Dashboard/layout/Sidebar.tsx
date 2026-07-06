@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import {
   Home,
-  ClipboardList,
-  Package,
-  Users,
-  BarChart3,
-  Settings,
+  Video,
   X,
+  Folder,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -19,22 +22,74 @@ interface SidebarProps {
   setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const navItems = [
+interface NavItem {
+  label: string;
+  href?: string;
+  icon?: React.ElementType;
+  children?: NavItem[];
+}
+
+const navItems: NavItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
     icon: Home,
   },
-  //   {
-  //     label: "Orders",
-  //     href: "/dashboard/orders",
-  //     icon: ClipboardList,
-  //   },
-  //   {
-  //     label: "Settings",
-  //     href: "/dashboard/settings",
-  //     icon: Settings,
-  //   },
+  {
+    label: "VMS",
+    href: "/dashboard/vms",
+    icon: Video,
+    children: [
+      {
+        label: "Dashboard",
+        href: "/dashboard/vms",
+      },
+      {
+        label: "Scans",
+        href: "/dashboard/vms/scans",
+        children: [
+          {
+            label: "VMS",
+            href: "/dashboard/vms/scans/vms",
+          },
+        ],
+      },
+      {
+        label: "Operator",
+        href: "/dashboard/vms/operator",
+        children: [
+          {
+            label: "VMS",
+            href: "/dashboard/vms/operator/vms",
+          },
+        ],
+      },
+
+      {
+        label: "Admin",
+        href: "/dashboard/vms/admin",
+        children: [
+          {
+            label: "Users",
+            href: "/dashboard/vms/admin/users",
+          },
+          {
+            label: "Feeds",
+            href: "/dashboard/vms/admin/feeds",
+          },
+          {
+            label: "Logistics Partners",
+            href: "/dashboard/vms/admin/logistics-partners",
+          },
+        ],
+      },
+
+      {
+        label: "Reports",
+        href: "/dashboard/vms/reports",
+      },
+    ],
+  },
 ];
 
 export default function Sidebar({
@@ -42,12 +97,178 @@ export default function Sidebar({
   sidebarCollapsed,
   setSidebarOpen,
 }: SidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  const findActivePath = (
+    items: NavItem[],
+    path: string,
+    trail: string[] = [],
+  ): string[] | null => {
+    for (const item of items) {
+      const nextTrail = [...trail, item.label];
+
+      if (item.href && path === item.href) {
+        return trail;
+      }
+
+      if (item.children) {
+        const found = findActivePath(item.children, path, nextTrail);
+        if (found) return found;
+        if (item.href && path.startsWith(item.href)) {
+          return nextTrail;
+        }
+      }
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const activeTrail = findActivePath(navItems, pathname);
+    if (activeTrail && activeTrail.length > 0) {
+      setOpenMenus((prev) => {
+        const next = { ...prev };
+        activeTrail.forEach((label) => {
+          next[label] = true;
+        });
+        return next;
+      });
+    }
+  }, [pathname]);
+
+  const isMenuActive = (item: NavItem): boolean => {
+    if (item.href && pathname === item.href) {
+      return true;
+    }
+
+    if (item.children) {
+      return item.children.some(isMenuActive);
+    }
+
+    return false;
+  };
+
+  const isMenuOpen = (item: NavItem) => {
+    return openMenus[item.label] ?? isMenuActive(item);
+  };
+
+  const toggleMenu = (item: NavItem) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [item.label]: !(prev[item.label] ?? isMenuActive(item)),
+    }));
+  };
+
+  const renderMenu = (items: NavItem[], level = 0) => {
+    return items.map((item) => {
+      const active = isMenuActive(item);
+      const isOpen = isMenuOpen(item);
+      const hasChildren = !!item.children?.length;
+      if (hasChildren) {
+        const isSelfActive = sidebarCollapsed
+          ? isMenuActive(item)
+          : !!item.href && pathname === item.href && !isOpen;
+
+        return (
+          <div key={item.label}>
+            <button
+              type="button"
+              onClick={() => {
+                if (sidebarCollapsed && item.href) {
+                  router.push(item.href);
+                  setSidebarOpen(false);
+                } else {
+                  toggleMenu(item);
+                }
+              }}
+              className={`group flex h-12 w-full items-center justify-between cursor-pointer
+transition-all duration-300 ease-out
+              ${
+                isSelfActive
+                  ? "bg-[#E8C16D] text-[#0A0E1A]"
+                  : "text-slate-300 hover:bg-white/10 hover:text-white"
+              }`}
+              style={{
+                paddingLeft: `${16 + level * 20}px`,
+                paddingRight: "16px",
+              }}
+            >
+              <div className="flex items-center gap-3">
+                {item.icon && <item.icon size={20} />}
+
+                {!sidebarCollapsed && (
+                  <span className="truncate">{item.label}</span>
+                )}
+              </div>
+
+              {!sidebarCollapsed &&
+                (isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+            </button>
+
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && isOpen && (
+                <motion.div
+                  initial={{
+                    height: 0,
+                    opacity: 0,
+                    y: -6,
+                  }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0,
+                    y: -6,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  style={{
+                    overflow: "hidden",
+                  }}
+                >
+                  {renderMenu(item.children!, level + 1)}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      }
+      return (
+        <Link
+          key={item.label}
+          href={item.href!}
+          onClick={() => setSidebarOpen(false)}
+          className={`flex h-12 items-center transition-colors
+          ${
+            active
+              ? "bg-[#E8C16D] text-[#0A0E1A]"
+              : "text-slate-300 hover:bg-white/10 hover:text-white"
+          }`}
+          style={{
+            paddingLeft: `${16 + level * 20}px`,
+            paddingRight: "16px",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            {item.icon && <item.icon size={20} />}
+
+            {!sidebarCollapsed && (
+              <span className="truncate">{item.label}</span>
+            )}
+          </div>
+        </Link>
+      );
+    });
+  };
 
   return (
     <>
-      {/* Mobile Overlay */}
-
       {sidebarOpen && (
         <button
           type="button"
@@ -63,7 +284,7 @@ export default function Sidebar({
   ${sidebarCollapsed ? "w-72 lg:w-[88px]" : "w-72"}`}
       >
         <div
-          className={`relative flex h-full min-h-screen flex-col py-6 transition-all duration-300
+          className={`relative flex h-full flex-col overflow-hidden py-6 transition-all duration-300
   ${sidebarCollapsed ? "px-5 lg:px-4" : "px-5"}`}
         >
           {/* Logo */}
@@ -74,7 +295,7 @@ export default function Sidebar({
           >
             <div className="flex min-w-0 items-center gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#E8C16D] font-bold text-xl text-[#0A0E1A]">
-                O
+                OS
               </div>
 
               <div
@@ -98,79 +319,33 @@ export default function Sidebar({
             </button>
           </div>
 
-          <nav className="mt-10 space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = pathname === item.href;
-
-              return (
-                <div key={item.href} className="group relative">
-                  <Link
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    aria-label={item.label}
-                    className={`relative flex h-12 w-full items-center gap-3 overflow-hidden px-4 text-left text-sm font-semibold transition-colors
-          ${
-            active
-              ? "bg-[#E8C16D] text-[#0A0E1A]"
-              : "text-slate-300 hover:bg-white/10 hover:text-white"
-          }
-          ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
-                  >
-                    {/* Left Active Border */}
-
-                    <span
-                      className={`absolute left-0 top-2 h-8 w-1 bg-[#E8C16D] transition-opacity
-            ${active && !sidebarCollapsed ? "opacity-100" : "opacity-0"}`}
-                    />
-
-                    {/* Icon */}
-
-                    <Icon size={20} className="shrink-0" />
-
-                    {/* Label */}
-
-                    <span
-                      className={`overflow-hidden whitespace-nowrap transition-all duration-300
-            ${sidebarCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"}`}
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
-
-                  {/* Tooltip */}
-
-                  {sidebarCollapsed && (
-                    <span
-                      className="
-              pointer-events-none
-              absolute
-              left-[calc(100%+12px)]
-              top-1/2
-              z-50
-              hidden
-              -translate-y-1/2
-              whitespace-nowrap
-              bg-[#111827]
-              px-3
-              py-2
-              text-xs
-              font-semibold
-              text-white
-              opacity-0
-              shadow-lg
-              transition-opacity
-              group-hover:opacity-100
-              lg:block
-            "
-                    >
-                      {item.label}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+          <nav
+            className="custom-scroll mt-10 flex-1 space-y-2 overflow-y-auto"
+            style={{
+              marginRight: "-19px",
+              paddingRight: "10px",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(232, 193, 109, 0.8) transparent",
+            }}
+          >
+            {renderMenu(navItems)}
           </nav>
+
+          <style jsx>{`
+            .custom-scroll::-webkit-scrollbar {
+              width: 4px;
+            }
+            .custom-scroll::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .custom-scroll::-webkit-scrollbar-thumb {
+              background: rgba(232, 193, 109, 0.8);
+              border-radius: 9999px;
+            }
+            .custom-scroll::-webkit-scrollbar-thumb:hover {
+              background: rgba(232, 193, 109, 0.8);
+            }
+          `}</style>
 
           <div
             className={`mt-auto border-t border-white/10 pt-5 text-sm text-slate-400

@@ -1,5 +1,5 @@
-// const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1";
-const BASE_URL = "http://localhost:5000/api/v1";
+const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1";
+// const BASE_URL = "http://localhost:5000/api/v1";
 
 interface ApiOptions extends RequestInit {
   token?: string;
@@ -7,15 +7,21 @@ interface ApiOptions extends RequestInit {
 
 async function request<T>(
   endpoint: string,
-  options: ApiOptions = {}
+  options: ApiOptions = {},
 ): Promise<T> {
-  const { token, headers, ...rest } = options;
+  const { token, headers, body, ...rest } = options;
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...rest,
 
+    body,
+
     headers: {
-      "Content-Type": "application/json",
+      ...(body instanceof FormData
+        ? {}
+        : {
+            "Content-Type": "application/json",
+          }),
 
       ...(token && {
         Authorization: `Bearer ${token}`,
@@ -41,36 +47,30 @@ export const api = {
       token,
     }),
 
-  post: <T>(
-    url: string,
-    body?: unknown,
-    token?: string
-  ) =>
+  post: <T>(url: string, body?: unknown, token?: string) =>
     request<T>(url, {
       method: "POST",
-      body: JSON.stringify(body),
+
+      body: body instanceof FormData ? body : JSON.stringify(body),
+
       token,
     }),
 
-  put: <T>(
-    url: string,
-    body?: unknown,
-    token?: string
-  ) =>
+  put: <T>(url: string, body?: unknown, token?: string) =>
     request<T>(url, {
       method: "PUT",
-      body: JSON.stringify(body),
+
+      body: body instanceof FormData ? body : JSON.stringify(body),
+
       token,
     }),
 
-  patch: <T>(
-    url: string,
-    body?: unknown,
-    token?: string
-  ) =>
+  patch: <T>(url: string, body?: unknown, token?: string) =>
     request<T>(url, {
       method: "PATCH",
-      body: JSON.stringify(body),
+
+      body: body instanceof FormData ? body : JSON.stringify(body),
+
       token,
     }),
 
