@@ -73,20 +73,24 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     setTrackingId(e.target.value);
   };
 
+  const focusAndSelectInput = () => {
+    inputRef.current?.focus();
+
+    inputRef.current?.select();
+  };
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (document.activeElement === inputRef.current) return;
 
       processKeyboardInput(event.key, (id) => {
-        // પહેલા old value remove
-        setTrackingId("");
+        setTrackingId(id);
 
-        // Next render માં new value મૂકો
-        requestAnimationFrame(() => {
-          setTrackingId(id);
+        setTimeout(() => {
+          focusAndSelectInput();
 
           void handleSubmit(id);
-        });
+        }, 0);
       });
     };
 
