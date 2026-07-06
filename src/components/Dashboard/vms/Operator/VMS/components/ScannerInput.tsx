@@ -33,6 +33,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
   const handleTrackingId = (id: string) => {
     console.log(id);
+    // setTrackingId("");
 
     if (!stream) {
       console.warn("Camera not ready");
@@ -77,9 +78,15 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
       if (document.activeElement === inputRef.current) return;
 
       processKeyboardInput(event.key, (id) => {
-        setTrackingId(id);
+        // પહેલા old value remove
+        setTrackingId("");
 
-        handleSubmit(id);
+        // Next render માં new value મૂકો
+        requestAnimationFrame(() => {
+          setTrackingId(id);
+
+          void handleSubmit(id);
+        });
       });
     };
 
