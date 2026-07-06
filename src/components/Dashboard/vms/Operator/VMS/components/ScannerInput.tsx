@@ -120,7 +120,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
           <div className="w-[15%]">
             <button
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               disabled={isProcessing || !trackingId.trim()}
               className="w-full h-full flex gap-5 justify-center items-center bg-[#0A0E1A] px-6 py-3 font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
             >
