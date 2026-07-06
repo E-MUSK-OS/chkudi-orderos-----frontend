@@ -15,8 +15,14 @@ interface ScannerInputProps {
 
 const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { processScan, processKeyboardInput, lastScan, scanHistory, scannerStatus, isProcessing } =
-    scanner;
+  const {
+    processScan,
+    processKeyboardInput,
+    lastScan,
+    scanHistory,
+    scannerStatus,
+    isProcessing,
+  } = scanner;
   const { stream } = camera;
   const { isRecording, startRecording, stopRecording } = recorder;
   const [trackingId, setTrackingId] = useState("");
@@ -40,8 +46,8 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     startRecording(stream, id);
   };
 
-  const handleSubmit = async () => {
-    const id = trackingId.trim();
+  const handleSubmit = async (value?: string) => {
+    const id = (value ?? trackingId).trim();
 
     if (!id || isProcessing) return;
 
@@ -70,10 +76,10 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (document.activeElement === inputRef.current) return;
 
-      processKeyboardInput(event.key, (trackingId) => {
-        setTrackingId(trackingId);
+      processKeyboardInput(event.key, (id) => {
+        setTrackingId(id);
 
-        handleSubmit();
+        handleSubmit(id);
       });
     };
 
