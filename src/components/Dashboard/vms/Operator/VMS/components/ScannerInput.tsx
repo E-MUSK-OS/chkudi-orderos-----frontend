@@ -107,7 +107,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  handleSubmit();
+                  void handleSubmit();
                 }
               }}
               disabled={isProcessing}
