@@ -14,7 +14,7 @@ const OperatorVMS = () => {
   return (
     <DashboardLayout title="Operator VMS">
       <div>
-        <CameraPreview camera={camera} />
+        <CameraPreview camera={camera} recorder={recorder} />
 
         <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
         {/* <VMSHeader /> */}

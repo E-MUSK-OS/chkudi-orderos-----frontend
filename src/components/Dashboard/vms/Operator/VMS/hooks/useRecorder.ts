@@ -11,8 +11,10 @@ export const useRecorder = () => {
   const onStopCallback = useRef<(() => void) | null>(null);
 
   const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
+  const [duration, setDuration] = useState(0);
 
   const { setRecording } = useVMSStore();
 
@@ -58,6 +60,12 @@ export const useRecorder = () => {
           blob,
         });
 
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+
+          timerRef.current = null;
+        }
+
         setIsRecording(false);
 
         if (onStopCallback.current) {
@@ -75,6 +83,11 @@ export const useRecorder = () => {
       });
 
       setIsRecording(true);
+      setDuration(0);
+
+      timerRef.current = setInterval(() => {
+        setDuration((prev) => prev + 1);
+      }, 1000);
     },
     [setRecording],
   );
@@ -89,6 +102,7 @@ export const useRecorder = () => {
 
   return {
     isRecording,
+    duration,
     startRecording,
     stopRecording,
   };
