@@ -31,17 +31,33 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     inputRef.current?.focus();
   }, []);
 
-  const handleTrackingId = (id: string) => {
-    console.log(id);
-    // setTrackingId("");
+  // const handleTrackingId = (id: string) => {
+  //   console.log(id);
 
+  //   if (!stream) {
+  //     console.warn("Camera not ready");
+  //     return;
+  //   }
+
+  //   if (isRecording) {
+  //     stopRecording();
+  //   }
+
+  //   startRecording(stream, id);
+  // };
+
+  const handleTrackingId = (id: string) => {
     if (!stream) {
       console.warn("Camera not ready");
       return;
     }
 
     if (isRecording) {
-      stopRecording();
+      stopRecording(() => {
+        startRecording(stream, id);
+      });
+
+      return;
     }
 
     startRecording(stream, id);

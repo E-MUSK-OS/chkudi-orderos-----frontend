@@ -8,6 +8,8 @@ export const useRecorder = () => {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const { addUpload } = useUploadQueue();
 
+  const onStopCallback = useRef<(() => void) | null>(null);
+
   const chunksRef = useRef<Blob[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -57,6 +59,12 @@ export const useRecorder = () => {
         });
 
         setIsRecording(false);
+
+        if (onStopCallback.current) {
+          onStopCallback.current();
+
+          onStopCallback.current = null;
+        }
       };
 
       recorder.start();
@@ -71,7 +79,11 @@ export const useRecorder = () => {
     [setRecording],
   );
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback((callback?: () => void) => {
+    if (callback) {
+      onStopCallback.current = callback;
+    }
+
     recorderRef.current?.stop();
   }, []);
 
