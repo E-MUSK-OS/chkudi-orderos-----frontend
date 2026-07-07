@@ -84,31 +84,46 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   };
 
   useEffect(() => {
+    // const handleKeyDown = (event: KeyboardEvent) => {
+    //   if (document.activeElement === inputRef.current) return;
+
+    // processKeyboardInput(event.key, (id) => {
+    //   setTrackingId(id);
+
+    //   setTimeout(() => {
+    //     focusAndSelectInput();
+
+    //     void handleSubmit(id);
+    //   }, 0);
+    // });
+
+    // processKeyboardInput(event.key, (id) => {
+    //   setTrackingId(id);
+
+    //   requestAnimationFrame(() => {
+    //     requestAnimationFrame(() => {
+    //       focusAndSelectInput();
+    //       void handleSubmit(id);
+    //     });
+    //   });
+    // });
+    // };
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (document.activeElement === inputRef.current) return;
-
-      // processKeyboardInput(event.key, (id) => {
-      //   setTrackingId(id);
-
-      //   setTimeout(() => {
-      //     focusAndSelectInput();
-
-      //     void handleSubmit(id);
-      //   }, 0);
-      // });
+      if (document.activeElement === inputRef.current) {
+        event.preventDefault();
+      }
 
       processKeyboardInput(event.key, (id) => {
         setTrackingId(id);
 
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            focusAndSelectInput();
-            void handleSubmit(id);
-          });
+          focusAndSelectInput();
+
+          void handleSubmit(id);
         });
       });
     };
-
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
