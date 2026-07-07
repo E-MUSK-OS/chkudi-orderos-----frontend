@@ -74,23 +74,38 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   };
 
   const focusAndSelectInput = () => {
-    inputRef.current?.focus();
+    const input = inputRef.current;
 
-    inputRef.current?.select();
+    if (!input) return;
+
+    input.focus();
+
+    input.setSelectionRange(0, input.value.length);
   };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (document.activeElement === inputRef.current) return;
 
+      // processKeyboardInput(event.key, (id) => {
+      //   setTrackingId(id);
+
+      //   setTimeout(() => {
+      //     focusAndSelectInput();
+
+      //     void handleSubmit(id);
+      //   }, 0);
+      // });
+
       processKeyboardInput(event.key, (id) => {
         setTrackingId(id);
 
-        setTimeout(() => {
-          focusAndSelectInput();
-
-          void handleSubmit(id);
-        }, 0);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            focusAndSelectInput();
+            void handleSubmit(id);
+          });
+        });
       });
     };
 
