@@ -29,6 +29,7 @@ export const useRecorder = () => {
       };
 
       recorder.onstop = () => {
+        console.log("Recorder stopped");
         const blob = new Blob(chunksRef.current, {
           type: "video/webm",
         });
