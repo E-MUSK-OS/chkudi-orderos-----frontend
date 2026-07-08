@@ -49,6 +49,10 @@ export interface UploadItem {
   retryCount: number;
 
   createdAt: number;
+
+  videoUrl?: string;
+  
+  thumbnailUrl?: string;
 }
 
 export interface VMSStore {
@@ -81,6 +85,7 @@ export interface RecordingState {
   trackingId: string | null;
   duration: number;
   blob: Blob | null;
+  startedAt: number | null;
 }
 
 export interface ScannerResult {

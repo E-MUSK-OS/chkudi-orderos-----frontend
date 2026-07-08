@@ -76,6 +76,9 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
       if (!result?.success) return;
 
       handleTrackingId(result.trackingId);
+      requestAnimationFrame(() => {
+        focusAndSelectInput();
+      });
 
       // setTrackingId("");
     } finally {
@@ -130,14 +133,19 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
         event.preventDefault();
       }
 
+      // processKeyboardInput(event.key, (id) => {
+      //   setTrackingId(id);
+
+      //   requestAnimationFrame(() => {
+      //     focusAndSelectInput();
+
+      //     void handleSubmit(id);
+      //   });
+      // });
       processKeyboardInput(event.key, (id) => {
         setTrackingId(id);
 
-        requestAnimationFrame(() => {
-          focusAndSelectInput();
-
-          void handleSubmit(id);
-        });
+        void handleSubmit(id);
       });
     };
     window.addEventListener("keydown", handleKeyDown);

@@ -13,10 +13,25 @@ export const useRecorder = () => {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [isRecording, setIsRecording] = useState(false);
-  const [duration, setDuration] = useState(0);
+  // const [isRecording, setIsRecording] = useState(false);
+  // const [duration, setDuration] = useState(0);
 
-  const { setRecording } = useVMSStore();
+  // const { setRecording } = useVMSStore();
+  const {
+    recording,
+
+    setRecording,
+  } = useVMSStore();
+
+  const updateDuration = () => {
+    const { recording, setRecording } = useVMSStore.getState();
+
+    if (!recording.startedAt) return;
+
+    setRecording({
+      duration: Math.floor((Date.now() - recording.startedAt) / 1000),
+    });
+  };
 
   const startRecording = useCallback(
     (stream: MediaStream, trackingId: string) => {
@@ -62,11 +77,20 @@ export const useRecorder = () => {
 
         if (timerRef.current) {
           clearInterval(timerRef.current);
+          updateDuration();
 
           timerRef.current = null;
         }
 
-        setIsRecording(false);
+        setRecording({
+          isRecording: false,
+
+          trackingId: null,
+
+          duration: 0,
+
+          startedAt: null,
+        });
 
         if (onStopCallback.current) {
           onStopCallback.current();
@@ -76,18 +100,32 @@ export const useRecorder = () => {
       };
 
       recorder.start();
+      console.log("Recording Started");
 
       setRecording({
         isRecording: true,
+
         trackingId,
+
+        duration: 0,
+
+        startedAt: Date.now(),
       });
 
-      setIsRecording(true);
-      setDuration(0);
+      // timerRef.current = setInterval(() => {
+      //   const startedAt = useVMSStore.getState().recording.startedAt;
 
-      timerRef.current = setInterval(() => {
-        setDuration((prev) => prev + 1);
-      }, 1000);
+      //   if (!startedAt) return;
+
+      //   const seconds = Math.floor((Date.now() - startedAt) / 1000);
+
+      //   useVMSStore.getState().setRecording({
+      //     duration: seconds,
+      //   });
+      // }, 1000);
+      updateDuration();
+
+      timerRef.current = setInterval(updateDuration, 1000);
     },
     [setRecording],
   );
@@ -101,9 +139,12 @@ export const useRecorder = () => {
   }, []);
 
   return {
-    isRecording,
-    duration,
+    isRecording: recording.isRecording,
+
+    duration: recording.duration,
+
     startRecording,
+
     stopRecording,
   };
 };

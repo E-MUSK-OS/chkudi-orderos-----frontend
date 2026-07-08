@@ -4,9 +4,14 @@ import { useVMSStore } from "../store/vmsStore";
 import { uploadRecording } from "../services/vms.service";
 import { UploadItem } from "../types/vms.types";
 import { useEffect } from "react";
+import { useRef } from "react";
+import { SCANNER_CONFIG } from "../utils/scanner.constants";
+import { toast } from "sonner";
 
 export const useUploadQueue = () => {
-  const { uploadQueue, addUpload, updateUpload, removeUpload } = useVMSStore();
+  const { uploadQueue, addUpload, updateUpload, removeUpload, setNetwork } =
+    useVMSStore();
+  const workerRunning = useRef(false);
 
   const uploadItem = async (item: UploadItem) => {
     try {
@@ -15,29 +20,139 @@ export const useUploadQueue = () => {
         progress: 0,
       });
 
-      await uploadRecording({
-        trackingId: item.trackingId,
-        blob: item.blob,
-      });
+      // await uploadRecording({
+      //   trackingId: item.trackingId,
+      //   blob: item.blob,
+      // });
+
+      // await uploadRecording(
+      //   {
+      //     trackingId: item.trackingId,
+      //     blob: item.blob,
+      //   },
+      //   (progress) => {
+      //     updateUpload(item.id, {
+      //       progress,
+      //     });
+      //   },
+      // );
+      const response = await uploadRecording(
+        {
+          trackingId: item.trackingId,
+          blob: item.blob,
+        },
+        (progress) => {
+          updateUpload(item.id, {
+            progress,
+          });
+        },
+      );
 
       updateUpload(item.id, {
         status: "completed",
         progress: 100,
+        videoUrl: response.data.videoUrl,
+        thumbnailUrl: response.data.thumbnailUrl,
       });
+
+      toast.success("Upload Completed", {
+        description: `${item.trackingId} uploaded successfully.`,
+      });
+
+      setTimeout(() => {
+        removeUpload(item.id);
+      }, 5000);
     } catch (error) {
       console.error(error);
 
+      if (item.retryCount < SCANNER_CONFIG.MAX_RETRY) {
+        toast.warning("Retrying Upload", {
+          description: `${item.trackingId}
+Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
+        });
+        updateUpload(item.id, {
+          status: "pending",
+
+          retryCount: item.retryCount + 1,
+
+          progress: 0,
+        });
+
+        return;
+      }
+
       updateUpload(item.id, {
         status: "failed",
+        progress: 0,
+      });
+      toast.error("Upload Failed", {
+        description: `Tracking ID : ${item.trackingId} (Retry ${item.retryCount}/${SCANNER_CONFIG.MAX_RETRY})`,
       });
     }
   };
 
-  const processQueue = async () => {
-    const pending = uploadQueue.filter((item) => item.status === "pending");
+  // const processQueue = async () => {
+  //   const pending = uploadQueue.filter((item) => item.status === "pending");
 
-    for (const item of pending) {
-      await uploadItem(item);
+  //   for (const item of pending) {
+  //     await uploadItem(item);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   processQueue();
+  // }, [uploadQueue]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("Internet Online");
+
+      setNetwork({
+        online: true,
+      });
+
+      void processQueue();
+
+      // processQueue();
+    };
+
+    const handleOffline = () => {
+      console.log("Internet Offline");
+
+      setNetwork({
+        online: false,
+      });
+    };
+
+    window.addEventListener("online", handleOnline);
+
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const processQueue = async () => {
+    if (!navigator.onLine) {
+      return;
+    }
+    if (workerRunning.current) {
+      return;
+    }
+
+    workerRunning.current = true;
+
+    try {
+      const pending = uploadQueue.filter((item) => item.status === "pending");
+
+      for (const item of pending) {
+        await uploadItem(item);
+      }
+    } finally {
+      workerRunning.current = false;
     }
   };
 

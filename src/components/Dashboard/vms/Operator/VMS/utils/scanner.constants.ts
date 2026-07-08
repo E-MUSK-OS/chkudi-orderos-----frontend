@@ -4,4 +4,6 @@ export const SCANNER_CONFIG = {
   DUPLICATE_DELAY: 1500,
 
   SCAN_TIMEOUT: 100,
+
+  MAX_RETRY: 3,
 };

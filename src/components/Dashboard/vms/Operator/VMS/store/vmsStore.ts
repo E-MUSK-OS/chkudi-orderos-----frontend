@@ -23,6 +23,7 @@ const initialState = {
     trackingId: null,
     duration: 0,
     blob: null,
+    startedAt: null,
   },
 
   session: {

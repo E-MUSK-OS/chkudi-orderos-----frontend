@@ -2,7 +2,7 @@
 
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import React from "react";
-import { ScannerInput, CameraPreview } from "./components";
+import { ScannerInput, CameraPreview, UploadQueue, RecentScans, SystemStatus } from "./components";
 import { useCamera } from "./hooks/useCamera";
 import { useRecorder } from "./hooks/useRecorder";
 import { useScanner } from "./hooks/useScanner";
@@ -14,9 +14,13 @@ const OperatorVMS = () => {
   return (
     <DashboardLayout title="Operator VMS">
       <div>
-        <CameraPreview camera={camera} recorder={recorder} />
+        {/* <CameraPreview camera={camera} recorder={recorder} /> */}
+        <SystemStatus />
+        <CameraPreview camera={camera} />
 
         <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
+        <UploadQueue />
+        <RecentScans scanner={scanner} />
         {/* <VMSHeader /> */}
 
         {/* <SystemStatus /> */}
