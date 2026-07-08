@@ -8,10 +8,15 @@ export const useRecorder = () => {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const { addUpload } = useUploadQueue();
 
-  const onStopCallback = useRef<(() => void) | null>(null);
+  // const onStopCallback = useRef<(() => void) | null>(null);
 
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const pendingRecordingRef = useRef<{
+    stream: MediaStream;
+    trackingId: string;
+  } | null>(null);
 
   // const [isRecording, setIsRecording] = useState(false);
   // const [duration, setDuration] = useState(0);
@@ -95,10 +100,18 @@ export const useRecorder = () => {
           startedAt: null,
         });
 
-        if (onStopCallback.current) {
-          onStopCallback.current();
+        // if (onStopCallback.current) {
+        //   onStopCallback.current();
 
-          onStopCallback.current = null;
+        //   onStopCallback.current = null;
+        // }
+
+        const pending = pendingRecordingRef.current;
+
+        if (pending) {
+          pendingRecordingRef.current = null;
+
+          startRecording(pending.stream, pending.trackingId);
         }
       };
 
@@ -133,12 +146,18 @@ export const useRecorder = () => {
     [setRecording],
   );
 
-  const stopRecording = useCallback((callback?: () => void) => {
+  // const stopRecording = useCallback((callback?: () => void) => {
+  //   console.log("STOP RECORDING");
+  //   if (callback) {
+  //     console.log("SAVE CALLBACK");
+  //     onStopCallback.current = callback;
+  //   }
+
+  //   recorderRef.current?.stop();
+  // }, []);
+
+  const stopRecording = useCallback(() => {
     console.log("STOP RECORDING");
-    if (callback) {
-      console.log("SAVE CALLBACK");
-      onStopCallback.current = callback;
-    }
 
     recorderRef.current?.stop();
   }, []);
@@ -147,12 +166,20 @@ export const useRecorder = () => {
     return recorderRef.current?.state === "recording";
   };
 
+  const queueNextRecording = (stream: MediaStream, trackingId: string) => {
+    pendingRecordingRef.current = {
+      stream,
+      trackingId,
+    };
+  };
+
   return {
     isRecording: recording.isRecording,
 
     duration: recording.duration,
 
     startRecording,
+    queueNextRecording,
 
     stopRecording,
     isRecorderRunning,

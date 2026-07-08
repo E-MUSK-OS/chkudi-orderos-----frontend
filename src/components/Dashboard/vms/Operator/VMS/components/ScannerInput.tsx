@@ -25,7 +25,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   } = scanner;
   // const { stream } = camera;
   const { streamRef } = camera;
-  const { isRecording, startRecording, stopRecording, isRecorderRunning } =
+  const { isRecording, startRecording, stopRecording, isRecorderRunning, queueNextRecording, } =
     recorder;
   const [trackingId, setTrackingId] = useState("");
 
@@ -58,14 +58,24 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
       return;
     }
 
+    // if (isRecorderRunning()) {
+    //   console.log("Stopping previous recording...");
+
+    //   stopRecording(() => {
+    //     console.log("Starting next recording...", id);
+
+    //     startRecording(stream, id);
+    //   });
+
+    //   return;
+    // }
+
     if (isRecorderRunning()) {
       console.log("Stopping previous recording...");
 
-      stopRecording(() => {
-        console.log("Starting next recording...", id);
+      queueNextRecording(stream, id);
 
-        startRecording(stream, id);
-      });
+      stopRecording();
 
       return;
     }
