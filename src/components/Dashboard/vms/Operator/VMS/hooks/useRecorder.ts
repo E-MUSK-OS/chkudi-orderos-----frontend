@@ -35,6 +35,7 @@ export const useRecorder = () => {
 
   const startRecording = useCallback(
     (stream: MediaStream, trackingId: string) => {
+      console.log("RECORDER START =>", trackingId);
       chunksRef.current = [];
 
       const recorder = new MediaRecorder(stream);

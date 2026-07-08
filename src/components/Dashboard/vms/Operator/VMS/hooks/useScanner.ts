@@ -63,6 +63,7 @@ export const useScanner = () => {
 
   const processScan = useCallback(
     async (trackingId: string): Promise<ScannerResult | null> => {
+      console.log("PROCESS SCAN =>", trackingId);
       if (isProcessing) {
         return {
           success: false,

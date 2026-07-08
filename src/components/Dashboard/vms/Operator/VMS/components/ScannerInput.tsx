@@ -47,6 +47,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   // };
 
   const handleTrackingId = (id: string) => {
+    console.log("START RECORDING =>", id);
     if (!stream) {
       console.warn("Camera not ready");
       return;
@@ -65,6 +66,9 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
   const handleSubmit = async (value?: string) => {
     const id = (value ?? trackingId).trim();
+
+    console.log("SUBMIT =>", id);
+
 
     if (!id || isProcessing) return;
 
