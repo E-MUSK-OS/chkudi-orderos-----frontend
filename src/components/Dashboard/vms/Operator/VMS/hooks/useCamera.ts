@@ -108,5 +108,6 @@ export const useCamera = () => {
     selectedCamera,
     setSelectedCamera,
     stream,
+    streamRef,
   };
 };

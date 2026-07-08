@@ -23,7 +23,8 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     scannerStatus,
     isProcessing,
   } = scanner;
-  const { stream } = camera;
+  // const { stream } = camera;
+  const { streamRef } = camera;
   const { isRecording, startRecording, stopRecording } = recorder;
   const [trackingId, setTrackingId] = useState("");
 
@@ -48,7 +49,9 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
   const handleTrackingId = (id: string) => {
     console.log("START RECORDING =>", id);
-    console.log("STREAM =>", stream);
+    // console.log("STREAM =>", stream);
+    const stream = streamRef.current;
+
     if (!stream) {
       console.warn("Camera not ready");
       return;
@@ -69,7 +72,6 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     const id = (value ?? trackingId).trim();
 
     console.log("SUBMIT =>", id);
-
 
     if (!id || isProcessing) return;
 
