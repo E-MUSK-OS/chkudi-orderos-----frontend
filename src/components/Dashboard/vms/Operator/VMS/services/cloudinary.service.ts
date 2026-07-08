@@ -13,7 +13,7 @@ export interface CloudinaryUploadResult {
   bytes: number;
 
   publicId: string;
-  version:number;
+  version: number;
 }
 
 // const getSignature = async () => {
@@ -35,22 +35,17 @@ export const uploadVideoToCloudinary = async (
   blob: Blob,
   onProgress?: (progress: number) => void,
 ): Promise<CloudinaryUploadResult> => {
-  const signature = await getSignature(trackingId);
+  // Generate a unique public ID with timestamp
+  const uniqueId = `${trackingId}_${Date.now()}`;
+  const signature = await getSignature(uniqueId);
 
   const formData = new FormData();
-
   formData.append("file", blob);
-
-  formData.append("public_id", trackingId);
-
-  formData.append("overwrite", "true");
-
+  formData.append("public_id", signature.publicId);
+  formData.append("overwrite", "false");
   formData.append("api_key", signature.apiKey);
-
   formData.append("timestamp", String(signature.timestamp));
-
   formData.append("signature", signature.signature);
-
   formData.append("folder", signature.folder);
 
   const response = await axios.post(
@@ -59,9 +54,7 @@ export const uploadVideoToCloudinary = async (
     {
       onUploadProgress: (event) => {
         if (!event.total) return;
-
         const progress = Math.round((event.loaded * 100) / event.total);
-
         onProgress?.(progress);
       },
     },
@@ -69,15 +62,11 @@ export const uploadVideoToCloudinary = async (
 
   return {
     videoUrl: response.data.secure_url,
-
     thumbnailUrl: response.data.secure_url
       .replace("/upload/", "/upload/so_1/")
       .replace(".webm", ".jpg"),
-
     duration: Math.round(response.data.duration),
-
     bytes: response.data.bytes,
-
     publicId: response.data.public_id,
     version: response.data.version,
   };
