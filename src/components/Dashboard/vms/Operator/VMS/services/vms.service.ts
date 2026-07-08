@@ -33,38 +33,68 @@ export interface UploadRecordingPayload {
 //   return api.post("/vms/upload", formData);
 // };
 
-export const uploadRecording = async (
-  payload: UploadRecordingPayload,
-  onProgress?: (progress: number) => void,
+// export const uploadRecording = async (
+//   payload: UploadRecordingPayload,
+//   onProgress?: (progress: number) => void,
+// ) => {
+//   console.log("API START");
+//   const formData = new FormData();
+
+//   formData.append("trackingId", payload.trackingId);
+
+//   formData.append("video", payload.blob, `${payload.trackingId}.webm`);
+
+//   if (payload.operatorId) {
+//     formData.append("operatorId", payload.operatorId);
+//   }
+
+//   if (payload.cameraName) {
+//     formData.append("cameraName", payload.cameraName);
+//   }
+
+//   const response = await axiosInstance.post("/vms/upload", formData, {
+//     headers: {
+//       "Content-Type": "multipart/form-data",
+//     },
+
+//     onUploadProgress: (event) => {
+//       if (!event.total) return;
+
+//       const progress = Math.round((event.loaded * 100) / event.total);
+
+//       onProgress?.(progress);
+//     },
+//   });
+
+//   return response.data;
+// };
+
+
+export interface SaveRecordingPayload {
+  trackingId: string;
+
+  videoUrl: string;
+
+  thumbnailUrl: string;
+
+  duration: number;
+
+  bytes: number;
+
+  publicId: string;
+
+  operatorId?: string;
+
+  cameraName?: string;
+}
+
+export const saveRecording = async (
+  payload: SaveRecordingPayload,
 ) => {
-  console.log("API START");
-  const formData = new FormData();
-
-  formData.append("trackingId", payload.trackingId);
-
-  formData.append("video", payload.blob, `${payload.trackingId}.webm`);
-
-  if (payload.operatorId) {
-    formData.append("operatorId", payload.operatorId);
-  }
-
-  if (payload.cameraName) {
-    formData.append("cameraName", payload.cameraName);
-  }
-
-  const response = await axiosInstance.post("/vms/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-
-    onUploadProgress: (event) => {
-      if (!event.total) return;
-
-      const progress = Math.round((event.loaded * 100) / event.total);
-
-      onProgress?.(progress);
-    },
-  });
+  const response = await axiosInstance.post(
+    "/vms/save",
+    payload,
+  );
 
   return response.data;
 };

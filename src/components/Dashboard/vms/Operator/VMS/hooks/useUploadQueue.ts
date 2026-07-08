@@ -1,7 +1,8 @@
 "use client";
 
 import { useVMSStore } from "../store/vmsStore";
-import { uploadRecording } from "../services/vms.service";
+import { uploadVideoToCloudinary } from "../services/cloudinary.service";
+import { saveRecording } from "../services/vms.service";
 import { UploadItem } from "../types/vms.types";
 import { useEffect } from "react";
 import { useRef } from "react";
@@ -37,11 +38,8 @@ export const useUploadQueue = () => {
       //     });
       //   },
       // );
-      const response = await uploadRecording(
-        {
-          trackingId: item.trackingId,
-          blob: item.blob,
-        },
+      const cloudinary = await uploadVideoToCloudinary(
+        item.blob,
         (progress) => {
           updateUpload(item.id, {
             progress,
@@ -49,11 +47,28 @@ export const useUploadQueue = () => {
         },
       );
 
+      const response = await saveRecording({
+        trackingId: item.trackingId,
+
+        videoUrl: cloudinary.videoUrl,
+
+        thumbnailUrl: cloudinary.thumbnailUrl,
+
+        duration: cloudinary.duration,
+
+        bytes: cloudinary.bytes,
+
+        publicId: cloudinary.publicId,
+      });
+
       updateUpload(item.id, {
         status: "completed",
+
         progress: 100,
-        videoUrl: response.data.videoUrl,
-        thumbnailUrl: response.data.thumbnailUrl,
+
+        videoUrl: cloudinary.videoUrl,
+
+        thumbnailUrl: cloudinary.thumbnailUrl,
       });
 
       toast.success("Upload Completed", {

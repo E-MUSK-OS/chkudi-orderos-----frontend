@@ -9,6 +9,10 @@ export interface CloudinaryUploadResult {
   thumbnailUrl: string;
 
   duration: number;
+
+  bytes: number;
+
+  publicId: string;
 }
 
 const getSignature = async () => {
@@ -19,6 +23,7 @@ const getSignature = async () => {
 
 export const uploadVideoToCloudinary = async (
   blob: Blob,
+  onProgress?: (progress: number) => void,
 ): Promise<CloudinaryUploadResult> => {
   const signature = await getSignature();
 
@@ -36,11 +41,29 @@ export const uploadVideoToCloudinary = async (
 
   const response = await axios.post(
     `https://api.cloudinary.com/v1_1/${signature.cloudName}/video/upload`,
-
     formData,
+    {
+      onUploadProgress: (event) => {
+        if (!event.total) return;
+
+        const progress = Math.round((event.loaded * 100) / event.total);
+
+        onProgress?.(progress);
+      },
+    },
   );
 
-  console.log(response.data);
+  return {
+    videoUrl: response.data.secure_url,
 
-  throw new Error("STOP");
+    thumbnailUrl: response.data.secure_url
+      .replace("/upload/", "/upload/so_1/")
+      .replace(".webm", ".jpg"),
+
+    duration: Math.round(response.data.duration),
+
+    bytes: response.data.bytes,
+
+    publicId: response.data.public_id,
+  };
 };
