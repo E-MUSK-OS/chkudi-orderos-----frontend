@@ -25,7 +25,8 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   } = scanner;
   // const { stream } = camera;
   const { streamRef } = camera;
-  const { isRecording, startRecording, stopRecording } = recorder;
+  const { isRecording, startRecording, stopRecording, isRecorderRunning } =
+    recorder;
   const [trackingId, setTrackingId] = useState("");
 
   useEffect(() => {
@@ -57,8 +58,12 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
       return;
     }
 
-    if (isRecording) {
+    if (isRecorderRunning()) {
+      console.log("Stopping previous recording...");
+
       stopRecording(() => {
+        console.log("Starting next recording...", id);
+
         startRecording(stream, id);
       });
 

@@ -49,7 +49,8 @@ export const useRecorder = () => {
       };
 
       recorder.onstop = () => {
-        console.log("Recorder stopped");
+        // console.log("Recorder stopped");
+        console.log("MEDIA RECORDER ONSTOP");
         const blob = new Blob(chunksRef.current, {
           type: "video/webm",
         });
@@ -133,12 +134,18 @@ export const useRecorder = () => {
   );
 
   const stopRecording = useCallback((callback?: () => void) => {
+    console.log("STOP RECORDING");
     if (callback) {
+      console.log("SAVE CALLBACK");
       onStopCallback.current = callback;
     }
 
     recorderRef.current?.stop();
   }, []);
+
+  const isRecorderRunning = () => {
+    return recorderRef.current?.state === "recording";
+  };
 
   return {
     isRecording: recording.isRecording,
@@ -148,5 +155,6 @@ export const useRecorder = () => {
     startRecording,
 
     stopRecording,
+    isRecorderRunning,
   };
 };
