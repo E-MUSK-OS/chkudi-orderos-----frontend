@@ -38,6 +38,16 @@ export const uploadVideoToCloudinary = async (
   //   const uniqueId = `${trackingId}_${Date.now()}`;
   const signature = await getSignature(trackingId);
 
+  console.log("Signature Response", signature);
+
+  console.log("Uploading with", {
+    public_id: signature.publicId,
+    folder: signature.folder,
+    timestamp: signature.timestamp,
+    signature: signature.signature,
+    apiKey: signature.apiKey,
+  });
+
   const formData = new FormData();
   formData.append("file", blob);
   formData.append("public_id", signature.publicId);
@@ -78,7 +88,13 @@ export const uploadVideoToCloudinary = async (
       version: response.data.version,
     };
   } catch (err: any) {
-    console.log("Cloudinary Error =>", err.response?.data);
+    console.log("FULL ERROR", err);
+    console.log("STATUS", err.response?.status);
+    console.log("DATA", err.response?.data);
+    console.dir(err.response?.data);
+    console.log("MESSAGE", err.response?.data?.error?.message);
+
+    alert(err.response?.data?.error?.message);
 
     throw err;
   }
