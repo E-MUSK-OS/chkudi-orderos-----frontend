@@ -48,6 +48,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
   const handleTrackingId = (id: string) => {
     console.log("START RECORDING =>", id);
+    console.log("STREAM =>", stream);
     if (!stream) {
       console.warn("Camera not ready");
       return;
