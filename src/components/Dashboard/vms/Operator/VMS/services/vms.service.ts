@@ -37,6 +37,7 @@ export const uploadRecording = async (
   payload: UploadRecordingPayload,
   onProgress?: (progress: number) => void,
 ) => {
+  console.log("API START");
   const formData = new FormData();
 
   formData.append("trackingId", payload.trackingId);

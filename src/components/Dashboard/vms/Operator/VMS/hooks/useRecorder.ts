@@ -52,6 +52,7 @@ export const useRecorder = () => {
         const blob = new Blob(chunksRef.current, {
           type: "video/webm",
         });
+        console.log("ADDING TO QUEUE", trackingId);
 
         addUpload({
           id: crypto.randomUUID(),

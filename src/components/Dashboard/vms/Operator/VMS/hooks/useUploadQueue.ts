@@ -14,6 +14,7 @@ export const useUploadQueue = () => {
   const workerRunning = useRef(false);
 
   const uploadItem = async (item: UploadItem) => {
+    console.log("UPLOAD ITEM", item);
     try {
       updateUpload(item.id, {
         status: "uploading",
@@ -136,6 +137,7 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
   }, []);
 
   const processQueue = async () => {
+    console.log("PROCESS QUEUE");
     if (!navigator.onLine) {
       return;
     }
@@ -158,6 +160,10 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
 
   useEffect(() => {
     processQueue();
+  }, [uploadQueue]);
+
+  useEffect(() => {
+    console.log("Upload Queue Changed:", uploadQueue);
   }, [uploadQueue]);
 
   return {
