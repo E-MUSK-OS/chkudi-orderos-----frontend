@@ -39,6 +39,7 @@ export const useUploadQueue = () => {
       //   },
       // );
       const cloudinary = await uploadVideoToCloudinary(
+        item.trackingId,
         item.blob,
         (progress) => {
           updateUpload(item.id, {
@@ -59,6 +60,8 @@ export const useUploadQueue = () => {
         bytes: cloudinary.bytes,
 
         publicId: cloudinary.publicId,
+
+        version: cloudinary.version,
       });
 
       updateUpload(item.id, {

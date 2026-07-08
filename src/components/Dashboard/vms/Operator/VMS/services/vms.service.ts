@@ -83,6 +83,8 @@ export interface SaveRecordingPayload {
 
   publicId: string;
 
+  version: number;
+
   operatorId?: string;
 
   cameraName?: string;

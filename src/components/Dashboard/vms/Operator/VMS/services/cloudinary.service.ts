@@ -13,23 +13,37 @@ export interface CloudinaryUploadResult {
   bytes: number;
 
   publicId: string;
+  version:number;
 }
 
-const getSignature = async () => {
-  const response = await axiosInstance.post("/vms/signature");
+// const getSignature = async () => {
+//   const response = await axiosInstance.post("/vms/signature");
+
+//   return response.data.data;
+// };
+
+const getSignature = async (publicId: string) => {
+  const response = await axiosInstance.post("/vms/signature", {
+    publicId,
+  });
 
   return response.data.data;
 };
 
 export const uploadVideoToCloudinary = async (
+  trackingId: string,
   blob: Blob,
   onProgress?: (progress: number) => void,
 ): Promise<CloudinaryUploadResult> => {
-  const signature = await getSignature();
+  const signature = await getSignature(trackingId);
 
   const formData = new FormData();
 
   formData.append("file", blob);
+
+  formData.append("public_id", trackingId);
+
+  formData.append("overwrite", "true");
 
   formData.append("api_key", signature.apiKey);
 
@@ -65,5 +79,6 @@ export const uploadVideoToCloudinary = async (
     bytes: response.data.bytes,
 
     publicId: response.data.public_id,
+    version: response.data.version,
   };
 };
