@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useVMSStore } from "../store/vmsStore";
 import { useUploadQueue } from "./useUploadQueue";
+import fixWebmDuration from "fix-webm-duration";
 
 export const useRecorder = () => {
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -75,61 +76,114 @@ export const useRecorder = () => {
         }
       };
 
+      // recorder.onstop = () => {
+      //   console.log("MEDIA RECORDER ONSTOP");
+      //   const blob = new Blob(chunksRef.current, {
+      //     type: "video/webm",
+      //   });
+      //   const url = URL.createObjectURL(blob);
+
+      //   window.open(url, "_blank");
+      //   console.log("Blob", blob);
+      //   console.log("Blob size", blob.size);
+      //   console.log("Blob type", blob.type);
+      //   const currentTrackingId = useVMSStore.getState().recording.trackingId;
+      //   console.log("ADDING TO QUEUE", currentTrackingId);
+
+      //   if (blob.size > 0 && currentTrackingId) {
+      //     addUpload({
+      //       id: crypto.randomUUID(),
+      //       trackingId: currentTrackingId,
+      //       blob,
+      //       status: "pending",
+      //       progress: 0,
+      //       retryCount: 0,
+      //       createdAt: Date.now(),
+      //     });
+      //   }
+
+      //   setRecording({
+      //     isRecording: false,
+      //     trackingId: null,
+      //     blob,
+      //     duration: 0,
+      //     startedAt: null,
+      //   });
+
+      //   if (timerRef.current) {
+      //     clearInterval(timerRef.current);
+      //     timerRef.current = null;
+      //   }
+
+      //   const pending = pendingRecordingRef.current;
+      //   if (pending) {
+      //     console.log("Starting pending recording:", pending.trackingId);
+      //     pendingRecordingRef.current = null;
+      //     setRecording({
+      //       trackingId: pending.trackingId,
+      //     });
+      //     startRecording(pending.stream, pending.trackingId);
+      //   }
+      // };
+
+      import fixWebmDuration from "fix-webm-duration";
+      // ...existing imports
+
       recorder.onstop = () => {
         console.log("MEDIA RECORDER ONSTOP");
-        const blob = new Blob(chunksRef.current, {
+
+        const rawBlob = new Blob(chunksRef.current, {
           type: "video/webm",
         });
-        const url = URL.createObjectURL(blob);
 
-        window.open(url, "_blank");
-        console.log("Blob", blob);
-        console.log("Blob size", blob.size);
-        console.log("Blob type", blob.type);
+        // Get actual recorded duration in ms
+        const startedAt = useVMSStore.getState().recording.startedAt;
+        const durationMs = startedAt ? Date.now() - startedAt : 0;
 
-        // Get the tracking ID from the current recording state
         const currentTrackingId = useVMSStore.getState().recording.trackingId;
-        console.log("ADDING TO QUEUE", currentTrackingId);
 
-        if (blob.size > 0 && currentTrackingId) {
-          addUpload({
-            id: crypto.randomUUID(),
-            trackingId: currentTrackingId,
-            blob,
-            status: "pending",
-            progress: 0,
-            retryCount: 0,
-            createdAt: Date.now(),
-          });
-        }
+        // 🔧 Fix the missing duration metadata before using the blob anywhere
+        fixWebmDuration(rawBlob, durationMs, (blob) => {
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
 
-        setRecording({
-          isRecording: false,
-          trackingId: null,
-          blob,
-          duration: 0,
-          startedAt: null,
-        });
+          console.log("Blob (fixed)", blob, "size", blob.size);
 
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
+          if (blob.size > 0 && currentTrackingId) {
+            addUpload({
+              id: crypto.randomUUID(),
+              trackingId: currentTrackingId,
+              blob,
+              status: "pending",
+              progress: 0,
+              retryCount: 0,
+              createdAt: Date.now(),
+            });
+          }
 
-        // Check for pending recording
-        const pending = pendingRecordingRef.current;
-        if (pending) {
-          console.log("Starting pending recording:", pending.trackingId);
-          pendingRecordingRef.current = null;
-          // Update the tracking ID in store before starting
           setRecording({
-            trackingId: pending.trackingId,
+            isRecording: false,
+            trackingId: null,
+            blob,
+            duration: 0,
+            startedAt: null,
           });
-          startRecording(pending.stream, pending.trackingId);
-        }
-      };
 
-      // Update store with new tracking ID before starting
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+
+          // Check pending recording (queueNextRecording flow)
+          const pending = pendingRecordingRef.current;
+          if (pending) {
+            console.log("Starting pending recording:", pending.trackingId);
+            pendingRecordingRef.current = null;
+            setRecording({ trackingId: pending.trackingId });
+            startRecording(pending.stream, pending.trackingId);
+          }
+        });
+      };
       setRecording({
         isRecording: true,
         trackingId: trackingId,
@@ -137,7 +191,7 @@ export const useRecorder = () => {
         startedAt: Date.now(),
       });
 
-      recorder.start(1000); // Collect data every second
+      recorder.start(1000);
       console.log("Recording Started for:", trackingId);
 
       if (timerRef.current) {

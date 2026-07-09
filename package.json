@@ -14,6 +14,7 @@
     "@hookform/resolvers": "^5.4.0",
     "axios": "^1.18.1",
     "clsx": "^2.1.1",
+    "fix-webm-duration": "^1.0.6",
     "framer-motion": "^12.42.2",
     "geist": "^1.7.2",
     "lucide-react": "^1.23.0",
