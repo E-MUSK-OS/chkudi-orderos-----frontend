@@ -44,10 +44,24 @@ export const useRecorder = () => {
       }
 
       console.log("Using mimeType", mimeType);
+      console.log(
+        "Supports video/webm:",
+        MediaRecorder.isTypeSupported("video/webm"),
+      );
+      console.log(
+        "Supports VP8:",
+        MediaRecorder.isTypeSupported("video/webm;codecs=vp8"),
+      );
+      console.log(
+        "Supports VP9:",
+        MediaRecorder.isTypeSupported("video/webm;codecs=vp9"),
+      );
 
       const recorder = new MediaRecorder(stream, {
         mimeType,
       });
+
+      console.log("Recorder mimeType:", recorder.mimeType);
 
       // const recorder = new MediaRecorder(stream, {
       //   mimeType: "video/webm;codecs=vp9,opus",
