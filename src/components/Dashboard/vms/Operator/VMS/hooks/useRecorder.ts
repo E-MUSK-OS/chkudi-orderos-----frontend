@@ -126,9 +126,6 @@ export const useRecorder = () => {
       //   }
       // };
 
-      import fixWebmDuration from "fix-webm-duration";
-      // ...existing imports
-
       recorder.onstop = () => {
         console.log("MEDIA RECORDER ONSTOP");
 
