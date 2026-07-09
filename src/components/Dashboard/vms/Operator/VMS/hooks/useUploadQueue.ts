@@ -49,9 +49,12 @@ export const useUploadQueue = () => {
           });
         },
       );
+      const userId = JSON.parse(localStorage.getItem("user") || "{}")?.id;
 
       const response = await saveRecording({
         trackingId: item.trackingId,
+
+        userId,
 
         videoUrl: cloudinary.videoUrl,
 

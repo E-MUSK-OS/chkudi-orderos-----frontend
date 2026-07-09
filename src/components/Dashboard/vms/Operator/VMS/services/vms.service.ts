@@ -73,6 +73,8 @@ export interface UploadRecordingPayload {
 export interface SaveRecordingPayload {
   trackingId: string;
 
+  userId: string;
+
   videoUrl: string;
 
   thumbnailUrl: string;
