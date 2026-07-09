@@ -10,6 +10,7 @@ import { SCANNER_CONFIG } from "../utils/scanner.constants";
 import { toast } from "sonner";
 
 export const useUploadQueue = () => {
+   console.log("UPLOAD QUEUE HOOK MOUNTED");
   const { uploadQueue, addUpload, updateUpload, removeUpload, setNetwork } =
     useVMSStore();
   const workerRunning = useRef(false);

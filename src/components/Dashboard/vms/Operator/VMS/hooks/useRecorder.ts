@@ -5,11 +5,9 @@ import { useVMSStore } from "../store/vmsStore";
 import { useUploadQueue } from "./useUploadQueue";
 
 export const useRecorder = () => {
+  const { processQueue } = useUploadQueue();
   const recorderRef = useRef<MediaRecorder | null>(null);
-  // const { addUpload } = useUploadQueue();
   const addUpload = useVMSStore((state) => state.addUpload);
-
-  // const onStopCallback = useRef<(() => void) | null>(null);
 
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -20,11 +18,6 @@ export const useRecorder = () => {
       trackingId: string;
     }[]
   >([]);
-
-  // const [isRecording, setIsRecording] = useState(false);
-  // const [duration, setDuration] = useState(0);
-
-  // const { setRecording } = useVMSStore();
   const {
     recording,
 
@@ -58,7 +51,6 @@ export const useRecorder = () => {
       };
 
       recorder.onstop = () => {
-        // console.log("Recorder stopped");
         console.log("MEDIA RECORDER ONSTOP");
 
         console.log("STOP TRACKING =", trackingId);
@@ -84,6 +76,8 @@ export const useRecorder = () => {
           createdAt: Date.now(),
         });
 
+        processQueue();
+
         setRecording({
           isRecording: false,
           trackingId: null,
@@ -106,12 +100,6 @@ export const useRecorder = () => {
 
           startedAt: null,
         });
-
-        // if (onStopCallback.current) {
-        //   onStopCallback.current();
-
-        //   onStopCallback.current = null;
-        // }
         console.log("PENDING =", pendingRecordingRef.current);
 
         const pending = pendingRecordingRef.current.shift();
@@ -137,34 +125,12 @@ export const useRecorder = () => {
 
         startedAt: Date.now(),
       });
-
-      // timerRef.current = setInterval(() => {
-      //   const startedAt = useVMSStore.getState().recording.startedAt;
-
-      //   if (!startedAt) return;
-
-      //   const seconds = Math.floor((Date.now() - startedAt) / 1000);
-
-      //   useVMSStore.getState().setRecording({
-      //     duration: seconds,
-      //   });
-      // }, 1000);
       updateDuration();
 
       timerRef.current = setInterval(updateDuration, 1000);
     },
     [setRecording],
   );
-
-  // const stopRecording = useCallback((callback?: () => void) => {
-  //   console.log("STOP RECORDING");
-  //   if (callback) {
-  //     console.log("SAVE CALLBACK");
-  //     onStopCallback.current = callback;
-  //   }
-
-  //   recorderRef.current?.stop();
-  // }, []);
   const stoppingRef = useRef(false);
 
   const stopRecording = useCallback(() => {
