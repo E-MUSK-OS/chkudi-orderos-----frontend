@@ -48,7 +48,17 @@ export const uploadVideoToCloudinary = async (
     apiKey: signature.apiKey,
   });
 
+  console.log("UPLOAD BLOB");
+  console.log(blob);
+  console.log(blob.size);
+  console.log(blob.type);
+
   const formData = new FormData();
+  const file = new File([blob], `${trackingId}.webm`, {
+    type: blob.type || "video/webm",
+  });
+
+  console.log(file);
   formData.append("file", blob);
   formData.append("public_id", signature.publicId);
   formData.append("overwrite", "false");

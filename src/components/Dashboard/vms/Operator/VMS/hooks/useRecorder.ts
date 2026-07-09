@@ -33,9 +33,25 @@ export const useRecorder = () => {
 
       chunksRef.current = [];
 
+      let mimeType = "";
+
+      if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+        mimeType = "video/webm;codecs=vp9";
+      } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+        mimeType = "video/webm;codecs=vp8";
+      } else if (MediaRecorder.isTypeSupported("video/webm")) {
+        mimeType = "video/webm";
+      }
+
+      console.log("Using mimeType", mimeType);
+
       const recorder = new MediaRecorder(stream, {
-        mimeType: "video/webm;codecs=vp9,opus",
+        mimeType,
       });
+
+      // const recorder = new MediaRecorder(stream, {
+      //   mimeType: "video/webm;codecs=vp9,opus",
+      // });
 
       recorderRef.current = recorder;
 
@@ -50,6 +66,9 @@ export const useRecorder = () => {
         const blob = new Blob(chunksRef.current, {
           type: "video/webm",
         });
+        console.log("Blob", blob);
+        console.log("Blob size", blob.size);
+        console.log("Blob type", blob.type);
 
         // Get the tracking ID from the current recording state
         const currentTrackingId = useVMSStore.getState().recording.trackingId;
