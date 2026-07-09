@@ -80,6 +80,9 @@ export const useRecorder = () => {
         const blob = new Blob(chunksRef.current, {
           type: "video/webm",
         });
+        const url = URL.createObjectURL(blob);
+
+        window.open(url, "_blank");
         console.log("Blob", blob);
         console.log("Blob size", blob.size);
         console.log("Blob type", blob.type);

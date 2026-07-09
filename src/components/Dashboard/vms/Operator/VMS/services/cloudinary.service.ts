@@ -5,22 +5,12 @@ import axios from "axios";
 
 export interface CloudinaryUploadResult {
   videoUrl: string;
-
   thumbnailUrl: string;
-
   duration: number;
-
   bytes: number;
-
   publicId: string;
   version: number;
 }
-
-// const getSignature = async () => {
-//   const response = await axiosInstance.post("/vms/signature");
-
-//   return response.data.data;
-// };
 
 const getSignature = async (publicId: string) => {
   const response = await axiosInstance.post("/vms/signature", {
@@ -35,37 +25,31 @@ export const uploadVideoToCloudinary = async (
   blob: Blob,
   onProgress?: (progress: number) => void,
 ): Promise<CloudinaryUploadResult> => {
-  //   const uniqueId = `${trackingId}_${Date.now()}`;
   const signature = await getSignature(trackingId);
 
-  console.log("Signature Response", signature);
+  console.log("========== CLOUDINARY SIGNATURE ==========");
+  console.log(signature);
 
-  console.log("Uploading with", {
-    public_id: signature.publicId,
-    folder: signature.folder,
-    timestamp: signature.timestamp,
-    signature: signature.signature,
-    apiKey: signature.apiKey,
-  });
+  console.log("========== BLOB ==========");
+  console.log("Size:", blob.size);
+  console.log("Type:", blob.type);
 
-  console.log("UPLOAD BLOB");
-  console.log(blob);
-  console.log(blob.size);
-  console.log(blob.type);
-
-  const formData = new FormData();
   const file = new File([blob], `${trackingId}.webm`, {
     type: blob.type || "video/webm",
   });
 
+  console.log("========== FILE ==========");
   console.log(file);
-  formData.append("file", blob);
+
+  const formData = new FormData();
+
+  formData.append("file", file);
   formData.append("public_id", signature.publicId);
-  formData.append("overwrite", "false");
+  formData.append("folder", signature.folder);
   formData.append("api_key", signature.apiKey);
   formData.append("timestamp", String(signature.timestamp));
   formData.append("signature", signature.signature);
-  formData.append("folder", signature.folder);
+  formData.append("overwrite", "false");
 
   try {
     const response = await axios.post(
@@ -75,19 +59,24 @@ export const uploadVideoToCloudinary = async (
         onUploadProgress: (event) => {
           if (!event.total) return;
 
-          const progress = Math.round((event.loaded * 100) / event.total);
+          const progress = Math.round(
+            (event.loaded * 100) / event.total,
+          );
 
           onProgress?.(progress);
         },
       },
     );
 
+    console.log("========== CLOUDINARY SUCCESS ==========");
+    console.log(response.data);
+
     return {
       videoUrl: response.data.secure_url,
 
       thumbnailUrl: response.data.secure_url
-        .replace("/upload/", "/upload/so_1/")
-        .replace(".webm", ".jpg"),
+        .replace("/video/upload/", "/video/upload/so_1/")
+        .replace(/\.(webm|mp4|mov|avi)$/i, ".jpg"),
 
       duration: Math.round(response.data.duration),
 
@@ -98,13 +87,10 @@ export const uploadVideoToCloudinary = async (
       version: response.data.version,
     };
   } catch (err: any) {
-    console.log("FULL ERROR", err);
-    console.log("STATUS", err.response?.status);
-    console.log("DATA", err.response?.data);
-    console.dir(err.response?.data);
-    console.log("MESSAGE", err.response?.data?.error?.message);
-
-    alert(err.response?.data?.error?.message);
+    console.log("========== CLOUDINARY ERROR ==========");
+    console.log("Status:", err.response?.status);
+    console.log("Data:", err.response?.data);
+    console.log("Message:", err.response?.data?.error?.message);
 
     throw err;
   }
