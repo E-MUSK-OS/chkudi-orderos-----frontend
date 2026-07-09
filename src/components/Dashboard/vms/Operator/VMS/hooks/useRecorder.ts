@@ -6,7 +6,8 @@ import { useUploadQueue } from "./useUploadQueue";
 
 export const useRecorder = () => {
   const recorderRef = useRef<MediaRecorder | null>(null);
-  const { addUpload } = useUploadQueue();
+  // const { addUpload } = useUploadQueue();
+  const addUpload = useVMSStore((state) => state.addUpload);
 
   // const onStopCallback = useRef<(() => void) | null>(null);
 
