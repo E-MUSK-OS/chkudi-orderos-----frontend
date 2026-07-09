@@ -42,6 +42,7 @@ export const useRecorder = () => {
   const startRecording = useCallback(
     (stream: MediaStream, trackingId: string) => {
       console.log("RECORDER START =>", trackingId);
+      console.log("START TIME =", Date.now());
       chunksRef.current = [];
 
       const recorder = new MediaRecorder(stream);
@@ -57,6 +58,9 @@ export const useRecorder = () => {
       recorder.onstop = () => {
         // console.log("Recorder stopped");
         console.log("MEDIA RECORDER ONSTOP");
+
+        console.log("STOP TRACKING =", trackingId);
+        console.log("STOP TIME =", Date.now());
         const blob = new Blob(chunksRef.current, {
           type: "video/webm",
         });
@@ -106,6 +110,7 @@ export const useRecorder = () => {
 
         //   onStopCallback.current = null;
         // }
+        console.log("PENDING =", pendingRecordingRef.current);
 
         const pending = pendingRecordingRef.current;
 
