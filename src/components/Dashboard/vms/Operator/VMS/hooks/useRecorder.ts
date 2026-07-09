@@ -5,7 +5,7 @@ import { useVMSStore } from "../store/vmsStore";
 import { useUploadQueue } from "./useUploadQueue";
 
 export const useRecorder = () => {
-  // const { processQueue } = useUploadQueue();
+  const { processQueue } = useUploadQueue();
   const recorderRef = useRef<MediaRecorder | null>(null);
   const addUpload = useVMSStore((state) => state.addUpload);
 
@@ -82,7 +82,7 @@ export const useRecorder = () => {
           createdAt: Date.now(),
         });
 
-        // processQueue();
+        processQueue();
 
         setRecording({
           isRecording: false,
