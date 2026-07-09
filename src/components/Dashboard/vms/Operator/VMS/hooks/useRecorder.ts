@@ -14,10 +14,12 @@ export const useRecorder = () => {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const pendingRecordingRef = useRef<{
-    stream: MediaStream;
-    trackingId: string;
-  } | null>(null);
+  const pendingRecordingRef = useRef<
+    {
+      stream: MediaStream;
+      trackingId: string;
+    }[]
+  >([]);
 
   // const [isRecording, setIsRecording] = useState(false);
   // const [duration, setDuration] = useState(0);
@@ -112,13 +114,15 @@ export const useRecorder = () => {
         // }
         console.log("PENDING =", pendingRecordingRef.current);
 
-        const pending = pendingRecordingRef.current;
+        const pending = pendingRecordingRef.current.shift();
 
         if (pending) {
-          pendingRecordingRef.current = null;
+          console.log("START NEXT =", pending.trackingId);
 
           startRecording(pending.stream, pending.trackingId);
         }
+
+        stoppingRef.current = false;
       };
 
       recorder.start();
@@ -161,11 +165,18 @@ export const useRecorder = () => {
 
   //   recorderRef.current?.stop();
   // }, []);
+  const stoppingRef = useRef(false);
 
   const stopRecording = useCallback(() => {
+    if (!recorderRef.current) return;
+
+    if (recorderRef.current.state !== "recording") return;
+
+    stoppingRef.current = true;
+
     console.log("STOP RECORDING");
 
-    recorderRef.current?.stop();
+    recorderRef.current.stop();
   }, []);
 
   const isRecorderRunning = () => {
@@ -173,10 +184,12 @@ export const useRecorder = () => {
   };
 
   const queueNextRecording = (stream: MediaStream, trackingId: string) => {
-    pendingRecordingRef.current = {
+    pendingRecordingRef.current.push({
       stream,
       trackingId,
-    };
+    });
+
+    console.log("QUEUE SIZE =", pendingRecordingRef.current.length);
   };
 
   return {
@@ -189,5 +202,7 @@ export const useRecorder = () => {
 
     stopRecording,
     isRecorderRunning,
+
+    stoppingRef,
   };
 };
