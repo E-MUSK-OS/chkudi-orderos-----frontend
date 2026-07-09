@@ -6,8 +6,18 @@ import { CameraDevice } from "../types/vms.types";
 
 const constraints: MediaStreamConstraints = {
   video: {
-    width: 1920,
-    height: 1080,
+    width: {
+      ideal: 1920,
+      max: 1920,
+    },
+    height: {
+      ideal: 1080,
+      max: 1080,
+    },
+    frameRate: {
+      ideal: 30,
+      max: 30,
+    },
     facingMode: "environment",
   },
   audio: false,

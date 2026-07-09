@@ -45,7 +45,12 @@ export const useRecorder = () => {
       console.log("START TIME =", Date.now());
       chunksRef.current = [];
 
-      const recorder = new MediaRecorder(stream);
+      // const recorder = new MediaRecorder(stream);
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: "video/webm;codecs=vp9",
+        videoBitsPerSecond: 10_000_000,
+      });
 
       recorderRef.current = recorder;
 

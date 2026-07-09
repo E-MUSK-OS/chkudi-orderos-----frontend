@@ -128,7 +128,11 @@ const CameraPreview = ({ camera }: CameraPreviewProps) => {
           autoPlay
           muted
           playsInline
+          disablePictureInPicture
           className="h-full w-full object-cover"
+          style={{
+            willChange: "transform",
+          }}
         />
       </div>
     </div>
