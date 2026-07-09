@@ -31,7 +31,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     stopRecording,
     isRecorderRunning,
     queueNextRecording,
-     stoppingRef,
+    stoppingRef,
   } = recorder;
   const [trackingId, setTrackingId] = useState("");
 
@@ -55,6 +55,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   // };
 
   const handleTrackingId = (id: string) => {
+    console.log("SCAN =", id);
     console.log("NEW SCAN =", id);
     console.log("CURRENT RECORDING =", recorder.isRecording);
     console.log("START RECORDING =>", id);
@@ -78,9 +79,23 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     //   return;
     // }
 
-    if (isRecorderRunning() || stoppingRef.current ) {
-      console.log("Stopping previous recording...");
+    // if (isRecorderRunning() || stoppingRef.current ) {
+    //   console.log("Stopping previous recording...");
 
+    //   queueNextRecording(stream, id);
+
+    //   stopRecording();
+
+    //   return;
+    // }
+
+    if (stoppingRef.current) {
+      queueNextRecording(stream, id);
+
+      return;
+    }
+
+    if (isRecorderRunning()) {
       queueNextRecording(stream, id);
 
       stopRecording();

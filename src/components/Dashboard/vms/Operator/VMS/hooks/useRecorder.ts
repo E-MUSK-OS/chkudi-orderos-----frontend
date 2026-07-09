@@ -5,19 +5,23 @@ import { useVMSStore } from "../store/vmsStore";
 import { useUploadQueue } from "./useUploadQueue";
 
 export const useRecorder = () => {
-  const { processQueue } = useUploadQueue();
+  // const { processQueue } = useUploadQueue();
   const recorderRef = useRef<MediaRecorder | null>(null);
   const addUpload = useVMSStore((state) => state.addUpload);
 
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const pendingRecordingRef = useRef<
-    {
-      stream: MediaStream;
-      trackingId: string;
-    }[]
-  >([]);
+  // const pendingRecordingRef = useRef<
+  //   {
+  //     stream: MediaStream;
+  //     trackingId: string;
+  //   }[]
+  // >([]);
+  const nextRecordingRef = useRef<{
+    stream: MediaStream;
+    trackingId: string;
+  } | null>(null);
   const {
     recording,
 
@@ -36,6 +40,7 @@ export const useRecorder = () => {
 
   const startRecording = useCallback(
     (stream: MediaStream, trackingId: string) => {
+      console.log("START =", trackingId);
       console.log("RECORDER START =>", trackingId);
       console.log("START TIME =", Date.now());
       chunksRef.current = [];
@@ -52,6 +57,7 @@ export const useRecorder = () => {
 
       recorder.onstop = () => {
         console.log("MEDIA RECORDER ONSTOP");
+        console.log("STOP =", trackingId);
 
         console.log("STOP TRACKING =", trackingId);
         console.log("STOP TIME =", Date.now());
@@ -100,14 +106,24 @@ export const useRecorder = () => {
 
           startedAt: null,
         });
-        console.log("PENDING =", pendingRecordingRef.current);
+        // console.log("PENDING =", pendingRecordingRef.current);
 
-        const pending = pendingRecordingRef.current.shift();
+        // const pending = pendingRecordingRef.current.shift();
 
-        if (pending) {
-          console.log("START NEXT =", pending.trackingId);
+        // if (pending) {
+        //   console.log("START NEXT =", pending.trackingId);
 
-          startRecording(pending.stream, pending.trackingId);
+        //   startRecording(pending.stream, pending.trackingId);
+        // }
+
+        const next = nextRecordingRef.current;
+
+        nextRecordingRef.current = null;
+
+        if (next) {
+          console.log("START NEXT =", next.trackingId);
+
+          startRecording(next.stream, next.trackingId);
         }
 
         stoppingRef.current = false;
@@ -133,14 +149,26 @@ export const useRecorder = () => {
   );
   const stoppingRef = useRef(false);
 
+  // const stopRecording = useCallback(() => {
+  //   if (!recorderRef.current) return;
+
+  //   if (recorderRef.current.state !== "recording") return;
+
+  //   stoppingRef.current = true;
+
+  //   console.log("STOP RECORDING");
+
+  //   recorderRef.current.stop();
+  // }, []);
+
   const stopRecording = useCallback(() => {
     if (!recorderRef.current) return;
 
     if (recorderRef.current.state !== "recording") return;
 
-    stoppingRef.current = true;
+    if (stoppingRef.current) return;
 
-    console.log("STOP RECORDING");
+    stoppingRef.current = true;
 
     recorderRef.current.stop();
   }, []);
@@ -149,15 +177,23 @@ export const useRecorder = () => {
     return recorderRef.current?.state === "recording";
   };
 
+  // const queueNextRecording = (stream: MediaStream, trackingId: string) => {
+  //   pendingRecordingRef.current.push({
+  //     stream,
+  //     trackingId,
+  //   });
+
+  //   console.log("QUEUE SIZE =", pendingRecordingRef.current.length);
+  // };
+
   const queueNextRecording = (stream: MediaStream, trackingId: string) => {
-    pendingRecordingRef.current.push({
+    nextRecordingRef.current = {
       stream,
       trackingId,
-    });
+    };
 
-    console.log("QUEUE SIZE =", pendingRecordingRef.current.length);
+    console.log("NEXT =", trackingId);
   };
-
   return {
     isRecording: recording.isRecording,
 

@@ -10,13 +10,14 @@ import { SCANNER_CONFIG } from "../utils/scanner.constants";
 import { toast } from "sonner";
 
 export const useUploadQueue = () => {
-   console.log("UPLOAD QUEUE HOOK MOUNTED");
+  console.log("UPLOAD QUEUE HOOK MOUNTED");
   const { uploadQueue, addUpload, updateUpload, removeUpload, setNetwork } =
     useVMSStore();
   const workerRunning = useRef(false);
 
   const uploadItem = async (item: UploadItem) => {
-    console.log("UPLOAD ITEM", item);
+    console.log("UPLOAD =", item.trackingId);
+    // console.log("UPLOAD ITEM", item);
     try {
       updateUpload(item.id, {
         status: "uploading",
@@ -167,7 +168,10 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
     workerRunning.current = true;
 
     try {
-      const pending = uploadQueue.filter((item) => item.status === "pending");
+      // const pending = uploadQueue.filter((item) => item.status === "pending");
+      const pending = useVMSStore
+        .getState()
+        .uploadQueue.filter((item) => item.status === "pending");
 
       for (const item of pending) {
         await uploadItem(item);
