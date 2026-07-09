@@ -82,7 +82,7 @@ export const useRecorder = () => {
           createdAt: Date.now(),
         });
 
-        processQueue();
+        // processQueue();
 
         setRecording({
           isRecording: false,
