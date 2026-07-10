@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import { aeonik, dmSans } from "@/lib/fonts";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+import ReactQueryProvider from "@/providers/ReactQueryProvider";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,11 +21,25 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${aeonik.variable} ${dmSans.variable} h-full antialiased`}
+      className={cn(
+        "h-full",
+        "antialiased",
+        aeonik.variable,
+        dmSans.variable,
+        "font-sans",
+        geist.variable,
+      )}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster position="top-right" richColors closeButton duration={3000} />
+        <ReactQueryProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            duration={3000}
+          />
+        </ReactQueryProvider>
       </body>
     </html>
   );

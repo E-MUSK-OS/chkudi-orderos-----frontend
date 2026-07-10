@@ -1,0 +1,149 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useEffect } from "react";
+
+import { getColumns } from "./columns";
+import DataTable from "./DataTable";
+import PreviewDialog from "./PreviewDialog";
+import Toolbar from "./Toolbar";
+
+import { useVMS } from "../hooks/useVMS";
+import type { VMSItem } from "../types";
+import Pagination from "./Pagination";
+
+const VMSList = () => {
+  // ===========================
+  // API
+  // ===========================
+
+  const {
+    data,
+    loading,
+    refetch, // જો હજી નથી તો પછી useVMS માં add કરીશું
+  } = useVMS();
+
+  // ===========================
+  // Preview Dialog
+  // ===========================
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const limit = 10;
+
+  const [selectedItem, setSelectedItem] = useState<VMSItem | null>(null);
+
+  const [fromDate, setFromDate] = useState<Date | undefined>();
+  const [toDate, setToDate] = useState<Date | undefined>();
+
+  const handlePreview = (item: VMSItem) => {
+    setSelectedItem(item);
+
+    setPreviewOpen(true);
+  };
+
+  // ===========================
+  // Search & Filter
+  // ===========================
+
+  const [search, setSearch] = useState("");
+
+  const [status, setStatus] = useState("");
+
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      const matchSearch = item.trackingId
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+      const matchStatus = !status || item.status === status;
+
+      const itemDate = new Date(item.createdAt);
+
+      let matchDate = true;
+
+      if (fromDate) {
+        matchDate = matchDate && itemDate >= new Date(fromDate);
+      }
+
+      if (toDate) {
+        const end = new Date(toDate);
+
+        end.setHours(23, 59, 59, 999);
+
+        matchDate = matchDate && itemDate <= end;
+      }
+
+      return matchSearch && matchStatus && matchDate;
+    });
+  }, [data, search, status, fromDate, toDate]);
+
+  // ===========================
+  // Refresh
+  // ===========================
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  // ===========================
+  // Table Columns
+  // ===========================
+
+  const columns = useMemo(
+    () =>
+      getColumns({
+        onPreview: handlePreview,
+      }),
+    [],
+  );
+
+  const totalRecords = filteredData.length;
+
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  const paginatedData = useMemo(() => {
+    const start = (page - 1) * limit;
+
+    return filteredData.slice(start, start + limit);
+  }, [filteredData, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, status]);
+
+  return (
+    <>
+      <Toolbar
+        search={search}
+        onSearchChange={setSearch}
+        status={status}
+        onStatusChange={setStatus}
+        fromDate={fromDate}
+        toDate={toDate}
+        onFromDateChange={setFromDate}
+        onToDateChange={setToDate}
+        onRefresh={handleRefresh}
+      />
+
+      <DataTable columns={columns} data={paginatedData} loading={loading} />
+
+      <PreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        item={selectedItem}
+      />
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        limit={limit}
+        onPageChange={setPage}
+      />
+    </>
+  );
+};
+
+export default VMSList;
