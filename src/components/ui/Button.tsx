@@ -3,9 +3,8 @@
 import { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: ReactNode;
 
   loading?: boolean;
 
@@ -15,14 +14,9 @@ interface ButtonProps
 
   rightIcon?: ReactNode;
 
-  variant?:
-    | "primary"
-    | "secondary"
-    | "outline"
-    | "ghost"
-    | "danger";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
 
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "icon";
 
   rounded?: string;
 
@@ -53,20 +47,16 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const variants = {
-    primary:
-      "bg-[#0A0E1A] text-white hover:bg-[#161D2E]",
+    primary: "bg-[#0A0E1A] text-white hover:bg-[#161D2E]",
 
-    secondary:
-      "bg-[#E8C16D] text-black hover:bg-[#ddb75d]",
+    secondary: "bg-[#E8C16D] text-black hover:bg-[#ddb75d]",
 
     outline:
       "border border-[#E2E5EA] bg-white text-[#0A0E1A] hover:bg-[#F8F8F8]",
 
-    ghost:
-      "bg-transparent text-[#0A0E1A] hover:bg-[#F3F4F6]",
+    ghost: "bg-transparent text-[#0A0E1A] hover:bg-[#F3F4F6]",
 
-    danger:
-      "bg-red-600 text-white hover:bg-red-700",
+    danger: "bg-red-600 text-white hover:bg-red-700",
   };
 
   const sizes = {
@@ -75,6 +65,8 @@ export default function Button({
     md: "h-14 px-6 text-[15px]",
 
     lg: "h-16 px-8 text-lg",
+
+    icon: "h-10 w-10 p-0",
   };
 
   return (
@@ -108,10 +100,9 @@ export default function Button({
 
         // rounded,
 
-
         fullWidth && "w-full",
 
-        className
+        className,
       )}
       {...props}
     >
@@ -149,11 +140,7 @@ export default function Button({
 
       {loading ? (
         <>
-          <svg
-            className="h-5 w-5 animate-spin"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle
               cx="12"
               cy="12"
@@ -163,12 +150,8 @@ export default function Button({
               opacity=".3"
             />
 
-            <path
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            />
+            <path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
           </svg>
-
           Loading...
         </>
       ) : (
