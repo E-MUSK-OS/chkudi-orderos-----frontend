@@ -50,11 +50,16 @@ export const useUploadQueue = () => {
         },
       );
       const userId = JSON.parse(localStorage.getItem("user") || "{}")?.id;
+      const operatorId = JSON.parse(
+        sessionStorage.getItem("operator") || "{}",
+      )?.id;
 
       const response = await saveRecording({
         trackingId: item.trackingId,
 
         userId,
+
+        operatorId,
 
         videoUrl: cloudinary.videoUrl,
 

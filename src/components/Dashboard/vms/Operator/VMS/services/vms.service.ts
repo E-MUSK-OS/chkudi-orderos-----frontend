@@ -69,7 +69,6 @@ export interface UploadRecordingPayload {
 //   return response.data;
 // };
 
-
 export interface SaveRecordingPayload {
   trackingId: string;
 
@@ -92,13 +91,10 @@ export interface SaveRecordingPayload {
   cameraName?: string;
 }
 
-export const saveRecording = async (
-  payload: SaveRecordingPayload,
-) => {
-  const response = await axiosInstance.post(
-    "/vms/save",
-    payload,
-  );
+const operatorId = sessionStorage.getItem("operatorId");
+
+export const saveRecording = async (payload: SaveRecordingPayload) => {
+  const response = await axiosInstance.post("/vms/save", payload);
 
   return response.data;
 };
