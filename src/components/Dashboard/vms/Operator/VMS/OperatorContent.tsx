@@ -23,7 +23,7 @@ interface OperatorContentProps {
 const OperatorContent = ({ onLogout }: OperatorContentProps) => {
   useHeartbeat();
   const { session, setSession } = useVMSStore();
-
+  
   const camera = useCamera();
   const recorder = useRecorder();
   const scanner = useScanner();
@@ -39,20 +39,6 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
           Operato Logout
         </button>
       </div>
-
-      {!session.isActive ? (
-        <button
-          onClick={() =>
-            setSession({
-              isActive: true,
-            })
-          }
-        >
-          Start Session
-        </button>
-      ) : (
-        <button onClick={handleStopSession}>Stop Session</button>
-      )}
 
       {/* <SystemStatus /> */}
 
