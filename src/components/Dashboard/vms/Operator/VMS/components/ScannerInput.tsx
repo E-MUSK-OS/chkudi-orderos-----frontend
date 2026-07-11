@@ -6,6 +6,8 @@ import type { useCamera } from "../hooks/useCamera";
 import type { useRecorder } from "../hooks/useRecorder";
 import type { useScanner } from "../hooks/useScanner";
 import Input from "@/components/ui/Input";
+import { useVMSStore } from "../store/vmsStore";
+import { toast } from "sonner";
 
 interface ScannerInputProps {
   camera: ReturnType<typeof useCamera>;
@@ -34,6 +36,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     stoppingRef,
   } = recorder;
   const [trackingId, setTrackingId] = useState("");
+  const session = useVMSStore((state) => state.session);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -107,6 +110,10 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   };
 
   const handleSubmit = async (value?: string) => {
+    if (!session.isActive) {
+      toast.error("Please start session first.");
+      return;
+    }
     const id = (value ?? trackingId).trim();
 
     console.log("SUBMIT =>", id);

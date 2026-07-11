@@ -122,6 +122,11 @@ export default function Toolbar({
             }}
           />
         </div>
+      </div>
+
+      {/* Right */}
+
+      <div className="flex flex-1 flex-col gap-4 lg:flex-row">
         <Button
           variant="secondary"
           fullWidth={false}
@@ -130,18 +135,16 @@ export default function Toolbar({
         >
           Download
         </Button>
+
+        <Button
+          variant="secondary"
+          fullWidth={false}
+          leftIcon={<RotateCw size={18} />}
+          onClick={onRefresh}
+        >
+          Refresh
+        </Button>
       </div>
-
-      {/* Right */}
-
-      <Button
-        variant="secondary"
-        fullWidth={false}
-        leftIcon={<RotateCw size={18} />}
-        onClick={onRefresh}
-      >
-        Refresh
-      </Button>
     </div>
   );
 }

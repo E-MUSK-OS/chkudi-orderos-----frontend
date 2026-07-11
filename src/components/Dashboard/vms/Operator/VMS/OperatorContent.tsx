@@ -14,6 +14,7 @@ import { useCamera } from "./hooks/useCamera";
 import { useRecorder } from "./hooks/useRecorder";
 import { useScanner } from "./hooks/useScanner";
 import { useHeartbeat } from "../auth/hooks/useHeartbeat";
+import { useVMSStore } from "./store/vmsStore";
 
 interface OperatorContentProps {
   onLogout: () => void;
@@ -21,10 +22,23 @@ interface OperatorContentProps {
 
 const OperatorContent = ({ onLogout }: OperatorContentProps) => {
   useHeartbeat();
-  
+  const { session, setSession } = useVMSStore();
+
   const camera = useCamera();
   const recorder = useRecorder();
   const scanner = useScanner();
+
+  const handleStopSession = () => {
+    recorder.stopSession();
+
+    if (recorder.isRecorderRunning()) {
+      recorder.stopRecording();
+    }
+
+    setSession({
+      isActive: false,
+    });
+  };
 
   return (
     <>
@@ -37,6 +51,20 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
           Operato Logout
         </button>
       </div>
+
+      {!session.isActive ? (
+        <button
+          onClick={() =>
+            setSession({
+              isActive: true,
+            })
+          }
+        >
+          Start Session
+        </button>
+      ) : (
+        <button onClick={handleStopSession}>Stop Session</button>
+      )}
 
       {/* <SystemStatus /> */}
 

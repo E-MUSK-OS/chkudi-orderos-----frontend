@@ -8,6 +8,7 @@ export interface SessionState {
   sessionId: string | null;
   operatorName: string;
   shift: string;
+  isActive: boolean;
 }
 
 export interface UploadState {
@@ -111,3 +112,4 @@ export interface ScannerStatus {
   type: "usb" | "bluetooth" | "wireless" | "manual";
   lastActivity: number;
 }
+

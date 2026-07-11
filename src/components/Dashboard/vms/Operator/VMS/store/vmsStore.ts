@@ -30,6 +30,7 @@ const initialState = {
     sessionId: null,
     operatorName: "",
     shift: "",
+    isActive: false,
   },
 
   uploads: {

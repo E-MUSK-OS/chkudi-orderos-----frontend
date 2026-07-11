@@ -11,6 +11,11 @@ export const useRecorder = () => {
 
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const stopSessionRef = useRef(false);
+
+  const stopSession = () => {
+    stopSessionRef.current = true;
+  };
 
   // const pendingRecordingRef = useRef<
   //   {
@@ -125,11 +130,11 @@ export const useRecorder = () => {
 
         nextRecordingRef.current = null;
 
-        if (next) {
-          console.log("START NEXT =", next.trackingId);
-
+        if (!stopSessionRef.current && next) {
           startRecording(next.stream, next.trackingId);
         }
+
+        stopSessionRef.current = false;
 
         stoppingRef.current = false;
       };
@@ -209,6 +214,7 @@ export const useRecorder = () => {
 
     stopRecording,
     isRecorderRunning,
+    stopSession,
 
     stoppingRef,
   };
