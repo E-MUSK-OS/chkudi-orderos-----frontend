@@ -17,21 +17,13 @@ import {
 // ======================================================
 
 const createSchema = z.object({
-  operatorName: z
-    .string()
-    .trim()
-    .min(2, "Operator name is required"),
+  operatorName: z.string().trim().min(2, "Operator name is required"),
 
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const updateSchema = z.object({
-  operatorName: z
-    .string()
-    .trim()
-    .min(2, "Operator name is required"),
+  operatorName: z.string().trim().min(2, "Operator name is required"),
 
   isActive: z.boolean(),
 });
@@ -39,17 +31,19 @@ const updateSchema = z.object({
 type CreateFormValues = z.infer<typeof createSchema>;
 type UpdateFormValues = z.infer<typeof updateSchema>;
 
-interface OperatorFormProps {
-  mode: "create" | "update";
-
-  operator?: Operator | null;
-
-  loading?: boolean;
-
-  onSubmit: (
-    data: CreateOperatorPayload | UpdateOperatorPayload
-  ) => void;
-}
+type OperatorFormProps =
+  | {
+      mode: "create";
+      operator?: never;
+      loading?: boolean;
+      onSubmit: (data: CreateOperatorPayload) => void | Promise<void>;
+    }
+  | {
+      mode: "update";
+      operator: Operator | null;
+      loading?: boolean;
+      onSubmit: (data: UpdateOperatorPayload) => void | Promise<void>;
+    };
 
 const OperatorForm: React.FC<OperatorFormProps> = ({
   mode,
@@ -57,10 +51,8 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
   loading = false,
   onSubmit,
 }) => {
-  const form = useForm<CreateFormValues | UpdateFormValues>({
-    resolver: zodResolver(
-      mode === "create" ? createSchema : updateSchema
-    ),
+  const form = useForm<any>({
+    resolver: zodResolver(mode === "create" ? createSchema : updateSchema),
 
     defaultValues:
       mode === "create"
@@ -85,11 +77,13 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
 
   return (
     <form
-      onSubmit={form.handleSubmit((values) =>
-        onSubmit(
-          values as CreateOperatorPayload | UpdateOperatorPayload
-        )
-      )}
+      onSubmit={form.handleSubmit((values) => {
+        if (mode === "create") {
+          onSubmit(values as CreateOperatorPayload);
+        } else {
+          onSubmit(values as UpdateOperatorPayload);
+        }
+      })}
       className="space-y-5"
     >
       {/* Operator Name */}
@@ -98,18 +92,22 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
         label="Operator Name"
         // placeholder="Enter operator name"
         {...form.register("operatorName")}
-        error={form.formState.errors.operatorName?.message}
+        error={
+          typeof form.formState.errors.operatorName?.message === "string"
+            ? form.formState.errors.operatorName.message
+            : undefined
+        }
       />
 
       {mode === "create" && (
         <Input
           type="password"
           label="Password"
-        //   placeholder="Enter password"
+          //   placeholder="Enter password"
           {...form.register("password")}
           error={
-            "password" in form.formState.errors
-              ? form.formState.errors.password?.message
+            typeof form.formState.errors.password?.message === "string"
+              ? form.formState.errors.password.message
               : undefined
           }
         />
@@ -131,20 +129,13 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
                 ? Boolean(form.watch("isActive"))
                 : false
             }
-            onChange={(e) =>
-              form.setValue("isActive", e.target.checked)
-            }
+            onChange={(e) => form.setValue("isActive", e.target.checked)}
           />
         </div>
       )}
 
-      <Button
-        type="submit"
-        loading={loading}
-      >
-        {mode === "create"
-          ? "Create Operator"
-          : "Update Operator"}
+      <Button type="submit" loading={loading}>
+        {mode === "create" ? "Create Operator" : "Update Operator"}
       </Button>
     </form>
   );
