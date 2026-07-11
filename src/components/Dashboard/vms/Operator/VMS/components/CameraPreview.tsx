@@ -61,7 +61,7 @@ const CameraPreview = ({ camera }: CameraPreviewProps) => {
           ))}
         </select>
       )}
-      <div className="relative h-[650px] overflow-hidden bg-black">
+      <div className="relative h-[90vh] overflow-hidden bg-black">
         {/* {isRecording && (
           <div className="absolute left-4 top-4 z-20 rounded-lg bg-black/70 px-4 py-2 backdrop-blur-sm">
             <div className="flex items-center gap-2">

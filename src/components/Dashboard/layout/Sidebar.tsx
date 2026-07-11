@@ -73,21 +73,21 @@ const navItems: NavItem[] = [
             label: "Users",
             href: "/dashboard/vms/admin/users",
           },
-          {
-            label: "Feeds",
-            href: "/dashboard/vms/admin/feeds",
-          },
-          {
-            label: "Logistics Partners",
-            href: "/dashboard/vms/admin/logistics-partners",
-          },
+          // {
+          //   label: "Feeds",
+          //   href: "/dashboard/vms/admin/feeds",
+          // },
+          // {
+          //   label: "Logistics Partners",
+          //   href: "/dashboard/vms/admin/logistics-partners",
+          // },
         ],
       },
 
-      {
-        label: "Reports",
-        href: "/dashboard/vms/reports",
-      },
+      // {
+      //   label: "Reports",
+      //   href: "/dashboard/vms/reports",
+      // },
     ],
   },
 ];
@@ -100,6 +100,13 @@ export default function Sidebar({
   const router = useRouter();
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  const handleOperatorLogout = () => {
+    localStorage.removeItem("operator");
+    localStorage.removeItem("operatorAccessToken");
+
+    router.replace("/dashboard/vms/");
+  };
 
   const findActivePath = (
     items: NavItem[],
@@ -237,6 +244,27 @@ transition-all duration-300 ease-out
               )}
             </AnimatePresence>
           </div>
+        );
+      }
+      if (item.label === "Logout") {
+        return (
+          <button
+            key={item.label}
+            type="button"
+            onClick={handleOperatorLogout}
+            className={`flex h-12 w-full items-center transition-colors
+        text-slate-300 hover:bg-white/10 hover:text-white`}
+            style={{
+              paddingLeft: `${16 + level * 20}px`,
+              paddingRight: "16px",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              {!sidebarCollapsed && (
+                <span className="truncate">{item.label}</span>
+              )}
+            </div>
+          </button>
         );
       }
       return (
