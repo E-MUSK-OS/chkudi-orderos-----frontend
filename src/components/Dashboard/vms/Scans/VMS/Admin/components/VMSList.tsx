@@ -84,13 +84,30 @@ const VMSList = () => {
     const exportData = filteredData.map((item) => ({
       "Tracking ID": item.trackingId,
       Status: item.status,
-      // Operator: item.operator?.name ?? "-",
+      Operator: item.operator?.operatorName ?? "-",
       "Created At": new Date(item.createdAt).toLocaleString(),
       Duration: item.duration ?? "-",
       Size: item.fileSize ?? "-",
+      "Video URL": "View Video",
     }));
 
+    // const worksheet = XLSX.utils.json_to_sheet(exportData);
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    filteredData.forEach((item, index) => {
+      const row = index + 2; // Row 1 = Header
+
+      const cell = `G${row}`; // G = "Video URL" column
+
+      worksheet[cell] = {
+        t: "s",
+        v: "View Video",
+        l: {
+          Target: item.videoUrl,
+          Tooltip: item.trackingId,
+        },
+      };
+    });
 
     const workbook = XLSX.utils.book_new();
 

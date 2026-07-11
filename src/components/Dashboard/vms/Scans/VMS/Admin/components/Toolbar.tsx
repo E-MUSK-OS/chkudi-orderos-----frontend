@@ -126,7 +126,7 @@ export default function Toolbar({
 
       {/* Right */}
 
-      <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+      <div className="flex items-center justify-end gap-3">
         <Button
           variant="secondary"
           fullWidth={false}
