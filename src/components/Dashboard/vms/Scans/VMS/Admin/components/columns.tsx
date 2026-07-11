@@ -13,7 +13,6 @@ interface Props {
 }
 
 export const getColumns = ({ onPreview }: Props): ColumnDef<VMSItem>[] => [
-
   {
     accessorKey: "trackingId",
 
@@ -41,11 +40,13 @@ export const getColumns = ({ onPreview }: Props): ColumnDef<VMSItem>[] => [
   },
 
   {
-    accessorKey: "operatorName",
+    id: "operator",
 
     header: "Operator",
 
-    cell: ({ row }) => row.original.operatorName || "-",
+    cell: ({ row }) => (
+      <span>{row.original.operator?.operatorName ?? "-"}</span>
+    ),
   },
 
   {
