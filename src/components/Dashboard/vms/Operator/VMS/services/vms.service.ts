@@ -91,8 +91,6 @@ export interface SaveRecordingPayload {
   cameraName?: string;
 }
 
-const operatorId = sessionStorage.getItem("operatorId");
-
 export const saveRecording = async (payload: SaveRecordingPayload) => {
   const response = await axiosInstance.post("/vms/save", payload);
 
