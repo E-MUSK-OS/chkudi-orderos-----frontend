@@ -11,6 +11,7 @@ import Toolbar from "./Toolbar";
 import { useVMS } from "../hooks/useVMS";
 import type { VMSItem } from "../types";
 import Pagination from "./Pagination";
+import * as XLSX from "xlsx";
 
 const VMSList = () => {
   // ===========================
@@ -79,6 +80,25 @@ const VMSList = () => {
     });
   }, [data, search, status, fromDate, toDate]);
 
+  const handleDownload = () => {
+    const exportData = filteredData.map((item) => ({
+      "Tracking ID": item.trackingId,
+      Status: item.status,
+      // Operator: item.operator?.name ?? "-",
+      "Created At": new Date(item.createdAt).toLocaleString(),
+      Duration: item.duration ?? "-",
+      Size: item.fileSize ?? "-",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "VMS Scans");
+
+    XLSX.writeFile(workbook, "vms-scans.xlsx");
+  };
+
   // ===========================
   // Refresh
   // ===========================
@@ -125,6 +145,7 @@ const VMSList = () => {
         onFromDateChange={setFromDate}
         onToDateChange={setToDate}
         onRefresh={handleRefresh}
+        onDownload={handleDownload}
       />
 
       <DataTable columns={columns} data={paginatedData} loading={loading} />

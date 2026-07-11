@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, RotateCw } from "lucide-react";
+import { Search, RotateCw, Download } from "lucide-react";
 
 import Button from "@/components/ui/Button";
 import ReactSelect from "@/components/ui/ReactSelect";
@@ -18,6 +18,7 @@ interface Props {
 
   onFromDateChange: (date?: Date) => void;
   onToDateChange: (date?: Date) => void;
+  onDownload: () => void;
 
   onRefresh: () => void;
 }
@@ -51,6 +52,7 @@ export default function Toolbar({
 
   onFromDateChange,
   onToDateChange,
+  onDownload,
 
   onRefresh,
 }: Props) {
@@ -120,6 +122,14 @@ export default function Toolbar({
             }}
           />
         </div>
+        <Button
+          variant="secondary"
+          fullWidth={false}
+          leftIcon={<Download size={18} />}
+          onClick={onDownload}
+        >
+          Download
+        </Button>
       </div>
 
       {/* Right */}
