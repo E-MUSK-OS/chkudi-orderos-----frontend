@@ -126,7 +126,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                     <p className="text-xs text-gray-400">Operator</p>
 
                     <p className="text-sm text-white">
-                      {item.operatorName || "-"}
+                      {item.operator?.operatorName || "-"}
                     </p>
                   </div>
                 </div>
