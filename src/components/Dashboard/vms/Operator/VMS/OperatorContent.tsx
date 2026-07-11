@@ -28,18 +28,6 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
   const recorder = useRecorder();
   const scanner = useScanner();
 
-  const handleStopSession = () => {
-    recorder.stopSession();
-
-    if (recorder.isRecorderRunning()) {
-      recorder.stopRecording();
-    }
-
-    setSession({
-      isActive: false,
-    });
-  };
-
   return (
     <>
       <div className="mb-4 flex justify-end">
