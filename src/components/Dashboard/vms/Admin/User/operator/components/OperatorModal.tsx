@@ -27,7 +27,7 @@ const OperatorModal: React.FC<OperatorModalProps> = ({
         if (!value) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl px-10 py-10">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

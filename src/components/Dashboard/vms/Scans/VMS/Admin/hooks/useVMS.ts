@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { getUserVMS } from "../services/vms.service";
+import { getUserVMS, deleteVMS as deleteVMSApi } from "../services/vms.service";
 
 export const useVMS = () => {
   const userId = useMemo(() => {
@@ -36,12 +36,20 @@ export const useVMS = () => {
     refetchOnWindowFocus: false,
   });
 
+  const deleteVMS = async (id: string) => {
+    await deleteVMSApi(id);
+
+    await query.refetch();
+  };
+
   return {
     userId,
 
     data: query.data?.data ?? [],
 
     total: query.data?.total ?? 0,
+
+    deleteVMS,
 
     success: query.data?.success ?? false,
 

@@ -5,14 +5,18 @@ import { format } from "date-fns";
 import Button from "@/components/ui/Button";
 import type { VMSItem } from "../types";
 import Image from "next/image";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, Trash2 } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 
 interface Props {
   onPreview: (item: VMSItem) => void;
+  onDelete: (item: VMSItem) => void;
 }
 
-export const getColumns = ({ onPreview }: Props): ColumnDef<VMSItem>[] => [
+export const getColumns = ({
+  onPreview,
+  onDelete,
+}: Props): ColumnDef<VMSItem>[] => [
   {
     accessorKey: "trackingId",
 
@@ -87,6 +91,26 @@ export const getColumns = ({ onPreview }: Props): ColumnDef<VMSItem>[] => [
         onClick={() => onPreview(row.original)}
       >
         Preview
+      </Button>
+    ),
+  },
+
+  {
+    id: "actions",
+
+    header: "Actions",
+
+    enableSorting: false,
+
+    cell: ({ row }) => (
+      <Button
+        size="sm"
+        variant="secondary"
+        fullWidth={false}
+        leftIcon={<Trash2 size={16} />}
+        onClick={() => onDelete(row.original)}
+      >
+        Delete
       </Button>
     ),
   },

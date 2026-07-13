@@ -3,4 +3,5 @@ const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1";
 
 export const API_ENDPOINTS = {
   GET_USER_VMS: `${BASE_URL}/vms/user`,
+  DELETE_VMS: `${BASE_URL}/vms`,
 };

@@ -29,7 +29,7 @@ const OperatorLoginModal: React.FC<OperatorLoginModalProps> = ({
       }}
     >
       <DialogContent
-        className="max-w-md"
+        className="max-w-[500px] px-10 py-10"
         showCloseButton={false}
         // onInteractOutside={(event) => {
         //   event.preventDefault();

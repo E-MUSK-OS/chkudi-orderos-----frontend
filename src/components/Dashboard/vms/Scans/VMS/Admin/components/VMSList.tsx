@@ -13,17 +13,15 @@ import { useOperators } from "@/components/Dashboard/vms/Admin/User/operator/hoo
 import type { VMSItem } from "../types";
 import Pagination from "./Pagination";
 import * as XLSX from "xlsx";
+import DeleteOperatorModal from "@/components/Dashboard/vms/Admin/User/operator/components/DeleteOperatorModal";
+import DeleteModal from "./DeleteModal";
 
 const VMSList = () => {
   // ===========================
   // API
   // ===========================
 
-  const {
-    data,
-    loading,
-    refetch, // જો હજી નથી તો પછી useVMS માં add કરીશું
-  } = useVMS();
+  const { data, loading, refetch, deleteVMS } = useVMS();
 
   const { operators, fetchOperators } = useOperators();
 
@@ -31,7 +29,6 @@ const VMSList = () => {
   // Preview Dialog
   // ===========================
 
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const limit = 10;
@@ -41,6 +38,9 @@ const VMSList = () => {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
   const [operator, setOperator] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const [openDelete, setOpenDelete] = useState(false);
 
   const handlePreview = (item: VMSItem) => {
     setSelectedItem(item);
@@ -151,10 +151,16 @@ const VMSList = () => {
   // Table Columns
   // ===========================
 
+  const handleDelete = (item: VMSItem) => {
+    setSelectedItem(item);
+    setOpenDelete(true);
+  };
+
   const columns = useMemo(
     () =>
       getColumns({
         onPreview: handlePreview,
+        onDelete: handleDelete,
       }),
     [],
   );
@@ -209,6 +215,25 @@ const VMSList = () => {
         totalRecords={totalRecords}
         limit={limit}
         onPageChange={setPage}
+      />
+
+      <DeleteModal
+        open={openDelete}
+        loading={loading}
+        title="Delete VMS"
+        description={`Are you sure you want to delete "${selectedItem?.trackingId}"? This action cannot be undone.`}
+        onClose={() => {
+          setOpenDelete(false);
+          setSelectedItem(null);
+        }}
+        onDelete={async () => {
+          if (!selectedItem) return;
+
+          await deleteVMS(selectedItem.id);
+
+          setOpenDelete(false);
+          setSelectedItem(null);
+        }}
       />
     </>
   );
