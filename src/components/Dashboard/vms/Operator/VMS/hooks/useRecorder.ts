@@ -199,6 +199,11 @@ export const useRecorder = () => {
 
     console.log("NEXT =", trackingId);
   };
+
+  const clearNextRecording = () => {
+    nextRecordingRef.current = null;
+  };
+
   return {
     isRecording: recording.isRecording,
 
@@ -206,6 +211,7 @@ export const useRecorder = () => {
 
     startRecording,
     queueNextRecording,
+    clearNextRecording,
 
     stopRecording,
     isRecorderRunning,

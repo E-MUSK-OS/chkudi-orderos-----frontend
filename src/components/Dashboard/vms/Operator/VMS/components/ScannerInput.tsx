@@ -32,6 +32,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
     stopRecording,
     isRecorderRunning,
     queueNextRecording,
+    clearNextRecording,
     stoppingRef,
   } = recorder;
   const [trackingId, setTrackingId] = useState("");
@@ -42,26 +43,35 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   }, []);
 
   // const handleTrackingId = (id: string) => {
-  //   console.log(id);
+  //   console.log("SCAN =", id);
+  //   console.log("NEW SCAN =", id);
+  //   console.log("CURRENT RECORDING =", recorder.isRecording);
+  //   console.log("START RECORDING =>", id);
+  //   const stream = streamRef.current;
 
   //   if (!stream) {
   //     console.warn("Camera not ready");
   //     return;
   //   }
 
-  //   if (isRecording) {
+  //   if (stoppingRef.current) {
+  //     queueNextRecording(stream, id);
+
+  //     return;
+  //   }
+
+  //   if (isRecorderRunning()) {
+  //     queueNextRecording(stream, id);
+
   //     stopRecording();
+
+  //     return;
   //   }
 
   //   startRecording(stream, id);
   // };
 
-  const handleTrackingId = (id: string) => {
-    console.log("SCAN =", id);
-    console.log("NEW SCAN =", id);
-    console.log("CURRENT RECORDING =", recorder.isRecording);
-    console.log("START RECORDING =>", id);
-    // console.log("STREAM =>", stream);
+  const handleTrackingId = (id: string, fromScanner: boolean) => {
     const stream = streamRef.current;
 
     if (!stream) {
@@ -69,43 +79,31 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
       return;
     }
 
-    // if (isRecorderRunning()) {
-    //   console.log("Stopping previous recording...");
-
-    //   stopRecording(() => {
-    //     console.log("Starting next recording...", id);
-
-    //     startRecording(stream, id);
-    //   });
-
-    //   return;
-    // }
-
-    // if (isRecorderRunning() || stoppingRef.current ) {
-    //   console.log("Stopping previous recording...");
-
-    //   queueNextRecording(stream, id);
-
-    //   stopRecording();
-
-    //   return;
-    // }
-
     if (stoppingRef.current) {
-      queueNextRecording(stream, id);
+      if (fromScanner) {
+        queueNextRecording(stream, id);
+      } else {
+        clearNextRecording();
+      }
 
       return;
     }
 
     if (isRecorderRunning()) {
-      queueNextRecording(stream, id);
+      if (fromScanner) {
+        queueNextRecording(stream, id);
+      } else {
+        clearNextRecording();
+      }
 
       stopRecording();
 
       return;
     }
 
-    startRecording(stream, id);
+    if (fromScanner) {
+      startRecording(stream, id);
+    }
   };
 
   const handleSubmit = async (value?: string) => {
@@ -122,7 +120,8 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
       if (!result?.success) return;
 
-      handleTrackingId(result.trackingId);
+      // handleTrackingId(result.trackingId);
+      handleTrackingId(result.trackingId, false);
       requestAnimationFrame(() => {
         focusAndSelectInput();
       });
@@ -183,16 +182,21 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
       // processKeyboardInput(event.key, (id) => {
       //   setTrackingId(id);
 
-      //   requestAnimationFrame(() => {
-      //     focusAndSelectInput();
-
-      //     void handleSubmit(id);
-      //   });
+      //   void handleSubmit(id);
       // });
-      processKeyboardInput(event.key, (id) => {
+
+      processKeyboardInput(event.key, async (id) => {
         setTrackingId(id);
 
-        void handleSubmit(id);
+        const result = await processScan(id);
+
+        if (!result?.success) return;
+
+        handleTrackingId(result.trackingId, true);
+
+        requestAnimationFrame(() => {
+          focusAndSelectInput();
+        });
       });
     };
     window.addEventListener("keydown", handleKeyDown);
