@@ -11,11 +11,13 @@ import StatusBadge from "./StatusBadge";
 interface Props {
   onPreview: (item: VMSItem) => void;
   onDelete: (item: VMSItem) => void;
+  onDownload: (item: VMSItem) => void;
 }
 
 export const getColumns = ({
   onPreview,
   onDelete,
+  onDownload,
 }: Props): ColumnDef<VMSItem>[] => [
   {
     accessorKey: "trackingId",
@@ -100,18 +102,29 @@ export const getColumns = ({
 
     header: "Actions",
 
-    enableSorting: false,
-
     cell: ({ row }) => (
-      <Button
-        size="sm"
-        variant="secondary"
-        fullWidth={false}
-        leftIcon={<Trash2 size={16} />}
-        onClick={() => onDelete(row.original)}
-      >
-        Delete
-      </Button>
+      <div className="flex items-center gap-2">
+
+        <Button
+          size="sm"
+          variant="secondary"
+          fullWidth={false}
+          leftIcon={<Download size={16} />}
+          onClick={() => onDownload(row.original)}
+        >
+          Download
+        </Button>
+
+        <Button
+          size="sm"
+          variant="secondary"
+          fullWidth={false}
+          leftIcon={<Trash2 size={16} />}
+          onClick={() => onDelete(row.original)}
+        >
+          Delete
+        </Button>
+      </div>
     ),
   },
 ];

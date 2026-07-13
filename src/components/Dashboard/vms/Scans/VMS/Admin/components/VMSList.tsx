@@ -151,6 +151,37 @@ const VMSList = () => {
   // Table Columns
   // ===========================
 
+  const handleSingleDownload = (item: VMSItem) => {
+    const exportData = [
+      {
+        "Tracking ID": item.trackingId,
+        Status: item.status,
+        Operator: item.operator?.operatorName ?? "-",
+        "Created At": new Date(item.createdAt).toLocaleString(),
+        Duration: item.duration ?? "-",
+        Size: item.fileSize ?? "-",
+        "Video URL": "View Video",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    worksheet["G2"] = {
+      t: "s",
+      v: "View Video",
+      l: {
+        Target: item.videoUrl ?? "",
+        Tooltip: item.trackingId,
+      },
+    };
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "VMS");
+
+    XLSX.writeFile(workbook, `${item.trackingId}.xlsx`);
+  };
+
   const handleDelete = (item: VMSItem) => {
     setSelectedItem(item);
     setOpenDelete(true);
@@ -161,6 +192,7 @@ const VMSList = () => {
       getColumns({
         onPreview: handlePreview,
         onDelete: handleDelete,
+        onDownload: handleSingleDownload,
       }),
     [],
   );

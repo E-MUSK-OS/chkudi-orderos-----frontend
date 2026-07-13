@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Select, { GroupBase, Props, StylesConfig } from "react-select";
 
 export interface SelectOption {
@@ -37,6 +38,21 @@ export default function ReactSelect({
   height = 44,
   ...props
 }: ReactSelectProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div
+        style={{ height }}
+        className="w-full animate-pulse border bg-slate-100"
+      />
+    );
+  }
+
   const styles: StylesConfig<SelectOption, false> = {
     control: (base, state) => ({
       ...base,
