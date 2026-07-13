@@ -58,7 +58,7 @@ export default function Pagination({
           Previous
         </Button>
 
-        <div className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white">
+        <div className=" bg-slate-800 px-4 py-2 text-sm font-semibold text-white">
           {page} / {Math.max(totalPages, 1)}
         </div>
 

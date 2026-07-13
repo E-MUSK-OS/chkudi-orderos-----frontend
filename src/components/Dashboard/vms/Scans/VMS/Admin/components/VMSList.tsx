@@ -9,6 +9,7 @@ import PreviewDialog from "./PreviewDialog";
 import Toolbar from "./Toolbar";
 
 import { useVMS } from "../hooks/useVMS";
+import { useOperators } from "@/components/Dashboard/vms/Admin/User/operator/hooks/useOperators";
 import type { VMSItem } from "../types";
 import Pagination from "./Pagination";
 import * as XLSX from "xlsx";
@@ -24,6 +25,8 @@ const VMSList = () => {
     refetch, // જો હજી નથી તો પછી useVMS માં add કરીશું
   } = useVMS();
 
+  const { operators, fetchOperators } = useOperators();
+
   // ===========================
   // Preview Dialog
   // ===========================
@@ -37,6 +40,7 @@ const VMSList = () => {
 
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
+  const [operator, setOperator] = useState("");
 
   const handlePreview = (item: VMSItem) => {
     setSelectedItem(item);
@@ -52,6 +56,21 @@ const VMSList = () => {
 
   const [status, setStatus] = useState("");
 
+  // const [operator, setOperator] = useState("");
+
+  const operatorOptions = useMemo(() => {
+    return [
+      {
+        label: "All Operators",
+        value: "",
+      },
+      ...operators.map((item) => ({
+        label: item.operatorName,
+        value: item.id,
+      })),
+    ];
+  }, [operators]);
+
   const filteredData = useMemo(() => {
     return data.filter((item) => {
       const matchSearch = item.trackingId
@@ -61,6 +80,10 @@ const VMSList = () => {
       const matchStatus = !status || item.status === status;
 
       const itemDate = new Date(item.createdAt);
+
+      console.log(item.operatorId, operator);
+
+      const matchOperator = !operator || item.operatorId === operator;
 
       let matchDate = true;
 
@@ -76,9 +99,9 @@ const VMSList = () => {
         matchDate = matchDate && itemDate <= end;
       }
 
-      return matchSearch && matchStatus && matchDate;
+      return matchSearch && matchStatus && matchOperator && matchDate;
     });
-  }, [data, search, status, fromDate, toDate]);
+  }, [data, search, status, operator, fromDate, toDate]);
 
   const handleDownload = () => {
     const exportData = filteredData.map((item) => ({
@@ -150,12 +173,19 @@ const VMSList = () => {
     setPage(1);
   }, [search, status]);
 
+  useEffect(() => {
+    fetchOperators();
+  }, []);
+
   return (
     <>
       <Toolbar
         search={search}
         onSearchChange={setSearch}
         status={status}
+        operator={operator}
+        onOperatorChange={setOperator}
+        operatorOptions={operatorOptions}
         onStatusChange={setStatus}
         fromDate={fromDate}
         toDate={toDate}

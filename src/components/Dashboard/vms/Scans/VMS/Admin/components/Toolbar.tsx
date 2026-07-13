@@ -13,6 +13,14 @@ interface Props {
   status: string;
   onStatusChange: (value: string) => void;
 
+  operator: string;
+  onOperatorChange: (value: string) => void;
+
+  operatorOptions: {
+    label: string;
+    value: string;
+  }[];
+
   fromDate?: Date;
   toDate?: Date;
 
@@ -47,6 +55,9 @@ export default function Toolbar({
   onSearchChange,
   status,
   onStatusChange,
+  operator,
+  onOperatorChange,
+  operatorOptions,
   fromDate,
   toDate,
 
@@ -108,6 +119,26 @@ export default function Toolbar({
             menuBackgroundColor="#111827"
             optionHoverColor="#1E293B"
             // optionSelectedColor="#2563EB"
+            optionSelectedTextColor="#ffffff"
+          />
+        </div>
+
+        <div className="w-full lg:w-56">
+          <ReactSelect
+            options={operatorOptions}
+            value={
+              operatorOptions.find((option) => option.value === operator) ??
+              operatorOptions[0]
+            }
+            onChange={(option) => onOperatorChange(option?.value ?? "")}
+            placeholder="Operator"
+            height={48}
+            borderColor="#334155"
+            backgroundColor="#111827"
+            textColor="#ffffff"
+            placeholderColor="#94A3B8"
+            menuBackgroundColor="#111827"
+            optionHoverColor="#1E293B"
             optionSelectedTextColor="#ffffff"
           />
         </div>

@@ -1,22 +1,56 @@
 "use client";
 
-const stats = [
-  {
-    title: "VMS Scans",
-    value: "128",
-  },
-  {
-    title: "Feeds",
-    value: "Rs. 84,320",
-    change: "+8.2%",
-  },
-  {
-    title: "Users",
-    value: "19",
-  },
-];
+import { useEffect, useMemo } from "react";
+
+import { useVMS } from "../../vms/Scans/VMS/Admin/hooks/useVMS";
+import { useOperators } from "../../vms/Admin/User/operator/hooks/useOperators";
 
 export default function StatsCards() {
+  const { data, loading: vmsLoading } = useVMS();
+
+  const {
+    operators,
+    loading: operatorLoading,
+    fetchOperators,
+  } = useOperators();
+
+  useEffect(() => {
+    fetchOperators();
+  }, []);
+
+  const stats = useMemo(() => {
+    const today = new Date();
+
+    const todayVMS = data.filter((item) => {
+      const created = new Date(item.createdAt);
+
+      return (
+        created.getFullYear() === today.getFullYear() &&
+        created.getMonth() === today.getMonth() &&
+        created.getDate() === today.getDate()
+      );
+    }).length;
+
+    return [
+      {
+        title: "Total VMS",
+        value: data.length,
+      },
+      {
+        title: "Today VMS",
+        value: todayVMS,
+      },
+      {
+        title: "Total Operator",
+        value: operators.length,
+      },
+    ];
+  }, [data, operators]);
+
+  if (vmsLoading || operatorLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {stats.map((item) => (
@@ -28,23 +62,9 @@ export default function StatsCards() {
             {item.title}
           </p>
 
-          <div className="mt-4 flex items-end justify-between gap-3">
-            <h3 className="text-4xl text-[#0A0E1A]">
-              {item.value}
-            </h3>
-
-            {item.change && (
-              <span
-                className={`rounded px-2 py-1 text-xs font-bold ${
-                  item.change.startsWith("+")
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                }`}
-              >
-                {item.change}
-              </span>
-            )}
-          </div>
+          <h3 className="mt-4 text-4xl text-[#0A0E1A]">
+            {item.value}
+          </h3>
         </article>
       ))}
     </div>
