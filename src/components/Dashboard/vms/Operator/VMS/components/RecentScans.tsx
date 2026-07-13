@@ -38,14 +38,14 @@ const RecentScans = ({ scanner }: Props) => {
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-xl">Recent Scans</h2>
 
-        <button
+        {/* <button
           onClick={downloadExcel}
           disabled={scanHistory.length === 0}
           className="flex items-center gap-2 rounded-lg bg-[#0A0E1A] px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download size={18} />
           Download Excel
-        </button>
+        </button> */}
       </div>
 
       {scanHistory.length === 0 ? (
