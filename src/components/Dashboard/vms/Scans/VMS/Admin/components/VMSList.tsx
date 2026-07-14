@@ -15,6 +15,7 @@ import Pagination from "./Pagination";
 import * as XLSX from "xlsx";
 import DeleteOperatorModal from "@/components/Dashboard/vms/Admin/User/operator/components/DeleteOperatorModal";
 import DeleteModal from "./DeleteModal";
+import { useAccounts } from "@/components/Dashboard/vms/Admin/Account/hooks/useAccounts";
 
 const VMSList = () => {
   // ===========================
@@ -24,6 +25,8 @@ const VMSList = () => {
   const { data, loading, refetch, deleteVMS } = useVMS();
 
   const { operators, fetchOperators } = useOperators();
+  const [account, setAccount] = useState("");
+  const { accounts, fetchAccounts } = useAccounts();
 
   // ===========================
   // Preview Dialog
@@ -71,6 +74,20 @@ const VMSList = () => {
     ];
   }, [operators]);
 
+  const accountOptions = useMemo(() => {
+    return [
+      {
+        label: "All Accounts",
+        value: "",
+      },
+
+      ...accounts.map((item) => ({
+        label: item.accountName,
+        value: item.id,
+      })),
+    ];
+  }, [accounts]);
+
   const filteredData = useMemo(() => {
     return data.filter((item) => {
       const matchSearch = item.trackingId
@@ -84,6 +101,8 @@ const VMSList = () => {
       console.log(item.operatorId, operator);
 
       const matchOperator = !operator || item.operatorId === operator;
+
+      const matchAccount = !account || item.accountId === account;
 
       let matchDate = true;
 
@@ -99,14 +118,15 @@ const VMSList = () => {
         matchDate = matchDate && itemDate <= end;
       }
 
-      return matchSearch && matchStatus && matchOperator && matchDate;
+      return matchSearch && matchStatus && matchOperator && matchAccount && matchDate;
     });
-  }, [data, search, status, operator, fromDate, toDate]);
+  }, [data, search, status, operator, account, fromDate, toDate]);
 
   const handleDownload = () => {
     const exportData = filteredData.map((item) => ({
       "Tracking ID": item.trackingId,
       Status: item.status,
+      Account: item.account?.accountName ?? "-",
       Operator: item.operator?.operatorName ?? "-",
       "Created At": new Date(item.createdAt).toLocaleString(),
       Duration: item.duration ?? "-",
@@ -120,7 +140,7 @@ const VMSList = () => {
     filteredData.forEach((item, index) => {
       const row = index + 2; // Row 1 = Header
 
-      const cell = `G${row}`; // G = "Video URL" column
+      const cell = `H${row}`; // G = "Video URL" column
 
       worksheet[cell] = {
         t: "s",
@@ -156,6 +176,7 @@ const VMSList = () => {
       {
         "Tracking ID": item.trackingId,
         Status: item.status,
+        Account: item.account?.accountName ?? "-",
         Operator: item.operator?.operatorName ?? "-",
         "Created At": new Date(item.createdAt).toLocaleString(),
         Duration: item.duration ?? "-",
@@ -166,7 +187,7 @@ const VMSList = () => {
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-    worksheet["G2"] = {
+    worksheet["H2"] = {
       t: "s",
       v: "View Video",
       l: {
@@ -209,10 +230,11 @@ const VMSList = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [search, status]);
+  }, [search, status, operator, account, fromDate, toDate]);
 
   useEffect(() => {
     fetchOperators();
+    fetchAccounts();
   }, []);
 
   return (
@@ -225,6 +247,9 @@ const VMSList = () => {
         onOperatorChange={setOperator}
         operatorOptions={operatorOptions}
         onStatusChange={setStatus}
+        account={account}
+        onAccountChange={setAccount}
+        accountOptions={accountOptions}
         fromDate={fromDate}
         toDate={toDate}
         onFromDateChange={setFromDate}

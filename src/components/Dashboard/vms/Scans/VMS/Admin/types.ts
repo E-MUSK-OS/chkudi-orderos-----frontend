@@ -8,14 +8,19 @@ export interface VMSItem {
   operatorId?: string | null;
 
   operator?: {
-  id: string;
-  operatorName: string;
-  employeeCode: string;
-  isActive: boolean;
-  isLoggedIn: boolean;
-  sessionId: string | null;
-  lastSeen: string | null;
-};
+    id: string;
+    operatorName: string;
+    employeeCode: string;
+    isActive: boolean;
+    isLoggedIn: boolean;
+    sessionId: string | null;
+    lastSeen: string | null;
+  };
+  account?: {
+    id: string;
+
+    accountName: string;
+  };
 
   videoUrl?: string | null;
 

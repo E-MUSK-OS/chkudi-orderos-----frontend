@@ -8,16 +8,15 @@ import StatsCards from "./StatsCards";
 import OperatorTable from "./OperatorTable";
 
 import { useOperators } from "../Admin/User/operator/hooks/useOperators";
+import { useAccounts } from "../../vms/Admin/Account/hooks/useAccounts";
 
 const Dashboard = () => {
-  const {
-    operators,
-    loading,
-    fetchOperators,
-  } = useOperators();
+  const { operators, loading, fetchOperators } = useOperators();
+  const { accounts, loading: accountLoading, fetchAccounts } = useAccounts();
 
   useEffect(() => {
     fetchOperators();
+     fetchAccounts();
   }, []);
 
   return (
@@ -26,9 +25,7 @@ const Dashboard = () => {
         <StatsCards />
 
         <div>
-          <h2 className="mb-4 text-2xl font-bold">
-            Recent Operators
-          </h2>
+          <h2 className="mb-4 text-2xl font-bold">Recent Operators</h2>
 
           <OperatorTable
             operators={operators}

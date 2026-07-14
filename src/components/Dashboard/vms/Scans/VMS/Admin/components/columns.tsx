@@ -55,6 +55,16 @@ export const getColumns = ({
     ),
   },
 
+    {
+    id: "account",
+
+    header: "Account",
+
+    cell: ({ row }) => (
+      <span>{row.original.account?.accountName ?? "-"}</span>
+    ),
+  },
+
   {
     accessorKey: "thumbnailUrl",
 

@@ -21,6 +21,14 @@ interface Props {
     value: string;
   }[];
 
+  account: string;
+  onAccountChange: (value: string) => void;
+
+  accountOptions: {
+    label: string;
+    value: string;
+  }[];
+
   fromDate?: Date;
   toDate?: Date;
 
@@ -58,6 +66,9 @@ export default function Toolbar({
   operator,
   onOperatorChange,
   operatorOptions,
+  account,
+  onAccountChange,
+  accountOptions,
   fromDate,
   toDate,
 
@@ -132,6 +143,26 @@ export default function Toolbar({
             }
             onChange={(option) => onOperatorChange(option?.value ?? "")}
             placeholder="Operator"
+            height={48}
+            borderColor="#334155"
+            backgroundColor="#111827"
+            textColor="#ffffff"
+            placeholderColor="#94A3B8"
+            menuBackgroundColor="#111827"
+            optionHoverColor="#1E293B"
+            optionSelectedTextColor="#ffffff"
+          />
+        </div>
+
+        <div className="w-full lg:w-56">
+          <ReactSelect
+            options={accountOptions}
+            value={
+              accountOptions.find((option) => option.value === account) ??
+              accountOptions[0]
+            }
+            onChange={(option) => onAccountChange(option?.value ?? "")}
+            placeholder="Account"
             height={48}
             borderColor="#334155"
             backgroundColor="#111827"
