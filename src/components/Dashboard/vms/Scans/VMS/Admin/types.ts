@@ -6,6 +6,7 @@ export interface VMSItem {
   userId: string;
 
   operatorId?: string | null;
+  accountId?: string | null;
 
   operator?: {
     id: string;
