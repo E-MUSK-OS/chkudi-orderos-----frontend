@@ -1,4 +1,6 @@
 import { API_BASE_URL } from "@/lib/config";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
+
 import {
   CreateOperatorPayload,
   UpdateOperatorPayload,
@@ -8,32 +10,19 @@ import {
 
 const BASE_URL = `${API_BASE_URL}/operators`;
 
-// const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1/operators";
-// const BASE_URL = "http://localhost:5000/api/v1/operators";
-
-const getHeaders = (): HeadersInit => {
-  const token = localStorage.getItem("accessToken");
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-};
-
 // ======================================================
 // Get All Operators
 // ======================================================
 
 export const getOperators = async (): Promise<OperatorsResponse> => {
-  const response = await fetch(BASE_URL, {
+  const response = await fetchWithAuth(BASE_URL, {
     method: "GET",
-    headers: getHeaders(),
   });
 
   const data: OperatorsResponse = await response.json();
 
   if (!response.ok) {
-    throw new Error("Failed to fetch operators.");
+    throw new Error(data.message || "Failed to fetch operators.");
   }
 
   return data;
@@ -46,15 +35,14 @@ export const getOperators = async (): Promise<OperatorsResponse> => {
 export const getOperatorById = async (
   id: string
 ): Promise<OperatorResponse> => {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${id}`, {
     method: "GET",
-    headers: getHeaders(),
   });
 
   const data: OperatorResponse = await response.json();
 
   if (!response.ok) {
-    throw new Error("Failed to fetch operator.");
+    throw new Error(data.message || "Failed to fetch operator.");
   }
 
   return data;
@@ -67,9 +55,8 @@ export const getOperatorById = async (
 export const createOperator = async (
   payload: CreateOperatorPayload
 ): Promise<OperatorResponse> => {
-  const response = await fetch(BASE_URL, {
+  const response = await fetchWithAuth(BASE_URL, {
     method: "POST",
-    headers: getHeaders(),
     body: JSON.stringify(payload),
   });
 
@@ -90,9 +77,8 @@ export const updateOperator = async (
   id: string,
   payload: UpdateOperatorPayload
 ): Promise<OperatorResponse> => {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${id}`, {
     method: "PUT",
-    headers: getHeaders(),
     body: JSON.stringify(payload),
   });
 
@@ -115,9 +101,8 @@ export const deleteOperator = async (
   success: boolean;
   message: string;
 }> => {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${id}`, {
     method: "DELETE",
-    headers: getHeaders(),
   });
 
   const data = await response.json();

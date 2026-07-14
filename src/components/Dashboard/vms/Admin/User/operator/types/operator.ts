@@ -48,4 +48,5 @@ export interface OperatorResponse {
 export interface OperatorsResponse {
   success: boolean;
   data: Operator[];
+  message?: string;
 }
