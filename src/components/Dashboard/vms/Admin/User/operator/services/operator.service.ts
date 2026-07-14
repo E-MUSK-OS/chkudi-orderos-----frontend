@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/lib/config";
 import {
   CreateOperatorPayload,
   UpdateOperatorPayload,
@@ -5,7 +6,9 @@ import {
   OperatorsResponse,
 } from "../types/operator";
 
-const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1/operators";
+const BASE_URL = `${API_BASE_URL}/operators`;
+
+// const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1/operators";
 // const BASE_URL = "http://localhost:5000/api/v1/operators";
 
 const getHeaders = (): HeadersInit => {

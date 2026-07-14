@@ -1,5 +1,8 @@
-const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1";
+import { API_BASE_URL } from "@/lib/config";
+
+// const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1";
 // const BASE_URL = "http://localhost:5000/api/v1";
+const BASE_URL = API_BASE_URL;
 
 interface ApiOptions extends RequestInit {
   token?: string;

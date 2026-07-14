@@ -1,3 +1,5 @@
+
+import { API_BASE_URL } from "@/lib/config";
 import {
   OperatorLoginPayload,
   OperatorLoginResponse,
@@ -5,8 +7,9 @@ import {
   OperatorResponse,
 } from "../types/operatorAuth";
 
-const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1/operator-auth";
+// const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1/operator-auth";
 // const BASE_URL = "http://localhost:5000/api/v1/operator-auth";
+const BASE_URL = `${API_BASE_URL}/operator-auth`;
 
 const getHeaders = (): HeadersInit => {
   const token = sessionStorage.getItem("operatorAccessToken");
