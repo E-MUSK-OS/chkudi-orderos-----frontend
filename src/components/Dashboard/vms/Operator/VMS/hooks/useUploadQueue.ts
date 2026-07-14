@@ -53,6 +53,9 @@ export const useUploadQueue = () => {
       const operatorId = JSON.parse(
         sessionStorage.getItem("operator") || "{}",
       )?.id;
+      const accountId = JSON.parse(
+        sessionStorage.getItem("selectedAccount") || "{}",
+      )?.id;
 
       const response = await saveRecording({
         trackingId: item.trackingId,
@@ -60,6 +63,7 @@ export const useUploadQueue = () => {
         userId,
 
         operatorId,
+        accountId,
 
         videoUrl: cloudinary.videoUrl,
 
@@ -99,13 +103,16 @@ export const useUploadQueue = () => {
           description: `${item.trackingId}
 Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
         });
+
         updateUpload(item.id, {
           status: "pending",
-
           retryCount: item.retryCount + 1,
-
           progress: 0,
         });
+
+        setTimeout(() => {
+          void processQueue();
+        }, 1000);
 
         return;
       }
@@ -114,6 +121,7 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
         status: "failed",
         progress: 0,
       });
+
       toast.error("Upload Failed", {
         description: `Tracking ID : ${item.trackingId} (Retry ${item.retryCount}/${SCANNER_CONFIG.MAX_RETRY})`,
       });
@@ -189,6 +197,24 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
     }
   };
 
+  const retryUpload = async (id: string) => {
+    const item = useVMSStore
+      .getState()
+      .uploadQueue.find((upload) => upload.id === id);
+
+    if (!item) {
+      return;
+    }
+
+    updateUpload(id, {
+      status: "pending",
+      progress: 0,
+      retryCount: item.retryCount + 1,
+    });
+
+    await processQueue();
+  };
+
   useEffect(() => {
     processQueue();
   }, [uploadQueue]);
@@ -203,5 +229,6 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
     updateUpload,
     removeUpload,
     processQueue,
+    retryUpload,
   };
 };

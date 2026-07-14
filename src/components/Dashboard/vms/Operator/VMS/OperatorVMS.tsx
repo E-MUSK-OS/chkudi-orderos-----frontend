@@ -43,6 +43,7 @@ const OperatorVMS = () => {
     } finally {
       sessionStorage.removeItem("operatorAccessToken");
       sessionStorage.removeItem("operator");
+      sessionStorage.removeItem("selectedAccount");
 
       setIsAuthenticated(false);
     }

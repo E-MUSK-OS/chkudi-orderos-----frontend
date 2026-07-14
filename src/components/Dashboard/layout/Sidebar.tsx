@@ -73,10 +73,10 @@ const navItems: NavItem[] = [
             label: "Users",
             href: "/dashboard/vms/admin/users",
           },
-          // {
-          //   label: "Feeds",
-          //   href: "/dashboard/vms/admin/feeds",
-          // },
+          {
+            label: "Accounts Name",
+            href: "/dashboard/vms/admin/account",
+          },
           // {
           //   label: "Logistics Partners",
           //   href: "/dashboard/vms/admin/logistics-partners",

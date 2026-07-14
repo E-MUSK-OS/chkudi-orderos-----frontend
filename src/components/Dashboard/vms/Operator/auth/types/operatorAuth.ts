@@ -1,4 +1,3 @@
-
 export interface Operator {
   id: string;
 
@@ -11,12 +10,19 @@ export interface Operator {
   isLoggedIn: boolean;
 }
 
+export interface SelectedAccount {
+  id: string;
+
+  accountName: string;
+}
+
 export interface OperatorLoginPayload {
+  accountId: string;
+
   employeeCode: string;
 
   password: string;
 }
-
 
 export interface OperatorLoginResponse {
   success: boolean;

@@ -10,6 +10,7 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
+import { useUploadQueue } from "../hooks/useUploadQueue";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -52,6 +53,7 @@ const getStatusBadge = (status: string) => {
 
 const UploadQueue = () => {
   const { uploadQueue, removeUpload } = useVMSStore();
+  const { retryUpload } = useUploadQueue();
 
   return (
     <div className="mt-6 border border-[#C89B3C] p-5 shadow-sm">
@@ -133,14 +135,16 @@ const UploadQueue = () => {
                   </button>
 
                   <button
-                    disabled={item.status !== "completed" || !item.videoUrl}
-                    onClick={() => {
-                      useVMSStore.getState().updateUpload(item.id, {
-                        status: "pending",
-                        retryCount: item.retryCount + 1,
-                        progress: 0,
-                      });
-                    }}
+                    // disabled={item.status !== "completed" || !item.videoUrl}
+                    disabled={!["failed", "pending"].includes(item.status)}
+                    // onClick={() => {
+                    //   useVMSStore.getState().updateUpload(item.id, {
+                    //     status: "pending",
+                    //     retryCount: item.retryCount + 1,
+                    //     progress: 0,
+                    //   });
+                    // }}
+                    onClick={() => retryUpload(item.id)}
                     className="rounded-lg border p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <RotateCcw size={18} />

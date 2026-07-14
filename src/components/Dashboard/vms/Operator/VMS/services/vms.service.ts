@@ -7,6 +7,7 @@ export interface UploadRecordingPayload {
   trackingId: string;
   blob: Blob;
   operatorId?: string;
+  accountId?: string;
   cameraName?: string;
 }
 
@@ -87,6 +88,8 @@ export interface SaveRecordingPayload {
   version: number;
 
   operatorId?: string;
+
+  accountId?: string;
 
   cameraName?: string;
 }

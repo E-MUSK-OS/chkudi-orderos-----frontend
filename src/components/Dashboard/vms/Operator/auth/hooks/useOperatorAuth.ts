@@ -30,7 +30,15 @@ export const useOperatorAuth = () => {
 
       sessionStorage.setItem("operatorAccessToken", response.data.accessToken);
 
-      sessionStorage.setItem("operator", JSON.stringify(response.data.operator));
+      sessionStorage.setItem(
+        "operator",
+        JSON.stringify(response.data.operator),
+      );
+
+      // sessionStorage.setItem(
+      //   "selectedAccount",
+      //   JSON.stringify(selectedAccount),
+      // );
 
       setOperator(response.data.operator);
 
@@ -62,7 +70,9 @@ export const useOperatorAuth = () => {
     } catch (error) {
       console.error("Heartbeat failed", error);
 
-      await logout();
+      if (error instanceof Error && error.message === "SESSION_EXPIRED") {
+        await logout();
+      }
     }
   };
 
@@ -74,12 +84,14 @@ export const useOperatorAuth = () => {
     } finally {
       sessionStorage.removeItem("operatorAccessToken");
       sessionStorage.removeItem("operator");
+      sessionStorage.removeItem("selectedAccount");
 
       setOperator(null);
     }
   };
 
-  const isAuthenticated = !!sessionStorage.getItem("operatorAccessToken");
+  // const isAuthenticated = !!sessionStorage.getItem("operatorAccessToken");
+  const isAuthenticated = !!operator;
 
   return {
     loading,

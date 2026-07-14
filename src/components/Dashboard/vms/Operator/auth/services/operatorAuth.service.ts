@@ -55,6 +55,21 @@ export const getMe = async (): Promise<OperatorMeResponse> => {
   return data;
 };
 
+// export const heartbeat = async (): Promise<OperatorResponse> => {
+//   const response = await fetch(`${BASE_URL}/heartbeat`, {
+//     method: "POST",
+//     headers: getHeaders(),
+//   });
+
+//   const data: OperatorResponse = await response.json();
+
+//   if (!response.ok) {
+//     throw new Error(data.message);
+//   }
+
+//   return data;
+// };
+
 export const heartbeat = async (): Promise<OperatorResponse> => {
   const response = await fetch(`${BASE_URL}/heartbeat`, {
     method: "POST",
@@ -64,6 +79,10 @@ export const heartbeat = async (): Promise<OperatorResponse> => {
   const data: OperatorResponse = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("SESSION_EXPIRED");
+    }
+
     throw new Error(data.message);
   }
 

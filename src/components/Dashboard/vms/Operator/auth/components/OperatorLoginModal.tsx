@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Account } from "../../../Admin/Account/types/account";
 
 interface OperatorLoginModalProps {
   open: boolean;
@@ -50,7 +51,12 @@ const OperatorLoginModal: React.FC<OperatorLoginModalProps> = ({
 
         <div className="mt-6">
           <OperatorLoginForm
-            onSuccess={() => {
+            onSuccess={(account: Account) => {
+              sessionStorage.setItem(
+                "selectedAccount",
+                JSON.stringify(account),
+              );
+
               onClose();
             }}
           />
