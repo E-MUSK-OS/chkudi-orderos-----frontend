@@ -207,11 +207,11 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
   }, [processKeyboardInput]);
 
   return (
-    <div className="pt-5">
+    <div className="">
       <div className="space-y-3">
-        <label className="block text-lg font-medium text-gray-700">
+        {/* <label className="block text-lg font-medium text-gray-700">
           Tracking ID
-        </label>
+        </label> */}
 
         <div className="flex gap-3">
           <div className="w-[85%]">

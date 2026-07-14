@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { operatorLogout } from "@/services/operatorAuth.service";
+import { toast } from "sonner";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -62,6 +64,9 @@ const navItems: NavItem[] = [
             label: "VMS",
             href: "/dashboard/vms/operator/vms",
           },
+          // {
+          //   label: "Logout",
+          // },
         ],
       },
 
@@ -100,12 +105,51 @@ export default function Sidebar({
   const router = useRouter();
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  const handleOperatorLogout = () => {
-    localStorage.removeItem("operator");
-    localStorage.removeItem("operatorAccessToken");
+  // const handleOperatorLogout = () => {
+  //   localStorage.removeItem("operator");
+  //   localStorage.removeItem("operatorAccessToken");
 
-    router.replace("/dashboard/vms/");
+  //   router.replace("/dashboard/vms/");
+  // };
+
+  // const handleOperatorLogout = async () => {
+  //   try {
+  //     const response = await operatorLogout();
+
+  //     toast.success(response.message);
+  //   } catch (error) {
+  //     toast.error(error instanceof Error ? error.message : "Logout failed.");
+  //   } finally {
+  //     sessionStorage.removeItem("operatorAccessToken");
+  //     sessionStorage.removeItem("operator");
+  //     sessionStorage.removeItem("selectedAccount");
+
+  //     setIsAuthenticated(false);
+
+  //     router.replace("/dashboard/vms/operator");
+  //   }
+  // };
+
+  const handleNavigation = async (href: string) => {
+    const token = sessionStorage.getItem("operatorAccessToken");
+
+    if (token) {
+      try {
+        await operatorLogout();
+      } catch (error) {
+        console.error(error);
+      } finally {
+        sessionStorage.removeItem("operatorAccessToken");
+        sessionStorage.removeItem("operator");
+        sessionStorage.removeItem("selectedAccount");
+      }
+    }
+
+    setSidebarOpen(false);
+
+    router.push(href);
   };
 
   const findActivePath = (
@@ -182,9 +226,12 @@ export default function Sidebar({
             <button
               type="button"
               onClick={() => {
+                // if (sidebarCollapsed && item.href) {
+                //   router.push(item.href);
+                //   setSidebarOpen(false);
+                // }
                 if (sidebarCollapsed && item.href) {
-                  router.push(item.href);
-                  setSidebarOpen(false);
+                  void handleNavigation(item.href);
                 } else {
                   toggleMenu(item);
                 }
@@ -246,38 +293,58 @@ transition-all duration-300 ease-out
           </div>
         );
       }
-      if (item.label === "Logout") {
-        return (
-          <button
-            key={item.label}
-            type="button"
-            onClick={handleOperatorLogout}
-            className={`flex h-12 w-full items-center transition-colors
-        text-slate-300 hover:bg-white/10 hover:text-white`}
-            style={{
-              paddingLeft: `${16 + level * 20}px`,
-              paddingRight: "16px",
-            }}
-          >
-            <div className="flex items-center gap-3">
-              {!sidebarCollapsed && (
-                <span className="truncate">{item.label}</span>
-              )}
-            </div>
-          </button>
-        );
-      }
+      // if (item.label === "Logout") {
+      //   return (
+      //     <button
+      //       key={item.label}
+      //       type="button"
+      //       onClick={() => setLogoutOpen(true)}
+      //       className={`
+      //   flex w-full items-center gap-3 px-4 py-3
+      //   transition hover:bg-[#1B2435]
+      // `}
+      //     >
+      //       {item.icon && <item.icon size={20} />}
+
+      //       {!sidebarCollapsed && <span>{item.label}</span>}
+      //     </button>
+      //   );
+      // }
       return (
-        <Link
+        // <Link
+        //   key={item.label}
+        //   href={item.href!}
+        //   onClick={() => setSidebarOpen(false)}
+        //   className={`flex h-12 items-center transition-colors
+        //   ${
+        //     active
+        //       ? "bg-[#E8C16D] text-[#0A0E1A]"
+        //       : "text-slate-300 hover:bg-white/10 hover:text-white"
+        //   }`}
+        //   style={{
+        //     paddingLeft: `${16 + level * 20}px`,
+        //     paddingRight: "16px",
+        //   }}
+        // >
+        //   <div className="flex items-center gap-3">
+        //     {item.icon && <item.icon size={20} />}
+
+        //     {!sidebarCollapsed && (
+        //       <span className="truncate">{item.label}</span>
+        //     )}
+        //   </div>
+        // </Link>
+
+        <button
           key={item.label}
-          href={item.href!}
-          onClick={() => setSidebarOpen(false)}
-          className={`flex h-12 items-center transition-colors
-          ${
-            active
-              ? "bg-[#E8C16D] text-[#0A0E1A]"
-              : "text-slate-300 hover:bg-white/10 hover:text-white"
-          }`}
+          type="button"
+          onClick={() => handleNavigation(item.href!)}
+          className={`flex h-12 w-full items-center transition-colors
+  ${
+    active
+      ? "bg-[#E8C16D] text-[#0A0E1A]"
+      : "text-slate-300 hover:bg-white/10 hover:text-white"
+  }`}
           style={{
             paddingLeft: `${16 + level * 20}px`,
             paddingRight: "16px",
@@ -290,7 +357,7 @@ transition-all duration-300 ease-out
               <span className="truncate">{item.label}</span>
             )}
           </div>
-        </Link>
+        </button>
       );
     });
   };

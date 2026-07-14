@@ -8,30 +8,17 @@ import OperatorContent from "./OperatorContent";
 import OperatorLoginModal from "../auth/components/OperatorLoginModal";
 import { operatorLogout } from "@/services/operatorAuth.service";
 import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 
 const OperatorVMS = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const token = sessionStorage.getItem("operatorAccessToken");
 
     setIsAuthenticated(!!token);
   }, []);
-
-  if (isAuthenticated === null) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <OperatorLoginModal
-        open
-        onClose={() => {
-          setIsAuthenticated(true);
-        }}
-      />
-    );
-  }
 
   const handleLogout = async () => {
     try {
@@ -48,6 +35,27 @@ const OperatorVMS = () => {
       setIsAuthenticated(false);
     }
   };
+
+  useEffect(() => {
+    if (isAuthenticated && pathname !== "/dashboard/vms/operator/vms") {
+      void handleLogout();
+    }
+  }, [pathname]);
+
+  if (isAuthenticated === null) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <OperatorLoginModal
+        open
+        onClose={() => {
+          setIsAuthenticated(true);
+        }}
+      />
+    );
+  }
 
   return (
     <DashboardLayout title="Operator VMS">

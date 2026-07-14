@@ -23,28 +23,33 @@ interface OperatorContentProps {
 const OperatorContent = ({ onLogout }: OperatorContentProps) => {
   useHeartbeat();
   const { session, setSession } = useVMSStore();
-  
+
   const camera = useCamera();
   const recorder = useRecorder();
   const scanner = useScanner();
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
-        <button
-          type="button"
-          onClick={onLogout}
-          className="bg-[#0A0E1A] px-5 py-3 text-white text-lg"
-        >
-          Operato Logout
-        </button>
+      <div className="mb-4 flex justify-between">
+        <div className="w-full">
+          <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
+        </div>
+        {/* <div>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="bg-[#0A0E1A] px-5 py-3 text-white text-lg"
+          >
+            Operato Logout
+          </button>
+        </div> */}
       </div>
 
       {/* <SystemStatus /> */}
 
       <CameraPreview camera={camera} />
 
-      <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
+      {/* <ScannerInput camera={camera} recorder={recorder} scanner={scanner} /> */}
 
       <UploadQueue />
 
