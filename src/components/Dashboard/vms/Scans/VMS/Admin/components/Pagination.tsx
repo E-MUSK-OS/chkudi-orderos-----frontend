@@ -1,6 +1,7 @@
 "use client";
 
 import Button from "@/components/ui/Button";
+import ReactSelect from "@/components/ui/ReactSelect";
 
 interface Props {
   page: number;
@@ -9,6 +10,8 @@ interface Props {
   limit: number;
 
   onPageChange: (page: number) => void;
+  pageSize: number;
+  onPageSizeChange: (size: number) => void;
 }
 
 export default function Pagination({
@@ -17,9 +20,18 @@ export default function Pagination({
   totalRecords,
   limit,
   onPageChange,
+  pageSize,
+  onPageSizeChange,
 }: Props) {
-  const start =
-    totalRecords === 0 ? 0 : (page - 1) * limit + 1;
+  const pageSizeOptions = [
+    { label: "10", value: "10" },
+    { label: "20", value: "20" },
+    { label: "25", value: "25" },
+    { label: "30", value: "30" },
+    { label: "50", value: "50" },
+    { label: "100", value: "100" },
+  ];
+  const start = totalRecords === 0 ? 0 : (page - 1) * limit + 1;
 
   const end = Math.min(page * limit, totalRecords);
 
@@ -28,25 +40,38 @@ export default function Pagination({
       {/* Left */}
 
       <div className="text-sm text-gray-400">
-        Showing{" "}
-        <span className="font-semibold text-white">
-          {start}
-        </span>{" "}
-        -
-        <span className="font-semibold text-white">
-          {" "}
-          {end}
-        </span>{" "}
-        of{" "}
-        <span className="font-semibold text-white">
-          {totalRecords}
-        </span>{" "}
-        records
+        Showing <span className="font-semibold text-white">{start}</span> -
+        <span className="font-semibold text-white"> {end}</span> of{" "}
+        <span className="font-semibold text-white">{totalRecords}</span> records
       </div>
 
       {/* Right */}
 
       <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-400">Rows</span>
+
+          <select
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+            className="
+      h-10
+      border
+      border-slate-700
+      bg-slate-800
+      px-3
+      text-sm
+      text-white
+      outline-none
+    "
+          >
+            {[10, 20, 25, 30, 50, 100].map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <Button
           variant="outline"
@@ -71,7 +96,6 @@ export default function Pagination({
         >
           Next
         </Button>
-
       </div>
     </div>
   );

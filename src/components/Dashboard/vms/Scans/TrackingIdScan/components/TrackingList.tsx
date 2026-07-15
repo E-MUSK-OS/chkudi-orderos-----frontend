@@ -27,13 +27,14 @@ export default function TrackingList() {
 
   const [account, setAccount] = useState("");
 
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  //   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const { operators, fetchOperators } = useOperators();
 
   const { accounts, fetchAccounts } = useAccounts();
 
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
   //   const tableData = useMemo(() => {
   //     return data.map((item) => ({
   //       ...item,
@@ -83,7 +84,7 @@ export default function TrackingList() {
     const start = (page - 1) * limit;
 
     return filteredData.slice(start, start + limit);
-  }, [filteredData, page]);
+  }, [filteredData, page, limit]);
 
   useEffect(() => {
     fetchOperators();
@@ -91,7 +92,7 @@ export default function TrackingList() {
   }, []);
   useEffect(() => {
     setPage(1);
-  }, [search, operator, account, selectedDate]);
+  }, [search, operator, account, selectedDate, limit]);
 
   const operatorOptions = useMemo(
     () => [
@@ -162,6 +163,8 @@ export default function TrackingList() {
         totalPages={totalPages}
         totalRecords={filteredData.length}
         limit={limit}
+        pageSize={limit}
+        onPageSizeChange={setLimit}
         onPageChange={setPage}
       />
     </>

@@ -34,7 +34,7 @@ const VMSList = () => {
 
   const [page, setPage] = useState(1);
 
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   const [selectedItem, setSelectedItem] = useState<VMSItem | null>(null);
 
@@ -118,7 +118,9 @@ const VMSList = () => {
         matchDate = matchDate && itemDate <= end;
       }
 
-      return matchSearch && matchStatus && matchOperator && matchAccount && matchDate;
+      return (
+        matchSearch && matchStatus && matchOperator && matchAccount && matchDate
+      );
     });
   }, [data, search, status, operator, account, fromDate, toDate]);
 
@@ -226,11 +228,11 @@ const VMSList = () => {
     const start = (page - 1) * limit;
 
     return filteredData.slice(start, start + limit);
-  }, [filteredData, page]);
+  }, [filteredData, page, limit]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, status, operator, account, fromDate, toDate]);
+  }, [search, status, operator, account, fromDate, toDate, limit]);
 
   useEffect(() => {
     fetchOperators();
@@ -271,6 +273,8 @@ const VMSList = () => {
         totalPages={totalPages}
         totalRecords={totalRecords}
         limit={limit}
+        pageSize={limit}
+        onPageSizeChange={setLimit}
         onPageChange={setPage}
       />
 
