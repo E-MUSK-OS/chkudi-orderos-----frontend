@@ -12,12 +12,22 @@ export const useTrackingScanner = (
   const [missingIds, setMissingIds] = useState<string[]>([]);
 
   const warningSound = useRef<HTMLAudioElement | null>(null);
+  const successSound = useRef<HTMLAudioElement | null>(null);
 
+  //   useEffect(() => {
+  //     warningSound.current = new Audio("/sounds/warning.wav");
+
+  //     return () => {
+  //       warningSound.current = null;
+  //     };
+  //   }, []);
   useEffect(() => {
     warningSound.current = new Audio("/sounds/warning.wav");
+    successSound.current = new Audio("/sounds/success.wav");
 
     return () => {
       warningSound.current = null;
+      successSound.current = null;
     };
   }, []);
 
@@ -65,6 +75,19 @@ export const useTrackingScanner = (
       });
 
       setMessage(result.message);
+
+      const successAudio = successSound.current;
+
+      if (successAudio) {
+        try {
+          successAudio.pause();
+          successAudio.currentTime = 0;
+
+          await successAudio.play();
+        } catch (error) {
+          console.error("Success sound failed:", error);
+        }
+      }
 
       await refetch();
     } catch (error) {
