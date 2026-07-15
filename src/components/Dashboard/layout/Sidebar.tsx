@@ -54,6 +54,10 @@ const navItems: NavItem[] = [
             label: "VMS",
             href: "/dashboard/vms/scans/vms",
           },
+          {
+            label: "TrackingID Scan",
+            href: "/dashboard/vms/scans/trackingid-scan",
+          },
         ],
       },
       {

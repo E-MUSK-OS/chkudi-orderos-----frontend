@@ -30,6 +30,7 @@ export interface VMSItem {
   publicId?: string | null;
 
   status: "PENDING" | "UPLOADING" | "COMPLETED" | "FAILED";
+  packingScanStatus: "PENDING" | "SCANNED";
 
   duration?: number | null;
 
