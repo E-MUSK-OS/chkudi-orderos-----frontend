@@ -25,9 +25,9 @@ interface Props {
     value: string;
   }[];
 
-  selectedDate?: Date;
+  selectedDate: Date;
 
-  onSelectedDateChange: (date?: Date) => void;
+  onSelectedDateChange: (date: Date) => void;
 }
 
 export default function TrackingToolbar({
@@ -120,7 +120,14 @@ export default function TrackingToolbar({
 
       {/* Date */}
 
-      <DatePicker value={selectedDate} onChange={onSelectedDateChange} />
+      <DatePicker
+        value={selectedDate}
+        onChange={(date) => {
+          if (date) {
+            onSelectedDateChange(date);
+          }
+        }}
+      />
     </div>
   );
 }
