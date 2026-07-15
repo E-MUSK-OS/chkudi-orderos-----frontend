@@ -32,7 +32,13 @@ export default function TrackingScanner({
           <input
             ref={inputRef}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              onChange(e.target.value);
+
+              requestAnimationFrame(() => {
+                inputRef.current?.select();
+              });
+            }}
             placeholder="Scan barcode or enter tracking ID..."
             onKeyDown={(e) => {
               if (e.key === "Enter") {
