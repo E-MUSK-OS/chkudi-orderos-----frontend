@@ -42,7 +42,7 @@ export default function TrackingScanner({
 
                 setTimeout(() => {
                   inputRef.current?.focus();
-                }, 5);
+                }, 2);
               }
             }}
             className="
