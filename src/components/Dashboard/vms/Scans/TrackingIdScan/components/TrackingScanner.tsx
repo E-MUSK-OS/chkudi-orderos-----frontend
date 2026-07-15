@@ -21,6 +21,13 @@ export default function TrackingScanner({
     inputRef.current?.focus();
   }, []);
 
+  // Auto-select text when value changes (new scan)
+  useEffect(() => {
+    if (value && inputRef.current) {
+      inputRef.current.select();
+    }
+  }, [value]);
+
   return (
     <div className="border border-slate-700 bg-[#0F172A] p-5">
       <div className="space-y-4">
@@ -37,13 +44,16 @@ export default function TrackingScanner({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-
                 onScan();
 
                 setTimeout(() => {
                   inputRef.current?.focus();
                 }, 10);
               }
+            }}
+            onFocus={(e) => {
+              // Select all text when input gets focus
+              e.target.select();
             }}
             className="
               h-12
