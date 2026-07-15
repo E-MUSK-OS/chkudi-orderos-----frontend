@@ -42,7 +42,7 @@ export default function TrackingList() {
   //   }, [data, scannedIds]);
 
   const filteredData = useMemo(() => {
-    return data.filter((item) => {
+    const filtered = data.filter((item) => {
       const matchSearch = item.trackingId
         .toLowerCase()
         .includes(search.toLowerCase());
@@ -64,6 +64,17 @@ export default function TrackingList() {
 
       return matchSearch && matchOperator && matchAccount && matchDate;
     });
+
+    // Pending ઉપર, Scanned નીચે
+    filtered.sort((a, b) => {
+      if (a.packingScanStatus === b.packingScanStatus) {
+        return 0;
+      }
+
+      return a.packingScanStatus === "PENDING" ? -1 : 1;
+    });
+
+    return filtered;
   }, [data, search, operator, account, selectedDate]);
 
   const totalPages = Math.ceil(filteredData.length / limit);
