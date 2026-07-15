@@ -14,6 +14,8 @@ export const useUploadQueue = () => {
   const { uploadQueue, addUpload, updateUpload, removeUpload, setNetwork } =
     useVMSStore();
   const workerRunning = useRef(false);
+  const successSound = useRef<HTMLAudioElement | null>(null);
+  const errorSound = useRef<HTMLAudioElement | null>(null);
 
   const uploadItem = async (item: UploadItem) => {
     console.log("UPLOAD =", item.trackingId);
@@ -92,6 +94,19 @@ export const useUploadQueue = () => {
         description: `${item.trackingId} uploaded successfully.`,
       });
 
+      const successAudio = successSound.current;
+
+      if (successAudio) {
+        try {
+          successAudio.pause();
+          successAudio.currentTime = 0;
+
+          await successAudio.play();
+        } catch (error) {
+          console.error("Success sound failed:", error);
+        }
+      }
+
       setTimeout(() => {
         removeUpload(item.id);
       }, 5000);
@@ -125,6 +140,19 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
       toast.error("Upload Failed", {
         description: `Tracking ID : ${item.trackingId} (Retry ${item.retryCount}/${SCANNER_CONFIG.MAX_RETRY})`,
       });
+
+      const errorAudio = errorSound.current;
+
+      if (errorAudio) {
+        try {
+          errorAudio.pause();
+          errorAudio.currentTime = 0;
+
+          await errorAudio.play();
+        } catch (error) {
+          console.error("Error sound failed:", error);
+        }
+      }
     }
   };
 
@@ -196,6 +224,16 @@ Retry ${item.retryCount + 1}/${SCANNER_CONFIG.MAX_RETRY}`,
       workerRunning.current = false;
     }
   };
+
+  useEffect(() => {
+    successSound.current = new Audio("/sounds/success.wav");
+    errorSound.current = new Audio("/sounds/warning.wav");
+
+    return () => {
+      successSound.current = null;
+      errorSound.current = null;
+    };
+  }, []);
 
   const retryUpload = async (id: string) => {
     const item = useVMSStore
