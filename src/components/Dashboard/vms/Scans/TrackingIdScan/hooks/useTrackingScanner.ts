@@ -90,7 +90,7 @@ export const useTrackingScanner = (
           console.error("Success sound failed:", error);
         }
       }
-      setScanValue("");
+      // setScanValue("");
 
       await refetch();
     } catch (error) {
@@ -101,7 +101,7 @@ export const useTrackingScanner = (
       }
     }
 
-    // setScanValue("");
+    setScanValue("");
   };
 
   return {
