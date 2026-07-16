@@ -1,9 +1,15 @@
 "use client";
 
 import { Download, Search } from "lucide-react";
+import type { WalletTransaction } from "./types/wallet.types";
 
 import WalletTable from "./WalletTable";
 import ReactSelect from "@/components/ui/ReactSelect";
+
+interface Props {
+  transactions: WalletTransaction[];
+  loading: boolean;
+}
 
 const columns = [
   {
@@ -30,44 +36,35 @@ const columns = [
   },
 ];
 
-const rows = [
-  {
-    date: "04 Jul 2026",
-    description: "Wallet Topup",
-    type: "Credit",
-    amount: "₹5,000",
-    balance: "₹15,420",
-  },
-  {
-    date: "03 Jul 2026",
-    description: "Refund",
-    type: "Credit",
-    amount: "₹1,200",
-    balance: "₹10,420",
-  },
-  {
-    date: "02 Jul 2026",
-    description: "Admin Credit",
-    type: "Credit",
-    amount: "₹500",
-    balance: "₹9,220",
-  },
-  {
-    date: "01 Jul 2026",
-    description: "Wallet Adjustment",
-    type: "Debit",
-    amount: "₹350",
-    balance: "₹8,720",
-  },
-];
-
 const options = [
   { label: "All", value: "all" },
   { label: "Credit", value: "credit" },
   { label: "Debit", value: "debit" },
 ];
 
-export default function AccountHistory() {
+export default function AccountHistory({ transactions, loading }: Props) {
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("accessToken") || ""
+      : "";
+
+  // const { transactions, loading } = useWallet(token);
+
+  const rows = transactions.map((item) => ({
+    date: new Date(item.createdAt).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+
+    description: item.description || "-",
+
+    type: item.type === "CREDIT" ? "Credit" : "Debit",
+
+    amount: item.points.toLocaleString(),
+
+    balance: item.balanceAfter.toLocaleString(),
+  }));
   return (
     <>
       {/* Filters */}

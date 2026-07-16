@@ -1,39 +1,54 @@
 "use client";
 
 import { Wallet, ArrowDownCircle, ArrowUpCircle, Clock3 } from "lucide-react";
+import type { WalletSummary as WalletSummaryType } from "./types/wallet.types";
 
-const cards = [
-  {
-    title: "Total Recharge",
-    value: "₹ 28,450",
-    icon: ArrowDownCircle,
-    color: "bg-emerald-50 text-emerald-700",
-    text: "Total wallet recharge",
-  },
-  {
-    title: "Current Balance",
-    value: "₹ 15,420",
-    icon: Wallet,
-    color: "bg-[#0A0E1A] text-white",
-    text: "Available wallet balance",
-  },
-  {
-    title: "Orders Processed",
-    value: "₹ 13,030",
-    icon: ArrowUpCircle,
-    color: "bg-red-50 text-red-600",
-    text: "Processed using wallet",
-  },
-  {
-    title: "Total Deduction",
-    value: "₹ 1,250",
-    icon: Clock3,
-    color: "bg-amber-50 text-amber-700",
-    text: "Total usage charges",
-  },
-];
+// import { useWallet } from "./hooks/useWallet";
 
-export default function WalletSummary() {
+interface Props {
+  summary: WalletSummaryType;
+  loading: boolean;
+}
+
+export default function WalletSummary({ summary, loading }: Props) {
+  // const token =
+  //   typeof window !== "undefined"
+  //     ? localStorage.getItem("accessToken") || ""
+  //     : "";
+
+  // const { summary, loading } = useWallet(token);
+
+  const cards = [
+    {
+      title: "Total Recharge",
+      value: summary.totalCredit,
+      icon: ArrowDownCircle,
+      color: "bg-emerald-50 text-emerald-700",
+      text: "Total wallet recharge",
+    },
+    {
+      title: "Current Balance",
+      value: summary.balance,
+      icon: Wallet,
+      color: "bg-[#0A0E1A] text-white",
+      text: "Available wallet balance",
+    },
+    {
+      title: "Total Transactions",
+      value: summary.totalTransactions,
+      icon: ArrowUpCircle,
+      color: "bg-red-50 text-red-600",
+      text: "Wallet transactions",
+    },
+    {
+      title: "Total Deduction",
+      value: summary.totalDebit,
+      icon: Clock3,
+      color: "bg-amber-50 text-amber-700",
+      text: "Total usage charges",
+    },
+  ];
+
   return (
     <section className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
@@ -51,7 +66,7 @@ export default function WalletSummary() {
                 </p>
 
                 <h2 className="mt-3 text-3xl font-bold text-[#0A0E1A]">
-                  {card.value}
+                  {loading ? "..." : card.value.toLocaleString()}
                 </h2>
 
                 <p className="mt-2 text-xs text-slate-500">{card.text}</p>
