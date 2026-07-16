@@ -13,6 +13,7 @@ export const useTrackingScanner = (
 
   const warningSound = useRef<HTMLAudioElement | null>(null);
   const successSound = useRef<HTMLAudioElement | null>(null);
+  const alreadyScannedSound = useRef<HTMLAudioElement | null>(null);
 
   //   useEffect(() => {
   //     warningSound.current = new Audio("/sounds/warning.wav");
@@ -24,10 +25,12 @@ export const useTrackingScanner = (
   useEffect(() => {
     warningSound.current = new Audio("/sounds/warning.wav");
     successSound.current = new Audio("/sounds/success.wav");
+    alreadyScannedSound.current = new Audio("/sounds/warning-01.wav");
 
     return () => {
       warningSound.current = null;
       successSound.current = null;
+      alreadyScannedSound.current = null;
     };
   }, []);
 
@@ -76,7 +79,6 @@ export const useTrackingScanner = (
       });
 
       setMessage(result.message);
-      setScanValue("");
 
       const successAudio = successSound.current;
 
@@ -90,7 +92,7 @@ export const useTrackingScanner = (
           console.error("Success sound failed:", error);
         }
       }
-      // setScanValue("");
+      setScanValue("");
 
       await refetch();
     } catch (error) {

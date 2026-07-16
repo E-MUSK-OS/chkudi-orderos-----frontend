@@ -14,6 +14,7 @@ import MissingTrackingList from "./MissingTrackingList";
 import { useOperators } from "../../../Admin/User/operator/hooks/useOperators";
 import { useAccounts } from "../../../Admin/Account/hooks/useAccounts";
 import TrackingToolbar from "./TrackingToolbar";
+import ScanSummary from "./ScanSummary";
 
 export default function TrackingList() {
   const { data, loading, userId, refetch } = useVMS();
@@ -78,6 +79,18 @@ export default function TrackingList() {
     return filtered;
   }, [data, search, operator, account, selectedDate]);
 
+  const scanSummary = useMemo(() => {
+    return {
+      pending: filteredData.filter(
+        (item) => item.packingScanStatus === "PENDING",
+      ).length,
+
+      scanned: filteredData.filter(
+        (item) => item.packingScanStatus === "SCANNED",
+      ).length,
+    };
+  }, [filteredData]);
+
   const totalPages = Math.ceil(filteredData.length / limit);
 
   const paginatedData = useMemo(() => {
@@ -135,6 +148,11 @@ export default function TrackingList() {
         accountOptions={accountOptions}
         selectedDate={selectedDate}
         onSelectedDateChange={setSelectedDate}
+      />
+
+      <ScanSummary
+        pending={scanSummary.pending}
+        scanned={scanSummary.scanned}
       />
       <TrackingScanner
         value={scanValue}
