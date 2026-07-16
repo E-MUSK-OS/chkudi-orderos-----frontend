@@ -35,6 +35,7 @@ export const useTrackingScanner = (
     const value = trackingId.trim();
 
     if (!value) return;
+    setScanValue("");
 
     // ============================
     // Missing Tracking ID
@@ -59,7 +60,7 @@ export const useTrackingScanner = (
       }
 
       setMessage("No VMS Record Found");
-      setScanValue("");
+      // setScanValue("");
 
       return;
     }
@@ -75,6 +76,7 @@ export const useTrackingScanner = (
       });
 
       setMessage(result.message);
+      setScanValue("");
 
       const successAudio = successSound.current;
 
@@ -98,7 +100,7 @@ export const useTrackingScanner = (
       }
     }
 
-    setScanValue("");
+    // setScanValue("");
   };
 
   return {
