@@ -35,7 +35,9 @@ export const useTrackingScanner = (
     const value = trackingId.trim();
 
     if (!value) return;
-    setScanValue("");
+    setTimeout(() => {
+      setScanValue("");
+    }, 1000); // 1 second
 
     // ============================
     // Missing Tracking ID
@@ -76,7 +78,7 @@ export const useTrackingScanner = (
       });
 
       setMessage(result.message);
-      // setScanValue("");
+      setScanValue("");
 
       const successAudio = successSound.current;
 
@@ -101,7 +103,7 @@ export const useTrackingScanner = (
       }
     }
 
-    setScanValue("");
+    // setScanValue("");
   };
 
   return {
