@@ -81,6 +81,7 @@ export default function TrackingList() {
 
   const scanSummary = useMemo(() => {
     return {
+      total: filteredData.length,
       pending: filteredData.filter(
         (item) => item.packingScanStatus === "PENDING",
       ).length,
@@ -151,6 +152,7 @@ export default function TrackingList() {
       />
 
       <ScanSummary
+        total={scanSummary.total}
         pending={scanSummary.pending}
         scanned={scanSummary.scanned}
       />
