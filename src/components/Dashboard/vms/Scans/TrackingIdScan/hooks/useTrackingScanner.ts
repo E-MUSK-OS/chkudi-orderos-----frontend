@@ -76,7 +76,7 @@ export const useTrackingScanner = (
       });
 
       setMessage(result.message);
-      setScanValue("");
+      // setScanValue("");
 
       const successAudio = successSound.current;
 
@@ -90,6 +90,7 @@ export const useTrackingScanner = (
           console.error("Success sound failed:", error);
         }
       }
+      setScanValue("");
 
       await refetch();
     } catch (error) {
