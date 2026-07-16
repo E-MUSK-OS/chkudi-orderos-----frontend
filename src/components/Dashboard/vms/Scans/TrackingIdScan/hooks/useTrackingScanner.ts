@@ -35,9 +35,7 @@ export const useTrackingScanner = (
     const value = trackingId.trim();
 
     if (!value) return;
-    setTimeout(() => {
-      setScanValue("");
-    }, 1000); // 1 second
+    setScanValue("");
 
     // ============================
     // Missing Tracking ID
