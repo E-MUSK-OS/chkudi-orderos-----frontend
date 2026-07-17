@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  ClipboardCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -29,6 +30,7 @@ interface NavItem {
   href?: string;
   icon?: React.ElementType;
   children?: NavItem[];
+  external?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -68,9 +70,6 @@ const navItems: NavItem[] = [
             label: "VMS",
             href: "/dashboard/vms/operator/vms",
           },
-          // {
-          //   label: "Logout",
-          // },
         ],
       },
 
@@ -86,16 +85,38 @@ const navItems: NavItem[] = [
             label: "Accounts Name",
             href: "/dashboard/vms/admin/account",
           },
-          // {
-          //   label: "Logistics Partners",
-          //   href: "/dashboard/vms/admin/logistics-partners",
-          // },
         ],
       },
+    ],
+  },
 
+  {
+    label: "Order Process",
+    href: "/dashboard/order-process",
+    icon: ClipboardCheck,
+    children: [
+      {
+        label: "Dashboard",
+        href: "/dashboard/order-process",
+      },
+      {
+        label: "Myntra",
+        children: [
+          {
+            label: "Manage Tag Loop",
+            href: "/dashboard/order-process/myntra/manage-tag-loop",
+          },
+        ],
+      },
       // {
-      //   label: "Reports",
-      //   href: "/dashboard/vms/reports",
+      //   label: "Myntra Order",
+      //   children: [
+      //     {
+      //       label: "Dashboard",
+      //       href: "https://mdirect.myntrainfo.com/",
+      //       external: true, // 👈
+      //     },
+      //   ],
       // },
     ],
   },
