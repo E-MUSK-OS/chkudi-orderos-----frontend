@@ -38,6 +38,7 @@ export const useTrackingScanner = (
     const value = trackingId.trim();
 
     if (!value) return;
+
     setScanValue("");
 
     // ============================
@@ -63,8 +64,6 @@ export const useTrackingScanner = (
       }
 
       setMessage("No VMS Record Found");
-      // setScanValue("");
-
       return;
     }
 
@@ -79,31 +78,6 @@ export const useTrackingScanner = (
       });
 
       setMessage(result.message);
-
-      // ============================
-      // Already Scanned Sound
-      // ============================
-
-      if (result.message?.toLowerCase().includes("already scanned")) {
-        const audio = alreadyScannedSound.current;
-
-        if (audio) {
-          try {
-            audio.pause();
-            audio.currentTime = 0;
-
-            await audio.play();
-          } catch (error) {
-            console.error("Already scanned sound failed:", error);
-          }
-        }
-
-        setScanValue("");
-
-        await refetch();
-
-        return;
-      }
 
       // ============================
       // Success Sound
@@ -122,18 +96,37 @@ export const useTrackingScanner = (
         }
       }
 
-      setScanValue("");
-
       await refetch();
     } catch (error) {
       if (error instanceof Error) {
         setMessage(error.message);
+
+        // ============================
+        // Already Scanned Sound
+        // ============================
+
+        if (error.message.toLowerCase().includes("already scanned")) {
+          const audio = alreadyScannedSound.current;
+
+          if (audio) {
+            try {
+              audio.pause();
+              audio.currentTime = 0;
+
+              await audio.play();
+            } catch (err) {
+              console.error("Already scanned sound failed:", err);
+            }
+          }
+
+          await refetch();
+        }
       } else {
         setMessage("Something went wrong.");
       }
     }
 
-    // setScanValue("");
+    setScanValue("");
   };
 
   return {
