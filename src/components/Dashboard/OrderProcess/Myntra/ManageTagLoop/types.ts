@@ -3,6 +3,7 @@ export interface TagLoop {
   prefix: string;
   startTag: string;
   endTag: string;
+  nextAvailableTag: string | null;
   total: number;
   available: number;
   used: number;

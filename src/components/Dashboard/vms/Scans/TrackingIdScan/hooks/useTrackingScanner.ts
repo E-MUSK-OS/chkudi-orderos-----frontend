@@ -80,6 +80,35 @@ export const useTrackingScanner = (
 
       setMessage(result.message);
 
+      // ============================
+      // Already Scanned Sound
+      // ============================
+
+      if (result.message?.toLowerCase().includes("already scanned")) {
+        const audio = alreadyScannedSound.current;
+
+        if (audio) {
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+
+            await audio.play();
+          } catch (error) {
+            console.error("Already scanned sound failed:", error);
+          }
+        }
+
+        setScanValue("");
+
+        await refetch();
+
+        return;
+      }
+
+      // ============================
+      // Success Sound
+      // ============================
+
       const successAudio = successSound.current;
 
       if (successAudio) {
@@ -92,6 +121,7 @@ export const useTrackingScanner = (
           console.error("Success sound failed:", error);
         }
       }
+
       setScanValue("");
 
       await refetch();

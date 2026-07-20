@@ -88,7 +88,7 @@ export default function ManageTagLoop() {
                         </p>
 
                         <h2 className="text-3xl font-bold tracking-wide text-[#E8C16D]">
-                          {loop.startTag}
+                          {loop.nextAvailableTag ?? "Completed"}
                         </h2>
                       </div>
 

@@ -182,9 +182,18 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
               Cancel
             </Button>
 
-            <Button onClick={handleSave}>
-              <Plus className="mr-2 h-4 w-4" />
-              Save Tag Loop
+            <Button onClick={handleSave} disabled={isPending}>
+              {isPending ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Save Tag Loop
+                </>
+              )}
             </Button>
           </div>
         </div>
