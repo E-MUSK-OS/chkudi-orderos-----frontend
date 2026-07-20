@@ -25,7 +25,7 @@ export const useTrackingScanner = (
   useEffect(() => {
     warningSound.current = new Audio("/sounds/warning.wav");
     successSound.current = new Audio("/sounds/success.wav");
-    alreadyScannedSound.current = new Audio("/sounds/warning-01.wav");
+    alreadyScannedSound.current = new Audio("/sounds/alreadyScanne.wav");
 
     return () => {
       warningSound.current = null;
