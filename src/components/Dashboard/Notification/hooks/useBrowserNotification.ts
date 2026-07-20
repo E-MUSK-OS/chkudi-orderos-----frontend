@@ -8,10 +8,7 @@ interface Props {
   notification: Notification | null;
 }
 
-export function useBrowserNotification({
-  unreadCount,
-  notification,
-}: Props) {
+export function useBrowserNotification({ unreadCount, notification }: Props) {
   const previousCount = useRef<number | null>(null);
   const lastNotificationId = useRef<string | null>(null);
 
@@ -59,6 +56,7 @@ export function useBrowserNotification({
       icon: "/logo.png",
       badge: "/logo.png",
       tag: notification.id,
+      requireInteraction: true,
     });
 
     browserNotification.onclick = () => {
