@@ -27,6 +27,8 @@ export const useNotifications = () => {
   return useQuery({
     queryKey: notificationKeys.all,
     queryFn: getNotifications,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 };
 
