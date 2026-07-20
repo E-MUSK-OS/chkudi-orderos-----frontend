@@ -10,7 +10,10 @@ import {
 import { useEffect, useState } from "react";
 import ProfileDropdown from "./ProfileDropdown";
 import Link from "next/link";
-import { useUnreadNotificationCount } from "@/components/Dashboard/Notification/hooks/useNotifications";
+import {
+  useNotifications,
+  useUnreadNotificationCount,
+} from "@/components/Dashboard/Notification/hooks/useNotifications";
 import NotificationDropdown from "../Notification/components/NotificationDropdown";
 import { useNotificationSound } from "@/components/Dashboard/Notification/hooks/useNotificationSound";
 import { useBrowserNotification } from "@/components/Dashboard/Notification/hooks/useBrowserNotification";
@@ -66,10 +69,21 @@ export default function Header({
 
   const unreadCount = data?.data.unreadCount ?? 0;
 
+  const { data: notificationsData } = useNotifications();
+
+  const latestNotification =
+    notificationsData?.data
+      ?.filter((item) => item.status === "UNREAD")
+      ?.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )[0] ?? null;
+
   useNotificationSound(unreadCount);
 
   useBrowserNotification({
     unreadCount,
+    notification: latestNotification,
   });
 
   return (
