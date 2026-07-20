@@ -10,8 +10,20 @@ import { TagLoop } from "./types";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-import { Plus, Search, Boxes, ArrowRight, Download } from "lucide-react";
-import { useTagLoops, useExportTagLoop } from "./hooks/useTagLoops";
+import {
+  Plus,
+  Search,
+  Boxes,
+  ArrowRight,
+  Download,
+  Trash2,
+} from "lucide-react";
+import {
+  useTagLoops,
+  useExportTagLoop,
+  useDeleteTagLoop,
+} from "./hooks/useTagLoops";
+import DeleteTagLoopModal from "./DeleteTagLoopModal";
 
 export default function ManageTagLoop() {
   const [open, setOpen] = useState(false);
@@ -22,6 +34,11 @@ export default function ManageTagLoop() {
   const [search, setSearch] = useState("");
   const { mutateAsync: downloadTagLoop, isPending: downloading } =
     useExportTagLoop();
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const [selectedLoop, setSelectedLoop] = useState<TagLoop | null>(null);
+  const { mutate: deleteLoop, isPending: deleting } = useDeleteTagLoop();
 
   const filteredLoops = useMemo(() => {
     return [...tagLoops]
@@ -90,7 +107,7 @@ export default function ManageTagLoop() {
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-2xl text-slate-900">Current TAG Ranges</p>
 
-                <span className="rounded bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
+                <span className="bg-[#0A0E1A] px-4 py-2 text-md font-medium text-[#E8C16D]">
                   Total Ranges : {filteredLoops.length}
                 </span>
               </div>
@@ -121,26 +138,46 @@ export default function ManageTagLoop() {
                             {loop.endTag}
                           </span>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={downloading}
-                          onClick={() =>
-                            handleDownload(loop.id, loop.startTag, loop.endTag)
-                          }
-                        >
-                          {downloading ? (
-                            <>
-                              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              Downloading...
-                            </>
-                          ) : (
-                            <>
-                              <Download className="mr-2 h-4 w-4" />
-                              Download
-                            </>
-                          )}
-                        </Button>
+                        <div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="!bg-[#E8C16D] !border-[#D9B45B] hover:!bg-[#ddb75d]"
+                            disabled={downloading}
+                            onClick={() =>
+                              handleDownload(
+                                loop.id,
+                                loop.startTag,
+                                loop.endTag,
+                              )
+                            }
+                          >
+                            {downloading ? (
+                              <>
+                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        <div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedLoop(loop);
+                              setDeleteOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
@@ -236,6 +273,25 @@ export default function ManageTagLoop() {
 
         {/* <TagLoopList tagLoops={filteredLoops} /> */}
         <AddTagLoopModal open={open} onClose={() => setOpen(false)} />
+        <DeleteTagLoopModal
+          open={deleteOpen}
+          onClose={() => {
+            setDeleteOpen(false);
+            setSelectedLoop(null);
+          }}
+          tagLoop={selectedLoop}
+          loading={deleting}
+          onDelete={() => {
+            if (!selectedLoop) return;
+
+            deleteLoop(selectedLoop.id, {
+              onSuccess: () => {
+                setDeleteOpen(false);
+                setSelectedLoop(null);
+              },
+            });
+          }}
+        />
       </div>
     </DashboardLayout>
   );

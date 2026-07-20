@@ -7,7 +7,9 @@ import {
   createTagLoop,
   getTagLoopDashboard,
   exportTagLoop,
+  deleteTagLoop,
 } from "../services/tagLoop.service";
+import { toast } from "sonner";
 
 export const useTagLoops = () => {
   return useQuery({
@@ -44,5 +46,25 @@ export const useTagLoopDashboard = () => {
 export const useExportTagLoop = () => {
   return useMutation({
     mutationFn: exportTagLoop,
+  });
+};
+
+export const useDeleteTagLoop = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteTagLoop,
+
+    onSuccess: (data) => {
+      toast.success(data.message);
+
+      queryClient.invalidateQueries({
+        queryKey: ["tag-loops"],
+      });
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
   });
 };

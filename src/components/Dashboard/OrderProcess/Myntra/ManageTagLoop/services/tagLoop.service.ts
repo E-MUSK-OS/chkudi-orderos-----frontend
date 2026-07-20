@@ -53,3 +53,12 @@ export const exportTagLoop = async (loopId: string) => {
 
   return response.blob();
 };
+
+export const deleteTagLoop = (id: string) => {
+  const token = localStorage.getItem("accessToken");
+
+  return api.delete<{
+    success: boolean;
+    message: string;
+  }>(`/tag-loops/${id}`, token || undefined);
+};

@@ -13,6 +13,7 @@ import {
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useCreateTagLoop } from "./hooks/useTagLoops";
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -44,12 +45,14 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
       },
       {
         onSuccess: () => {
+          toast.success("Tag Loop created successfully.");
+
           onClose();
           setStartTag("");
           setTotal(500);
         },
         onError: (error: Error) => {
-          alert(error.message);
+          toast.error(error.message || "Failed to create Tag Loop.");
         },
       },
     );

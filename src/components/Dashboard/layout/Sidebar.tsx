@@ -106,18 +106,12 @@ const navItems: NavItem[] = [
             label: "Manage Tag Loop",
             href: "/dashboard/order-process/myntra/manage-tag-loop",
           },
+          {
+            label: "Myntra Order",
+            href: "/dashboard/order-process/myntra/myntra-order",
+          },
         ],
       },
-      // {
-      //   label: "Myntra Order",
-      //   children: [
-      //     {
-      //       label: "Dashboard",
-      //       href: "https://mdirect.myntrainfo.com/",
-      //       external: true, // 👈
-      //     },
-      //   ],
-      // },
     ],
   },
 ];
