@@ -109,10 +109,10 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
               <h3 className="font-semibold text-xl">Generated Preview</h3>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-[1fr_auto_1fr] md:items-center">
               {/* Start */}
 
-              <div className="bg-white p-5 shadow-sm">
+              <div className="w-full bg-white p-5 shadow-sm">
                 <p className="text-xs uppercase tracking-wider text-slate-500">
                   Start
                 </p>
@@ -124,16 +124,16 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
 
               {/* Arrow */}
 
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center px-2">
                 <ArrowDown
-                  size={30}
+                  size={28}
                   className="text-slate-400 md:rotate-[-90deg]"
                 />
               </div>
 
               {/* End */}
 
-              <div className="bg-white p-5 shadow-sm">
+              <div className="w-full bg-white p-5 shadow-sm">
                 <p className="text-xs uppercase tracking-wider text-slate-500">
                   End
                 </p>

@@ -10,8 +10,8 @@ import { TagLoop } from "./types";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-import { Plus, Search, Boxes, ArrowRight } from "lucide-react";
-import { useTagLoops } from "./hooks/useTagLoops";
+import { Plus, Search, Boxes, ArrowRight, Download } from "lucide-react";
+import { useTagLoops, useExportTagLoop } from "./hooks/useTagLoops";
 
 export default function ManageTagLoop() {
   const [open, setOpen] = useState(false);
@@ -20,6 +20,8 @@ export default function ManageTagLoop() {
   const tagLoops = data?.data ?? [];
 
   const [search, setSearch] = useState("");
+  const { mutateAsync: downloadTagLoop, isPending: downloading } =
+    useExportTagLoop();
 
   const filteredLoops = useMemo(() => {
     return [...tagLoops]
@@ -30,6 +32,34 @@ export default function ManageTagLoop() {
       )
       .reverse();
   }, [search, tagLoops]);
+
+  const handleDownload = async (
+    loopId: string,
+    startTag: string,
+    endTag: string,
+  ) => {
+    try {
+      const blob = await downloadTagLoop(loopId);
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = url;
+
+      link.download = `${startTag}-${endTag}.xlsx`;
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Failed to download TAG Loop.");
+    }
+  };
 
   return (
     <DashboardLayout title="Manage Tag Loop">
@@ -74,9 +104,43 @@ export default function ManageTagLoop() {
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-slate-200 bg-[#0A0E1A] px-6 py-4">
                       <div>
-                        <p className="text-xl text-[#E8C16D]">
+                        <p className="text-xl font-semibold text-[#E8C16D]">
                           Active Tag Range
                         </p>
+                      </div>
+
+                      <div className="flex gap-5">
+                        <div className="flex items-center gap-3 border border-[#E8C16D]/30 bg-white/5 px-4 py-2">
+                          <span className="font-semibold text-white">
+                            {loop.startTag}
+                          </span>
+
+                          <ArrowRight className="h-4 w-4 text-[#E8C16D]" />
+
+                          <span className="font-semibold text-[#E8C16D]">
+                            {loop.endTag}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={downloading}
+                          onClick={() =>
+                            handleDownload(loop.id, loop.startTag, loop.endTag)
+                          }
+                        >
+                          {downloading ? (
+                            <>
+                              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="mr-2 h-4 w-4" />
+                              Download
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
 

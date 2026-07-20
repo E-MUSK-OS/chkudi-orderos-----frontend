@@ -10,10 +10,7 @@ import {
 export const getTagLoops = () => {
   const token = localStorage.getItem("accessToken");
 
-  return api.get<GetTagLoopsResponse>(
-    "/tag-loops",
-    token || undefined,
-  );
+  return api.get<GetTagLoopsResponse>("/tag-loops", token || undefined);
 };
 
 export const createTagLoop = (
@@ -35,4 +32,24 @@ export const getTagLoopDashboard = () => {
     "/tag-loops/dashboard",
     token || undefined,
   );
+};
+
+export const exportTagLoop = async (loopId: string) => {
+  const token = localStorage.getItem("accessToken");
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/tag-loops/${loopId}/export`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to download TAG Loop.");
+  }
+
+  return response.blob();
 };

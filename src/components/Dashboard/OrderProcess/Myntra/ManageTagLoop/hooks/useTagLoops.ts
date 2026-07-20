@@ -6,6 +6,7 @@ import {
   getTagLoops,
   createTagLoop,
   getTagLoopDashboard,
+  exportTagLoop,
 } from "../services/tagLoop.service";
 
 export const useTagLoops = () => {
@@ -37,5 +38,11 @@ export const useTagLoopDashboard = () => {
   return useQuery({
     queryKey: ["tag-loop-dashboard"],
     queryFn: getTagLoopDashboard,
+  });
+};
+
+export const useExportTagLoop = () => {
+  return useMutation({
+    mutationFn: exportTagLoop,
   });
 };
