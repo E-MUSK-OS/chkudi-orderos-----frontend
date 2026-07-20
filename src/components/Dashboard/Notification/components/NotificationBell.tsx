@@ -10,11 +10,15 @@ import { useUnreadNotificationCount } from "../hooks/useNotifications";
 import { useNotificationSound } from "../hooks/useNotificationSound";
 
 export default function NotificationBell() {
+    console.log("NotificationBell Rendered");
   const [open, setOpen] = useState(false);
 
   const { data } = useUnreadNotificationCount();
 
   const unreadCount = data?.data.unreadCount ?? 0;
+
+  // 👇 અહીં add કરો
+  console.log("Unread Count:", unreadCount);
 
   useNotificationSound(unreadCount);
 

@@ -6,18 +6,21 @@ export function useNotificationSound(unreadCount: number) {
   const previousCount = useRef<number | null>(null);
 
   useEffect(() => {
+    console.log("Previous:", previousCount.current);
+    console.log("Current:", unreadCount);
+
     if (previousCount.current === null) {
       previousCount.current = unreadCount;
       return;
     }
 
     if (unreadCount > previousCount.current) {
+      console.log("PLAY SOUND");
+
       const audio = new Audio("/sounds/notification.wav");
 
-      audio.volume = 1;
-
-      audio.play().catch(() => {
-        // Ignore autoplay errors
+      audio.play().catch((err) => {
+        console.error(err);
       });
     }
 
