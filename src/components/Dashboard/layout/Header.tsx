@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useUnreadNotificationCount } from "@/components/Dashboard/Notification/hooks/useNotifications";
 import NotificationDropdown from "../Notification/components/NotificationDropdown";
 import { useNotificationSound } from "@/components/Dashboard/Notification/hooks/useNotificationSound";
+import { useBrowserNotification } from "@/components/Dashboard/Notification/hooks/useBrowserNotification";
 
 interface HeaderProps {
   title: string;
@@ -66,6 +67,11 @@ export default function Header({
   const unreadCount = data?.data.unreadCount ?? 0;
 
   useNotificationSound(unreadCount);
+
+  useBrowserNotification({
+    unreadCount,
+  });
+
   return (
     <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-4 py-4 backdrop-blur md:px-8">
       <div className="flex items-center gap-4">
