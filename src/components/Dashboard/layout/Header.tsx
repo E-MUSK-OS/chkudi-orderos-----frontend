@@ -9,6 +9,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import ProfileDropdown from "./ProfileDropdown";
+import Link from "next/link";
+import { useUnreadNotificationCount } from "@/components/Dashboard/Notification/hooks/useNotifications";
+import NotificationDropdown from "../Notification/components/NotificationDropdown";
 
 interface HeaderProps {
   title: string;
@@ -26,6 +29,7 @@ export default function Header({
   setLogoutOpen,
 }: HeaderProps) {
   const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
+  const [notificationOpen, setNotificationOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -55,10 +59,13 @@ export default function Header({
         second: "2-digit",
       })
     : "";
+
+  const { data } = useUnreadNotificationCount();
+
+  const unreadCount = data?.data.unreadCount ?? 0;
   return (
     <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-4 py-4 backdrop-blur md:px-8">
       <div className="flex items-center gap-4">
-
         <button
           type="button"
           aria-label="Open Sidebar"
@@ -100,13 +107,25 @@ export default function Header({
         </div>
 
         <div className="ml-auto flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="grid h-11 w-11 place-items-center bg-white text-slate-600 shadow-sm hover:text-[#C89B3C]"
-          >
-            <Bell size={19} />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setNotificationOpen((prev) => !prev)}
+              className="relative grid h-11 w-11 place-items-center bg-white text-slate-600 shadow-sm transition-colors hover:text-[#C89B3C]"
+            >
+              <Bell size={19} />
+
+              {unreadCount > 0 && (
+                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+              )}
+            </button>
+
+            {notificationOpen && (
+              <NotificationDropdown
+                onClose={() => setNotificationOpen(false)}
+              />
+            )}
+          </div>
 
           <ProfileDropdown setLogoutOpen={setLogoutOpen} />
         </div>
