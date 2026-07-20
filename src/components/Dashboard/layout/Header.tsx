@@ -7,7 +7,7 @@ import {
   PanelLeftOpen,
   Search,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProfileDropdown from "./ProfileDropdown";
 import Link from "next/link";
 import {
@@ -85,6 +85,18 @@ export default function Header({
     unreadCount,
     notification: latestNotification,
   });
+
+  const hasAutoOpened = useRef(false);
+
+  useEffect(() => {
+    if (hasAutoOpened.current) return;
+
+    if (unreadCount > 0) {
+      setNotificationOpen(true);
+
+      hasAutoOpened.current = true;
+    }
+  }, [unreadCount]);
 
   return (
     <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-4 py-4 backdrop-blur md:px-8">

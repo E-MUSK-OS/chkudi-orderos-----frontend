@@ -86,7 +86,7 @@ export default function NotificationDropdown({ onClose }: Props) {
                 </div>
 
                 {notification.status === "UNREAD" && (
-                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-blue-500" />
+                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-red-500" />
                 )}
               </div>
 
