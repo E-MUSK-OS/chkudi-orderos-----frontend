@@ -1,4 +1,3 @@
-
 import { API_BASE_URL } from "@/lib/config";
 import {
   OperatorLoginPayload,
@@ -23,10 +22,13 @@ const getHeaders = (): HeadersInit => {
 export const login = async (
   payload: OperatorLoginPayload,
 ): Promise<OperatorLoginResponse> => {
+  const adminToken = localStorage.getItem("accessToken");
+
   const response = await fetch(`${BASE_URL}/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${adminToken}`,
     },
     body: JSON.stringify(payload),
   });
