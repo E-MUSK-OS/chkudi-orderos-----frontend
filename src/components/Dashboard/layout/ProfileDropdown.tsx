@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { ChevronDown, LogOut, UserRound, Wallet } from "lucide-react";
+import {
+  ChevronDown,
+  LogOut,
+  UserRound,
+  Wallet,
+  Warehouse,
+} from "lucide-react";
 
 import type { User } from "@/services/auth/auth.types";
 import { AnimatePresence, motion } from "framer-motion";
@@ -105,7 +111,7 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
                 duration: 0.22,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="absolute right-0 top-14 z-30 w-72 origin-top-right border border-[#E7E0D2] bg-white p-3 shadow-xl"
+              className="absolute right-0 top-14 z-30 w-80 origin-top-right border border-[#E7E0D2] bg-white p-3 shadow-xl"
             >
               <div className="border-b border-[#E7E0D2] px-2 pb-3">
                 <p className="truncate text-sm font-bold text-[#0A0E1A]">
@@ -124,6 +130,15 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
               >
                 <UserRound size={17} />
                 Profile
+              </Link>
+
+              <Link
+                href="/dashboard/warehouse"
+                onClick={() => setProfileOpen(false)}
+                className="mt-3 flex h-11 w-full items-center gap-3 px-3 text-sm font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0]"
+              >
+                <Warehouse size={17} />
+                Warehouse
               </Link>
 
               <Link
