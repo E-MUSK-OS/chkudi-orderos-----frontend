@@ -72,6 +72,11 @@ export interface ProductAttributePayload {
   attributeName: string;
 }
 
+export interface ProductAttributePayload {
+  id?: string;
+  attributeName: string;
+}
+
 // export interface ProductPayload {
 //   productName: string;
 //   masterSku: string;

@@ -189,11 +189,11 @@ export default function ProductVariantInline({ productId, attributes }: Props) {
                     <td key={attribute.id} className="px-5 py-4">
                       {editingId === variant.id ? (
                         <input
-                          value={editAttributes[attribute.id] || ""}
+                          value={editAttributes[attribute.id ?? ""] || ""}
                           onChange={(e) =>
                             setEditAttributes((prev) => ({
                               ...prev,
-                              [attribute.id]: e.target.value,
+                              [attribute.id ?? ""]: e.target.value,
                             }))
                           }
                           className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
@@ -304,14 +304,17 @@ export default function ProductVariantInline({ productId, attributes }: Props) {
 
             {/* Dynamic Attributes */}
             {attributes.map((attribute) => (
-              <td key={attribute.id} className="px-5 py-4">
+              <td
+                key={attribute.id ?? attribute.attributeName}
+                className="px-5 py-4"
+              >
                 {editing ? (
                   <input
-                    value={attributeValues[attribute.id] || ""}
+                    value={attributeValues[attribute.id ?? ""] || ""}
                     onChange={(e) =>
                       setAttributeValues((prev) => ({
                         ...prev,
-                        [attribute.id]: e.target.value,
+                        [attribute.id ?? ""]: e.target.value,
                       }))
                     }
                     placeholder={attribute.attributeName}
