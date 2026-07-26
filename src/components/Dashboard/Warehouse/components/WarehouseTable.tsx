@@ -65,6 +65,12 @@ export default function WarehouseTable({
   onDelete,
   onStatusChange,
 }: Props) {
+  const sortedWarehouses = [...warehouses].sort((a, b) => {
+    if (a.isDefault === b.isDefault) return 0;
+
+    return a.isDefault ? -1 : 1;
+  });
+
   return (
     <div className="overflow-hidden border border-[#E7EAF0] bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -94,7 +100,7 @@ export default function WarehouseTable({
           </thead>
 
           <tbody>
-            {warehouses.map((warehouse) => (
+            {sortedWarehouses.map((warehouse) => (
               <tr
                 key={warehouse.id}
                 className="border-b border-[#EEF2F7] hover:bg-slate-50"

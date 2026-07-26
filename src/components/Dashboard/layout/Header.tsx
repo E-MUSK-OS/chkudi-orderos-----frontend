@@ -6,10 +6,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Search,
+  Warehouse,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ProfileDropdown from "./ProfileDropdown";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useNotifications,
   useUnreadNotificationCount,
@@ -33,6 +35,7 @@ export default function Header({
   setSidebarOpen,
   setLogoutOpen,
 }: HeaderProps) {
+  const router = useRouter();
   const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
@@ -143,17 +146,38 @@ export default function Header({
 
         <div className="ml-auto flex items-center gap-3">
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setNotificationOpen((prev) => !prev)}
-              className="relative grid h-11 w-11 place-items-center bg-white text-slate-600 shadow-sm transition-colors hover:text-[#C89B3C]"
-            >
-              <Bell size={19} />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/warehouse")}
+                className="group relative grid h-11 w-11 place-items-center bg-white text-slate-600 shadow-sm transition-colors hover:text-[#C89B3C] cursor-pointer"
+              >
+                <Warehouse size={19} />
 
-              {unreadCount > 0 && (
-                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
-              )}
-            </button>
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                )}
+
+                <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap bg-[#0A0E1A] px-2 py-1 text-xs font-medium text-white opacity-0 transition-all duration-200 group-hover:opacity-100">
+                  Warehouse
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setNotificationOpen((prev) => !prev)}
+                className="group relative grid h-11 w-11 place-items-center bg-white text-slate-600 shadow-sm transition-colors hover:text-[#C89B3C] cursor-pointer"
+              >
+                <Bell size={19} />
+
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                )}
+                <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#0A0E1A] px-2 py-1 text-xs font-medium text-white opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                  Notification
+                </span>
+              </button>
+            </div>
 
             {notificationOpen && (
               <NotificationDropdown

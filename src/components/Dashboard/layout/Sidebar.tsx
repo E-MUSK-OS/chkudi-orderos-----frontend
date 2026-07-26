@@ -13,6 +13,7 @@ import {
   ChevronRight,
   ChevronUp,
   ClipboardCheck,
+  Package,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -86,6 +87,25 @@ const navItems: NavItem[] = [
             href: "/dashboard/vms/admin/account",
           },
         ],
+      },
+    ],
+  },
+  {
+    label: "Products",
+    href: "/dashboard/products",
+    icon: Package,
+    children: [
+      {
+        label: "Dashboard",
+        href: "/dashboard/products",
+      },
+      {
+        label: "Products",
+        href: "/dashboard/products/manage-products",
+      },
+      {
+        label: "Inventory",
+        href: "/dashboard/products/inventory",
       },
     ],
   },
