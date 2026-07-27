@@ -67,7 +67,7 @@ const InventoryModal = ({
 
   return (
     <Modal
-      isOpen={open}
+      open={open}
       onClose={() => onOpenChange(false)}
       title="Update Reorder Level"
     >
