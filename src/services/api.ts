@@ -82,4 +82,22 @@ export const api = {
       method: "DELETE",
       token,
     }),
+
+  download: async (url: string, token?: string) => {
+    const response = await fetch(`${BASE_URL}${url}`, {
+      method: "GET",
+
+      headers: {
+        ...(token && {
+          Authorization: `Bearer ${token}`,
+        }),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to download file");
+    }
+
+    return response.blob();
+  },
 };

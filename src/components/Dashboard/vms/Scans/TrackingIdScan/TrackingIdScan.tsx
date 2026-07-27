@@ -10,7 +10,11 @@ export default function TrackingIdScan() {
   const router = useRouter();
 
   useEffect(() => {
-    router.refresh();
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 5000); // Every 5 seconds
+
+    return () => clearInterval(interval);
   }, [router]);
 
   return (
