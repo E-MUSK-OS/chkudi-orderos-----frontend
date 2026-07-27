@@ -154,9 +154,9 @@ export default function Header({
               >
                 <Warehouse size={19} />
 
-                {unreadCount > 0 && (
+                {/* {unreadCount > 0 && (
                   <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
-                )}
+                )} */}
 
                 <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap bg-[#0A0E1A] px-2 py-1 text-xs font-medium text-white opacity-0 transition-all duration-200 group-hover:opacity-100">
                   Warehouse

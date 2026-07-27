@@ -92,13 +92,13 @@ const navItems: NavItem[] = [
   },
   {
     label: "Products",
-    href: "/dashboard/products",
+    href: "/dashboard/products/manage-products",
     icon: Package,
     children: [
-      {
-        label: "Dashboard",
-        href: "/dashboard/products",
-      },
+      // {
+      //   label: "Dashboard",
+      //   href: "/dashboard/products",
+      // },
       {
         label: "Products",
         href: "/dashboard/products/manage-products",

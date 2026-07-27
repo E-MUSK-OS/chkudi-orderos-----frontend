@@ -73,7 +73,7 @@ const InventoryModal = ({
     >
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-5"
+        className="space-y-5 px-5 py-5"
       >
         <div>
           <label className="mb-2 block text-sm font-medium">

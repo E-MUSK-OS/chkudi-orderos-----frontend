@@ -133,7 +133,7 @@ const InventoryTable = ({
 
                   <td className="px-4 py-3 text-center">{status}</td>
 
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-3 text-center flex justify-center">
                     <InventoryActionMenu
                       inventory={inventory}
                       onEdit={onEdit}
