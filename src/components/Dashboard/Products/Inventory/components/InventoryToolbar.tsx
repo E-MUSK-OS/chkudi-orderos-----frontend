@@ -11,6 +11,8 @@ import { useState } from "react";
 import { useWarehouses } from "@/components/Dashboard/Warehouse/hooks/useWarehouse";
 import ImportInventoryModal from "./ImportInventoryModal";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
+import { ArrowRightLeft } from "lucide-react";
+import CreateTransferModal from "../../Transfer/components/CreateTransferModal";
 
 interface Props {
   filters: InventoryFilters;
@@ -31,6 +33,7 @@ const InventoryToolbar = ({
   isExporting,
 }: Props) => {
   const [importOpen, setImportOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const { data: warehouseResponse } = useWarehouses();
 
   const warehouseOptions: SelectOption[] = [
@@ -106,6 +109,11 @@ const InventoryToolbar = ({
       {/* ====================================================== */}
 
       <div className="flex items-center gap-2">
+        <Button variant="secondary" onClick={() => setTransferOpen(true)}>
+          <ArrowRightLeft size={16} className="mr-2" />
+          Transfer
+        </Button>
+
         <Button variant="outline" onClick={() => setImportOpen(true)}>
           <FileUp size={16} className="mr-2" />
           Import
@@ -123,6 +131,11 @@ const InventoryToolbar = ({
       <ImportInventoryModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
+      />
+
+      <CreateTransferModal
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
       />
     </div>
   );

@@ -189,3 +189,4 @@ export function useWarehouseStats() {
     queryFn: () => warehouseService.getStats(getToken()),
   });
 }
+

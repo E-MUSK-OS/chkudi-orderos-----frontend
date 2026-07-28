@@ -206,3 +206,14 @@ export const useImportInventory = () => {
     },
   });
 };
+
+// ==================================================================================
+// ============================ SEARCH INVENTORY ====================================
+// ==================================================================================
+
+export const useSearchInventory = () => {
+  return useMutation({
+    mutationFn: (filters: InventoryFilters) =>
+      getInventories(filters, getToken()),
+  });
+};

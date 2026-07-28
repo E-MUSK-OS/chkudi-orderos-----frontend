@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl";
+type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "4xl" ;
 
 interface ModalProps {
   open: boolean;
@@ -34,6 +34,7 @@ const sizeClasses: Record<ModalSize, string> = {
   lg: "sm:max-w-2xl",
   xl: "sm:max-w-4xl",
   "2xl": "sm:max-w-5xl",
+  "4xl": "sm:max-w-6xl",
 };
 
 export default function Modal({
