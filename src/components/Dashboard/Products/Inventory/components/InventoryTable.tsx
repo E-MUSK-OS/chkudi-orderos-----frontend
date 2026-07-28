@@ -70,6 +70,8 @@ const InventoryTable = ({
 
               <th className="px-4 py-3 text-left">Variant SKU</th>
 
+              <th className="px-4 py-3 text-left">Warehouse</th>
+
               <th className="px-4 py-3 text-center">Available</th>
 
               <th className="px-4 py-3 text-center">Reserved</th>
@@ -111,8 +113,30 @@ const InventoryTable = ({
                     {inventory.productVariant.variantSku}
                   </td>
 
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-slate-800">
+                        {inventory.warehouse.warehouseName}
+                      </span>
+
+                      <span className="mt-1 inline-flex w-fit rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                        {inventory.warehouse.warehouseCode}
+                      </span>
+                    </div>
+                  </td>
+
                   <td className="px-4 py-3 text-center">
-                    {inventory.availableStock}
+                    <span
+                      className={`font-semibold ${
+                        inventory.availableStock === 0
+                          ? "text-red-600"
+                          : inventory.availableStock <= inventory.reorderLevel
+                            ? "text-yellow-600"
+                            : "text-green-600"
+                      }`}
+                    >
+                      {inventory.availableStock}
+                    </span>
                   </td>
 
                   <td className="px-4 py-3 text-center">
@@ -131,7 +155,19 @@ const InventoryTable = ({
                     {inventory.reorderLevel}
                   </td>
 
-                  <td className="px-4 py-3 text-center">{status}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                        inventory.availableStock === 0
+                          ? "bg-red-100 text-red-700"
+                          : inventory.availableStock <= inventory.reorderLevel
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                  </td>
 
                   <td className="px-4 py-3 text-center flex justify-center">
                     <InventoryActionMenu

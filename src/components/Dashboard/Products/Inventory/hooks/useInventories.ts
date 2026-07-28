@@ -173,7 +173,9 @@ export const useDeleteInventory = () => {
 
 export const useExportInventory = () => {
   return useMutation({
-    mutationFn: () => exportInventory(getToken()),
+    // mutationFn: () => exportInventory(getToken()),
+    mutationFn: (filters: InventoryFilters) =>
+      exportInventory(filters, getToken()),
 
     onSuccess: () => {
       toast.success("Inventory exported successfully");

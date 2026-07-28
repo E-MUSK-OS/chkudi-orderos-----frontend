@@ -38,6 +38,27 @@ export default function Header({
   const router = useRouter();
   const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setNotificationOpen(false);
+      }
+    }
+
+    if (notificationOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      <Bell size={19} />;
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [notificationOpen]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -180,9 +201,11 @@ export default function Header({
             </div>
 
             {notificationOpen && (
-              <NotificationDropdown
-                onClose={() => setNotificationOpen(false)}
-              />
+              <div ref={notificationRef}>
+                <NotificationDropdown
+                  onClose={() => setNotificationOpen(false)}
+                />
+              </div>
             )}
           </div>
 

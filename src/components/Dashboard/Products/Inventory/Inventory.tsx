@@ -33,6 +33,7 @@ const InventoryPage = () => {
     page: 1,
     limit: 10,
     search: "",
+    warehouseId: "",
     sortBy: "createdAt",
     sortOrder: "desc",
   });
@@ -74,7 +75,7 @@ const InventoryPage = () => {
           filters={filters}
           setFilters={setFilters}
           onRefresh={refetch}
-          onExport={() => exportInventoryMutation.mutate()}
+          onExport={() => exportInventoryMutation.mutate(filters)}
           isExporting={exportInventoryMutation.isPending}
         />
 

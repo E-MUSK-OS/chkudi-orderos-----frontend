@@ -19,6 +19,35 @@ export default function ImportInventoryModal({ open, onClose }: Props) {
   const [file, setFile] = useState<File | null>(null);
 
   const { mutate, isPending } = useImportInventory();
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+
+    if (!droppedFile) return;
+
+    const isExcel =
+      droppedFile.name.endsWith(".xlsx") || droppedFile.name.endsWith(".xls");
+
+    if (!isExcel) {
+      return;
+    }
+
+    setFile(droppedFile);
+  };
 
   const handleUpload = () => {
     if (!file) return;
@@ -63,17 +92,26 @@ export default function ImportInventoryModal({ open, onClose }: Props) {
       }
     >
       <div className="space-y-4 px-5 py-5">
-        <button
-          type="button"
+        <div
           onClick={() => inputRef.current?.click()}
-          className="flex h-40 w-full cursor-pointer flex-col items-center justify-center border-2 border-dashed border-slate-300 transition hover:border-primary"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`flex h-40 w-full cursor-pointer flex-col items-center justify-center border-2 border-dashed transition
+    ${
+      isDragging
+        ? "border-primary bg-primary/5"
+        : "border-slate-300 hover:border-primary"
+    }`}
         >
           <Upload className="mb-3 h-8 w-8 text-slate-500" />
 
-          <p className="font-medium">Click to select Excel file</p>
+          <p className="font-medium">Drag & Drop Excel file here</p>
 
-          <p className="mt-1 text-sm text-slate-500">.xlsx or .xls</p>
-        </button>
+          <p className="mt-1 text-sm text-slate-500">
+            or Click to browse (.xlsx / .xls)
+          </p>
+        </div>
 
         <input
           ref={inputRef}
@@ -81,7 +119,14 @@ export default function ImportInventoryModal({ open, onClose }: Props) {
           hidden
           accept=".xlsx,.xls"
           onChange={(e) => {
-            const selected = e.target.files?.[0] ?? null;
+            const selected = e.target.files?.[0];
+
+            if (!selected) return;
+
+            const isExcel =
+              selected.name.endsWith(".xlsx") || selected.name.endsWith(".xls");
+
+            if (!isExcel) return;
 
             setFile(selected);
           }}

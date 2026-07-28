@@ -8,7 +8,9 @@ import Button from "@/components/ui/Button";
 
 import type { InventoryFilters } from "../types/inventory.types";
 import { useState } from "react";
+import { useWarehouses } from "@/components/Dashboard/Warehouse/hooks/useWarehouse";
 import ImportInventoryModal from "./ImportInventoryModal";
+import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 
 interface Props {
   filters: InventoryFilters;
@@ -29,6 +31,19 @@ const InventoryToolbar = ({
   isExporting,
 }: Props) => {
   const [importOpen, setImportOpen] = useState(false);
+  const { data: warehouseResponse } = useWarehouses();
+
+  const warehouseOptions: SelectOption[] = [
+    {
+      label: "All Warehouses",
+      value: "",
+    },
+
+    ...(warehouseResponse?.data?.map((warehouse) => ({
+      label: warehouse.warehouseName,
+      value: warehouse.id,
+    })) ?? []),
+  ];
   return (
     <div className="flex flex-col gap-4 border bg-[#0A0E1A] p-4 lg:flex-row lg:items-center lg:justify-between">
       {/* ====================================================== */}
@@ -64,6 +79,25 @@ const InventoryToolbar = ({
               transition
               focus:border-[#E8C16D]
             "
+        />
+      </div>
+
+      <div className="w-full lg:w-72">
+        <ReactSelect
+          options={warehouseOptions}
+          value={
+            warehouseOptions.find(
+              (option) => option.value === (filters.warehouseId ?? ""),
+            ) ?? warehouseOptions[0]
+          }
+          onChange={(option) =>
+            setFilters((prev) => ({
+              ...prev,
+              page: 1,
+              warehouseId: option?.value ?? "",
+            }))
+          }
+          placeholder="Select Warehouse"
         />
       </div>
 

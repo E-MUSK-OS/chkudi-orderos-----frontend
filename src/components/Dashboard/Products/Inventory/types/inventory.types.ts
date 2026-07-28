@@ -10,6 +10,12 @@ export interface Inventory {
   createdAt: string;
   updatedAt: string;
 
+  warehouse: {
+    id: string;
+    warehouseName: string;
+    warehouseCode: string;
+  };
+
   productVariant: {
     id: string;
     variantSku: string;
@@ -77,6 +83,8 @@ export interface InventoryFilters {
   limit?: number;
 
   search?: string;
+
+  warehouseId?: string;
 
   productId?: string;
 

@@ -102,8 +102,17 @@ export const deleteInventory = async (
   return api.delete(`/inventories/${id}`, token);
 };
 
-export const exportInventory = async (token: string): Promise<void> => {
-  const blob = await api.download("/inventories/export", token);
+export const exportInventory = async (
+  filters: InventoryFilters,
+  token: string,
+): Promise<void> => {
+  // const blob = await api.download("/inventories/export", token);
+  const query = buildQueryString(filters);
+
+  const blob = await api.download(
+    `/inventories/export${query ? `?${query}` : ""}`,
+    token,
+  );
 
   const url = window.URL.createObjectURL(blob);
 
