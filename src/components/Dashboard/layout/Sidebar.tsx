@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { Barcode } from "lucide-react";
+import { ScanBarcode } from "lucide-react";
+import Image from "next/image";
 
 import {
   Home,
@@ -133,6 +136,11 @@ const navItems: NavItem[] = [
         ],
       },
     ],
+  },
+  {
+    label: "SkuMapping",
+    href: "/dashboard/sku-mapping",
+    icon: ScanBarcode,
   },
 ];
 
@@ -486,21 +494,21 @@ transition-all duration-300 ease-out
   ${sidebarCollapsed ? "lg:text-center lg:text-xs" : ""}`}
           >
             <span
-              className={`block overflow-hidden whitespace-nowrap transition-all duration-300
+              className={`block overflow-hidden whitespace-nowrap transition-all duration-300 text-[#E8C16D] uppercase
     ${sidebarCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"}`}
             >
-              Signed in workspace
+              Developed by : NetuTechno
             </span>
 
-            <span
-              className={
-                sidebarCollapsed
-                  ? "hidden h-9 w-9 place-items-center bg-white/10 text-[10px] font-bold uppercase text-[#E8C16D] lg:grid"
-                  : "hidden"
-              }
-            >
-              ON
-            </span>
+            {sidebarCollapsed && (
+              <div className="hidden lg:flex h-10 w-10 items-center justify-center ">
+                <img
+                  src="/image/netu-logo.jpeg"
+                  alt="NetuTechno"
+                  className="h-12 w-12 object-contain"
+                />
+              </div>
+            )}
           </div>
         </div>
       </aside>

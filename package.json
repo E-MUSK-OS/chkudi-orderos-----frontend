@@ -20,6 +20,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "fix-webm-duration": "^1.0.6",
     "framer-motion": "^12.42.2",
     "geist": "^1.7.2",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
