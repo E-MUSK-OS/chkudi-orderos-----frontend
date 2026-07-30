@@ -441,6 +441,25 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                             e.target.value.toUpperCase();
                           setRows(updated);
                         }}
+                        // onKeyDown={async (e) => {
+                        //   if (e.key !== "Enter") return;
+
+                        //   e.preventDefault();
+
+                        //   if (!row.shortSku.trim()) return;
+
+                        //   const found = await searchSku(
+                        //     row.shortSku.trim(),
+                        //     index,
+                        //   );
+
+                        //   if (!found) return;
+
+                        //   if (index === rows.length - 1) {
+                        //     addNewRow();
+                        //   }
+                        // }}
+
                         onKeyDown={async (e) => {
                           if (e.key !== "Enter") return;
 
@@ -448,16 +467,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                           if (!row.shortSku.trim()) return;
 
-                          const found = await searchSku(
-                            row.shortSku.trim(),
-                            index,
-                          );
-
-                          if (!found) return;
-
+                          // Last row hoy to pehla new row add karo
                           if (index === rows.length - 1) {
                             addNewRow();
                           }
+
+                          // Background search (wait nahi kare)
+                          searchSku(row.shortSku.trim(), index);
                         }}
                       />
                     </td>
