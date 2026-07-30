@@ -21,3 +21,15 @@ export const removeToken = () => {
 
   localStorage.removeItem("accessToken");
 };
+
+export const logout = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("user");
+
+  window.location.href = "/login";
+};

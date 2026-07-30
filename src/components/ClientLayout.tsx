@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import AccountLockChecker from "./AccountLockChecker";
 
 export default function ClientLayout({
   children,
@@ -39,8 +40,15 @@ export default function ClientLayout({
 
   return (
     <>
-      <ReactQueryProvider>
+      {/* <ReactQueryProvider>
         {children}
+        <Toaster position="top-right" richColors closeButton duration={3000} />
+      </ReactQueryProvider> */}
+      <ReactQueryProvider>
+        <AccountLockChecker />
+
+        {children}
+
         <Toaster position="top-right" richColors closeButton duration={3000} />
       </ReactQueryProvider>
     </>
