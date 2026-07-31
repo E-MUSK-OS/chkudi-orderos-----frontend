@@ -80,7 +80,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
               pl-12
               pr-12
-              pt-3
 
               text-[15px]
               text-slate-900
