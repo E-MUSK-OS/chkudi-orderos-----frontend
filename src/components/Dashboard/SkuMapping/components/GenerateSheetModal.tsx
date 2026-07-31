@@ -436,11 +436,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     const summaryStartRow = 1;
 
     // Heading
-    worksheet.getCell(`I${summaryStartRow}`).value = "OrderCook SKU";
-    worksheet.getCell(`J${summaryStartRow}`).value = "OrderCook Qty";
+    worksheet.getCell(`I${summaryStartRow}`).value = "Barcode SKU";
+    worksheet.getCell(`J${summaryStartRow}`).value = "OrderCook SKU";
+    worksheet.getCell(`K${summaryStartRow}`).value = "Qty";
 
     // Heading Style
-    ["I", "J"].forEach((col) => {
+    ["I", "J", "K"].forEach((col) => {
       const cell = worksheet.getCell(`${col}${summaryStartRow}`);
 
       cell.font = {
@@ -469,43 +470,55 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     });
 
     // Count OrderCook SKU
-    const orderCookMap = new Map<string, number>();
+    const summaryMap = new Map<
+      string,
+      {
+        barcodeSku: string;
+        ordercookSku: string;
+        qty: number;
+      }
+    >();
 
     rows
-      .filter((row) => row.ordercookSku.trim())
+      .filter((row) => row.barcodeSku.trim() && row.ordercookSku.trim())
       .forEach((row) => {
-        const sku = row.ordercookSku.trim();
+        const key = `${row.barcodeSku}|${row.ordercookSku}`;
 
-        orderCookMap.set(sku, (orderCookMap.get(sku) || 0) + 1);
+        if (summaryMap.has(key)) {
+          summaryMap.get(key)!.qty += 1;
+        } else {
+          summaryMap.set(key, {
+            barcodeSku: row.barcodeSku,
+            ordercookSku: row.ordercookSku,
+            qty: 1,
+          });
+        }
       });
 
     // Add Summary Data
     let currentRow = summaryStartRow + 1;
 
-    orderCookMap.forEach((qty, sku) => {
-      worksheet.getCell(`I${currentRow}`).value = sku;
-      worksheet.getCell(`J${currentRow}`).value = qty;
+    summaryMap.forEach((item) => {
+      worksheet.getCell(`I${currentRow}`).value = item.barcodeSku;
+      worksheet.getCell(`J${currentRow}`).value = item.ordercookSku;
+      worksheet.getCell(`K${currentRow}`).value = item.qty;
 
-      worksheet.getCell(`I${currentRow}`).border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        right: { style: "thin" },
-        bottom: { style: "thin" },
-      };
-
-      worksheet.getCell(`J${currentRow}`).border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        right: { style: "thin" },
-        bottom: { style: "thin" },
-      };
+      ["I", "J", "K"].forEach((col) => {
+        worksheet.getCell(`${col}${currentRow}`).border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" },
+          bottom: { style: "thin" },
+        };
+      });
 
       currentRow++;
     });
 
     // Width
     worksheet.getColumn("I").width = 35;
-    worksheet.getColumn("J").width = 15;
+    worksheet.getColumn("J").width = 35;
+    worksheet.getColumn("K").width = 15;
 
     const buffer = await workbook.xlsx.writeBuffer();
 
