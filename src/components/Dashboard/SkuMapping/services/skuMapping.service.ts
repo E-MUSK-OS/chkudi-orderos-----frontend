@@ -13,10 +13,7 @@ export const skuMappingService = {
   /**
    * Get All SKU Mappings
    */
-  getAll(
-    params?: Record<string, string | number | undefined>,
-    token?: string,
-  ) {
+  getAll(params?: Record<string, string | number | undefined>, token?: string) {
     const searchParams = new URLSearchParams();
 
     if (params) {
@@ -53,28 +50,30 @@ export const skuMappingService = {
   },
 
   /**
+   * Short SKU Suggestions
+   */
+  suggestions(query: string, token?: string) {
+    return api.get<{
+      success: boolean;
+      data: {
+        id: string;
+        shortSku: string;
+      }[];
+    }>(`${BASE_URL}/suggestions?q=${encodeURIComponent(query)}`, token);
+  },
+
+  /**
    * Update SKU Mapping
    */
-  update(
-    id: string,
-    data: UpdateSkuMappingPayload,
-    token?: string,
-  ) {
-    return api.put<SkuMappingResponse>(
-      `${BASE_URL}/${id}`,
-      data,
-      token,
-    );
+  update(id: string, data: UpdateSkuMappingPayload, token?: string) {
+    return api.put<SkuMappingResponse>(`${BASE_URL}/${id}`, data, token);
   },
 
   /**
    * Delete SKU Mapping
    */
   delete(id: string, token?: string) {
-    return api.delete<SkuMappingResponse>(
-      `${BASE_URL}/${id}`,
-      token,
-    );
+    return api.delete<SkuMappingResponse>(`${BASE_URL}/${id}`, token);
   },
 
   /**

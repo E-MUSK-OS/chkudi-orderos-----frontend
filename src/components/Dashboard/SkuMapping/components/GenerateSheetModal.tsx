@@ -34,6 +34,11 @@ interface GenerateRow {
   errorMessage: string;
 }
 
+interface SkuSuggestion {
+  id: string;
+  shortSku: string;
+}
+
 export default function GenerateSheetModal({ open, onClose }: Props) {
   const STORAGE_KEY = "sku-generate-sheet";
   const STORAGE_EXPIRE_HOURS = 24;
@@ -72,6 +77,16 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       return DEFAULT_ROWS;
     }
   });
+
+  const [suggestions, setSuggestions] = useState<
+    { id: string; shortSku: string }[]
+  >([]);
+
+  const [activeRow, setActiveRow] = useState<number | null>(null);
+
+  const [selectedSuggestion, setSelectedSuggestion] = useState(0);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [copiedRow, setCopiedRow] = useState<GenerateRow | null>(null);
 
   const addNewRow = () => {
     setRows((prev) => [
@@ -249,6 +264,35 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     }
   };
 
+  const getSuggestions = (value: string, rowIndex: number) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (!value.trim()) {
+      setSuggestions([]);
+      setActiveRow(null);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const response = await skuMappingService.suggestions(value, getToken());
+
+        console.log(response);
+
+        setSuggestions(response.data);
+
+        setActiveRow(rowIndex);
+
+        setSelectedSuggestion(0);
+      } catch {
+        setSuggestions([]);
+        setActiveRow(null);
+      }
+    }, 300);
+  };
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   useEffect(() => {
     const lastIndex = rows.length - 1;
@@ -316,16 +360,52 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       };
     });
 
-    const groupedRows = new Map<
-      string,
-      {
-        shortSku: string;
-        barcodeSku: string;
-        ordercookSku: string;
-        barcodeQty: number;
-        ordercookQty: number;
-      }
-    >();
+    // const groupedRows = new Map<
+    //   string,
+    //   {
+    //     shortSku: string;
+    //     barcodeSku: string;
+    //     ordercookSku: string;
+    //     barcodeQty: number;
+    //     ordercookQty: number;
+    //   }
+    // >();
+
+    // rows
+    //   .filter(
+    //     (row) =>
+    //       row.shortSku.trim() &&
+    //       row.barcodeSku.trim() &&
+    //       row.ordercookSku.trim(),
+    //   )
+    //   .forEach((row) => {
+    //     // Same SKU + Barcode + OrderCook ne group karo
+    //     const key = `${row.shortSku}|${row.barcodeSku}|${row.ordercookSku}`;
+
+    //     if (groupedRows.has(key)) {
+    //       groupedRows.get(key)!.barcodeQty += 1;
+    //       groupedRows.get(key)!.ordercookQty += 1;
+    //     } else {
+    //       groupedRows.set(key, {
+    //         shortSku: row.shortSku,
+    //         barcodeSku: row.barcodeSku,
+    //         ordercookSku: row.ordercookSku,
+    //         barcodeQty: 1,
+    //         ordercookQty: 1,
+    //       });
+    //     }
+    //   });
+
+    // // Excel ma unique rows add karo
+    // groupedRows.forEach((item) => {
+    //   worksheet.addRow({
+    //     shortSku: item.shortSku,
+    //     barcodeSku: item.barcodeSku,
+    //     barcodeQty: item.barcodeQty,
+    //     ordercookSku: item.ordercookSku,
+    //     ordercookQty: item.ordercookQty,
+    //   });
+    // });
 
     rows
       .filter(
@@ -335,33 +415,97 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           row.ordercookSku.trim(),
       )
       .forEach((row) => {
-        // Same SKU + Barcode + OrderCook ne group karo
-        const key = `${row.shortSku}|${row.barcodeSku}|${row.ordercookSku}`;
-
-        if (groupedRows.has(key)) {
-          groupedRows.get(key)!.barcodeQty += 1;
-          groupedRows.get(key)!.ordercookQty += 1;
-        } else {
-          groupedRows.set(key, {
-            shortSku: row.shortSku,
-            barcodeSku: row.barcodeSku,
-            ordercookSku: row.ordercookSku,
-            barcodeQty: 1,
-            ordercookQty: 1,
-          });
-        }
+        worksheet.addRow({
+          shortSku: row.shortSku,
+          barcodeSku: row.barcodeSku,
+          barcodeQty: 1,
+          ordercookSku: row.ordercookSku,
+          ordercookQty: 1,
+        });
       });
 
-    // Excel ma unique rows add karo
-    groupedRows.forEach((item) => {
-      worksheet.addRow({
-        shortSku: item.shortSku,
-        barcodeSku: item.barcodeSku,
-        barcodeQty: item.barcodeQty,
-        ordercookSku: item.ordercookSku,
-        ordercookQty: item.ordercookQty,
-      });
+    // ===============================
+    // OrderCook Summary Table
+    // ===============================
+
+    // 2 Blank Rows
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+
+    // Summary Start Row
+    const summaryStartRow = 1;
+
+    // Heading
+    worksheet.getCell(`I${summaryStartRow}`).value = "OrderCook SKU";
+    worksheet.getCell(`J${summaryStartRow}`).value = "OrderCook Qty";
+
+    // Heading Style
+    ["I", "J"].forEach((col) => {
+      const cell = worksheet.getCell(`${col}${summaryStartRow}`);
+
+      cell.font = {
+        bold: true,
+      };
+
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: {
+          argb: "E2E8F0",
+        },
+      };
+
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        right: { style: "thin" },
+        bottom: { style: "thin" },
+      };
     });
+
+    // Count OrderCook SKU
+    const orderCookMap = new Map<string, number>();
+
+    rows
+      .filter((row) => row.ordercookSku.trim())
+      .forEach((row) => {
+        const sku = row.ordercookSku.trim();
+
+        orderCookMap.set(sku, (orderCookMap.get(sku) || 0) + 1);
+      });
+
+    // Add Summary Data
+    let currentRow = summaryStartRow + 1;
+
+    orderCookMap.forEach((qty, sku) => {
+      worksheet.getCell(`I${currentRow}`).value = sku;
+      worksheet.getCell(`J${currentRow}`).value = qty;
+
+      worksheet.getCell(`I${currentRow}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        right: { style: "thin" },
+        bottom: { style: "thin" },
+      };
+
+      worksheet.getCell(`J${currentRow}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        right: { style: "thin" },
+        bottom: { style: "thin" },
+      };
+
+      currentRow++;
+    });
+
+    // Width
+    worksheet.getColumn("I").width = 35;
+    worksheet.getColumn("J").width = 15;
 
     const buffer = await workbook.xlsx.writeBuffer();
 
@@ -398,7 +542,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </Button>
         </div>
         <div className="flex-1 overflow-hidden px-6 py-4">
-          <div className="h-full overflow-y-auto border">
+          <div className="h-full overflow-auto border">
             <table className="w-full table-fixed border-collapse">
               <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-white text-lg">
                 <tr>
@@ -428,54 +572,285 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                     <td className="border px-4 py-3">{index + 1}</td>
 
                     <td className="border px-4 py-3">
-                      <input
-                        ref={(el) => {
-                          inputRefs.current[index] = el;
-                        }}
-                        value={row.shortSku}
-                        placeholder="Enter Short SKU"
-                        className="w-full border-none bg-transparent outline-none"
-                        onChange={(e) => {
-                          const updated = [...rows];
-                          updated[index].shortSku =
-                            e.target.value.toUpperCase();
-                          setRows(updated);
-                        }}
-                        // onKeyDown={async (e) => {
-                        //   if (e.key !== "Enter") return;
+                      <div className="relative">
+                        <input
+                          ref={(el) => {
+                            inputRefs.current[index] = el;
+                          }}
+                          value={row.shortSku}
+                          placeholder="Enter Short SKU"
+                          className="w-full border-none bg-transparent outline-none"
+                          // onChange={(e) => {
+                          //   const updated = [...rows];
+                          //   updated[index].shortSku =
+                          //     e.target.value.toUpperCase();
+                          //   setRows(updated);
+                          // }}
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase();
 
-                        //   e.preventDefault();
+                            const updated = [...rows];
 
-                        //   if (!row.shortSku.trim()) return;
+                            updated[index].shortSku = value;
 
-                        //   const found = await searchSku(
-                        //     row.shortSku.trim(),
-                        //     index,
-                        //   );
+                            setRows(updated);
 
-                        //   if (!found) return;
+                            setActiveRow(index);
 
-                        //   if (index === rows.length - 1) {
-                        //     addNewRow();
-                        //   }
-                        // }}
+                            getSuggestions(value, index);
+                          }}
+                          // onKeyDown={async (e) => {
+                          //   if (e.key !== "Enter") return;
 
-                        onKeyDown={async (e) => {
-                          if (e.key !== "Enter") return;
+                          //   e.preventDefault();
 
-                          e.preventDefault();
+                          //   if (!row.shortSku.trim()) return;
 
-                          if (!row.shortSku.trim()) return;
+                          //   // Last row hoy to pehla new row add karo
+                          //   if (index === rows.length - 1) {
+                          //     addNewRow();
+                          //   }
 
-                          // Last row hoy to pehla new row add karo
-                          if (index === rows.length - 1) {
-                            addNewRow();
-                          }
+                          //   // Background search (wait nahi kare)
+                          //   searchSku(row.shortSku.trim(), index);
+                          // }}
 
-                          // Background search (wait nahi kare)
-                          searchSku(row.shortSku.trim(), index);
-                        }}
-                      />
+                          onKeyDown={async (e) => {
+                            // Ctrl + C
+                            if (e.ctrlKey && e.key.toLowerCase() === "c") {
+                              e.preventDefault();
+
+                              setCopiedRow(rows[index]);
+
+                              toast.success("Row copied.");
+
+                              return;
+                            }
+
+                            // Ctrl + V
+                            if (e.ctrlKey && e.key.toLowerCase() === "v") {
+                              e.preventDefault();
+
+                              if (!copiedRow) {
+                                toast.error("No copied row.");
+                                return;
+                              }
+
+                              const updated = [...rows];
+
+                              updated[index] = {
+                                ...updated[index],
+                                shortSku: copiedRow.shortSku,
+                                barcodeSku: copiedRow.barcodeSku,
+                                ordercookSku: copiedRow.ordercookSku,
+                                error: false,
+                                errorMessage: "",
+                              };
+
+                              setRows(updated);
+
+                              setSuggestions([]);
+                              setActiveRow(null);
+
+                              // Search again (latest data mate)
+                              searchSku(copiedRow.shortSku, index);
+
+                              // Last row hoy to new row add karo
+                              if (index === rows.length - 1) {
+                                addNewRow();
+                              }
+
+                              // Next row focus
+                              setTimeout(() => {
+                                inputRefs.current[index + 1]?.focus();
+                              }, 100);
+
+                              toast.success("Row pasted.");
+
+                              return;
+                            }
+                            // Ctrl + D
+                            if (e.ctrlKey && e.key.toLowerCase() === "d") {
+                              e.preventDefault();
+
+                              // First row ma duplicate na thai
+                              if (index === 0) return;
+
+                              const previousRow = rows[index - 1];
+
+                              if (!previousRow.shortSku) return;
+
+                              const updated = [...rows];
+
+                              updated[index].shortSku = previousRow.shortSku;
+
+                              setRows(updated);
+
+                              setSuggestions([]);
+                              setActiveRow(null);
+
+                              // Background search
+                              searchSku(previousRow.shortSku, index);
+
+                              // Last row hoy to new row add
+                              if (index === rows.length - 1) {
+                                addNewRow();
+                              }
+
+                              // Next row focus
+                              setTimeout(() => {
+                                inputRefs.current[index + 1]?.focus();
+                              }, 100);
+
+                              return;
+                            }
+
+                            // ↓ Down Arrow
+                            if (e.key === "ArrowDown") {
+                              e.preventDefault();
+
+                              // Dropdown open hoy to suggestion ma move
+                              if (
+                                activeRow === index &&
+                                suggestions.length > 0
+                              ) {
+                                setSelectedSuggestion((prev) =>
+                                  prev < suggestions.length - 1
+                                    ? prev + 1
+                                    : prev,
+                                );
+                                return;
+                              }
+
+                              // Dropdown open nathi to next row
+                              if (index < rows.length - 1) {
+                                inputRefs.current[index + 1]?.focus();
+                              }
+
+                              return;
+                            }
+
+                            // ↑ Up Arrow
+                            if (e.key === "ArrowUp") {
+                              e.preventDefault();
+
+                              // Dropdown open hoy to suggestion ma move karo
+                              if (
+                                activeRow === index &&
+                                suggestions.length > 0
+                              ) {
+                                setSelectedSuggestion((prev) =>
+                                  prev > 0 ? prev - 1 : 0,
+                                );
+                                return;
+                              }
+
+                              // Dropdown open nathi to previous row
+                              if (index > 0) {
+                                inputRefs.current[index - 1]?.focus();
+                              }
+
+                              return;
+                            }
+
+                            // Enter
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+
+                              // Suggestion open hoy to select karo
+                              if (
+                                activeRow === index &&
+                                suggestions.length > 0
+                              ) {
+                                const item = suggestions[selectedSuggestion];
+
+                                if (!item) return;
+
+                                const updated = [...rows];
+
+                                updated[index].shortSku = item.shortSku;
+
+                                setRows(updated);
+
+                                setSuggestions([]);
+
+                                setActiveRow(null);
+
+                                searchSku(item.shortSku, index);
+
+                                if (index === rows.length - 1) {
+                                  addNewRow();
+                                }
+
+                                setTimeout(() => {
+                                  inputRefs.current[index + 1]?.focus();
+                                }, 100);
+
+                                return;
+                              }
+
+                              // Suggestion open na hoy to normal search
+                              if (!row.shortSku.trim()) return;
+
+                              if (index === rows.length - 1) {
+                                addNewRow();
+                              }
+
+                              searchSku(row.shortSku.trim(), index);
+                            }
+
+                            // ESC
+                            if (e.key === "Escape") {
+                              setSuggestions([]);
+                              setActiveRow(null);
+                            }
+                          }}
+                        />
+
+                        {activeRow === index && suggestions.length > 0 && (
+                          <div className="absolute left-0 top-full z-[99999] mt-1 w-full border border-slate-200 bg-white shadow-xl">
+                            {suggestions.map((item, i) => (
+                              <div
+                                ref={(el) => {
+                                  if (selectedSuggestion === i) {
+                                    el?.scrollIntoView({
+                                      block: "nearest",
+                                    });
+                                  }
+                                }}
+                                key={item.id}
+                                onClick={() => {
+                                  const updated = [...rows];
+
+                                  updated[index].shortSku = item.shortSku;
+
+                                  setRows(updated);
+
+                                  setSuggestions([]);
+
+                                  setActiveRow(null);
+
+                                  searchSku(item.shortSku, index);
+
+                                  if (index === rows.length - 1) {
+                                    addNewRow();
+                                  }
+                                  setTimeout(() => {
+                                    inputRefs.current[index + 1]?.focus();
+                                  }, 100);
+                                }}
+                                className={`cursor-pointer px-4 py-2 transition ${
+                                  selectedSuggestion === i
+                                    ? "bg-[#0A0E1A] text-white"
+                                    : "hover:bg-slate-100"
+                                }`}
+                              >
+                                {item.shortSku}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     <td className="border px-4 py-3">
