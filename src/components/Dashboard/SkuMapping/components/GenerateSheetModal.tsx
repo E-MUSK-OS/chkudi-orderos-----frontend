@@ -879,7 +879,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                           }}
                         />
 
-                        {activeRow === index && suggestions.length > 0 && (
+                        {/* {activeRow === index && suggestions.length > 0 && (
                           <div className="absolute left-0 top-full z-[99999] mt-1 w-full border border-slate-200 bg-white shadow-xl">
                             {suggestions.map((item, i) => (
                               <div
@@ -921,7 +921,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                               </div>
                             ))}
                           </div>
-                        )}
+                        )} */}
                       </div>
                     </td>
 
