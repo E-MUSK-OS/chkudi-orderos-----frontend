@@ -543,9 +543,9 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     saveAs(new Blob([buffer]), fileName);
 
     toast.success("Excel downloaded successfully.");
-    deleteDraftMutation.mutate();
+    // deleteDraftMutation.mutate();
 
-    setRows(DEFAULT_ROWS);
+    // setRows(DEFAULT_ROWS);
   };
 
   useEffect(() => {
