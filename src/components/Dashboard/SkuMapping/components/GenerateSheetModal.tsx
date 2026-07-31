@@ -15,6 +15,11 @@ import { skuMappingService } from "../services/skuMapping.service";
 import { getToken } from "@/utils/auth";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import {
+  useSaveSheetDraft,
+  useSheetDraft,
+  useDeleteSheetDraft,
+} from "../hooks/useSheetDraft";
 
 interface Props {
   open: boolean;
@@ -40,8 +45,8 @@ interface SkuSuggestion {
 }
 
 export default function GenerateSheetModal({ open, onClose }: Props) {
-  const STORAGE_KEY = "sku-generate-sheet";
-  const STORAGE_EXPIRE_HOURS = 24;
+  // const STORAGE_KEY = "sku-generate-sheet";
+  // const STORAGE_EXPIRE_HOURS = 24;
   const DEFAULT_ROWS: GenerateRow[] = [
     {
       id: 1,
@@ -54,29 +59,38 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     },
   ];
 
-  const [rows, setRows] = useState<GenerateRow[]>(() => {
-    if (typeof window === "undefined") {
-      return DEFAULT_ROWS;
-    }
+  // const [rows, setRows] = useState<GenerateRow[]>(() => {
+  //   if (typeof window === "undefined") {
+  //     return DEFAULT_ROWS;
+  //   }
 
-    const saved = localStorage.getItem(STORAGE_KEY);
+  //   const saved = localStorage.getItem(STORAGE_KEY);
 
-    if (!saved) return DEFAULT_ROWS;
+  //   if (!saved) return DEFAULT_ROWS;
 
-    try {
-      const parsed = JSON.parse(saved);
+  //   try {
+  //     const parsed = JSON.parse(saved);
 
-      if (Date.now() > parsed.expiresAt) {
-        localStorage.removeItem(STORAGE_KEY);
-        return DEFAULT_ROWS;
-      }
+  //     if (Date.now() > parsed.expiresAt) {
+  //       localStorage.removeItem(STORAGE_KEY);
+  //       return DEFAULT_ROWS;
+  //     }
 
-      return parsed.rows?.length ? parsed.rows : DEFAULT_ROWS;
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-      return DEFAULT_ROWS;
-    }
-  });
+  //     return parsed.rows?.length ? parsed.rows : DEFAULT_ROWS;
+  //   } catch {
+  //     localStorage.removeItem(STORAGE_KEY);
+  //     return DEFAULT_ROWS;
+  //   }
+  // });
+  const [rows, setRows] = useState<GenerateRow[]>(DEFAULT_ROWS);
+
+  const saveDraftMutation = useSaveSheetDraft();
+
+  const deleteDraftMutation = useDeleteSheetDraft();
+
+  const { data: draftResponse } = useSheetDraft();
+
+  const isInitialLoad = useRef(true);
 
   const [suggestions, setSuggestions] = useState<
     { id: string; shortSku: string }[]
@@ -114,17 +128,17 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     });
   };
 
-  const saveRows = (data: GenerateRow[]) => {
-    console.log("Saving Rows:", data);
+  // const saveRows = (data: GenerateRow[]) => {
+  //   console.log("Saving Rows:", data);
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        expiresAt: Date.now() + STORAGE_EXPIRE_HOURS * 60 * 60 * 1000,
-        rows: data,
-      }),
-    );
-  };
+  //   localStorage.setItem(
+  //     STORAGE_KEY,
+  //     JSON.stringify({
+  //       expiresAt: Date.now() + STORAGE_EXPIRE_HOURS * 60 * 60 * 1000,
+  //       rows: data,
+  //     }),
+  //   );
+  // };
 
   //   useEffect(() => {
   //     const saved = localStorage.getItem(STORAGE_KEY);
@@ -181,12 +195,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
   //     saveRows(rows);
   //   }, [rows, isRestored]);
 
-  useEffect(() => {
-    saveRows(rows);
-  }, [rows]);
+  // useEffect(() => {
+  //   saveRows(rows);
+  // }, [rows]);
 
   const clearSheet = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    deleteDraftMutation.mutate();
 
     // setRows([
     //   {
@@ -529,7 +543,52 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     saveAs(new Blob([buffer]), fileName);
 
     toast.success("Excel downloaded successfully.");
+    deleteDraftMutation.mutate();
+
+    setRows(DEFAULT_ROWS);
   };
+
+  useEffect(() => {
+    if (draftResponse?.data?.rows?.length) {
+      setRows(
+        draftResponse.data.rows.map((row: any, index: number) => ({
+          id: Date.now() + index,
+
+          shortSku: row.shortSku,
+
+          barcodeSku: row.barcodeSku,
+
+          ordercookSku: row.ordercookSku,
+
+          loading: false,
+
+          error: false,
+
+          errorMessage: "",
+        })),
+      );
+    }
+
+    isInitialLoad.current = false;
+  }, [draftResponse]);
+
+  useEffect(() => {
+    if (isInitialLoad.current) return;
+
+    const timer = setTimeout(() => {
+      const payload = rows
+        .filter((row) => row.shortSku.trim())
+        .map((row) => ({
+          shortSku: row.shortSku,
+          barcodeSku: row.barcodeSku,
+          ordercookSku: row.ordercookSku,
+        }));
+
+      saveDraftMutation.mutate(payload);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [rows]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
