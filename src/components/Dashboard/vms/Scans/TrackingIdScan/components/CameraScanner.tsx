@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 
 interface CameraScannerProps {
@@ -13,74 +13,104 @@ export default function CameraScanner({
   onClose,
 }: CameraScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [starting, setStarting] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const scanner = new Html5Qrcode("tracking-camera");
 
     scannerRef.current = scanner;
 
-    const startScanner = async () => {
+    async function startCamera() {
       try {
+        const cameras = await Html5Qrcode.getCameras();
+
+        if (!mounted) return;
+
+        if (cameras.length === 0) {
+          alert("No Camera Found");
+          return;
+        }
+
+        // Rear camera શોધવાનો પ્રયત્ન
+        const rearCamera =
+          cameras.find((camera) =>
+            camera.label.toLowerCase().includes("back"),
+          ) ||
+          cameras.find((camera) =>
+            camera.label.toLowerCase().includes("rear"),
+          ) ||
+          cameras[cameras.length - 1];
+
         await scanner.start(
-          {
-            facingMode: "environment", // Rear Camera
-          },
+          rearCamera.id,
           {
             fps: 10,
             qrbox: {
               width: 250,
               height: 120,
             },
+            aspectRatio: 1.777,
           },
-          (decodedText) => {
-            console.log("Barcode:", decodedText);
+          async (decodedText) => {
+            console.log("Detected:", decodedText);
 
-            // હજુ API Call નથી કરવી
+            await scanner.stop();
+
             onDetected(decodedText);
           },
-          () => {
-            // Ignore scan errors
-          },
+          () => {},
         );
-      } catch (error) {
-        console.error("Camera start failed:", error);
-      }
-    };
 
-    startScanner();
+        setStarting(false);
+      } catch (err) {
+        console.error(err);
+
+        alert("Camera Start Failed");
+      }
+    }
+
+    startCamera();
 
     return () => {
-      if (scanner.isScanning) {
-        scanner
+      mounted = false;
+
+      if (scannerRef.current) {
+        scannerRef.current
           .stop()
-          .then(() => {
-            scanner.clear();
-          })
-          .catch((err) => {
-            console.error(err);
+          .catch(() => {})
+          .finally(() => {
+            scannerRef.current?.clear();
           });
       }
     };
   }, [onDetected]);
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-[#0F172A] p-5">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="fixed inset-0 z-[9999] bg-black">
+      <div className="flex h-16 items-center justify-between border-b border-slate-700 px-4">
         <h2 className="text-lg font-semibold text-white">
-          Camera Scanner
+          Scan Tracking ID
         </h2>
 
         <button
           onClick={onClose}
-          className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+          className="rounded bg-red-600 px-4 py-2 text-white"
         >
           Close
         </button>
       </div>
 
+      {starting && (
+        <div className="py-6 text-center text-white">
+          Opening Camera...
+        </div>
+      )}
+
       <div
         id="tracking-camera"
-        className="min-h-[350px] overflow-hidden rounded-lg border border-slate-700"
+        className="mx-auto mt-5 max-w-xl overflow-hidden rounded-lg"
       />
     </div>
   );

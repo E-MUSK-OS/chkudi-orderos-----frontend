@@ -81,7 +81,9 @@ export default function TrackingScanner({
           <CameraScanner
             onClose={() => setCameraOpen(false)}
             onDetected={(trackingId) => {
-              console.log(trackingId);
+              alert(trackingId);
+
+              setCameraOpen(false);
             }}
           />
         </div>
