@@ -63,14 +63,14 @@ export default function DeleteSkuMappingModal({
         </DialogHeader>
 
         <div className="space-y-6 p-6">
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <div className="border border-red-200 bg-red-50 px-4 py-3">
             <p className="text-sm font-medium text-red-700">
               ⚠️ This SKU Mapping will be permanently removed from your account.
             </p>
           </div>
 
           {skuMapping && (
-            <div className="overflow-hidden rounded-xl border">
+            <div className="overflow-hidden border">
               <div className="border-b bg-slate-50 px-4 py-3">
                 <h3 className="font-semibold text-slate-900">SKU Details</h3>
               </div>

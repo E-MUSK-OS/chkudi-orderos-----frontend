@@ -34,6 +34,7 @@ const InventoryPage = () => {
     limit: 10,
     search: "",
     warehouseId: "",
+    status: "",
     sortBy: "createdAt",
     sortOrder: "desc",
   });
@@ -64,6 +65,26 @@ const InventoryPage = () => {
   const { data, isLoading, isError, refetch } = useInventories(filters);
   const exportInventoryMutation = useExportInventory();
 
+  const inventories =
+    data?.data?.filter((inventory) => {
+      switch (filters.status) {
+        case "OUT_OF_STOCK":
+          return inventory.availableStock === 0;
+
+        case "LOW_STOCK":
+          return (
+            inventory.availableStock > 0 &&
+            inventory.availableStock <= inventory.reorderLevel
+          );
+
+        case "IN_STOCK":
+          return inventory.availableStock > inventory.reorderLevel;
+
+        default:
+          return true;
+      }
+    }) ?? [];
+
   // ======================================================
   // Render
   // ======================================================
@@ -80,7 +101,8 @@ const InventoryPage = () => {
         />
 
         <InventoryTable
-          inventories={data?.data ?? []}
+          // inventories={data?.data ?? []}
+          inventories={inventories}
           pagination={data?.pagination}
           isLoading={isLoading}
           isError={isError}

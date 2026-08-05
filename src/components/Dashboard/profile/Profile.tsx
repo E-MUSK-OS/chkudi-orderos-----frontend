@@ -1,6 +1,7 @@
 import DashboardLayout from "../layout/DashboardLayout";
 import ProfileForm from "./ProfileForm";
 import AccountStatus from "./AccountStatus";
+import MarketplaceAccounts from "./MarketplaceAccounts";
 
 export default function Profile() {
   return (
@@ -20,9 +21,14 @@ export default function Profile() {
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_360px]">
-        <ProfileForm />
+        <div className="space-y-6">
+          <ProfileForm />
+        </div>
 
         <AccountStatus />
+      </div>
+      <div className="mt-8">
+        <MarketplaceAccounts />
       </div>
     </DashboardLayout>
   );

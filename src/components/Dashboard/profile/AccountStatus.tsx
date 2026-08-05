@@ -61,16 +61,16 @@ export default function AccountStatus() {
 
           </div>
 
-          {/* User ID */}
+          {/* User Name */}
 
           <div className="flex items-center justify-between">
 
             <span className="text-sm font-medium text-slate-600">
-              User ID
+              User Name
             </span>
 
             <span className="max-w-40 truncate text-xs font-semibold text-slate-500">
-              {user?.id || "Not Available"}
+              {user?.username || "Not Available"}
             </span>
 
           </div>
@@ -95,7 +95,7 @@ export default function AccountStatus() {
 
       {/* Info Card */}
 
-      <section className="bg-[#0A0E1A] p-6 text-white shadow-sm">
+      {/* <section className="bg-[#0A0E1A] p-6 text-white shadow-sm">
 
         <p className="text-sm font-semibold uppercase tracking-wide text-[#E8C16D]">
           Profile
@@ -111,7 +111,7 @@ export default function AccountStatus() {
           accurate for a better experience.
         </p>
 
-      </section>
+      </section> */}
 
     </aside>
   );

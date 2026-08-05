@@ -3,7 +3,7 @@
 import { Toaster } from "sonner";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import AccountLockChecker from "./AccountLockChecker";
 
 export default function ClientLayout({
@@ -12,6 +12,19 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const currentUrl =
+      pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
+
+    // Offline page save નહીં કરવી
+    if (pathname !== "/offline") {
+      sessionStorage.setItem("lastVisitedPage", currentUrl);
+    }
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     // 🔥 Check initial status
@@ -24,9 +37,13 @@ export default function ClientLayout({
     };
 
     const handleOnline = () => {
-      // ✅ Net આવે તરત જ Home Page પર જાઓ
-      window.location.href = "/"; // Home page પર Redirect
-      // window.location.reload(); // આના lieu માં આ પણ use કરી શકો
+      const lastPage = sessionStorage.getItem("lastVisitedPage");
+
+      if (lastPage) {
+        window.location.href = lastPage;
+      } else {
+        window.location.href = "/";
+      }
     };
 
     window.addEventListener("offline", handleOffline);

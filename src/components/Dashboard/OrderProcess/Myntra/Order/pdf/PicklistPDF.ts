@@ -21,9 +21,7 @@ const RIGHT_X = LEFT_X + TABLE_WIDTH + COLUMN_GAP;
 const MAX_ROWS_PER_COLUMN = 35;
 const ITEMS_PER_PAGE = MAX_ROWS_PER_COLUMN * 2;
 
-export const downloadPicklistPDF = (
-  picklist: PicklistResult,
-) => {
+export const downloadPicklistPDF = (picklist: PicklistResult) => {
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -55,44 +53,19 @@ export const downloadPicklistPDF = (
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    doc.text(
-      `Picklist No : ${picklistNo}`,
-      10,
-      22,
-    );
+    doc.text(`Picklist No : ${picklistNo}`, 10, 22);
 
-    doc.text(
-      `Generated : ${formattedDate}`,
-      10,
-      28,
-    );
+    doc.text(`Generated : ${formattedDate}`, 10, 28);
 
-    doc.text(
-      `Total SKU : ${picklist.items.length}`,
-      145,
-      22,
-    );
+    doc.text(`Total SKU : ${picklist.items.length}`, 145, 22);
 
-    doc.text(
-      `Total Qty : ${picklist.totalQuantity}`,
-      145,
-      28,
-    );
+    doc.text(`Total Qty : ${picklist.totalQuantity}`, 145, 28);
 
-    doc.text(
-      `Page : ${page}`,
-      145,
-      34,
-    );
+    doc.text(`Page : ${page}`, 145, 34);
 
     doc.setDrawColor(180);
 
-    doc.line(
-      MARGIN,
-      HEADER_HEIGHT,
-      PAGE_WIDTH - MARGIN,
-      HEADER_HEIGHT,
-    );
+    doc.line(MARGIN, HEADER_HEIGHT, PAGE_WIDTH - MARGIN, HEADER_HEIGHT);
   };
 
   const drawFooter = (page: number) => {
@@ -125,19 +98,10 @@ export const downloadPicklistPDF = (
 
   const pages: PicklistResult["items"][] = [];
 
-  for (
-    let i = 0;
-    i < picklist.items.length;
-    i += ITEMS_PER_PAGE
-  ) {
-    pages.push(
-      picklist.items.slice(
-        i,
-        i + ITEMS_PER_PAGE,
-      ),
-    );
+  for (let i = 0; i < picklist.items.length; i += ITEMS_PER_PAGE) {
+    pages.push(picklist.items.slice(i, i + ITEMS_PER_PAGE));
   }
-    pages.forEach((pageItems, pageIndex) => {
+  pages.forEach((pageItems, pageIndex) => {
     if (pageIndex > 0) {
       doc.addPage();
     }
@@ -145,15 +109,9 @@ export const downloadPicklistPDF = (
     drawHeader(pageIndex + 1);
     drawFooter(pageIndex + 1);
 
-    const leftItems = pageItems.slice(
-      0,
-      MAX_ROWS_PER_COLUMN,
-    );
+    const leftItems = pageItems.slice(0, MAX_ROWS_PER_COLUMN);
 
-    const rightItems = pageItems.slice(
-      MAX_ROWS_PER_COLUMN,
-      ITEMS_PER_PAGE,
-    );
+    const rightItems = pageItems.slice(MAX_ROWS_PER_COLUMN, ITEMS_PER_PAGE);
 
     autoTable(doc, {
       startY: HEADER_HEIGHT + 4,
@@ -166,10 +124,7 @@ export const downloadPicklistPDF = (
 
       head: [["SKU", "Qty"]],
 
-      body: leftItems.map((item) => [
-        item.sku,
-        item.quantity.toString(),
-      ]),
+      body: leftItems.map((item) => [item.sku, item.quantity.toString()]),
 
       styles: {
         fontSize: 9,
@@ -178,8 +133,8 @@ export const downloadPicklistPDF = (
       },
 
       headStyles: {
-        fillColor: [232, 193, 109],
-        textColor: [0, 0, 0],
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
         fontStyle: "bold",
         halign: "center",
       },
@@ -202,10 +157,7 @@ export const downloadPicklistPDF = (
 
       head: [["SKU", "Qty"]],
 
-      body: rightItems.map((item) => [
-        item.sku,
-        item.quantity.toString(),
-      ]),
+      body: rightItems.map((item) => [item.sku, item.quantity.toString()]),
 
       styles: {
         fontSize: 9,
@@ -214,8 +166,8 @@ export const downloadPicklistPDF = (
       },
 
       headStyles: {
-        fillColor: [232, 193, 109],
-        textColor: [0, 0, 0],
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
         fontStyle: "bold",
         halign: "center",
       },
@@ -272,9 +224,5 @@ export const downloadPicklistPDF = (
     // }
   });
 
-  doc.save(
-    `Picklist_${picklistNo}_${now
-      .toISOString()
-      .slice(0, 10)}.pdf`,
-  );
+  doc.save(`Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.pdf`);
 };

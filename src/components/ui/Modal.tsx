@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "4xl" ;
+type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "4xl";
 
 interface ModalProps {
   open: boolean;
@@ -54,6 +54,15 @@ export default function Modal({
         if (!value) onClose();
       }}
     >
+      {/* <DialogContent
+        className={`
+    ${sizeClasses[size]}
+    w-[95vw]
+    p-0
+    overflow-hidden
+    max-h-[90vh]
+  `}
+      > */}
       <DialogContent
         className={`
     ${sizeClasses[size]}
@@ -61,6 +70,8 @@ export default function Modal({
     p-0
     overflow-hidden
     max-h-[90vh]
+    flex
+    flex-col
   `}
       >
         {showHeader && (
@@ -82,13 +93,26 @@ export default function Modal({
             )}
           </DialogHeader>
         )}
-        <div
+        {/* <div
           className="
     overflow-y-auto
     max-h-[calc(90vh-140px)]
     scrollbar-thin
     scrollbar-thumb-[#0A0E1A]
     scrollbar-track-transparent
+  "
+        >
+          {children}
+        </div> */}
+
+        <div
+          className="
+    custom-scrollbar
+    overflow-y-auto
+    flex-1
+    min-h-0
+    px-6
+    py-6
   "
         >
           {children}

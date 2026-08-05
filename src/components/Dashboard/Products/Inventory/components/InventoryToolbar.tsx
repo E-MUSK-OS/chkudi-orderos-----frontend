@@ -47,6 +47,25 @@ const InventoryToolbar = ({
       value: warehouse.id,
     })) ?? []),
   ];
+
+  const statusOptions: SelectOption[] = [
+    {
+      label: "All Status",
+      value: "",
+    },
+    {
+      label: "In Stock",
+      value: "IN_STOCK",
+    },
+    {
+      label: "Low Stock",
+      value: "LOW_STOCK",
+    },
+    {
+      label: "Out of Stock",
+      value: "OUT_OF_STOCK",
+    },
+  ];
   return (
     <div className="flex flex-col gap-4 border bg-[#0A0E1A] p-4 lg:flex-row lg:items-center lg:justify-between">
       {/* ====================================================== */}
@@ -101,6 +120,25 @@ const InventoryToolbar = ({
             }))
           }
           placeholder="Select Warehouse"
+        />
+      </div>
+
+      <div className="w-full lg:w-56">
+        <ReactSelect
+          options={statusOptions}
+          value={
+            statusOptions.find(
+              (option) => option.value === (filters.status ?? ""),
+            ) ?? statusOptions[0]
+          }
+          onChange={(option) =>
+            setFilters((prev) => ({
+              ...prev,
+              page: 1,
+              status: option?.value ?? "",
+            }))
+          }
+          placeholder="Stock Status"
         />
       </div>
 

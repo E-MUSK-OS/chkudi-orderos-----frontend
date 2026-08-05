@@ -93,6 +93,8 @@ export interface InventoryFilters {
   sortBy?: string;
 
   sortOrder?: "asc" | "desc";
+
+  status?: string;
 }
 
 // export interface ImportInventoryResponse {

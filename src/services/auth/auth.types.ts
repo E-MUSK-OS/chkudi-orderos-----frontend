@@ -24,6 +24,7 @@ export interface User {
   fullName: string;
   email: string;
   isEmailVerified: boolean;
+  username?: string;
 }
 
 export interface SignupRequest {
