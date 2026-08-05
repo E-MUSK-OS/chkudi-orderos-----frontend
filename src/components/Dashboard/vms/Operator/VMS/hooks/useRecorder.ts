@@ -49,7 +49,8 @@ export const useRecorder = () => {
 
       const recorder = new MediaRecorder(stream, {
         mimeType: "video/webm;codecs=vp9",
-        videoBitsPerSecond: 10_000_000,
+        // videoBitsPerSecond: 10_000_000,
+        videoBitsPerSecond: 5_000_000,
       });
 
       recorderRef.current = recorder;
