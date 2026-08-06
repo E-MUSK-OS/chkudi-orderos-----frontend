@@ -92,14 +92,14 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
   const isInitialLoad = useRef(true);
 
-  const [suggestions, setSuggestions] = useState<
-    { id: string; shortSku: string }[]
-  >([]);
+  // const [suggestions, setSuggestions] = useState<
+  //   { id: string; shortSku: string }[]
+  // >([]);
 
-  const [activeRow, setActiveRow] = useState<number | null>(null);
+  // const [activeRow, setActiveRow] = useState<number | null>(null);
 
-  const [selectedSuggestion, setSelectedSuggestion] = useState(0);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  // const [selectedSuggestion, setSelectedSuggestion] = useState(0);
+  // const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [copiedRow, setCopiedRow] = useState<GenerateRow | null>(null);
 
   const addNewRow = () => {
@@ -219,6 +219,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
   };
 
   const searchSku = async (shortSku: string, index: number) => {
+    console.log("Searching:", shortSku);
     // Loading
     setRows((prev) =>
       prev.map((row, i) =>
@@ -278,34 +279,34 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     }
   };
 
-  const getSuggestions = (value: string, rowIndex: number) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+  // const getSuggestions = (value: string, rowIndex: number) => {
+  //   if (debounceRef.current) {
+  //     clearTimeout(debounceRef.current);
+  //   }
 
-    if (!value.trim()) {
-      setSuggestions([]);
-      setActiveRow(null);
-      return;
-    }
+  //   if (!value.trim()) {
+  //     setSuggestions([]);
+  //     setActiveRow(null);
+  //     return;
+  //   }
 
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const response = await skuMappingService.suggestions(value, getToken());
+  //   debounceRef.current = setTimeout(async () => {
+  //     try {
+  //       const response = await skuMappingService.suggestions(value, getToken());
 
-        console.log(response);
+  //       console.log(response);
 
-        setSuggestions(response.data);
+  //       setSuggestions(response.data);
 
-        setActiveRow(rowIndex);
+  //       setActiveRow(rowIndex);
 
-        setSelectedSuggestion(0);
-      } catch {
-        setSuggestions([]);
-        setActiveRow(null);
-      }
-    }, 300);
-  };
+  //       setSelectedSuggestion(0);
+  //     } catch {
+  //       setSuggestions([]);
+  //       setActiveRow(null);
+  //     }
+  //   }, 300);
+  // };
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   useEffect(() => {
@@ -667,9 +668,9 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                             setRows(updated);
 
-                            setActiveRow(index);
+                            // setActiveRow(index);
 
-                            getSuggestions(value, index);
+                            // getSuggestions(value, index);
                           }}
                           // onKeyDown={async (e) => {
                           //   if (e.key !== "Enter") return;
@@ -721,8 +722,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                               setRows(updated);
 
-                              setSuggestions([]);
-                              setActiveRow(null);
+                              // setSuggestions([]);
+                              // setActiveRow(null);
 
                               // Search again (latest data mate)
                               searchSku(copiedRow.shortSku, index);
@@ -758,8 +759,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                               setRows(updated);
 
-                              setSuggestions([]);
-                              setActiveRow(null);
+                              // setSuggestions([]);
+                              // setActiveRow(null);
 
                               // Background search
                               searchSku(previousRow.shortSku, index);
@@ -782,17 +783,17 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                               e.preventDefault();
 
                               // Dropdown open hoy to suggestion ma move
-                              if (
-                                activeRow === index &&
-                                suggestions.length > 0
-                              ) {
-                                setSelectedSuggestion((prev) =>
-                                  prev < suggestions.length - 1
-                                    ? prev + 1
-                                    : prev,
-                                );
-                                return;
-                              }
+                              // if (
+                              //   activeRow === index &&
+                              //   suggestions.length > 0
+                              // ) {
+                              //   setSelectedSuggestion((prev) =>
+                              //     prev < suggestions.length - 1
+                              //       ? prev + 1
+                              //       : prev,
+                              //   );
+                              //   return;
+                              // }
 
                               // Dropdown open nathi to next row
                               if (index < rows.length - 1) {
@@ -807,15 +808,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                               e.preventDefault();
 
                               // Dropdown open hoy to suggestion ma move karo
-                              if (
-                                activeRow === index &&
-                                suggestions.length > 0
-                              ) {
-                                setSelectedSuggestion((prev) =>
-                                  prev > 0 ? prev - 1 : 0,
-                                );
-                                return;
-                              }
+                              // if (
+                              //   activeRow === index &&
+                              //   suggestions.length > 0
+                              // ) {
+                              //   setSelectedSuggestion((prev) =>
+                              //     prev > 0 ? prev - 1 : 0,
+                              //   );
+                              //   return;
+                              // }
 
                               // Dropdown open nathi to previous row
                               if (index > 0) {
@@ -830,36 +831,36 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                               e.preventDefault();
 
                               // Suggestion open hoy to select karo
-                              if (
-                                activeRow === index &&
-                                suggestions.length > 0
-                              ) {
-                                const item = suggestions[selectedSuggestion];
+                              // if (
+                              //   activeRow === index &&
+                              //   suggestions.length > 0
+                              // ) {
+                              //   const item = suggestions[selectedSuggestion];
 
-                                if (!item) return;
+                              //   if (!item) return;
 
-                                const updated = [...rows];
+                              //   const updated = [...rows];
 
-                                updated[index].shortSku = item.shortSku;
+                              //   updated[index].shortSku = item.shortSku;
 
-                                setRows(updated);
+                              //   setRows(updated);
 
-                                setSuggestions([]);
+                              //   setSuggestions([]);
 
-                                setActiveRow(null);
+                              //   setActiveRow(null);
 
-                                searchSku(item.shortSku, index);
+                              //   searchSku(item.shortSku, index);
 
-                                if (index === rows.length - 1) {
-                                  addNewRow();
-                                }
+                              //   if (index === rows.length - 1) {
+                              //     addNewRow();
+                              //   }
 
-                                setTimeout(() => {
-                                  inputRefs.current[index + 1]?.focus();
-                                }, 100);
+                              //   setTimeout(() => {
+                              //     inputRefs.current[index + 1]?.focus();
+                              //   }, 100);
 
-                                return;
-                              }
+                              //   return;
+                              // }
 
                               // Suggestion open na hoy to normal search
                               if (!row.shortSku.trim()) return;
@@ -872,10 +873,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                             }
 
                             // ESC
-                            if (e.key === "Escape") {
-                              setSuggestions([]);
-                              setActiveRow(null);
-                            }
+                            // if (e.key === "Escape") {
+                            //   setSuggestions([]);
+                            //   setActiveRow(null);
+                            // }
                           }}
                         />
 

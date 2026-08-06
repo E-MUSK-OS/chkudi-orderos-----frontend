@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import CameraScanner from "./CameraScanner";
 
 interface Props {
   value: string;
@@ -27,14 +26,6 @@ export default function TrackingScanner({
     <div className="border border-slate-700 bg-[#0F172A] p-5">
       <div className="space-y-4">
         <div>
-          <div className="mb-4 lg:hidden">
-            <button
-              onClick={() => setCameraOpen(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-            >
-              📷 Scan By Camera
-            </button>
-          </div>
           <label className="mb-2 block text-lg font-medium text-white">
             Scan Tracking ID
           </label>
@@ -76,18 +67,6 @@ export default function TrackingScanner({
           </div>
         )}
       </div>
-      {cameraOpen && (
-        <div className="lg:hidden">
-          <CameraScanner
-            onClose={() => setCameraOpen(false)}
-            onDetected={(trackingId) => {
-              alert(trackingId);
-
-              setCameraOpen(false);
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 }
