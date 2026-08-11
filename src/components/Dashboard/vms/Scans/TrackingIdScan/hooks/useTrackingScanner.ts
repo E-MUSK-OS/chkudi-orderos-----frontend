@@ -48,18 +48,18 @@ export const useTrackingScanner = (
     if (!allTrackingIds.includes(value)) {
       if (!missingIds.includes(value)) {
         setMissingIds((prev) => [...prev, value]);
+      }
 
-        const audio = warningSound.current;
+      const audio = warningSound.current;
 
-        if (audio) {
-          try {
-            audio.pause();
-            audio.currentTime = 0;
+      if (audio) {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
 
-            await audio.play();
-          } catch (error) {
-            console.error("Warning sound failed:", error);
-          }
+          await audio.play();
+        } catch (error) {
+          console.error("Warning sound failed:", error);
         }
       }
 
