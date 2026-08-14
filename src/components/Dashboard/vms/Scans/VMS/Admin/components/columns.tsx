@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import Button from "@/components/ui/Button";
 import type { VMSItem } from "../types";
-import Image from "next/image";
+// import Image from "next/image";
 import { Download, Eye, Trash2 } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 
@@ -55,14 +55,12 @@ export const getColumns = ({
     ),
   },
 
-    {
+  {
     id: "account",
 
     header: "Account",
 
-    cell: ({ row }) => (
-      <span>{row.original.account?.accountName ?? "-"}</span>
-    ),
+    cell: ({ row }) => <span>{row.original.account?.accountName ?? "-"}</span>,
   },
 
   {
@@ -70,18 +68,48 @@ export const getColumns = ({
 
     header: "Thumbnail",
 
+    // cell: ({ row }) => {
+    //   if (!row.original.thumbnailUrl) {
+    //     return <div className="h-[70px] w-[100px] bg-slate-800" />;
+    //   }
+
+    //   return (
+    //     <Image
+    //       src={row.original.thumbnailUrl}
+    //       alt="thumbnail"
+    //       width={90}
+    //       height={60}
+    //       className="object-cover border border-slate-700"
+    //     />
+    //   );
+    // },
+
     cell: ({ row }) => {
+      console.log("VMS ITEM:", row.original);
+      console.log("THUMBNAIL:", row.original.thumbnailUrl);
+
       if (!row.original.thumbnailUrl) {
-        return <div className="h-[70px] w-[100px] bg-slate-800" />;
+        return (
+          <div className="h-[70px] w-[100px] bg-red-500 text-white">
+            No Thumbnail
+          </div>
+        );
       }
 
       return (
-        <Image
+        // <Image
+        //   src={row.original.thumbnailUrl}
+        //   alt="thumbnail"
+        //   width={100}
+        //   height={70}
+        //   className="h-[70px] w-[100px] object-cover border border-slate-700"
+        // />
+        <img
           src={row.original.thumbnailUrl}
           alt="thumbnail"
           width={90}
           height={60}
-          className="object-cover border border-slate-700"
+          className="h-[60px] w-[90px] border border-slate-700 object-cover"
         />
       );
     },
@@ -114,7 +142,6 @@ export const getColumns = ({
 
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-
         <Button
           size="sm"
           variant="secondary"
