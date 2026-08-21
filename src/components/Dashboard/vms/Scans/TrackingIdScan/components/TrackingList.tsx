@@ -139,50 +139,8 @@ export default function TrackingList() {
     [accounts],
   );
 
-  // useEffect(() => {
-  //   if (!userId) return;
-
-  //   const handleTrackingUpdate = (payload: {
-  //     trackingId: string;
-  //     userId: string;
-  //     scanId: string;
-  //     packingScanStatus: string;
-  //   }) => {
-  //     console.log("📦 TRACKING UPDATE RECEIVED:", payload);
-
-  //     queryClient.invalidateQueries({
-  //       queryKey: ["user-vms", userId],
-  //     });
-  //   };
-
-  //   socket.on("tracking:updated", handleTrackingUpdate);
-
-  //   return () => {
-  //     socket.off("tracking:updated", handleTrackingUpdate);
-  //   };
-  // }, [userId, queryClient]);
-
   useEffect(() => {
     if (!userId) return;
-
-    // Socket connect
-    socket.connect();
-
-    console.log("🔌 Connecting socket...");
-
-    // Join user room
-    socket.emit("join:user", userId);
-
-    console.log("👤 Joining user room:", userId);
-
-    const handleConnect = () => {
-      console.log("🟢 Tracking Socket Connected:", socket.id);
-
-      // Connection થયા પછી room join કરવો
-      socket.emit("join:user", userId);
-
-      console.log("👤 Joined user room:", `user:${userId}`);
-    };
 
     const handleTrackingUpdate = (payload: {
       trackingId: string;
@@ -197,16 +155,90 @@ export default function TrackingList() {
       });
     };
 
-    socket.on("connect", handleConnect);
     socket.on("tracking:updated", handleTrackingUpdate);
 
     return () => {
-      socket.off("connect", handleConnect);
       socket.off("tracking:updated", handleTrackingUpdate);
-
-      socket.disconnect();
     };
   }, [userId, queryClient]);
+
+  // useEffect(() => {
+  //   socket.connect();
+
+  //   const handleConnect = () => {
+  //     console.log("🟢 Socket connected:", socket.id);
+
+  //     if (userId) {
+  //       socket.emit("join:user", userId);
+  //     }
+  //   };
+
+  //   const handleDisconnect = (reason: string) => {
+  //     console.log("🔴 Socket disconnected:", reason);
+  //   };
+
+  //   const handleConnectError = (error: Error) => {
+  //     console.error("❌ Socket connection error:", error.message);
+  //   };
+
+  //   socket.on("connect", handleConnect);
+  //   socket.on("disconnect", handleDisconnect);
+  //   socket.on("connect_error", handleConnectError);
+
+  //   return () => {
+  //     socket.off("connect", handleConnect);
+  //     socket.off("disconnect", handleDisconnect);
+  //     socket.off("connect_error", handleConnectError);
+
+  //     socket.disconnect();
+  //   };
+  // }, [userId]);
+
+  // useEffect(() => {
+  //   if (!userId) return;
+
+  //   // Socket connect
+  //   socket.connect();
+
+  //   console.log("🔌 Connecting socket...");
+
+  //   // Join user room
+  //   socket.emit("join:user", userId);
+
+  //   console.log("👤 Joining user room:", userId);
+
+  //   const handleConnect = () => {
+  //     console.log("🟢 Tracking Socket Connected:", socket.id);
+
+  //     // Connection થયા પછી room join કરવો
+  //     socket.emit("join:user", userId);
+
+  //     console.log("👤 Joined user room:", `user:${userId}`);
+  //   };
+
+  //   const handleTrackingUpdate = (payload: {
+  //     trackingId: string;
+  //     userId: string;
+  //     scanId: string;
+  //     packingScanStatus: string;
+  //   }) => {
+  //     console.log("📦 TRACKING UPDATE RECEIVED:", payload);
+
+  //     queryClient.invalidateQueries({
+  //       queryKey: ["user-vms", userId],
+  //     });
+  //   };
+
+  //   socket.on("connect", handleConnect);
+  //   socket.on("tracking:updated", handleTrackingUpdate);
+
+  //   return () => {
+  //     socket.off("connect", handleConnect);
+  //     socket.off("tracking:updated", handleTrackingUpdate);
+
+  //     socket.disconnect();
+  //   };
+  // }, [userId, queryClient]);
 
   return (
     <>
