@@ -139,60 +139,60 @@ export default function TrackingList() {
     [accounts],
   );
 
-  // useEffect(() => {
-  //   if (!userId) return;
-
-  //   const handleTrackingUpdate = (payload: {
-  //     trackingId: string;
-  //     userId: string;
-  //     scanId: string;
-  //     packingScanStatus: string;
-  //   }) => {
-  //     console.log("📦 TRACKING UPDATE RECEIVED:", payload);
-
-  //     queryClient.invalidateQueries({
-  //       queryKey: ["user-vms", userId],
-  //     });
-  //   };
-
-  //   socket.on("tracking:updated", handleTrackingUpdate);
-
-  //   return () => {
-  //     socket.off("tracking:updated", handleTrackingUpdate);
-  //   };
-  // }, [userId, queryClient]);
-
   useEffect(() => {
-    socket.connect();
+    if (!userId) return;
 
-    const handleConnect = () => {
-      console.log("🟢 Socket connected:", socket.id);
+    const handleTrackingUpdate = (payload: {
+      trackingId: string;
+      userId: string;
+      scanId: string;
+      packingScanStatus: string;
+    }) => {
+      console.log("📦 TRACKING UPDATE RECEIVED:", payload);
 
-      if (userId) {
-        socket.emit("join:user", userId);
-      }
+      queryClient.invalidateQueries({
+        queryKey: ["user-vms", userId],
+      });
     };
 
-    const handleDisconnect = (reason: string) => {
-      console.log("🔴 Socket disconnected:", reason);
-    };
-
-    const handleConnectError = (error: Error) => {
-      console.error("❌ Socket connection error:", error.message);
-    };
-
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("connect_error", handleConnectError);
+    socket.on("tracking:updated", handleTrackingUpdate);
 
     return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("connect_error", handleConnectError);
-
-      socket.disconnect();
+      socket.off("tracking:updated", handleTrackingUpdate);
     };
-  }, [userId]);
+  }, [userId, queryClient]);
+
+  // useEffect(() => {
+  //   socket.connect();
+
+  //   const handleConnect = () => {
+  //     console.log("🟢 Socket connected:", socket.id);
+
+  //     if (userId) {
+  //       socket.emit("join:user", userId);
+  //     }
+  //   };
+
+  //   const handleDisconnect = (reason: string) => {
+  //     console.log("🔴 Socket disconnected:", reason);
+  //   };
+
+  //   const handleConnectError = (error: Error) => {
+  //     console.error("❌ Socket connection error:", error.message);
+  //   };
+
+  //   socket.on("connect", handleConnect);
+  //   socket.on("disconnect", handleDisconnect);
+  //   socket.on("connect_error", handleConnectError);
+
+  //   return () => {
+  //     socket.off("connect", handleConnect);
+  //     socket.off("disconnect", handleDisconnect);
+  //     socket.off("connect_error", handleConnectError);
+
+  //     socket.disconnect();
+  //   };
+  // }, [userId]);
 
   // useEffect(() => {
   //   if (!userId) return;
