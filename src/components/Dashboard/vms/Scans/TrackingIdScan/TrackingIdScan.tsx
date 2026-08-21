@@ -7,15 +7,15 @@ import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import TrackingList from "./components/TrackingList";
 
 export default function TrackingIdScan() {
-  const router = useRouter();
+  // const router = useRouter();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 5000); // Every 5 seconds
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     router.refresh();
+  //   }, 5000); // Every 5 seconds
 
-    return () => clearInterval(interval);
-  }, [router]);
+  //   return () => clearInterval(interval);
+  // }, [router]);
 
   return (
     <DashboardLayout title="TrackingId Scan">

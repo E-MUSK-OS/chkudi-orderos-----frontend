@@ -23,12 +23,20 @@ export const notificationKeys = {
 // Get Notifications
 // =====================================
 
+// export const useNotifications = () => {
+//   return useQuery({
+//     queryKey: notificationKeys.all,
+//     queryFn: getNotifications,
+//     refetchInterval: 5000,
+//     refetchIntervalInBackground: true,
+//   });
+// };
 export const useNotifications = () => {
   return useQuery({
     queryKey: notificationKeys.all,
     queryFn: getNotifications,
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -43,13 +51,22 @@ export const useNotifications = () => {
 //   });
 // };
 
+// export const useUnreadNotificationCount = () => {
+//   return useQuery({
+//     queryKey: notificationKeys.unreadCount,
+//     queryFn: getUnreadNotificationCount,
+
+//     refetchInterval: 5000,
+//     refetchIntervalInBackground: true,
+//   });
+// };
+
 export const useUnreadNotificationCount = () => {
   return useQuery({
     queryKey: notificationKeys.unreadCount,
     queryFn: getUnreadNotificationCount,
-
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 

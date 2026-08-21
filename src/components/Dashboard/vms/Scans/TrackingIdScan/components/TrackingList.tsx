@@ -15,8 +15,11 @@ import { useOperators } from "../../../Admin/User/operator/hooks/useOperators";
 import { useAccounts } from "../../../Admin/Account/hooks/useAccounts";
 import TrackingToolbar from "./TrackingToolbar";
 import ScanSummary from "./ScanSummary";
+import { useQueryClient } from "@tanstack/react-query";
+import { socket } from "@/lib/socket";
 
 export default function TrackingList() {
+  const queryClient = useQueryClient();
   const { data, loading, userId, refetch } = useVMS();
 
   const { scanValue, setScanValue, missingIds, message, handleScan } =
@@ -135,6 +138,75 @@ export default function TrackingList() {
     ],
     [accounts],
   );
+
+  // useEffect(() => {
+  //   if (!userId) return;
+
+  //   const handleTrackingUpdate = (payload: {
+  //     trackingId: string;
+  //     userId: string;
+  //     scanId: string;
+  //     packingScanStatus: string;
+  //   }) => {
+  //     console.log("📦 TRACKING UPDATE RECEIVED:", payload);
+
+  //     queryClient.invalidateQueries({
+  //       queryKey: ["user-vms", userId],
+  //     });
+  //   };
+
+  //   socket.on("tracking:updated", handleTrackingUpdate);
+
+  //   return () => {
+  //     socket.off("tracking:updated", handleTrackingUpdate);
+  //   };
+  // }, [userId, queryClient]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // Socket connect
+    socket.connect();
+
+    console.log("🔌 Connecting socket...");
+
+    // Join user room
+    socket.emit("join:user", userId);
+
+    console.log("👤 Joining user room:", userId);
+
+    const handleConnect = () => {
+      console.log("🟢 Tracking Socket Connected:", socket.id);
+
+      // Connection થયા પછી room join કરવો
+      socket.emit("join:user", userId);
+
+      console.log("👤 Joined user room:", `user:${userId}`);
+    };
+
+    const handleTrackingUpdate = (payload: {
+      trackingId: string;
+      userId: string;
+      scanId: string;
+      packingScanStatus: string;
+    }) => {
+      console.log("📦 TRACKING UPDATE RECEIVED:", payload);
+
+      queryClient.invalidateQueries({
+        queryKey: ["user-vms", userId],
+      });
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("tracking:updated", handleTrackingUpdate);
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("tracking:updated", handleTrackingUpdate);
+
+      socket.disconnect();
+    };
+  }, [userId, queryClient]);
 
   return (
     <>

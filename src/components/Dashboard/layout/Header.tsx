@@ -19,6 +19,7 @@ import {
 import NotificationDropdown from "../Notification/components/NotificationDropdown";
 import { useNotificationSound } from "@/components/Dashboard/Notification/hooks/useNotificationSound";
 import { useBrowserNotification } from "@/components/Dashboard/Notification/hooks/useBrowserNotification";
+import { useNotificationSocket } from "@/components/Dashboard/Notification/hooks/useNotificationSocket";
 
 interface HeaderProps {
   title: string;
@@ -39,6 +40,8 @@ export default function Header({
   const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+
+  useNotificationSocket();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
