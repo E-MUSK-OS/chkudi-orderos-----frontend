@@ -138,10 +138,29 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "SkuMapping",
-    href: "/dashboard/sku-mapping",
+    label: "Barcode Print",
+    href: "/dashboard/barcode-print",
     icon: ScanBarcode,
+    children: [
+      // {
+      //   label: "Dashboard",
+      //   href: "/dashboard/barcode-print",
+      // },
+      {
+        label: "Barcode Design",
+        href: "/dashboard/barcode-design",
+      },
+      {
+        label: "Barcode Print",
+        href: "/dashboard/sku-mapping",
+      },
+    ],
   },
+  // {
+  //   label: "SkuMapping",
+  //   href: "/dashboard/sku-mapping",
+  //   icon: ScanBarcode,
+  // },
 ];
 
 export default function Sidebar({
