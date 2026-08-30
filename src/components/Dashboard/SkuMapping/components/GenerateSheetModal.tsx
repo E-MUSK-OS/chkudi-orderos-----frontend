@@ -30,6 +30,7 @@ interface GenerateRow {
   id: number;
   shortSku: string;
   barcodeSku: string;
+  fullSku: string;
   ordercookSku: string;
 
   loading: boolean;
@@ -52,6 +53,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       id: 1,
       shortSku: "",
       barcodeSku: "",
+      fullSku: "",
       ordercookSku: "",
       loading: false,
       error: false,
@@ -109,6 +111,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         id: Date.now(),
         shortSku: "",
         barcodeSku: "",
+        fullSku: "",
         ordercookSku: "",
 
         loading: false,
@@ -243,6 +246,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             ? {
                 ...row,
                 barcodeSku: response.data.barcodeSku,
+                fullSku: response.data.fullSku,
 
                 ordercookSku: response.data.ordercookSku,
 
@@ -266,6 +270,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             ? {
                 ...row,
                 barcodeSku: "",
+                fullSku: "",
                 ordercookSku: "",
                 loading: false,
                 error: true,
@@ -335,6 +340,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         header: "Barcode Qty",
         key: "barcodeQty",
         width: 15,
+      },
+      {
+        header: "Full SKU",
+        key: "fullSku",
+        width: 35,
       },
       {
         header: "OrderCook SKU",
@@ -434,6 +444,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           shortSku: row.shortSku,
           barcodeSku: row.barcodeSku,
           barcodeQty: 1,
+          fullSku: row.fullSku,
           ordercookSku: row.ordercookSku,
           ordercookQty: 1,
         });
@@ -452,8 +463,9 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
     // Heading
     worksheet.getCell(`I${summaryStartRow}`).value = "Barcode SKU";
-    worksheet.getCell(`J${summaryStartRow}`).value = "OrderCook SKU";
-    worksheet.getCell(`K${summaryStartRow}`).value = "Qty";
+    worksheet.getCell(`J${summaryStartRow}`).value = "Full SKU";
+    worksheet.getCell(`K${summaryStartRow}`).value = "OrderCook SKU";
+    worksheet.getCell(`L${summaryStartRow}`).value = "Qty";
 
     // Heading Style
     ["I", "J", "K"].forEach((col) => {
@@ -489,6 +501,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       string,
       {
         barcodeSku: string;
+        fullSku: string;
         ordercookSku: string;
         qty: number;
       }
@@ -497,13 +510,14 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     rows
       .filter((row) => row.barcodeSku.trim() && row.ordercookSku.trim())
       .forEach((row) => {
-        const key = `${row.barcodeSku}|${row.ordercookSku}`;
+        const key = `${row.barcodeSku}|${row.fullSku}|${row.ordercookSku}`;
 
         if (summaryMap.has(key)) {
           summaryMap.get(key)!.qty += 1;
         } else {
           summaryMap.set(key, {
             barcodeSku: row.barcodeSku,
+            fullSku: row.fullSku,
             ordercookSku: row.ordercookSku,
             qty: 1,
           });
@@ -515,10 +529,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
     summaryMap.forEach((item) => {
       worksheet.getCell(`I${currentRow}`).value = item.barcodeSku;
-      worksheet.getCell(`J${currentRow}`).value = item.ordercookSku;
-      worksheet.getCell(`K${currentRow}`).value = item.qty;
+      worksheet.getCell(`J${currentRow}`).value = item.fullSku;
+      worksheet.getCell(`K${currentRow}`).value = item.ordercookSku;
+      worksheet.getCell(`L${currentRow}`).value = item.qty;
 
-      ["I", "J", "K"].forEach((col) => {
+      ["I", "J", "K", "L"].forEach((col) => {
         worksheet.getCell(`${col}${currentRow}`).border = {
           top: { style: "thin" },
           left: { style: "thin" },
@@ -534,6 +549,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     worksheet.getColumn("I").width = 35;
     worksheet.getColumn("J").width = 35;
     worksheet.getColumn("K").width = 15;
+    worksheet.getColumn("L").width = 15;
 
     const buffer = await workbook.xlsx.writeBuffer();
 
@@ -558,6 +574,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           shortSku: row.shortSku,
 
           barcodeSku: row.barcodeSku,
+          fullSku: row.fullSku,
 
           ordercookSku: row.ordercookSku,
 
@@ -627,6 +644,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                   <th className="w-[30%] border px-4 py-3 text-left">
                     Barcode SKU
+                  </th>
+
+                  <th className="w-[30%] border px-4 py-3 text-left">
+                    Full SKU
                   </th>
 
                   <th className="w-[30%] border px-4 py-3 text-left">
@@ -928,6 +949,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                     <td className="border px-4 py-3">
                       {row.loading ? "Searching..." : row.barcodeSku || "-"}
+                    </td>
+
+                    <td className="border px-4 py-3">
+                      {row.loading ? "Searching..." : row.fullSku || "-"}
                     </td>
 
                     <td className="border px-4 py-3">

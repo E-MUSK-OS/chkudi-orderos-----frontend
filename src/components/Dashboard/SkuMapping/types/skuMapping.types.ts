@@ -2,7 +2,8 @@ export interface SkuMapping {
   id: string;
   shortSku: string;
   barcodeSku: string;
-  ordercookSku: string;
+  fullSku: string;
+  asinBarcode: string;
   createdAt: string;
   updatedAt: string;
 }
