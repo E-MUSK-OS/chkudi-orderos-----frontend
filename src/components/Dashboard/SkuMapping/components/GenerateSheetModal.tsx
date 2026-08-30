@@ -599,6 +599,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         .map((row) => ({
           shortSku: row.shortSku,
           barcodeSku: row.barcodeSku,
+          fullSku: row.fullSku,
           ordercookSku: row.ordercookSku,
         }));
 
