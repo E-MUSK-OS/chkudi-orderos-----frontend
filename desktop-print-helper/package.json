@@ -1,0 +1,8 @@
+{
+  "name": "labelcraft-helper",
+  "version": "1.0.0",
+  "bin": "printer-helper.js",
+  "pkg": {
+    "targets": [ "node18-win-x64" ]
+  }
+}

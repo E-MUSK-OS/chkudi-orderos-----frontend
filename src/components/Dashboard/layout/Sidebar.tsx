@@ -147,29 +147,19 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Barcode Print",
-    href: "/dashboard/barcode-print",
+    label: "Barcode/Labels",
     icon: ScanBarcode,
     children: [
-      // {
-      //   label: "Dashboard",
-      //   href: "/dashboard/barcode-print",
-      // },
       {
-        label: "Barcode Design",
-        href: "/dashboard/barcode-design",
+        label: "Designer",
+        href: "/dashboard/labels/designer",
       },
       {
-        label: "Barcode Print",
+        label: "SKU Mapping",
         href: "/dashboard/sku-mapping",
       },
     ],
   },
-  // {
-  //   label: "SkuMapping",
-  //   href: "/dashboard/sku-mapping",
-  //   icon: ScanBarcode,
-  // },
 ];
 
 export default function Sidebar({

@@ -9,6 +9,7 @@ type MenuItem = {
   icon: LucideIcon;
   onClick: () => void;
   variant?: "default" | "danger";
+  disabled?: boolean;
 };
 
 interface Props {
@@ -136,21 +137,20 @@ export default function ActionMenu({ items }: Props) {
               return (
                 <button
                   key={item.label}
+                  disabled={item.disabled}
                   onClick={() => {
                     setOpen(false);
                     item.onClick();
                   }}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition
-
-                    ${
-                      item.variant === "danger"
-                        ? "text-red-600 hover:bg-red-50"
-                        : "text-slate-700 hover:bg-slate-50"
-                    }
-                  `}
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition ${
+                    item.disabled ? "opacity-50 cursor-not-allowed" : ""
+                  } ${
+                    item.variant === "danger"
+                      ? "text-red-600 hover:bg-red-50"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
                 >
                   <Icon size={16} />
-
                   {item.label}
                 </button>
               );
