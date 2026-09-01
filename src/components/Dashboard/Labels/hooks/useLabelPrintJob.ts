@@ -158,6 +158,62 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     setStep("summary");
   }, [template, queue, selectedForPrint]);
 
+  const printViaWebUsb = useCallback(async () => {
+    if (!template) return;
+    setStep("printing");
+
+    const itemsToPrint = queue.filter(q => selectedForPrint.has(q.rowId) && q.status !== "pending");
+    setQueue(prev => prev.map(q => selectedForPrint.has(q.rowId) ? { ...q, status: "pending" } : q));
+    
+    const succeeded: PrintQueueItem[] = [];
+    const failed: PrintQueueItem[] = [];
+
+    for (const item of itemsToPrint) {
+      try {
+        const canvas = await renderLabelToCanvas(template, item.product || {});
+        await printAgentService.printViaWebUsb(canvas);
+        succeeded.push(item);
+        setQueue(prev => prev.map(q => q.rowId === item.rowId ? { ...q, status: "matched" } : q));
+      } catch (err) {
+        console.error(err);
+        const errorMessage = (err as Error).message || "Print failed";
+        const failedItem = { ...item, errorMessage, status: "error" as const };
+        failed.push(failedItem);
+        setQueue(prev => prev.map(q => q.rowId === item.rowId ? failedItem : q));
+        
+        // Stop if user cancels USB prompt
+        if (errorMessage.toLowerCase().includes("no device selected")) {
+           break;
+        }
+      }
+    }
+
+    setSuccessfulJobs(prev => [...prev, ...succeeded]);
+    setFailedJobs(prev => {
+      const newFailed = prev.filter(p => !succeeded.find(s => s.rowId === p.rowId));
+      for (const fail of failed) {
+        if (!newFailed.find(f => f.rowId === fail.rowId)) {
+          newFailed.push(fail);
+        }
+      }
+      return newFailed;
+    });
+
+    if (succeeded.length > 0) {
+      const itemsMap = new Map<string, number>();
+      succeeded.forEach(j => {
+        itemsMap.set(j.lookupSku, (itemsMap.get(j.lookupSku) || 0) + 1);
+      });
+      const items = Array.from(itemsMap.entries()).map(([sku, count]) => ({ sku, count }));
+      
+      try {
+        labelService.logPrintSession(items).catch(console.warn);
+      } catch (err) {}
+    }
+
+    setStep("summary");
+  }, [template, queue, selectedForPrint]);
+
   const retryFailed = useCallback(() => {
     const failedIds = new Set(failedJobs.map(f => f.rowId));
     setSelectedForPrint(failedIds);
@@ -180,6 +236,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     proceedToPrinter,
     refreshPrinters,
     startPrinting,
+    printViaWebUsb,
     retryFailed,
   };
 }
