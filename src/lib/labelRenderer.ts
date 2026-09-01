@@ -12,6 +12,7 @@ export interface ProductLookupResult {
   masterSku?: string;
   brand?: string;
   size?: string;
+  color?: string;
   mrp?: number | null;
   asin?: string | null;
   manufacturingMonth?: string | null;
