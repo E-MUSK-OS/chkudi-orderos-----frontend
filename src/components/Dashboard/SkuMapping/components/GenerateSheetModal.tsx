@@ -694,7 +694,9 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                       <div className="flex items-center gap-2">
                         <span>{index + 1}</span>
                         {printedRowIds.has(row.id) && (
-                          <BadgeCheck className="w-4 h-4 text-green-600" title="Printed" />
+                          <span title="Printed">
+                            <BadgeCheck className="w-4 h-4 text-green-600" />
+                          </span>
                         )}
                       </div>
                     </td>
