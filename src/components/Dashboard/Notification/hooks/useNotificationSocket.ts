@@ -10,6 +10,10 @@ export const useNotificationSocket = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SOCKET_URL) {
+      return;
+    }
+
     const userData = localStorage.getItem("user");
 
     if (!userData) {

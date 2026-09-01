@@ -135,6 +135,15 @@ const navItems: NavItem[] = [
           },
         ],
       },
+      {
+        label: "Amazon",
+        children: [
+          {
+            label: "Order Process",
+            href: "/dashboard/order-process/amazon/order-process",
+          },
+        ],
+      },
     ],
   },
   {
