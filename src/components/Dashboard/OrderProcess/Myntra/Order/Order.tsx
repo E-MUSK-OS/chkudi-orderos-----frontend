@@ -7,7 +7,6 @@ import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import Toolbar from "./components/Toolbar";
 import OrderTable from "./components/OrderTable";
 import Pagination from "./components/Pagination";
-
 import { orders as initialOrders } from "./data";
 import { generatePicklist } from "./utils/generatePicklist";
 import { downloadPicklistPDF } from "./pdf/PicklistPDF";

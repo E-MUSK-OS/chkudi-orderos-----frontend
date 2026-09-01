@@ -49,9 +49,7 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
 
               <th className="px-4 py-3 text-left">Barcode SKU</th>
 
-              <th className="px-4 py-3 text-left">Full SKU</th>
-
-              <th className="px-4 py-3 text-left">Asin NO</th>
+              <th className="px-4 py-3 text-left">OrderCook SKU</th>
 
               <th className="px-4 py-3 text-center">Action</th>
             </tr>
@@ -64,9 +62,7 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
 
                 <td className="px-4 py-3">{item.barcodeSku}</td>
 
-                <td className="px-4 py-3">{item.fullSku}</td>
-
-                <td className="px-4 py-3">{item.asinBarcode}</td>
+                <td className="px-4 py-3">{item.ordercookSku}</td>
 
                 <td className="px-4 py-3">
                   <div className="flex justify-center gap-2">

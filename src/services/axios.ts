@@ -1,8 +1,9 @@
 import axios from "axios";
 
+import { API_BASE_URL } from "@/lib/config";
+
 const axiosInstance = axios.create({
-  //   baseURL: "http://localhost:5000/api/v1",
-  baseURL: "https://chkudi-orderos-backend.vercel.app/api/v1",
+  baseURL: API_BASE_URL,
 });
 
 export default axiosInstance;

@@ -63,11 +63,10 @@ const Toolbar = ({
           <Button
             key={button.key}
             onClick={() => onStatusChange(button.key)}
-            className={`h-14 border transition-all duration-200 ${
-              status === button.key
+            className={`h-14 border transition-all duration-200 ${status === button.key
                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:text-white hover:bg-[#0A0E1A]"
                 : "bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-            }`}
+              }`}
           >
             {button.label} ({button.count})
           </Button>
@@ -114,9 +113,7 @@ const Toolbar = ({
               <div>
                 <Button
                   disabled={selectedRows.length === 0}
-                  onClick={() => {
-                    // TODO: Process Action
-                  }}
+                  onClick={() => {}}
                 >
                   <ArrowRight className="mr-2 h-4 w-4" />
                   Process ({selectedRows.length})

@@ -99,16 +99,6 @@ export default function DeleteSkuMappingModal({
                     {skuMapping.ordercookSku}
                   </span>
                 </div>
-
-                <div className="flex justify-between px-4 py-3">
-                  <span className="font-medium text-slate-500">
-                    Full SKU
-                  </span>
-
-                  <span className="font-semibold">
-                    {skuMapping.fullSku}
-                  </span>
-                </div>
               </div>
             </div>
           )}

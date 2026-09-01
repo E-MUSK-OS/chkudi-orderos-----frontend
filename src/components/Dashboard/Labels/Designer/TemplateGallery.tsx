@@ -1,0 +1,331 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Copy, Trash2, Edit2, Tag, Plus, Loader2 } from "lucide-react";
+import { labelService } from "../services/label.service";
+import { LabelTemplate, ProductLookupResult } from "../types/label.types";
+import { renderLabelToCanvas } from "@/lib/labelRenderer";
+import { toast } from "sonner";
+import { getMarketplaces } from "@/services/marketplaceAccount/marketplaceAccount.service";
+import { Marketplace } from "@/services/marketplaceAccount/marketplaceAccount.types";
+import ActionMenu from "@/components/ui/ActionMenu";
+import ConfirmModal from "./components/ConfirmModal";
+import ReactSelect from "@/components/ui/ReactSelect";
+
+const DUMMY_PRODUCT: ProductLookupResult = {
+  title: "Sample Product Name",
+  sku: "SAMPLE-SKU-123",
+  mrp: 199.99,
+  asin: "B00EXAMPLE",
+  size: "M",
+  manufacturingMonth: new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+};
+
+function TemplateThumbnail({ template }: { template: LabelTemplate }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.disconnect();
+      }
+    });
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    if (template.thumbnailUrl) {
+      setUrl(template.thumbnailUrl);
+      return;
+    }
+
+    let mounted = true;
+    renderLabelToCanvas(template, DUMMY_PRODUCT, 1).then(canvas => {
+      if (mounted) setUrl(canvas.toDataURL("image/png"));
+    }).catch(err => {
+      console.error(err);
+      if (mounted) setError(true);
+    });
+    return () => { mounted = false; };
+  }, [template, isVisible]);
+
+  if (error) {
+    return (
+      <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center bg-brand-navy text-gray-400 p-4 text-center">
+        <span className="text-sm font-medium">Preview unavailable</span>
+      </div>
+    );
+  }
+
+  if (!url) {
+    return (
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-brand-navy text-gray-400">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-brand-navy p-2 relative">
+      <img
+        src={url}
+        alt={template.name}
+        className="max-w-full max-h-full object-contain bg-[#111827] shadow-sm border border-stone-800"
+      />
+    </div>
+  );
+}
+
+export function TemplateGallery() {
+  const router = useRouter();
+  const [templates, setTemplates] = useState<LabelTemplate[]>([]);
+  const [marketplaces, setMarketplaces] = useState<Marketplace[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionInFlight, setActionInFlight] = useState(false);
+
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const [editingMarketplaceId, setEditingMarketplaceId] = useState<string | null>(null);
+  const isCancelingRename = useRef(false);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [tpls, mkts] = await Promise.all([
+        labelService.getTemplates(),
+        getMarketplaces().then(res => res.data).catch(() => [])
+      ]);
+      setTemplates(tpls);
+      setMarketplaces(mkts);
+    } catch (err) {
+      toast.error("Failed to load templates");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleDuplicate = async (template: LabelTemplate) => {
+    if (actionInFlight) return;
+    setActionInFlight(true);
+    try {
+      const fullTemplate = await labelService.getTemplateById(template.id!);
+      if (!fullTemplate) throw new Error("Template not found");
+      const { id, name, ...rest } = fullTemplate;
+      const newTemplate = await labelService.createTemplate({
+        ...rest,
+        name: `Copy of ${name}`
+      });
+      toast.success("Template duplicated");
+      setTemplates(prev => [...prev, newTemplate]);
+    } catch (err) {
+      toast.error("Failed to duplicate template");
+    } finally {
+      setActionInFlight(false);
+    }
+  };
+
+  const triggerDelete = (id: string) => {
+    setDeleteModalId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModalId || actionInFlight) return;
+    setActionInFlight(true);
+    try {
+      await labelService.deleteTemplate(deleteModalId);
+      toast.success("Template deleted");
+      setTemplates(prev => prev.filter(t => t.id !== deleteModalId));
+    } catch (err) {
+      toast.error("Failed to delete template");
+    } finally {
+      setDeleteModalId(null);
+      setActionInFlight(false);
+    }
+  };
+
+  const submitRename = async (id: string) => {
+    if (!renameValue.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+    if (actionInFlight) return;
+    setActionInFlight(true);
+    try {
+      const template = templates.find(t => t.id === id);
+      if (!template) throw new Error("Template not found");
+      const updated = await labelService.updateTemplate(id, { ...template, name: renameValue.trim() });
+      setTemplates(prev => prev.map(t => t.id === id ? updated : t));
+      toast.success("Template renamed");
+    } catch (err) {
+      toast.error("Failed to rename template");
+    } finally {
+      setRenamingId(null);
+      setActionInFlight(false);
+    }
+  };
+
+  const submitMarketplace = async (id: string, marketplaceId: string) => {
+    if (actionInFlight) return;
+    setActionInFlight(true);
+    try {
+      const template = templates.find(t => t.id === id);
+      if (!template) throw new Error("Template not found");
+      const updated = await labelService.updateTemplate(id, { ...template, marketplaceId: marketplaceId || null });
+      setTemplates(prev => prev.map(t => t.id === id ? updated : t));
+      toast.success("Marketplace updated");
+    } catch (err) {
+      toast.error("Failed to update marketplace");
+    } finally {
+      setEditingMarketplaceId(null);
+      setActionInFlight(false);
+    }
+  };
+
+  const getMarketplaceName = (id?: string | null) => {
+    if (!id) return null;
+    return marketplaces.find(m => m.id === id)?.marketplaceName || "Unknown";
+  };
+
+  return (
+    <div className="p-6 max-w-8xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6 text-gray-900">Label Templates</h1>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64 text-gray-400">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Create New Card */}
+          <div
+            onClick={() => router.push("/dashboard/labels/designer?id=new")}
+            className="group cursor-pointer rounded-lg border-2 border-dashed border-gray-300 hover:border-[#E8C16D] hover:bg-stone-50 flex flex-col items-center justify-center aspect-[4/3] transition-all"
+          >
+            <div className="w-12 h-12 rounded-full bg-gray-200 group-hover:bg-[#E8C16D]/20 flex items-center justify-center mb-4 transition-colors">
+              <Plus className="w-6 h-6 text-gray-500 group-hover:text-[#E8C16D]" />
+            </div>
+            <span className="font-semibold text-gray-600 group-hover:text-gray-900">New Template</span>
+          </div>
+
+          {/* Template Cards */}
+          {templates.map(template => (
+            <div
+              key={template.id}
+              className="group cursor-pointer rounded-lg border border-stone-800 bg-[#111827] overflow-hidden hover:shadow-md transition-all flex flex-col relative"
+              onClick={() => router.push(`/dashboard/labels/designer?id=${template.id}`)}
+            >
+              <div className="aspect-[4/3] border-b border-stone-800 relative">
+                <TemplateThumbnail template={template} />
+              </div>
+
+              <div className="p-4 flex flex-col relative h-24">
+                <div className="pr-6">
+                  {renamingId === template.id ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      className="w-full text-sm font-semibold border-b border-[#E8C16D] focus:outline-none mb-1"
+                      value={renameValue}
+                      onChange={e => setRenameValue(e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                      onBlur={() => {
+                        if (!isCancelingRename.current) submitRename(template.id!);
+                        isCancelingRename.current = false;
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') submitRename(template.id!);
+                        if (e.key === 'Escape') {
+                          isCancelingRename.current = true;
+                          setRenamingId(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <h3 className="font-semibold text-white truncate" title={template.name}>
+                      {template.name}
+                    </h3>
+                  )}
+
+                  {editingMarketplaceId === template.id ? (
+                    <div onClick={e => e.stopPropagation()} className="mt-1">
+                      <ReactSelect
+                        menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                        options={[
+                          { label: "No Marketplace", value: "" },
+                          ...marketplaces.filter(m => m.isActive).map(m => ({
+                            label: m.marketplaceName,
+                            value: m.id
+                          }))
+                        ]}
+                        value={
+                          template.marketplaceId 
+                            ? { label: getMarketplaceName(template.marketplaceId) || "", value: template.marketplaceId }
+                            : { label: "No Marketplace", value: "" }
+                        }
+                        onChange={opt => {
+                          if (opt) submitMarketplace(template.id!, String(opt.value));
+                        }}
+                        onBlur={() => setEditingMarketplaceId(null)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-1">
+                      {template.marketplaceId && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                          {getMarketplaceName(template.marketplaceId)}
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-500">
+                        {template.settings.widthMm}x{template.settings.heightMm}mm
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Menu */}
+                <div 
+                  className="absolute top-4 right-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ActionMenu
+                    items={[
+                      { label: "Rename", icon: Edit2, onClick: () => { setRenamingId(template.id!); setRenameValue(template.name); }, disabled: actionInFlight },
+                      { label: "Duplicate", icon: Copy, onClick: () => handleDuplicate(template), disabled: actionInFlight },
+                      { label: "Assign Marketplace", icon: Tag, onClick: () => setEditingMarketplaceId(template.id!), disabled: actionInFlight },
+                      { label: "Delete", icon: Trash2, variant: "danger", onClick: () => triggerDelete(template.id!), disabled: actionInFlight },
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <ConfirmModal
+        open={deleteModalId !== null}
+        onClose={() => setDeleteModalId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Template"
+        description="Are you sure you want to delete this template? This action cannot be undone."
+        confirmLabel="Delete"
+        danger={true}
+      />
+    </div>
+  );
+}
+

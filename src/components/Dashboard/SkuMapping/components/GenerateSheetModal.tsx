@@ -14,12 +14,13 @@ import {
 import { skuMappingService } from "../services/skuMapping.service";
 import { getToken } from "@/utils/auth";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
-import {
-  useSaveSheetDraft,
-  useSheetDraft,
-  useDeleteSheetDraft,
-} from "../hooks/useSheetDraft";
+import { Trash2, Printer } from "lucide-react";
+import { useDeleteSheetDraft, useSaveSheetDraft, useSheetDraft } from "../hooks/useSheetDraft";
+import LabelSelectionModal from "@/components/Dashboard/Labels/components/LabelSelectionModal";
+import PrintExecutionModal from "@/components/Dashboard/Labels/components/PrintExecutionModal";
+import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BadgeCheck } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -30,7 +31,6 @@ interface GenerateRow {
   id: number;
   shortSku: string;
   barcodeSku: string;
-  fullSku: string;
   ordercookSku: string;
 
   loading: boolean;
@@ -53,7 +53,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       id: 1,
       shortSku: "",
       barcodeSku: "",
-      fullSku: "",
       ordercookSku: "",
       loading: false,
       error: false,
@@ -103,6 +102,30 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
   // const [selectedSuggestion, setSelectedSuggestion] = useState(0);
   // const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [copiedRow, setCopiedRow] = useState<GenerateRow | null>(null);
+  const [isLabelPickerOpen, setIsLabelPickerOpen] = useState(false);
+  
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
+  const [printedRowIds, setPrintedRowIds] = useState<Set<number>>(new Set());
+  const [isPrintExecutionOpen, setIsPrintExecutionOpen] = useState(false);
+  const [activePrintTemplate, setActivePrintTemplate] = useState<LabelTemplate | null>(null);
+
+  const toggleAllRows = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(rows.filter(r => r.shortSku.trim() || r.barcodeSku.trim()).map(r => r.id));
+      setSelectedRowIds(allIds);
+    } else {
+      setSelectedRowIds(new Set());
+    }
+  };
+
+  const toggleRow = (id: number, checked: boolean) => {
+    setSelectedRowIds(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
 
   const addNewRow = () => {
     setRows((prev) => [
@@ -111,7 +134,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         id: Date.now(),
         shortSku: "",
         barcodeSku: "",
-        fullSku: "",
         ordercookSku: "",
 
         loading: false,
@@ -246,7 +268,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             ? {
                 ...row,
                 barcodeSku: response.data.barcodeSku,
-                fullSku: response.data.fullSku,
 
                 ordercookSku: response.data.ordercookSku,
 
@@ -270,7 +291,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             ? {
                 ...row,
                 barcodeSku: "",
-                fullSku: "",
                 ordercookSku: "",
                 loading: false,
                 error: true,
@@ -340,11 +360,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         header: "Barcode Qty",
         key: "barcodeQty",
         width: 15,
-      },
-      {
-        header: "Full SKU",
-        key: "fullSku",
-        width: 35,
       },
       {
         header: "OrderCook SKU",
@@ -444,7 +459,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           shortSku: row.shortSku,
           barcodeSku: row.barcodeSku,
           barcodeQty: 1,
-          fullSku: row.fullSku,
           ordercookSku: row.ordercookSku,
           ordercookQty: 1,
         });
@@ -463,9 +477,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
     // Heading
     worksheet.getCell(`I${summaryStartRow}`).value = "Barcode SKU";
-    worksheet.getCell(`J${summaryStartRow}`).value = "Full SKU";
-    worksheet.getCell(`K${summaryStartRow}`).value = "OrderCook SKU";
-    worksheet.getCell(`L${summaryStartRow}`).value = "Qty";
+    worksheet.getCell(`J${summaryStartRow}`).value = "OrderCook SKU";
+    worksheet.getCell(`K${summaryStartRow}`).value = "Qty";
 
     // Heading Style
     ["I", "J", "K"].forEach((col) => {
@@ -501,7 +514,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       string,
       {
         barcodeSku: string;
-        fullSku: string;
         ordercookSku: string;
         qty: number;
       }
@@ -510,14 +522,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     rows
       .filter((row) => row.barcodeSku.trim() && row.ordercookSku.trim())
       .forEach((row) => {
-        const key = `${row.barcodeSku}|${row.fullSku}|${row.ordercookSku}`;
+        const key = `${row.barcodeSku}|${row.ordercookSku}`;
 
         if (summaryMap.has(key)) {
           summaryMap.get(key)!.qty += 1;
         } else {
           summaryMap.set(key, {
             barcodeSku: row.barcodeSku,
-            fullSku: row.fullSku,
             ordercookSku: row.ordercookSku,
             qty: 1,
           });
@@ -529,11 +540,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
     summaryMap.forEach((item) => {
       worksheet.getCell(`I${currentRow}`).value = item.barcodeSku;
-      worksheet.getCell(`J${currentRow}`).value = item.fullSku;
-      worksheet.getCell(`K${currentRow}`).value = item.ordercookSku;
-      worksheet.getCell(`L${currentRow}`).value = item.qty;
+      worksheet.getCell(`J${currentRow}`).value = item.ordercookSku;
+      worksheet.getCell(`K${currentRow}`).value = item.qty;
 
-      ["I", "J", "K", "L"].forEach((col) => {
+      ["I", "J", "K"].forEach((col) => {
         worksheet.getCell(`${col}${currentRow}`).border = {
           top: { style: "thin" },
           left: { style: "thin" },
@@ -549,7 +559,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     worksheet.getColumn("I").width = 35;
     worksheet.getColumn("J").width = 35;
     worksheet.getColumn("K").width = 15;
-    worksheet.getColumn("L").width = 15;
 
     const buffer = await workbook.xlsx.writeBuffer();
 
@@ -574,7 +583,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           shortSku: row.shortSku,
 
           barcodeSku: row.barcodeSku,
-          fullSku: row.fullSku,
 
           ordercookSku: row.ordercookSku,
 
@@ -599,7 +607,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         .map((row) => ({
           shortSku: row.shortSku,
           barcodeSku: row.barcodeSku,
-          fullSku: row.fullSku,
           ordercookSku: row.ordercookSku,
         }));
 
@@ -627,8 +634,18 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </div>
         </DialogHeader>
 
-        <div className="flex justify-end pt-5 pr-7">
-          <Button variant="primary" onClick={clearSheet} className="w-50">
+        <div className="flex justify-end items-center gap-3 pt-5 pr-7">
+          <Button 
+            variant="secondary" 
+            fullWidth={false} 
+            className="w-40" 
+            leftIcon={<Printer className="h-4 w-4" />} 
+            onClick={() => setIsLabelPickerOpen(true)}
+            disabled={selectedRowIds.size === 0}
+          >
+            Print ({selectedRowIds.size})
+          </Button>
+          <Button variant="primary" fullWidth={false} className="w-40" leftIcon={<Trash2 className="h-4 w-4" />} onClick={clearSheet}>
             Clear Sheet
           </Button>
         </div>
@@ -637,6 +654,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             <table className="w-full table-fixed border-collapse">
               <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-white text-lg">
                 <tr>
+                  <th className="w-12 border px-4 py-3 text-center">
+                    <Checkbox
+                      checked={selectedRowIds.size > 0 && selectedRowIds.size === rows.filter(r => r.shortSku.trim() || r.barcodeSku.trim()).length}
+                      onCheckedChange={(checked) => toggleAllRows(!!checked)}
+                      className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[#0A0E1A]"
+                    />
+                  </th>
                   <th className="w-16 border px-4 py-3 text-left">#</th>
 
                   <th className="w-[40%] border px-4 py-3 text-left">
@@ -645,10 +669,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                   <th className="w-[30%] border px-4 py-3 text-left">
                     Barcode SKU
-                  </th>
-
-                  <th className="w-[30%] border px-4 py-3 text-left">
-                    Full SKU
                   </th>
 
                   <th className="w-[30%] border px-4 py-3 text-left">
@@ -664,7 +684,20 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                     key={row.id}
                     className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}
                   >
-                    <td className="border px-4 py-3">{index + 1}</td>
+                    <td className="border px-4 py-3 text-center">
+                      <Checkbox
+                        checked={selectedRowIds.has(row.id)}
+                        onCheckedChange={(checked) => toggleRow(row.id, !!checked)}
+                      />
+                    </td>
+                    <td className="border px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span>{index + 1}</span>
+                        {printedRowIds.has(row.id) && (
+                          <BadgeCheck className="w-4 h-4 text-green-600" title="Printed" />
+                        )}
+                      </div>
+                    </td>
 
                     <td className="border px-4 py-3">
                       <div className="relative">
@@ -953,10 +986,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                     </td>
 
                     <td className="border px-4 py-3">
-                      {row.loading ? "Searching..." : row.fullSku || "-"}
-                    </td>
-
-                    <td className="border px-4 py-3">
                       {row.loading ? "Searching..." : row.ordercookSku || "-"}
                     </td>
                     <td className="border px-4 py-3 text-center">
@@ -996,6 +1025,27 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </div>
         </div>
       </DialogContent>
+
+      <LabelSelectionModal
+        open={isLabelPickerOpen}
+        onClose={() => setIsLabelPickerOpen(false)}
+        onConfirm={(template) => {
+          setIsLabelPickerOpen(false);
+          setActivePrintTemplate(template);
+          setIsPrintExecutionOpen(true);
+        }}
+      />
+
+      <PrintExecutionModal
+        open={isPrintExecutionOpen}
+        onClose={() => setIsPrintExecutionOpen(false)}
+        template={activePrintTemplate}
+        rows={rows.filter((r) => selectedRowIds.has(r.id))}
+        onComplete={(succeededRowIds) => {
+          setPrintedRowIds((prev) => new Set([...prev, ...succeededRowIds]));
+          setSelectedRowIds(new Set());
+        }}
+      />
     </Dialog>
   );
 }

@@ -1,5 +1,12 @@
 "use client";
 
+import { MoreVertical, type LucideIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MoreVertical, type LucideIcon } from "lucide-react";
@@ -9,6 +16,7 @@ type MenuItem = {
   icon: LucideIcon;
   onClick: () => void;
   variant?: "default" | "danger";
+  disabled?: boolean;
 };
 
 interface Props {
@@ -16,6 +24,47 @@ interface Props {
 }
 
 export default function ActionMenu({ items }: Props) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-stone-800 bg-[#111827] text-gray-400 transition hover:border-[#E8C16D] hover:text-[#E8C16D] focus:outline-none"
+          >
+            <MoreVertical size={18} />
+          </button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-52 border-stone-800 bg-[#111827] text-white">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <DropdownMenuItem
+              key={item.label}
+              disabled={item.disabled}
+              render={
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    item.onClick();
+                  }}
+                  className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-sm transition focus:bg-stone-800 focus:text-white ${
+                    item.variant === "danger"
+                      ? "text-red-500 focus:bg-red-500/10 focus:text-red-500"
+                      : "text-gray-300"
+                  }`}
+                >
+                  <Icon size={16} />
+                  {item.label}
+                </button>
+              }
+            />
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
