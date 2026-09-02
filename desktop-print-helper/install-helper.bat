@@ -59,6 +59,7 @@ copy /Y "watchdog.vbs" "%INSTALL_DIR%\watchdog.vbs" >nul
 echo {> "%INSTALL_DIR%\config.json"
 echo   "ALLOWED_ORIGINS": [>> "%INSTALL_DIR%\config.json"
 echo     "http://localhost:3000",>> "%INSTALL_DIR%\config.json"
+echo     "https://chkudi-orderos-frontend.vercel.app",>> "%INSTALL_DIR%\config.json"
 echo     "https://chkudi-orderos-frontend-git-main-e-musk-os.vercel.app">> "%INSTALL_DIR%\config.json"
 echo   ],>> "%INSTALL_DIR%\config.json"
 echo   "PRINT_TOKEN": "dev-secret-token-123">> "%INSTALL_DIR%\config.json"

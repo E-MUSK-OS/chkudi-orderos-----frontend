@@ -170,9 +170,14 @@ const DEFAULT_PRINT_TOKEN = "dev-secret-token-123";
 const server = http.createServer((req, res) => {
   // CORS Headers for Private Network Access
   const requestOrigin = req.headers.origin;
-  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
+  const originAllowed = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin);
+  if (originAllowed) {
     res.setHeader('Access-Control-Allow-Origin', requestOrigin);
   }
+  // Always send these on every response so the browser can read them.
+  // Without Allow-Headers on the preflight, Chrome blocks the request
+  // before the origin-check error is even visible — making it look like
+  // the helper is offline when it is actually running fine.
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Print-Token');
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
