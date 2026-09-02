@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { Loader2, Printer, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { LabelTemplate } from "../types/label.types";
+import { LabelTemplate, ProductLookupResult } from "../types/label.types";
 import { GenerateRow, useLabelPrintJob } from "../hooks/useLabelPrintJob";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
 
@@ -29,6 +29,7 @@ export default function PrintExecutionModal({
     selectedForPrint,
     printers,
     helperOnline,
+    helperStatus,
     selectedPrinter,
     setSelectedPrinter,
     successfulJobs,
@@ -38,7 +39,7 @@ export default function PrintExecutionModal({
     proceedToPrinter,
     refreshPrinters,
     startPrinting,
-    printViaWebUsb,
+    printViaBrowser,
     retryFailed,
   } = useLabelPrintJob(template, rows);
 
@@ -142,20 +143,65 @@ export default function PrintExecutionModal({
         <p className="text-[#0A0E1A]">Select a printer to send {selectedForPrint.size} labels to.</p>
         
         <div className="flex items-center space-x-3 p-4 bg-slate-100 rounded border">
-          <div className={`w-3 h-3 rounded-full ${helperOnline ? "bg-green-500" : "bg-red-500"}`} />
+          <div className={`w-3 h-3 rounded-full ${helperOnline ? "bg-green-500" : helperStatus === "checking" ? "bg-yellow-400 animate-pulse" : "bg-red-500"}`} />
           <span className="font-medium text-[#0A0E1A]">
-            Print Helper: {helperOnline ? "Online" : "Offline"}
+            Print Helper: {helperOnline ? "Online" : helperStatus === "checking" ? "Checking..." : "Offline"}
           </span>
-          {!helperOnline && (
-            <Button variant="ghost" size="sm" onClick={refreshPrinters} className="ml-auto text-[#0A0E1A]">
-              Retry Connection
+          {!helperOnline && helperStatus !== "checking" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={helperStatus === "permission-blocked" ? () => window.location.reload() : refreshPrinters}
+              className="ml-auto text-[#0A0E1A]"
+            >
+              {helperStatus === "needs-permission" ? "Allow Printer Access" : helperStatus === "permission-blocked" ? "Reload Page" : "Retry Connection"}
             </Button>
           )}
         </div>
 
-        {!helperOnline && (
+        {helperStatus === "needs-permission" && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded text-sm space-y-1">
+            <p className="font-semibold">One-time step: Chrome needs your permission to reach your printer.</p>
+            <p>
+              Click <span className="font-semibold">&quot;Allow Printer Access&quot;</span> above — Chrome will show a
+              popup asking to connect to your local network. Click <span className="font-semibold">Allow</span>. This
+              only happens once on this PC; every print after that is instant with no popup.
+            </p>
+          </div>
+        )}
+
+        {helperStatus === "permission-blocked" && (
+          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm space-y-1">
+            <p className="font-semibold">Local network access is blocked for this site.</p>
+            <p>
+              Someone previously clicked &quot;Block&quot; on Chrome&apos;s permission popup. Click the lock/info icon
+              in the address bar → Site settings → set <span className="font-semibold">&quot;Local network access&quot;</span> or <span className="font-semibold">&quot;Apps on device&quot;</span> to
+              Allow → reload this page.
+            </p>
+          </div>
+        )}
+
+        {helperStatus === "helper-down" && (
           <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm">
-            Print helper is offline. Please start LabelCraft Helper on this PC.
+            Print helper is offline. Please make sure the LabelCraft Helper app is running on this PC (you can run install-helper.bat if needed), then click Retry Connection.
+          </div>
+        )}
+
+        {helperStatus === "helper-error" && (
+          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm">
+            Print helper is running but returned an error. Please check the helper console/logs, then click Retry Connection.
+          </div>
+        )}
+
+        {helperStatus === "no-internet" && (
+          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm">
+            Your computer has no internet connection. Please reconnect to your network and click Retry Connection.
+          </div>
+        )}
+
+        {helperStatus === "unsupported-browser" && (
+          <div className="bg-slate-50 border border-slate-200 text-slate-800 p-4 rounded text-sm">
+            Your browser does not support silent local printing. Please switch to Google Chrome or Microsoft Edge for the best experience.
           </div>
         )}
 
@@ -181,11 +227,11 @@ export default function PrintExecutionModal({
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             variant="secondary"
-            onClick={printViaWebUsb}
+            onClick={printViaBrowser}
             disabled={selectedForPrint.size === 0}
             leftIcon={<Printer className="w-4 h-4" />}
           >
-            Print via USB
+            Browser Print
           </Button>
           <Button
             variant="primary"
@@ -252,7 +298,7 @@ export default function PrintExecutionModal({
             {success} of {total} labels sent successfully. {failed > 0 && <span className="text-red-600">{failed} failed.</span>}
           </p>
           <p className="text-sm text-slate-500 mt-2">
-            Note: "Sent successfully" means the job was handed to the Windows print spooler.
+            Note: &quot;Sent successfully&quot; means the job was handed to the Windows print spooler.
           </p>
         </div>
 
@@ -286,7 +332,7 @@ export default function PrintExecutionModal({
   );
 }
 
-function LabelPreviewThumbnail({ template, data }: { template: LabelTemplate | null; data?: any }) {
+function LabelPreviewThumbnail({ template, data }: { template: LabelTemplate | null; data?: Partial<ProductLookupResult> }) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

@@ -9,6 +9,15 @@ export interface PrintLogItemPayload {
   count: number;
 }
 
+export interface PrintLogResult {
+  success?: boolean;
+}
+
+export interface PrintStatEntry {
+  sku: string;
+  count: number;
+}
+
 export const labelService = {
   // 1. Templates
   getTemplates: async (marketplaceId?: string): Promise<LabelTemplate[]> => {
@@ -66,7 +75,7 @@ export const labelService = {
   },
 
   // 3. Print Logs
-  logPrintSession: async (items: PrintLogItemPayload[]): Promise<any> => {
+  logPrintSession: async (items: PrintLogItemPayload[]): Promise<PrintLogResult> => {
     const res = await fetchWithAuth(`${BASE_URL}/print-log`, {
       method: "POST",
       body: JSON.stringify({ items }),
@@ -76,7 +85,7 @@ export const labelService = {
     return data.data;
   },
 
-  getPrintStats: async (): Promise<any[]> => {
+  getPrintStats: async (): Promise<PrintStatEntry[]> => {
     const res = await fetchWithAuth(`${BASE_URL}/print-stats`);
     if (!res.ok) throw new Error("Failed to fetch print stats");
     const data = await res.json();
