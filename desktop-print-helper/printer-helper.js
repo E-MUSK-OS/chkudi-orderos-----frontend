@@ -140,9 +140,15 @@ try {
 }
 
 // --- CONFIGURATION ---
+// NOTE: this used to read from %APPDATA%\desktop-print-helper\config.json,
+// but install-helper.bat has never installed to that folder — it installs
+// to %LOCALAPPDATA%\LabelCraftHelper. That mismatch meant a config.json could
+// never actually be found, so ALLOWED_ORIGINS silently fell back to the
+// localhost-only default below on every worker PC, no matter what. Reading
+// from the exe's own install folder instead fixes that.
 let config = {};
 try {
-  const configPath = path.join(process.env.APPDATA || '', 'desktop-print-helper', 'config.json');
+  const configPath = path.join(process.env.LOCALAPPDATA || '', 'LabelCraftHelper', 'config.json');
   if (fs.existsSync(configPath)) {
     config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   }
@@ -150,7 +156,9 @@ try {
   console.error("Failed to load config.json", e.message);
 }
 
-// In a real production deployment, the installer would write the API URL here.
+// Kept as a localhost-dev fallback only. The real production origin(s) now
+// come from config.json (written by install-helper.bat) so they can be
+// changed without ever rebuilding this exe again.
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:3000"
 ];
