@@ -33,7 +33,6 @@ export default function SkuMappingPage() {
     search,
   });
   useEffect(() => {
-    console.log("accessToken =>", localStorage.getItem("accessToken"));
     console.log(
       "sku-generate-sheet =>",
       localStorage.getItem("sku-generate-sheet"),
