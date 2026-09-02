@@ -16,6 +16,13 @@ import * as XLSX from "xlsx";
 import DeleteOperatorModal from "@/components/Dashboard/vms/Admin/User/operator/components/DeleteOperatorModal";
 import DeleteModal from "./DeleteModal";
 import { useAccounts } from "@/components/Dashboard/vms/Admin/Account/hooks/useAccounts";
+import { API_BASE_URL } from "@/lib/config";
+
+const getFullUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE_URL}${url}`;
+};
 
 const VMSList = () => {
   // ===========================
@@ -148,7 +155,7 @@ const VMSList = () => {
         t: "s",
         v: "View Video",
         l: {
-          Target: item.videoUrl,
+          Target: getFullUrl(item.videoUrl),
           Tooltip: item.trackingId,
         },
       };
@@ -166,9 +173,6 @@ const VMSList = () => {
   // ===========================
 
   const handleRefresh = () => {
-    refetch();
-  };
-
   // ===========================
   // Table Columns
   // ===========================
@@ -176,10 +180,12 @@ const VMSList = () => {
   const handleSingleDownload = (item: VMSItem) => {
     if (!item.videoUrl) return;
     
+    const fullUrl = getFullUrl(item.videoUrl)!;
+
     // Append ?download=true to trigger the backend Content-Disposition header
-    const downloadUrl = item.videoUrl.includes('?') 
-      ? `${item.videoUrl}&download=true` 
-      : `${item.videoUrl}?download=true`;
+    const downloadUrl = fullUrl.includes('?') 
+      ? `${fullUrl}&download=true` 
+      : `${fullUrl}?download=true`;
       
     // Trigger download
     const link = document.createElement("a");
