@@ -49,6 +49,22 @@ echo [3/5] Copying engine and watchdog...
 copy /Y "printer-helper.exe" "%INSTALL_DIR%\printer-helper.exe" >nul
 copy /Y "watchdog.vbs" "%INSTALL_DIR%\watchdog.vbs" >nul
 
+:: 3b. Write config.json (allowed origins + print token) into the install
+:: folder. EDIT THE URL BELOW to your real production domain (the exact
+:: origin the browser bar shows for your live site — scheme + host, no
+:: trailing slash, no path) before you distribute this .bat to worker PCs.
+:: You can add more "https://..." lines (comma-separated) if the app is
+:: reachable from more than one domain. Changing this later never requires
+:: rebuilding printer-helper.exe again — just edit this file and re-run it.
+echo {> "%INSTALL_DIR%\config.json"
+echo   "ALLOWED_ORIGINS": [>> "%INSTALL_DIR%\config.json"
+echo     "http://localhost:3000",>> "%INSTALL_DIR%\config.json"
+echo     "https://chkudi-orderos-frontend.vercel.app",>> "%INSTALL_DIR%\config.json"
+echo     "https://chkudi-orderos-frontend-git-main-e-musk-os.vercel.app">> "%INSTALL_DIR%\config.json"
+echo   ],>> "%INSTALL_DIR%\config.json"
+echo   "PRINT_TOKEN": "dev-secret-token-123">> "%INSTALL_DIR%\config.json"
+echo }>> "%INSTALL_DIR%\config.json"
+
 :: Verify the copy
 if not exist "%INSTALL_DIR%\printer-helper.exe" (
     color 0C
