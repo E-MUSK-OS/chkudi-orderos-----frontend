@@ -38,6 +38,7 @@ export default function PrintExecutionModal({
     proceedToPrinter,
     refreshPrinters,
     startPrinting,
+    printViaWebUsb,
     retryFailed,
   } = useLabelPrintJob(template, rows);
 
@@ -178,6 +179,14 @@ export default function PrintExecutionModal({
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            variant="secondary"
+            onClick={printViaWebUsb}
+            disabled={selectedForPrint.size === 0}
+            leftIcon={<Printer className="w-4 h-4" />}
+          >
+            Print via USB
+          </Button>
           <Button
             variant="primary"
             onClick={() => startPrinting(selectedPrinter)}
