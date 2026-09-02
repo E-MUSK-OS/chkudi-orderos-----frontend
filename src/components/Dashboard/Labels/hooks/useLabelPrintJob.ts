@@ -258,6 +258,10 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           margin: 0;
           padding: 0;
           width: 100%;
+          /* Force full color output — without this Chrome strips colors for ink saving */
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
         }
         .print-page {
           page-break-after: always;
@@ -269,6 +273,9 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           max-width: 100%;
           max-height: 100vh;
           object-fit: contain;
+          /* Ensure the canvas image itself is not desaturated by the browser */
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
       }
     `;
