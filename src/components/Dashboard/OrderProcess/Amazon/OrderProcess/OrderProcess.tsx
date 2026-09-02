@@ -197,9 +197,46 @@ export default function OrderProcess() {
     }, 450);
 
     try {
+      // Helper to safely convert File or Blob to Base64 without touching detached ArrayBuffers
+      const fileToBase64 = (file: File | Blob): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.includes(",") ? result.split(",")[1] : result;
+            resolve(base64 || "");
+          };
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+      };
+
+      // 1. Start converting original PDF to base64 in parallel using FileReader
+      const originalPdfBase64Promise = fileToBase64(pdfFile);
+
+      // 2. Extract text from PDF on the client-side to bypass Vercel 4.5MB upload limit
+      setProgress(15, "Extracting Amazon Invoices locally (bypassing size limits)...");
+      const pdfjs = await import("pdfjs-dist");
+      if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version || "6.3.289"}/build/pdf.worker.min.mjs`;
+      }
+      
+      const pdfBytesForExtraction = new Uint8Array(await pdfFile.arrayBuffer());
+      const loadingTask = pdfjs.getDocument({ data: pdfBytesForExtraction });
+      const pdf = await loadingTask.promise;
+      
+      const pdfTextArray: string[] = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const strings = textContent.items.map((item: any) => item.str);
+        pdfTextArray.push(strings.join(" "));
+      }
+
+      setProgress(50, "Converting ZPL Barcode Labels to PDF & Verifying...");
       const formData = new FormData();
       formData.append("zplFile", zplFile);
-      formData.append("pdfFile", pdfFile);
+      formData.append("pdfTextArray", JSON.stringify(pdfTextArray));
 
       const response = await fetch("/api/amazon/process-orders", {
         method: "POST",
@@ -212,14 +249,88 @@ export default function OrderProcess() {
         throw new Error(data.error || "Failed to process Amazon order files.");
       }
 
-      // Finish progress to 100%
       clearInterval(progressInterval);
-      setProgress(96, "5. Finalizing Paired Dispatch Documents...");
-      await new Promise((r) => setTimeout(r, 400));
-      setProgress(100, "Processing Complete!");
-      await new Promise((r) => setTimeout(r, 300));
+      setProgress(90, "5. Finalizing Paired Dispatch Documents...");
 
       const processResponse = data as AmazonProcessResponse;
+      
+      // Inject the original PDF base64 using the FileReader result
+      const originalPdfBase64 = await originalPdfBase64Promise;
+      if (!processResponse.files) {
+        processResponse.files = {
+          convertedZplPdfBase64: "",
+          combinedPdfBase64: "",
+          originalPdfBase64: "",
+        };
+      }
+      processResponse.files.originalPdfBase64 = originalPdfBase64;
+      if (processResponse.summary) {
+        processResponse.summary.pdfFileName = pdfFile.name;
+      }
+
+      // 3. Generate Combined Matched PDF client-side for Preview & Download
+      try {
+        if (processResponse.files.convertedZplPdfBase64 && originalPdfBase64) {
+          setProgress(95, "Generating Combined Matched PDF...");
+          const { PDFDocument } = await import("pdf-lib");
+          const zplBytes = Uint8Array.from(atob(processResponse.files.convertedZplPdfBase64), (c) =>
+            c.charCodeAt(0)
+          );
+          const origPdfBytes = Uint8Array.from(atob(originalPdfBase64), (c) =>
+            c.charCodeAt(0)
+          );
+
+          const zplDoc = await PDFDocument.load(zplBytes);
+          const origDoc = await PDFDocument.load(origPdfBytes);
+          const combinedDoc = await PDFDocument.create();
+
+          const TARGET_WIDTH = 3.5 * 72; // 252 pt
+          const TARGET_HEIGHT = 5.5 * 72; // 396 pt
+          const MARGIN = 6;
+          const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
+          const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
+
+          const addScaledPage = async (srcPage: any) => {
+            const embedded = await combinedDoc.embedPage(srcPage);
+            const { width: srcW, height: srcH } = embedded;
+            const scale = Math.min(AVAIL_WIDTH / srcW, AVAIL_HEIGHT / srcH);
+            const finalW = srcW * scale;
+            const finalH = srcH * scale;
+            const x = (TARGET_WIDTH - finalW) / 2;
+            const y = (TARGET_HEIGHT - finalH) / 2;
+            const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+            newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+          };
+
+          // Matched only (interleaved)
+          for (const item of processResponse.results) {
+            if (item.isMatch) {
+              if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
+                await addScaledPage(zplDoc.getPage(item.zplPage - 1));
+              }
+              if (item.pdfPages && item.pdfPages.length > 0) {
+                for (const p of item.pdfPages) {
+                  const idx = p - 1;
+                  if (idx >= 0 && idx < origDoc.getPageCount()) {
+                    await addScaledPage(origDoc.getPage(idx));
+                  }
+                }
+              }
+            }
+          }
+
+          const combinedBytes = await combinedDoc.save();
+          const combinedBlob = new Blob([combinedBytes as unknown as BlobPart], { type: "application/pdf" });
+          const combinedBase64 = await fileToBase64(combinedBlob);
+          processResponse.files.combinedPdfBase64 = combinedBase64;
+        }
+      } catch (genErr) {
+        console.warn("Could not generate combined preview PDF client-side:", genErr);
+      }
+
+      setProgress(100, "Processing Complete!");
+      await new Promise((r) => setTimeout(r, 250));
+
       setProcessData(processResponse);
 
       toast.success(

@@ -23,6 +23,7 @@ import { printAgentService } from "@/components/Dashboard/Labels/services/printA
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import { useAmazonOrderStore } from "../store/useAmazonOrderStore";
+import { cleanCustomerName } from "../utils";
 
 interface ComparisonResultViewProps {
   isStandaloneTab?: boolean;
@@ -133,11 +134,53 @@ export default function ComparisonResultView({
     return images;
   };
 
+  // Browser fallback: render PDF into an iframe with @page CSS for 3.5" x 5.5"
+  const printViaBrowser = (pdfBytes: Uint8Array) => {
+    const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.src = blobUrl;
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (iframeDoc) {
+            const style = iframeDoc.createElement("style");
+            style.textContent = `
+              @page { size: 3.5in 5.5in; margin: 0; }
+              @media print { body { margin: 0; padding: 0; } }
+            `;
+            iframeDoc.head.appendChild(style);
+          }
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {
+          window.open(blobUrl, "_blank");
+        }
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+          URL.revokeObjectURL(blobUrl);
+        }, 5000);
+      }, 500);
+    };
+  };
+
   const handlePrintSelected = async () => {
-    const targetResults =
-      selectedRows.size > 0
-        ? results.filter((r) => selectedRows.has(r.index))
-        : filteredResults;
+    if (selectedRows.size === 0) {
+      toast.error("Please select at least one order to print.");
+      return;
+    }
+
+    const targetResults = results.filter((r) => selectedRows.has(r.index));
 
     if (targetResults.length === 0) {
       toast.error("No orders found to print.");
@@ -149,37 +192,11 @@ export default function ComparisonResultView({
       return;
     }
 
-    toast.loading("Connecting to desktop helper printer...", {
+    toast.loading(`Preparing 3.5" x 5.5" print for ${targetResults.length} order(s)...`, {
       id: "print-prep",
     });
 
     try {
-      // 1. Check desktop print helper connectivity
-      let printers: string[] = [];
-      try {
-        printers = await printAgentService.getPrinters();
-      } catch {
-        toast.error(
-          "Desktop print helper is not running! Please start printer-helper on your desktop (port 9999).",
-          { id: "print-prep", duration: 5000 }
-        );
-        return;
-      }
-
-      if (!printers || printers.length === 0) {
-        toast.error("No printers found by desktop print helper. Please connect a thermal printer.", {
-          id: "print-prep",
-        });
-        return;
-      }
-
-      const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-      const printerName = lastUsed && printers.includes(lastUsed) ? lastUsed : printers[0];
-
-      toast.loading(`Preparing 3.5" x 5.5" print for ${targetResults.length} order(s)...`, {
-        id: "print-prep",
-      });
-
       const zplBytes = Uint8Array.from(atob(files.convertedZplPdfBase64), (c) =>
         c.charCodeAt(0)
       );
@@ -191,50 +208,36 @@ export default function ComparisonResultView({
       const origDoc = await PDFDocument.load(pdfBytes);
       const printDoc = await PDFDocument.create();
 
-      // Target Dimensions: 3.5 inches width x 5.5 inches height (1 inch = 72 pt, 1 inch = 25.4 mm)
+      // Target Dimensions: 3.5 inches width x 5.5 inches height
       const TARGET_WIDTH = 3.5 * 72; // 252 pt
       const TARGET_HEIGHT = 5.5 * 72; // 396 pt
       const WIDTH_MM = 3.5 * 25.4; // 88.9 mm
       const HEIGHT_MM = 5.5 * 25.4; // 139.7 mm
-      const MARGIN = 5; // 5 pt margin
+      const MARGIN = 5;
       const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
       const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
 
-      // Helper to add a proportional scaled page onto a fixed 3.5" x 5.5" page
       const addScaledPage = async (srcPage: any) => {
         const embedded = await printDoc.embedPage(srcPage);
         const { width: srcW, height: srcH } = embedded;
-
         const scale = Math.min(AVAIL_WIDTH / srcW, AVAIL_HEIGHT / srcH);
         const finalW = srcW * scale;
         const finalH = srcH * scale;
-
         const x = (TARGET_WIDTH - finalW) / 2;
         const y = (TARGET_HEIGHT - finalH) / 2;
-
         const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-        newPage.drawPage(embedded, {
-          x,
-          y,
-          width: finalW,
-          height: finalH,
-        });
+        newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
       };
 
       for (const item of targetResults) {
-        // Interleaved pair: 1. ZPL barcode label first (scaled to 3.5" x 5.5")
         if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-          const zplPage = zplDoc.getPage(item.zplPage - 1);
-          await addScaledPage(zplPage);
+          await addScaledPage(zplDoc.getPage(item.zplPage - 1));
         }
-
-        // Interleaved pair: 2. Matching original PDF tax invoice page(s) (scaled to 3.5" x 5.5")
         if (item.pdfPages && item.pdfPages.length > 0) {
           for (const pageNum of item.pdfPages) {
-            const pageIndex = pageNum - 1;
-            if (pageIndex >= 0 && pageIndex < origDoc.getPageCount()) {
-              const origPage = origDoc.getPage(pageIndex);
-              await addScaledPage(origPage);
+            const idx = pageNum - 1;
+            if (idx >= 0 && idx < origDoc.getPageCount()) {
+              await addScaledPage(origDoc.getPage(idx));
             }
           }
         }
@@ -247,28 +250,50 @@ export default function ComparisonResultView({
 
       const finalBytes = await printDoc.save();
 
-      toast.loading(`Direct printing ${printDoc.getPageCount()} label(s) to ${printerName}...`, {
-        id: "print-prep",
-      });
+      // === STRATEGY: Try desktop helper first, fall back to browser print ===
+      let usedDesktopHelper = false;
 
-      const images = await renderPdfBytesToImages(finalBytes);
+      try {
+        const printers = await printAgentService.getPrinters();
+        if (printers && printers.length > 0) {
+          const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+          const printerName = lastUsed && printers.includes(lastUsed) ? lastUsed : printers[0];
 
-      for (const imgBase64 of images) {
-        await printAgentService.sendPrintJob({
-          imageBase64: imgBase64,
-          printerName,
-          widthMm: WIDTH_MM,
-          heightMm: HEIGHT_MM,
-        });
+          toast.loading(`Direct printing ${printDoc.getPageCount()} page(s) to ${printerName}...`, {
+            id: "print-prep",
+          });
+
+          const images = await renderPdfBytesToImages(finalBytes);
+          for (const imgBase64 of images) {
+            await printAgentService.sendPrintJob({
+              imageBase64: imgBase64,
+              printerName,
+              widthMm: WIDTH_MM,
+              heightMm: HEIGHT_MM,
+            });
+          }
+
+          toast.success(
+            `Printed ${images.length} label(s) (3.5" x 5.5") directly to ${printerName}!`,
+            { id: "print-prep" }
+          );
+          usedDesktopHelper = true;
+        }
+      } catch {
+        // Desktop helper not available — fall back to browser print
       }
 
-      toast.success(
-        `Printed ${images.length} label(s) (3.5" x 5.5") directly to ${printerName}!`,
-        { id: "print-prep" }
-      );
+      if (!usedDesktopHelper) {
+        toast.loading("Opening browser print (3.5\" x 5.5\")...", { id: "print-prep" });
+        printViaBrowser(finalBytes);
+        toast.success(
+          `Print dialog opened for ${printDoc.getPageCount()} page(s) at 3.5" x 5.5".`,
+          { id: "print-prep" }
+        );
+      }
     } catch (err: any) {
-      console.error("Desktop helper print error:", err);
-      toast.error(err?.message || "Failed to print via desktop helper printer.", {
+      console.error("Print error:", err);
+      toast.error(err?.message || "Failed to prepare print.", {
         id: "print-prep",
       });
     }
@@ -549,11 +574,12 @@ export default function ComparisonResultView({
 
               <button
                 type="button"
+                disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
                 className={`inline-flex h-14 w-44 items-center justify-center gap-1.5 border text-sm font-semibold transition-all duration-200 ${
                   selectedRows.size > 0
-                    ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
-                    : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D]"
+                    ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
+                    : "cursor-not-allowed border-border/50 bg-[#0A0E1A]/60 text-[#E8C16D]/40 opacity-50"
                 }`}
               >
                 <Printer className="h-4 w-4" />
@@ -649,7 +675,7 @@ export default function ComparisonResultView({
                           {item.awb}
                         </td>
                         <td className="truncate px-4 py-4 text-center">
-                          {item.customer}
+                          {cleanCustomerName(item.customer)}
                         </td>
                       </tr>
                     ))

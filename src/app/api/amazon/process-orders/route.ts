@@ -106,6 +106,40 @@ async function convertZplChunkToPdf(zplChunk: string): Promise<Buffer> {
 }
 
 /**
+ * Clean customer name by removing addresses, pin codes, and delivery details.
+ */
+function cleanCustomerName(raw: string): string {
+  if (!raw || raw === "N/A") return "N/A";
+
+  let cleaned = raw
+    .replace(/^(Shipping|Billing)\s+Address\s*[:\-]?\s*/i, "")
+    .replace(/^Ship\s+To\s*[:\-]?\s*/i, "")
+    .replace(/^(Customer\s*Name|Recipient|Name)\s*[:\-]?\s*/i, "")
+    .replace(/^C\/O\s*[:\-]?\s*/i, "")
+    .trim();
+
+  // Split on common delimiters (commas, newlines, pipes, semicolons, backslash-ampersand for ZPL)
+  cleaned = cleaned.split(/\\&|[\r\n|,;]|\s+-\s+/)[0].trim();
+
+  // Remove known address trigger words if stuck to the name without commas
+  const addressTrigger =
+    /\s+(?:Flat|H\.?No|House|Plot|Room|Shop|Bldg|Building|Apartment|Apt|Tower|Floor|Block|Sector|Opp|Opposite|Near|Behind|Beside|Road|Street|Lane|Nagar|Colony|Enclave|Vihar|Layout|Society|Village|Vill|Post|Taluka|Dist|District|PIN|Pincode|\d{1,5}[A-Za-z]?\b).*$/i;
+  cleaned = cleaned.replace(addressTrigger, "").trim();
+
+  // Remove trailing digits, special chars, or postal codes
+  cleaned = cleaned.replace(/\s*\b\d{5,6}\b.*$/, "").trim();
+  cleaned = cleaned.replace(/[,\-:;.]+$/, "").trim();
+
+  // If still excessively long (e.g. over 30 characters or more than 4 words), take the first 3 words
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length > 4 && cleaned.length > 30) {
+    cleaned = words.slice(0, 3).join(" ");
+  }
+
+  return cleaned || "N/A";
+}
+
+/**
  * Parse ZPL content into individual label objects.
  *
  * Invoice extraction strategy:
@@ -299,9 +333,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       decoded.match(/Ship To:[\s\S]*?\^FD(.*?)\^FS/i);
 
     if (customerMatch?.[1]) {
-      customer = customerMatch[1]
-        .split("\\&")[0]
-        .trim();
+      customer = cleanCustomerName(customerMatch[1]);
     }
 
     // ---------------------------------------------------------
@@ -454,35 +486,23 @@ function normalizeInvoice(value: string): string {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-
     const zplFile = formData.get("zplFile");
-    const pdfFile = formData.get("pdfFile");
+    const pdfTextArrayStr = formData.get("pdfTextArray");
 
-    // ---------------------------------------------------------
-    // Validate uploads.
-    // ---------------------------------------------------------
-
-    if (
-      !(zplFile instanceof File) ||
-      !(pdfFile instanceof File)
-    ) {
+    if (!(zplFile instanceof File) || typeof pdfTextArrayStr !== "string") {
       return NextResponse.json(
-        {
-          error:
-            "Both ZPL file and PDF file are required.",
-        },
+        { error: "ZPL file and PDF text array are required." },
         { status: 400 }
       );
     }
+
+    const pdfTextArray: string[] = JSON.parse(pdfTextArrayStr);
 
     // ---------------------------------------------------------
     // 1. Read uploaded files.
     // ---------------------------------------------------------
 
     const zplText = await zplFile.text();
-
-    const pdfArrayBuffer = await pdfFile.arrayBuffer();
-    const pdfBuffer = Buffer.from(pdfArrayBuffer);
 
     // ---------------------------------------------------------
     // 2. Parse ZPL labels.
@@ -557,34 +577,16 @@ export async function POST(req: NextRequest) {
         "base64"
       );
 
+
+
     // ---------------------------------------------------------
-    // 4. Parse Amazon invoice PDF.
+    // 4. Parse Amazon invoice PDF using provided text array
     // ---------------------------------------------------------
 
-    const extracted = await extractText(
-      new Uint8Array(pdfBuffer),
-      {
-        mergePages: false,
-      }
-    );
-
-    const pdfPagesText = extracted.text;
-
-    const originalPdfDoc =
-      await PDFDocument.load(pdfBuffer, {
-        ignoreEncryption: true,
-      });
-
-    const invoiceMap =
-      new Map<string, PdfOrderData>();
-
+    const invoiceMap = new Map<string, PdfOrderData>();
     const pdfOrdersList: PdfOrderData[] = [];
+    const pagesArray = pdfTextArray;
 
-    const pagesArray = Array.isArray(pdfPagesText)
-      ? pdfPagesText
-      : [pdfPagesText];
-
-    // Debug first page.
     if (pagesArray.length > 0) {
       console.log(
         "[PDF Debug] First page text (500 chars):",
@@ -592,107 +594,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ---------------------------------------------------------
-    // Parse every PDF page.
-    // ---------------------------------------------------------
-
-    for (
-      let index = 0;
-      index < pagesArray.length;
-      index++
-    ) {
+    for (let index = 0; index < pagesArray.length; index++) {
       const pageNumber = index + 1;
-
       const text = pagesArray[index] || "";
 
-      // -------------------------------------------------------
-      // Order number.
-      // -------------------------------------------------------
-
+      // Order number
       const orderMatch =
-        text.match(
-          /Order Number:\s*([0-9-]{17,19})/i
-        ) ||
-        text.match(
-          /\b(\d{3}-\d{7}-\d{7})\b/
-        );
+        text.match(/Order Number:\s*([0-9-]{17,19})/i) ||
+        text.match(/\b(\d{3}-\d{7}-\d{7})\b/);
+      const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
 
-      const orderNumber = orderMatch
-        ? orderMatch[1] || orderMatch[0]
-        : "";
+      // Invoice number
+      const invoiceNumber = extractPdfInvoiceNumber(text);
 
-      // -------------------------------------------------------
-      // Invoice number.
-      // -------------------------------------------------------
-
-      const invoiceNumber =
-        extractPdfInvoiceNumber(text);
-
-      // -------------------------------------------------------
-      // Amount.
-      // -------------------------------------------------------
-
+      // Amount
       const amountMatch =
-        text.match(
-          /TOTAL:\s*₹?\s*([0-9.,]+)/i
-        ) ||
-        text.match(
-          /Invoice Value:\s*([0-9.,]+)/i
-        ) ||
-        text.match(
-          /Grand Total\s*:?\s*₹?\s*([0-9.,]+)/i
-        );
+        text.match(/TOTAL:\s*₹?\s*([0-9.,]+)/i) ||
+        text.match(/Invoice Value:\s*([0-9.,]+)/i) ||
+        text.match(/Grand Total\s*:?\s*₹?\s*([0-9.,]+)/i);
+      const amount = amountMatch?.[1]?.trim() || "";
 
-      const amount =
-        amountMatch?.[1]?.trim() || "";
-
-      // -------------------------------------------------------
-      // Date.
-      // -------------------------------------------------------
-
+      // Date
       const dateMatch =
-        text.match(
-          /Invoice Date\s*:\s*([0-9./-]+)/i
-        ) ||
-        text.match(
-          /Order Date:\s*([0-9./-]+)/i
-        );
+        text.match(/Invoice Date\s*:\s*([0-9./-]+)/i) ||
+        text.match(/Order Date:\s*([0-9./-]+)/i);
+      const date = dateMatch?.[1]?.trim() || "";
 
-      const date =
-        dateMatch?.[1]?.trim() || "";
-
-      // -------------------------------------------------------
-      // Customer.
-      // -------------------------------------------------------
-
+      // Customer
       const billingMatch =
-        text.match(
-          /Shipping Address\s*:\s*([^|]+)/i
-        ) ||
-        text.match(
-          /Billing Address\s*:\s*([^|]+)/i
-        );
-
+        text.match(/Shipping Address\s*:\s*([^|]+)/i) ||
+        text.match(/Billing Address\s*:\s*([^|]+)/i);
       let customer = "";
-
       if (billingMatch?.[1]) {
-        const parts = billingMatch[1]
-          .trim()
-          .split(/\r?\n|,/);
-
-        customer = parts[0]?.trim() || "";
+        customer = cleanCustomerName(billingMatch[1]);
       }
 
-      console.log(
-        `[PDF Parse] Page ${pageNumber}: Invoice="${invoiceNumber}", Order="${orderNumber}"`
-      );
+      console.log(`[PDF Parse] Page ${pageNumber}: Invoice="${invoiceNumber}", Order="${orderNumber}"`);
 
       const orderRecord: PdfOrderData = {
         orderNumber,
         sellerInvoice: invoiceNumber,
-        allInvoices: invoiceNumber
-          ? [invoiceNumber]
-          : [],
+        allInvoices: invoiceNumber ? [invoiceNumber] : [],
         pages: [pageNumber],
         customer,
         amount,
@@ -701,63 +643,26 @@ export async function POST(req: NextRequest) {
 
       pdfOrdersList.push(orderRecord);
 
-      // -------------------------------------------------------
-      // Build invoice lookup map.
-      // -------------------------------------------------------
-
       if (invoiceNumber) {
-        const key =
-          normalizeInvoice(invoiceNumber);
-
+        const key = normalizeInvoice(invoiceNumber);
         if (invoiceMap.has(key)) {
-          const existing =
-            invoiceMap.get(key)!;
-
+          const existing = invoiceMap.get(key)!;
           existing.pages.push(pageNumber);
-
-          if (
-            !existing.orderNumber &&
-            orderNumber
-          ) {
-            existing.orderNumber =
-              orderNumber;
-          }
-
-          if (!existing.amount && amount) {
-            existing.amount = amount;
-          }
-
-          if (!existing.date && date) {
-            existing.date = date;
-          }
-
-          if (!existing.customer && customer) {
-            existing.customer = customer;
-          }
-
-          if (
-            !existing.allInvoices.includes(
-              invoiceNumber
-            )
-          ) {
-            existing.allInvoices.push(
-              invoiceNumber
-            );
+          if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
+          if (!existing.amount && amount) existing.amount = amount;
+          if (!existing.date && date) existing.date = date;
+          if (!existing.customer && customer) existing.customer = customer;
+          if (!existing.allInvoices.includes(invoiceNumber)) {
+            existing.allInvoices.push(invoiceNumber);
           }
         } else {
-          invoiceMap.set(key, {
-            ...orderRecord,
-          });
+          invoiceMap.set(key, { ...orderRecord });
         }
       }
     }
 
-    console.log(
-      `[Match Info] ZPL labels: ${zplLabels.length}, PDF invoices found: ${invoiceMap.size}, PDF pages: ${pagesArray.length}`
-    );
-
     // ---------------------------------------------------------
-    // 5. Compare ZPL labels with PDF invoices.
+    // 5. Compare ZPL labels with PDF invoices
     // ---------------------------------------------------------
     const matchedResults: ComparisonResult[] = [];
     const mismatchedZplResults: ComparisonResult[] = [];
@@ -804,7 +709,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Identify PDF orders that were NOT matched to any ZPL label
     const mismatchedPdfResults: ComparisonResult[] = [];
     const seenPdfKeys = new Set<string>();
 
@@ -830,185 +734,40 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Combined comparison results: Matched first, then Mismatched ZPLs, then Mismatched PDFs
     const comparisonResults: ComparisonResult[] = [
       ...matchedResults,
       ...mismatchedZplResults,
       ...mismatchedPdfResults,
-    ].map((res, idx) => ({
-      ...res,
-      index: idx + 1,
-    }));
+    ].map((res, idx) => ({ ...res, index: idx + 1 }));
 
     const matchCount = matchedResults.length;
-    const mismatchCount =
-      mismatchedZplResults.length + mismatchedPdfResults.length;
-
-    // ---------------------------------------------------------
-    // 6. Generate combined PDF.
-    //
-    // Section 1: MATCHED SECTION
-    // For every matched set, ZPL invoice page appears first,
-    // immediately followed by its corresponding original PDF page(s).
-    //
-    // Section 2: MISMATCH SECTION
-    // All mismatches go to the mismatch section at the end of the PDF!
-    // Mismatched ZPL pages first, followed by unmatched PDF pages.
-    // ---------------------------------------------------------
-    const combinedPdf = await PDFDocument.create();
-
-    // Fixed Print Dimensions: 3.5" width x 5.5" height (252 x 396 pt)
-    const TARGET_WIDTH = 3.5 * 72; // 252 pt
-    const TARGET_HEIGHT = 5.5 * 72; // 396 pt
-    const MARGIN = 6; // 6 pt margin
-    const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
-    const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
-
-    const addScaledPageToCombined = async (srcPage: any) => {
-      const embedded = await combinedPdf.embedPage(srcPage);
-      const { width: srcW, height: srcH } = embedded;
-
-      const scale = Math.min(AVAIL_WIDTH / srcW, AVAIL_HEIGHT / srcH);
-      const finalW = srcW * scale;
-      const finalH = srcH * scale;
-
-      const x = (TARGET_WIDTH - finalW) / 2;
-      const y = (TARGET_HEIGHT - finalH) / 2;
-
-      const newPage = combinedPdf.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-      newPage.drawPage(embedded, {
-        x,
-        y,
-        width: finalW,
-        height: finalH,
-      });
-    };
-
-    // SECTION 1: Matched pairs (interleaved)
-    for (const result of matchedResults) {
-      if (result.zplPage > 0 && result.zplPage <= mergedZplPdf.getPageCount()) {
-        const zplPage = mergedZplPdf.getPage(result.zplPage - 1);
-        await addScaledPageToCombined(zplPage);
-      }
-
-      if (result.pdfPages.length > 0) {
-        for (const pageNum of result.pdfPages) {
-          const pageIndex = pageNum - 1;
-          if (pageIndex >= 0 && pageIndex < originalPdfDoc.getPageCount()) {
-            const origPage = originalPdfDoc.getPage(pageIndex);
-            await addScaledPageToCombined(origPage);
-          }
-        }
-      }
-    }
-
-    // SECTION 2: Mismatch section
-    // 1. Mismatched ZPL pages
-    for (const result of mismatchedZplResults) {
-      if (result.zplPage > 0 && result.zplPage <= mergedZplPdf.getPageCount()) {
-        const zplPage = mergedZplPdf.getPage(result.zplPage - 1);
-        await addScaledPageToCombined(zplPage);
-      }
-    }
-
-    // 2. Unmatched PDF invoice pages
-    for (const result of mismatchedPdfResults) {
-      if (result.pdfPages.length > 0) {
-        for (const pageNum of result.pdfPages) {
-          const pageIndex = pageNum - 1;
-          if (pageIndex >= 0 && pageIndex < originalPdfDoc.getPageCount()) {
-            const origPage = originalPdfDoc.getPage(pageIndex);
-            await addScaledPageToCombined(origPage);
-          }
-        }
-      }
-    }
-
-    const combinedPdfBytes = await combinedPdf.save();
-
-    const combinedPdfBase64 =
-      Buffer.from(combinedPdfBytes).toString("base64");
-
-    // ---------------------------------------------------------
-    // Original PDF.
-    // ---------------------------------------------------------
-
-    const originalPdfBase64 =
-      Buffer.from(pdfBuffer).toString(
-        "base64"
-      );
-
-    // ---------------------------------------------------------
-    // Match percentage.
-    // ---------------------------------------------------------
-
-    const matchPercentage =
-      zplLabels.length > 0
-        ? Math.round(
-            (matchCount /
-              zplLabels.length) *
-              100
-          )
-        : 0;
-
-    // ---------------------------------------------------------
-    // Response.
-    // ---------------------------------------------------------
+    const mismatchCount = mismatchedZplResults.length + mismatchedPdfResults.length;
+    const matchPercentage = zplLabels.length > 0 ? Math.round((matchCount / zplLabels.length) * 100) : 0;
 
     return NextResponse.json({
       success: true,
-
       summary: {
         totalZplLabels: zplLabels.length,
-
         totalPdfOrders: invoiceMap.size,
-
         totalPdfPages: pagesArray.length,
-
         matchedCount: matchCount,
-
         mismatchCount: mismatchCount,
-
         matchPercentage,
-
-        isAllMatched:
-          matchCount > 0 &&
-          mismatchCount === 0,
-
-        processedAt:
-          new Date().toISOString(),
-
+        isAllMatched: matchCount > 0 && mismatchCount === 0,
+        processedAt: new Date().toISOString(),
         zplFileName: zplFile.name,
-
-        pdfFileName: pdfFile.name,
+        pdfFileName: "client-processed.pdf",
       },
-
       results: comparisonResults,
-
       files: {
         convertedZplPdfBase64,
-
-        combinedPdfBase64,
-
-        originalPdfBase64,
+        combinedPdfBase64: "", // No longer generated on server
+        originalPdfBase64: "", // No longer sent back from server
       },
     });
   } catch (error: unknown) {
-    console.error(
-      "Amazon order process error:",
-      error
-    );
-
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Internal processing error occurred.";
-
-    return NextResponse.json(
-      {
-        error: `Processing failed: ${errorMessage}`,
-      },
-      { status: 500 }
-    );
+    console.error("Amazon order process error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Internal processing error occurred.";
+    return NextResponse.json({ error: `Processing failed: ${errorMessage}` }, { status: 500 });
   }
 }
