@@ -160,7 +160,7 @@ export default function PrintExecutionModal({
         </div>
 
         {helperStatus === "needs-permission" && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded text-sm space-y-1">
+          <div className="bg-amber-900/20 border border-amber-900/50 text-amber-400 p-4 rounded text-sm space-y-1">
             <p className="font-semibold">One-time step: Chrome needs your permission to reach your printer.</p>
             <p>
               Click <span className="font-semibold">&quot;Allow Printer Access&quot;</span> above — Chrome will show a
@@ -171,7 +171,7 @@ export default function PrintExecutionModal({
         )}
 
         {helperStatus === "permission-blocked" && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm space-y-1">
+          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm space-y-1">
             <p className="font-semibold">Local network access is blocked for this site.</p>
             <p>
               Someone previously clicked &quot;Block&quot; on Chrome&apos;s permission popup. Click the lock/info icon
@@ -182,25 +182,32 @@ export default function PrintExecutionModal({
         )}
 
         {helperStatus === "helper-down" && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm">
+          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm">
             Print helper is offline. Please make sure the LabelCraft Helper app is running on this PC (you can run install-helper.bat if needed), then click Retry Connection.
           </div>
         )}
 
         {helperStatus === "helper-error" && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm">
+          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm">
             Print helper is running but returned an error. Please check the helper console/logs, then click Retry Connection.
           </div>
         )}
 
         {helperStatus === "no-internet" && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded text-sm">
+          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm">
             Your computer has no internet connection. Please reconnect to your network and click Retry Connection.
           </div>
         )}
 
+        {helperStatus === "unauthorized" && (
+          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm space-y-1">
+            <p className="font-semibold">Print service couldn&apos;t authenticate.</p>
+            <p>Please contact your administrator.</p>
+          </div>
+        )}
+
         {helperStatus === "unsupported-browser" && (
-          <div className="bg-slate-50 border border-slate-200 text-slate-800 p-4 rounded text-sm">
+          <div className="bg-stone-800 border border-stone-700 text-stone-300 p-4 rounded text-sm">
             Your browser does not support silent local printing. Please switch to Google Chrome or Microsoft Edge for the best experience.
           </div>
         )}

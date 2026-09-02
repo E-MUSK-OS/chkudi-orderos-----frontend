@@ -17,7 +17,7 @@ type Step = "matching" | "review" | "printer" | "printing" | "summary";
 // "helper-error"        -> helper is reachable but returned an error/bad response
 // "no-internet"         -> computer has no network connection at all
 // "unsupported-browser" -> browser is not Chromium-based and doesn't support the permission
-export type HelperStatus = "checking" | "online" | "needs-permission" | "permission-blocked" | "helper-down" | "helper-error" | "no-internet" | "unsupported-browser";
+export type HelperStatus = "checking" | "online" | "needs-permission" | "permission-blocked" | "helper-down" | "helper-error" | "no-internet" | "unsupported-browser" | "unauthorized";
 
 
 export interface GenerateRow {
@@ -121,6 +121,11 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       setPrinters([]);
       setHelperOnline(false);
       
+      if (err instanceof Error && err.message === "PRINT_HELPER_401") {
+        console.error("Print Helper 401: Invalid NEXT_PUBLIC_PRINT_HELPER_TOKEN configured.");
+        setHelperStatus("unauthorized");
+        return;
+      }
       if (err instanceof Error && err.message === "Print helper responded with an error") {
         setHelperStatus("helper-error");
         return;
