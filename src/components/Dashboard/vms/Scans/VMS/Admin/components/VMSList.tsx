@@ -174,35 +174,20 @@ const VMSList = () => {
   // ===========================
 
   const handleSingleDownload = (item: VMSItem) => {
-    const exportData = [
-      {
-        "Tracking ID": item.trackingId,
-        Status: item.status,
-        Account: item.account?.accountName ?? "-",
-        Operator: item.operator?.operatorName ?? "-",
-        "Created At": new Date(item.createdAt).toLocaleString(),
-        Duration: item.duration ?? "-",
-        Size: item.fileSize ?? "-",
-        "Video URL": "View Video",
-      },
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-
-    worksheet["H2"] = {
-      t: "s",
-      v: "View Video",
-      l: {
-        Target: item.videoUrl ?? "",
-        Tooltip: item.trackingId,
-      },
-    };
-
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, "VMS");
-
-    XLSX.writeFile(workbook, `${item.trackingId}.xlsx`);
+    if (!item.videoUrl) return;
+    
+    // Append ?download=true to trigger the backend Content-Disposition header
+    const downloadUrl = item.videoUrl.includes('?') 
+      ? `${item.videoUrl}&download=true` 
+      : `${item.videoUrl}?download=true`;
+      
+    // Trigger download
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", ""); // Let the browser use the backend's filename
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   const handleDelete = (item: VMSItem) => {
