@@ -16,6 +16,9 @@ if (!SOCKET_URL) {
 export const socket: Socket = io(SOCKET_URL || "http://localhost:invalid-port-to-prevent-connection", {
   withCredentials: true,
   autoConnect: false,
+  extraHeaders: {
+    "ngrok-skip-browser-warning": "true"
+  }
 });
 
 if (!SOCKET_URL) {

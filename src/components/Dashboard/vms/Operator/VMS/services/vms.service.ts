@@ -6,6 +6,7 @@ export const uploadRecording = async (formData: FormData, onProgress?: (progress
   const response = await axiosInstance.post("/vms/upload", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
+      "ngrok-skip-browser-warning": "true",
     },
     onUploadProgress: (event) => {
       if (!event.total) return;

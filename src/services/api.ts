@@ -21,9 +21,12 @@ async function request<T>(
 
     headers: {
       ...(body instanceof FormData
-        ? {}
+        ? {
+            "ngrok-skip-browser-warning": "true"
+          }
         : {
             "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
           }),
 
       ...(token && {
@@ -88,6 +91,7 @@ export const api = {
       method: "GET",
 
       headers: {
+        "ngrok-skip-browser-warning": "true",
         ...(token && {
           Authorization: `Bearer ${token}`,
         }),
