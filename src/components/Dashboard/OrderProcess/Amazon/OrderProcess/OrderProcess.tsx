@@ -225,24 +225,6 @@ export default function OrderProcess() {
       toast.success(
         `Successfully processed ${processResponse.summary.totalZplLabels} labels & ${processResponse.summary.totalPdfOrders} invoices (${processResponse.summary.matchPercentage}% matched)!`
       );
-
-      // Open in new tab automatically
-      try {
-        const newTab = window.open(
-          "/dashboard/order-process/amazon/order-process/result",
-          "_blank"
-        );
-        if (newTab) {
-          toast.info("Opened verification report in a new tab.", {
-            action: {
-              label: "Focus Tab",
-              onClick: () => newTab.focus(),
-            },
-          });
-        }
-      } catch (tabErr) {
-        console.warn("Popup blocked or failed to open new tab:", tabErr);
-      }
     } catch (err: unknown) {
       clearInterval(progressInterval);
       const message = err instanceof Error ? err.message : "Processing failed.";

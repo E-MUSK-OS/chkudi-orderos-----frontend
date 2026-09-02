@@ -14,7 +14,11 @@ import {
   CheckCheck,
   ChevronLeft,
   ChevronRight,
+  Printer,
 } from "lucide-react";
+import { toast } from "sonner";
+import { PDFDocument } from "pdf-lib";
+import { printAgentService } from "@/components/Dashboard/Labels/services/printAgent.service";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
@@ -28,7 +32,7 @@ interface ComparisonResultViewProps {
 export default function ComparisonResultView({
   onReset,
 }: ComparisonResultViewProps) {
-  const { summary, results, combinedPdfUrl, downloadCombinedPdf, clearProcessData } =
+  const { summary, results, files, combinedPdfUrl, downloadCombinedPdf, clearProcessData } =
     useAmazonOrderStore();
 
   const [activeTab, setActiveTab] = useState<"table" | "combinedPdf">("table");
@@ -98,6 +102,176 @@ export default function ComparisonResultView({
       next.delete(index);
     }
     setSelectedRows(next);
+  };
+
+  const renderPdfBytesToImages = async (pdfBytes: Uint8Array): Promise<string[]> => {
+    const pdfjs = await import("pdfjs-dist");
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version || "6.3.289"}/build/pdf.worker.min.mjs`;
+    }
+
+    const loadingTask = pdfjs.getDocument({ data: pdfBytes });
+    const pdf = await loadingTask.promise;
+    const images: string[] = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 3.0 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const context = canvas.getContext("2d");
+      if (context) {
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        await (page.render as any)({ canvasContext: context, viewport, canvas }).promise;
+        const base64 = canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+        images.push(base64);
+      }
+    }
+
+    return images;
+  };
+
+  const handlePrintSelected = async () => {
+    const targetResults =
+      selectedRows.size > 0
+        ? results.filter((r) => selectedRows.has(r.index))
+        : filteredResults;
+
+    if (targetResults.length === 0) {
+      toast.error("No orders found to print.");
+      return;
+    }
+
+    if (!files?.convertedZplPdfBase64 || !files?.originalPdfBase64) {
+      toast.error("Processed order files are not ready for printing.");
+      return;
+    }
+
+    toast.loading("Connecting to desktop helper printer...", {
+      id: "print-prep",
+    });
+
+    try {
+      // 1. Check desktop print helper connectivity
+      let printers: string[] = [];
+      try {
+        printers = await printAgentService.getPrinters();
+      } catch {
+        toast.error(
+          "Desktop print helper is not running! Please start printer-helper on your desktop (port 9999).",
+          { id: "print-prep", duration: 5000 }
+        );
+        return;
+      }
+
+      if (!printers || printers.length === 0) {
+        toast.error("No printers found by desktop print helper. Please connect a thermal printer.", {
+          id: "print-prep",
+        });
+        return;
+      }
+
+      const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+      const printerName = lastUsed && printers.includes(lastUsed) ? lastUsed : printers[0];
+
+      toast.loading(`Preparing 3.5" x 5.5" print for ${targetResults.length} order(s)...`, {
+        id: "print-prep",
+      });
+
+      const zplBytes = Uint8Array.from(atob(files.convertedZplPdfBase64), (c) =>
+        c.charCodeAt(0)
+      );
+      const pdfBytes = Uint8Array.from(atob(files.originalPdfBase64), (c) =>
+        c.charCodeAt(0)
+      );
+
+      const zplDoc = await PDFDocument.load(zplBytes);
+      const origDoc = await PDFDocument.load(pdfBytes);
+      const printDoc = await PDFDocument.create();
+
+      // Target Dimensions: 3.5 inches width x 5.5 inches height (1 inch = 72 pt, 1 inch = 25.4 mm)
+      const TARGET_WIDTH = 3.5 * 72; // 252 pt
+      const TARGET_HEIGHT = 5.5 * 72; // 396 pt
+      const WIDTH_MM = 3.5 * 25.4; // 88.9 mm
+      const HEIGHT_MM = 5.5 * 25.4; // 139.7 mm
+      const MARGIN = 5; // 5 pt margin
+      const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
+      const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
+
+      // Helper to add a proportional scaled page onto a fixed 3.5" x 5.5" page
+      const addScaledPage = async (srcPage: any) => {
+        const embedded = await printDoc.embedPage(srcPage);
+        const { width: srcW, height: srcH } = embedded;
+
+        const scale = Math.min(AVAIL_WIDTH / srcW, AVAIL_HEIGHT / srcH);
+        const finalW = srcW * scale;
+        const finalH = srcH * scale;
+
+        const x = (TARGET_WIDTH - finalW) / 2;
+        const y = (TARGET_HEIGHT - finalH) / 2;
+
+        const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+        newPage.drawPage(embedded, {
+          x,
+          y,
+          width: finalW,
+          height: finalH,
+        });
+      };
+
+      for (const item of targetResults) {
+        // Interleaved pair: 1. ZPL barcode label first (scaled to 3.5" x 5.5")
+        if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
+          const zplPage = zplDoc.getPage(item.zplPage - 1);
+          await addScaledPage(zplPage);
+        }
+
+        // Interleaved pair: 2. Matching original PDF tax invoice page(s) (scaled to 3.5" x 5.5")
+        if (item.pdfPages && item.pdfPages.length > 0) {
+          for (const pageNum of item.pdfPages) {
+            const pageIndex = pageNum - 1;
+            if (pageIndex >= 0 && pageIndex < origDoc.getPageCount()) {
+              const origPage = origDoc.getPage(pageIndex);
+              await addScaledPage(origPage);
+            }
+          }
+        }
+      }
+
+      if (printDoc.getPageCount() === 0) {
+        toast.error("Selected orders have no valid pages to print.", { id: "print-prep" });
+        return;
+      }
+
+      const finalBytes = await printDoc.save();
+
+      toast.loading(`Direct printing ${printDoc.getPageCount()} label(s) to ${printerName}...`, {
+        id: "print-prep",
+      });
+
+      const images = await renderPdfBytesToImages(finalBytes);
+
+      for (const imgBase64 of images) {
+        await printAgentService.sendPrintJob({
+          imageBase64: imgBase64,
+          printerName,
+          widthMm: WIDTH_MM,
+          heightMm: HEIGHT_MM,
+        });
+      }
+
+      toast.success(
+        `Printed ${images.length} label(s) (3.5" x 5.5") directly to ${printerName}!`,
+        { id: "print-prep" }
+      );
+    } catch (err: any) {
+      console.error("Desktop helper print error:", err);
+      toast.error(err?.message || "Failed to print via desktop helper printer.", {
+        id: "print-prep",
+      });
+    }
   };
 
   if (!summary || results.length === 0) {
@@ -288,25 +462,8 @@ export default function ComparisonResultView({
               : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
           }`}
         >
-          <Layers className="h-4 w-4" />
+          {/* <Layers className="h-4 w-4" /> */}
           Comparison Table ({results.length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("table");
-            setFilterStatus("mismatch");
-            setPage(1);
-          }}
-          className={`inline-flex h-14 w-64 items-center justify-center gap-2 border text-sm font-semibold transition-all duration-200 ${
-            activeTab === "table" && filterStatus === "mismatch"
-              ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-              : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-          }`}
-        >
-          <AlertTriangle className="h-4 w-4" />
-          Mismatch Section ({summary.mismatchCount})
         </button>
 
         <button
@@ -318,7 +475,7 @@ export default function ComparisonResultView({
               : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
           }`}
         >
-          <Sparkles className="h-4 w-4" />
+          {/* <Sparkles className="h-4 w-4" /> */}
           Combined Matched PDF
         </button>
       </div>
@@ -388,6 +545,19 @@ export default function ComparisonResultView({
                 }`}
               >
                 Mismatch ({summary.mismatchCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintSelected}
+                className={`inline-flex h-14 w-44 items-center justify-center gap-1.5 border text-sm font-semibold transition-all duration-200 ${
+                  selectedRows.size > 0
+                    ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
+                    : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D]"
+                }`}
+              >
+                <Printer className="h-4 w-4" />
+                Print {selectedRows.size > 0 ? `(${selectedRows.size})` : ""}
               </button>
             </div>
           </div>

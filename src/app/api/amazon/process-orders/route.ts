@@ -857,24 +857,48 @@ export async function POST(req: NextRequest) {
     // ---------------------------------------------------------
     const combinedPdf = await PDFDocument.create();
 
+    // Fixed Print Dimensions: 3.5" width x 5.5" height (252 x 396 pt)
+    const TARGET_WIDTH = 3.5 * 72; // 252 pt
+    const TARGET_HEIGHT = 5.5 * 72; // 396 pt
+    const MARGIN = 6; // 6 pt margin
+    const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
+    const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
+
+    const addScaledPageToCombined = async (srcPage: any) => {
+      const embedded = await combinedPdf.embedPage(srcPage);
+      const { width: srcW, height: srcH } = embedded;
+
+      const scale = Math.min(AVAIL_WIDTH / srcW, AVAIL_HEIGHT / srcH);
+      const finalW = srcW * scale;
+      const finalH = srcH * scale;
+
+      const x = (TARGET_WIDTH - finalW) / 2;
+      const y = (TARGET_HEIGHT - finalH) / 2;
+
+      const newPage = combinedPdf.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+      newPage.drawPage(embedded, {
+        x,
+        y,
+        width: finalW,
+        height: finalH,
+      });
+    };
+
     // SECTION 1: Matched pairs (interleaved)
     for (const result of matchedResults) {
       if (result.zplPage > 0 && result.zplPage <= mergedZplPdf.getPageCount()) {
-        const [zplPage] = await combinedPdf.copyPages(mergedZplPdf, [
-          result.zplPage - 1,
-        ]);
-        combinedPdf.addPage(zplPage);
+        const zplPage = mergedZplPdf.getPage(result.zplPage - 1);
+        await addScaledPageToCombined(zplPage);
       }
 
       if (result.pdfPages.length > 0) {
-        const pageIndices = result.pdfPages.map((page) => page - 1);
-        const invoicePages = await combinedPdf.copyPages(
-          originalPdfDoc,
-          pageIndices
-        );
-        invoicePages.forEach((page) => {
-          combinedPdf.addPage(page);
-        });
+        for (const pageNum of result.pdfPages) {
+          const pageIndex = pageNum - 1;
+          if (pageIndex >= 0 && pageIndex < originalPdfDoc.getPageCount()) {
+            const origPage = originalPdfDoc.getPage(pageIndex);
+            await addScaledPageToCombined(origPage);
+          }
+        }
       }
     }
 
@@ -882,24 +906,21 @@ export async function POST(req: NextRequest) {
     // 1. Mismatched ZPL pages
     for (const result of mismatchedZplResults) {
       if (result.zplPage > 0 && result.zplPage <= mergedZplPdf.getPageCount()) {
-        const [zplPage] = await combinedPdf.copyPages(mergedZplPdf, [
-          result.zplPage - 1,
-        ]);
-        combinedPdf.addPage(zplPage);
+        const zplPage = mergedZplPdf.getPage(result.zplPage - 1);
+        await addScaledPageToCombined(zplPage);
       }
     }
 
     // 2. Unmatched PDF invoice pages
     for (const result of mismatchedPdfResults) {
       if (result.pdfPages.length > 0) {
-        const pageIndices = result.pdfPages.map((page) => page - 1);
-        const invoicePages = await combinedPdf.copyPages(
-          originalPdfDoc,
-          pageIndices
-        );
-        invoicePages.forEach((page) => {
-          combinedPdf.addPage(page);
-        });
+        for (const pageNum of result.pdfPages) {
+          const pageIndex = pageNum - 1;
+          if (pageIndex >= 0 && pageIndex < originalPdfDoc.getPageCount()) {
+            const origPage = originalPdfDoc.getPage(pageIndex);
+            await addScaledPageToCombined(origPage);
+          }
+        }
       }
     }
 
