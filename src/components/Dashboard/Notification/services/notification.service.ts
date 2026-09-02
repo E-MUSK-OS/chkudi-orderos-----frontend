@@ -16,6 +16,7 @@ const getHeaders = () => {
 
   return {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
     Authorization: `Bearer ${token}`,
   };
 };

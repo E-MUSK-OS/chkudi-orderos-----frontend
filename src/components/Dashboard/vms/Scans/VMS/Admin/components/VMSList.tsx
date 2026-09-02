@@ -16,6 +16,13 @@ import * as XLSX from "xlsx";
 import DeleteOperatorModal from "@/components/Dashboard/vms/Admin/User/operator/components/DeleteOperatorModal";
 import DeleteModal from "./DeleteModal";
 import { useAccounts } from "@/components/Dashboard/vms/Admin/Account/hooks/useAccounts";
+import { API_BASE_URL } from "@/lib/config";
+
+const getFullUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE_URL}${url}`;
+};
 
 const VMSList = () => {
   // ===========================
@@ -148,7 +155,7 @@ const VMSList = () => {
         t: "s",
         v: "View Video",
         l: {
-          Target: item.videoUrl,
+          Target: getFullUrl(item.videoUrl),
           Tooltip: item.trackingId,
         },
       };
@@ -166,43 +173,27 @@ const VMSList = () => {
   // ===========================
 
   const handleRefresh = () => {
-    refetch();
-  };
-
   // ===========================
   // Table Columns
   // ===========================
 
   const handleSingleDownload = (item: VMSItem) => {
-    const exportData = [
-      {
-        "Tracking ID": item.trackingId,
-        Status: item.status,
-        Account: item.account?.accountName ?? "-",
-        Operator: item.operator?.operatorName ?? "-",
-        "Created At": new Date(item.createdAt).toLocaleString(),
-        Duration: item.duration ?? "-",
-        Size: item.fileSize ?? "-",
-        "Video URL": "View Video",
-      },
-    ];
+    if (!item.videoUrl) return;
+    
+    const fullUrl = getFullUrl(item.videoUrl)!;
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-
-    worksheet["H2"] = {
-      t: "s",
-      v: "View Video",
-      l: {
-        Target: item.videoUrl ?? "",
-        Tooltip: item.trackingId,
-      },
-    };
-
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, "VMS");
-
-    XLSX.writeFile(workbook, `${item.trackingId}.xlsx`);
+    // Append ?download=true to trigger the backend Content-Disposition header
+    const downloadUrl = fullUrl.includes('?') 
+      ? `${fullUrl}&download=true` 
+      : `${fullUrl}?download=true`;
+      
+    // Trigger download
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", ""); // Let the browser use the backend's filename
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   const handleDelete = (item: VMSItem) => {

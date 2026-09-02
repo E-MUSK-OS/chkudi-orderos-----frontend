@@ -15,6 +15,7 @@ const getHeaders = (): HeadersInit => {
 
   return {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
     Authorization: `Bearer ${token}`,
   };
 };
@@ -28,6 +29,7 @@ export const login = async (
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
       Authorization: `Bearer ${adminToken}`,
     },
     body: JSON.stringify(payload),

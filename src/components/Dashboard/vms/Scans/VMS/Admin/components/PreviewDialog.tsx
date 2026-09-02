@@ -4,6 +4,13 @@ import { CalendarDays, Clock3, Download, UserRound, X } from "lucide-react";
 import { format } from "date-fns";
 
 import Button from "@/components/ui/Button";
+import { API_BASE_URL } from "@/lib/config";
+
+const getFullUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE_URL}${url}`;
+};
 
 import type { VMSItem } from "../types";
 
@@ -20,7 +27,11 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
     if (!item.videoUrl) return;
 
     try {
-      const response = await fetch(item.videoUrl);
+      const response = await fetch(getFullUrl(item.videoUrl)!, {
+        headers: {
+          "ngrok-skip-browser-warning": "true"
+        }
+      });
 
       const blob = await response.blob();
 
@@ -75,13 +86,10 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                 <video
                   controls
                   className="aspect-video w-full"
-                  src={item.videoUrl}
-                  poster={item.thumbnailUrl ?? undefined}
+                  src={getFullUrl(item.videoUrl)}
+                  poster={getFullUrl(item.thumbnailUrl) ?? undefined}
                 />
               ) : (
-                <div className="flex aspect-video items-center justify-center bg-black text-gray-400">
-                  Video Not Available
-                </div>
               )}
             </div>
           </div>
@@ -151,7 +159,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
 
         <div className="flex justify-end gap-3 border-t border-white/10 px-6 py-5">
           {item.videoUrl && (
-            <a href={item.videoUrl} target="_blank" rel="noreferrer">
+            <a href={getFullUrl(item.videoUrl)} target="_blank" rel="noreferrer">
               <Button
                 variant="secondary"
                 fullWidth={false}
