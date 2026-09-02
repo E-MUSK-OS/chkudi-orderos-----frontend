@@ -62,13 +62,6 @@ const FONTS: SelectOption[] = [
   { label: 'Serif', value: 'serif' },
 ];
 
-const ROTATIONS: SelectOption[] = [
-  { label: '0°', value: '0' },
-  { label: '90°', value: '90' },
-  { label: '180°', value: '180' },
-  { label: '270°', value: '270' },
-];
-
 const DPI_OPTIONS: SelectOption[] = [
   { label: '203 DPI (Standard Thermal)', value: '203' },
   { label: '300 DPI (High Res Thermal)', value: '300' },
@@ -384,13 +377,42 @@ export function PropertiesPanel({
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-400">Rotation</label>
-            <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
-              height={36}
-              options={ROTATIONS}
-              value={ROTATIONS.find(o => o.value === String(selectedElement.rotation)) || ROTATIONS[0]}
-              onChange={(opt) => opt && handleUpdate('rotation', Number(opt.value))}
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-400">Rotation</label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={0}
+                  max={360}
+                  step={1}
+                  value={Math.round(selectedElement.rotation ?? 0)}
+                  onChange={(e) => {
+                    let v = Number(e.target.value);
+                    if (v < 0) v = 0;
+                    if (v > 360) v = 360;
+                    handleUpdate('rotation', v);
+                  }}
+                  className="w-16 h-7 px-2 text-xs bg-transparent text-white border border-stone-700 rounded-sm focus:outline-none focus:border-[#E8C16D] text-right"
+                />
+                <span className="text-xs text-gray-500">°</span>
+              </div>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={360}
+              step={1}
+              value={Math.round(selectedElement.rotation ?? 0)}
+              onChange={(e) => handleUpdate('rotation', Number(e.target.value))}
+              className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
             />
+            <div className="flex justify-between text-[10px] text-gray-600">
+              <span>0°</span>
+              <button onClick={() => handleUpdate('rotation', 90)} className="hover:text-[#E8C16D] transition-colors">90°</button>
+              <button onClick={() => handleUpdate('rotation', 180)} className="hover:text-[#E8C16D] transition-colors">180°</button>
+              <button onClick={() => handleUpdate('rotation', 270)} className="hover:text-[#E8C16D] transition-colors">270°</button>
+              <span>360°</span>
+            </div>
           </div>
         </div>
 

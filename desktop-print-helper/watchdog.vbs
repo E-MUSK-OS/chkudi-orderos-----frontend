@@ -40,13 +40,34 @@ If Err.Number <> 0 Then
 ElseIf objHTTP.Status <> 200 Then
     LogMessage "HTTP Status was not 200: " & objHTTP.Status
     failed = True
+Else
+    ' Read expected version
+    Dim expectedVersion
+    expectedVersion = ""
+    If fso.FileExists(localAppData & "\LabelCraftHelper\version.txt") Then
+        Dim ts
+        Set ts = fso.OpenTextFile(localAppData & "\LabelCraftHelper\version.txt", 1)
+        If Not ts.AtEndOfStream Then
+            expectedVersion = Trim(ts.ReadLine())
+        End If
+        ts.Close
+    End If
+    
+    Dim actualVersion
+    actualVersion = objHTTP.getResponseHeader("X-Helper-Version")
+    
+    If expectedVersion <> "" And actualVersion <> expectedVersion Then
+        LogMessage "Version mismatch! Expected " & expectedVersion & ", got " & actualVersion
+        failed = True
+    End If
 End If
 On Error GoTo 0
 
 If failed Then
-    LogMessage "Helper appears offline. Restarting..."
+    LogMessage "Helper appears offline or stale. Restarting..."
     ' Kill any existing instances silently
     On Error Resume Next
+    WshShell.Run "cmd.exe /c for /f """"tokens=5"""" %a in ('netstat -aon ^| findstr :9999') do taskkill /F /PID %a", 0, True
     WshShell.Run "taskkill /F /IM printer-helper.exe", 0, True
     On Error GoTo 0
     WScript.Sleep 1000
