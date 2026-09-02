@@ -265,6 +265,7 @@ export function ElementRenderer({
 
   return (
     <div
+      data-element-id={element.id}
       style={style}
       onPointerDown={(e) => {
         onPointerDownElement(e, element.id);
