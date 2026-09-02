@@ -366,35 +366,63 @@ export default function OrderProcess() {
           const origDoc = await PDFDocument.load(origPdfBytes);
           const combinedDoc = await PDFDocument.create();
 
-          const TARGET_WIDTH = 3.5 * 72; // 252 pt
-          const TARGET_HEIGHT = 5.5 * 72; // 396 pt
+          const TARGET_WIDTH = 3.7 * 72; // 266.4 pt
+          const TARGET_HEIGHT = 5.7 * 72; // 410.4 pt
           const MARGIN = 6;
           const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
           const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
 
-          const addScaledPage = async (srcPage: any) => {
+          const addScaledPage = async (srcPage: any, isZpl = false) => {
             const embedded = await combinedDoc.embedPage(srcPage);
             const { width: srcW, height: srcH } = embedded;
-            const scale = Math.min(AVAIL_WIDTH / srcW, AVAIL_HEIGHT / srcH);
-            const finalW = srcW * scale;
-            const finalH = srcH * scale;
-            const x = (TARGET_WIDTH - finalW) / 2;
-            const y = (TARGET_HEIGHT - finalH) / 2;
-            const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-            newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+
+            if (isZpl) {
+              // Adjust top spacing for ZPL barcode label so the top barcode has clean breathing room
+              const TOP_SPACING = 25; // 25 pt (~8.8 mm) top margin
+              const BOTTOM_SPACING = 10;
+              const SIDE_SPACING = 8;
+
+              const availW = TARGET_WIDTH - 2 * SIDE_SPACING;
+              const availH = TARGET_HEIGHT - TOP_SPACING - BOTTOM_SPACING;
+
+              const scale = Math.min(availW / srcW, availH / srcH);
+              const finalW = srcW * scale;
+              const finalH = srcH * scale;
+
+              const x = (TARGET_WIDTH - finalW) / 2;
+              // In PDF coordinates (0,0 is bottom-left), distance from top edge is TOP_SPACING
+              const y = TARGET_HEIGHT - TOP_SPACING - finalH;
+
+              const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+              newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+            } else {
+              const MARGIN = 6;
+              const availW = TARGET_WIDTH - 2 * MARGIN;
+              const availH = TARGET_HEIGHT - 2 * MARGIN;
+
+              const scale = Math.min(availW / srcW, availH / srcH);
+              const finalW = srcW * scale;
+              const finalH = srcH * scale;
+
+              const x = (TARGET_WIDTH - finalW) / 2;
+              const y = (TARGET_HEIGHT - finalH) / 2;
+
+              const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+              newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+            }
           };
 
           // Matched only (interleaved)
           for (const item of processResponse.results) {
             if (item.isMatch) {
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-                await addScaledPage(zplDoc.getPage(item.zplPage - 1));
+                await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
               }
               if (item.pdfPages && item.pdfPages.length > 0) {
                 for (const p of item.pdfPages) {
                   const idx = p - 1;
                   if (idx >= 0 && idx < origDoc.getPageCount()) {
-                    await addScaledPage(origDoc.getPage(idx));
+                    await addScaledPage(origDoc.getPage(idx), false);
                   }
                 }
               }
