@@ -134,7 +134,7 @@ export default function ComparisonResultView({
     return images;
   };
 
-  // Browser fallback: render PDF into an iframe with @page CSS for 3.7" x 5.7"
+  // Browser fallback: render PDF into an iframe with @page CSS for 4" x 6"
   const printViaBrowser = (pdfBytes: Uint8Array) => {
     const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(blob);
@@ -156,7 +156,7 @@ export default function ComparisonResultView({
           if (iframeDoc) {
             const style = iframeDoc.createElement("style");
             style.textContent = `
-              @page { size: 3.7in 5.7in; margin: 0; }
+              @page { size: 4in 6in; margin: 0; }
               @media print { body { margin: 0; padding: 0; } }
             `;
             iframeDoc.head.appendChild(style);
@@ -192,7 +192,7 @@ export default function ComparisonResultView({
       return;
     }
 
-    toast.loading(`Preparing 3.7" x 5.7" print for ${targetResults.length} order(s)...`, {
+    toast.loading(`Preparing 4" x 6" print for ${targetResults.length} order(s)...`, {
       id: "print-prep",
     });
 
@@ -208,11 +208,11 @@ export default function ComparisonResultView({
       const origDoc = await PDFDocument.load(pdfBytes);
       const printDoc = await PDFDocument.create();
 
-      // Target Dimensions: 3.7 inches width x 5.7 inches height
-      const TARGET_WIDTH = 3.7 * 72; // 266.4 pt
-      const TARGET_HEIGHT = 5.7 * 72; // 410.4 pt
-      const WIDTH_MM = 3.7 * 25.4; // 93.98 mm
-      const HEIGHT_MM = 5.7 * 25.4; // 144.78 mm
+      // Target Dimensions: 4 inches width x 6 inches height
+      const TARGET_WIDTH = 4 * 72; // 288 pt
+      const TARGET_HEIGHT = 6 * 72; // 432 pt
+      const WIDTH_MM = 4 * 25.4; // 101.6 mm
+      const HEIGHT_MM = 6 * 25.4; // 152.4 mm
       const MARGIN = 5;
       const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
       const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
@@ -258,9 +258,7 @@ export default function ComparisonResultView({
       };
 
       for (const item of targetResults) {
-        if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-          await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
-        }
+        // 1. Tax Invoice first
         if (item.pdfPages && item.pdfPages.length > 0) {
           for (const pageNum of item.pdfPages) {
             const idx = pageNum - 1;
@@ -268,6 +266,10 @@ export default function ComparisonResultView({
               await addScaledPage(origDoc.getPage(idx), false);
             }
           }
+        }
+        // 2. ZPL / JPL barcode label second
+        if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
+          await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
         }
       }
 
@@ -302,7 +304,7 @@ export default function ComparisonResultView({
           }
 
           toast.success(
-            `Printed ${images.length} label(s) (3.7" x 5.7") directly to ${printerName}!`,
+            `Printed ${images.length} label(s) (4" x 6") directly to ${printerName}!`,
             { id: "print-prep" }
           );
           usedDesktopHelper = true;
@@ -312,10 +314,10 @@ export default function ComparisonResultView({
       }
 
       if (!usedDesktopHelper) {
-        toast.loading("Opening browser print (3.7\" x 5.7\")...", { id: "print-prep" });
+        toast.loading("Opening browser print (4\" x 6\")...", { id: "print-prep" });
         printViaBrowser(finalBytes);
         toast.success(
-          `Print dialog opened for ${printDoc.getPageCount()} page(s) at 3.7" x 5.7".`,
+          `Print dialog opened for ${printDoc.getPageCount()} page(s) at 4" x 6".`,
           { id: "print-prep" }
         );
       }

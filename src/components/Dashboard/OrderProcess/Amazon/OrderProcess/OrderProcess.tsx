@@ -412,12 +412,10 @@ export default function OrderProcess() {
             }
           };
 
-          // Matched only (interleaved)
+          // Matched only (interleaved: Tax Invoice FIRST, ZPL/JPL SECOND)
           for (const item of processResponse.results) {
             if (item.isMatch) {
-              if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-                await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
-              }
+              // 1. Tax Invoice first
               if (item.pdfPages && item.pdfPages.length > 0) {
                 for (const p of item.pdfPages) {
                   const idx = p - 1;
@@ -425,6 +423,10 @@ export default function OrderProcess() {
                     await addScaledPage(origDoc.getPage(idx), false);
                   }
                 }
+              }
+              // 2. ZPL / JPL barcode label second
+              if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
+                await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
               }
             }
           }
