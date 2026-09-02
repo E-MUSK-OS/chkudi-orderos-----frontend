@@ -42,19 +42,20 @@ export const printAgentService = {
   },
 
   async printViaWebUsb(canvas: HTMLCanvasElement): Promise<void> {
-    if (!navigator.usb) {
+    const nav = navigator as any;
+    if (!nav.usb) {
       throw new Error("WebUSB is not supported by your browser. Please use Chrome or Edge.");
     }
 
     // Prompt user to select a printer (classCode 7)
-    const device = await navigator.usb.requestDevice({ filters: [{ classCode: 7 }] });
+    const device = await nav.usb.requestDevice({ filters: [{ classCode: 7 }] });
     
     await device.open();
     if (device.configuration === null) {
       await device.selectConfiguration(1);
     }
 
-    let printerInterface: USBInterface | undefined;
+    let printerInterface: any | undefined;
     for (const iface of device.configuration?.interfaces || []) {
       // Some devices have multiple interfaces, look for the printer class (7)
       if (iface.alternate.interfaceClass === 7) {
@@ -71,7 +72,7 @@ export const printAgentService = {
 
     await device.claimInterface(printerInterface.interfaceNumber);
 
-    const endpoint = printerInterface.alternate.endpoints.find(e => e.direction === "out");
+    const endpoint = printerInterface.alternate.endpoints.find((e: any) => e.direction === "out");
     if (!endpoint) {
       throw new Error("Could not find USB output endpoint");
     }
