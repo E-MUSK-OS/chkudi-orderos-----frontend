@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import http from "http";
+import https from "https";
 import { PDFDocument } from "pdf-lib";
-import { extractText } from "unpdf";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -39,70 +38,105 @@ interface ComparisonResult {
 }
 
 /**
- * Convert a chunk of ZPL labels to PDF using Labelary.
+ * Convert a chunk of ZPL labels to PDF using Labelary with automatic retry on 429 rate limits.
  */
-async function convertZplChunkToPdf(zplChunk: string): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const postData = Buffer.from(zplChunk, "utf8");
+async function convertZplChunkToPdf(
+  zplChunk: string,
+  maxRetries = 4
+): Promise<Buffer> {
+  const postData = Buffer.from(zplChunk, "utf8");
 
-    const options: http.RequestOptions = {
-      hostname: "api.labelary.com",
-      port: 80,
-      path: "/v1/printers/8dpmm/labels/6x9/",
-      method: "POST",
-      headers: {
-        Accept: "application/pdf",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Content-Length": postData.length,
-      },
-      timeout: 30000,
-    };
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await new Promise<Buffer>((resolve, reject) => {
+        const options: https.RequestOptions = {
+          hostname: "api.labelary.com",
+          port: 443,
+          path: "/v1/printers/8dpmm/labels/6x9/",
+          method: "POST",
+          headers: {
+            Accept: "application/pdf",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Length": postData.length,
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OrderOS/AmazonProcessor",
+          },
+          timeout: 45000,
+        };
 
-    const request = http.request(options, (response) => {
-      if (response.statusCode !== 200) {
-        let errorBody = "";
+        const request = https.request(options, (response) => {
+          if (response.statusCode === 429) {
+            let errorBody = "";
+            response.on("data", (chunk) => {
+              errorBody += chunk.toString();
+            });
+            response.on("end", () => {
+              const retryAfterHeader = response.headers["retry-after"];
+              const retryAfterMs = retryAfterHeader
+                ? parseInt(String(retryAfterHeader), 10) * 1000
+                : attempt * 2000;
+              const err = new Error(
+                `Labelary rate limit (429): ${errorBody.substring(0, 150)}`
+              ) as any;
+              err.isRateLimit = true;
+              err.retryAfterMs = retryAfterMs;
+              reject(err);
+            });
+            return;
+          }
 
-        response.on("data", (chunk) => {
-          errorBody += chunk.toString();
+          if (response.statusCode !== 200) {
+            let errorBody = "";
+            response.on("data", (chunk) => {
+              errorBody += chunk.toString();
+            });
+            response.on("end", () => {
+              reject(
+                new Error(
+                  `Labelary conversion failed with status ${response.statusCode}: ${errorBody.substring(
+                    0,
+                    200
+                  )}`
+                )
+              );
+            });
+            return;
+          }
+
+          const chunks: Buffer[] = [];
+          response.on("data", (chunk) => {
+            chunks.push(Buffer.from(chunk));
+          });
+          response.on("end", () => {
+            resolve(Buffer.concat(chunks));
+          });
         });
 
-        response.on("end", () => {
-          reject(
-            new Error(
-              `Labelary conversion failed with status ${response.statusCode}: ${errorBody.substring(
-                0,
-                200
-              )}`
-            )
-          );
+        request.on("error", (error) => {
+          reject(new Error(`Labelary network error: ${error.message}`));
         });
 
-        return;
+        request.on("timeout", () => {
+          request.destroy();
+          reject(new Error("Labelary request timed out after 45 seconds"));
+        });
+
+        request.write(postData);
+        request.end();
+      });
+    } catch (err: any) {
+      if (err?.isRateLimit && attempt < maxRetries) {
+        const waitTime = err.retryAfterMs || attempt * 2500;
+        console.warn(
+          `[Labelary 429] Rate limit hit on attempt ${attempt}/${maxRetries}. Waiting ${waitTime}ms before retry...`
+        );
+        await new Promise((r) => setTimeout(r, waitTime));
+      } else {
+        throw err;
       }
+    }
+  }
 
-      const chunks: Buffer[] = [];
-
-      response.on("data", (chunk) => {
-        chunks.push(Buffer.from(chunk));
-      });
-
-      response.on("end", () => {
-        resolve(Buffer.concat(chunks));
-      });
-    });
-
-    request.on("error", (error) => {
-      reject(new Error(`Labelary network error: ${error.message}`));
-    });
-
-    request.on("timeout", () => {
-      request.destroy();
-      reject(new Error("Labelary request timed out after 30 seconds"));
-    });
-
-    request.write(postData);
-    request.end();
-  });
+  throw new Error("Labelary conversion failed: Maximum retries exceeded due to rate limit.");
 }
 
 /**
@@ -530,43 +564,34 @@ export async function POST(req: NextRequest) {
 
     const mergedZplPdf = await PDFDocument.create();
 
-    const CHUNK_SIZE = 20;
+    const CHUNK_SIZE = 50;
 
-    for (
-      let i = 0;
-      i < zplLabels.length;
-      i += CHUNK_SIZE
-    ) {
-      const chunk = zplLabels.slice(
-        i,
-        i + CHUNK_SIZE
-      );
+    for (let i = 0; i < zplLabels.length; i += CHUNK_SIZE) {
+      const chunk = zplLabels.slice(i, i + CHUNK_SIZE);
 
-      const chunkZpl = chunk
-        .map((label) => label.rawZpl)
-        .join("\n");
+      const chunkZpl = chunk.map((label) => label.rawZpl).join("\n");
 
       console.log(
-        `[Labelary] Converting labels ${
-          i + 1
-        }-${i + chunk.length}`
+        `[Labelary] Converting labels ${i + 1}-${i + chunk.length} of ${zplLabels.length}`
       );
 
-      const chunkPdfBuffer =
-        await convertZplChunkToPdf(chunkZpl);
+      const chunkPdfBuffer = await convertZplChunkToPdf(chunkZpl);
 
-      const chunkPdf =
-        await PDFDocument.load(chunkPdfBuffer);
+      const chunkPdf = await PDFDocument.load(chunkPdfBuffer);
 
-      const copiedPages =
-        await mergedZplPdf.copyPages(
-          chunkPdf,
-          chunkPdf.getPageIndices()
-        );
+      const copiedPages = await mergedZplPdf.copyPages(
+        chunkPdf,
+        chunkPdf.getPageIndices()
+      );
 
       copiedPages.forEach((page) => {
         mergedZplPdf.addPage(page);
       });
+
+      // Add a polite delay between chunks to stay well below rate limits
+      if (i + CHUNK_SIZE < zplLabels.length) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
     }
 
     const convertedZplPdfBytes =
