@@ -9,6 +9,7 @@ import {
   AmazonProcessFiles,
   AmazonProcessResponse,
 } from "../types";
+import { cleanCustomerName } from "../utils";
 
 interface AmazonOrderState {
   isProcessing: boolean;
@@ -234,7 +235,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       "PDF Invoice #": r.pdfInvoice,
       "Amazon Order Number": r.orderNumber,
       "AWB / Tracking Number": r.awb,
-      "Customer Name": r.customer,
+      "Customer Name": cleanCustomerName(r.customer),
       "Invoice Amount": r.amount,
       "Invoice Date": r.date,
       "PDF Page(s)": r.pdfPages.join(", ") || "N/A",
