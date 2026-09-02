@@ -70,9 +70,13 @@ export const printAgentService = {
         headers: {
           "X-Print-Token": process.env.NEXT_PUBLIC_PRINT_HELPER_TOKEN || ""
         },
-        signal: controller.signal 
-      });
-      if (!res.ok) throw new Error("Print helper responded with an error");
+        signal: controller.signal,
+        targetAddressSpace: "local"
+      } as RequestInit & { targetAddressSpace?: string });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("PRINT_HELPER_401");
+        throw new Error("Print helper responded with an error");
+      }
       const data = await res.json();
       return Array.isArray(data) ? data : (data.printers || []);
     } finally {
@@ -92,8 +96,12 @@ export const printAgentService = {
         },
         body: JSON.stringify(payload),
         signal: controller.signal,
-      });
-      if (!res.ok) throw new Error(`Print request failed (${res.status})`);
+        targetAddressSpace: "local"
+      } as RequestInit & { targetAddressSpace?: string });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("PRINT_HELPER_401");
+        throw new Error(`Print request failed (${res.status})`);
+      }
       // NOTE: a 200 here means "the helper accepted and queued the job," not
       // "the label physically printed."
     } finally {
