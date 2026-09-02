@@ -3,6 +3,8 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+
+const BUILD_VERSION = "2026-09-02-v1";
 const crypto = require('crypto');
 
 const PORT = 9999;
@@ -181,6 +183,7 @@ const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Print-Token');
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  res.setHeader('X-Helper-Version', BUILD_VERSION);
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204); 
@@ -203,7 +206,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end('<h1 style="color:green; font-family:sans-serif; text-align:center; margin-top:50px;">✅ LabelCraft Rapid-Fire Helper is Running!</h1>');
+    res.end(`<h1 style="color:green; font-family:sans-serif; text-align:center; margin-top:50px;">✅ LabelCraft Rapid-Fire Helper is Running!</h1><p style="text-align:center; color:#666;">Version: ${BUILD_VERSION}</p>`);
     return;
   }
 
@@ -251,7 +254,14 @@ const server = http.createServer((req, res) => {
 
 server.on('error', (e) => {
   if (e.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} in use. Duplicate instance exiting immediately.`);
+    const errorMsg = `[${new Date().toISOString()}] Port ${PORT} in use. Duplicate instance exiting immediately.`;
+    console.error(errorMsg);
+    try {
+      const logDir = path.join(process.env.LOCALAPPDATA || '', 'LabelCraftHelper', 'logs');
+      if (fs.existsSync(logDir)) {
+        fs.appendFileSync(path.join(logDir, 'crash.log'), errorMsg + '\n');
+      }
+    } catch(err) {}
     process.exit(1);
   }
 });
