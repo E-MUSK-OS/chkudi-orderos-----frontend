@@ -9,7 +9,7 @@ export interface BaseElement {
   y: number;      // in mm
   width: number;  // in mm
   height: number; // in mm
-  rotation: 0 | 90 | 180 | 270;
+  rotation: number; // 0–360 degrees, any angle
   zIndex: number;
   locked?: boolean;
 }
