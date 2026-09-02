@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Info,
   ExternalLink,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
@@ -23,8 +24,8 @@ import { useAmazonOrderStore } from "./store/useAmazonOrderStore";
 import { AmazonProcessResponse } from "./types";
 
 export default function OrderProcess() {
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [zplFile, setZplFile] = useState<File | null>(null);
+  const [pdfFiles, setPdfFiles] = useState<File[]>([]);
+  const [zplFiles, setZplFiles] = useState<File[]>([]);
 
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [zplError, setZplError] = useState<string | null>(null);
@@ -55,36 +56,76 @@ export default function OrderProcess() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  // Validate and handle PDF file
-  const handlePdfSelection = (file: File) => {
-    const isPdf =
-      file.name.toLowerCase().endsWith(".pdf") ||
-      file.type === "application/pdf";
+  // Validate and handle multiple PDF files
+  const handlePdfSelection = (selectedFiles: FileList | File[]) => {
+    const validPdfs: File[] = [];
+    const invalidNames: string[] = [];
 
-    if (!isPdf) {
-      setPdfError("Invalid file type. Only .pdf files are accepted.");
-      toast.error("Invalid file format. Please upload a PDF (.pdf) file.");
-      return;
+    Array.from(selectedFiles).forEach((file) => {
+      const isPdf =
+        file.name.toLowerCase().endsWith(".pdf") ||
+        file.type === "application/pdf";
+
+      if (isPdf) {
+        validPdfs.push(file);
+      } else {
+        invalidNames.push(file.name);
+      }
+    });
+
+    if (invalidNames.length > 0) {
+      toast.error(`Ignored ${invalidNames.length} non-PDF file(s). Only .pdf files are accepted.`);
     }
 
-    setPdfFile(file);
-    setPdfError(null);
-    toast.success(`PDF file "${file.name}" added successfully.`);
+    if (validPdfs.length > 0) {
+      setPdfFiles((prev) => {
+        const existingKeys = new Set(prev.map((f) => `${f.name}_${f.size}`));
+        const newUnique = validPdfs.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
+        if (newUnique.length < validPdfs.length) {
+          toast.info("Duplicate PDF file(s) were skipped.");
+        }
+        return [...prev, ...newUnique];
+      });
+      setPdfError(null);
+      toast.success(`Added ${validPdfs.length} PDF file(s).`);
+    }
   };
 
-  // Validate and handle ZPL file
-  const handleZplSelection = (file: File) => {
-    const isZpl = file.name.toLowerCase().endsWith(".zpl");
+  // Validate and handle multiple ZPL / JPL files
+  const handleZplSelection = (selectedFiles: FileList | File[]) => {
+    const validZpls: File[] = [];
+    const invalidNames: string[] = [];
 
-    if (!isZpl) {
-      setZplError("Invalid file type. Only .zpl files are accepted.");
-      toast.error("Invalid file format. Please upload a ZPL (.zpl) file.");
-      return;
+    Array.from(selectedFiles).forEach((file) => {
+      const lower = file.name.toLowerCase();
+      const isZpl =
+        lower.endsWith(".zpl") ||
+        lower.endsWith(".txt") ||
+        lower.endsWith(".jpl");
+
+      if (isZpl) {
+        validZpls.push(file);
+      } else {
+        invalidNames.push(file.name);
+      }
+    });
+
+    if (invalidNames.length > 0) {
+      toast.error(`Ignored ${invalidNames.length} non-ZPL/JPL file(s).`);
     }
 
-    setZplFile(file);
-    setZplError(null);
-    toast.success(`ZPL file "${file.name}" added successfully.`);
+    if (validZpls.length > 0) {
+      setZplFiles((prev) => {
+        const existingKeys = new Set(prev.map((f) => `${f.name}_${f.size}`));
+        const newUnique = validZpls.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
+        if (newUnique.length < validZpls.length) {
+          toast.info("Duplicate ZPL file(s) were skipped.");
+        }
+        return [...prev, ...newUnique];
+      });
+      setZplError(null);
+      toast.success(`Added ${validZpls.length} ZPL file(s).`);
+    }
   };
 
   // Drag & drop handlers for PDF
@@ -104,9 +145,9 @@ export default function OrderProcess() {
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingPdf(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handlePdfSelection(file);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handlePdfSelection(files);
     }
   };
 
@@ -127,24 +168,31 @@ export default function OrderProcess() {
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingZpl(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleZplSelection(file);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleZplSelection(files);
     }
   };
 
-  // Clear PDF
-  const handleRemovePdf = () => {
-    setPdfFile(null);
+  // Remove individual files
+  const handleRemoveSinglePdf = (index: number) => {
+    setPdfFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveAllPdfs = () => {
+    setPdfFiles([]);
     setPdfError(null);
     if (pdfInputRef.current) {
       pdfInputRef.current.value = "";
     }
   };
 
-  // Clear ZPL
-  const handleRemoveZpl = () => {
-    setZplFile(null);
+  const handleRemoveSingleZpl = (index: number) => {
+    setZplFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveAllZpls = () => {
+    setZplFiles([]);
     setZplError(null);
     if (zplInputRef.current) {
       zplInputRef.current.value = "";
@@ -153,21 +201,24 @@ export default function OrderProcess() {
 
   // Reset all
   const handleResetAll = () => {
-    handleRemovePdf();
-    handleRemoveZpl();
+    handleRemoveAllPdfs();
+    handleRemoveAllZpls();
     clearProcessData();
     toast.info("Upload form cleared.");
   };
 
-  // Check if both files are present
-  const isReadyToSubmit = Boolean(pdfFile && zplFile);
+  // Check if both file types have at least one file
+  const isReadyToSubmit = pdfFiles.length > 0 && zplFiles.length > 0;
+  const uploadedCount = (pdfFiles.length > 0 ? 1 : 0) + (zplFiles.length > 0 ? 1 : 0);
+  const totalPdfSize = pdfFiles.reduce((sum, f) => sum + f.size, 0);
+  const totalZplSize = zplFiles.reduce((sum, f) => sum + f.size, 0);
 
   // Submit & Real-Time Processing Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!pdfFile || !zplFile) {
-      toast.error("Please upload both PDF and ZPL files before submitting.");
+    if (pdfFiles.length === 0 || zplFiles.length === 0) {
+      toast.error("Please upload at least one PDF file and one ZPL file before submitting.");
       return;
     }
 
@@ -177,16 +228,16 @@ export default function OrderProcess() {
     // Smooth real-time progress interval
     let currentPct = 5;
     const progressInterval = setInterval(() => {
-      if (currentPct < 90) {
-        currentPct += Math.random() * 8 + 2;
-        if (currentPct > 90) currentPct = 90;
+      if (currentPct < 85) {
+        currentPct += Math.random() * 6 + 2;
+        if (currentPct > 85) currentPct = 85;
 
         let stageText = "Processing...";
-        if (currentPct < 20) {
-          stageText = "1. Reading & Validating Files...";
+        if (currentPct < 25) {
+          stageText = `1. Reading & Merging ${pdfFiles.length} PDF(s)...`;
         } else if (currentPct < 55) {
-          stageText = "2. Converting ZPL Barcode Labels to PDF...";
-        } else if (currentPct < 80) {
+          stageText = `2. Converting ${zplFiles.length} ZPL File(s) to PDF...`;
+        } else if (currentPct < 75) {
           stageText = "3. Extracting Amazon Invoices & Order IDs...";
         } else {
           stageText = "4. Comparing & Cross-Verifying Invoice Numbers...";
@@ -211,20 +262,38 @@ export default function OrderProcess() {
         });
       };
 
-      // 1. Start converting original PDF to base64 in parallel using FileReader
-      const originalPdfBase64Promise = fileToBase64(pdfFile);
+      // 1. Merge multiple PDF files if needed, or load single PDF
+      setProgress(10, `Reading & Preparing ${pdfFiles.length} PDF file(s)...`);
+      const { PDFDocument } = await import("pdf-lib");
 
-      // 2. Extract text from PDF on the client-side to bypass Vercel 4.5MB upload limit
-      setProgress(15, "Extracting Amazon Invoices locally (bypassing size limits)...");
+      let mergedPdfBytes: Uint8Array;
+      if (pdfFiles.length === 1) {
+        mergedPdfBytes = new Uint8Array(await pdfFiles[0].arrayBuffer());
+      } else {
+        const mergedDoc = await PDFDocument.create();
+        for (let i = 0; i < pdfFiles.length; i++) {
+          setProgress(
+            10 + Math.round((i / pdfFiles.length) * 12),
+            `Merging PDF ${i + 1} of ${pdfFiles.length}...`
+          );
+          const buf = await pdfFiles[i].arrayBuffer();
+          const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+          const pages = await mergedDoc.copyPages(doc, doc.getPageIndices());
+          pages.forEach((p) => mergedDoc.addPage(p));
+        }
+        mergedPdfBytes = await mergedDoc.save();
+      }
+
+      // 2. Extract text from each page across all merged PDF pages
+      setProgress(25, "Extracting Amazon Invoices locally (bypassing size limits)...");
       const pdfjs = await import("pdfjs-dist");
       if (!pdfjs.GlobalWorkerOptions.workerSrc) {
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version || "6.3.289"}/build/pdf.worker.min.mjs`;
       }
-      
-      const pdfBytesForExtraction = new Uint8Array(await pdfFile.arrayBuffer());
-      const loadingTask = pdfjs.getDocument({ data: pdfBytesForExtraction });
+
+      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(mergedPdfBytes) });
       const pdf = await loadingTask.promise;
-      
+
       const pdfTextArray: string[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
@@ -233,9 +302,18 @@ export default function OrderProcess() {
         pdfTextArray.push(strings.join(" "));
       }
 
-      setProgress(50, "Converting ZPL Barcode Labels to PDF & Verifying...");
+      // 3. Combine all ZPL files into a single unified stream
+      setProgress(45, `Reading & Combining ${zplFiles.length} ZPL file(s)...`);
+      const zplTexts = await Promise.all(zplFiles.map((f) => f.text()));
+      const combinedZplText = zplTexts.join("\n");
+      const combinedZplFile = new File([combinedZplText], zplFiles[0]?.name || "combined.zpl", {
+        type: "text/plain",
+      });
+
+      // 4. Send combined files to backend
+      setProgress(55, "Converting ZPL Barcode Labels to PDF & Verifying...");
       const formData = new FormData();
-      formData.append("zplFile", zplFile);
+      formData.append("zplFile", combinedZplFile);
       formData.append("pdfTextArray", JSON.stringify(pdfTextArray));
 
       const response = await fetch("/api/amazon/process-orders", {
@@ -253,9 +331,11 @@ export default function OrderProcess() {
       setProgress(90, "5. Finalizing Paired Dispatch Documents...");
 
       const processResponse = data as AmazonProcessResponse;
-      
-      // Inject the original PDF base64 using the FileReader result
-      const originalPdfBase64 = await originalPdfBase64Promise;
+
+      // 5. Convert merged PDF to base64 for preview / printing
+      const mergedBlob = new Blob([mergedPdfBytes as unknown as BlobPart], { type: "application/pdf" });
+      const originalPdfBase64 = await fileToBase64(mergedBlob);
+
       if (!processResponse.files) {
         processResponse.files = {
           convertedZplPdfBase64: "",
@@ -265,14 +345,16 @@ export default function OrderProcess() {
       }
       processResponse.files.originalPdfBase64 = originalPdfBase64;
       if (processResponse.summary) {
-        processResponse.summary.pdfFileName = pdfFile.name;
+        processResponse.summary.pdfFileName =
+          pdfFiles.length === 1 ? pdfFiles[0].name : `${pdfFiles.length}_PDF_Invoices_Merged.pdf`;
+        processResponse.summary.zplFileName =
+          zplFiles.length === 1 ? zplFiles[0].name : `${zplFiles.length}_ZPL_Labels_Combined.zpl`;
       }
 
-      // 3. Generate Combined Matched PDF client-side for Preview & Download
+      // 6. Generate Combined Matched PDF client-side (matched only, interleaved)
       try {
         if (processResponse.files.convertedZplPdfBase64 && originalPdfBase64) {
           setProgress(95, "Generating Combined Matched PDF...");
-          const { PDFDocument } = await import("pdf-lib");
           const zplBytes = Uint8Array.from(atob(processResponse.files.convertedZplPdfBase64), (c) =>
             c.charCodeAt(0)
           );
@@ -345,8 +427,6 @@ export default function OrderProcess() {
     }
   };
 
-  const uploadedCount = (pdfFile ? 1 : 0) + (zplFile ? 1 : 0);
-
   return (
     <DashboardLayout title="Amazon Order Process">
       <div className="space-y-6">
@@ -386,17 +466,16 @@ export default function OrderProcess() {
                 <div className="flex items-center gap-3 self-start md:self-center">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3.5 text-right shadow-2xs">
                     <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Files Uploaded
+                      Files Ready
                     </div>
-                    <div className="text-2xl font-black text-[#0A0E1A]">
-                      <span
-                        className={
-                          uploadedCount === 2 ? "text-emerald-600" : "text-[#B88728]"
-                        }
-                      >
-                        {uploadedCount}
+                    <div className="text-lg font-black text-[#0A0E1A] mt-0.5">
+                      <span className={pdfFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
+                        {pdfFiles.length} PDF{pdfFiles.length !== 1 ? "s" : ""}
                       </span>
-                      <span className="text-slate-400"> / 2</span>
+                      <span className="text-slate-300 mx-1.5">•</span>
+                      <span className={zplFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
+                        {zplFiles.length} ZPL{zplFiles.length !== 1 ? "s" : ""}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -415,15 +494,17 @@ export default function OrderProcess() {
                       <FileText className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-[#0A0E1A]">1. PDF Invoices File</h3>
-                      <p className="text-xs text-slate-500">Accepts only .pdf files</p>
+                      <h3 className="font-bold text-[#0A0E1A]">
+                        1. PDF Invoices {pdfFiles.length > 0 ? `(${pdfFiles.length})` : ""}
+                      </h3>
+                      <p className="text-xs text-slate-500">Upload one or multiple .pdf files</p>
                     </div>
                   </div>
 
-                  {pdfFile ? (
+                  {pdfFiles.length > 0 ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      PDF Ready
+                      {pdfFiles.length} Ready
                     </span>
                   ) : (
                     <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
@@ -432,9 +513,9 @@ export default function OrderProcess() {
                   )}
                 </div>
 
-                {/* Upload Box / Selected File View */}
-                <div className="mt-5 flex-1">
-                  {!pdfFile ? (
+                {/* Upload Box / Selected Files View */}
+                <div className="mt-5 flex-1 flex flex-col justify-between">
+                  {pdfFiles.length === 0 ? (
                     <div
                       onClick={() => pdfInputRef.current?.click()}
                       onDragOver={handlePdfDragOver}
@@ -451,69 +532,85 @@ export default function OrderProcess() {
                       </div>
 
                       <p className="text-sm font-semibold text-[#0A0E1A]">
-                        Click to upload or drag & drop PDF
+                        Click to upload or drag & drop PDF(s)
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Strictly accepts standard Adobe PDF (<code className="font-mono text-red-600">.pdf</code>)
+                        Select one or multiple Adobe PDF (<code className="font-mono text-red-600">.pdf</code>) files
                       </p>
 
                       <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
                         <FileText className="h-3.5 w-3.5 text-red-500" />
-                        Browse PDF File
+                        Browse PDF Files
                       </div>
                     </div>
                   ) : (
-                    <div className="flex min-h-[220px] flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/30 p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-red-100 text-red-600">
-                            <FileCheck className="h-6 w-6" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-semibold text-[#0A0E1A]" title={pdfFile.name}>
-                              {pdfFile.name}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {formatFileSize(pdfFile.size)} • PDF Document
-                            </p>
-                          </div>
-                        </div>
+                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-4">
+                      <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                        {pdfFiles.map((file, idx) => (
+                          <div
+                            key={`${file.name}_${idx}`}
+                            className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2.5 shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-red-50 text-red-600">
+                                <FileCheck className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={file.name}>
+                                  {file.name}
+                                </p>
+                                <p className="text-[11px] text-slate-500">
+                                  {formatFileSize(file.size)}
+                                </p>
+                              </div>
+                            </div>
 
-                        <button
-                          type="button"
-                          onClick={handleRemovePdf}
-                          title="Remove PDF"
-                          className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSinglePdf(idx)}
+                              title="Remove this PDF"
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-emerald-200/60 flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                          <CheckCircle2 className="h-4 w-4" /> File validated (.pdf)
+                      <div className="mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
+                        <span className="text-xs font-medium text-emerald-800">
+                          Total: {pdfFiles.length} file{pdfFiles.length > 1 ? "s" : ""} ({formatFileSize(totalPdfSize)})
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => pdfInputRef.current?.click()}
-                          className="text-xs font-semibold text-slate-600 hover:text-[#0A0E1A] hover:underline"
-                        >
-                          Replace file
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => pdfInputRef.current?.click()}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-[#E8C16D] shadow-2xs"
+                          >
+                            <Plus className="h-3 w-3" /> Add More
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveAllPdfs}
+                            className="text-xs font-medium text-red-600 hover:underline px-1"
+                          >
+                            Clear
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Hidden File Input */}
+                  {/* Hidden File Input with multiple enabled */}
                   <input
                     ref={pdfInputRef}
                     type="file"
+                    multiple
                     hidden
                     accept=".pdf,application/pdf"
                     onChange={(e) => {
-                      const selected = e.target.files?.[0];
-                      if (selected) {
-                        handlePdfSelection(selected);
+                      if (e.target.files && e.target.files.length > 0) {
+                        handlePdfSelection(e.target.files);
                       }
                     }}
                   />
@@ -529,7 +626,7 @@ export default function OrderProcess() {
               </div>
 
               {/* ======================================================== */}
-              {/* SECTION 2: ZPL FILE UPLOAD */}
+              {/* SECTION 2: ZPL / JPL FILE UPLOAD */}
               {/* ======================================================== */}
               <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-6 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -538,15 +635,17 @@ export default function OrderProcess() {
                       <Barcode className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-[#0A0E1A]">2. ZPL Barcode File</h3>
-                      <p className="text-xs text-slate-500">Accepts only .zpl files</p>
+                      <h3 className="font-bold text-[#0A0E1A]">
+                        2. ZPL / JPL Barcodes {zplFiles.length > 0 ? `(${zplFiles.length})` : ""}
+                      </h3>
+                      <p className="text-xs text-slate-500">Upload one or multiple .zpl / .txt / .jpl files</p>
                     </div>
                   </div>
 
-                  {zplFile ? (
+                  {zplFiles.length > 0 ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      ZPL Ready
+                      {zplFiles.length} Ready
                     </span>
                   ) : (
                     <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
@@ -555,9 +654,9 @@ export default function OrderProcess() {
                   )}
                 </div>
 
-                {/* Upload Box / Selected File View */}
-                <div className="mt-5 flex-1">
-                  {!zplFile ? (
+                {/* Upload Box / Selected Files View */}
+                <div className="mt-5 flex-1 flex flex-col justify-between">
+                  {zplFiles.length === 0 ? (
                     <div
                       onClick={() => zplInputRef.current?.click()}
                       onDragOver={handleZplDragOver}
@@ -574,69 +673,85 @@ export default function OrderProcess() {
                       </div>
 
                       <p className="text-sm font-semibold text-[#0A0E1A]">
-                        Click to upload or drag & drop ZPL
+                        Click to upload or drag & drop ZPL/JPL(s)
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Strictly accepts Zebra Barcode file (<code className="font-mono text-amber-600">.zpl</code>)
+                        Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600">.zpl, .txt, .jpl</code>) files
                       </p>
 
                       <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
                         <Barcode className="h-3.5 w-3.5 text-amber-500" />
-                        Browse ZPL File
+                        Browse ZPL Files
                       </div>
                     </div>
                   ) : (
-                    <div className="flex min-h-[220px] flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/30 p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700">
-                            <Barcode className="h-6 w-6" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-semibold text-[#0A0E1A]" title={zplFile.name}>
-                              {zplFile.name}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {formatFileSize(zplFile.size)} • Zebra Print File (.zpl)
-                            </p>
-                          </div>
-                        </div>
+                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-4">
+                      <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                        {zplFiles.map((file, idx) => (
+                          <div
+                            key={`${file.name}_${idx}`}
+                            className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2.5 shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700">
+                                <Barcode className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={file.name}>
+                                  {file.name}
+                                </p>
+                                <p className="text-[11px] text-slate-500">
+                                  {formatFileSize(file.size)}
+                                </p>
+                              </div>
+                            </div>
 
-                        <button
-                          type="button"
-                          onClick={handleRemoveZpl}
-                          title="Remove ZPL"
-                          className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSingleZpl(idx)}
+                              title="Remove this ZPL"
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-emerald-200/60 flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                          <CheckCircle2 className="h-4 w-4" /> File validated (.zpl)
+                      <div className="mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
+                        <span className="text-xs font-medium text-emerald-800">
+                          Total: {zplFiles.length} file{zplFiles.length > 1 ? "s" : ""} ({formatFileSize(totalZplSize)})
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => zplInputRef.current?.click()}
-                          className="text-xs font-semibold text-slate-600 hover:text-[#0A0E1A] hover:underline"
-                        >
-                          Replace file
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => zplInputRef.current?.click()}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-[#E8C16D] shadow-2xs"
+                          >
+                            <Plus className="h-3 w-3" /> Add More
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveAllZpls}
+                            className="text-xs font-medium text-red-600 hover:underline px-1"
+                          >
+                            Clear
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Hidden File Input */}
+                  {/* Hidden File Input with multiple enabled */}
                   <input
                     ref={zplInputRef}
                     type="file"
+                    multiple
                     hidden
-                    accept=".zpl"
+                    accept=".zpl,.txt,.jpl"
                     onChange={(e) => {
-                      const selected = e.target.files?.[0];
-                      if (selected) {
-                        handleZplSelection(selected);
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleZplSelection(e.target.files);
                       }
                     }}
                   />
@@ -669,17 +784,17 @@ export default function OrderProcess() {
                 <div className="space-y-1">
                   <h4 className="font-semibold text-sm">
                     {isReadyToSubmit
-                      ? "Both files uploaded & ready for conversion & verification"
-                      : "Both PDF and ZPL files are mandatory to proceed"}
+                      ? `${pdfFiles.length} PDF and ${zplFiles.length} ZPL file(s) ready for conversion & verification`
+                      : "Both PDF and ZPL file(s) are mandatory to proceed"}
                   </h4>
                   <p className="text-xs opacity-90">
                     {isReadyToSubmit
-                      ? "All requirements are satisfied. Click 'Convert, Verify & Process' below to run real-time ZPL to PDF conversion and invoice comparison."
-                      : !pdfFile && !zplFile
-                      ? "You must select both a .pdf document and a .zpl label file. The submit action remains disabled until both are uploaded."
-                      : !pdfFile
-                      ? "You have uploaded the ZPL file. Please also upload the corresponding PDF file to enable submission."
-                      : "You have uploaded the PDF file. Please also upload the corresponding ZPL file to enable submission."}
+                      ? "All requirements are satisfied. Click 'Convert, Verify & Process' below to merge the files, convert ZPL to high-resolution PDF, and cross-verify invoice numbers."
+                      : pdfFiles.length === 0 && zplFiles.length === 0
+                      ? "Please upload at least one .pdf document and one .zpl barcode file. You can upload multiple files of each type."
+                      : pdfFiles.length === 0
+                      ? `You have uploaded ${zplFiles.length} ZPL file(s). Please also upload at least one PDF invoice file to proceed.`
+                      : `You have uploaded ${pdfFiles.length} PDF file(s). Please also upload at least one ZPL barcode file to proceed.`}
                   </p>
                 </div>
               </div>
@@ -692,7 +807,7 @@ export default function OrderProcess() {
                 variant="outline"
                 size="md"
                 fullWidth={false}
-                disabled={!pdfFile && !zplFile}
+                disabled={pdfFiles.length === 0 && zplFiles.length === 0}
                 onClick={handleResetAll}
                 leftIcon={<RotateCcw className="h-4 w-4" />}
                 className="w-full sm:w-auto"
@@ -715,7 +830,7 @@ export default function OrderProcess() {
                   {isProcessing
                     ? "Processing Files..."
                     : isReadyToSubmit
-                    ? "Convert, Verify & Process"
+                    ? `Convert, Verify & Process (${pdfFiles.length} PDF${pdfFiles.length > 1 ? "s" : ""}, ${zplFiles.length} ZPL${zplFiles.length > 1 ? "s" : ""})`
                     : "Upload Both Files to Submit"}
                 </Button>
               </div>
