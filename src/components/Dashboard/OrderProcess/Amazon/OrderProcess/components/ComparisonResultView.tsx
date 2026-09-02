@@ -134,7 +134,7 @@ export default function ComparisonResultView({
     return images;
   };
 
-  // Browser fallback: render PDF into an iframe with @page CSS for 3.5" x 5.5"
+  // Browser fallback: render PDF into an iframe with @page CSS for 3.7" x 5.7"
   const printViaBrowser = (pdfBytes: Uint8Array) => {
     const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(blob);
@@ -156,7 +156,7 @@ export default function ComparisonResultView({
           if (iframeDoc) {
             const style = iframeDoc.createElement("style");
             style.textContent = `
-              @page { size: 3.5in 5.5in; margin: 0; }
+              @page { size: 3.7in 5.7in; margin: 0; }
               @media print { body { margin: 0; padding: 0; } }
             `;
             iframeDoc.head.appendChild(style);
@@ -192,7 +192,7 @@ export default function ComparisonResultView({
       return;
     }
 
-    toast.loading(`Preparing 3.5" x 5.5" print for ${targetResults.length} order(s)...`, {
+    toast.loading(`Preparing 3.7" x 5.7" print for ${targetResults.length} order(s)...`, {
       id: "print-prep",
     });
 
@@ -208,36 +208,64 @@ export default function ComparisonResultView({
       const origDoc = await PDFDocument.load(pdfBytes);
       const printDoc = await PDFDocument.create();
 
-      // Target Dimensions: 3.5 inches width x 5.5 inches height
-      const TARGET_WIDTH = 3.5 * 72; // 252 pt
-      const TARGET_HEIGHT = 5.5 * 72; // 396 pt
-      const WIDTH_MM = 3.5 * 25.4; // 88.9 mm
-      const HEIGHT_MM = 5.5 * 25.4; // 139.7 mm
+      // Target Dimensions: 3.7 inches width x 5.7 inches height
+      const TARGET_WIDTH = 3.7 * 72; // 266.4 pt
+      const TARGET_HEIGHT = 5.7 * 72; // 410.4 pt
+      const WIDTH_MM = 3.7 * 25.4; // 93.98 mm
+      const HEIGHT_MM = 5.7 * 25.4; // 144.78 mm
       const MARGIN = 5;
       const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
       const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
 
-      const addScaledPage = async (srcPage: any) => {
+      const addScaledPage = async (srcPage: any, isZpl = false) => {
         const embedded = await printDoc.embedPage(srcPage);
         const { width: srcW, height: srcH } = embedded;
-        const scale = Math.min(AVAIL_WIDTH / srcW, AVAIL_HEIGHT / srcH);
-        const finalW = srcW * scale;
-        const finalH = srcH * scale;
-        const x = (TARGET_WIDTH - finalW) / 2;
-        const y = (TARGET_HEIGHT - finalH) / 2;
-        const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-        newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+
+        if (isZpl) {
+          // Adjust top spacing for ZPL barcode label so the top barcode has clean breathing room
+          const TOP_SPACING = 25; // 25 pt (~8.8 mm) top margin
+          const BOTTOM_SPACING = 10;
+          const SIDE_SPACING = 8;
+
+          const availW = TARGET_WIDTH - 2 * SIDE_SPACING;
+          const availH = TARGET_HEIGHT - TOP_SPACING - BOTTOM_SPACING;
+
+          const scale = Math.min(availW / srcW, availH / srcH);
+          const finalW = srcW * scale;
+          const finalH = srcH * scale;
+
+          const x = (TARGET_WIDTH - finalW) / 2;
+          // In PDF coordinates (0,0 is bottom-left), distance from top edge is TOP_SPACING
+          const y = TARGET_HEIGHT - TOP_SPACING - finalH;
+
+          const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+          newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+        } else {
+          const MARGIN = 6;
+          const availW = TARGET_WIDTH - 2 * MARGIN;
+          const availH = TARGET_HEIGHT - 2 * MARGIN;
+
+          const scale = Math.min(availW / srcW, availH / srcH);
+          const finalW = srcW * scale;
+          const finalH = srcH * scale;
+
+          const x = (TARGET_WIDTH - finalW) / 2;
+          const y = (TARGET_HEIGHT - finalH) / 2;
+
+          const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+          newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+        }
       };
 
       for (const item of targetResults) {
         if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-          await addScaledPage(zplDoc.getPage(item.zplPage - 1));
+          await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
         }
         if (item.pdfPages && item.pdfPages.length > 0) {
           for (const pageNum of item.pdfPages) {
             const idx = pageNum - 1;
             if (idx >= 0 && idx < origDoc.getPageCount()) {
-              await addScaledPage(origDoc.getPage(idx));
+              await addScaledPage(origDoc.getPage(idx), false);
             }
           }
         }
@@ -274,7 +302,7 @@ export default function ComparisonResultView({
           }
 
           toast.success(
-            `Printed ${images.length} label(s) (3.5" x 5.5") directly to ${printerName}!`,
+            `Printed ${images.length} label(s) (3.7" x 5.7") directly to ${printerName}!`,
             { id: "print-prep" }
           );
           usedDesktopHelper = true;
@@ -284,10 +312,10 @@ export default function ComparisonResultView({
       }
 
       if (!usedDesktopHelper) {
-        toast.loading("Opening browser print (3.5\" x 5.5\")...", { id: "print-prep" });
+        toast.loading("Opening browser print (3.7\" x 5.7\")...", { id: "print-prep" });
         printViaBrowser(finalBytes);
         toast.success(
-          `Print dialog opened for ${printDoc.getPageCount()} page(s) at 3.5" x 5.5".`,
+          `Print dialog opened for ${printDoc.getPageCount()} page(s) at 3.7" x 5.7".`,
           { id: "print-prep" }
         );
       }
