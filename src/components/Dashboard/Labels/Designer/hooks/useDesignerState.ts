@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS: CanvasSettings = {
   orientation: 'landscape',
   gridSizeMm: 1,
   snapToGrid: true,
-  colorMode: 'monochrome', // default: thermal-safe B&W
+  colorMode: 'color', // default: full color
 };
 
 const INITIAL_STATE: DesignerState = {
@@ -49,8 +49,8 @@ export function useDesignerState(initialTemplateId?: string | null) {
               ...DEFAULT_SETTINGS,
               ...res.settings,
               // Existing templates saved before colorMode was added won't have this field.
-              // Default them to 'monochrome' (safe for thermal printers).
-              colorMode: res.settings.colorMode ?? 'monochrome',
+              // Default them to 'color' so they print in full color.
+              colorMode: res.settings.colorMode ?? 'color',
             },
             elements: res.layoutJson as LabelElement[],
           };

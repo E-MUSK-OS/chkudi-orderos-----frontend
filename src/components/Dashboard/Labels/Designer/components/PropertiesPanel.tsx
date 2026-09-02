@@ -223,7 +223,7 @@ export function PropertiesPanel({
               <button
                 onClick={() => handleSettingsChange('colorMode', 'color')}
                 className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${
-                  (settings.colorMode ?? 'monochrome') === 'color'
+                  (settings.colorMode ?? 'color') === 'color'
                     ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]'
                     : 'bg-transparent text-gray-300 border-stone-700 hover:border-stone-500'
                 }`}
@@ -233,7 +233,7 @@ export function PropertiesPanel({
               <button
                 onClick={() => handleSettingsChange('colorMode', 'monochrome')}
                 className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${
-                  (settings.colorMode ?? 'monochrome') === 'monochrome'
+                  (settings.colorMode ?? 'color') === 'monochrome'
                     ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]'
                     : 'bg-transparent text-gray-300 border-stone-700 hover:border-stone-500'
                 }`}
@@ -242,7 +242,7 @@ export function PropertiesPanel({
               </button>
             </div>
             <p className="text-[10px] text-gray-500">
-              {(settings.colorMode ?? 'monochrome') === 'color'
+              {(settings.colorMode ?? 'color') === 'color'
                 ? 'Label renders in full color — use with inkjet/laser printers.'
                 : 'Label converts to B&W — use with thermal printers (TSC, Zebra).'}
             </p>

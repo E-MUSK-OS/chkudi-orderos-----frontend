@@ -320,7 +320,7 @@ export const renderLabelToCanvas = async (
 
   // Apply monochrome thresholding only for thermal (B&W) printers.
   // Color mode labels skip this step so colors are preserved in the print output.
-  if ((template.settings.colorMode ?? "monochrome") === "monochrome") {
+  if ((template.settings.colorMode ?? "color") === "monochrome") {
     applyMonochromeThreshold(ctx, canvas.width, canvas.height);
   }
 
