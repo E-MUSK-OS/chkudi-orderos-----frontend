@@ -139,17 +139,53 @@ try {
   });
 }
 
+// --- CONFIGURATION ---
+let config = {};
+try {
+  const configPath = path.join(process.env.APPDATA || '', 'desktop-print-helper', 'config.json');
+  if (fs.existsSync(configPath)) {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  }
+} catch (e) {
+  console.error("Failed to load config.json", e.message);
+}
+
+// In a real production deployment, the installer would write the API URL here.
+const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:3000"
+];
+const configOrigins = Array.isArray(config.ALLOWED_ORIGINS) ? config.ALLOWED_ORIGINS : [];
+const ALLOWED_ORIGINS = [...DEFAULT_ALLOWED_ORIGINS, ...configOrigins];
+
+const DEFAULT_PRINT_TOKEN = "dev-secret-token-123";
+
 const server = http.createServer((req, res) => {
   // CORS Headers for Private Network Access
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Print-Token');
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204); 
     res.end(); 
     return;
+  }
+
+  // Auth Check (require token for any non-OPTIONS request except the root heartbeat)
+  if (req.url !== '/') {
+    const expectedToken = config.PRINT_TOKEN || DEFAULT_PRINT_TOKEN;
+    const providedToken = req.headers['x-print-token'];
+    
+    // Check against expected token
+    if (!expectedToken || providedToken !== expectedToken) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Unauthorized' }));
+      return;
+    }
   }
 
   if (req.method === 'GET' && req.url === '/') {
