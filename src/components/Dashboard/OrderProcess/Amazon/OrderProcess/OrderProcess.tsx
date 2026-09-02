@@ -366,8 +366,8 @@ export default function OrderProcess() {
           const origDoc = await PDFDocument.load(origPdfBytes);
           const combinedDoc = await PDFDocument.create();
 
-          const TARGET_WIDTH = 3.7 * 72; // 266.4 pt
-          const TARGET_HEIGHT = 5.7 * 72; // 410.4 pt
+          const TARGET_WIDTH = 4 * 72; // 288 pt
+          const TARGET_HEIGHT = 6 * 72; // 432 pt
           const MARGIN = 6;
           const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
           const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
@@ -389,7 +389,9 @@ export default function OrderProcess() {
               const finalW = srcW * scale;
               const finalH = srcH * scale;
 
-              const x = (TARGET_WIDTH - finalW) / 2;
+              // Shift slightly right to perfectly balance left and right margins (centers visual content)
+              const X_OFFSET_ZPL = 5.5;
+              const x = (TARGET_WIDTH - finalW) / 2 + X_OFFSET_ZPL;
               // In PDF coordinates (0,0 is bottom-left), distance from top edge is TOP_SPACING
               const y = TARGET_HEIGHT - TOP_SPACING - finalH;
 
@@ -404,7 +406,9 @@ export default function OrderProcess() {
               const finalW = srcW * scale;
               const finalH = srcH * scale;
 
-              const x = (TARGET_WIDTH - finalW) / 2;
+              // Shift slightly right to perfectly balance left and right margins of the invoice
+              const X_OFFSET_INVOICE = 4.5;
+              const x = (TARGET_WIDTH - finalW) / 2 + X_OFFSET_INVOICE;
               const y = (TARGET_HEIGHT - finalH) / 2;
 
               const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
