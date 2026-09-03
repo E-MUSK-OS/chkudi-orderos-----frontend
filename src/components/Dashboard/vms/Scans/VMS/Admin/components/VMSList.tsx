@@ -131,41 +131,55 @@ const VMSList = () => {
     });
   }, [data, search, status, operator, account, fromDate, toDate]);
 
-  const handleDownload = () => {
-    const exportData = filteredData.map((item) => ({
-      "Tracking ID": item.trackingId,
-      Status: item.status,
-      Account: item.account?.accountName ?? "-",
-      Operator: item.operator?.operatorName ?? "-",
-      "Created At": new Date(item.createdAt).toLocaleString(),
-      Duration: item.duration ?? "-",
-      Size: item.fileSize ?? "-",
-      "Video URL": "View Video",
-    }));
+  const exportToExcel = (items: VMSItem[], filename: string) => {
+    const exportData = items.map((item) => {
+      let durationStr = "-";
+      if (item.duration !== null && item.duration !== undefined) {
+        durationStr = `${item.duration}s`;
+      }
 
-    // const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+      let sizeStr = "-";
+      if (item.fileSize) {
+        sizeStr = `${(Number(item.fileSize) / (1024 * 1024)).toFixed(2)} MB`;
+      }
 
-    filteredData.forEach((item, index) => {
-      const row = index + 2; // Row 1 = Header
-
-      const cell = `H${row}`; // G = "Video URL" column
-
-      worksheet[cell] = {
-        t: "s",
-        v: "View Video",
-        l: {
-          Target: getFullUrl(item.videoUrl),
-          Tooltip: item.trackingId,
-        },
+      return {
+        "Tracking ID": item.trackingId,
+        Status: item.status ?? "-",
+        Account: item.account?.accountName ?? "-",
+        Operator: item.operator?.operatorName ?? "-",
+        "Created At": item.createdAt ? new Date(item.createdAt).toLocaleString() : "-",
+        Duration: durationStr,
+        Size: sizeStr,
+        "Video URL": item.videoUrl ? "View Video" : "-",
       };
     });
 
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    items.forEach((item, index) => {
+      const row = index + 2; // Row 1 = Header
+      const cell = `H${row}`; // Column H = "Video URL" column
+
+      if (item.videoUrl) {
+        worksheet[cell] = {
+          t: "s",
+          v: "View Video",
+          l: {
+            Target: getFullUrl(item.videoUrl),
+            Tooltip: item.trackingId,
+          },
+        };
+      }
+    });
+
     const workbook = XLSX.utils.book_new();
-
     XLSX.utils.book_append_sheet(workbook, worksheet, "VMS Scans");
+    XLSX.writeFile(workbook, filename);
+  };
 
-    XLSX.writeFile(workbook, "vms-scans.xlsx");
+  const handleDownload = () => {
+    exportToExcel(filteredData, "vms-scans.xlsx");
   };
 
   // ===========================
@@ -181,22 +195,7 @@ const VMSList = () => {
   // ===========================
 
   const handleSingleDownload = (item: VMSItem) => {
-    if (!item.videoUrl) return;
-    
-    const fullUrl = getFullUrl(item.videoUrl)!;
-
-    // Append ?download=true to trigger the backend Content-Disposition header
-    const downloadUrl = fullUrl.includes('?') 
-      ? `${fullUrl}&download=true` 
-      : `${fullUrl}?download=true`;
-      
-    // Trigger download
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.setAttribute("download", ""); // Let the browser use the backend's filename
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    exportToExcel([item], `${item.trackingId}.xlsx`);
   };
 
   const handleDelete = (item: VMSItem) => {
