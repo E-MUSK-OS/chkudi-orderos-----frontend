@@ -1,26 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 
 import { getColumns } from "./columns";
 import DataTable from "./DataTable";
 import PreviewDialog from "./PreviewDialog";
 import Toolbar from "./Toolbar";
+import Pagination from "./Pagination";
+import DeleteModal from "./DeleteModal";
 
 import { useVMS } from "../hooks/useVMS";
 import { useOperators } from "@/components/Dashboard/vms/Admin/User/operator/hooks/useOperators";
-import type { VMSItem } from "../types";
-import Pagination from "./Pagination";
-import * as XLSX from "xlsx";
-import DeleteOperatorModal from "@/components/Dashboard/vms/Admin/User/operator/components/DeleteOperatorModal";
-import DeleteModal from "./DeleteModal";
 import { useAccounts } from "@/components/Dashboard/vms/Admin/Account/hooks/useAccounts";
+import type { VMSItem } from "../types";
 import { API_BASE_URL } from "@/lib/config";
 
 const getFullUrl = (url?: string | null) => {
   if (!url) return undefined;
-  if (url.startsWith('http')) return url;
+
+  if (url.startsWith("http")) {
+    return url;
+  }
+
   return `${API_BASE_URL}${url}`;
 };
 
@@ -32,41 +34,40 @@ const VMSList = () => {
   const { data, loading, refetch, deleteVMS } = useVMS();
 
   const { operators, fetchOperators } = useOperators();
-  const [account, setAccount] = useState("");
   const { accounts, fetchAccounts } = useAccounts();
 
   // ===========================
-  // Preview Dialog
+  // State
   // ===========================
 
   const [page, setPage] = useState(1);
-
   const [limit, setLimit] = useState(10);
 
   const [selectedItem, setSelectedItem] = useState<VMSItem | null>(null);
 
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
-  const [operator, setOperator] = useState("");
-  const [previewOpen, setPreviewOpen] = useState(false);
 
+  const [operator, setOperator] = useState("");
+  const [account, setAccount] = useState("");
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
+
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+
+  // ===========================
+  // Preview
+  // ===========================
 
   const handlePreview = (item: VMSItem) => {
     setSelectedItem(item);
-
     setPreviewOpen(true);
   };
 
   // ===========================
-  // Search & Filter
+  // Operator Options
   // ===========================
-
-  const [search, setSearch] = useState("");
-
-  const [status, setStatus] = useState("");
-
-  // const [operator, setOperator] = useState("");
 
   const operatorOptions = useMemo(() => {
     return [
@@ -81,19 +82,26 @@ const VMSList = () => {
     ];
   }, [operators]);
 
+  // ===========================
+  // Account Options
+  // ===========================
+
   const accountOptions = useMemo(() => {
     return [
       {
         label: "All Accounts",
         value: "",
       },
-
       ...accounts.map((item) => ({
         label: item.accountName,
         value: item.id,
       })),
     ];
   }, [accounts]);
+
+  // ===========================
+  // Filter Data
+  // ===========================
 
   const filteredData = useMemo(() => {
     return data.filter((item) => {
@@ -103,33 +111,51 @@ const VMSList = () => {
 
       const matchStatus = !status || item.status === status;
 
+      const matchOperator =
+        !operator || String(item.operatorId) === String(operator);
+
+      const matchAccount =
+        !account || String(item.accountId) === String(account);
+
       const itemDate = new Date(item.createdAt);
-
-      console.log(item.operatorId, operator);
-
-      const matchOperator = !operator || item.operatorId === operator;
-
-      const matchAccount = !account || item.accountId === account;
 
       let matchDate = true;
 
       if (fromDate) {
-        matchDate = matchDate && itemDate >= new Date(fromDate);
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+
+        matchDate = matchDate && itemDate >= start;
       }
 
       if (toDate) {
         const end = new Date(toDate);
-
         end.setHours(23, 59, 59, 999);
 
         matchDate = matchDate && itemDate <= end;
       }
 
       return (
-        matchSearch && matchStatus && matchOperator && matchAccount && matchDate
+        matchSearch &&
+        matchStatus &&
+        matchOperator &&
+        matchAccount &&
+        matchDate
       );
     });
-  }, [data, search, status, operator, account, fromDate, toDate]);
+  }, [
+    data,
+    search,
+    status,
+    operator,
+    account,
+    fromDate,
+    toDate,
+  ]);
+
+  // ===========================
+  // Excel Download
+  // ===========================
 
   const handleDownload = () => {
     const exportData = filteredData.map((item) => ({
@@ -143,19 +169,19 @@ const VMSList = () => {
       "Video URL": "View Video",
     }));
 
-    // const worksheet = XLSX.utils.json_to_sheet(exportData);
     const worksheet = XLSX.utils.json_to_sheet(exportData);
 
     filteredData.forEach((item, index) => {
-      const row = index + 2; // Row 1 = Header
+      const row = index + 2;
+      const cell = `H${row}`;
 
-      const cell = `H${row}`; // G = "Video URL" column
+      const videoUrl = getFullUrl(item.videoUrl);
 
       worksheet[cell] = {
         t: "s",
         v: "View Video",
         l: {
-          Target: getFullUrl(item.videoUrl),
+          Target: videoUrl,
           Tooltip: item.trackingId,
         },
       };
@@ -163,9 +189,47 @@ const VMSList = () => {
 
     const workbook = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "VMS Scans");
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "VMS Scans",
+    );
 
     XLSX.writeFile(workbook, "vms-scans.xlsx");
+  };
+
+  // ===========================
+  // Single Video Download
+  // ===========================
+
+  const handleSingleDownload = (item: VMSItem) => {
+    if (!item.videoUrl) return;
+
+    const fullUrl = getFullUrl(item.videoUrl);
+
+    if (!fullUrl) return;
+
+    const downloadUrl = fullUrl.includes("?")
+      ? `${fullUrl}&download=true`
+      : `${fullUrl}?download=true`;
+
+    const link = document.createElement("a");
+
+    link.href = downloadUrl;
+    link.setAttribute("download", "");
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  // ===========================
+  // Delete
+  // ===========================
+
+  const handleDelete = (item: VMSItem) => {
+    setSelectedItem(item);
+    setOpenDelete(true);
   };
 
   // ===========================
@@ -180,30 +244,6 @@ const VMSList = () => {
   // Table Columns
   // ===========================
 
-  const handleSingleDownload = (item: VMSItem) => {
-    if (!item.videoUrl) return;
-    
-    const fullUrl = getFullUrl(item.videoUrl)!;
-
-    // Append ?download=true to trigger the backend Content-Disposition header
-    const downloadUrl = fullUrl.includes('?') 
-      ? `${fullUrl}&download=true` 
-      : `${fullUrl}?download=true`;
-      
-    // Trigger download
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.setAttribute("download", ""); // Let the browser use the backend's filename
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  };
-
-  const handleDelete = (item: VMSItem) => {
-    setSelectedItem(item);
-    setOpenDelete(true);
-  };
-
   const columns = useMemo(
     () =>
       getColumns({
@@ -213,6 +253,10 @@ const VMSList = () => {
       }),
     [],
   );
+
+  // ===========================
+  // Pagination
+  // ===========================
 
   const totalRecords = filteredData.length;
 
@@ -224,14 +268,34 @@ const VMSList = () => {
     return filteredData.slice(start, start + limit);
   }, [filteredData, page, limit]);
 
+  // ===========================
+  // Reset Page On Filter Change
+  // ===========================
+
   useEffect(() => {
     setPage(1);
-  }, [search, status, operator, account, fromDate, toDate, limit]);
+  }, [
+    search,
+    status,
+    operator,
+    account,
+    fromDate,
+    toDate,
+    limit,
+  ]);
+
+  // ===========================
+  // Fetch Operators & Accounts
+  // ===========================
 
   useEffect(() => {
     fetchOperators();
     fetchAccounts();
   }, []);
+
+  // ===========================
+  // Render
+  // ===========================
 
   return (
     <>
@@ -254,7 +318,11 @@ const VMSList = () => {
         onDownload={handleDownload}
       />
 
-      <DataTable columns={columns} data={paginatedData} loading={loading} />
+      <DataTable
+        columns={columns}
+        data={paginatedData}
+        loading={loading}
+      />
 
       <PreviewDialog
         open={previewOpen}

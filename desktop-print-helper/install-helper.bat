@@ -96,4 +96,8 @@ echo [5/5] Waking up the background helper now...
 wscript.exe "%INSTALL_DIR%\watchdog.vbs"
 
 echo.
+echo Checking running helper version...
+powershell -NoProfile -Command "Start-Sleep -Seconds 1; $r = Invoke-WebRequest -Uri 'http://127.0.0.1:9999/' -UseBasicParsing -ErrorAction SilentlyContinue; if ($r) { Write-Host 'Running Version:' $r.Headers['X-Helper-Version'] } else { Write-Host 'Could not detect running version.' }"
+
+echo.
 echo The helper is now running invisibly. You can close this window.
