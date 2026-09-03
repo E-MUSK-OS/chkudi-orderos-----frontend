@@ -7,6 +7,7 @@ export const getUserVMS = async (userId: string): Promise<GetVMSResponse> => {
 
     headers: {
       "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true"
     },
 
     body: JSON.stringify({
@@ -26,6 +27,9 @@ export const getUserVMS = async (userId: string): Promise<GetVMSResponse> => {
 export const deleteVMS = async (id: string) => {
   const response = await fetch(`${API_ENDPOINTS.DELETE_VMS}/${id}`, {
     method: "DELETE",
+    headers: {
+      "ngrok-skip-browser-warning": "true"
+    }
   });
 
   const data = await response.json();

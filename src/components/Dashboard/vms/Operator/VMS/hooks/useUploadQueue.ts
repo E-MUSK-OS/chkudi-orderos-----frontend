@@ -1,8 +1,7 @@
 "use client";
 
 import { useVMSStore } from "../store/vmsStore";
-import { uploadVideoToCloudinary } from "../services/cloudinary.service";
-import { saveRecording } from "../services/vms.service";
+import { uploadRecording } from "../services/vms.service";
 import { UploadItem } from "../types/vms.types";
 import { useEffect } from "react";
 import { useRef } from "react";
@@ -42,15 +41,6 @@ export const useUploadQueue = () => {
       //     });
       //   },
       // );
-      const cloudinary = await uploadVideoToCloudinary(
-        item.trackingId,
-        item.blob,
-        (progress) => {
-          updateUpload(item.id, {
-            progress,
-          });
-        },
-      );
       const userId = JSON.parse(localStorage.getItem("user") || "{}")?.id;
       const operatorId = JSON.parse(
         sessionStorage.getItem("operator") || "{}",
@@ -59,35 +49,48 @@ export const useUploadQueue = () => {
         sessionStorage.getItem("selectedAccount") || "{}",
       )?.id;
 
-      const response = await saveRecording({
-        trackingId: item.trackingId,
+      if (!operatorId || !accountId) {
+        toast.error("Upload Failed", {
+          description: "Operator or Account is missing. Please restart VMS.",
+        });
+        
+        updateUpload(item.id, {
+          status: "failed",
+          progress: 0,
+        });
+        
+        const errorAudio = errorSound.current;
+        if (errorAudio) {
+          try {
+            errorAudio.pause();
+            errorAudio.currentTime = 0;
+            await errorAudio.play();
+          } catch (error) {
+            console.error("Error sound failed:", error);
+          }
+        }
+        return; // Stop upload
+      }
 
-        userId,
+      const formData = new FormData();
+      formData.append("video", item.blob, `${item.trackingId}.webm`);
+      formData.append("trackingId", item.trackingId);
+      if (userId) formData.append("userId", userId);
+      formData.append("operatorId", operatorId);
+      formData.append("accountId", accountId);
 
-        operatorId,
-        accountId,
-
-        videoUrl: cloudinary.videoUrl,
-
-        thumbnailUrl: cloudinary.thumbnailUrl,
-
-        duration: cloudinary.duration,
-
-        bytes: cloudinary.bytes,
-
-        publicId: cloudinary.publicId,
-
-        version: cloudinary.version,
+      const res = await uploadRecording(formData, (progress) => {
+        updateUpload(item.id, { progress });
       });
+
+      const videoUrl = `/vms/media/${res.data.id}/video`;
+      const thumbnailUrl = `/vms/media/${res.data.id}/thumbnail`;
 
       updateUpload(item.id, {
         status: "completed",
-
         progress: 100,
-
-        videoUrl: cloudinary.videoUrl,
-
-        thumbnailUrl: cloudinary.thumbnailUrl,
+        videoUrl,
+        thumbnailUrl,
       });
 
       toast.success("Upload Completed", {

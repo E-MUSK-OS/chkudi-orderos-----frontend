@@ -7,6 +7,13 @@ import type { VMSItem } from "../types";
 // import Image from "next/image";
 import { Download, Eye, Trash2 } from "lucide-react";
 import StatusBadge from "./StatusBadge";
+import { API_BASE_URL } from "@/lib/config";
+
+const getFullUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE_URL}${url}`;
+};
 
 interface Props {
   onPreview: (item: VMSItem) => void;
@@ -97,15 +104,8 @@ export const getColumns = ({
       }
 
       return (
-        // <Image
-        //   src={row.original.thumbnailUrl}
-        //   alt="thumbnail"
-        //   width={100}
-        //   height={70}
-        //   className="h-[70px] w-[100px] object-cover border border-slate-700"
-        // />
         <img
-          src={row.original.thumbnailUrl}
+          src={getFullUrl(row.original.thumbnailUrl)}
           alt="thumbnail"
           width={90}
           height={60}
