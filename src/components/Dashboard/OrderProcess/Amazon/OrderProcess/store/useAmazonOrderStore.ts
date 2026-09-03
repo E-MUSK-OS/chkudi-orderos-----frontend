@@ -84,13 +84,22 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
   combinedPdfUrl: null,
   originalPdfUrl: null,
 
-  setProcessing: (isProcessing) => set({ isProcessing }),
+  setProcessing: (isProcessing) =>
+    set({
+      isProcessing,
+      progress: isProcessing ? 1 : 0,
+    }),
 
-  setProgress: (progress, stage) =>
-    set((state) => ({
-      progress,
-      currentStage: stage !== undefined ? stage : state.currentStage,
-    })),
+  setProgress: (newProgress, stage) =>
+    set((state) => {
+      const clamped = Math.min(100, Math.max(1, Math.round(newProgress)));
+      // When processing, progress can only increase monotonically, never jump backwards
+      const nextProgress = state.isProcessing ? Math.max(state.progress, clamped) : clamped;
+      return {
+        progress: nextProgress,
+        currentStage: stage !== undefined ? stage : state.currentStage,
+      };
+    }),
 
   setProcessData: (data) => {
     // Generate blob URLs

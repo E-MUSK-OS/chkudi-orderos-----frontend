@@ -19,34 +19,34 @@ interface ProcessingProgressModalProps {
 
 const STAGES = [
   {
-    threshold: 15,
-    title: "1. Parsing ZPL & PDF Files",
-    description: "Extracting label blocks and reading document structures",
+    threshold: 20,
+    title: "1. Reading & Preparing Documents",
+    description: "Loading PDFs, merging files, and validating structures",
     icon: FileCode,
   },
   {
     threshold: 45,
-    title: "2. Converting ZPL to High-Resolution PDF",
-    description: "Rendering Zebra barcode labels via Zebra Rendering Engine",
-    icon: Barcode,
-  },
-  {
-    threshold: 75,
-    title: "3. Indexing Amazon Invoices & Orders",
-    description: "Extracting Invoice numbers, Amazon Order IDs, and customer data",
+    title: "2. Extracting Invoices & Order IDs",
+    description: "Parsing Amazon invoices, customer details, and order numbers",
     icon: FileCheck2,
   },
   {
-    threshold: 90,
-    title: "4. Cross-Verifying & Matching Data",
-    description: "Comparing invoice and order numbers across both documents",
-    icon: SearchCheck,
+    threshold: 75,
+    title: "3. Converting ZPL Barcodes & Matching",
+    description: "Rendering shipping labels and cross-verifying invoice IDs",
+    icon: Barcode,
+  },
+  {
+    threshold: 92,
+    title: "4. Enhancing Invoice Table Readability",
+    description: "Clearing gridline interference and balancing document layouts",
+    icon: Sparkles,
   },
   {
     threshold: 100,
-    title: "5. Generating Matched Dispatch PDF",
+    title: "5. Dispatch Documents Ready",
     description: "Pairing labels with invoices for 1-click warehouse printing",
-    icon: Sparkles,
+    icon: CheckCircle2,
   },
 ];
 

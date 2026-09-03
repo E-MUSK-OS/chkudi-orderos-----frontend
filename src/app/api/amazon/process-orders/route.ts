@@ -517,12 +517,258 @@ function normalizeInvoice(value: string): string {
 /**
  * Main POST handler.
  */
+/**
+ * Helper to build comparison results from parsed ZPL labels and PDF text.
+ */
+function buildComparisonResponse(
+  zplLabels: ZplLabelData[],
+  convertedZplPdfBase64: string,
+  pagesArray: string[],
+  zplFileName = "labels.zpl"
+) {
+  const invoiceMap = new Map<string, PdfOrderData>();
+  const pdfOrdersList: PdfOrderData[] = [];
+
+  for (let index = 0; index < pagesArray.length; index++) {
+    const pageNumber = index + 1;
+    const text = pagesArray[index] || "";
+
+    // Order number
+    const orderMatch =
+      text.match(/Order Number:\s*([0-9-]{17,19})/i) ||
+      text.match(/\b(\d{3}-\d{7}-\d{7})\b/);
+    const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
+
+    // Invoice number
+    const invoiceNumber = extractPdfInvoiceNumber(text);
+
+    // Amount
+    const amountMatch =
+      text.match(/TOTAL:\s*₹?\s*([0-9.,]+)/i) ||
+      text.match(/Invoice Value:\s*([0-9.,]+)/i) ||
+      text.match(/Grand Total\s*:?\s*₹?\s*([0-9.,]+)/i);
+    const amount = amountMatch?.[1]?.trim() || "";
+
+    // Date
+    const dateMatch =
+      text.match(/Invoice Date\s*:\s*([0-9./-]+)/i) ||
+      text.match(/Order Date:\s*([0-9./-]+)/i);
+    const date = dateMatch?.[1]?.trim() || "";
+
+    // Customer
+    const billingMatch =
+      text.match(/Shipping Address\s*:\s*([^|]+)/i) ||
+      text.match(/Billing Address\s*:\s*([^|]+)/i);
+    let customer = "";
+    if (billingMatch?.[1]) {
+      customer = cleanCustomerName(billingMatch[1]);
+    }
+
+    const orderRecord: PdfOrderData = {
+      orderNumber,
+      sellerInvoice: invoiceNumber,
+      allInvoices: invoiceNumber ? [invoiceNumber] : [],
+      pages: [pageNumber],
+      customer,
+      amount,
+      date,
+    };
+
+    pdfOrdersList.push(orderRecord);
+
+    if (invoiceNumber) {
+      const key = normalizeInvoice(invoiceNumber);
+      if (invoiceMap.has(key)) {
+        const existing = invoiceMap.get(key)!;
+        existing.pages.push(pageNumber);
+        if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
+        if (!existing.amount && amount) existing.amount = amount;
+        if (!existing.date && date) existing.date = date;
+        if (!existing.customer && customer) existing.customer = customer;
+        if (!existing.allInvoices.includes(invoiceNumber)) {
+          existing.allInvoices.push(invoiceNumber);
+        }
+      } else {
+        invoiceMap.set(key, { ...orderRecord });
+      }
+    }
+  }
+
+  // Compare ZPL labels with PDF invoices
+  const matchedResults: ComparisonResult[] = [];
+  const mismatchedZplResults: ComparisonResult[] = [];
+  const matchedPdfKeys = new Set<string>();
+
+  for (let i = 0; i < zplLabels.length; i++) {
+    const label = zplLabels[i];
+    let matchedOrder: PdfOrderData | null = null;
+
+    if (label.invoiceNumber) {
+      const key = normalizeInvoice(label.invoiceNumber);
+      matchedOrder = invoiceMap.get(key) || null;
+    }
+
+    if (matchedOrder) {
+      matchedPdfKeys.add(normalizeInvoice(matchedOrder.sellerInvoice));
+      matchedResults.push({
+        index: 0,
+        isMatch: true,
+        pdfInvoice: matchedOrder.sellerInvoice || label.invoiceNumber,
+        zplInvoice: label.invoiceNumber,
+        orderNumber: matchedOrder.orderNumber || "N/A",
+        awb: label.awb || "N/A",
+        customer: matchedOrder.customer || label.customer || "N/A",
+        amount: matchedOrder.amount ? `₹${matchedOrder.amount}` : "N/A",
+        date: matchedOrder.date || "N/A",
+        pdfPages: matchedOrder.pages || [],
+        zplPage: label.index,
+      });
+    } else {
+      mismatchedZplResults.push({
+        index: 0,
+        isMatch: false,
+        pdfInvoice: "Not Found in PDF",
+        zplInvoice: label.invoiceNumber || "Not Found in ZPL",
+        orderNumber: "N/A",
+        awb: label.awb || "N/A",
+        customer: label.customer || "N/A",
+        amount: "N/A",
+        date: "N/A",
+        pdfPages: [],
+        zplPage: label.index,
+      });
+    }
+  }
+
+  const mismatchedPdfResults: ComparisonResult[] = [];
+  const seenPdfKeys = new Set<string>();
+
+  for (const pdfOrder of pdfOrdersList) {
+    const key = normalizeInvoice(pdfOrder.sellerInvoice);
+    if (!key || seenPdfKeys.has(key)) continue;
+    seenPdfKeys.add(key);
+
+    if (!matchedPdfKeys.has(key)) {
+      mismatchedPdfResults.push({
+        index: 0,
+        isMatch: false,
+        pdfInvoice: pdfOrder.sellerInvoice || "N/A",
+        zplInvoice: "Not Found in ZPL",
+        orderNumber: pdfOrder.orderNumber || "N/A",
+        awb: "N/A",
+        customer: pdfOrder.customer || "N/A",
+        amount: pdfOrder.amount ? `₹${pdfOrder.amount}` : "N/A",
+        date: pdfOrder.date || "N/A",
+        pdfPages: pdfOrder.pages || [],
+        zplPage: 0,
+      });
+    }
+  }
+
+  const comparisonResults: ComparisonResult[] = [
+    ...matchedResults,
+    ...mismatchedZplResults,
+    ...mismatchedPdfResults,
+  ].map((res, idx) => ({ ...res, index: idx + 1 }));
+
+  const matchCount = matchedResults.length;
+  const mismatchCount = mismatchedZplResults.length + mismatchedPdfResults.length;
+  const matchPercentage = zplLabels.length > 0 ? Math.round((matchCount / zplLabels.length) * 100) : 0;
+
+  return NextResponse.json({
+    success: true,
+    summary: {
+      totalZplLabels: zplLabels.length,
+      totalPdfOrders: invoiceMap.size,
+      totalPdfPages: pagesArray.length,
+      matchedCount: matchCount,
+      mismatchCount: mismatchCount,
+      matchPercentage,
+      isAllMatched: matchCount > 0 && mismatchCount === 0,
+      processedAt: new Date().toISOString(),
+      zplFileName,
+      pdfFileName: "client-processed.pdf",
+    },
+    results: comparisonResults,
+    files: {
+      convertedZplPdfBase64,
+      combinedPdfBase64: "",
+      originalPdfBase64: "",
+    },
+  });
+}
+
+/**
+ * Main POST handler with Streamlined Network Pipeline support.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const zplFile = formData.get("zplFile");
-    const pdfTextArrayStr = formData.get("pdfTextArray");
+    const contentType = req.headers.get("content-type") || "";
 
+    // 1. JSON Request (Action: "compare")
+    if (contentType.includes("application/json")) {
+      const body = await req.json();
+      const { action, zplLabels, convertedZplPdfBase64, pdfTextArray, zplFileName } = body;
+
+      if (action === "compare") {
+        return buildComparisonResponse(
+          zplLabels || [],
+          convertedZplPdfBase64 || "",
+          pdfTextArray || [],
+          zplFileName || "labels.zpl"
+        );
+      }
+    }
+
+    // 2. FormData Request
+    const formData = await req.formData();
+    const action = (formData.get("action") as string) || null;
+    const zplFile = formData.get("zplFile") as File | null;
+
+    // CONCURRENT PIPELINE: Convert ZPL immediately in the background
+    if (action === "convert-zpl") {
+      if (!(zplFile instanceof File)) {
+        return NextResponse.json({ error: "ZPL file is required." }, { status: 400 });
+      }
+
+      const zplText = await zplFile.text();
+      const zplLabels = parseZplLabels(zplText);
+
+      if (zplLabels.length === 0) {
+        return NextResponse.json(
+          { error: "No valid ZPL label definitions found in the uploaded ZPL file." },
+          { status: 400 }
+        );
+      }
+
+      const mergedZplPdf = await PDFDocument.create();
+      const CHUNK_SIZE = 50;
+
+      for (let i = 0; i < zplLabels.length; i += CHUNK_SIZE) {
+        const chunk = zplLabels.slice(i, i + CHUNK_SIZE);
+        const chunkZpl = chunk.map((label) => label.rawZpl).join("\n");
+        const chunkPdfBuffer = await convertZplChunkToPdf(chunkZpl);
+        const chunkPdf = await PDFDocument.load(chunkPdfBuffer);
+        const copiedPages = await mergedZplPdf.copyPages(chunkPdf, chunkPdf.getPageIndices());
+        copiedPages.forEach((page) => mergedZplPdf.addPage(page));
+
+        if (i + CHUNK_SIZE < zplLabels.length) {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
+
+      const convertedZplPdfBytes = await mergedZplPdf.save();
+      const convertedZplPdfBase64 = Buffer.from(convertedZplPdfBytes).toString("base64");
+
+      return NextResponse.json({
+        success: true,
+        zplLabels,
+        convertedZplPdfBase64,
+      });
+    }
+
+    // 3. Fallback: Full single-pass processing
+    const pdfTextArrayStr = formData.get("pdfTextArray");
     if (!(zplFile instanceof File) || typeof pdfTextArrayStr !== "string") {
       return NextResponse.json(
         { error: "ZPL file and PDF text array are required." },
@@ -531,265 +777,41 @@ export async function POST(req: NextRequest) {
     }
 
     const pdfTextArray: string[] = JSON.parse(pdfTextArrayStr);
-
-    // ---------------------------------------------------------
-    // 1. Read uploaded files.
-    // ---------------------------------------------------------
-
     const zplText = await zplFile.text();
-
-    // ---------------------------------------------------------
-    // 2. Parse ZPL labels.
-    // ---------------------------------------------------------
-
     const zplLabels = parseZplLabels(zplText);
 
     if (zplLabels.length === 0) {
       return NextResponse.json(
-        {
-          error:
-            "No valid ZPL label definitions found in the uploaded ZPL file.",
-        },
+        { error: "No valid ZPL label definitions found in the uploaded ZPL file." },
         { status: 400 }
       );
     }
 
-    console.log(
-      `[ZPL] Parsed ${zplLabels.length} labels`
-    );
-
-    // ---------------------------------------------------------
-    // 3. Convert ZPL to PDF in batches.
-    // ---------------------------------------------------------
-
     const mergedZplPdf = await PDFDocument.create();
-
     const CHUNK_SIZE = 50;
 
     for (let i = 0; i < zplLabels.length; i += CHUNK_SIZE) {
       const chunk = zplLabels.slice(i, i + CHUNK_SIZE);
-
       const chunkZpl = chunk.map((label) => label.rawZpl).join("\n");
-
-      console.log(
-        `[Labelary] Converting labels ${i + 1}-${i + chunk.length} of ${zplLabels.length}`
-      );
-
       const chunkPdfBuffer = await convertZplChunkToPdf(chunkZpl);
-
       const chunkPdf = await PDFDocument.load(chunkPdfBuffer);
+      const copiedPages = await mergedZplPdf.copyPages(chunkPdf, chunkPdf.getPageIndices());
+      copiedPages.forEach((page) => mergedZplPdf.addPage(page));
 
-      const copiedPages = await mergedZplPdf.copyPages(
-        chunkPdf,
-        chunkPdf.getPageIndices()
-      );
-
-      copiedPages.forEach((page) => {
-        mergedZplPdf.addPage(page);
-      });
-
-      // Add a polite delay between chunks to stay well below rate limits
       if (i + CHUNK_SIZE < zplLabels.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 250));
       }
     }
 
-    const convertedZplPdfBytes =
-      await mergedZplPdf.save();
+    const convertedZplPdfBytes = await mergedZplPdf.save();
+    const convertedZplPdfBase64 = Buffer.from(convertedZplPdfBytes).toString("base64");
 
-    const convertedZplPdfBase64 =
-      Buffer.from(convertedZplPdfBytes).toString(
-        "base64"
-      );
-
-
-
-    // ---------------------------------------------------------
-    // 4. Parse Amazon invoice PDF using provided text array
-    // ---------------------------------------------------------
-
-    const invoiceMap = new Map<string, PdfOrderData>();
-    const pdfOrdersList: PdfOrderData[] = [];
-    const pagesArray = pdfTextArray;
-
-    if (pagesArray.length > 0) {
-      console.log(
-        "[PDF Debug] First page text (500 chars):",
-        pagesArray[0].substring(0, 500)
-      );
-    }
-
-    for (let index = 0; index < pagesArray.length; index++) {
-      const pageNumber = index + 1;
-      const text = pagesArray[index] || "";
-
-      // Order number
-      const orderMatch =
-        text.match(/Order Number:\s*([0-9-]{17,19})/i) ||
-        text.match(/\b(\d{3}-\d{7}-\d{7})\b/);
-      const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
-
-      // Invoice number
-      const invoiceNumber = extractPdfInvoiceNumber(text);
-
-      // Amount
-      const amountMatch =
-        text.match(/TOTAL:\s*₹?\s*([0-9.,]+)/i) ||
-        text.match(/Invoice Value:\s*([0-9.,]+)/i) ||
-        text.match(/Grand Total\s*:?\s*₹?\s*([0-9.,]+)/i);
-      const amount = amountMatch?.[1]?.trim() || "";
-
-      // Date
-      const dateMatch =
-        text.match(/Invoice Date\s*:\s*([0-9./-]+)/i) ||
-        text.match(/Order Date:\s*([0-9./-]+)/i);
-      const date = dateMatch?.[1]?.trim() || "";
-
-      // Customer
-      const billingMatch =
-        text.match(/Shipping Address\s*:\s*([^|]+)/i) ||
-        text.match(/Billing Address\s*:\s*([^|]+)/i);
-      let customer = "";
-      if (billingMatch?.[1]) {
-        customer = cleanCustomerName(billingMatch[1]);
-      }
-
-      console.log(`[PDF Parse] Page ${pageNumber}: Invoice="${invoiceNumber}", Order="${orderNumber}"`);
-
-      const orderRecord: PdfOrderData = {
-        orderNumber,
-        sellerInvoice: invoiceNumber,
-        allInvoices: invoiceNumber ? [invoiceNumber] : [],
-        pages: [pageNumber],
-        customer,
-        amount,
-        date,
-      };
-
-      pdfOrdersList.push(orderRecord);
-
-      if (invoiceNumber) {
-        const key = normalizeInvoice(invoiceNumber);
-        if (invoiceMap.has(key)) {
-          const existing = invoiceMap.get(key)!;
-          existing.pages.push(pageNumber);
-          if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
-          if (!existing.amount && amount) existing.amount = amount;
-          if (!existing.date && date) existing.date = date;
-          if (!existing.customer && customer) existing.customer = customer;
-          if (!existing.allInvoices.includes(invoiceNumber)) {
-            existing.allInvoices.push(invoiceNumber);
-          }
-        } else {
-          invoiceMap.set(key, { ...orderRecord });
-        }
-      }
-    }
-
-    // ---------------------------------------------------------
-    // 5. Compare ZPL labels with PDF invoices
-    // ---------------------------------------------------------
-    const matchedResults: ComparisonResult[] = [];
-    const mismatchedZplResults: ComparisonResult[] = [];
-    const matchedPdfKeys = new Set<string>();
-
-    for (let i = 0; i < zplLabels.length; i++) {
-      const label = zplLabels[i];
-      let matchedOrder: PdfOrderData | null = null;
-
-      if (label.invoiceNumber) {
-        const key = normalizeInvoice(label.invoiceNumber);
-        matchedOrder = invoiceMap.get(key) || null;
-      }
-
-      if (matchedOrder) {
-        matchedPdfKeys.add(normalizeInvoice(matchedOrder.sellerInvoice));
-        matchedResults.push({
-          index: 0,
-          isMatch: true,
-          pdfInvoice: matchedOrder.sellerInvoice || label.invoiceNumber,
-          zplInvoice: label.invoiceNumber,
-          orderNumber: matchedOrder.orderNumber || "N/A",
-          awb: label.awb || "N/A",
-          customer: matchedOrder.customer || label.customer || "N/A",
-          amount: matchedOrder.amount ? `₹${matchedOrder.amount}` : "N/A",
-          date: matchedOrder.date || "N/A",
-          pdfPages: matchedOrder.pages || [],
-          zplPage: label.index,
-        });
-      } else {
-        mismatchedZplResults.push({
-          index: 0,
-          isMatch: false,
-          pdfInvoice: "Not Found in PDF",
-          zplInvoice: label.invoiceNumber || "Not Found in ZPL",
-          orderNumber: "N/A",
-          awb: label.awb || "N/A",
-          customer: label.customer || "N/A",
-          amount: "N/A",
-          date: "N/A",
-          pdfPages: [],
-          zplPage: label.index,
-        });
-      }
-    }
-
-    const mismatchedPdfResults: ComparisonResult[] = [];
-    const seenPdfKeys = new Set<string>();
-
-    for (const pdfOrder of pdfOrdersList) {
-      const key = normalizeInvoice(pdfOrder.sellerInvoice);
-      if (!key || seenPdfKeys.has(key)) continue;
-      seenPdfKeys.add(key);
-
-      if (!matchedPdfKeys.has(key)) {
-        mismatchedPdfResults.push({
-          index: 0,
-          isMatch: false,
-          pdfInvoice: pdfOrder.sellerInvoice || "N/A",
-          zplInvoice: "Not Found in ZPL",
-          orderNumber: pdfOrder.orderNumber || "N/A",
-          awb: "N/A",
-          customer: pdfOrder.customer || "N/A",
-          amount: pdfOrder.amount ? `₹${pdfOrder.amount}` : "N/A",
-          date: pdfOrder.date || "N/A",
-          pdfPages: pdfOrder.pages || [],
-          zplPage: 0,
-        });
-      }
-    }
-
-    const comparisonResults: ComparisonResult[] = [
-      ...matchedResults,
-      ...mismatchedZplResults,
-      ...mismatchedPdfResults,
-    ].map((res, idx) => ({ ...res, index: idx + 1 }));
-
-    const matchCount = matchedResults.length;
-    const mismatchCount = mismatchedZplResults.length + mismatchedPdfResults.length;
-    const matchPercentage = zplLabels.length > 0 ? Math.round((matchCount / zplLabels.length) * 100) : 0;
-
-    return NextResponse.json({
-      success: true,
-      summary: {
-        totalZplLabels: zplLabels.length,
-        totalPdfOrders: invoiceMap.size,
-        totalPdfPages: pagesArray.length,
-        matchedCount: matchCount,
-        mismatchCount: mismatchCount,
-        matchPercentage,
-        isAllMatched: matchCount > 0 && mismatchCount === 0,
-        processedAt: new Date().toISOString(),
-        zplFileName: zplFile.name,
-        pdfFileName: "client-processed.pdf",
-      },
-      results: comparisonResults,
-      files: {
-        convertedZplPdfBase64,
-        combinedPdfBase64: "", // No longer generated on server
-        originalPdfBase64: "", // No longer sent back from server
-      },
-    });
+    return buildComparisonResponse(
+      zplLabels,
+      convertedZplPdfBase64,
+      pdfTextArray,
+      zplFile.name
+    );
   } catch (error: unknown) {
     console.error("Amazon order process error:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal processing error occurred.";
