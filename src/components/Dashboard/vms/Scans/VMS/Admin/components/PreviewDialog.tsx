@@ -89,8 +89,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                   src={getFullUrl(item.videoUrl)}
                   poster={getFullUrl(item.thumbnailUrl) ?? undefined}
                 />
-              ) : (
-              )}
+              ) : null}
             </div>
           </div>
 
