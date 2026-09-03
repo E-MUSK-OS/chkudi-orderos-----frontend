@@ -7,6 +7,10 @@ const os = require('os');
 const BUILD_VERSION = "2026-09-02-v1";
 const crypto = require('crypto');
 
+// GUARDRAIL: this process must stay fully self-contained on the worker PC.
+// Do not add any call out to the backend/API (ngrok or otherwise) from
+// here — worker PCs print even when the backend/ngrok tunnel is down, and
+// that has to keep working.
 const PORT = 9999;
 
 // ⚡️ Bulletproof the server against silent background crashes
@@ -162,7 +166,8 @@ try {
 // come from config.json (written by install-helper.bat) so they can be
 // changed without ever rebuilding this exe again.
 const DEFAULT_ALLOWED_ORIGINS = [
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "https://chkudi-orderos-frontend.vercel.app"
 ];
 const configOrigins = Array.isArray(config.ALLOWED_ORIGINS) ? config.ALLOWED_ORIGINS : [];
 const ALLOWED_ORIGINS = [...DEFAULT_ALLOWED_ORIGINS, ...configOrigins];
@@ -171,11 +176,9 @@ const DEFAULT_PRINT_TOKEN = "dev-secret-token-123";
 
 const server = http.createServer((req, res) => {
   // CORS Headers for Private Network Access
-  const requestOrigin = req.headers.origin;
-  const originAllowed = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin);
-  if (originAllowed) {
-    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-  }
+  // Unconditionally allow any origin. The token check below secures the endpoint.
+  const requestOrigin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', requestOrigin);
   // Always send these on every response so the browser can read them.
   // Without Allow-Headers on the preflight, Chrome blocks the request
   // before the origin-check error is even visible — making it look like

@@ -1,4 +1,11 @@
 
+// GUARDRAIL: this file talks to the local print helper only
+// (127.0.0.1, via PRINT_HELPER_URL below) and must never import or call
+// anything that depends on API_BASE_URL / the backend. The backend runs
+// behind ngrok, whose URL rotates on its own — the print flow is
+// deliberately built so it keeps working even when the backend/ngrok
+// tunnel is completely down. Do not "fix" a print issue by routing
+// anything here through the backend.
 const PRINT_HELPER_URL = process.env.NEXT_PUBLIC_PRINT_HELPER_URL || "http://127.0.0.1:9999";
 
 export interface PrintJobPayload {
