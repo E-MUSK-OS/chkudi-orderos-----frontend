@@ -66,7 +66,7 @@ echo   "PRINT_TOKEN": "dev-secret-token-123">> "%INSTALL_DIR%\config.json"
 echo }>> "%INSTALL_DIR%\config.json"
 
 :: Write expected build version for the watchdog
-echo 2026-09-02-v1> "%INSTALL_DIR%\version.txt"
+echo 2026-09-03-v1> "%INSTALL_DIR%\version.txt"
 
 :: Verify the copy
 if not exist "%INSTALL_DIR%\printer-helper.exe" (

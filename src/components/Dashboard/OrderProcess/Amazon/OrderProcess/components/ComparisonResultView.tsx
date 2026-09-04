@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
-import { printAgentService } from "@/components/Dashboard/Labels/services/printAgent.service";
+import { printAgentService, chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
@@ -134,45 +134,7 @@ export default function ComparisonResultView({
     return images;
   };
 
-  // Browser fallback: render PDF into an iframe with @page CSS for 4" x 6"
-  const printViaBrowser = (pdfBytes: Uint8Array) => {
-    const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
-    const blobUrl = URL.createObjectURL(blob);
 
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    iframe.src = blobUrl;
-    document.body.appendChild(iframe);
-
-    iframe.onload = () => {
-      setTimeout(() => {
-        try {
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (iframeDoc) {
-            const style = iframeDoc.createElement("style");
-            style.textContent = `
-              @page { size: 4in 6in; margin: 0; }
-              @media print { body { margin: 0; padding: 0; } }
-            `;
-            iframeDoc.head.appendChild(style);
-          }
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        } catch {
-          window.open(blobUrl, "_blank");
-        }
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          URL.revokeObjectURL(blobUrl);
-        }, 5000);
-      }, 500);
-    };
-  };
 
   const handlePrintSelected = async () => {
     if (selectedRows.size === 0) {
@@ -284,45 +246,122 @@ export default function ComparisonResultView({
 
       const finalBytes = await printDoc.save();
 
-      // === STRATEGY: Try desktop helper first, fall back to browser print ===
-      let usedDesktopHelper = false;
+      // Convert finalBytes to base64 for the Chrome extension
+      let binary = "";
+      const len = finalBytes.byteLength;
+      const CHUNK_SIZE = 8192;
+      for (let i = 0; i < len; i += CHUNK_SIZE) {
+        const chunk = finalBytes.subarray(i, i + CHUNK_SIZE);
+        binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+      }
+      const pdfBase64 = btoa(binary);
 
+      let printedSuccessfully = false;
+      let extError = "";
+      let helperError = "";
+
+      // ============================================================
+      // STRATEGY 1: Chrome Extension ("cmegfllojibhfipdgamnfefilfokeooh")
+      // Direct in-browser silent printing — works seamlessly on Vercel & Local
+      // ============================================================
       try {
-        const printers = await printAgentService.getPrinters();
-        if (printers && printers.length > 0) {
+        const extCheck = await chromeExtensionPrintService.checkExtension();
+        if (extCheck.ok) {
+          console.log("Chrome print extension detected:", extCheck.response);
+          toast.loading("Sending silent print to Chrome extension...", { id: "print-prep" });
+
+          const extPrinters = await chromeExtensionPrintService.getPrinters();
           const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-          const printerName = lastUsed && printers.includes(lastUsed) ? lastUsed : printers[0];
+          const targetPrinter =
+            lastUsed && extPrinters.includes(lastUsed)
+              ? lastUsed
+              : extPrinters.length > 0
+              ? extPrinters[0]
+              : lastUsed || null;
 
-          toast.loading(`Direct printing ${printDoc.getPageCount()} page(s) to ${printerName}...`, {
-            id: "print-prep",
-          });
+          const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, targetPrinter, 1);
+          console.log("Chrome extension print response:", extRes);
 
-          const images = await renderPdfBytesToImages(finalBytes);
-          for (const imgBase64 of images) {
-            await printAgentService.sendPrintJob({
-              imageBase64: imgBase64,
-              printerName,
-              widthMm: WIDTH_MM,
-              heightMm: HEIGHT_MM,
+          toast.success(
+            `Printed ${printDoc.getPageCount()} page(s) (4" x 6") directly via Chrome extension!`,
+            { id: "print-prep" }
+          );
+          printedSuccessfully = true;
+        } else {
+          extError = extCheck.error || "Extension not responding";
+          console.warn("Chrome print extension check failed:", extError);
+        }
+      } catch (extErr: any) {
+        extError = extErr?.message || String(extErr);
+        console.warn("Chrome extension print failed:", extErr);
+      }
+
+      // ============================================================
+      // STRATEGY 2: Desktop Helper (http://127.0.0.1:9999) Fallback
+      // ============================================================
+      if (!printedSuccessfully) {
+        try {
+          const permission = await printAgentService.checkLocalNetworkPermission();
+          if (permission === "prompt") {
+            toast.loading("Please click 'Allow' on Chrome's network permission popup to connect to your printer...", {
+              id: "print-prep",
+              duration: 8000,
+            });
+          } else if (permission === "denied") {
+            helperError = "Local network access blocked in Chrome settings";
+            toast.error("Local network access is blocked in Chrome. Click the lock/tune icon near the URL bar -> Site settings -> Allow 'Local network access'.", {
+              duration: 8000,
             });
           }
 
-          toast.success(
-            `Printed ${images.length} label(s) (4" x 6") directly to ${printerName}!`,
-            { id: "print-prep" }
-          );
-          usedDesktopHelper = true;
+          const printers = await printAgentService.getPrinters();
+          if (printers && printers.length > 0) {
+            const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+            const printerName = lastUsed && printers.includes(lastUsed) ? lastUsed : printers[0];
+
+            toast.loading(`Direct printing ${printDoc.getPageCount()} page(s) to ${printerName}...`, {
+              id: "print-prep",
+            });
+
+            const images = await renderPdfBytesToImages(finalBytes);
+            for (const imgBase64 of images) {
+              await printAgentService.sendPrintJob({
+                imageBase64: imgBase64,
+                printerName,
+                widthMm: WIDTH_MM,
+                heightMm: HEIGHT_MM,
+              });
+            }
+
+            toast.success(
+              `Printed ${images.length} label(s) (4" x 6") directly to ${printerName}!`,
+              { id: "print-prep" }
+            );
+            printedSuccessfully = true;
+          } else {
+            helperError = "Helper is running but no printers found in Windows";
+            console.warn(helperError);
+          }
+        } catch (err: any) {
+          helperError = err?.message || String(err);
+          console.warn("Desktop print helper error:", err);
+          if (err?.message === "PRINT_HELPER_401") {
+            helperError = "Helper token unauthorized (401)";
+            toast.error("Print helper token unauthorized. Please verify the print helper configuration.", {
+              duration: 5000,
+            });
+          }
         }
-      } catch {
-        // Desktop helper not available — fall back to browser print
       }
 
-      if (!usedDesktopHelper) {
-        toast.loading("Opening browser print (4\" x 6\")...", { id: "print-prep" });
-        printViaBrowser(finalBytes);
-        toast.success(
-          `Print dialog opened for ${printDoc.getPageCount()} page(s) at 4" x 6".`,
-          { id: "print-prep" }
+      // ============================================================
+      // Failure notification (NO browser print popup is opened)
+      // ============================================================
+      if (!printedSuccessfully) {
+        console.error("Silent Print Diagnostics:", { extError, helperError });
+        toast.error(
+          `Direct print failed.\n• Extension: ${extError || "Not available"}\n• Local Helper: ${helperError || "Not reachable"}`,
+          { id: "print-prep", duration: 8000 }
         );
       }
     } catch (err: any) {

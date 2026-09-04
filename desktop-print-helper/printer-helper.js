@@ -4,10 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const BUILD_VERSION = "2026-09-02-v1";
+const BUILD_VERSION = "2026-09-03-v1";
 const crypto = require('crypto');
 
-const PORT = 9999;
+const PORT = 9000;
 
 // ⚡️ Bulletproof the server against silent background crashes
 process.on('uncaughtException', (err) => {
@@ -150,42 +150,61 @@ try {
 // from the exe's own install folder instead fixes that.
 let config = {};
 try {
-  const configPath = path.join(process.env.LOCALAPPDATA || '', 'LabelCraftHelper', 'config.json');
-  if (fs.existsSync(configPath)) {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const localAppDataPath = path.join(process.env.LOCALAPPDATA || '', 'LabelCraftHelper', 'config.json');
+  const localDirConfig = path.join(__dirname, 'config.json');
+  if (fs.existsSync(localAppDataPath)) {
+    config = JSON.parse(fs.readFileSync(localAppDataPath, 'utf8'));
+  } else if (fs.existsSync(localDirConfig)) {
+    config = JSON.parse(fs.readFileSync(localDirConfig, 'utf8'));
   }
 } catch (e) {
   console.error("Failed to load config.json", e.message);
 }
 
-// Kept as a localhost-dev fallback only. The real production origin(s) now
-// come from config.json (written by install-helper.bat) so they can be
-// changed without ever rebuilding this exe again.
+// Fallback origins if no config.json is present
 const DEFAULT_ALLOWED_ORIGINS = [
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "https://chkudi-orderos-frontend.vercel.app",
+  "https://chkudi-orderos-frontend-git-main-e-musk-os.vercel.app"
 ];
 const configOrigins = Array.isArray(config.ALLOWED_ORIGINS) ? config.ALLOWED_ORIGINS : [];
 const ALLOWED_ORIGINS = [...DEFAULT_ALLOWED_ORIGINS, ...configOrigins];
 
 const DEFAULT_PRINT_TOKEN = "dev-secret-token-123";
 
+function isOriginAllowed(requestOrigin) {
+  if (!requestOrigin) return true;
+  if (ALLOWED_ORIGINS.includes(requestOrigin)) return true;
+  try {
+    const url = new URL(requestOrigin);
+    // Allow any localhost or 127.0.0.1 port (HTTP or HTTPS)
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return true;
+    // Allow all Vercel deployments (*.vercel.app)
+    if (url.hostname === 'vercel.app' || url.hostname.endsWith('.vercel.app')) return true;
+  } catch (e) {}
+  return false;
+}
+
 const server = http.createServer((req, res) => {
-  // CORS Headers for Private Network Access
+  // CORS & Private Network Access Headers
   const requestOrigin = req.headers.origin;
-  const originAllowed = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin);
-  if (originAllowed) {
+  const originAllowed = isOriginAllowed(requestOrigin);
+  if (originAllowed && requestOrigin) {
     res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+  } else if (!requestOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
-  // Always send these on every response so the browser can read them.
-  // Without Allow-Headers on the preflight, Chrome blocks the request
-  // before the origin-check error is even visible — making it look like
-  // the helper is offline when it is actually running fine.
+
+  // Always send these on every response so Chrome PNA / CORS succeeds
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Print-Token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Print-Token, targetaddressspace, authorization');
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
   res.setHeader('X-Helper-Version', BUILD_VERSION);
 
   if (req.method === 'OPTIONS') {
+    if (requestOrigin && originAllowed) {
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    }
     res.writeHead(204); 
     res.end(); 
     return;
