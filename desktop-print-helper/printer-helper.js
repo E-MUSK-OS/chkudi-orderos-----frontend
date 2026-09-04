@@ -7,7 +7,11 @@ const os = require('os');
 const BUILD_VERSION = "2026-09-03-v1";
 const crypto = require('crypto');
 
-const PORT = 9000;
+// GUARDRAIL: this process must stay fully self-contained on the worker PC.
+// Do not add any call out to the backend/API (ngrok or otherwise) from
+// here — worker PCs print even when the backend/ngrok tunnel is down, and
+// that has to keep working.
+const PORT = 9999;
 
 // ⚡️ Bulletproof the server against silent background crashes
 process.on('uncaughtException', (err) => {
@@ -187,13 +191,9 @@ function isOriginAllowed(requestOrigin) {
 
 const server = http.createServer((req, res) => {
   // CORS & Private Network Access Headers
-  const requestOrigin = req.headers.origin;
-  const originAllowed = isOriginAllowed(requestOrigin);
-  if (originAllowed && requestOrigin) {
-    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-  } else if (!requestOrigin) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
+  // Unconditionally allow any requesting origin. The token check below secures the endpoint.
+  const requestOrigin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', requestOrigin);
 
   // Always send these on every response so Chrome PNA / CORS succeeds
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -202,9 +202,7 @@ const server = http.createServer((req, res) => {
   res.setHeader('X-Helper-Version', BUILD_VERSION);
 
   if (req.method === 'OPTIONS') {
-    if (requestOrigin && originAllowed) {
-      res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-    }
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
     res.writeHead(204); 
     res.end(); 
     return;
