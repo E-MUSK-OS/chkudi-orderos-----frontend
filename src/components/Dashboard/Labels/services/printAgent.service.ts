@@ -1,6 +1,6 @@
 
 
-const EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "dedcmkepbiimcbagdhghapmkbafoohal").trim();
+const EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "cigeelpciafibpknmacihhidobkeccno").trim();
 
 export interface ExtensionPingResponse {
   success?: boolean;
@@ -81,6 +81,10 @@ export const chromeExtensionPrintService = {
           { type: "GET_PRINTERS" },
           (response: any) => {
             if (chrome.runtime.lastError || !response) {
+              if (chrome.runtime.lastError) console.warn("Extension lastError:", chrome.runtime.lastError.message);
+              resolve([]);
+            } else if (response.success === false) {
+              console.warn("Print extension error:", response.error || response);
               resolve([]);
             } else {
               const list = Array.isArray(response)
