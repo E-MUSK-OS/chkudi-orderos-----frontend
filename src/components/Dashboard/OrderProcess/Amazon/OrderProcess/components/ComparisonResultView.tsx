@@ -382,7 +382,14 @@ export default function ComparisonResultView({
         console.error("Silent Print Diagnostics:", { extError });
         toast.error(
           `Direct print failed: ${extError || "Extension not responding"}`,
-          { id: "print-prep", duration: 8000 }
+          {
+            id: "print-prep",
+            duration: 10000,
+            action: {
+              label: "Setup PrintBridge",
+              onClick: () => window.open("/printbridge", "_blank"),
+            },
+          }
         );
       }
     } catch (err: any) {
