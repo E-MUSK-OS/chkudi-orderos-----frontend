@@ -135,14 +135,22 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
       // 2. Fetch available printers
       const printers = await chromeExtensionPrintService.getPrinters();
+      const lastUsedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+      const targetPrinterName = lastUsedPrinter || (printers && printers.length > 0 ? printers[0] : "Printer");
+
       if (!printers || printers.length === 0) {
-        toast.error("No printers found via Chrome Print Extension.", { id: toastId, duration: 5000 });
+        toast.error(`Print failed: Printer ${targetPrinterName} is disconnected or offline.`, { id: toastId, duration: 6000 });
         setIsPrintingDirectly(false);
         return;
       }
 
-      const lastUsedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-      const targetPrinter = (lastUsedPrinter && printers.includes(lastUsedPrinter)) ? lastUsedPrinter : printers[0];
+      if (lastUsedPrinter && !printers.includes(lastUsedPrinter)) {
+        toast.error(`Print failed: Printer ${lastUsedPrinter} is disconnected or offline.`, { id: toastId, duration: 6000 });
+        setIsPrintingDirectly(false);
+        return;
+      }
+
+      const targetPrinter = lastUsedPrinter || printers[0];
 
       // 3. Fetch template if not active
       toast.loading("Preparing label template...", { id: toastId });
@@ -220,7 +228,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       if (successCount > 0) {
         setPrintedRowIds((prev) => new Set([...prev, ...succeededIds]));
         setSelectedRowIds(new Set());
-        toast.success(`Printed ${successCount} label(s) directly to ${targetPrinter}!`, { id: toastId });
+        toast.success(`Sent ${successCount} label(s) to ${targetPrinter} (Queued in Print Spooler)!`, { id: toastId });
       } else {
         toast.error("Failed to print labels. Please check printer connection.", { id: toastId });
       }

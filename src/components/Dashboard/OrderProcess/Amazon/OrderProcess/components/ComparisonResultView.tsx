@@ -320,10 +320,17 @@ export default function ComparisonResultView({
           if (extPrinters.length > 0) {
             setAvailablePrinters(extPrinters);
           }
-          const targetPrinter = selectedPrinter || resolveTargetPrinter(extPrinters);
 
-          if (!targetPrinter) {
-            throw new Error("No printer detected on this PC");
+          const lastSavedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+          const targetPrinter = selectedPrinter || resolveTargetPrinter(extPrinters) || lastSavedPrinter;
+
+          if (!targetPrinter || extPrinters.length === 0) {
+            const fallbackName = targetPrinter || "Printer";
+            throw new Error(`Print failed: Printer ${fallbackName} is disconnected or offline`);
+          }
+
+          if (lastSavedPrinter && extPrinters.length > 0 && !extPrinters.includes(lastSavedPrinter)) {
+            throw new Error(`Print failed: Printer ${lastSavedPrinter} is disconnected or offline`);
           }
 
           setSelectedPrinter(targetPrinter);
@@ -341,7 +348,7 @@ export default function ComparisonResultView({
           }
 
           toast.success(
-            `Printed ${printDoc.getPageCount()} page(s) (4" x 6") directly to ${targetPrinter}!`,
+            `Sent ${printDoc.getPageCount()} page(s) (4" x 6") to ${targetPrinter} (Queued in Print Spooler)!`,
             { id: "print-prep" }
           );
           printedSuccessfully = true;
