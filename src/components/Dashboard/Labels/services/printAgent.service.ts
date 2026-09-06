@@ -1,6 +1,6 @@
 
 
-const EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "cigeelpciafibpknmacihhidobkeccno").trim();
+const EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "dedcmkepbiimcbagdhghapmkbafoohal").trim();
 
 export interface ExtensionPingResponse {
   success?: boolean;
@@ -39,7 +39,7 @@ export const chromeExtensionPrintService = {
           { type: "PING" },
           (response: any) => {
             if (chrome.runtime.lastError) {
-              console.error("Extension error:", chrome.runtime.lastError.message);
+              console.error(`Extension error (Target ID: ${EXTENSION_ID}):`, chrome.runtime.lastError.message);
               resolve({ ok: false, error: chrome.runtime.lastError.message });
             } else {
               console.log("PING RESPONSE:", response);
