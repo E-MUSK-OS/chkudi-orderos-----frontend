@@ -321,6 +321,14 @@ export default function PrintBridgePage() {
           </a>
         </div>
 
+        {/* Chrome Safe Browsing Helper Note */}
+        <div className="flex items-center gap-2 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-300">
+          <ShieldCheck className="h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+          <span>
+            <strong>Chrome Download Note:</strong> If Chrome displays <em>"This file isn't commonly downloaded"</em>, click <strong>Download suspicious file</strong> (or <strong>Keep</strong>) to complete the download. This occurs because the installer is a custom internal <code>.exe</code> file.
+          </span>
+        </div>
+
         {/* Installation Steps */}
         <InstallationSteps
           extensionId={extensionId}
