@@ -338,17 +338,28 @@ export default function ComparisonResultView({
             localStorage.setItem("lastUsedPrinter", targetPrinter);
           }
 
-          toast.loading(`Printing ${printDoc.getPageCount()} page(s) to ${targetPrinter}...`, { id: "print-prep" });
+          const totalPages = printDoc.getPageCount();
+          const BATCH_SIZE = 5;
 
-          const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, targetPrinter, 1);
-          console.log("Chrome extension print response:", extRes);
+          for (let i = 0; i < totalPages; i += BATCH_SIZE) {
+            const endIdx = Math.min(i + BATCH_SIZE, totalPages);
+            toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${targetPrinter}...`, { id: "print-prep" });
 
-          if (extRes && (extRes.success === false || extRes.error)) {
-            throw new Error(extRes.error || "PrintBridge reported print failure");
+            const chunkDoc = await PDFDocument.create();
+            const pageIndices = Array.from({ length: endIdx - i }, (_, idx) => i + idx);
+            const copiedPages = await chunkDoc.copyPages(printDoc, pageIndices);
+            copiedPages.forEach((p) => chunkDoc.addPage(p));
+
+            const chunkBase64 = await chunkDoc.saveAsBase64();
+
+            const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, targetPrinter, 1);
+            if (extRes && (extRes.success === false || extRes.error)) {
+              throw new Error(extRes.error || `PrintBridge reported print failure on pages ${i + 1}-${endIdx}`);
+            }
           }
 
           toast.success(
-            `Sent ${printDoc.getPageCount()} page(s) (4" x 6") to ${targetPrinter} (Queued in Print Spooler)!`,
+            `Sent ${totalPages} page(s) (4" x 6") to ${targetPrinter} (Queued in Print Spooler)!`,
             { id: "print-prep" }
           );
           printedSuccessfully = true;
