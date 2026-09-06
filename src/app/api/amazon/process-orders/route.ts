@@ -8,6 +8,7 @@ export const maxDuration = 60;
 interface ZplLabelData {
   index: number;
   invoiceNumber: string;
+  asin?: string;
   awb: string;
   customer: string;
   rawZpl: string;
@@ -16,6 +17,7 @@ interface ZplLabelData {
 interface PdfOrderData {
   orderNumber: string;
   sellerInvoice: string;
+  asin?: string;
   allInvoices: string[];
   pages: number[];
   customer: string;
@@ -28,6 +30,7 @@ interface ComparisonResult {
   isMatch: boolean;
   zplInvoice: string;
   pdfInvoice: string;
+  asin?: string;
   orderNumber: string;
   awb: string;
   customer: string;
@@ -140,37 +143,227 @@ async function convertZplChunkToPdf(
 }
 
 /**
+ * Check whether a word is a valid name token.
+ * Valid name tokens contain ONLY alphabetic letters (no digits like A602, O9ff) and are not address keywords.
+ */
+function isValidNameWord(word: string): boolean {
+  if (!word || word.length < 2) return false;
+
+  // Must consist ONLY of alphabetic letters (no numbers)
+  if (!/^[A-Za-z]+$/.test(word)) return false;
+
+  const upper = word.toUpperCase();
+  const addressKeywords = [
+    "FLAT",
+    "HNO",
+    "HOUSE",
+    "PLOT",
+    "ROOM",
+    "SHOP",
+    "BLDG",
+    "BUILDING",
+    "APARTMENT",
+    "APT",
+    "TOWER",
+    "FLOOR",
+    "BLOCK",
+    "SECTOR",
+    "OPP",
+    "OPPOSITE",
+    "NEAR",
+    "BEHIND",
+    "BESIDE",
+    "ROAD",
+    "STREET",
+    "LANE",
+    "NAGAR",
+    "COLONY",
+    "ENCLAVE",
+    "VIHAR",
+    "LAYOUT",
+    "SOCIETY",
+    "VILLAGE",
+    "VILL",
+    "POST",
+    "TALUKA",
+    "DIST",
+    "DISTRICT",
+    "PIN",
+    "PINCODE",
+    "NO",
+    "NUM",
+    "NUMBER",
+    "PH",
+    "PHONE",
+    "MOB",
+    "MOBILE",
+    "TEL",
+    "SHIPPING",
+    "BILLING",
+    "ADDRESS",
+    "SHIP",
+    "NAME",
+    "RECIPIENT",
+    "CUSTOMER",
+  ];
+
+  if (addressKeywords.includes(upper)) return false;
+
+  return true;
+}
+
+/**
  * Clean customer name by removing addresses, pin codes, and delivery details.
  */
 function cleanCustomerName(raw: string): string {
   if (!raw || raw === "N/A") return "N/A";
 
+  // 1. Remove Shipping Address / Billing Address / Ship To headers & prefixes
   let cleaned = raw
-    .replace(/^(Shipping|Billing)\s+Address\s*[:\-]?\s*/i, "")
-    .replace(/^Ship\s+To\s*[:\-]?\s*/i, "")
+    .replace(/^[\s\S]*?(?:Shipping|Billing)\s+Address\s*[:\-]?\s*/i, "")
+    .replace(/^[\s\S]*?Ship\s+To\s*[:\-]?\s*/i, "")
     .replace(/^(Customer\s*Name|Recipient|Name)\s*[:\-]?\s*/i, "")
-    .replace(/^C\/O\s*[:\-]?\s*/i, "")
     .trim();
 
-  // Split on common delimiters (commas, newlines, pipes, semicolons, backslash-ampersand for ZPL)
-  cleaned = cleaned.split(/\\&|[\r\n|,;]|\s+-\s+/)[0].trim();
+  // 2. Extract ONLY the very first non-empty line of the address block
+  const lines = cleaned.split(/[\r\n]+/);
+  const firstLine = lines.find((l) => l.trim().length > 0) || cleaned;
 
-  // Remove known address trigger words if stuck to the name without commas
+  // 3. Split first line by comma, pipe, semicolon, ZPL newline (\\&), or dash
+  cleaned = firstLine.split(/\\&|[,|;]|\s+-\s+/)[0].trim();
+
+  // 4. Remove C/O prefix if present
+  cleaned = cleaned.replace(/^C\/O\s*[:\-]?\s*/i, "").trim();
+
+  // 5. Remove known address trigger words if stuck to the name without commas
   const addressTrigger =
     /\s+(?:Flat|H\.?No|House|Plot|Room|Shop|Bldg|Building|Apartment|Apt|Tower|Floor|Block|Sector|Opp|Opposite|Near|Behind|Beside|Road|Street|Lane|Nagar|Colony|Enclave|Vihar|Layout|Society|Village|Vill|Post|Taluka|Dist|District|PIN|Pincode|\d{1,5}[A-Za-z]?\b).*$/i;
   cleaned = cleaned.replace(addressTrigger, "").trim();
 
-  // Remove trailing digits, special chars, or postal codes
+  // 6. Remove trailing digits, postal codes, or punctuation
   cleaned = cleaned.replace(/\s*\b\d{5,6}\b.*$/, "").trim();
   cleaned = cleaned.replace(/[,\-:;.]+$/, "").trim();
 
-  // If still excessively long (e.g. over 30 characters or more than 4 words), take the first 3 words
-  const words = cleaned.split(/\s+/).filter(Boolean);
-  if (words.length > 4 && cleaned.length > 30) {
-    cleaned = words.slice(0, 3).join(" ");
+  // 7. Tokenize into words and filter for valid human name words ONLY
+  const rawWords = cleaned
+    .split(/\s+/)
+    .map((w) => w.replace(/[^A-Za-z0-9]/g, ""))
+    .filter(Boolean);
+
+  const uniqueWords: string[] = [];
+  const seenLower = new Set<string>();
+
+  for (const word of rawWords) {
+    if (!isValidNameWord(word)) continue;
+    const lower = word.toLowerCase();
+    if (!seenLower.has(lower)) {
+      seenLower.add(lower);
+      uniqueWords.push(word);
+    }
   }
 
-  return cleaned || "N/A";
+  // 8. Keep at most 2 valid name words (Firstname + Middlename / Firstname + Lastname)
+  const finalWords = uniqueWords.slice(0, 2);
+
+  // Capitalize properly if ALL CAPS
+  const formatted = finalWords
+    .map((w) =>
+      w === w.toUpperCase() && w.length > 1
+        ? w.charAt(0) + w.slice(1).toLowerCase()
+        : w
+    )
+    .join(" ");
+
+  return formatted || "N/A";
+}
+
+/**
+ * Validate whether a 10-character string is a plausible Amazon ASIN.
+ * Real ASINs start with 'B0' (or 'B') and contain digits, and are never plain English words like LOUNGEWEAR.
+ */
+function isValidAsin(candidate: string): boolean {
+  if (!candidate || candidate.length !== 10) return false;
+  const upper = candidate.toUpperCase();
+
+  // Exclude non-alphanumeric
+  if (!/^[A-Z0-9]{10}$/.test(upper)) return false;
+
+  // Real Amazon ASINs almost always start with 'B0'
+  if (upper.startsWith("B0")) {
+    return true;
+  }
+
+  // If candidate has NO digits at all (e.g. LOUNGEWEAR, STREETWEAR, CASUALWEAR), it is a plain word, not an ASIN
+  if (!/\d/.test(upper)) {
+    return false;
+  }
+
+  // If starts with 'B' and contains at least one digit
+  if (upper.startsWith("B") && /\d/.test(upper)) {
+    return true;
+  }
+
+  // Exclude known non-ASIN English words / headers
+  const blacklisted = [
+    "DESCRIPTION",
+    "TAXINVOICE",
+    "PARTICULAR",
+    "LOUNGEWEAR",
+    "STREETWEAR",
+    "ACTIVEWEAR",
+    "CASUALWEAR",
+    "SLEEPWEAR",
+    "SPORTSWEAR",
+    "NIGHTWEAR",
+    "FOOTWEAR",
+    "CLOTHING",
+  ];
+  if (blacklisted.includes(upper)) return false;
+
+  return true;
+}
+
+/**
+ * Extract ASIN / ASI number from text (e.g. tax invoice description).
+ * Amazon ASINs are 10-character alphanumeric codes starting with 'B0' (e.g. B0GGY92FR8).
+ */
+function extractAsin(text: string): string {
+  if (!text) return "";
+
+  // Strategy 1: Explicit ASIN / ASI label match (e.g. "ASIN: B0GGY92FR8" or "ASI: B0GGY92FR8")
+  const labelMatch = text.match(/(?:ASIN|ASI|ASIN\s*NO|ASIN\s*NUMBER)\s*[:\-#]?\s*([A-Z0-9]{10})/i);
+  if (labelMatch?.[1] && isValidAsin(labelMatch[1])) {
+    return labelMatch[1].toUpperCase();
+  }
+
+  // Strategy 2: Standard 10-character Amazon ASIN starting with B0 (e.g. B0GGY92FR8)
+  const b0Matches = Array.from(text.matchAll(/\b(B0[A-Z0-9]{8})\b/gi));
+  for (const match of b0Matches) {
+    const candidate = match[1];
+    if (isValidAsin(candidate)) {
+      return candidate.toUpperCase();
+    }
+  }
+
+  // Strategy 3: 10-character candidate immediately before HSN / HSN/SAC
+  const hsnMatches = Array.from(text.matchAll(/\b([A-Z0-9]{10})\b[\s\S]{0,100}?\bHSN/gi));
+  for (const match of hsnMatches) {
+    const candidate = match[1];
+    if (isValidAsin(candidate)) {
+      return candidate.toUpperCase();
+    }
+  }
+
+  // Strategy 4: Any 10-character code starting with B and containing digits
+  const bMatches = Array.from(text.matchAll(/\b(B[A-Z0-9]{9})\b/gi));
+  for (const match of bMatches) {
+    const candidate = match[1];
+    if (isValidAsin(candidate)) {
+      return candidate.toUpperCase();
+    }
+  }
+
+  return "";
 }
 
 /**
@@ -319,7 +512,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
         const value = field.text;
 
         if (
-          /^[A-Z]{2,6}[-/][0-9A-Z/_-]{3,}$/i.test(value)
+          /^[A-Z]{2,6}[-/][0-9A-Z/_\-]{3,}$/i.test(value)
         ) {
           // Exclude Amazon Order IDs.
           if (/^\d{3}-\d{7}-\d{7}$/.test(value)) {
@@ -371,6 +564,12 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
     }
 
     // ---------------------------------------------------------
+    // STEP 6: Extract ASIN / ASI number.
+    // ---------------------------------------------------------
+
+    const asin = extractAsin(decoded);
+
+    // ---------------------------------------------------------
     // Logging.
     // ---------------------------------------------------------
 
@@ -378,7 +577,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       console.log(
         `[ZPL Parse] Label ${
           labels.length + 1
-        }: Invoice="${invoiceNumber}", AWB="${awb}"`
+        }: Invoice="${invoiceNumber}", ASIN="${asin}", AWB="${awb}"`
       );
     } else {
       console.log(
@@ -392,6 +591,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
     labels.push({
       index: labels.length + 1,
       invoiceNumber,
+      asin,
       awb,
       customer,
       rawZpl: fullLabel,
@@ -542,6 +742,9 @@ function buildComparisonResponse(
     // Invoice number
     const invoiceNumber = extractPdfInvoiceNumber(text);
 
+    // ASIN / ASI number
+    const asin = extractAsin(text);
+
     // Amount
     const amountMatch =
       text.match(/TOTAL:\s*₹?\s*([0-9.,]+)/i) ||
@@ -567,6 +770,7 @@ function buildComparisonResponse(
     const orderRecord: PdfOrderData = {
       orderNumber,
       sellerInvoice: invoiceNumber,
+      asin,
       allInvoices: invoiceNumber ? [invoiceNumber] : [],
       pages: [pageNumber],
       customer,
@@ -582,6 +786,7 @@ function buildComparisonResponse(
         const existing = invoiceMap.get(key)!;
         existing.pages.push(pageNumber);
         if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
+        if (!existing.asin && asin) existing.asin = asin;
         if (!existing.amount && amount) existing.amount = amount;
         if (!existing.date && date) existing.date = date;
         if (!existing.customer && customer) existing.customer = customer;
@@ -615,6 +820,7 @@ function buildComparisonResponse(
         isMatch: true,
         pdfInvoice: matchedOrder.sellerInvoice || label.invoiceNumber,
         zplInvoice: label.invoiceNumber,
+        asin: matchedOrder.asin || label.asin || "N/A",
         orderNumber: matchedOrder.orderNumber || "N/A",
         awb: label.awb || "N/A",
         customer: matchedOrder.customer || label.customer || "N/A",
@@ -629,6 +835,7 @@ function buildComparisonResponse(
         isMatch: false,
         pdfInvoice: "Not Found in PDF",
         zplInvoice: label.invoiceNumber || "Not Found in ZPL",
+        asin: label.asin || "N/A",
         orderNumber: "N/A",
         awb: label.awb || "N/A",
         customer: label.customer || "N/A",
@@ -654,6 +861,7 @@ function buildComparisonResponse(
         isMatch: false,
         pdfInvoice: pdfOrder.sellerInvoice || "N/A",
         zplInvoice: "Not Found in ZPL",
+        asin: pdfOrder.asin || "N/A",
         orderNumber: pdfOrder.orderNumber || "N/A",
         awb: "N/A",
         customer: pdfOrder.customer || "N/A",

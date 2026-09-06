@@ -3,6 +3,7 @@ export interface AmazonComparisonResult {
   isMatch: boolean;
   zplInvoice: string;
   pdfInvoice: string;
+  asin?: string;
   orderNumber: string;
   awb: string;
   customer: string;

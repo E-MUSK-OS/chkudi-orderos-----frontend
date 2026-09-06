@@ -107,6 +107,7 @@ export default function ComparisonResultView({
       return (
         item.zplInvoice.toLowerCase().includes(q) ||
         item.pdfInvoice.toLowerCase().includes(q) ||
+        (item.asin && item.asin.toLowerCase().includes(q)) ||
         item.orderNumber.toLowerCase().includes(q) ||
         item.awb.toLowerCase().includes(q) ||
         item.customer.toLowerCase().includes(q)
@@ -695,18 +696,19 @@ export default function ComparisonResultView({
                         />
                       </div>
                     </th>
-                    <th className="w-[12%] px-4 py-4 text-center font-semibold">Status</th>
-                    <th className="w-[16%] px-4 py-4 text-center font-semibold">PDF Invoice</th>
-                    <th className="w-[16%] px-4 py-4 text-center font-semibold">ZPL Invoice</th>
-                    <th className="w-[20%] px-4 py-4 text-center font-semibold">Amazon Order ID</th>
-                    <th className="w-[18%] px-4 py-4 text-center font-semibold">AWB Tracking</th>
-                    <th className="w-[18%] px-4 py-4 text-center font-semibold">Customer</th>
+                    <th className="w-[10%] px-4 py-4 text-center font-semibold">Status</th>
+                    <th className="w-[14%] px-4 py-4 text-center font-semibold">PDF Invoice</th>
+                    <th className="w-[14%] px-4 py-4 text-center font-semibold">ZPL Invoice</th>
+                    <th className="w-[14%] px-4 py-4 text-center font-semibold">ASIN</th>
+                    <th className="w-[18%] px-4 py-4 text-center font-semibold">Amazon Order ID</th>
+                    <th className="w-[15%] px-4 py-4 text-center font-semibold">AWB Tracking</th>
+                    <th className="w-[15%] px-4 py-4 text-center font-semibold">Customer</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedResults.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                      <td colSpan={8} className="py-12 text-center text-muted-foreground">
                         No orders match your current search or filter.
                       </td>
                     </tr>
@@ -758,6 +760,17 @@ export default function ComparisonResultView({
                           ) : (
                             <span className="italic text-xs text-muted-foreground">
                               Not Found in ZPL
+                            </span>
+                          )}
+                        </td>
+                        <td className="truncate px-4 py-4 text-center font-mono text-xs">
+                          {item.asin && item.asin !== "N/A" ? (
+                            <span className="rounded-md bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-600 dark:text-purple-400">
+                              {item.asin}
+                            </span>
+                          ) : (
+                            <span className="italic text-xs text-muted-foreground">
+                              N/A
                             </span>
                           )}
                         </td>

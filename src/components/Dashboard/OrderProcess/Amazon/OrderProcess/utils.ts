@@ -1,36 +1,136 @@
 /**
+ * Check whether a word is a valid name token.
+ * Valid name tokens contain ONLY alphabetic letters (no digits like A602, O9ff) and are not address keywords.
+ */
+function isValidNameWord(word: string): boolean {
+  if (!word || word.length < 2) return false;
+
+  // Must consist ONLY of alphabetic letters (no numbers)
+  if (!/^[A-Za-z]+$/.test(word)) return false;
+
+  const upper = word.toUpperCase();
+  const addressKeywords = [
+    "FLAT",
+    "HNO",
+    "HOUSE",
+    "PLOT",
+    "ROOM",
+    "SHOP",
+    "BLDG",
+    "BUILDING",
+    "APARTMENT",
+    "APT",
+    "TOWER",
+    "FLOOR",
+    "BLOCK",
+    "SECTOR",
+    "OPP",
+    "OPPOSITE",
+    "NEAR",
+    "BEHIND",
+    "BESIDE",
+    "ROAD",
+    "STREET",
+    "LANE",
+    "NAGAR",
+    "COLONY",
+    "ENCLAVE",
+    "VIHAR",
+    "LAYOUT",
+    "SOCIETY",
+    "VILLAGE",
+    "VILL",
+    "POST",
+    "TALUKA",
+    "DIST",
+    "DISTRICT",
+    "PIN",
+    "PINCODE",
+    "NO",
+    "NUM",
+    "NUMBER",
+    "PH",
+    "PHONE",
+    "MOB",
+    "MOBILE",
+    "TEL",
+    "SHIPPING",
+    "BILLING",
+    "ADDRESS",
+    "SHIP",
+    "NAME",
+    "RECIPIENT",
+    "CUSTOMER",
+  ];
+
+  if (addressKeywords.includes(upper)) return false;
+
+  return true;
+}
+
+/**
  * Clean customer name by removing addresses, pin codes, and delivery details.
  */
 export function cleanCustomerName(raw: string): string {
   if (!raw || raw === "N/A") return "N/A";
 
-  // 1. Remove common prefixes
+  // 1. Remove Shipping Address / Billing Address / Ship To headers & prefixes
   let cleaned = raw
-    .replace(/^(Shipping|Billing)\s+Address\s*[:\-]?\s*/i, "")
-    .replace(/^Ship\s+To\s*[:\-]?\s*/i, "")
+    .replace(/^[\s\S]*?(?:Shipping|Billing)\s+Address\s*[:\-]?\s*/i, "")
+    .replace(/^[\s\S]*?Ship\s+To\s*[:\-]?\s*/i, "")
     .replace(/^(Customer\s*Name|Recipient|Name)\s*[:\-]?\s*/i, "")
-    .replace(/^C\/O\s*[:\-]?\s*/i, "")
     .trim();
 
-  // 2. Split on common delimiters (commas, newlines, pipes, semicolons, backslash-ampersand for ZPL)
-  cleaned = cleaned.split(/\\&|[\r\n|,;]|\s+-\s+/)[0].trim();
+  // 2. Extract ONLY the very first non-empty line of the address block
+  const lines = cleaned.split(/[\r\n]+/);
+  const firstLine = lines.find((l) => l.trim().length > 0) || cleaned;
 
-  // 3. Remove known address trigger words if stuck to the name without commas
+  // 3. Split first line by comma, pipe, semicolon, ZPL newline (\\&), or dash
+  cleaned = firstLine.split(/\\&|[,|;]|\s+-\s+/)[0].trim();
+
+  // 4. Remove C/O prefix if present
+  cleaned = cleaned.replace(/^C\/O\s*[:\-]?\s*/i, "").trim();
+
+  // 5. Remove known address trigger words if stuck to the name without commas
   const addressTrigger =
     /\s+(?:Flat|H\.?No|House|Plot|Room|Shop|Bldg|Building|Apartment|Apt|Tower|Floor|Block|Sector|Opp|Opposite|Near|Behind|Beside|Road|Street|Lane|Nagar|Colony|Enclave|Vihar|Layout|Society|Village|Vill|Post|Taluka|Dist|District|PIN|Pincode|\d{1,5}[A-Za-z]?\b).*$/i;
   cleaned = cleaned.replace(addressTrigger, "").trim();
 
-  // 4. Remove trailing digits, special chars, or postal codes
+  // 6. Remove trailing digits, postal codes, or punctuation
   cleaned = cleaned.replace(/\s*\b\d{5,6}\b.*$/, "").trim();
   cleaned = cleaned.replace(/[,\-:;.]+$/, "").trim();
 
-  // 5. If it's still excessively long (e.g. over 30 characters or more than 4 words), take the first 3-4 words
-  const words = cleaned.split(/\s+/).filter(Boolean);
-  if (words.length > 4 && cleaned.length > 30) {
-    cleaned = words.slice(0, 3).join(" ");
+  // 7. Tokenize into words and filter for valid human name words ONLY
+  const rawWords = cleaned
+    .split(/\s+/)
+    .map((w) => w.replace(/[^A-Za-z0-9]/g, ""))
+    .filter(Boolean);
+
+  const uniqueWords: string[] = [];
+  const seenLower = new Set<string>();
+
+  for (const word of rawWords) {
+    if (!isValidNameWord(word)) continue;
+    const lower = word.toLowerCase();
+    if (!seenLower.has(lower)) {
+      seenLower.add(lower);
+      uniqueWords.push(word);
+    }
   }
 
-  return cleaned || "N/A";
+  // 8. Keep at most 2 valid name words (Firstname + Middlename / Firstname + Lastname)
+  const finalWords = uniqueWords.slice(0, 2);
+
+  // Capitalize properly if ALL CAPS
+  const formatted = finalWords
+    .map((w) =>
+      w === w.toUpperCase() && w.length > 1
+        ? w.charAt(0) + w.slice(1).toLowerCase()
+        : w
+    )
+    .join(" ");
+
+  return formatted || "N/A";
 }
 
 /**
