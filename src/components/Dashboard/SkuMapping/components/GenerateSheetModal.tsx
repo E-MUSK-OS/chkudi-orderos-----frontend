@@ -14,11 +14,15 @@ import {
 import { skuMappingService } from "../services/skuMapping.service";
 import { getToken } from "@/utils/auth";
 import { toast } from "sonner";
-import { Trash2, Printer } from "lucide-react";
+import { Trash2, Printer, Tag } from "lucide-react";
 import { useDeleteSheetDraft, useSaveSheetDraft, useSheetDraft } from "../hooks/useSheetDraft";
 import LabelSelectionModal from "@/components/Dashboard/Labels/components/LabelSelectionModal";
 import PrintExecutionModal from "@/components/Dashboard/Labels/components/PrintExecutionModal";
 import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
+import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
+import { labelService } from "@/components/Dashboard/Labels/services/label.service";
+import { renderLabelToCanvas } from "@/lib/labelRenderer";
+import { PDFDocument } from "pdf-lib";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BadgeCheck } from "lucide-react";
 
@@ -108,6 +112,125 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
   const [printedRowIds, setPrintedRowIds] = useState<Set<number>>(new Set());
   const [isPrintExecutionOpen, setIsPrintExecutionOpen] = useState(false);
   const [activePrintTemplate, setActivePrintTemplate] = useState<LabelTemplate | null>(null);
+  const [isPrintingDirectly, setIsPrintingDirectly] = useState(false);
+
+  const handleDirectPrint = async () => {
+    const selectedRowsList = rows.filter((r) => selectedRowIds.has(r.id));
+    if (selectedRowsList.length === 0) return;
+
+    setIsPrintingDirectly(true);
+    const toastId = toast.loading("Connecting to printer extension...", { id: "sku-direct-print" });
+
+    try {
+      // 1. Check Chrome Extension
+      const extCheck = await chromeExtensionPrintService.checkExtension();
+      if (!extCheck.ok) {
+        toast.error(
+          "Chrome Print Extension (PrintBridge) not detected. Please ensure it is installed and enabled.",
+          { id: toastId, duration: 6000 }
+        );
+        setIsPrintingDirectly(false);
+        return;
+      }
+
+      // 2. Fetch available printers
+      const printers = await chromeExtensionPrintService.getPrinters();
+      if (!printers || printers.length === 0) {
+        toast.error("No printers found via Chrome Print Extension.", { id: toastId, duration: 5000 });
+        setIsPrintingDirectly(false);
+        return;
+      }
+
+      const lastUsedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+      const targetPrinter = (lastUsedPrinter && printers.includes(lastUsedPrinter)) ? lastUsedPrinter : printers[0];
+
+      // 3. Fetch template if not active
+      toast.loading("Preparing label template...", { id: toastId });
+      let template: LabelTemplate | null = activePrintTemplate;
+      if (!template) {
+        try {
+          const templates = await labelService.getTemplates();
+          if (templates && templates.length > 0) {
+            const lastTemplateId = typeof window !== "undefined" ? localStorage.getItem("lastUsedLabelTemplateId") : null;
+            template = (lastTemplateId && templates.find(t => t.id === lastTemplateId)) || templates[0];
+            setActivePrintTemplate(template);
+          }
+        } catch (e) {
+          console.warn("Failed to fetch templates automatically:", e);
+        }
+      }
+
+      if (!template) {
+        toast.dismiss(toastId);
+        // Fall back to template selection modal if no template exists/saved
+        setIsLabelPickerOpen(true);
+        setIsPrintingDirectly(false);
+        return;
+      }
+
+      toast.loading(`Direct printing ${selectedRowsList.length} label(s) to ${targetPrinter}...`, { id: toastId });
+
+      const isPortrait = template.settings.orientation === "portrait";
+      const printDimensions = isPortrait
+        ? { widthMm: template.settings.heightMm, heightMm: template.settings.widthMm }
+        : { widthMm: template.settings.widthMm, heightMm: template.settings.heightMm };
+
+      const succeededIds = new Set<number>();
+      let successCount = 0;
+
+      for (const row of selectedRowsList) {
+        const query = row.barcodeSku?.trim() || row.shortSku?.trim();
+        if (!query) continue;
+
+        try {
+          const matches = await labelService.lookupProduct(query);
+          const product = matches.length > 0 ? matches[0] : {};
+
+          const canvas = await renderLabelToCanvas(template, product);
+          const dataUrl = canvas.toDataURL("image/png");
+          const cleanBase64 = dataUrl.split(",")[1];
+          const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
+
+          const pdfDoc = await PDFDocument.create();
+          const embeddedImage = await pdfDoc.embedPng(imageBytes);
+          const widthPoints = (printDimensions.widthMm / 25.4) * 72;
+          const heightPoints = (printDimensions.heightMm / 25.4) * 72;
+          const page = pdfDoc.addPage([widthPoints, heightPoints]);
+          page.drawImage(embeddedImage, {
+            x: 0,
+            y: 0,
+            width: widthPoints,
+            height: heightPoints,
+          });
+
+          const pdfBase64 = await pdfDoc.saveAsBase64();
+
+          const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, targetPrinter, 1);
+          if (extRes && (extRes.success === false || extRes.error)) {
+            throw new Error(extRes.error || "Print extension reported print failure");
+          }
+
+          succeededIds.add(row.id);
+          successCount++;
+        } catch (err: any) {
+          console.error(`Failed to print row ${row.id}:`, err);
+        }
+      }
+
+      if (successCount > 0) {
+        setPrintedRowIds((prev) => new Set([...prev, ...succeededIds]));
+        setSelectedRowIds(new Set());
+        toast.success(`Printed ${successCount} label(s) directly to ${targetPrinter}!`, { id: toastId });
+      } else {
+        toast.error("Failed to print labels. Please check printer connection.", { id: toastId });
+      }
+    } catch (err: any) {
+      console.error("Direct print error:", err);
+      toast.error(err?.message || "Direct print failed", { id: toastId });
+    } finally {
+      setIsPrintingDirectly(false);
+    }
+  };
 
   const toggleAllRows = (checked: boolean) => {
     if (checked) {
@@ -640,10 +763,20 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             fullWidth={false} 
             className="w-40" 
             leftIcon={<Printer className="h-4 w-4" />} 
-            onClick={() => setIsLabelPickerOpen(true)}
-            disabled={selectedRowIds.size === 0}
+            onClick={handleDirectPrint}
+            disabled={selectedRowIds.size === 0 || isPrintingDirectly}
           >
-            Print ({selectedRowIds.size})
+            {isPrintingDirectly ? "Printing..." : `Print (${selectedRowIds.size})`}
+          </Button>
+          <Button
+            variant="outline"
+            fullWidth={false}
+            className="w-44 truncate"
+            leftIcon={<Tag className="h-4 w-4" />}
+            onClick={() => setIsLabelPickerOpen(true)}
+            title={activePrintTemplate?.name ? `Current Template: ${activePrintTemplate.name}. Click to change.` : "Select label template"}
+          >
+            {activePrintTemplate?.name ? activePrintTemplate.name : "Select Template"}
           </Button>
           <Button variant="primary" fullWidth={false} className="w-40" leftIcon={<Trash2 className="h-4 w-4" />} onClick={clearSheet}>
             Clear Sheet
@@ -1034,7 +1167,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         onConfirm={(template) => {
           setIsLabelPickerOpen(false);
           setActivePrintTemplate(template);
-          setIsPrintExecutionOpen(true);
+          if (template?.id && typeof window !== "undefined") {
+            localStorage.setItem("lastUsedLabelTemplateId", template.id);
+          }
+          setTimeout(() => {
+            handleDirectPrint();
+          }, 100);
         }}
       />
 

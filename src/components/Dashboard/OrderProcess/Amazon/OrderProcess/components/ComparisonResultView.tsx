@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -18,12 +18,33 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
-import { printAgentService, chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
+import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import { useAmazonOrderStore } from "../store/useAmazonOrderStore";
 import { cleanCustomerName } from "../utils";
+
+function resolveTargetPrinter(availablePrinters: string[]): string {
+  if (!availablePrinters || availablePrinters.length === 0) return "";
+  const saved = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+  if (saved && availablePrinters.includes(saved)) {
+    return saved;
+  }
+  // Prefer thermal / label printers (TSC, Zebra, DA310, etc.)
+  const thermal = availablePrinters.find((p) =>
+    /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p)
+  );
+  if (thermal) return thermal;
+
+  // Prefer physical printers over virtual document printers
+  const physical = availablePrinters.find(
+    (p) => !/pdf|onenote|fax|xps|document|writer/i.test(p)
+  );
+  if (physical) return physical;
+
+  return availablePrinters[0];
+}
 
 interface ComparisonResultViewProps {
   isStandaloneTab?: boolean;
@@ -40,6 +61,26 @@ export default function ComparisonResultView({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "matched" | "mismatch">("all");
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+
+  // Printer selection state
+  const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
+  const [selectedPrinter, setSelectedPrinter] = useState<string>("");
+
+  useEffect(() => {
+    async function loadPrinters() {
+      try {
+        const list = await chromeExtensionPrintService.getPrinters();
+        if (list && list.length > 0) {
+          setAvailablePrinters(list);
+          const preferred = resolveTargetPrinter(list);
+          setSelectedPrinter(preferred);
+        }
+      } catch (e) {
+        console.warn("Failed to load initial printers:", e);
+      }
+    }
+    loadPrinters();
+  }, []);
 
   // Pagination state (same as Myntra order)
   const [page, setPage] = useState(1);
@@ -268,22 +309,39 @@ export default function ComparisonResultView({
         const extCheck = await chromeExtensionPrintService.checkExtension();
         if (extCheck.ok) {
           console.log("Chrome print extension detected:", extCheck.response);
-          toast.loading("Sending silent print to Chrome extension...", { id: "print-prep" });
+          if (extCheck.response?.silentPrinting === false) {
+            toast.error(
+              "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
+              { duration: 9000 }
+            );
+          }
 
           const extPrinters = await chromeExtensionPrintService.getPrinters();
-          const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-          const targetPrinter =
-            lastUsed && extPrinters.includes(lastUsed)
-              ? lastUsed
-              : extPrinters.length > 0
-              ? extPrinters[0]
-              : lastUsed || null;
+          if (extPrinters.length > 0) {
+            setAvailablePrinters(extPrinters);
+          }
+          const targetPrinter = selectedPrinter || resolveTargetPrinter(extPrinters);
+
+          if (!targetPrinter) {
+            throw new Error("No printer detected on this PC");
+          }
+
+          setSelectedPrinter(targetPrinter);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("lastUsedPrinter", targetPrinter);
+          }
+
+          toast.loading(`Printing ${printDoc.getPageCount()} page(s) to ${targetPrinter}...`, { id: "print-prep" });
 
           const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, targetPrinter, 1);
           console.log("Chrome extension print response:", extRes);
 
+          if (extRes && (extRes.success === false || extRes.error)) {
+            throw new Error(extRes.error || "PrintBridge reported print failure");
+          }
+
           toast.success(
-            `Printed ${printDoc.getPageCount()} page(s) (4" x 6") directly via Chrome extension!`,
+            `Printed ${printDoc.getPageCount()} page(s) (4" x 6") directly to ${targetPrinter}!`,
             { id: "print-prep" }
           );
           printedSuccessfully = true;
@@ -296,71 +354,15 @@ export default function ComparisonResultView({
         console.warn("Chrome extension print failed:", extErr);
       }
 
-      // ============================================================
-      // STRATEGY 2: Desktop Helper (http://127.0.0.1:9999) Fallback
-      // ============================================================
-      if (!printedSuccessfully) {
-        try {
-          const permission = await printAgentService.checkLocalNetworkPermission();
-          if (permission === "prompt") {
-            toast.loading("Please click 'Allow' on Chrome's network permission popup to connect to your printer...", {
-              id: "print-prep",
-              duration: 8000,
-            });
-          } else if (permission === "denied") {
-            helperError = "Local network access blocked in Chrome settings";
-            toast.error("Local network access is blocked in Chrome. Click the lock/tune icon near the URL bar -> Site settings -> Allow 'Local network access'.", {
-              duration: 8000,
-            });
-          }
 
-          const printers = await printAgentService.getPrinters();
-          if (printers && printers.length > 0) {
-            const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-            const printerName = lastUsed && printers.includes(lastUsed) ? lastUsed : printers[0];
-
-            toast.loading(`Direct printing ${printDoc.getPageCount()} page(s) to ${printerName}...`, {
-              id: "print-prep",
-            });
-
-            const images = await renderPdfBytesToImages(finalBytes);
-            for (const imgBase64 of images) {
-              await printAgentService.sendPrintJob({
-                imageBase64: imgBase64,
-                printerName,
-                widthMm: WIDTH_MM,
-                heightMm: HEIGHT_MM,
-              });
-            }
-
-            toast.success(
-              `Printed ${images.length} label(s) (4" x 6") directly to ${printerName}!`,
-              { id: "print-prep" }
-            );
-            printedSuccessfully = true;
-          } else {
-            helperError = "Helper is running but no printers found in Windows";
-            console.warn(helperError);
-          }
-        } catch (err: any) {
-          helperError = err?.message || String(err);
-          console.warn("Desktop print helper error:", err);
-          if (err?.message === "PRINT_HELPER_401") {
-            helperError = "Helper token unauthorized (401)";
-            toast.error("Print helper token unauthorized. Please verify the print helper configuration.", {
-              duration: 5000,
-            });
-          }
-        }
-      }
 
       // ============================================================
       // Failure notification (NO browser print popup is opened)
       // ============================================================
       if (!printedSuccessfully) {
-        console.error("Silent Print Diagnostics:", { extError, helperError });
+        console.error("Silent Print Diagnostics:", { extError });
         toast.error(
-          `Direct print failed.\n• Extension: ${extError || "Not available"}\n• Local Helper: ${helperError || "Not reachable"}`,
+          `Direct print failed: ${extError || "Extension not responding"}`,
           { id: "print-prep", duration: 8000 }
         );
       }

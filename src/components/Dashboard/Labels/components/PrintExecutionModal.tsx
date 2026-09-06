@@ -145,70 +145,53 @@ export default function PrintExecutionModal({
         <div className="flex items-center space-x-3 p-4 bg-slate-100 rounded border">
           <div className={`w-3 h-3 rounded-full ${helperOnline ? "bg-green-500" : helperStatus === "checking" ? "bg-yellow-400 animate-pulse" : "bg-red-500"}`} />
           <span className="font-medium text-[#0A0E1A]">
-            Print Helper: {helperOnline ? "Online" : helperStatus === "checking" ? "Checking..." : "Offline"}
+            Chrome Print Extension: {helperOnline ? "Active" : helperStatus === "checking" ? "Checking..." : "Offline / Not Found"}
           </span>
           {!helperOnline && helperStatus !== "checking" && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={helperStatus === "permission-blocked" ? () => window.location.reload() : refreshPrinters}
+              onClick={refreshPrinters}
               className="ml-auto text-[#0A0E1A]"
             >
-              {helperStatus === "needs-permission" ? "Allow Printer Access" : helperStatus === "permission-blocked" ? "Reload Page" : "Retry Connection"}
+              Retry Connection
             </Button>
           )}
         </div>
 
-        {helperStatus === "needs-permission" && (
+        {helperStatus === "extension-missing" && (
           <div className="bg-amber-900/20 border border-amber-900/50 text-amber-400 p-4 rounded text-sm space-y-1">
-            <p className="font-semibold">One-time step: Chrome needs your permission to reach your printer.</p>
+            <p className="font-semibold">Chrome Print Extension (PrintBridge) Not Detected</p>
             <p>
-              Click <span className="font-semibold">&quot;Allow Printer Access&quot;</span> above — Chrome will show a
-              popup asking to connect to your local network. Click <span className="font-semibold">Allow</span>. This
-              only happens once on this PC; every print after that is instant with no popup.
+              Please make sure the PrintBridge Chrome extension is installed and enabled in Google Chrome or Microsoft Edge.
             </p>
           </div>
         )}
 
-        {helperStatus === "permission-blocked" && (
-          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm space-y-1">
-            <p className="font-semibold">Local network access is blocked for this site.</p>
+        {helperStatus === "no-printers" && (
+          <div className="bg-amber-900/20 border border-amber-900/50 text-amber-400 p-4 rounded text-sm space-y-1">
+            <p className="font-semibold">No Printers Found</p>
             <p>
-              Someone previously clicked &quot;Block&quot; on Chrome&apos;s permission popup. Click the lock/info icon
-              in the address bar → Site settings → set <span className="font-semibold">&quot;Local network access&quot;</span> or <span className="font-semibold">&quot;Apps on device&quot;</span> to
-              Allow → reload this page.
+              The print extension is active, but no system printers were returned. Ensure your printer is connected and powered on.
             </p>
-          </div>
-        )}
-
-        {helperStatus === "helper-down" && (
-          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm">
-            Print helper is offline. Please make sure the LabelCraft Helper app is running on this PC (you can run install-helper.bat if needed), then click Retry Connection.
-          </div>
-        )}
-
-        {helperStatus === "helper-error" && (
-          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm">
-            Print helper is running but returned an error. Please check the helper console/logs, then click Retry Connection.
           </div>
         )}
 
         {helperStatus === "no-internet" && (
           <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm">
-            Your computer has no internet connection. Please reconnect to your network and click Retry Connection.
-          </div>
-        )}
-
-        {helperStatus === "unauthorized" && (
-          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm space-y-1">
-            <p className="font-semibold">Print service couldn&apos;t authenticate.</p>
-            <p>Please contact your administrator.</p>
+            Your computer has no network connection. Please reconnect and click Retry Connection.
           </div>
         )}
 
         {helperStatus === "unsupported-browser" && (
           <div className="bg-stone-800 border border-stone-700 text-stone-300 p-4 rounded text-sm">
-            Your browser does not support silent local printing. Please switch to Google Chrome or Microsoft Edge for the best experience.
+            Your browser does not support silent extension printing. Please switch to Google Chrome or Microsoft Edge for the best experience.
+          </div>
+        )}
+
+        {helperStatus === "error" && (
+          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded text-sm">
+            Failed to connect to the Chrome Print extension. Click Retry Connection to try again.
           </div>
         )}
 

@@ -1,23 +1,20 @@
 import { useState, useCallback } from "react";
 import { LabelTemplate, PrintQueueItem } from "../types/label.types";
-import { printAgentService } from "../services/printAgent.service";
+import { chromeExtensionPrintService } from "../services/printAgent.service";
 import { labelService } from "../services/label.service";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
+import { PDFDocument } from "pdf-lib";
 
 type Step = "matching" | "review" | "printer" | "printing" | "summary";
 
-// "checking"            -> we're probing right now
-// "online"              -> helper reachable, printers loaded, fully silent
-// "needs-permission"    -> Chrome hasn't asked the user yet; the next click
-//                          on "Allow Printer Access" IS the click that makes
-//                          Chrome show its native local-network prompt
-// "permission-blocked"  -> user (or someone) previously clicked "Block";
-//                          only fixable from Chrome's own site settings
-// "helper-down"         -> permission is fine, helper genuinely isn't running
-// "helper-error"        -> helper is reachable but returned an error/bad response
-// "no-internet"         -> computer has no network connection at all
-// "unsupported-browser" -> browser is not Chromium-based and doesn't support the permission
-export type HelperStatus = "checking" | "online" | "needs-permission" | "permission-blocked" | "helper-down" | "helper-error" | "no-internet" | "unsupported-browser" | "unauthorized";
+export type HelperStatus = 
+  | "checking" 
+  | "online" 
+  | "extension-missing" 
+  | "no-printers" 
+  | "no-internet" 
+  | "unsupported-browser" 
+  | "error";
 
 
 export interface GenerateRow {
@@ -88,28 +85,22 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
 
     setHelperStatus("checking");
 
-    // Read (don't request) the current permission state first. If Chrome
-    // has this blocked outright, there's no point firing the fetch below —
-    // it'll just fail, and we can point the user straight at the fix.
-    const permission = await printAgentService.checkLocalNetworkPermission();
-    if (permission === "denied") {
-      setPrinters([]);
-      setHelperOnline(false);
-      setHelperStatus("permission-blocked");
-      return;
-    }
-
     try {
-      // NOTE: on a fresh browser profile (permission === "prompt"), THIS is
-      // the exact call that makes Chrome show its native "Allow [site] to
-      // access your local network?" dialog. It only ever appears once per
-      // browser — Chrome remembers the choice the same way it remembers
-      // camera/mic grants, so every visit after the first is fully silent.
-      const list = await printAgentService.getPrinters();
+      const check = await chromeExtensionPrintService.checkExtension();
+      if (!check.ok) {
+        setPrinters([]);
+        setHelperOnline(false);
+        setHelperStatus("extension-missing");
+        return;
+      }
+
+      const list = await chromeExtensionPrintService.getPrinters();
       setPrinters(list);
       setHelperOnline(true);
-      setHelperStatus("online");
-      if (list.length > 0) {
+      if (list.length === 0) {
+        setHelperStatus("no-printers");
+      } else {
+        setHelperStatus("online");
         const lastUsed = localStorage.getItem("lastUsedPrinter");
         if (lastUsed && list.includes(lastUsed)) {
           setSelectedPrinter(lastUsed);
@@ -120,37 +111,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     } catch (err) {
       setPrinters([]);
       setHelperOnline(false);
-      
-      if (err instanceof Error && err.message === "PRINT_HELPER_401") {
-        console.error("Print Helper 401: Invalid NEXT_PUBLIC_PRINT_HELPER_TOKEN configured.");
-        setHelperStatus("unauthorized");
-        return;
-      }
-      if (err instanceof Error && err.message === "Print helper responded with an error") {
-        setHelperStatus("helper-error");
-        return;
-      }
-      if (err instanceof SyntaxError) {
-        setHelperStatus("helper-error");
-        return;
-      }
-
-      const isChromium = /Chrome|Chromium|Edg|OPR|Brave/i.test(navigator.userAgent);
-
-      // A fetch to 127.0.0.1 can fail for two very different reasons and,
-      // by design, browsers don't hand JS a clean way to tell them apart.
-      // We use the permission state we already read as our best signal:
-      // "prompt" means the user almost certainly just dismissed/ignored
-      // the dialog that just appeared; anything else means the helper
-      // process itself isn't running on this PC.
-      if (permission === "prompt") {
-        setHelperStatus("needs-permission");
-      } else if (permission === "unsupported" && !isChromium) {
-        setHelperStatus("unsupported-browser");
-      } else {
-        setHelperStatus("helper-down");
-      }
-      console.warn("Print helper is offline or unreachable.", err);
+      setHelperStatus("error");
+      console.warn("Chrome print extension check failed:", err);
     }
   }, []);
 
@@ -180,13 +142,28 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       try {
         const canvas = await renderLabelToCanvas(template, item.product || {}); // no third argument for full res
         const dataUrl = canvas.toDataURL("image/png");
-        const imageBase64 = dataUrl.split(",")[1];
+        const cleanBase64 = dataUrl.split(",")[1];
+        const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
 
-        await printAgentService.sendPrintJob({
-          imageBase64,
-          printerName,
-          ...printDimensions
+        // Convert canvas image into a PDF document with exact label dimensions (points = mm / 25.4 * 72)
+        const pdfDoc = await PDFDocument.create();
+        const embeddedImage = await pdfDoc.embedPng(imageBytes);
+        const widthPoints = (printDimensions.widthMm / 25.4) * 72;
+        const heightPoints = (printDimensions.heightMm / 25.4) * 72;
+        const page = pdfDoc.addPage([widthPoints, heightPoints]);
+        page.drawImage(embeddedImage, {
+          x: 0,
+          y: 0,
+          width: widthPoints,
+          height: heightPoints,
         });
+
+        const pdfBase64 = await pdfDoc.saveAsBase64();
+
+        const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, printerName, 1);
+        if (extRes && (extRes.success === false || extRes.error)) {
+          throw new Error(extRes.error || "Print extension reported print failure");
+        }
 
         succeeded.push(item);
         setQueue(prev => prev.map(q => q.rowId === item.rowId ? { ...q, status: "matched" } : q));
