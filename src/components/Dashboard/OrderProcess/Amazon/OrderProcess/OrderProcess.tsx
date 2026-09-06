@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   UploadCloud,
   FileText,
@@ -25,6 +26,7 @@ import { AmazonProcessResponse } from "./types";
 import { enhanceInvoicePages } from "./utils";
 
 export default function OrderProcess() {
+  const router = useRouter();
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [zplFiles, setZplFiles] = useState<File[]>([]);
 
@@ -511,13 +513,16 @@ export default function OrderProcess() {
 
       clearInterval(progressInterval);
       setProgress(100, "5. Processing Complete!");
-      await new Promise((r) => setTimeout(r, 40));
-
       setProcessData(processResponse);
 
       toast.success(
         `Successfully processed ${processResponse.summary.totalZplLabels} labels & ${processResponse.summary.totalPdfOrders} invoices (${processResponse.summary.matchPercentage}% matched)!`
       );
+
+      // Smooth pause to let user see the 100% completion state before navigating
+      await new Promise((r) => setTimeout(r, 600));
+
+      router.push("/dashboard/order-process/amazon/order-process/result");
     } catch (err: unknown) {
       clearInterval(progressInterval);
       const message = err instanceof Error ? err.message : "Processing failed.";
@@ -538,16 +543,13 @@ export default function OrderProcess() {
           currentStage={currentStage}
         />
 
-        {/* If results exist, show the interactive Comparison Result View */}
-        {summary ? (
-          <ComparisonResultView onReset={handleResetAll} />
-        ) : (
-          <>
-            {/* Header Information Banner */}
-            <div className="rounded-3xl border border-[#E7E0D2] bg-white p-7 shadow-sm">
+        {/* Upload Form */}
+        <>
+          {/* Header Information Banner */}
+            <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-md bg-[#FFF9EC] px-2.5 py-1 text-xs font-semibold text-[#B88728] border border-[#E8C16D]/30">
                       Amazon Order Processing
                     </span>
@@ -555,21 +557,21 @@ export default function OrderProcess() {
                       Dual File Ingestion & Auto-Verification
                     </span>
                   </div>
-                  <h2 className="text-2xl font-bold tracking-tight text-[#0A0E1A]">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A]">
                     Upload Required Amazon Order Files
                   </h2>
-                  <p className="text-sm text-slate-500 max-w-2xl">
-                    Please upload both the <strong className="text-slate-700">PDF file</strong> (tax invoices) and the <strong className="text-slate-700">ZPL file</strong> (zebra barcode labels). The system will convert ZPL to high-resolution PDF, cross-verify all invoice and order numbers, and display matched results.
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+                    Upload PDF tax invoices and ZPL barcode labels to automatically convert, cross-verify, and match orders.
                   </p>
                 </div>
 
                 {/* Progress Badge */}
                 <div className="flex items-center gap-3 self-start md:self-center">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3.5 text-right shadow-2xs">
-                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 sm:px-5 py-2.5 sm:py-3.5 text-left md:text-right shadow-2xs w-full md:w-auto">
+                    <div className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       Files Ready
                     </div>
-                    <div className="text-lg font-black text-[#0A0E1A] mt-0.5">
+                    <div className="text-base sm:text-lg font-black text-[#0A0E1A] mt-0.5">
                       <span className={pdfFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
                         {pdfFiles.length} PDF{pdfFiles.length !== 1 ? "s" : ""}
                       </span>
@@ -588,14 +590,14 @@ export default function OrderProcess() {
               {/* ======================================================== */}
               {/* SECTION 1: PDF FILE UPLOAD */}
               {/* ======================================================== */}
-              <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-red-50 text-red-600 border border-red-100">
+                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-red-50 text-red-600 border border-red-100 shrink-0">
                       <FileText className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-[#0A0E1A]">
+                      <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
                         1. PDF Invoices {pdfFiles.length > 0 ? `(${pdfFiles.length})` : ""}
                       </h3>
                       <p className="text-xs text-slate-500">Upload one or multiple .pdf files</p>
@@ -603,64 +605,64 @@ export default function OrderProcess() {
                   </div>
 
                   {pdfFiles.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       {pdfFiles.length} Ready
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                    <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
                       Required
                     </span>
                   )}
                 </div>
 
                 {/* Upload Box / Selected Files View */}
-                <div className="mt-5 flex-1 flex flex-col justify-between">
+                <div className="mt-4 sm:mt-5 flex-1 flex flex-col justify-between">
                   {pdfFiles.length === 0 ? (
                     <div
                       onClick={() => pdfInputRef.current?.click()}
                       onDragOver={handlePdfDragOver}
                       onDragLeave={handlePdfDragLeave}
                       onDrop={handlePdfDrop}
-                      className={`group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+                      className={`group relative flex min-h-[170px] sm:min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                         isDraggingPdf
                           ? "border-[#E8C16D] bg-[#FFF9EC]"
                           : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
                       }`}
                     >
-                      <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-red-500">
-                        <UploadCloud className="h-7 w-7" />
+                      <div className="mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-red-500">
+                        <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                       </div>
 
-                      <p className="text-sm font-semibold text-[#0A0E1A]">
+                      <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">
                         Click to upload or drag & drop PDF(s)
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
                         Select one or multiple Adobe PDF (<code className="font-mono text-red-600">.pdf</code>) files
                       </p>
 
-                      <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
+                      <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
                         <FileText className="h-3.5 w-3.5 text-red-500" />
                         Browse PDF Files
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-4">
+                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-3 sm:p-4">
                       <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
                         {pdfFiles.map((file, idx) => (
                           <div
                             key={`${file.name}_${idx}`}
-                            className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2.5 shadow-2xs"
+                            className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2 sm:p-2.5 shadow-2xs"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-red-50 text-red-600">
-                                <FileCheck className="h-4 w-4" />
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg bg-red-50 text-red-600">
+                                <FileCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </div>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={file.name}>
                                   {file.name}
                                 </p>
-                                <p className="text-[11px] text-slate-500">
+                                <p className="text-[10px] sm:text-[11px] text-slate-500">
                                   {formatFileSize(file.size)}
                                 </p>
                               </div>
@@ -678,7 +680,7 @@ export default function OrderProcess() {
                         ))}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
+                      <div className="mt-3 sm:mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
                         <span className="text-xs font-medium text-emerald-800">
                           Total: {pdfFiles.length} file{pdfFiles.length > 1 ? "s" : ""} ({formatFileSize(totalPdfSize)})
                         </span>
@@ -729,14 +731,14 @@ export default function OrderProcess() {
               {/* ======================================================== */}
               {/* SECTION 2: ZPL / JPL FILE UPLOAD */}
               {/* ======================================================== */}
-              <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
+                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 shrink-0">
                       <Barcode className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-[#0A0E1A]">
+                      <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
                         2. ZPL / JPL Barcodes {zplFiles.length > 0 ? `(${zplFiles.length})` : ""}
                       </h3>
                       <p className="text-xs text-slate-500">Upload one or multiple .zpl / .txt / .jpl files</p>
@@ -744,64 +746,64 @@ export default function OrderProcess() {
                   </div>
 
                   {zplFiles.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       {zplFiles.length} Ready
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                    <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
                       Required
                     </span>
                   )}
                 </div>
 
                 {/* Upload Box / Selected Files View */}
-                <div className="mt-5 flex-1 flex flex-col justify-between">
+                <div className="mt-4 sm:mt-5 flex-1 flex flex-col justify-between">
                   {zplFiles.length === 0 ? (
                     <div
                       onClick={() => zplInputRef.current?.click()}
                       onDragOver={handleZplDragOver}
                       onDragLeave={handleZplDragLeave}
                       onDrop={handleZplDrop}
-                      className={`group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+                      className={`group relative flex min-h-[170px] sm:min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                         isDraggingZpl
                           ? "border-[#E8C16D] bg-[#FFF9EC]"
                           : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
                       }`}
                     >
-                      <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-amber-500">
-                        <UploadCloud className="h-7 w-7" />
+                      <div className="mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-amber-500">
+                        <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                       </div>
 
-                      <p className="text-sm font-semibold text-[#0A0E1A]">
+                      <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">
                         Click to upload or drag & drop ZPL/JPL(s)
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
                         Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600">.zpl, .txt, .jpl</code>) files
                       </p>
 
-                      <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
+                      <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
                         <Barcode className="h-3.5 w-3.5 text-amber-500" />
                         Browse ZPL Files
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-4">
+                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-3 sm:p-4">
                       <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
                         {zplFiles.map((file, idx) => (
                           <div
                             key={`${file.name}_${idx}`}
-                            className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2.5 shadow-2xs"
+                            className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2 sm:p-2.5 shadow-2xs"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700">
-                                <Barcode className="h-4 w-4" />
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700">
+                                <Barcode className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </div>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={file.name}>
                                   {file.name}
                                 </p>
-                                <p className="text-[11px] text-slate-500">
+                                <p className="text-[10px] sm:text-[11px] text-slate-500">
                                   {formatFileSize(file.size)}
                                 </p>
                               </div>
@@ -819,7 +821,7 @@ export default function OrderProcess() {
                         ))}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
+                      <div className="mt-3 sm:mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
                         <span className="text-xs font-medium text-emerald-800">
                           Total: {zplFiles.length} file{zplFiles.length > 1 ? "s" : ""} ({formatFileSize(totalZplSize)})
                         </span>
@@ -868,41 +870,8 @@ export default function OrderProcess() {
               </div>
             </div>
 
-            {/* Status / Requirement Callout */}
-            <div
-              className={`rounded-3xl border p-5 transition-all ${
-                isReadyToSubmit
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                  : "border-amber-200 bg-amber-50/70 text-amber-900"
-              }`}
-            >
-              <div className="flex items-start gap-3.5">
-                {isReadyToSubmit ? (
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                ) : (
-                  <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                )}
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm">
-                    {isReadyToSubmit
-                      ? `${pdfFiles.length} PDF and ${zplFiles.length} ZPL file(s) ready for conversion & verification`
-                      : "Both PDF and ZPL file(s) are mandatory to proceed"}
-                  </h4>
-                  <p className="text-xs opacity-90">
-                    {isReadyToSubmit
-                      ? "All requirements are satisfied. Click 'Convert, Verify & Process' below to merge the files, convert ZPL to high-resolution PDF, and cross-verify invoice numbers."
-                      : pdfFiles.length === 0 && zplFiles.length === 0
-                      ? "Please upload at least one .pdf document and one .zpl barcode file. You can upload multiple files of each type."
-                      : pdfFiles.length === 0
-                      ? `You have uploaded ${zplFiles.length} ZPL file(s). Please also upload at least one PDF invoice file to proceed.`
-                      : `You have uploaded ${pdfFiles.length} PDF file(s). Please also upload at least one ZPL barcode file to proceed.`}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Action Controls */}
-            <div className="flex flex-col-reverse items-center justify-between gap-4 rounded-3xl border border-[#E7E0D2] bg-white p-5 shadow-sm sm:flex-row">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm">
               <Button
                 type="button"
                 variant="outline"
@@ -926,19 +895,18 @@ export default function OrderProcess() {
                   disabled={!isReadyToSubmit || isProcessing}
                   onClick={handleSubmit}
                   rightIcon={<ArrowRight className="h-4 w-4" />}
-                  className="w-full sm:w-auto min-w-[260px]"
+                  className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-xs sm:text-sm"
                 >
                   {isProcessing
                     ? "Processing Files..."
                     : isReadyToSubmit
                     ? `Convert, Verify & Process (${pdfFiles.length} PDF${pdfFiles.length > 1 ? "s" : ""}, ${zplFiles.length} ZPL${zplFiles.length > 1 ? "s" : ""})`
-                    : "Upload Both Files to Submit"}
+                    : "Upload Files"}
                 </Button>
               </div>
             </div>
           </>
-        )}
-      </div>
-    </DashboardLayout>
-  );
+        </div>
+      </DashboardLayout>
+    );
 }

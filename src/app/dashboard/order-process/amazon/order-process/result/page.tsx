@@ -8,25 +8,36 @@ import { useRouter } from "next/navigation";
 
 export default function AmazonOrderResultPage() {
   const router = useRouter();
-  const { summary, loadFromSessionStorage } = useAmazonOrderStore();
+  const { summary, loadFromSessionStorage, clearProcessData } = useAmazonOrderStore();
 
   useEffect(() => {
     if (!summary) {
-      loadFromSessionStorage();
+      const loaded = loadFromSessionStorage();
+      if (!loaded) {
+        router.push("/dashboard/order-process/amazon/order-process");
+      }
     }
-  }, [summary, loadFromSessionStorage]);
+  }, [summary, loadFromSessionStorage, router]);
+
+  const handleReset = () => {
+    router.push("/dashboard/order-process/amazon/order-process");
+    setTimeout(() => {
+      clearProcessData();
+    }, 150);
+  };
+
+  if (!summary) return null;
 
   return (
     <DashboardLayout title="Amazon Order Verification Results">
       <div className="space-y-6">
         <ComparisonResultView
           isStandaloneTab={true}
-          onReset={() => {
-            router.push("/dashboard/order-process/amazon/order-process");
-          }}
+          onReset={handleReset}
         />
       </div>
     </DashboardLayout>
   );
 }
+
 
