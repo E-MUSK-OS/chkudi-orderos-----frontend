@@ -347,9 +347,7 @@ transition-all duration-300 ease-out
                     duration: 0.3,
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  style={{
-                    overflow: "hidden",
-                  }}
+                  className="overflow-hidden"
                 >
                   {renderMenu(item.children!, level + 1)}
                 </motion.div>

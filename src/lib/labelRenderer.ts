@@ -90,6 +90,7 @@ export const renderLabelToCanvas = async (
     title: productData.title || "",
     sku: productData.sku || "",
     masterSku: productData.masterSku || "",
+    fullSku: productData.masterSku || "",
     brand: productData.brand || "",
     size: productData.size || "",
     mrp: productData.mrp !== null && productData.mrp !== undefined ? String(productData.mrp) : "",

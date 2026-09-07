@@ -12,6 +12,7 @@ export interface BaseElement {
   rotation: number; // 0–360 degrees, any angle
   zIndex: number;
   locked?: boolean;
+  opacity?: number;
 }
 
 export interface TextElement extends BaseElement {
@@ -72,6 +73,7 @@ export interface CanvasSettings {
   gridSizeMm: number;
   snapToGrid: boolean;
   colorMode: "color" | "monochrome"; // "color" = full color print, "monochrome" = thermal B&W
+  backgroundOpacity?: number;
 }
 
 export interface DesignerState {
@@ -80,7 +82,7 @@ export interface DesignerState {
   backgroundImageUrl: string | null;
   settings: CanvasSettings;
   elements: LabelElement[];
-  selectedElementId: string | null;
+  selectedIds: string[];
   zoom: number;
   previewSampleData: boolean;
 }

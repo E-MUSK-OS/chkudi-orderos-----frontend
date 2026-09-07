@@ -15,17 +15,23 @@ import { toast } from 'sonner';
 
 interface PropertiesPanelProps {
   settings: CanvasSettings;
-  updateSettings: (settings: Partial<CanvasSettings>) => void;
+  updateSettings: (settings: Partial<CanvasSettings>, skipHistory?: boolean) => void;
   backgroundImageUrl: string | null;
   setBackgroundImageUrl: (url: string | null) => void;
   selectedElement?: LabelElement;
-  updateElement: (id: string, updates: Partial<LabelElement>) => void;
+  selectedIds: string[];
+  allElements: LabelElement[];
+  updateElement: (id: string, updates: Partial<LabelElement>, skipHistory?: boolean) => void;
+  onBatchUpdateElements: (updates: { id: string; changes: Partial<LabelElement> }[], skipHistory?: boolean) => void;
+  onDeleteElements: (ids: string[]) => void;
+  onDuplicateElements: (ids: string[]) => void;
   deleteElement: (id: string) => void;
   duplicateElement: (id: string) => void;
   bringForward: (id: string) => void;
   sendBackward: (id: string) => void;
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
+  commitHistory: () => void;
 }
 
 const PRESET_SIZES: SelectOption[] = [
@@ -40,6 +46,7 @@ const VARIABLE_SOURCES: SelectOption[] = [
   { label: 'Custom Value', value: 'custom' },
   { label: 'Product Title ({{title}})', value: '{{title}}' },
   { label: 'Product SKU ({{sku}})', value: '{{sku}}' },
+  { label: 'Product Full SKU ({{fullSku}})', value: '{{fullSku}}' },
   { label: 'Product MRP ({{mrp}})', value: '{{mrp}}' },
   { label: 'Product ASIN ({{asin}})', value: '{{asin}}' },
   { label: 'Product Size ({{size}})', value: '{{size}}' },
@@ -78,19 +85,26 @@ export function PropertiesPanel({
   backgroundImageUrl,
   setBackgroundImageUrl,
   selectedElement,
+  selectedIds,
+  allElements,
   updateElement,
+  onBatchUpdateElements,
+  onDeleteElements,
+  onDuplicateElements,
   deleteElement,
   duplicateElement,
   bringForward,
   sendBackward,
   bringToFront,
   sendToBack,
+  commitHistory
 }: PropertiesPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
-  const handleSettingsChange = (key: keyof CanvasSettings, value: any) => {
-    updateSettings({ [key]: value });
+  const handleSettingsChange = (key: keyof CanvasSettings, value: any, skipHistory = false) => {
+    updateSettings({ [key]: value }, skipHistory);
   };
 
   const handlePresetChange = (val: string) => {
@@ -101,11 +115,19 @@ export function PropertiesPanel({
 
   const handleUpdate = (key: string, value: any) => {
     if (selectedElement) {
-      updateElement(selectedElement.id, { [key]: value });
+      updateElement(selectedElement.id, { [key]: value }, true);
     }
   };
 
-  const [isUploading, setIsUploading] = useState(false);
+  const handleCommit = () => {
+    commitHistory();
+  };
+
+  const handleUpdateDiscrete = (key: string, value: any) => {
+    if (selectedElement) {
+      updateElement(selectedElement.id, { [key]: value }, false);
+    }
+  };
 
   const handleImageUpload = async (file: File, onComplete: (url: string) => void) => {
     if (!file.type.startsWith('image/')) {
@@ -126,7 +148,9 @@ export function PropertiesPanel({
   };
 
   if (!selectedElement) {
-    // Render Canvas Settings
+    const backgroundOpacityBelow1OrAnyElementOpacityBelow1 = 
+      (settings.backgroundOpacity ?? 1) < 1 || allElements.some(el => (el.opacity ?? 1) < 1);
+
     return (
       <div className="w-72 bg-[#111827] border-l border-stone-800 overflow-y-auto shrink-0 font-sans text-sm">
         <div className="p-4 border-b border-stone-800 font-semibold text-white">
@@ -239,6 +263,9 @@ export function PropertiesPanel({
                 ? 'Label renders in full color — use with inkjet/laser printers.'
                 : 'Label converts to B&W — use with thermal printers (TSC, Zebra).'}
             </p>
+            {(settings.colorMode ?? 'color') === 'monochrome' && backgroundOpacityBelow1OrAnyElementOpacityBelow1 && (
+              <p className="text-[10px] text-amber-500 mt-1">Monochrome mode prints pure black and white. Semi-transparent items may disappear.</p>
+            )}
           </div>
 
           <div className="space-y-3 pt-4 border-stone-800">
@@ -256,6 +283,25 @@ export function PropertiesPanel({
                     <Trash2 size={14} />
                     <span className="text-[10px]">Clear</span>
                   </button>
+                </div>
+              )}
+
+              {backgroundImageUrl && (
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-gray-400">Opacity</label>
+                    <span className="text-xs text-gray-500">{Math.round((settings.backgroundOpacity ?? 1) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={Math.round((settings.backgroundOpacity ?? 1) * 100)}
+                    onChange={(e) => handleSettingsChange('backgroundOpacity', Number(e.target.value) / 100, true)}
+                    onPointerUp={handleCommit}
+                    className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
+                  />
                 </div>
               )}
               
@@ -298,6 +344,164 @@ export function PropertiesPanel({
     );
   }
 
+  if (selectedIds.length > 1) {
+    const selected = allElements.filter(el => selectedIds.includes(el.id));
+    const unlockedSelected = selected.filter(el => !el.locked);
+    const left = Math.min(...selected.map(e => e.x));
+    const top = Math.min(...selected.map(e => e.y));
+    const right = Math.max(...selected.map(e => e.x + e.width));
+    const bottom = Math.max(...selected.map(e => e.y + e.height));
+  
+    const alignLeft = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { x: left } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignCenterH = () => {
+      const centerX = (left + right) / 2;
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { x: centerX - e.width / 2 } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignRight = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { x: right - e.width } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignTop = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { y: top } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignMiddleV = () => {
+      const centerY = (top + bottom) / 2;
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { y: centerY - e.height / 2 } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignBottom = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { y: bottom - e.height } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const distributeH = () => {
+      if (unlockedSelected.length < 3) return;
+      
+      const sortedByX = [...unlockedSelected].sort((a, b) => a.x - b.x);
+      const cols: LabelElement[][] = [];
+      for (const el of sortedByX) {
+        if (cols.length === 0) { cols.push([el]); } else {
+          const currentCol = cols[cols.length - 1];
+          const colAvgX = currentCol.reduce((sum, e) => sum + e.x, 0) / currentCol.length;
+          if (Math.abs(el.x - colAvgX) < 2) { currentCol.push(el); }
+          else { cols.push([el]); }
+        }
+      }
+
+      if (cols.length < 3) return;
+
+      const colBounds = cols.map(col => {
+        const left = Math.min(...col.map(e => e.x));
+        const right = Math.max(...col.map(e => e.x + e.width));
+        return { left, right, width: right - left, elements: col };
+      });
+
+      const leftCol = colBounds[0];
+      const rightCol = colBounds[colBounds.length - 1];
+      const totalSpace = rightCol.left - (leftCol.left + leftCol.width);
+      const middleCols = colBounds.slice(1, -1);
+      const totalMiddleWidths = middleCols.reduce((sum, c) => sum + c.width, 0);
+      const gap = (totalSpace - totalMiddleWidths) / (colBounds.length - 1);
+
+      const updates: { id: string; changes: { x: number } }[] = [];
+      let currentX = leftCol.left + leftCol.width + gap;
+      for (const col of middleCols) {
+        const deltaX = currentX - col.left;
+        for (const el of col.elements) { updates.push({ id: el.id, changes: { x: el.x + deltaX } }); }
+        currentX += col.width + gap;
+      }
+      
+      if (updates.length > 0) onBatchUpdateElements(updates, false);
+    };
+
+    const distributeV = () => {
+      if (unlockedSelected.length < 3) return;
+
+      const sortedByY = [...unlockedSelected].sort((a, b) => a.y - b.y);
+      const rows: LabelElement[][] = [];
+      for (const el of sortedByY) {
+        if (rows.length === 0) { rows.push([el]); } else {
+          const currentRow = rows[rows.length - 1];
+          const rowAvgY = currentRow.reduce((sum, e) => sum + e.y, 0) / currentRow.length;
+          if (Math.abs(el.y - rowAvgY) < 2) { currentRow.push(el); }
+          else { rows.push([el]); }
+        }
+      }
+
+      if (rows.length < 3) return;
+
+      const rowBounds = rows.map(row => {
+        const top = Math.min(...row.map(e => e.y));
+        const bottom = Math.max(...row.map(e => e.y + e.height));
+        return { top, bottom, height: bottom - top, elements: row };
+      });
+
+      const topRow = rowBounds[0];
+      const bottomRow = rowBounds[rowBounds.length - 1];
+      const totalSpace = bottomRow.top - (topRow.top + topRow.height);
+      const middleRows = rowBounds.slice(1, -1);
+      const totalMiddleHeights = middleRows.reduce((sum, r) => sum + r.height, 0);
+      const gap = (totalSpace - totalMiddleHeights) / (rowBounds.length - 1);
+
+      const updates: { id: string; changes: { y: number } }[] = [];
+      let currentY = topRow.top + topRow.height + gap;
+      for (const row of middleRows) {
+        const deltaY = currentY - row.top;
+        for (const el of row.elements) { updates.push({ id: el.id, changes: { y: el.y + deltaY } }); }
+        currentY += row.height + gap;
+      }
+
+      if (updates.length > 0) onBatchUpdateElements(updates, false);
+    };
+  
+    const btnClass = "flex-1 h-9 flex items-center justify-center rounded-sm border border-stone-700 text-gray-300 hover:border-[#E8C16D] hover:text-[#E8C16D] transition-colors disabled:opacity-30 disabled:hover:border-stone-700 disabled:hover:text-gray-300";
+  
+    return (
+      <div className="w-72 bg-[#111827] border-l border-stone-800 overflow-y-auto shrink-0 font-sans text-sm">
+        <div className="p-4 border-b border-stone-800 flex items-center justify-between">
+          <span className="font-semibold text-white">{selectedIds.length} elements selected</span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => onDuplicateElements(selectedIds)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Duplicate all (Ctrl+D)">
+              <Copy size={16} />
+            </button>
+            <button onClick={() => onDeleteElements(selectedIds)} className="p-1 text-red-500 hover:text-red-400 hover:bg-red-900/20 rounded-sm" title="Delete all (Delete)">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          <p className="text-[11px] text-gray-500">Resize and rotate are single-element only. Move, align, distribute, delete and duplicate work on the whole selection.</p>
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Align</h4>
+            <div className="flex gap-2">
+              <button className={btnClass} onClick={alignLeft} title="Align left"><AlignLeft size={16} /></button>
+              <button className={btnClass} onClick={alignCenterH} title="Align center horizontal"><AlignCenter size={16} /></button>
+              <button className={btnClass} onClick={alignRight} title="Align right"><AlignRight size={16} /></button>
+            </div>
+            <div className="flex gap-2">
+              <button className={btnClass} onClick={alignTop} title="Align top"><ArrowUpToLine size={16} /></button>
+              <button className={btnClass} onClick={alignMiddleV} title="Align middle"><ArrowUp size={16} className="rotate-90" /></button>
+              <button className={btnClass} onClick={alignBottom} title="Align bottom"><ArrowDownToLine size={16} /></button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Distribute</h4>
+            <div className="flex gap-2">
+              <button className={btnClass} disabled={unlockedSelected.length < 3} onClick={distributeH} title={unlockedSelected.length < 3 ? "Need 3 or more elements" : "Distribute horizontally"}>H</button>
+              <button className={btnClass} disabled={unlockedSelected.length < 3} onClick={distributeV} title={unlockedSelected.length < 3 ? "Need 3 or more elements" : "Distribute vertically"}>V</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const btnClassSingle = "flex-1 h-9 flex items-center justify-center rounded-sm border border-stone-700 text-gray-300 hover:border-[#E8C16D] hover:text-[#E8C16D] transition-colors disabled:opacity-30 disabled:hover:border-stone-700 disabled:hover:text-gray-300";
+
   // Common properties
   return (
     <div className="w-72 bg-[#111827] border-l border-stone-800 overflow-y-auto shrink-0 font-sans text-sm">
@@ -320,7 +524,7 @@ export function PropertiesPanel({
             <Copy size={16} />
           </button>
           <button 
-            onClick={() => handleUpdate('locked', !selectedElement.locked)} 
+            onClick={() => handleUpdateDiscrete('locked', !selectedElement.locked)} 
             className={`p-1 rounded-sm ${selectedElement.locked ? 'text-red-400 bg-red-900/20 hover:bg-red-900/40' : 'text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937]'}`} 
             title={selectedElement.locked ? "Unlock Element" : "Lock Element"}
           >
@@ -333,6 +537,20 @@ export function PropertiesPanel({
       </div>
 
       <div className="p-4 space-y-5">
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Align to Canvas</h4>
+          <div className="flex gap-2">
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', 0)} title="Align left"><AlignLeft size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', (settings.widthMm - selectedElement.width) / 2)} title="Center horizontally"><AlignCenter size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', settings.widthMm - selectedElement.width)} title="Align right"><AlignRight size={16} /></button>
+          </div>
+          <div className="flex gap-2">
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', 0)} title="Align top"><ArrowUpToLine size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', (settings.heightMm - selectedElement.height) / 2)} title="Center vertically"><ArrowUp size={16} className="rotate-90" /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', settings.heightMm - selectedElement.height)} title="Align bottom"><ArrowDownToLine size={16} /></button>
+          </div>
+        </div>
+      
         {/* Geometry */}
         <div className="space-y-3">
           <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Geometry</h4>
@@ -344,6 +562,7 @@ export function PropertiesPanel({
                 className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                 value={selectedElement.x}
                 onChange={(e) => handleUpdate('x', Number(e.target.value))}
+                onBlur={handleCommit}
               />
             </div>
             <div className="space-y-1">
@@ -353,6 +572,7 @@ export function PropertiesPanel({
                 className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                 value={selectedElement.y}
                 onChange={(e) => handleUpdate('y', Number(e.target.value))}
+                onBlur={handleCommit}
               />
             </div>
             <div className="space-y-1">
@@ -363,6 +583,7 @@ export function PropertiesPanel({
                 className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                 value={selectedElement.width}
                 onChange={(e) => handleUpdate('width', Math.max(1, Number(e.target.value)))}
+                onBlur={handleCommit}
               />
             </div>
             <div className="space-y-1">
@@ -373,6 +594,7 @@ export function PropertiesPanel({
                 className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                 value={selectedElement.height}
                 onChange={(e) => handleUpdate('height', Math.max(1, Number(e.target.value)))}
+                onBlur={handleCommit}
               />
             </div>
           </div>
@@ -392,6 +614,7 @@ export function PropertiesPanel({
                     if (v > 360) v = 360;
                     handleUpdate('rotation', v);
                   }}
+                  onBlur={handleCommit}
                   className="w-16 h-7 px-2 text-xs bg-transparent text-white border border-stone-700 rounded-sm focus:outline-none focus:border-[#E8C16D] text-right"
                 />
                 <span className="text-xs text-gray-500">°</span>
@@ -404,15 +627,36 @@ export function PropertiesPanel({
               step={1}
               value={Math.round(selectedElement.rotation ?? 0)}
               onChange={(e) => handleUpdate('rotation', Number(e.target.value))}
+              onPointerUp={handleCommit}
+              onKeyUp={handleCommit}
               className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-gray-600">
               <span>0°</span>
-              <button onClick={() => handleUpdate('rotation', 90)} className="hover:text-[#E8C16D] transition-colors">90°</button>
-              <button onClick={() => handleUpdate('rotation', 180)} className="hover:text-[#E8C16D] transition-colors">180°</button>
-              <button onClick={() => handleUpdate('rotation', 270)} className="hover:text-[#E8C16D] transition-colors">270°</button>
+              <button onClick={() => handleUpdateDiscrete('rotation', 90)} className="hover:text-[#E8C16D] transition-colors">90°</button>
+              <button onClick={() => handleUpdateDiscrete('rotation', 180)} className="hover:text-[#E8C16D] transition-colors">180°</button>
+              <button onClick={() => handleUpdateDiscrete('rotation', 270)} className="hover:text-[#E8C16D] transition-colors">270°</button>
               <span>360°</span>
             </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-400">Opacity</label>
+              <span className="text-xs text-gray-500">{Math.round((selectedElement.opacity ?? 1) * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round((selectedElement.opacity ?? 1) * 100)}
+              onChange={(e) => handleUpdate('opacity', Number(e.target.value) / 100)}
+              onPointerUp={handleCommit}
+              className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
+            />
+            {(selectedElement.type === 'barcode' || selectedElement.type === 'qrcode') && (selectedElement.opacity ?? 1) < 0.7 && (
+              <p className="text-[10px] text-amber-500">Low opacity can make {selectedElement.type === 'barcode' ? 'barcodes' : 'QR codes'} unscannable.</p>
+            )}
           </div>
         </div>
 
@@ -428,7 +672,7 @@ export function PropertiesPanel({
                 height={36}
                 options={VARIABLE_SOURCES}
                 value={VARIABLE_SOURCES.find(o => o.value === (selectedElement as TextElement).variableSource) || VARIABLE_SOURCES[0]}
-                onChange={(opt) => opt && handleUpdate('variableSource', opt.value === 'custom' ? undefined : opt.value)}
+                onChange={(opt) => opt && handleUpdateDiscrete('variableSource', opt.value === 'custom' ? undefined : opt.value)}
               />
             </div>
             <div className="space-y-2">
@@ -438,6 +682,7 @@ export function PropertiesPanel({
                 rows={3}
                 value={(selectedElement as TextElement).content}
                 onChange={(e) => handleUpdate('content', e.target.value)}
+                onBlur={handleCommit}
                 disabled={!!(selectedElement as TextElement).variableSource}
               />
             </div>
@@ -448,7 +693,7 @@ export function PropertiesPanel({
                   height={36}
                   options={FONTS}
                   value={FONTS.find(o => o.value === (selectedElement as TextElement).fontFamily) || FONTS[0]}
-                  onChange={(opt) => opt && handleUpdate('fontFamily', opt.value)}
+                  onChange={(opt) => opt && handleUpdateDiscrete('fontFamily', opt.value)}
                 />
               </div>
               <div className="space-y-1">
@@ -459,20 +704,37 @@ export function PropertiesPanel({
                   className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                   value={(selectedElement as TextElement).fontSize}
                   onChange={(e) => handleUpdate('fontSize', Number(e.target.value))}
+                  onBlur={handleCommit}
                 />
               </div>
             </div>
             <div className="space-y-1 mt-3">
               <label className="text-xs text-gray-400">Formatting</label>
               <div className="flex items-center gap-1 mt-1">
-                <button onClick={() => handleUpdate('fontWeight', (selectedElement as TextElement).fontWeight === 'bold' ? 'normal' : 'bold')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).fontWeight === 'bold' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Bold size={16} /></button>
-                <button onClick={() => handleUpdate('fontStyle', (selectedElement as TextElement).fontStyle === 'italic' ? 'normal' : 'italic')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).fontStyle === 'italic' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Italic size={16} /></button>
-                <button onClick={() => handleUpdate('textDecoration', (selectedElement as TextElement).textDecoration === 'underline' ? 'none' : 'underline')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textDecoration === 'underline' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Underline size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('fontWeight', (selectedElement as TextElement).fontWeight === 'bold' ? 'normal' : 'bold')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).fontWeight === 'bold' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Bold size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('fontStyle', (selectedElement as TextElement).fontStyle === 'italic' ? 'normal' : 'italic')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).fontStyle === 'italic' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Italic size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('textDecoration', (selectedElement as TextElement).textDecoration === 'underline' ? 'none' : 'underline')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textDecoration === 'underline' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Underline size={16} /></button>
                 <div className="w-px h-5 bg-stone-300 mx-1" />
-                <button onClick={() => handleUpdate('textAlign', 'left')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'left' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignLeft size={16} /></button>
-                <button onClick={() => handleUpdate('textAlign', 'center')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'center' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignCenter size={16} /></button>
-                <button onClick={() => handleUpdate('textAlign', 'right')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'right' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignRight size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('textAlign', 'left')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'left' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignLeft size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('textAlign', 'center')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'center' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignCenter size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('textAlign', 'right')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'right' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignRight size={16} /></button>
               </div>
+            </div>
+            <div className="space-y-1 mt-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-gray-400">Line Height</label>
+                <span className="text-xs text-gray-500">{((selectedElement as TextElement).lineHeight ?? 1.2).toFixed(1)}</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={3.0}
+                step={0.1}
+                value={(selectedElement as TextElement).lineHeight ?? 1.2}
+                onChange={(e) => handleUpdate('lineHeight', Number(e.target.value))}
+                onPointerUp={handleCommit}
+                className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
+              />
             </div>
             <div className="space-y-1 mt-3">
               <label className="text-xs text-gray-400">Color</label>
@@ -482,12 +744,14 @@ export function PropertiesPanel({
                   className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
                   value={(selectedElement as TextElement).color || '#000000'}
                   onChange={(e) => handleUpdate('color', e.target.value)}
+                  onBlur={handleCommit}
                 />
                 <input
                   type="text"
                   className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                   value={(selectedElement as TextElement).color || '#000000'}
                   onChange={(e) => handleUpdate('color', e.target.value)}
+                  onBlur={handleCommit}
                 />
               </div>
             </div>
@@ -503,7 +767,7 @@ export function PropertiesPanel({
                 height={36}
                 options={VARIABLE_SOURCES}
                 value={VARIABLE_SOURCES.find(o => o.value === (selectedElement as BarcodeElement).variableSource) || VARIABLE_SOURCES[0]}
-                onChange={(opt) => opt && handleUpdate('variableSource', opt.value === 'custom' ? undefined : opt.value)}
+                onChange={(opt) => opt && handleUpdateDiscrete('variableSource', opt.value === 'custom' ? undefined : opt.value)}
               />
             </div>
             <div className="space-y-2">
@@ -513,6 +777,7 @@ export function PropertiesPanel({
                 className="w-full h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                 value={(selectedElement as BarcodeElement).content}
                 onChange={(e) => handleUpdate('content', e.target.value)}
+                onBlur={handleCommit}
                 disabled={!!(selectedElement as BarcodeElement).variableSource}
               />
             </div>
@@ -522,7 +787,7 @@ export function PropertiesPanel({
                 height={36}
                 options={BARCODE_FORMATS}
                 value={BARCODE_FORMATS.find(o => o.value === (selectedElement as BarcodeElement).barcodeFormat) || BARCODE_FORMATS[0]}
-                onChange={(opt) => opt && handleUpdate('barcodeFormat', opt.value)}
+                onChange={(opt) => opt && handleUpdateDiscrete('barcodeFormat', opt.value)}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -530,7 +795,7 @@ export function PropertiesPanel({
                 type="checkbox"
                 id="showText"
                 checked={(selectedElement as BarcodeElement).showText}
-                onChange={(e) => handleUpdate('showText', e.target.checked)}
+                onChange={(e) => handleUpdateDiscrete('showText', e.target.checked)}
                 className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
               />
               <label htmlFor="showText" className="text-sm text-gray-300 cursor-pointer">
@@ -549,7 +814,7 @@ export function PropertiesPanel({
                 height={36}
                 options={VARIABLE_SOURCES}
                 value={VARIABLE_SOURCES.find(o => o.value === (selectedElement as QrCodeElement).variableSource) || VARIABLE_SOURCES[0]}
-                onChange={(opt) => opt && handleUpdate('variableSource', opt.value === 'custom' ? undefined : opt.value)}
+                onChange={(opt) => opt && handleUpdateDiscrete('variableSource', opt.value === 'custom' ? undefined : opt.value)}
               />
             </div>
             <div className="space-y-2">
@@ -559,6 +824,7 @@ export function PropertiesPanel({
                 rows={3}
                 value={(selectedElement as QrCodeElement).content}
                 onChange={(e) => handleUpdate('content', e.target.value)}
+                onBlur={handleCommit}
                 disabled={!!(selectedElement as QrCodeElement).variableSource}
               />
             </div>
@@ -582,7 +848,7 @@ export function PropertiesPanel({
                   e.stopPropagation();
                   setIsDragging(false);
                   if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    handleImageUpload(e.dataTransfer.files[0], (url) => handleUpdate('imageUrl', url));
+                    handleImageUpload(e.dataTransfer.files[0], (url) => handleUpdateDiscrete('imageUrl', url));
                   }
                 }}
                 onClick={() => fileInputRef.current?.click()}
@@ -594,7 +860,7 @@ export function PropertiesPanel({
                   ref={fileInputRef}
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      handleImageUpload(e.target.files[0], (url) => handleUpdate('imageUrl', url));
+                      handleImageUpload(e.target.files[0], (url) => handleUpdateDiscrete('imageUrl', url));
                     }
                     if (fileInputRef.current) fileInputRef.current.value = '';
                   }}
@@ -613,6 +879,7 @@ export function PropertiesPanel({
                   className="w-full h-9 px-3 bg-transparent text-gray-300 border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] text-xs truncate"
                   value={(selectedElement as ImageElement).imageUrl}
                   onChange={(e) => handleUpdate('imageUrl', e.target.value)}
+                  onBlur={handleCommit}
                 />
               )}
             </div>
@@ -621,7 +888,7 @@ export function PropertiesPanel({
                 type="checkbox"
                 id="keepAspectRatio"
                 checked={(selectedElement as ImageElement).keepAspectRatio}
-                onChange={(e) => handleUpdate('keepAspectRatio', e.target.checked)}
+                onChange={(e) => handleUpdateDiscrete('keepAspectRatio', e.target.checked)}
                 className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
               />
               <label htmlFor="keepAspectRatio" className="text-sm text-gray-300 cursor-pointer">
@@ -643,6 +910,7 @@ export function PropertiesPanel({
                 className="w-full h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                 value={(selectedElement as ShapeElement).borderWidth}
                 onChange={(e) => handleUpdate('borderWidth', Number(e.target.value))}
+                onBlur={handleCommit}
               />
             </div>
             <div className="space-y-2">
@@ -653,12 +921,14 @@ export function PropertiesPanel({
                   className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
                   value={(selectedElement as ShapeElement).borderColor}
                   onChange={(e) => handleUpdate('borderColor', e.target.value)}
+                  onBlur={handleCommit}
                 />
                 <input
                   type="text"
                   className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                   value={(selectedElement as ShapeElement).borderColor}
                   onChange={(e) => handleUpdate('borderColor', e.target.value)}
+                  onBlur={handleCommit}
                 />
               </div>
             </div>
@@ -671,6 +941,7 @@ export function PropertiesPanel({
                     className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
                     value={(selectedElement as ShapeElement).fillColor || '#ffffff'}
                     onChange={(e) => handleUpdate('fillColor', e.target.value)}
+                    onBlur={handleCommit}
                   />
                   <input
                     type="text"
@@ -678,6 +949,7 @@ export function PropertiesPanel({
                     value={(selectedElement as ShapeElement).fillColor || ''}
                     placeholder="transparent"
                     onChange={(e) => handleUpdate('fillColor', e.target.value)}
+                    onBlur={handleCommit}
                   />
                 </div>
               </div>
@@ -688,4 +960,3 @@ export function PropertiesPanel({
     </div>
   );
 }
-
