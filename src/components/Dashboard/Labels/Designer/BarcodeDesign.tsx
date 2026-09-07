@@ -15,7 +15,8 @@ import { uploadImageToCloudinary } from './utils/uploadImage';
 import { sampleData } from './utils/sampleData';
 import ConfirmModal from './components/ConfirmModal';
 import { PreviewPanel } from './components/PreviewPanel';
-import { ProductLookupResult } from '../types/label.types';
+import { LivePreview } from './components/LivePreview';
+import { ProductLookupResult, LabelElement } from '../types/label.types';
 
 export function BarcodeDesign() {
   const searchParams = useSearchParams();
@@ -56,32 +57,39 @@ export function BarcodeDesign() {
         e.preventDefault();
         designer.redo();
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (designer.state.selectedElementId) {
+        if (designer.state.selectedIds.length > 0) {
           e.preventDefault();
-          designer.deleteElement(designer.state.selectedElementId);
+          designer.deleteElements(designer.state.selectedIds);
         }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        designer.selectAll();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        designer.selectElement(null);
+        designer.clearSelection();
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
-        if (designer.state.selectedElementId) {
-          designer.duplicateElement(designer.state.selectedElementId);
+        if (designer.state.selectedIds.length > 0) {
+          designer.duplicateElements(designer.state.selectedIds);
         }
       } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        const id = designer.state.selectedElementId;
-        if (id) {
-          const el = designer.state.elements.find((e) => e.id === id);
-          if (el && !el.locked) {
-            e.preventDefault();
-            const step = e.shiftKey ? 1 : 0.1;
-            const updates: any = {};
-            if (e.key === 'ArrowUp') updates.y = el.y - step;
-            if (e.key === 'ArrowDown') updates.y = el.y + step;
-            if (e.key === 'ArrowLeft') updates.x = el.x - step;
-            if (e.key === 'ArrowRight') updates.x = el.x + step;
-            designer.updateElement(id, updates, true);
-            
+        if (designer.state.selectedIds.length > 0) {
+          e.preventDefault();
+          const step = e.shiftKey ? 1 : 0.1;
+          
+          const updates = designer.state.selectedIds.map(id => {
+            const el = designer.state.elements.find(e => e.id === id);
+            if (!el || el.locked) return null;
+            const changes: any = {};
+            if (e.key === 'ArrowUp') changes.y = el.y - step;
+            if (e.key === 'ArrowDown') changes.y = el.y + step;
+            if (e.key === 'ArrowLeft') changes.x = el.x - step;
+            if (e.key === 'ArrowRight') changes.x = el.x + step;
+            return { id, changes };
+          }).filter(Boolean) as { id: string; changes: any }[];
+
+          if (updates.length > 0) {
+            designer.batchUpdateElements(updates, true);
             if (nudgeTimeoutRef.current) {
               clearTimeout(nudgeTimeoutRef.current);
             }
@@ -144,12 +152,79 @@ export function BarcodeDesign() {
     }
   };
 
+  const handleDistributeVertically = () => {
+    const { selectedIds, elements } = designer.state;
+    const selectedEls = elements.filter(el => selectedIds.includes(el.id));
+    if (selectedEls.length < 3) return;
 
+    // Group elements into rows based on Y position (allow 2mm variance)
+    const sortedByY = [...selectedEls].sort((a, b) => a.y - b.y);
+    const rows: LabelElement[][] = [];
+    
+    for (const el of sortedByY) {
+      if (rows.length === 0) {
+        rows.push([el]);
+      } else {
+        const currentRow = rows[rows.length - 1];
+        const rowAvgY = currentRow.reduce((sum, e) => sum + e.y, 0) / currentRow.length;
+        if (Math.abs(el.y - rowAvgY) < 2) {
+          currentRow.push(el);
+        } else {
+          rows.push([el]);
+        }
+      }
+    }
+
+    if (rows.length < 3) {
+      toast.error("Please select elements across at least 3 rows to distribute space.");
+      return;
+    }
+
+    const rowBounds = rows.map(row => {
+      const top = Math.min(...row.map(e => e.y));
+      const bottom = Math.max(...row.map(e => e.y + e.height));
+      return { top, bottom, height: bottom - top, elements: row };
+    });
+
+    const topRow = rowBounds[0];
+    const bottomRow = rowBounds[rowBounds.length - 1];
+
+    const totalSpace = bottomRow.top - (topRow.top + topRow.height);
+    const middleRows = rowBounds.slice(1, -1);
+    const totalMiddleHeights = middleRows.reduce((sum, r) => sum + r.height, 0);
+
+    const gapCount = rowBounds.length - 1;
+    const gap = (totalSpace - totalMiddleHeights) / gapCount;
+
+    const updates: { id: string; changes: { y: number } }[] = [];
+    let currentY = topRow.top + topRow.height + gap;
+
+    for (const row of middleRows) {
+      const deltaY = currentY - row.top;
+      for (const el of row.elements) {
+        updates.push({ id: el.id, changes: { y: el.y + deltaY } });
+      }
+      currentY += row.height + gap;
+    }
+
+    if (updates.length > 0) {
+      designer.batchUpdateElements(updates, false);
+    }
+  };
+
+  const selectedElementId = designer.state.selectedIds.length === 1 ? designer.state.selectedIds[0] : null;
 
   return (
     <DashboardLayout title="Barcode Design">
       <div className="flex w-full h-[calc(100vh-4rem)] bg-brand-navy overflow-hidden font-sans">
-        <Toolbox elements={designer.state.elements} onAddElement={designer.addElement} />
+        {!designer.state.previewSampleData && (
+          <Toolbox 
+            elements={designer.state.elements} 
+            selectedIds={designer.state.selectedIds}
+            onAddElement={designer.addElement} 
+            onDistributeVertically={handleDistributeVertically}
+          />
+        )}
 
         <div className="flex-1 flex flex-col min-w-0">
           <TopToolbar
@@ -169,38 +244,61 @@ export function BarcodeDesign() {
             onBack={handleBack}
           />
 
-          <DesignCanvas
-            settings={designer.state.settings}
-            elements={designer.state.elements}
-            selectedElementId={designer.state.selectedElementId}
-            zoom={designer.state.zoom}
-            previewSampleData={designer.state.previewSampleData}
-            previewData={previewData}
-            backgroundImageUrl={designer.state.backgroundImageUrl}
-            onSelect={designer.selectElement}
-            onUpdateElement={designer.updateElement}
-            commitHistory={designer.commitHistory}
-          />
+          {designer.state.previewSampleData ? (
+            <div className="flex-1 overflow-auto bg-[#F7F5F0] flex items-center justify-center p-8">
+              <LivePreview 
+                template={{ 
+                  id: '', 
+                  name: designer.state.templateName || '', 
+                  settings: designer.state.settings, 
+                  layoutJson: designer.state.elements, 
+                  backgroundImageUrl: designer.state.backgroundImageUrl 
+                }}
+                productData={previewData || sampleData}
+              />
+            </div>
+          ) : (
+            <DesignCanvas
+              settings={designer.state.settings}
+              elements={designer.state.elements}
+              selectedElementId={selectedElementId}
+              selectedIds={designer.state.selectedIds}
+              zoom={designer.state.zoom}
+              previewSampleData={designer.state.previewSampleData}
+              previewData={previewData}
+              backgroundImageUrl={designer.state.backgroundImageUrl}
+              onSelect={designer.selectElement}
+              onToggleSelect={designer.toggleSelect}
+              onSetSelection={designer.setSelection}
+              onUpdateElement={designer.updateElement}
+              onBatchUpdateElements={designer.batchUpdateElements}
+              commitHistory={designer.commitHistory}
+            />
+          )}
         </div>
 
         {designer.state.previewSampleData ? (
-          <PreviewPanel
-            onSelectData={setPreviewData}
-          />
+          <PreviewPanel onSelectData={setPreviewData} />
         ) : (
           <PropertiesPanel
             settings={designer.state.settings}
             updateSettings={designer.updateSettings}
             backgroundImageUrl={designer.state.backgroundImageUrl}
             setBackgroundImageUrl={designer.setBackgroundImageUrl}
-            selectedElement={designer.state.elements.find(e => e.id === designer.state.selectedElementId)}
+            selectedElement={designer.state.elements.find(e => e.id === selectedElementId)}
+            selectedIds={designer.state.selectedIds}
+            allElements={designer.state.elements}
             updateElement={designer.updateElement}
+            onBatchUpdateElements={designer.batchUpdateElements}
+            onDeleteElements={designer.deleteElements}
+            onDuplicateElements={designer.duplicateElements}
             deleteElement={designer.deleteElement}
             duplicateElement={designer.duplicateElement}
             bringForward={designer.bringForward}
             sendBackward={designer.sendBackward}
             bringToFront={designer.bringToFront}
             sendToBack={designer.sendToBack}
+            commitHistory={designer.commitHistory}
           />
         )}
       </div>
@@ -210,7 +308,7 @@ export function BarcodeDesign() {
         onClose={() => setShowClearModal(false)}
         onConfirm={() => designer.clearCanvas()}
         title="Clear Canvas"
-        description="Are you sure you want to clear the canvas? This action cannot be undone."
+        description="Are you sure you want to clear the canvas? You can undo this with Ctrl+Z."
       />
 
       <ConfirmModal

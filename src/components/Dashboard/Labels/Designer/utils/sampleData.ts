@@ -6,7 +6,8 @@ export const sampleData: Record<string, string> = {
   size: "30",
   color: "Black",
   manufacturingMonth: "10/2023",
-  printDate: new Date().toLocaleDateString()
+  printDate: new Date().toLocaleDateString(),
+  fullSku: "WH-1000XM4-BLK-FULL"
 };
 
 /**

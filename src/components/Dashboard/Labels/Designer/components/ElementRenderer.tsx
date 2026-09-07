@@ -9,6 +9,8 @@ import { TransformHandle } from './TransformHandle';
 interface ElementRendererProps {
   element: LabelElement;
   isSelected: boolean;
+  isPrimarySelection: boolean;
+  isMultiSelected: boolean;
   zoom: number;
   previewSampleData: boolean;
   previewData?: Record<string, string> | null;
@@ -21,6 +23,8 @@ interface ElementRendererProps {
 export function ElementRenderer({
   element,
   isSelected,
+  isPrimarySelection,
+  isMultiSelected,
   zoom,
   previewSampleData,
   previewData,
@@ -101,6 +105,8 @@ export function ElementRenderer({
   const widthPx = mmToPx(element.width, zoom);
   const heightPx = mmToPx(element.height, zoom);
 
+  const contentOpacity = element.opacity ?? 1;
+
   const style: React.CSSProperties = {
     position: 'absolute',
     left: xPx,
@@ -109,11 +115,18 @@ export function ElementRenderer({
     height: heightPx,
     transform: `rotate(${element.rotation}deg)`,
     zIndex: element.zIndex,
-    border: isSelected ? '1px dashed #E8C16D' : 'none',
+    border: isMultiSelected
+      ? '1px dashed rgba(232,193,109,0.6)'
+      : isPrimarySelection
+        ? '1px dashed #E8C16D'
+        : 'none',
     boxSizing: 'border-box',
     cursor: element.locked ? 'default' : 'move',
-    opacity: element.locked ? 0.8 : 1,
+    opacity: contentOpacity,
+    filter: element.locked && !previewSampleData ? 'grayscale(0.35)' : undefined,
     pointerEvents: isEditing ? 'none' : 'auto',
+    userSelect: isEditing ? 'auto' : 'none',
+    WebkitUserSelect: isEditing ? 'auto' : 'none',
   };
 
   const renderContent = () => {
@@ -273,7 +286,7 @@ export function ElementRenderer({
     >
       {renderContent()}
       
-      {isSelected && !element.locked && (
+      {isPrimarySelection && !isMultiSelected && !element.locked && (
         <TransformHandle onPointerDown={(e, handle) => onPointerDownResize(e, handle, element.id)} zoom={zoom} />
       )}
     </div>

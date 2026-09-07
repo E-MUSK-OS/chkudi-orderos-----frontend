@@ -1,13 +1,15 @@
 import React from 'react';
-import { Type, Barcode, QrCode, Image as ImageIcon, Minus, Square } from 'lucide-react';
+import { Type, Barcode, QrCode, Image as ImageIcon, Minus, Square, ArrowUpDown } from 'lucide-react';
 import { LabelElement, ElementType, TextElement, BarcodeElement, QrCodeElement, ImageElement, ShapeElement } from '../../types/label.types';
 
 interface ToolboxProps {
   elements: LabelElement[];
+  selectedIds: string[];
   onAddElement: (element: LabelElement) => void;
+  onDistributeVertically: () => void;
 }
 
-export function Toolbox({ elements, onAddElement }: ToolboxProps) {
+export function Toolbox({ elements, selectedIds, onAddElement, onDistributeVertically }: ToolboxProps) {
   const handleAdd = (type: ElementType) => {
     const highestZ = elements.length > 0 ? Math.max(...elements.map(e => e.zIndex)) : -1;
     const offset = (elements.length % 10) * 2; // Stagger by 2mm
@@ -110,7 +112,7 @@ export function Toolbox({ elements, onAddElement }: ToolboxProps) {
   ] as const;
 
   return (
-    <div className="w-16 bg-[#111827] border-r border-stone-800 flex flex-col items-center py-4 gap-4 shrink-0">
+    <div className="w-16 bg-[#111827] border-r border-stone-800 flex flex-col items-center py-4 gap-4 shrink-0 overflow-y-auto">
       {tools.map((tool) => (
         <button
           key={tool.type}
@@ -122,6 +124,22 @@ export function Toolbox({ elements, onAddElement }: ToolboxProps) {
           <span className="text-[10px] mt-1 font-medium">{tool.label}</span>
         </button>
       ))}
+
+      <div className="w-10 h-px bg-stone-700 my-2" />
+
+      <button
+        onClick={onDistributeVertically}
+        disabled={selectedIds.length < 3}
+        className={`flex flex-col items-center justify-center w-12 h-12 rounded-sm transition-colors ${
+          selectedIds.length >= 3 
+            ? 'text-gray-400 hover:bg-[#1F2937] hover:text-[#E8C16D]' 
+            : 'text-stone-700 cursor-not-allowed'
+        }`}
+        title="Distribute Vertically (Select 3+ elements)"
+      >
+        <ArrowUpDown size={20} />
+        <span className="text-[10px] mt-1 font-medium text-center leading-tight">Space</span>
+      </button>
     </div>
   );
 }
