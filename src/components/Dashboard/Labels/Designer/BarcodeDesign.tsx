@@ -16,7 +16,7 @@ import { sampleData } from './utils/sampleData';
 import ConfirmModal from './components/ConfirmModal';
 import { PreviewPanel } from './components/PreviewPanel';
 import { LivePreview } from './components/LivePreview';
-import { ProductLookupResult } from '../types/label.types';
+import { ProductLookupResult, LabelElement } from '../types/label.types';
 
 export function BarcodeDesign() {
   const searchParams = useSearchParams();
