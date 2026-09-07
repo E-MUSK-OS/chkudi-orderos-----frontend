@@ -41,7 +41,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
 
       link.href = url;
 
-      link.download = `${item.trackingId}.webm`;
+      link.download = `${item.trackingId}.mp4`;
 
       document.body.appendChild(link);
 
@@ -86,8 +86,14 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                 <video
                   controls
                   className="aspect-video w-full"
-                  src={getFullUrl(item.videoUrl)}
+                  src={`${getFullUrl(item.videoUrl)}#t=2`}
                   poster={getFullUrl(item.thumbnailUrl) ?? undefined}
+                  onLoadedMetadata={(e) => {
+                    const video = e.currentTarget;
+                    if (video.duration >= 2) {
+                      video.currentTime = 2;
+                    }
+                  }}
                 />
               ) : null}
             </div>

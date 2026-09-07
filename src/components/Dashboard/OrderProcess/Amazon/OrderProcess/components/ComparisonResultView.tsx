@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -15,6 +15,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Printer,
+  Zap,
+  X,
+  Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
@@ -22,8 +25,16 @@ import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/servi
 
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
-import { useAmazonOrderStore } from "../store/useAmazonOrderStore";
+import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
+import { useAmazonOrderStore, loadFilesFromIDB } from "../store/useAmazonOrderStore";
 import { cleanCustomerName } from "../utils";
+import { AmazonOrderType } from "../types";
+import {
+  generateAmazonPicklist,
+  downloadAmazonPicklistPDF,
+} from "../utils/generateAmazonPicklist";
+
+export type AmazonOrderTypeFilter = "all" | AmazonOrderType;
 
 function resolveTargetPrinter(availablePrinters: string[]): string {
   if (!availablePrinters || availablePrinters.length === 0) return "";
@@ -46,6 +57,36 @@ function resolveTargetPrinter(availablePrinters: string[]): string {
   return availablePrinters[0];
 }
 
+function renderItemListCell(val?: string) {
+  if (!val || val === "N/A") {
+    return <span className="italic text-muted-foreground">N/A</span>;
+  }
+
+  const rawItems = val
+    .split(/[\r\n]+|\s+\/\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const items = Array.from(new Set(rawItems));
+
+  if (items.length <= 1) {
+    return items[0] || val;
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-0.5 py-0.5">
+      {items.map((item, idx) => (
+        <div key={idx} className="whitespace-nowrap flex items-center justify-center gap-1">
+          <span>{item}</span>
+          {idx < items.length - 1 && (
+            <span className="font-bold text-slate-400 text-[11px]">/</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface ComparisonResultViewProps {
   isStandaloneTab?: boolean;
   onReset?: () => void;
@@ -59,8 +100,63 @@ export default function ComparisonResultView({
 
   const [activeTab, setActiveTab] = useState<"table" | "combinedPdf">("table");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "matched" | "mismatch">("matched");
+  const [autoPrintQuery, setAutoPrintQuery] = useState("");
+  const autoPrintInputRef = useRef<HTMLInputElement>(null);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [printedRows, setPrintedRows] = useState<Set<number>>(new Set());
+  const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("all");
+
+  // Helper to get item's order type (with client fallback)
+  const getOrderTypeForItem = (item: (typeof results)[0]): AmazonOrderType => {
+    if (item.orderType) return item.orderType;
+
+    let totalQty = item.totalQuantity || 0;
+    let asinsCount = item.asinsCount || 0;
+    let skusCount = 1;
+
+    if (item.asin && item.asin !== "N/A") {
+      const rawAsins = item.asin.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
+      asinsCount = new Set(rawAsins).size;
+      if (!totalQty) totalQty = rawAsins.length;
+    }
+
+    if (item.sellerSku && item.sellerSku !== "N/A") {
+      const rawSkus = item.sellerSku.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
+      skusCount = new Set(rawSkus).size;
+      if (rawSkus.length > totalQty) totalQty = rawSkus.length;
+    }
+
+    if (asinsCount > 1) return "multiple_asin";
+    if (skusCount > 1 || totalQty > 1) return "multiple_pieces";
+    return "single_quantity";
+  };
+
+  // Order composition filter counts
+  const orderTypeCounts = useMemo(() => {
+    const counts = {
+      all: 0,
+      single_quantity: 0,
+      multiple_asin: 0,
+      multiple_pieces: 0,
+    };
+    results.forEach((item) => {
+      if (!item.isMatch) return;
+      counts.all++;
+      const type = getOrderTypeForItem(item);
+      counts[type]++;
+    });
+    return counts;
+  }, [results]);
+
+  const orderTypeOptions: SelectOption[] = useMemo(
+    () => [
+      { label: `All Orders (${orderTypeCounts.all})`, value: "all" },
+      { label: `Single Quantity (${orderTypeCounts.single_quantity})`, value: "single_quantity" },
+      { label: `Multiple ASIN (${orderTypeCounts.multiple_asin})`, value: "multiple_asin" },
+      { label: `Multiple Pieces (${orderTypeCounts.multiple_pieces})`, value: "multiple_pieces" },
+    ],
+    [orderTypeCounts]
+  );
 
   // Printer selection state
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
@@ -87,6 +183,7 @@ export default function ComparisonResultView({
   const [limit, setLimit] = useState(10);
 
   const handleReset = () => {
+    setPrintedRows(new Set());
     if (onReset) {
       onReset();
     } else {
@@ -94,26 +191,33 @@ export default function ComparisonResultView({
     }
   };
 
-  // Filter and search results
+  // Filter and search results (Only matched orders are displayed)
   const filteredResults = useMemo(() => {
     return results.filter((item) => {
-      // Status filter
-      if (filterStatus === "matched" && !item.isMatch) return false;
-      if (filterStatus === "mismatch" && item.isMatch) return false;
+      // Exclude mismatched data completely
+      if (!item.isMatch) return false;
+
+      // Filter by order composition type
+      if (orderTypeFilter !== "all") {
+        const type = getOrderTypeForItem(item);
+        if (type !== orderTypeFilter) return false;
+      }
+
+      const activeQuery = (autoPrintQuery || searchQuery).trim().toLowerCase();
 
       // Search query
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase().trim();
+      if (!activeQuery) return true;
       return (
-        item.zplInvoice.toLowerCase().includes(q) ||
-        item.pdfInvoice.toLowerCase().includes(q) ||
-        (item.asin && item.asin.toLowerCase().includes(q)) ||
-        item.orderNumber.toLowerCase().includes(q) ||
-        item.awb.toLowerCase().includes(q) ||
-        item.customer.toLowerCase().includes(q)
+        item.zplInvoice.toLowerCase().includes(activeQuery) ||
+        item.pdfInvoice.toLowerCase().includes(activeQuery) ||
+        (item.asin && item.asin.toLowerCase().includes(activeQuery)) ||
+        (item.sellerSku && item.sellerSku.toLowerCase().includes(activeQuery)) ||
+        item.orderNumber.toLowerCase().includes(activeQuery) ||
+        item.awb.toLowerCase().includes(activeQuery) ||
+        item.customer.toLowerCase().includes(activeQuery)
       );
     });
-  }, [results, filterStatus, searchQuery]);
+  }, [results, searchQuery, autoPrintQuery, orderTypeFilter]);
 
   // Pagination calculations (exact Myntra logic)
   const totalRecords = filteredResults.length;
@@ -176,35 +280,35 @@ export default function ComparisonResultView({
     return images;
   };
 
-
-
-  const handlePrintSelected = async () => {
-    if (selectedRows.size === 0) {
-      toast.error("Please select at least one order to print.");
-      return;
-    }
-
-    const targetResults = results.filter((r) => selectedRows.has(r.index));
-
+  const executePrintForItems = async (targetResults: typeof results) => {
     if (targetResults.length === 0) {
-      toast.error("No orders found to print.");
+      toast.error('No orders found to print.');
       return;
     }
 
-    if (!files?.convertedZplPdfBase64 || !files?.originalPdfBase64) {
-      toast.error("Processed order files are not ready for printing.");
+    let activeFiles = files;
+    if (!activeFiles?.convertedZplPdfBase64 || !activeFiles?.originalPdfBase64) {
+      const recovered = await loadFilesFromIDB();
+      if (recovered?.convertedZplPdfBase64 && recovered?.originalPdfBase64) {
+        useAmazonOrderStore.setState({ files: recovered });
+        activeFiles = recovered;
+      }
+    }
+
+    if (!activeFiles?.convertedZplPdfBase64 || !activeFiles?.originalPdfBase64) {
+      toast.error('Processed order files are not ready for printing.');
       return;
     }
 
     toast.loading(`Preparing 4" x 6" print for ${targetResults.length} order(s)...`, {
-      id: "print-prep",
+      id: 'print-prep',
     });
 
     try {
-      const zplBytes = Uint8Array.from(atob(files.convertedZplPdfBase64), (c) =>
+      const zplBytes = Uint8Array.from(atob(activeFiles.convertedZplPdfBase64), (c) =>
         c.charCodeAt(0)
       );
-      const pdfBytes = Uint8Array.from(atob(files.originalPdfBase64), (c) =>
+      const pdfBytes = Uint8Array.from(atob(activeFiles.originalPdfBase64), (c) =>
         c.charCodeAt(0)
       );
 
@@ -212,22 +316,15 @@ export default function ComparisonResultView({
       const origDoc = await PDFDocument.load(pdfBytes);
       const printDoc = await PDFDocument.create();
 
-      // Target Dimensions: 4 inches width x 6 inches height
-      const TARGET_WIDTH = 4 * 72; // 288 pt
-      const TARGET_HEIGHT = 6 * 72; // 432 pt
-      const WIDTH_MM = 4 * 25.4; // 101.6 mm
-      const HEIGHT_MM = 6 * 25.4; // 152.4 mm
-      const MARGIN = 5;
-      const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
-      const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
+      const TARGET_WIDTH = 4 * 72;
+      const TARGET_HEIGHT = 6 * 72;
 
       const addScaledPage = async (srcPage: any, isZpl = false) => {
         const embedded = await printDoc.embedPage(srcPage);
         const { width: srcW, height: srcH } = embedded;
 
         if (isZpl) {
-          // Adjust top spacing for ZPL barcode label so the top barcode has clean breathing room
-          const TOP_SPACING = 25; // 25 pt (~8.8 mm) top margin
+          const TOP_SPACING = 25;
           const BOTTOM_SPACING = 10;
           const SIDE_SPACING = 8;
 
@@ -238,10 +335,8 @@ export default function ComparisonResultView({
           const finalW = srcW * scale;
           const finalH = srcH * scale;
 
-          // Shift slightly right to perfectly balance left and right margins (centers visual content)
-          const X_OFFSET_ZPL = 5.5;
-          const x = (TARGET_WIDTH - finalW) / 2 + X_OFFSET_ZPL;
-          // In PDF coordinates (0,0 is bottom-left), distance from top edge is TOP_SPACING
+          // Perfectly centered horizontally (equal left & right margins)
+          const x = (TARGET_WIDTH - finalW) / 2;
           const y = TARGET_HEIGHT - TOP_SPACING - finalH;
 
           const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
@@ -255,9 +350,8 @@ export default function ComparisonResultView({
           const finalW = srcW * scale;
           const finalH = srcH * scale;
 
-          // Shift slightly right to perfectly balance left and right margins of the invoice
-          const X_OFFSET_INVOICE = 4.5;
-          const x = (TARGET_WIDTH - finalW) / 2 + X_OFFSET_INVOICE;
+          // Perfectly centered horizontally (equal left & right margins)
+          const x = (TARGET_WIDTH - finalW) / 2;
           const y = (TARGET_HEIGHT - finalH) / 2;
 
           const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
@@ -266,7 +360,6 @@ export default function ComparisonResultView({
       };
 
       for (const item of targetResults) {
-        // 1. Tax Invoice first
         if (item.pdfPages && item.pdfPages.length > 0) {
           for (const pageNum of item.pdfPages) {
             const idx = pageNum - 1;
@@ -275,41 +368,22 @@ export default function ComparisonResultView({
             }
           }
         }
-        // 2. ZPL / JPL barcode label second
         if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
           await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
         }
       }
 
       if (printDoc.getPageCount() === 0) {
-        toast.error("Selected orders have no valid pages to print.", { id: "print-prep" });
+        toast.error('Selected orders have no valid pages to print.', { id: 'print-prep' });
         return;
       }
 
-      const finalBytes = await printDoc.save();
-
-      // Convert finalBytes to base64 for the Chrome extension
-      let binary = "";
-      const len = finalBytes.byteLength;
-      const CHUNK_SIZE = 8192;
-      for (let i = 0; i < len; i += CHUNK_SIZE) {
-        const chunk = finalBytes.subarray(i, i + CHUNK_SIZE);
-        binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
-      }
-      const pdfBase64 = btoa(binary);
-
       let printedSuccessfully = false;
-      let extError = "";
-      let helperError = "";
+      let extError = '';
 
-      // ============================================================
-      // STRATEGY 1: Chrome Extension ("cmegfllojibhfipdgamnfefilfokeooh")
-      // Direct in-browser silent printing — works seamlessly on Vercel & Local
-      // ============================================================
       try {
         const extCheck = await chromeExtensionPrintService.checkExtension();
         if (extCheck.ok) {
-          console.log("Chrome print extension detected:", extCheck.response);
           if (extCheck.response?.silentPrinting === false) {
             toast.error(
               "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
@@ -322,11 +396,11 @@ export default function ComparisonResultView({
             setAvailablePrinters(extPrinters);
           }
 
-          const lastSavedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+          const lastSavedPrinter = typeof window !== 'undefined' ? localStorage.getItem('lastUsedPrinter') : null;
           const targetPrinter = selectedPrinter || resolveTargetPrinter(extPrinters) || lastSavedPrinter;
 
           if (!targetPrinter || extPrinters.length === 0) {
-            const fallbackName = targetPrinter || "Printer";
+            const fallbackName = targetPrinter || 'Printer';
             throw new Error(`Print failed: Printer ${fallbackName} is disconnected or offline`);
           }
 
@@ -335,8 +409,8 @@ export default function ComparisonResultView({
           }
 
           setSelectedPrinter(targetPrinter);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("lastUsedPrinter", targetPrinter);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastUsedPrinter', targetPrinter);
           }
 
           const totalPages = printDoc.getPageCount();
@@ -344,7 +418,7 @@ export default function ComparisonResultView({
 
           for (let i = 0; i < totalPages; i += BATCH_SIZE) {
             const endIdx = Math.min(i + BATCH_SIZE, totalPages);
-            toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${targetPrinter}...`, { id: "print-prep" });
+            toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${targetPrinter}...`, { id: 'print-prep' });
 
             const chunkDoc = await PDFDocument.create();
             const pageIndices = Array.from({ length: endIdx - i }, (_, idx) => i + idx);
@@ -361,42 +435,133 @@ export default function ComparisonResultView({
 
           toast.success(
             `Sent ${totalPages} page(s) (4" x 6") to ${targetPrinter} (Queued in Print Spooler)!`,
-            { id: "print-prep" }
+            { id: 'print-prep' }
           );
           printedSuccessfully = true;
+          setPrintedRows((prev) => {
+            const next = new Set(prev);
+            targetResults.forEach((r) => next.add(r.index));
+            return next;
+          });
         } else {
-          extError = extCheck.error || "Extension not responding";
-          console.warn("Chrome print extension check failed:", extError);
+          extError = extCheck.error || 'Extension not responding';
+          console.warn('Chrome print extension check failed:', extError);
         }
       } catch (extErr: any) {
         extError = extErr?.message || String(extErr);
-        console.warn("Chrome extension print failed:", extErr);
+        console.warn('Chrome extension print failed:', extErr);
       }
 
-
-
-      // ============================================================
-      // Failure notification (NO browser print popup is opened)
-      // ============================================================
       if (!printedSuccessfully) {
-        console.error("Silent Print Diagnostics:", { extError });
         toast.error(
-          `Direct print failed: ${extError || "Extension not responding"}`,
+          `Direct print failed: ${extError || 'Extension not responding'}`,
           {
-            id: "print-prep",
+            id: 'print-prep',
             duration: 10000,
             action: {
-              label: "Setup PrintBridge",
-              onClick: () => window.open("/printbridge", "_blank"),
+              label: 'Setup PrintBridge',
+              onClick: () => window.open('/printbridge', '_blank'),
             },
           }
         );
       }
     } catch (err: any) {
-      console.error("Print error:", err);
-      toast.error(err?.message || "Failed to prepare print.", {
-        id: "print-prep",
+      console.error('Print error:', err);
+      toast.error(err?.message || 'Failed to prepare print.', {
+        id: 'print-prep',
       });
+    }
+  };
+
+  const handlePrintSelected = async () => {
+    if (selectedRows.size === 0) {
+      toast.error('Please select at least one order to print.');
+      return;
+    }
+
+    const targetResults = results.filter((r) => selectedRows.has(r.index));
+    await executePrintForItems(targetResults);
+  };
+
+  const handleGeneratePicklist = () => {
+    // If specific rows are selected, use selected rows; otherwise fallback to ALL matched orders
+    const targetSet =
+      selectedRows.size > 0
+        ? selectedRows
+        : new Set(filteredResults.map((item) => item.index));
+
+    if (targetSet.size === 0) {
+      toast.error('No matched orders available to generate a picklist.');
+      return;
+    }
+
+    const picklist = generateAmazonPicklist(results, targetSet);
+    downloadAmazonPicklistPDF(picklist);
+
+    if (selectedRows.size > 0) {
+      toast.success(`Generated picklist for ${selectedRows.size} selected order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`);
+    } else {
+      toast.success(`Generated picklist for ALL ${targetSet.size} matched order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`);
+    }
+  };
+
+  const handleAutoPrintSearch = async (query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return;
+
+    // Immediately select all written text when user leaves writing / submits
+    autoPrintInputRef.current?.focus();
+    autoPrintInputRef.current?.select();
+
+    const matchingItems = results.filter((item) => {
+      const asinMatch = item.asin && item.asin.toLowerCase() === q;
+      const skuMatch = item.sellerSku && item.sellerSku.toLowerCase() === q;
+      const orderMatch = item.orderNumber && item.orderNumber.toLowerCase() === q;
+      const awbMatch = item.awb && item.awb.toLowerCase() === q;
+      const pdfMatch = item.pdfInvoice && item.pdfInvoice.toLowerCase() === q;
+      const zplMatch = item.zplInvoice && item.zplInvoice.toLowerCase() === q;
+
+      const partialOrder = q.length >= 6 && item.orderNumber && item.orderNumber.toLowerCase().includes(q);
+      const partialAwb = q.length >= 6 && item.awb && item.awb.toLowerCase().includes(q);
+      const partialAsin = q.length >= 6 && item.asin && item.asin.toLowerCase().includes(q);
+      const partialSku = q.length >= 3 && item.sellerSku && item.sellerSku.toLowerCase().includes(q);
+
+      return asinMatch || skuMatch || orderMatch || awbMatch || pdfMatch || zplMatch || partialOrder || partialAwb || partialAsin || partialSku;
+    });
+
+    if (matchingItems.length > 0) {
+      const unprintedItems = matchingItems.filter((item) => !printedRows.has(item.index));
+      let targetItem: typeof results[0];
+      let seqNotice = "";
+
+      if (unprintedItems.length > 0) {
+        targetItem = unprintedItems[0];
+        const step = matchingItems.length - unprintedItems.length + 1;
+        if (matchingItems.length > 1) {
+          seqNotice = `Order ${step} of ${matchingItems.length}`;
+        }
+      } else {
+        // All matching items for this query have been printed once -> cycle restart
+        targetItem = matchingItems[0];
+        if (matchingItems.length > 1) {
+          seqNotice = `Cycle restart: Order 1 of ${matchingItems.length}`;
+          setPrintedRows((prev) => {
+            const next = new Set(prev);
+            matchingItems.forEach((m) => next.delete(m.index));
+            return next;
+          });
+        }
+      }
+
+      await executePrintForItems([targetItem]);
+
+      if (seqNotice) {
+        toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
+          duration: 4000,
+        });
+      }
+    } else {
+      toast.error(`No matching order found for "${query}"`);
     }
   };
 
@@ -452,12 +617,11 @@ export default function ComparisonResultView({
         {/* =================================================== */}
         {/* STATS CARDS */}
         {/* =================================================== */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-6">
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-6">
           {/* Card 1: Total ZPL */}
           <article
             onClick={() => {
               setActiveTab("table");
-              setFilterStatus("all");
               setPage(1);
             }}
             className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
@@ -481,7 +645,6 @@ export default function ComparisonResultView({
           <article
             onClick={() => {
               setActiveTab("table");
-              setFilterStatus("all");
               setPage(1);
             }}
             className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
@@ -505,13 +668,12 @@ export default function ComparisonResultView({
           <article
             onClick={() => {
               setActiveTab("table");
-              setFilterStatus("matched");
               setPage(1);
             }}
             className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
           >
             <p className="text-xs sm:text-sm font-medium text-slate-500">
-              Matched Invoices
+              Matched Orders
             </p>
 
             <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
@@ -524,70 +686,82 @@ export default function ComparisonResultView({
               </span>
             </div>
           </article>
-
-          {/* Card 4: Mismatches */}
-          <article
-            onClick={() => {
-              setActiveTab("table");
-              setFilterStatus("mismatch");
-              setPage(1);
-            }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-          >
-            <p className="text-xs sm:text-sm font-medium text-slate-500">
-              Mismatches
-            </p>
-
-            <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
-                {summary.mismatchCount}
-              </h3>
-
-              <span
-                className={`rounded px-2 py-1 text-xs font-bold ${
-                  summary.mismatchCount === 0
-                    ? "bg-slate-100 text-slate-700"
-                    : "bg-red-100 text-red-700"
-                }`}
-              >
-                {summary.mismatchCount === 0 ? "0" : `-${summary.mismatchCount}`}
-              </span>
-            </div>
-          </article>
         </div>
       </div>
 
       {/* ===================================================== */}
-      {/* TABS */}
+      {/* TABS & INSTANT AUTO-PRINT SEARCH BAR */}
       {/* ===================================================== */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 border-b border-border pb-3">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("table");
-            setFilterStatus("matched");
-            setPage(1);
-          }}
-          className={`inline-flex h-12 sm:h-14 w-full sm:w-64 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
-            activeTab === "table"
-              ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-              : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-          }`}
-        >
-          Comparison Table ({results.length})
-        </button>
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("table");
+              setPage(1);
+            }}
+            className={`inline-flex h-12 sm:h-14 w-full sm:w-64 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+              activeTab === "table"
+                ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
+                : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+            }`}
+          >
+            Matched Orders ({filteredResults.length})
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("combinedPdf")}
-          className={`inline-flex h-12 sm:h-14 w-full sm:w-64 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
-            activeTab === "combinedPdf"
-              ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-              : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-          }`}
-        >
-          Combined Matched PDF
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("combinedPdf")}
+            className={`inline-flex h-12 sm:h-14 w-full sm:w-64 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+              activeTab === "combinedPdf"
+                ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
+                : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+            }`}
+          >
+            Combined Matched PDF
+          </button>
+        </div>
+
+        {/* Rightside Corner: Instant Auto-Print Search Bar */}
+        <div className="relative w-full md:w-[480px] lg:w-[560px]">
+          <Zap className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B88728] animate-pulse" />
+          <input
+            ref={autoPrintInputRef}
+            type="text"
+            placeholder="Print with ASIN, Order ID and AWB Direct with Pressing Enter"
+            value={autoPrintQuery}
+            onChange={(e) => setAutoPrintQuery(e.target.value)}
+            onFocus={(e) => e.target.select()}
+            onClick={(e) => e.currentTarget.select()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                autoPrintInputRef.current?.select();
+                handleAutoPrintSearch(autoPrintQuery);
+              }
+            }}
+            className="h-12 sm:h-14 w-full border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#0A0E1A] pl-10 pr-10 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 placeholder:font-normal outline-none transition focus:ring-2 focus:ring-[#E8C16D]"
+          />
+          {autoPrintQuery ? (
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setAutoPrintQuery("");
+                setTimeout(() => {
+                  autoPrintInputRef.current?.focus();
+                }, 10);
+              }}
+              onClick={() => {
+                setAutoPrintQuery("");
+                autoPrintInputRef.current?.focus();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {/* ===================================================== */}
@@ -612,59 +786,51 @@ export default function ComparisonResultView({
               />
             </div>
 
-            {/* Status Filter Buttons */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3">
+            {/* Action Buttons & Filters */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Order Composition Filter Select Dropdown */}
+              <div className="w-full sm:w-60">
+                <ReactSelect
+                  options={orderTypeOptions}
+                  value={
+                    orderTypeOptions.find((opt) => opt.value === orderTypeFilter) ??
+                    orderTypeOptions[0]
+                  }
+                  onChange={(opt) => {
+                    if (opt?.value) {
+                      setOrderTypeFilter(opt.value as AmazonOrderTypeFilter);
+                      setPage(1);
+                    }
+                  }}
+                  height={56}
+                  borderColor="#0A0E1A"
+                  backgroundColor="#0A0E1A"
+                  textColor="#E8C16D"
+                  placeholderColor="#E8C16D"
+                  menuBackgroundColor="#0A0E1A"
+                  optionHoverColor="#161D2E"
+                  optionSelectedColor="#E8C16D"
+                  optionSelectedTextColor="#0A0E1A"
+                />
+              </div>
+
               <button
                 type="button"
-                onClick={() => {
-                  setFilterStatus("all");
-                  setPage(1);
-                }}
-                className={`inline-flex h-11 sm:h-14 w-full sm:w-36 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                  filterStatus === "all"
-                    ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-                    : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-                }`}
+                onClick={handleGeneratePicklist}
+                className="inline-flex h-11 sm:h-14 w-full sm:w-52 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
               >
-                All ({results.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilterStatus("matched");
-                  setPage(1);
-                }}
-                className={`inline-flex h-11 sm:h-14 w-full sm:w-36 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                  filterStatus === "matched"
-                    ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-                    : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-                }`}
-              >
-                Matched ({summary.matchedCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilterStatus("mismatch");
-                  setPage(1);
-                }}
-                className={`inline-flex h-11 sm:h-14 w-full sm:w-36 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                  filterStatus === "mismatch"
-                    ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-                    : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-                }`}
-              >
-                Mismatch ({summary.mismatchCount})
+                <FileText className="h-4 w-4" />
+                Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${filteredResults.length})`}
               </button>
 
               <button
                 type="button"
                 disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
-                className={`col-span-2 sm:col-span-1 inline-flex h-11 sm:h-14 w-full sm:w-36 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                className={`inline-flex h-11 sm:h-14 w-full sm:w-44 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   selectedRows.size > 0
                     ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
-                    : "cursor-not-allowed border-border/50 bg-[#0A0E1A]/60 text-[#E8C16D]/40 opacity-50"
+                    : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"
                 }`}
               >
                 <Printer className="h-4 w-4" />
@@ -719,51 +885,45 @@ export default function ComparisonResultView({
                       </span>
                     </label>
 
-                    {item.isMatch ? (
-                      <span className="rounded-md bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-600 dark:text-green-400">
-                        Matched
-                      </span>
-                    ) : (
-                      <span className="rounded-md bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
-                        Mismatch
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {printedRows.has(item.index) && (
+                        <span className="rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Printed
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Card Detail Grid */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    {/* PDF Invoice */}
-                    <div className="rounded-lg bg-muted/40 p-2 space-y-0.5">
+                    {/* Invoices */}
+                    <div className="col-span-2 rounded-lg bg-muted/40 p-2 space-y-0.5">
                       <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
-                        PDF Invoice
+                        Invoice
                       </span>
                       {item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
                         <span className="font-semibold text-blue-600 dark:text-blue-400 truncate block">
                           {item.pdfInvoice}
                         </span>
-                      ) : (
-                        <span className="italic text-muted-foreground text-[11px] block">
-                          Not Found
-                        </span>
-                      )}
-                    </div>
-
-                    {/* ZPL Invoice */}
-                    <div className="rounded-lg bg-muted/40 p-2 space-y-0.5">
-                      <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
-                        ZPL Invoice
-                      </span>
-                      {item.zplInvoice &&
-                      item.zplInvoice !== "Not Found in ZPL" &&
-                      item.zplInvoice !== "N/A" ? (
-                        <span className="font-semibold text-[#B88728] dark:text-[#E8C16D] truncate block">
+                      ) : item.zplInvoice &&
+                        item.zplInvoice !== "Not Found in ZPL" &&
+                        item.zplInvoice !== "N/A" ? (
+                        <span className="font-semibold text-blue-600 dark:text-blue-400 truncate block">
                           {item.zplInvoice}
                         </span>
                       ) : (
                         <span className="italic text-muted-foreground text-[11px] block">
-                          Not Found
+                          N/A
                         </span>
                       )}
+                    </div>
+
+                    {/* Seller SKU */}
+                    <div className="rounded-lg bg-muted/40 p-2 space-y-0.5">
+                      <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
+                        Seller SKU
+                      </span>
+                      {renderItemListCell(item.sellerSku)}
                     </div>
 
                     {/* ASIN */}
@@ -771,15 +931,7 @@ export default function ComparisonResultView({
                       <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
                         ASIN
                       </span>
-                      {item.asin && item.asin !== "N/A" ? (
-                        <span className="font-mono font-semibold text-purple-600 dark:text-purple-400 truncate block">
-                          {item.asin}
-                        </span>
-                      ) : (
-                        <span className="italic text-muted-foreground text-[11px] block">
-                          N/A
-                        </span>
-                      )}
+                      {renderItemListCell(item.asin)}
                     </div>
 
                     {/* AWB Tracking */}
@@ -823,20 +975,19 @@ export default function ComparisonResultView({
                         />
                       </div>
                     </th>
-                    <th className="w-28 min-w-[110px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Status</th>
-                    <th className="w-40 min-w-[150px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">PDF Invoice</th>
-                    <th className="w-40 min-w-[150px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">ZPL Invoice</th>
-                    <th className="w-36 min-w-[140px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">ASIN</th>
+                    <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Invoices</th>
                     <th className="w-52 min-w-[190px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Amazon Order ID</th>
                     <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">AWB Tracking</th>
+                    <th className="w-36 min-w-[140px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">ASIN</th>
+                    <th className="w-44 min-w-[170px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Seller SKU</th>
                     <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-xs sm:text-sm">
                   {paginatedResults.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-muted-foreground">
-                        No orders match your current search or filter.
+                      <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                        No orders match your current search.
                       </td>
                     </tr>
                   ) : (
@@ -855,59 +1006,39 @@ export default function ComparisonResultView({
                             />
                           </div>
                         </td>
-                        <td className="w-28 min-w-[110px] px-4 py-3 text-center whitespace-nowrap">
-                          {item.isMatch ? (
-                            <span className="inline-block rounded-md bg-green-500/10 px-2.5 py-1 text-xs font-semibold text-green-500">
-                              Matched
-                            </span>
-                          ) : (
-                            <span className="inline-block rounded-md bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-500">
-                              Mismatch
-                            </span>
-                          )}
-                        </td>
-                        <td className="w-40 min-w-[150px] px-4 py-3 text-center whitespace-nowrap">
+                        <td className="w-44 min-w-[160px] px-4 py-3 text-center font-medium whitespace-nowrap">
                           {item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
-                            <span className="inline-block rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-500">
-                              {item.pdfInvoice}
-                            </span>
+                            item.pdfInvoice
+                          ) : item.zplInvoice &&
+                            item.zplInvoice !== "Not Found in ZPL" &&
+                            item.zplInvoice !== "N/A" ? (
+                            item.zplInvoice
                           ) : (
-                            <span className="italic text-xs text-muted-foreground">
-                              Not Found in PDF
-                            </span>
-                          )}
-                        </td>
-                        <td className="w-40 min-w-[150px] px-4 py-3 text-center whitespace-nowrap">
-                          {item.zplInvoice &&
-                          item.zplInvoice !== "Not Found in ZPL" &&
-                          item.zplInvoice !== "N/A" ? (
-                            <span className="inline-block rounded-md bg-[#E8C16D]/15 px-2.5 py-1 text-xs font-semibold text-[#E8C16D]">
-                              {item.zplInvoice}
-                            </span>
-                          ) : (
-                            <span className="italic text-xs text-muted-foreground">
-                              Not Found in ZPL
-                            </span>
-                          )}
-                        </td>
-                        <td className="w-36 min-w-[140px] px-4 py-3 text-center font-mono text-xs whitespace-nowrap">
-                          {item.asin && item.asin !== "N/A" ? (
-                            <span className="inline-block rounded-md bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-600 dark:text-purple-400">
-                              {item.asin}
-                            </span>
-                          ) : (
-                            <span className="italic text-xs text-muted-foreground">
+                            <span className="italic text-muted-foreground">
                               N/A
                             </span>
                           )}
                         </td>
                         <td className="w-52 min-w-[190px] px-4 py-3 text-center font-medium whitespace-nowrap">
-                          {item.orderNumber}
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span>{item.orderNumber}</span>
+                            {printedRows.has(item.index) && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                                <CheckCircle2 className="h-3 w-3" /> Printed
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="w-44 min-w-[160px] px-4 py-3 text-center whitespace-nowrap">
+                        <td className="w-44 min-w-[160px] px-4 py-3 text-center font-medium whitespace-nowrap">
                           {item.awb}
                         </td>
-                        <td className="w-44 min-w-[160px] px-4 py-3 text-center whitespace-nowrap">
+                        <td className="w-36 min-w-[140px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                          {renderItemListCell(item.asin)}
+                        </td>
+                        <td className="w-44 min-w-[170px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                          {renderItemListCell(item.sellerSku)}
+                        </td>
+                        <td className="w-44 min-w-[160px] px-4 py-3 text-center font-medium whitespace-nowrap">
                           {cleanCustomerName(item.customer)}
                         </td>
                       </tr>

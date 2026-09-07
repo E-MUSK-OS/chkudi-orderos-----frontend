@@ -27,4 +27,5 @@ export const dmSans = localFont({
   ],
   variable: "--font-dm-sans",
   display: "swap",
+  preload: false,
 });

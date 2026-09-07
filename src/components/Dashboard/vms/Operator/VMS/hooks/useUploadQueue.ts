@@ -73,7 +73,7 @@ export const useUploadQueue = () => {
       }
 
       const formData = new FormData();
-      formData.append("video", item.blob, `${item.trackingId}.webm`);
+      formData.append("video", item.blob, `${item.trackingId}.mp4`);
       formData.append("trackingId", item.trackingId);
       if (userId) formData.append("userId", userId);
       formData.append("operatorId", operatorId);

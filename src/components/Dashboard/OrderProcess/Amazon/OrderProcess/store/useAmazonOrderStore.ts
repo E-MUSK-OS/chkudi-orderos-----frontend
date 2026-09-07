@@ -40,6 +40,62 @@ interface AmazonOrderState {
 
 const SESSION_STORAGE_KEY = "amazon_order_process_data_v1";
 
+const IDB_NAME = "chkudi_orderos_idb";
+const IDB_STORE = "amazon_files";
+const IDB_KEY = "latest_files";
+
+function openIDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !window.indexedDB) {
+      return reject("IndexedDB not available");
+    }
+    const request = indexedDB.open(IDB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function saveFilesToIDB(files: AmazonProcessFiles | null): Promise<void> {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    const store = tx.objectStore(IDB_STORE);
+    if (files) {
+      store.put(files, IDB_KEY);
+    } else {
+      store.delete(IDB_KEY);
+    }
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    console.warn("Failed to save files to IndexedDB:", e);
+  }
+}
+
+export async function loadFilesFromIDB(): Promise<AmazonProcessFiles | null> {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const store = tx.objectStore(IDB_STORE);
+    const request = store.get(IDB_KEY);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.warn("Failed to load files from IndexedDB:", e);
+    return null;
+  }
+}
+
 // Helper to convert base64 string to a Blob URL
 const base64ToBlobUrl = (base64Data: string, mimeType = "application/pdf"): string => {
   try {
@@ -101,7 +157,12 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       };
     }),
 
-  setProcessData: (data) => {
+  setProcessData: async (data) => {
+    // Save files base64 payload to IndexedDB for reliable persistence across 5MB quota limits
+    if (data.files) {
+      await saveFilesToIDB(data.files);
+    }
+
     // Generate blob URLs
     let zplUrl = null;
     let combUrl = null;
@@ -157,28 +218,58 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       const data: AmazonProcessResponse = JSON.parse(stored);
       if (!data || !data.summary || !data.results) return false;
 
+      const currentFiles = data.files || get().files;
+
       let zplUrl = null;
       let combUrl = null;
       let origUrl = null;
 
-      if (data.files?.convertedZplPdfBase64) {
-        zplUrl = base64ToBlobUrl(data.files.convertedZplPdfBase64);
+      if (currentFiles?.convertedZplPdfBase64) {
+        zplUrl = base64ToBlobUrl(currentFiles.convertedZplPdfBase64);
       }
-      if (data.files?.combinedPdfBase64) {
-        combUrl = base64ToBlobUrl(data.files.combinedPdfBase64);
+      if (currentFiles?.combinedPdfBase64) {
+        combUrl = base64ToBlobUrl(currentFiles.combinedPdfBase64);
       }
-      if (data.files?.originalPdfBase64) {
-        origUrl = base64ToBlobUrl(data.files.originalPdfBase64);
+      if (currentFiles?.originalPdfBase64) {
+        origUrl = base64ToBlobUrl(currentFiles.originalPdfBase64);
       }
 
       set({
         summary: data.summary,
         results: data.results,
-        files: data.files,
+        files: currentFiles,
         convertedZplPdfUrl: zplUrl,
         combinedPdfUrl: combUrl,
         originalPdfUrl: origUrl,
       });
+
+      // Asynchronously restore files from IndexedDB if not present in sessionStorage
+      if (!currentFiles) {
+        loadFilesFromIDB().then((idbFiles) => {
+          if (idbFiles) {
+            let idbZplUrl = null;
+            let idbCombUrl = null;
+            let idbOrigUrl = null;
+
+            if (idbFiles.convertedZplPdfBase64) {
+              idbZplUrl = base64ToBlobUrl(idbFiles.convertedZplPdfBase64);
+            }
+            if (idbFiles.combinedPdfBase64) {
+              idbCombUrl = base64ToBlobUrl(idbFiles.combinedPdfBase64);
+            }
+            if (idbFiles.originalPdfBase64) {
+              idbOrigUrl = base64ToBlobUrl(idbFiles.originalPdfBase64);
+            }
+
+            set({
+              files: idbFiles,
+              convertedZplPdfUrl: idbZplUrl,
+              combinedPdfUrl: idbCombUrl,
+              originalPdfUrl: idbOrigUrl,
+            });
+          }
+        });
+      }
 
       return true;
     } catch (e) {
@@ -198,6 +289,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
       }
     } catch (e) {}
+
+    saveFilesToIDB(null);
 
     set({
       isProcessing: false,
@@ -237,19 +330,29 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     const { results, summary } = get();
     if (!results || results.length === 0) return;
 
-    const exportData = results.map((r) => ({
-      "Sr No": r.index,
-      "Match Status": r.isMatch ? "MATCHED" : "MISMATCH",
-      "ZPL Invoice #": r.zplInvoice,
-      "PDF Invoice #": r.pdfInvoice,
-      "Amazon Order Number": r.orderNumber,
-      "AWB / Tracking Number": r.awb,
-      "Customer Name": cleanCustomerName(r.customer),
-      "Invoice Amount": r.amount,
-      "Invoice Date": r.date,
-      "PDF Page(s)": r.pdfPages.join(", ") || "N/A",
-      "ZPL Label Page": r.zplPage,
-    }));
+    const exportData = results.map((r) => {
+      const invoiceVal =
+        r.pdfInvoice && r.pdfInvoice !== "Not Found in PDF"
+          ? r.pdfInvoice
+          : r.zplInvoice && r.zplInvoice !== "Not Found in ZPL" && r.zplInvoice !== "N/A"
+          ? r.zplInvoice
+          : "N/A";
+
+      return {
+        "Sr No": r.index,
+        "Match Status": r.isMatch ? "MATCHED" : "MISMATCH",
+        "Invoice #": invoiceVal,
+        "Amazon Order Number": r.orderNumber,
+        "AWB / Tracking Number": r.awb,
+        "ASIN": r.asin || "N/A",
+        "Seller SKU": r.sellerSku || "N/A",
+        "Customer Name": cleanCustomerName(r.customer),
+        "Invoice Amount": r.amount,
+        "Invoice Date": r.date,
+        "PDF Page(s)": r.pdfPages.join(", ") || "N/A",
+        "ZPL Label Page": r.zplPage,
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
@@ -259,10 +362,11 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     const colWidths = [
       { wch: 8 },  // Sr No
       { wch: 14 }, // Match Status
-      { wch: 20 }, // ZPL Invoice
-      { wch: 20 }, // PDF Invoice
+      { wch: 20 }, // Invoice #
       { wch: 24 }, // Order Number
       { wch: 20 }, // AWB
+      { wch: 16 }, // ASIN
+      { wch: 22 }, // Seller SKU
       { wch: 24 }, // Customer
       { wch: 14 }, // Amount
       { wch: 14 }, // Date

@@ -428,9 +428,8 @@ export default function OrderProcess() {
               const finalW = srcW * scale;
               const finalH = srcH * scale;
 
-              // Shift slightly right to perfectly balance left and right margins (centers visual content)
-              const X_OFFSET_ZPL = 5.5;
-              const x = (TARGET_WIDTH - finalW) / 2 + X_OFFSET_ZPL;
+              // Perfectly centered horizontally (equal left & right margins)
+              const x = (TARGET_WIDTH - finalW) / 2;
               // In PDF coordinates (0,0 is bottom-left), distance from top edge is TOP_SPACING
               const y = TARGET_HEIGHT - TOP_SPACING - finalH;
 
@@ -445,9 +444,8 @@ export default function OrderProcess() {
               const finalW = srcW * scale;
               const finalH = srcH * scale;
 
-              // Shift slightly right to perfectly balance left and right margins of the invoice
-              const X_OFFSET_INVOICE = 4.5;
-              const x = (TARGET_WIDTH - finalW) / 2 + X_OFFSET_INVOICE;
+              // Perfectly centered horizontally (equal left & right margins)
+              const x = (TARGET_WIDTH - finalW) / 2;
               const y = (TARGET_HEIGHT - finalH) / 2;
 
               const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
@@ -513,7 +511,7 @@ export default function OrderProcess() {
 
       clearInterval(progressInterval);
       setProgress(100, "5. Processing Complete!");
-      setProcessData(processResponse);
+      await setProcessData(processResponse);
 
       toast.success(
         `Successfully processed ${processResponse.summary.totalZplLabels} labels & ${processResponse.summary.totalPdfOrders} invoices (${processResponse.summary.matchPercentage}% matched)!`

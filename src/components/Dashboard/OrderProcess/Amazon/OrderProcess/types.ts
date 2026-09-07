@@ -1,9 +1,12 @@
+export type AmazonOrderType = "single_quantity" | "multiple_asin" | "multiple_pieces";
+
 export interface AmazonComparisonResult {
   index: number;
   isMatch: boolean;
   zplInvoice: string;
   pdfInvoice: string;
   asin?: string;
+  sellerSku?: string;
   orderNumber: string;
   awb: string;
   customer: string;
@@ -11,6 +14,9 @@ export interface AmazonComparisonResult {
   date: string;
   pdfPages: number[];
   zplPage: number;
+  orderType?: AmazonOrderType;
+  totalQuantity?: number;
+  asinsCount?: number;
 }
 
 export interface AmazonOrderSummary {

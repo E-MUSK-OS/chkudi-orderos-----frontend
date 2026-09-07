@@ -211,8 +211,30 @@ const VMSList = () => {
   // Single Video / Item Download
   // ===========================
 
-  const handleSingleDownload = (item: VMSItem) => {
-    exportToExcel([item], `${item.trackingId}.xlsx`);
+  const handleSingleDownload = async (item: VMSItem) => {
+    if (item.videoUrl) {
+      try {
+        const response = await fetch(getFullUrl(item.videoUrl)!, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${item.trackingId}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Download failed:", error);
+        exportToExcel([item], `${item.trackingId}.xlsx`);
+      }
+    } else {
+      exportToExcel([item], `${item.trackingId}.xlsx`);
+    }
   };
 
   // ===========================

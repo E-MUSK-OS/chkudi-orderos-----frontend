@@ -9,6 +9,7 @@ interface ZplLabelData {
   index: number;
   invoiceNumber: string;
   asin?: string;
+  sellerSku?: string;
   awb: string;
   customer: string;
   rawZpl: string;
@@ -18,6 +19,7 @@ interface PdfOrderData {
   orderNumber: string;
   sellerInvoice: string;
   asin?: string;
+  sellerSku?: string;
   allInvoices: string[];
   pages: number[];
   customer: string;
@@ -31,6 +33,7 @@ interface ComparisonResult {
   zplInvoice: string;
   pdfInvoice: string;
   asin?: string;
+  sellerSku?: string;
   orderNumber: string;
   awb: string;
   customer: string;
@@ -38,6 +41,9 @@ interface ComparisonResult {
   date: string;
   pdfPages: number[];
   zplPage: number;
+  orderType?: "single_quantity" | "multiple_asin" | "multiple_pieces";
+  totalQuantity?: number;
+  asinsCount?: number;
 }
 
 /**
@@ -367,6 +373,205 @@ function extractAsin(text: string): string {
 }
 
 /**
+ * Helper to clean and format extracted Seller SKU.
+ * If SKU and ASIN are combined like "(Men-Track-Pant-5240-White-36_White | B0DXVSJQF1 )",
+ * abstract the first part before "|" as the SKU.
+ */
+function cleanExtractedSku(raw: string): string {
+  if (!raw) return "";
+  let sku = raw.trim();
+
+  // If candidate is a combined string containing "|", take the first part before "|"
+  if (sku.includes("|")) {
+    sku = sku.split("|")[0].trim();
+  }
+
+  // Strip surrounding quotes or trailing colons/dots
+  sku = sku.replace(/^[\\"']+|[\\"'.\-:]+$/g, "").trim();
+  return sku;
+}
+
+/**
+ * Extract Seller SKU from PDF tax invoice / ZPL text.
+ * Rule: Inside product description, locate the ASIN (e.g. B0...). The Seller SKU is written inside `()` right before the ASIN.
+ * If combined with ASIN via "|", abstract the first part before "|" as the SKU.
+ */
+function extractSellerSku(text: string): string {
+  if (!text) return "";
+
+  // 1. Prefer Product Description section text
+  let targetText = text;
+  const descMatch = text.match(/(?:Description\s+of\s+Goods|Description|Particulars|Item\s+Details|Product\s+Details)[\s\S]*/i);
+  if (descMatch?.[0]) {
+    targetText = descMatch[0];
+  }
+
+  // 2. Find ASINs (e.g. B0GGY92FR8)
+  const asinMatches = Array.from(targetText.matchAll(/\b(B0[A-Z0-9]{8})\b/gi));
+
+  for (const m of asinMatches) {
+    if (m.index !== undefined) {
+      // Get text segment immediately preceding the ASIN (up to 250 characters before)
+      const beforeText = targetText.substring(Math.max(0, m.index - 250), m.index);
+
+      // Find all parenthesized strings (...) in the text before ASIN
+      const parenMatches = Array.from(beforeText.matchAll(/\(([^()]{2,100})\)/g));
+      if (parenMatches.length > 0) {
+        // Take the parenthesized content closest to the ASIN
+        const rawContent = parenMatches[parenMatches.length - 1][1].trim();
+        const cleaned = cleanExtractedSku(rawContent);
+
+        // Ensure candidate is not the ASIN itself, an Order ID, or standard header
+        if (
+          cleaned &&
+          !cleaned.toUpperCase().startsWith("B0") &&
+          !/^\d{3}-\d{7}-\d{7}$/.test(cleaned) &&
+          !/^(TAX|INVOICE|ORIGINAL|DUPLICATE|COPY|SHIPPING|BILLING)$/i.test(cleaned)
+        ) {
+          return cleaned;
+        }
+      }
+    }
+  }
+
+  // Fallback 1: Check if ASIN is formatted as (B0...) and SKU is in parentheses immediately before it
+  // e.g. "(5266_M_Navy) (B0GGY92FR8)" or "(Men-Track-Pant-5240-White-36_White | B0DXVSJQF1 )"
+  const doubleParenMatch = targetText.match(/\(([^()]{2,100})\)\s*\(?\s*B0[A-Z0-9]{8}/i);
+  if (doubleParenMatch?.[1]) {
+    const cleaned = cleanExtractedSku(doubleParenMatch[1]);
+    if (cleaned && !cleaned.toUpperCase().startsWith("B0") && !/^\d{3}-\d{7}-\d{7}$/.test(cleaned)) {
+      return cleaned;
+    }
+  }
+
+  // Fallback 2: Explicit SKU: / MSKU: label if present in description
+  const labelMatch = targetText.match(/(?:Seller\s*SKU|MSKU|Merchant\s*SKU|SKU)\s*[:\-#]?\s*\(?([A-Za-z0-9\-_ |]{2,60})\)?/i);
+  if (labelMatch?.[1]) {
+    const rawFirstLine = labelMatch[1].split(/[\r\n,;]|  +/)[0];
+    const cleaned = cleanExtractedSku(rawFirstLine);
+    if (cleaned && !cleaned.toUpperCase().startsWith("B0") && !/^\d{3}-\d{7}-\d{7}$/.test(cleaned)) {
+      return cleaned;
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Extract ALL ASINs and Seller SKUs for multi-item invoices.
+ */
+function extractAllItemsFromPdfText(text: string): {
+  asins: string[];
+  sellerSkus: string[];
+  asinString: string;
+  sellerSkuString: string;
+} {
+  if (!text) {
+    return { asins: [], sellerSkus: [], asinString: "", sellerSkuString: "" };
+  }
+
+  let targetText = text;
+  const descMatch = text.match(
+    /(?:Description\s+of\s+Goods|Description|Particulars|Item\s+Details|Product\s+Details)[\s\S]*/i
+  );
+  if (descMatch?.[0]) {
+    targetText = descMatch[0];
+  }
+
+  const asinMatches = Array.from(targetText.matchAll(/\b(B0[A-Z0-9]{8})\b/gi));
+
+  const rawAsins: string[] = [];
+  const rawSellerSkus: string[] = [];
+  const seenAsinIndexes = new Set<number>();
+
+  for (const m of asinMatches) {
+    const asinCandidate = m[1].toUpperCase();
+    if (!isValidAsin(asinCandidate)) continue;
+
+    if (m.index !== undefined) {
+      if (seenAsinIndexes.has(m.index)) continue;
+      seenAsinIndexes.add(m.index);
+    }
+
+    let extractedSku = "";
+    if (m.index !== undefined) {
+      const beforeText = targetText.substring(Math.max(0, m.index - 250), m.index);
+      const parenMatches = Array.from(beforeText.matchAll(/\(([^()]{2,100})\)/g));
+      if (parenMatches.length > 0) {
+        const rawContent = parenMatches[parenMatches.length - 1][1].trim();
+        const cleaned = cleanExtractedSku(rawContent);
+        if (
+          cleaned &&
+          !cleaned.toUpperCase().startsWith("B0") &&
+          !/^\d{3}-\d{7}-\d{7}$/.test(cleaned) &&
+          !/^(TAX|INVOICE|ORIGINAL|DUPLICATE|COPY|SHIPPING|BILLING)$/i.test(cleaned)
+        ) {
+          extractedSku = cleaned;
+        }
+      }
+    }
+
+    if (!extractedSku) {
+      const doubleParenMatch = targetText.match(/\(([^()]{2,100})\)\s*\(?\s*B0[A-Z0-9]{8}/i);
+      if (doubleParenMatch?.[1]) {
+        const cleaned = cleanExtractedSku(doubleParenMatch[1]);
+        if (cleaned && !cleaned.toUpperCase().startsWith("B0") && !/^\d{3}-\d{7}-\d{7}$/.test(cleaned)) {
+          extractedSku = cleaned;
+        }
+      }
+    }
+
+    if (!extractedSku) {
+      const labelMatch = targetText.match(/(?:Seller\s*SKU|MSKU|Merchant\s*SKU|SKU)\s*[:\-#]?\s*\(?([A-Za-z0-9\-_ |]{2,60})\)?/i);
+      if (labelMatch?.[1]) {
+        const rawFirstLine = labelMatch[1].split(/[\r\n,;]|  +/)[0];
+        const cleaned = cleanExtractedSku(rawFirstLine);
+        if (cleaned && !cleaned.toUpperCase().startsWith("B0") && !/^\d{3}-\d{7}-\d{7}$/.test(cleaned)) {
+          extractedSku = cleaned;
+        }
+      }
+    }
+
+    rawAsins.push(asinCandidate);
+    rawSellerSkus.push(extractedSku || asinCandidate);
+  }
+
+  // Deduplicate consecutive identical ASIN & SKU pairs resulting from duplicate matches on the same line item
+  const asins: string[] = [];
+  const sellerSkus: string[] = [];
+
+  for (let i = 0; i < rawAsins.length; i++) {
+    const curAsin = rawAsins[i];
+    const curSku = rawSellerSkus[i];
+    const prevAsin = asins[asins.length - 1];
+    const prevSku = sellerSkus[sellerSkus.length - 1];
+
+    if (curAsin === prevAsin && curSku === prevSku) {
+      continue;
+    }
+    asins.push(curAsin);
+    sellerSkus.push(curSku);
+  }
+
+  if (asins.length === 0) {
+    const singleAsin = extractAsin(text);
+    const singleSku = extractSellerSku(text);
+    if (singleAsin) asins.push(singleAsin);
+    if (singleSku) sellerSkus.push(singleSku);
+  }
+
+  const asinString = asins.join("\n");
+  const sellerSkuString = sellerSkus.join("\n");
+
+  return {
+    asins,
+    sellerSkus,
+    asinString,
+    sellerSkuString,
+  };
+}
+
+/**
  * Parse ZPL content into individual label objects.
  *
  * Invoice extraction strategy:
@@ -568,6 +773,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
     // ---------------------------------------------------------
 
     const asin = extractAsin(decoded);
+    const sellerSku = extractSellerSku(decoded);
 
     // ---------------------------------------------------------
     // Logging.
@@ -577,7 +783,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       console.log(
         `[ZPL Parse] Label ${
           labels.length + 1
-        }: Invoice="${invoiceNumber}", ASIN="${asin}", AWB="${awb}"`
+        }: Invoice="${invoiceNumber}", ASIN="${asin}", SKU="${sellerSku}", AWB="${awb}"`
       );
     } else {
       console.log(
@@ -592,6 +798,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       index: labels.length + 1,
       invoiceNumber,
       asin,
+      sellerSku,
       awb,
       customer,
       rawZpl: fullLabel,
@@ -715,6 +922,71 @@ function normalizeInvoice(value: string): string {
 }
 
 /**
+ * Categorize order composition into:
+ * - "single_quantity": Exactly 1 ASIN and 1 piece/quantity total in invoice
+ * - "multiple_asin": Multiple different ASINs in invoice
+ * - "multiple_pieces": Multiple pieces (qty > 1) for the same ASIN
+ */
+function classifyOrderType(
+  text: string,
+  extractedAsins?: string[],
+  extractedSkus?: string[]
+): {
+  orderType: "single_quantity" | "multiple_asin" | "multiple_pieces";
+  totalQuantity: number;
+  asinsCount: number;
+} {
+  if (!text && (!extractedAsins || extractedAsins.length === 0)) {
+    return { orderType: "single_quantity", totalQuantity: 1, asinsCount: 1 };
+  }
+
+  let asinsCount = 1;
+  let skusCount = 1;
+  let totalQty = 1;
+
+  if (extractedAsins && extractedAsins.length > 0) {
+    const uniqueAsins = new Set(extractedAsins);
+    asinsCount = uniqueAsins.size;
+    totalQty = extractedAsins.length;
+  } else {
+    const asinMatches = Array.from(text.matchAll(/\b(B0[A-Z0-9]{8})\b/gi)).map((m) => m[1].toUpperCase());
+    const uniqueAsins = new Set(asinMatches);
+    asinsCount = uniqueAsins.size || 1;
+    if (asinMatches.length > totalQty) totalQty = asinMatches.length;
+  }
+
+  if (extractedSkus && extractedSkus.length > 0) {
+    const uniqueSkus = new Set(extractedSkus);
+    skusCount = uniqueSkus.size;
+    if (extractedSkus.length > totalQty) totalQty = extractedSkus.length;
+  }
+
+  const qtyMatch = text.match(/(?:TOTAL\s*QTY|Quantity|Qty|QTY)\s*[:\-#]?\s*(\d+)/i);
+  if (qtyMatch?.[1]) {
+    const parsed = parseInt(qtyMatch[1], 10);
+    if (!isNaN(parsed) && parsed > 0 && parsed < 500) {
+      totalQty = Math.max(totalQty, parsed);
+    }
+  }
+
+  let orderType: "single_quantity" | "multiple_asin" | "multiple_pieces" = "single_quantity";
+
+  if (asinsCount > 1) {
+    orderType = "multiple_asin";
+  } else if (skusCount > 1 || totalQty > 1 || (extractedSkus && extractedSkus.length > 1)) {
+    orderType = "multiple_pieces";
+  } else {
+    orderType = "single_quantity";
+  }
+
+  return {
+    orderType,
+    totalQuantity: Math.max(totalQty, 1),
+    asinsCount,
+  };
+}
+
+/**
  * Main POST handler.
  */
 /**
@@ -726,8 +998,8 @@ function buildComparisonResponse(
   pagesArray: string[],
   zplFileName = "labels.zpl"
 ) {
-  const invoiceMap = new Map<string, PdfOrderData>();
-  const pdfOrdersList: PdfOrderData[] = [];
+  const invoiceMap = new Map<string, PdfOrderData & { fullText?: string }>();
+  const pdfOrdersList: (PdfOrderData & { fullText?: string })[] = [];
 
   for (let index = 0; index < pagesArray.length; index++) {
     const pageNumber = index + 1;
@@ -744,6 +1016,9 @@ function buildComparisonResponse(
 
     // ASIN / ASI number
     const asin = extractAsin(text);
+
+    // Seller SKU
+    const sellerSku = extractSellerSku(text);
 
     // Amount
     const amountMatch =
@@ -767,15 +1042,17 @@ function buildComparisonResponse(
       customer = cleanCustomerName(billingMatch[1]);
     }
 
-    const orderRecord: PdfOrderData = {
+    const orderRecord = {
       orderNumber,
       sellerInvoice: invoiceNumber,
       asin,
+      sellerSku,
       allInvoices: invoiceNumber ? [invoiceNumber] : [],
       pages: [pageNumber],
       customer,
       amount,
       date,
+      fullText: text,
     };
 
     pdfOrdersList.push(orderRecord);
@@ -785,8 +1062,10 @@ function buildComparisonResponse(
       if (invoiceMap.has(key)) {
         const existing = invoiceMap.get(key)!;
         existing.pages.push(pageNumber);
+        existing.fullText = (existing.fullText || "") + "\n" + text;
         if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
         if (!existing.asin && asin) existing.asin = asin;
+        if (!existing.sellerSku && sellerSku) existing.sellerSku = sellerSku;
         if (!existing.amount && amount) existing.amount = amount;
         if (!existing.date && date) existing.date = date;
         if (!existing.customer && customer) existing.customer = customer;
@@ -806,7 +1085,7 @@ function buildComparisonResponse(
 
   for (let i = 0; i < zplLabels.length; i++) {
     const label = zplLabels[i];
-    let matchedOrder: PdfOrderData | null = null;
+    let matchedOrder: (PdfOrderData & { fullText?: string }) | null = null;
 
     if (label.invoiceNumber) {
       const key = normalizeInvoice(label.invoiceNumber);
@@ -815,12 +1094,24 @@ function buildComparisonResponse(
 
     if (matchedOrder) {
       matchedPdfKeys.add(normalizeInvoice(matchedOrder.sellerInvoice));
+
+      const extractedItems = extractAllItemsFromPdfText(matchedOrder.fullText || "");
+      const classification = classifyOrderType(
+        matchedOrder.fullText || "",
+        extractedItems.asins,
+        extractedItems.sellerSkus
+      );
+
+      const asinVal = extractedItems.asinString || matchedOrder.asin || label.asin || "N/A";
+      const skuVal = extractedItems.sellerSkuString || matchedOrder.sellerSku || label.sellerSku || "N/A";
+
       matchedResults.push({
         index: 0,
         isMatch: true,
         pdfInvoice: matchedOrder.sellerInvoice || label.invoiceNumber,
         zplInvoice: label.invoiceNumber,
-        asin: matchedOrder.asin || label.asin || "N/A",
+        asin: asinVal,
+        sellerSku: skuVal,
         orderNumber: matchedOrder.orderNumber || "N/A",
         awb: label.awb || "N/A",
         customer: matchedOrder.customer || label.customer || "N/A",
@@ -828,6 +1119,9 @@ function buildComparisonResponse(
         date: matchedOrder.date || "N/A",
         pdfPages: matchedOrder.pages || [],
         zplPage: label.index,
+        orderType: classification.orderType,
+        totalQuantity: classification.totalQuantity,
+        asinsCount: classification.asinsCount,
       });
     } else {
       mismatchedZplResults.push({
@@ -836,6 +1130,7 @@ function buildComparisonResponse(
         pdfInvoice: "Not Found in PDF",
         zplInvoice: label.invoiceNumber || "Not Found in ZPL",
         asin: label.asin || "N/A",
+        sellerSku: label.sellerSku || "N/A",
         orderNumber: "N/A",
         awb: label.awb || "N/A",
         customer: label.customer || "N/A",
@@ -856,12 +1151,17 @@ function buildComparisonResponse(
     seenPdfKeys.add(key);
 
     if (!matchedPdfKeys.has(key)) {
+      const extractedItems = extractAllItemsFromPdfText(pdfOrder.fullText || "");
+      const asinVal = extractedItems.asinString || pdfOrder.asin || "N/A";
+      const skuVal = extractedItems.sellerSkuString || pdfOrder.sellerSku || "N/A";
+
       mismatchedPdfResults.push({
         index: 0,
         isMatch: false,
         pdfInvoice: pdfOrder.sellerInvoice || "N/A",
         zplInvoice: "Not Found in ZPL",
-        asin: pdfOrder.asin || "N/A",
+        asin: asinVal,
+        sellerSku: skuVal,
         orderNumber: pdfOrder.orderNumber || "N/A",
         awb: "N/A",
         customer: pdfOrder.customer || "N/A",
