@@ -114,7 +114,7 @@ export default function TroubleshootingRef({ onCopyText }: TroubleshootingRefPro
       {/* Page Footer */}
       <footer className="mt-8 flex flex-wrap items-center justify-between border-t border-border pt-6 text-xs text-muted-foreground">
         <div className="flex items-center gap-4">
-          <span className="font-semibold text-[#0A0E1A] dark:text-white">PrintBridge v0.3.1</span>
+          <span className="font-semibold text-[#0A0E1A] dark:text-white">PrintBridge v1.0.0</span>
           <span>•</span>
           <span>Target: C:\Program Files\PrintBridge</span>
         </div>

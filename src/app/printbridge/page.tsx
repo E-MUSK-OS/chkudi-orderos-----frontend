@@ -256,7 +256,7 @@ export default function PrintBridgePage() {
                   OrderOS PrintBridge
                 </span>
                 <span className="rounded-md bg-[#E8C16D]/20 px-2 py-0.5 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D]">
-                  v0.3.1
+                  v1.0.0
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">

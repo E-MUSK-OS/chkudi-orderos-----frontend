@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, RotateCw } from "lucide-react";
+import { useRef } from "react";
+import { Search, RotateCw, FileSpreadsheet } from "lucide-react";
 
 import Button from "@/components/ui/Button";
 import ReactSelect from "@/components/ui/ReactSelect";
@@ -27,6 +28,9 @@ interface Props {
   brandOptions: Option[];
 
   onRefresh: () => void;
+
+  onImportExcel?: (file: File) => void;
+  isImporting?: boolean;
 }
 
 const statusOptions = [
@@ -61,13 +65,25 @@ export default function ProductToolbar({
   brandOptions,
 
   onRefresh,
-}: Props) {
-  return (
-    <div className="mb-6 flex flex-col gap-4 border border-slate-700 bg-[#0F172A] p-5 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex flex-1 flex-col gap-4 lg:flex-row">
-        {/* Search */}
 
-        <div className="relative w-full lg:max-w-sm">
+  onImportExcel,
+  isImporting = false,
+}: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImportExcel) {
+      onImportExcel(file);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="mb-6 flex flex-col gap-4 rounded-lg border border-slate-700 bg-[#0F172A] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between shadow-sm">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4 xl:flex xl:flex-1 xl:items-center xl:gap-4">
+        {/* Search */}
+        <div className="relative w-full xl:max-w-xs">
           <Search
             size={18}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -80,11 +96,13 @@ export default function ProductToolbar({
             className="
               h-12
               w-full
+              rounded-md
               border
               border-slate-700
               bg-[#111827]
               pl-11
               pr-4
+              text-sm
               text-white
               outline-none
               transition
@@ -94,8 +112,7 @@ export default function ProductToolbar({
         </div>
 
         {/* Status */}
-
-        <div className="w-full lg:w-52">
+        <div className="w-full xl:w-48">
           <ReactSelect
             options={statusOptions}
             value={
@@ -118,8 +135,7 @@ export default function ProductToolbar({
         </div>
 
         {/* Category */}
-
-        <div className="w-full lg:w-56">
+        <div className="w-full xl:w-52">
           <ReactSelect
             options={categoryOptions}
             value={
@@ -142,8 +158,7 @@ export default function ProductToolbar({
         </div>
 
         {/* Brand */}
-
-        <div className="w-full lg:w-56">
+        <div className="w-full xl:w-52">
           <ReactSelect
             options={brandOptions}
             value={
@@ -166,10 +181,30 @@ export default function ProductToolbar({
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-stretch sm:justify-end gap-2.5 sm:gap-3 w-full xl:w-auto">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept=".xlsx, .xls"
+          className="hidden"
+        />
+
         <Button
           variant="secondary"
           fullWidth={false}
+          className="flex-1 sm:flex-none"
+          leftIcon={<FileSpreadsheet size={18} />}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isImporting}
+        >
+          {isImporting ? "Importing..." : "Import Excel"}
+        </Button>
+
+        <Button
+          variant="secondary"
+          fullWidth={false}
+          className="flex-1 sm:flex-none"
           leftIcon={<RotateCw size={18} />}
           onClick={onRefresh}
         >

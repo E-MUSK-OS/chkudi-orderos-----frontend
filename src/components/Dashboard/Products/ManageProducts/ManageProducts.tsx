@@ -17,6 +17,7 @@ import {
   useProductStats,
   useDeleteProduct,
   useUpdateProductStatus,
+  useImportProductsExcel,
 } from "./hooks/useProducts";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -43,6 +44,15 @@ const ManageProducts = () => {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const updateProductStatusMutation = useUpdateProductStatus();
+  const importExcelMutation = useImportProductsExcel();
+
+  const handleImportExcel = async (file: File) => {
+    try {
+      await importExcelMutation.mutateAsync(file);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const {
     data: productsResponse,
@@ -213,6 +223,8 @@ const ManageProducts = () => {
           categoryOptions={categoryOptions}
           brandOptions={brandOptions}
           onRefresh={handleRefresh}
+          onImportExcel={handleImportExcel}
+          isImporting={importExcelMutation.isPending}
         />
 
         <ProductTable

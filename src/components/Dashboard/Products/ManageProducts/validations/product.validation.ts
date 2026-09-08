@@ -19,9 +19,25 @@ export const productSchema = z.object({
 
   category: z.string().trim().min(1, "Category is required"),
 
-  subCategory: z.string().trim().min(1, "Sub Category is required"),
+  subCategory: z.string().optional().default(""),
 
-  description: z.string(),
+  description: z.string().optional().default(""),
+
+  asin: z.string().optional().default(""),
+
+  rackAddress: z.string().optional().default(""),
+
+  mrp: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.number({ message: "MRP is required" }).min(0, "MRP must be non-negative")
+  ),
+
+  hsnCode: z.string().trim().min(1, "HSN Code is required"),
+
+  gstRate: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.number({ message: "GST % is required" })
+  ),
 
   attributes: z.array(productAttributeSchema).default([]),
 

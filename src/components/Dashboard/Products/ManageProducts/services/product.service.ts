@@ -89,4 +89,17 @@ export const productService = {
       token,
     );
   },
+
+  /**
+   * Import Products From Excel
+   */
+  importExcel(file: File, token?: string) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<{ success: boolean; message: string; data?: any }>(
+      `${BASE_URL}/import-excel`,
+      formData,
+      token,
+    );
+  },
 };

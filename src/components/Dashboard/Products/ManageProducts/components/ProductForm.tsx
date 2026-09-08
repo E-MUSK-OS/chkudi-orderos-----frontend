@@ -4,10 +4,11 @@ import { useEffect } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { cn } from "@/lib/utils";
 import Input from "@/components/ui/Input";
-import ReactSelect from "@/components/ui/ReactSelect";
+import ReactSelect, { type SelectOption } from "@/components/ui/ReactSelect";
 
-import { Package } from "lucide-react";
+import { Package, Receipt } from "lucide-react";
 
 import SectionCard from "./SectionCard";
 
@@ -28,6 +29,13 @@ interface Props {
   onLoadingChange?: (loading: boolean) => void;
 }
 
+const gstOptions: SelectOption[] = [
+  { label: "0%", value: "0" },
+  { label: "5%", value: "5" },
+  { label: "18%", value: "18" },
+  { label: "40%", value: "40" },
+];
+
 const defaultValues: ProductFormValues = {
   productName: "",
   masterSku: "",
@@ -35,6 +43,11 @@ const defaultValues: ProductFormValues = {
   category: "",
   subCategory: "",
   description: "",
+  asin: "",
+  rackAddress: "",
+  mrp: undefined as unknown as number,
+  hsnCode: "",
+  gstRate: undefined as unknown as number,
   isActive: true,
   attributes: [],
 };
@@ -74,6 +87,11 @@ export default function ProductForm({
         category: product.category,
         subCategory: product.subCategory,
         description: product.description ?? "",
+        asin: product.asin ?? "",
+        rackAddress: product.rackAddress ?? "",
+        mrp: (product.mrp ?? undefined) as unknown as number,
+        hsnCode: product.hsnCode ?? "",
+        gstRate: (product.gstRate ?? undefined) as unknown as number,
         isActive: product.isActive,
 
         attributes:
@@ -153,6 +171,52 @@ export default function ProductForm({
               />
             )}
           />
+
+          <Controller
+            name="rackAddress"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                value={field.value ?? ""}
+                label="Rack Address"
+                error={errors.rackAddress?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name="mrp"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                type="number"
+                step="0.01"
+                min="0"
+                onKeyDown={(e) => {
+                  if (["-", "+", "e", "E", "/", "*", ","].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  const pasteText = e.clipboardData.getData("text");
+                  if (/[/\-*+eE,]/.test(pasteText)) {
+                    e.preventDefault();
+                  }
+                }}
+                value={field.value ?? ""}
+                onChange={(e) => {
+                  const sanitized = e.target.value.replace(/[^0-9.]/g, "");
+                  field.onChange(
+                    sanitized === "" ? undefined : parseFloat(sanitized),
+                  );
+                }}
+                label="MRP (₹)"
+                error={errors.mrp?.message}
+              />
+            )}
+          />
         </div>
 
         <Controller
@@ -178,47 +242,27 @@ export default function ProductForm({
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* Brand */}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">Brand *</label>
-
-            <Controller
-              name="brand"
-              control={control}
-              render={({ field }) => (
-                <Input {...field} label="Brand" error={errors.brand?.message} />
-              )}
-            />
-
-            {errors.brand && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.brand.message}
-              </p>
+          <Controller
+            name="brand"
+            control={control}
+            render={({ field }) => (
+              <Input {...field} label="Brand" error={errors.brand?.message} />
             )}
-          </div>
+          />
 
           {/* Category */}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">Category *</label>
-
-            <Controller
-              name="category"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  {...field}
-                  label="Category"
-                  error={errors.category?.message}
-                />
-              )}
-            />
-
-            {errors.category && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.category.message}
-              </p>
+          <Controller
+            name="category"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                label="Category"
+                error={errors.category?.message}
+              />
             )}
-          </div>
+          />
 
           {/* Sub Category */}
 
@@ -243,6 +287,74 @@ export default function ProductForm({
         append={append}
         remove={remove}
       />
+
+      {/* ================= Product Tax Info ================= */}
+
+      <SectionCard
+        icon={<Receipt size={20} />}
+        title="Product Tax Info"
+        description="Tax details including HSN Code and GST percentage."
+      >
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <Controller
+            name="hsnCode"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                value={field.value ?? ""}
+                label="HSN Code"
+                error={errors.hsnCode?.message}
+              />
+            )}
+          />
+
+          <div className="space-y-2">
+            <Controller
+              name="gstRate"
+              control={control}
+              render={({ field }) => {
+                const hasValue = field.value !== undefined && field.value !== null;
+                return (
+                  <div className="relative group">
+                    <ReactSelect
+                      height={56}
+                      borderColor="#e2e8f0"
+                      placeholder={hasValue ? "Select GST %" : " "}
+                      options={gstOptions}
+                      value={
+                        gstOptions.find(
+                          (option) => Number(option.value) === field.value,
+                        ) ?? null
+                      }
+                      onChange={(option) => {
+                        field.onChange(
+                          option ? Number(option.value) : undefined,
+                        );
+                      }}
+                    />
+                    <label
+                      className={cn(
+                        "pointer-events-none absolute left-4 bg-white px-1 transition-all duration-200 z-10",
+                        hasValue
+                          ? "-top-2 text-[11px] text-slate-500 font-medium"
+                          : "top-1/2 -translate-y-1/2 text-[15px] text-slate-400"
+                      )}
+                    >
+                      GST %
+                    </label>
+                  </div>
+                );
+              }}
+            />
+            {errors.gstRate && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.gstRate.message}
+              </p>
+            )}
+          </div>
+        </div>
+      </SectionCard>
 
       {/* ================= Product Status ================= */}
 

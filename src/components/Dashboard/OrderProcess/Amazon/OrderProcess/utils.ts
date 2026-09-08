@@ -407,3 +407,110 @@ export async function enhanceInvoicePages(
   }
 }
 
+/**
+ * Maps extracted ASINs in Amazon orders to internal seller SKUs (variantSku) stored in DB ProductVariant model.
+ * Rules:
+ * - If ASIN matches in DB and has variantSku -> returns variantSku
+ * - If ASIN matches in DB but variantSku is empty/null -> returns "-"
+ * - If ASIN does not match in DB (or missing/N/A) -> returns "N/A"
+ */
+export function mapAsinToSellerSku(
+  asinValue?: string,
+  asinToSkuMap?: Map<string, string>
+): string {
+  if (!asinValue || asinValue === "N/A") {
+    return "N/A";
+  }
+
+  if (!asinToSkuMap || asinToSkuMap.size === 0) {
+    return "N/A";
+  }
+
+  const delimiter = asinValue.includes("\n") ? "\n" : asinValue.includes(" / ") ? " / " : "\n";
+  const rawAsins = asinValue
+    .split(/[\r\n]+|\s+\/\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (rawAsins.length === 0) {
+    return "N/A";
+  }
+
+  const mappedSkus = rawAsins.map((asin) => {
+    const normAsin = asin.toUpperCase();
+    if (asinToSkuMap.has(normAsin)) {
+      const skuInDb = asinToSkuMap.get(normAsin)?.trim();
+      return skuInDb && skuInDb.length > 0 ? skuInDb : "-";
+    }
+    return "N/A";
+  });
+
+  return mappedSkus.join(delimiter);
+}
+
+/**
+ * Formats a Seller SKU for display on labels: [ Mens-Hoodie-5047-White-M ]
+ */
+export function formatSkuForLabel(sellerSku?: string): string {
+  if (!sellerSku || sellerSku === "N/A") {
+    return "[ N/A ]";
+  }
+  if (sellerSku === "-") {
+    return "[ - ]";
+  }
+  const items = sellerSku
+    .split(/[\r\n]+|\s+\/\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (items.length <= 1) {
+    const sku = items[0] || sellerSku;
+    return sku.startsWith("[") && sku.endsWith("]") ? sku : `[ ${sku} ]`;
+  }
+
+  return items
+    .map((item) => (item.startsWith("[") && item.endsWith("]") ? item : `[ ${item} ]`))
+    .join(" ");
+}
+
+/**
+ * Draws the formatted Seller SKU [ <seller_sku> ] on a 4" x 6" label page exact below "Sold on : www.amazon.in".
+ */
+export async function drawSkuOnLabelPage(
+  doc: any,
+  page: any,
+  sellerSku: string,
+  labelX: number,
+  labelY: number,
+  labelW: number,
+  labelH: number
+): Promise<void> {
+  const formattedSku = formatSkuForLabel(sellerSku);
+  if (!formattedSku) return;
+
+  try {
+    const { StandardFonts, rgb } = await import("pdf-lib");
+    const font = await doc.embedFont(StandardFonts.HelveticaBold);
+
+    const fontSize = 7.5;
+
+    // Exact placement below "Sold on : www.amazon.in" at bottom left of label
+    const skuX = labelX + 16;
+    const skuY = labelY + 2.5;
+
+    // Plain text matching www.amazon.in font size (no surrounding rectangle)
+    page.drawText(formattedSku, {
+      x: skuX,
+      y: skuY,
+      size: fontSize,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
+  } catch (err) {
+    console.warn("Could not draw SKU on label page:", err);
+  }
+}
+
+
+
+

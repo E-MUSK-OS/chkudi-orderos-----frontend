@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import MissingSkuModal from "./MissingSkuModal";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -27,7 +29,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { useAmazonOrderStore, loadFilesFromIDB } from "../store/useAmazonOrderStore";
-import { cleanCustomerName } from "../utils";
+import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage } from "../utils";
+import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 import { AmazonOrderType } from "../types";
 import {
   generateAmazonPicklist,
@@ -106,6 +109,94 @@ export default function ComparisonResultView({
   const [printedRows, setPrintedRows] = useState<Set<number>>(new Set());
   const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("all");
 
+  // Fetch product variants from DB and map ASIN to variantSku (seller_sku)
+  const [asinToSkuMap, setAsinToSkuMap] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchProductVariants() {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
+        const res = await productVariantService.getAll(token);
+        if (res && res.data && Array.isArray(res.data)) {
+          const map = new Map<string, string>();
+          res.data.forEach((variant) => {
+            if (variant.asin) {
+              const cleanAsin = variant.asin.trim().toUpperCase();
+              if (cleanAsin) {
+                map.set(cleanAsin, variant.variantSku ? variant.variantSku.trim() : "");
+              }
+            }
+          });
+          if (isMounted) {
+            setAsinToSkuMap(map);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch product variants for ASIN mapping:", err);
+      }
+    }
+    fetchProductVariants();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Map each order item's ASIN to the corresponding variantSku from DB
+  const mappedResults = useMemo(() => {
+    if (!asinToSkuMap || asinToSkuMap.size === 0) {
+      return results.map((item) => ({
+        ...item,
+        sellerSku: mapAsinToSellerSku(item.asin, asinToSkuMap),
+      }));
+    }
+
+    return results.map((item) => {
+      const mappedSku = mapAsinToSellerSku(item.asin, asinToSkuMap);
+      return {
+        ...item,
+        sellerSku: mappedSku,
+      };
+    });
+  }, [results, asinToSkuMap]);
+
+  const router = useRouter();
+  const hasAlertedRef = useRef(false);
+
+  // Missing SKU modal state
+  const [isMissingSkuModalOpen, setIsMissingSkuModalOpen] = useState(false);
+  const [modalMissingAsins, setModalMissingAsins] = useState<string[]>([]);
+
+  // Missing SKU items detection
+  const missingSkuItems = useMemo(() => {
+    return mappedResults.filter(
+      (item) => item.isMatch && (!item.sellerSku || item.sellerSku === "N/A" || item.sellerSku === "-")
+    );
+  }, [mappedResults]);
+
+  // Modal trigger function for missing Seller SKU
+  const triggerMissingSkuAlert = (items = missingSkuItems) => {
+    if (items.length === 0) return;
+
+    const uniqueAsins = Array.from(
+      new Set(
+        items
+          .map((i) => i.asin)
+          .filter((a): a is string => Boolean(a && a !== "N/A"))
+      )
+    );
+    setModalMissingAsins(uniqueAsins);
+    setIsMissingSkuModalOpen(true);
+  };
+
+  // Show Missing SKU modal automatically once when missing SKUs exist
+  useEffect(() => {
+    if (missingSkuItems.length > 0 && !hasAlertedRef.current) {
+      hasAlertedRef.current = true;
+      triggerMissingSkuAlert(missingSkuItems);
+    }
+  }, [missingSkuItems]);
+
   // Helper to get item's order type (with client fallback)
   const getOrderTypeForItem = (item: (typeof results)[0]): AmazonOrderType => {
     if (item.orderType) return item.orderType;
@@ -139,14 +230,14 @@ export default function ComparisonResultView({
       multiple_asin: 0,
       multiple_pieces: 0,
     };
-    results.forEach((item) => {
+    mappedResults.forEach((item) => {
       if (!item.isMatch) return;
       counts.all++;
       const type = getOrderTypeForItem(item);
       counts[type]++;
     });
     return counts;
-  }, [results]);
+  }, [mappedResults]);
 
   const orderTypeOptions: SelectOption[] = useMemo(
     () => [
@@ -193,7 +284,7 @@ export default function ComparisonResultView({
 
   // Filter and search results (Only matched orders are displayed)
   const filteredResults = useMemo(() => {
-    return results.filter((item) => {
+    return mappedResults.filter((item) => {
       // Exclude mismatched data completely
       if (!item.isMatch) return false;
 
@@ -217,7 +308,7 @@ export default function ComparisonResultView({
         item.customer.toLowerCase().includes(activeQuery)
       );
     });
-  }, [results, searchQuery, autoPrintQuery, orderTypeFilter]);
+  }, [mappedResults, searchQuery, autoPrintQuery, orderTypeFilter]);
 
   // Pagination calculations (exact Myntra logic)
   const totalRecords = filteredResults.length;
@@ -280,7 +371,7 @@ export default function ComparisonResultView({
     return images;
   };
 
-  const executePrintForItems = async (targetResults: typeof results) => {
+  const executePrintForItems = async (targetResults: typeof mappedResults) => {
     if (targetResults.length === 0) {
       toast.error('No orders found to print.');
       return;
@@ -319,7 +410,7 @@ export default function ComparisonResultView({
       const TARGET_WIDTH = 4 * 72;
       const TARGET_HEIGHT = 6 * 72;
 
-      const addScaledPage = async (srcPage: any, isZpl = false) => {
+      const addScaledPage = async (srcPage: any, isZpl = false, sellerSku?: string) => {
         const embedded = await printDoc.embedPage(srcPage);
         const { width: srcW, height: srcH } = embedded;
 
@@ -341,6 +432,10 @@ export default function ComparisonResultView({
 
           const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
           newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+
+          if (sellerSku) {
+            await drawSkuOnLabelPage(printDoc, newPage, sellerSku, x, y, finalW, finalH);
+          }
         } else {
           const MARGIN = 6;
           const availW = TARGET_WIDTH - 2 * MARGIN;
@@ -369,7 +464,7 @@ export default function ComparisonResultView({
           }
         }
         if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-          await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
+          await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
         }
       }
 
@@ -479,7 +574,7 @@ export default function ComparisonResultView({
       return;
     }
 
-    const targetResults = results.filter((r) => selectedRows.has(r.index));
+    const targetResults = mappedResults.filter((r) => selectedRows.has(r.index));
     await executePrintForItems(targetResults);
   };
 
@@ -495,7 +590,7 @@ export default function ComparisonResultView({
       return;
     }
 
-    const picklist = generateAmazonPicklist(results, targetSet);
+    const picklist = generateAmazonPicklist(mappedResults, targetSet);
     downloadAmazonPicklistPDF(picklist);
 
     if (selectedRows.size > 0) {
@@ -513,7 +608,7 @@ export default function ComparisonResultView({
     autoPrintInputRef.current?.focus();
     autoPrintInputRef.current?.select();
 
-    const matchingItems = results.filter((item) => {
+    const matchingItems = mappedResults.filter((item) => {
       const asinMatch = item.asin && item.asin.toLowerCase() === q;
       const skuMatch = item.sellerSku && item.sellerSku.toLowerCase() === q;
       const orderMatch = item.orderNumber && item.orderNumber.toLowerCase() === q;
@@ -531,7 +626,7 @@ export default function ComparisonResultView({
 
     if (matchingItems.length > 0) {
       const unprintedItems = matchingItems.filter((item) => !printedRows.has(item.index));
-      let targetItem: typeof results[0];
+      let targetItem: typeof mappedResults[0];
       let seqNotice = "";
 
       if (unprintedItems.length > 0) {
@@ -813,6 +908,17 @@ export default function ComparisonResultView({
                   optionSelectedTextColor="#0A0E1A"
                 />
               </div>
+
+              {missingSkuItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => triggerMissingSkuAlert(missingSkuItems)}
+                  className="inline-flex h-11 sm:h-14 items-center justify-center border border-red-500/50 bg-red-500/10 px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
+                  title="Click to view ASINs missing Seller SKU in database"
+                >
+                  <span>Missing Sku ({missingSkuItems.length})</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -1162,6 +1268,13 @@ export default function ComparisonResultView({
           )}
         </div>
       )}
+
+      {/* Missing Seller SKU Modal */}
+      <MissingSkuModal
+        isOpen={isMissingSkuModalOpen}
+        onClose={() => setIsMissingSkuModalOpen(false)}
+        missingAsins={modalMissingAsins}
+      />
     </div>
   );
 }

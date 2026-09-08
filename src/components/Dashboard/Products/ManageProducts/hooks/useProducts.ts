@@ -61,7 +61,7 @@ export function useCreateProduct() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message || "Failed to create product",
+        error?.message || error?.response?.data?.message || "Failed to create product",
       );
     },
   });
@@ -91,7 +91,7 @@ export function useUpdateProduct() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message || "Failed to update product",
+        error?.message || error?.response?.data?.message || "Failed to update product",
       );
     },
   });
@@ -116,7 +116,7 @@ export function useDeleteProduct() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message || "Failed to delete product",
+        error?.message || error?.response?.data?.message || "Failed to delete product",
       );
     },
   });
@@ -148,7 +148,8 @@ export function useUpdateProductStatus() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message ||
+        error?.message ||
+          error?.response?.data?.message ||
           "Failed to update product status",
       );
     },
@@ -162,5 +163,29 @@ export function useProductStats() {
   return useQuery({
     queryKey: STATS_QUERY_KEY,
     queryFn: () => productService.getStats(getToken()),
+  });
+}
+
+/**
+ * Import Products From Excel
+ */
+export function useImportProductsExcel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => productService.importExcel(file, getToken()),
+
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
+
+      toast.success(response?.message || "Excel file imported successfully");
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error?.message || error?.response?.data?.message || "Failed to import Excel file",
+      );
+    },
   });
 }

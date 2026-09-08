@@ -13,6 +13,11 @@ export interface Product {
   category: string;
   subCategory: string;
   description?: string;
+  asin?: string;
+  rackAddress?: string;
+  mrp?: number;
+  hsnCode?: string;
+  gstRate?: number;
   isActive: boolean;
   attributes: ProductAttribute[];
   createdAt: string;
@@ -25,6 +30,11 @@ export interface ProductPayload {
   category: string;
   subCategory?: string;
   description?: string;
+  asin?: string;
+  rackAddress?: string;
+  mrp?: number;
+  hsnCode?: string;
+  gstRate?: number;
   isActive: boolean;
 }
 
@@ -101,6 +111,11 @@ export interface CreateProductPayload {
   subCategory?: string;
 
   description?: string;
+  asin?: string;
+  rackAddress?: string;
+  mrp?: number;
+  hsnCode?: string;
+  gstRate?: number;
 
   isActive: boolean;
 

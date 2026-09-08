@@ -37,10 +37,21 @@ async function request<T>(
     },
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get("content-type");
+  let data: any;
+
+  if (contentType && contentType.includes("application/json")) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+    }
+    data = text;
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || "Something went wrong");
+    throw new Error(data?.message || "Something went wrong");
   }
 
   return data;

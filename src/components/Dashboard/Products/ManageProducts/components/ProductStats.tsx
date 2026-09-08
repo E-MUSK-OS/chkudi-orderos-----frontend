@@ -46,30 +46,31 @@ export default function ProductStats({ stats }: Props) {
   ];
 
   return (
-    <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 lg:gap-5">
       {cards.map((item) => {
         const Icon = item.icon;
 
         return (
           <div
             key={item.title}
-            className="border border-[#E7EAF0] bg-[#0A0E1A] p-5 shadow-sm transition-all hover:shadow-md"
+            className="rounded-lg border border-[#E7EAF0] bg-[#0A0E1A] p-4 sm:p-5 shadow-sm transition-all hover:shadow-md"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-medium text-[#E8C16D]">
+                <p className="text-sm sm:text-base font-medium text-[#E8C16D]">
                   {item.title}
                 </p>
 
-                <h3 className="mt-3 text-3xl font-bold text-white">
+                <h3 className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold text-white">
                   {item.value}
                 </h3>
               </div>
 
               <div
-                className={`flex h-12 w-12 items-center justify-center ${item.iconBg}`}
+                className={`flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-md ${item.iconBg}`}
               >
-                <Icon size={24} className={item.iconColor} />
+                <Icon size={22} className={`${item.iconColor} sm:hidden`} />
+                <Icon size={24} className={`${item.iconColor} hidden sm:block`} />
               </div>
             </div>
           </div>

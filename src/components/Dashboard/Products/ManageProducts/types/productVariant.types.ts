@@ -18,6 +18,8 @@ export interface ProductVariant {
 
   variantSku: string;
 
+  asin?: string | null;
+
   isActive: boolean;
 
   createdAt: string;
@@ -30,6 +32,8 @@ export interface CreateProductVariantPayload {
   productId: string;
 
   variantSku: string;
+
+  asin?: string;
 
   isActive: boolean;
 

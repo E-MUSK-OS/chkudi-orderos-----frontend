@@ -9,33 +9,37 @@ interface Props {
 
 export default function ProductHeader({ onAddProduct }: Props) {
   return (
-    <section className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-      <div>
+    <section className="flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex-1">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center bg-[#0A0E1A] text-[#E8C16D]">
-            <Package size={24} />
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg bg-[#0A0E1A] text-[#E8C16D]">
+            <Package size={22} className="sm:hidden" />
+            <Package size={24} className="hidden sm:block" />
           </div>
 
           <div>
-            <p className="text-xl font-semibold uppercase tracking-wider text-[#E8C16D]">
+            <h1 className="text-lg sm:text-xl font-semibold uppercase tracking-wider text-[#E8C16D]">
               Product Management
-            </p>
+            </h1>
           </div>
         </div>
 
-        <p className="mt-4 max-w-2xl text-lg leading-6 text-black">
+        <p className="mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-slate-700">
           Manage all your products, brands and categories from one place for
           inventory, order processing and marketplace integrations.
         </p>
       </div>
 
-      <Button
-        fullWidth={false}
-        leftIcon={<Plus size={18} />}
-        onClick={onAddProduct}
-      >
-        Add Product
-      </Button>
+      <div className="w-full sm:w-auto self-stretch sm:self-auto">
+        <Button
+          fullWidth={true}
+          className="sm:w-auto"
+          leftIcon={<Plus size={18} />}
+          onClick={onAddProduct}
+        >
+          Add Product
+        </Button>
+      </div>
     </section>
   );
 }

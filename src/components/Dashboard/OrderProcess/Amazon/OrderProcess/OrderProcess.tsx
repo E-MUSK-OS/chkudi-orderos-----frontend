@@ -22,8 +22,9 @@ import Button from "@/components/ui/Button";
 import ProcessingProgressModal from "./components/ProcessingProgressModal";
 import ComparisonResultView from "./components/ComparisonResultView";
 import { useAmazonOrderStore } from "./store/useAmazonOrderStore";
-import { AmazonProcessResponse } from "./types";
-import { enhanceInvoicePages } from "./utils";
+import { AmazonProcessResponse, AmazonComparisonResult } from "./types";
+import { enhanceInvoicePages, mapAsinToSellerSku, drawSkuOnLabelPage } from "./utils";
+import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 
 export default function OrderProcess() {
   const router = useRouter();
@@ -378,6 +379,32 @@ export default function OrderProcess() {
 
       const processResponse = compareData as AmazonProcessResponse;
 
+      // Resolve product variants from DB for Seller SKU mapping
+      let asinToSkuMap = new Map<string, string>();
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
+        const varRes = await productVariantService.getAll(token);
+        if (varRes?.data && Array.isArray(varRes.data)) {
+          varRes.data.forEach((variant) => {
+            if (variant.asin) {
+              const cleanAsin = variant.asin.trim().toUpperCase();
+              if (cleanAsin) {
+                asinToSkuMap.set(cleanAsin, variant.variantSku ? variant.variantSku.trim() : "");
+              }
+            }
+          });
+        }
+      } catch (vErr) {
+        console.warn("Could not fetch product variants in OrderProcess:", vErr);
+      }
+
+      if (processResponse.results) {
+        processResponse.results = processResponse.results.map((item: AmazonComparisonResult) => ({
+          ...item,
+          sellerSku: mapAsinToSellerSku(item.asin, asinToSkuMap),
+        }));
+      }
+
       // 5. Enhance invoice pages in-memory & generate dispatch documents (Instant in-memory execution)
       targetCeiling = 95;
       currentPct = Math.max(currentPct, 80);
@@ -411,7 +438,7 @@ export default function OrderProcess() {
           const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
           const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
 
-          const addScaledPage = async (srcPage: any, isZpl = false) => {
+          const addScaledPage = async (srcPage: any, isZpl = false, sellerSku?: string) => {
             const embedded = await combinedDoc.embedPage(srcPage);
             const { width: srcW, height: srcH } = embedded;
 
@@ -435,6 +462,10 @@ export default function OrderProcess() {
 
               const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
               newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+
+              if (sellerSku) {
+                await drawSkuOnLabelPage(combinedDoc, newPage, sellerSku, x, y, finalW, finalH);
+              }
             } else {
               const MARGIN = 6;
               const availW = TARGET_WIDTH - 2 * MARGIN;
@@ -467,7 +498,7 @@ export default function OrderProcess() {
               }
               // 2. ZPL / JPL barcode label second
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-                await addScaledPage(zplDoc.getPage(item.zplPage - 1), true);
+                await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
               }
             }
           }

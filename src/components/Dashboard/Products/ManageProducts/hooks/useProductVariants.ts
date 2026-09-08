@@ -83,7 +83,8 @@ export function useCreateProductVariant() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message ??
+        error?.message ??
+          error?.response?.data?.message ??
           "Failed to create product variant",
       );
     },
@@ -128,7 +129,8 @@ export function useUpdateProductVariant() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message ??
+        error?.message ??
+          error?.response?.data?.message ??
           "Failed to update product variant",
       );
     },
@@ -170,7 +172,8 @@ export function useDeleteProductVariant() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message ??
+        error?.message ??
+          error?.response?.data?.message ??
           "Failed to delete product variant",
       );
     },
@@ -215,7 +218,8 @@ export function useUpdateProductVariantStatus() {
 
     onError: (error: any) => {
       toast.error(
-        error?.response?.data?.message ??
+        error?.message ??
+          error?.response?.data?.message ??
           "Failed to update product variant status",
       );
     },
