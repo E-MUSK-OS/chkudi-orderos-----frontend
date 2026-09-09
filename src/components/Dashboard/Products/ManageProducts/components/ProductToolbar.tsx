@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Search, RotateCw, FileSpreadsheet } from "lucide-react";
+import { Search, RotateCw } from "lucide-react";
 
 import Button from "@/components/ui/Button";
 import ReactSelect from "@/components/ui/ReactSelect";
@@ -10,6 +10,8 @@ interface Option {
   label: string;
   value: string;
 }
+
+export type ImportType = "product" | "asin";
 
 interface Props {
   search: string;
@@ -24,12 +26,15 @@ interface Props {
   brand: string;
   onBrandChange: (value: string) => void;
 
+  importType: ImportType;
+  onImportTypeChange: (value: ImportType) => void;
+
   categoryOptions: Option[];
   brandOptions: Option[];
 
   onRefresh: () => void;
 
-  onImportExcel?: (file: File) => void;
+  onImportExcel?: (file: File, type: ImportType) => void;
   isImporting?: boolean;
 }
 
@@ -48,6 +53,17 @@ const statusOptions = [
   },
 ];
 
+const importTypeOptions: { label: string; value: ImportType }[] = [
+  {
+    label: "Product Import",
+    value: "product",
+  },
+  {
+    label: "ASIN Import",
+    value: "asin",
+  },
+];
+
 export default function ProductToolbar({
   search,
   onSearchChange,
@@ -61,6 +77,9 @@ export default function ProductToolbar({
   brand,
   onBrandChange,
 
+  importType,
+  onImportTypeChange,
+
   categoryOptions,
   brandOptions,
 
@@ -70,13 +89,27 @@ export default function ProductToolbar({
   isImporting = false,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedTypeRef = useRef<ImportType>(importType);
+  selectedTypeRef.current = importType;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onImportExcel) {
-      onImportExcel(file);
+      onImportExcel(file, selectedTypeRef.current);
       e.target.value = "";
     }
+  };
+
+  const handleSelectImportType = (option: { label: string; value: ImportType } | null) => {
+    if (!option) return;
+    const selected = option.value;
+    selectedTypeRef.current = selected;
+    onImportTypeChange(selected);
+
+    // Trigger file input upload dialog
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 100);
   };
 
   return (
@@ -92,7 +125,7 @@ export default function ProductToolbar({
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search Product..."
+            placeholder={importType === "asin" ? "Search ASIN, SKU, Rack..." : "Search Product..."}
             className="
               h-12
               w-full
@@ -116,13 +149,9 @@ export default function ProductToolbar({
           <ReactSelect
             options={statusOptions}
             value={
-              statusOptions.find(
-                (option) => option.value === status
-              ) ?? statusOptions[0]
+              statusOptions.find((option) => option.value === status) ?? statusOptions[0] ?? null
             }
-            onChange={(option) =>
-              onStatusChange(option?.value ?? "")
-            }
+            onChange={(option) => onStatusChange(option?.value ?? "")}
             height={48}
             borderColor="#334155"
             backgroundColor="#111827"
@@ -139,13 +168,9 @@ export default function ProductToolbar({
           <ReactSelect
             options={categoryOptions}
             value={
-              categoryOptions.find(
-                (option) => option.value === category
-              ) ?? categoryOptions[0]
+              categoryOptions.find((option) => option.value === category) ?? categoryOptions[0] ?? null
             }
-            onChange={(option) =>
-              onCategoryChange(option?.value ?? "")
-            }
+            onChange={(option) => onCategoryChange(option?.value ?? "")}
             height={48}
             borderColor="#334155"
             backgroundColor="#111827"
@@ -162,13 +187,9 @@ export default function ProductToolbar({
           <ReactSelect
             options={brandOptions}
             value={
-              brandOptions.find(
-                (option) => option.value === brand
-              ) ?? brandOptions[0]
+              brandOptions.find((option) => option.value === brand) ?? brandOptions[0] ?? null
             }
-            onChange={(option) =>
-              onBrandChange(option?.value ?? "")
-            }
+            onChange={(option) => onBrandChange(option?.value ?? "")}
             height={48}
             borderColor="#334155"
             backgroundColor="#111827"
@@ -190,21 +211,32 @@ export default function ProductToolbar({
           className="hidden"
         />
 
-        <Button
-          variant="secondary"
-          fullWidth={false}
-          className="flex-1 sm:flex-none"
-          leftIcon={<FileSpreadsheet size={18} />}
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isImporting}
-        >
-          {isImporting ? "Importing..." : "Import Excel"}
-        </Button>
+        {/* Import Select Dropdown using ReactSelect UI */}
+        <div className="w-full sm:w-48 flex-1 sm:flex-none">
+          <ReactSelect
+            options={importTypeOptions}
+            value={
+              importTypeOptions.find((opt) => opt.value === importType) ?? importTypeOptions[0]
+            }
+            onChange={(option) => handleSelectImportType(option as any)}
+            height={48}
+            borderColor="#E8C16D"
+            backgroundColor="#E8C16D"
+            textColor="#0A0E1A"
+            placeholderColor="#0A0E1A"
+            menuBackgroundColor="#111827"
+            optionHoverColor="#1E293B"
+            optionSelectedColor="#E8C16D"
+            optionSelectedTextColor="#0A0E1A"
+            optionTextColor="#ffffff"
+            isDisabled={isImporting}
+          />
+        </div>
 
         <Button
           variant="secondary"
           fullWidth={false}
-          className="flex-1 sm:flex-none"
+          className="h-12 flex-1 sm:flex-none"
           leftIcon={<RotateCw size={18} />}
           onClick={onRefresh}
         >

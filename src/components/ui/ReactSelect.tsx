@@ -21,6 +21,7 @@ interface ReactSelectProps extends Props<
   optionHoverColor?: string;
   optionSelectedColor?: string;
   optionSelectedTextColor?: string;
+  optionTextColor?: string;
   borderRadius?: number;
   height?: number;
 }
@@ -34,6 +35,7 @@ export default function ReactSelect({
   optionHoverColor = "#F8F5EE",
   optionSelectedColor = "#E8C16D",
   optionSelectedTextColor = "#111827",
+  optionTextColor,
   borderRadius = 0,
   height = 44,
   ...props
@@ -84,6 +86,7 @@ export default function ReactSelect({
       ...base,
       color: textColor,
       fontSize: 14,
+      fontWeight: 600,
     }),
 
     placeholder: (base) => ({
@@ -116,17 +119,28 @@ export default function ReactSelect({
       ...base,
       cursor: "pointer",
       fontSize: 14,
+      fontWeight: state.isSelected ? 600 : 500,
       backgroundColor: state.isSelected
         ? optionSelectedColor
         : state.isFocused
           ? optionHoverColor
           : menuBackgroundColor,
-      color: state.isSelected ? optionSelectedTextColor : textColor,
+      color: state.isSelected
+        ? optionSelectedTextColor
+        : optionTextColor || (menuBackgroundColor !== "#ffffff" ? "#ffffff" : textColor),
       "&:active": {
         backgroundColor: optionSelectedColor,
       },
     }),
   };
 
-  return <Select styles={styles} isSearchable={false} {...props} />;
+  return (
+    <Select
+      styles={styles}
+      isSearchable={false}
+      getOptionLabel={(option) => (option ? option.label ?? (option as any).name ?? "" : "")}
+      getOptionValue={(option) => (option ? option.value ?? (option as any).id ?? "" : "")}
+      {...props}
+    />
+  );
 }
