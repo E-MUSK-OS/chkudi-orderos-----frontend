@@ -1,6 +1,6 @@
 
 
-const EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "dedcmkepbiimcbagdhghapmkbafoohal").trim();
+const EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "nlcjdcpoibicgiejjhfdmfioojaaapng").trim();
 
 export interface ExtensionPingResponse {
   success?: boolean;
