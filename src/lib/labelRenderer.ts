@@ -78,7 +78,8 @@ const applyMonochromeThreshold = (ctx: CanvasRenderingContext2D, width: number, 
 export const renderLabelToCanvas = async (
   template: LabelTemplate,
   productData: ProductLookupResult,
-  scaleOverride?: number
+  scaleOverride?: number,
+  forceHorizontal = false
 ): Promise<HTMLCanvasElement> => {
   await document.fonts.ready;
 
@@ -99,7 +100,7 @@ export const renderLabelToCanvas = async (
     printDate: new Date().toLocaleDateString(),
   };
 
-  const isPortrait = template.settings.orientation === "portrait";
+  const isPortrait = forceHorizontal ? false : template.settings.orientation === "portrait";
   
   // Calculate raw pixels
   // We apply a basic DPI scale to ensure crisp thermal printing (e.g. 203 dpi usually ~8 dots/mm)

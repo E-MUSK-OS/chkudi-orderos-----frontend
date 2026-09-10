@@ -152,14 +152,15 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     const succeeded: PrintQueueItem[] = [];
     const failed: PrintQueueItem[] = [];
 
-    const isPortrait = template.settings.orientation === "portrait";
-    const printDimensions = isPortrait
-      ? { widthMm: template.settings.heightMm, heightMm: template.settings.widthMm }
-      : { widthMm: template.settings.widthMm, heightMm: template.settings.heightMm };
+    // Ensure horizontal print dimensions for thermal label printing
+    const printDimensions = {
+      widthMm: template.settings.widthMm,
+      heightMm: template.settings.heightMm,
+    };
 
     for (const item of itemsToPrint) {
       try {
-        const canvas = await renderLabelToCanvas(template, item.product || {}); // no third argument for full res
+        const canvas = await renderLabelToCanvas(template, item.product || {}, undefined, true); // forceHorizontal = true
         const dataUrl = canvas.toDataURL("image/png");
         const cleanBase64 = dataUrl.split(",")[1];
         const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));

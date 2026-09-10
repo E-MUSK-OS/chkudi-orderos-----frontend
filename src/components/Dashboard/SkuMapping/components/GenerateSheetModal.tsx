@@ -193,10 +193,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
       toast.loading(`Direct printing ${selectedRowsList.length} label(s) to ${targetPrinter}...`, { id: toastId });
 
-      const isPortrait = template.settings.orientation === "portrait";
-      const printDimensions = isPortrait
-        ? { widthMm: template.settings.heightMm, heightMm: template.settings.widthMm }
-        : { widthMm: template.settings.widthMm, heightMm: template.settings.heightMm };
+      // Always print barcode/labels horizontally for thermal label roll printing
+      const printDimensions = {
+        widthMm: template.settings.widthMm,
+        heightMm: template.settings.heightMm,
+      };
 
       const succeededIds = new Set<number>();
       let successCount = 0;
@@ -209,7 +210,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const matches = await labelService.lookupProduct(query);
           const product = matches.length > 0 ? matches[0] : {};
 
-          const canvas = await renderLabelToCanvas(template, product);
+          // Render canvas in horizontal orientation (forceHorizontal = true)
+          const canvas = await renderLabelToCanvas(template, product, undefined, true);
           const dataUrl = canvas.toDataURL("image/png");
           const cleanBase64 = dataUrl.split(",")[1];
           const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
