@@ -152,11 +152,10 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     const succeeded: PrintQueueItem[] = [];
     const failed: PrintQueueItem[] = [];
 
-    // For thermal printing: if template is landscape, swap dimensions to match portrait sticker
-    const isLandscapeTemplate = template.settings.widthMm > template.settings.heightMm;
+    // For thermal printing on portrait roll: swap width and height to match rotated canvas
     const printDimensions = {
-      widthMm: isLandscapeTemplate ? template.settings.heightMm : template.settings.widthMm,
-      heightMm: isLandscapeTemplate ? template.settings.widthMm : template.settings.heightMm,
+      widthMm: template.settings.heightMm || 50,
+      heightMm: template.settings.widthMm || 100,
     };
 
     for (const item of itemsToPrint) {

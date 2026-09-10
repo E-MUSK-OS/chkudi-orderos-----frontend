@@ -107,9 +107,9 @@ export const renderLabelToCanvas = async (
   const logicalWidth = template.settings.widthMm * MM_TO_PX;
   const logicalHeight = template.settings.heightMm * MM_TO_PX;
 
-  // For thermal printing: if template is landscape (wider than tall), rotate 90° anti-clockwise
-  // to fit onto a portrait thermal sticker. Brand (top-left) goes to bottom-left of sticker.
-  const needsRotation = forThermalPrint && template.settings.widthMm > template.settings.heightMm;
+  // For thermal printing: always rotate 90° anti-clockwise so the label fills portrait thermal sticker.
+  // Brand (top-left in design) -> bottom-left of sticker.
+  const needsRotation = forThermalPrint;
 
   if (needsRotation) {
     // Portrait canvas: swap width/height to match physical sticker dimensions
