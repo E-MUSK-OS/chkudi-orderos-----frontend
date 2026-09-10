@@ -227,8 +227,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             width: widthPoints,
             height: heightPoints,
           });
-          // Rotate PDF page 90 degrees anti-clockwise (270 degrees) for horizontal thermal print layout
-          page.setRotation(degrees(270));
 
           const pdfBase64 = await pdfDoc.saveAsBase64();
 
