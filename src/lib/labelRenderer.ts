@@ -78,8 +78,7 @@ const applyMonochromeThreshold = (ctx: CanvasRenderingContext2D, width: number, 
 export const renderLabelToCanvas = async (
   template: LabelTemplate,
   productData: ProductLookupResult,
-  scaleOverride?: number,
-  forceHorizontal = false
+  scaleOverride?: number
 ): Promise<HTMLCanvasElement> => {
   await document.fonts.ready;
 
@@ -100,8 +99,6 @@ export const renderLabelToCanvas = async (
     printDate: new Date().toLocaleDateString(),
   };
 
-  const isPortrait = forceHorizontal ? false : template.settings.orientation === "portrait";
-  
   // Calculate raw pixels
   // We apply a basic DPI scale to ensure crisp thermal printing (e.g. 203 dpi usually ~8 dots/mm)
   // But we stick to MM_TO_PX for logical layout, then scale
@@ -109,29 +106,15 @@ export const renderLabelToCanvas = async (
   const logicalWidth = template.settings.widthMm * MM_TO_PX;
   const logicalHeight = template.settings.heightMm * MM_TO_PX;
 
-  // Set canvas size (swap if portrait for final output rotation)
-  if (isPortrait) {
-    canvas.width = logicalHeight * scale;
-    canvas.height = logicalWidth * scale;
-  } else {
-    canvas.width = logicalWidth * scale;
-    canvas.height = logicalHeight * scale;
-  }
+  canvas.width = logicalWidth * scale;
+  canvas.height = logicalHeight * scale;
 
   // Draw background white
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Setup transform for portrait rotation
   ctx.save();
-  if (isPortrait) {
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate((90 * Math.PI) / 180);
-    ctx.scale(scale, scale);
-    ctx.translate(-logicalWidth / 2, -logicalHeight / 2);
-  } else {
-    ctx.scale(scale, scale);
-  }
+  ctx.scale(scale, scale);
 
   // Draw Background Image
   if (template.backgroundImageUrl) {

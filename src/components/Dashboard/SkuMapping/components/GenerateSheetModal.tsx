@@ -210,8 +210,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const matches = await labelService.lookupProduct(query);
           const product = matches.length > 0 ? matches[0] : {};
 
-          // Render canvas in horizontal orientation (forceHorizontal = true)
-          const canvas = await renderLabelToCanvas(template, product, undefined, true);
+          // Render canvas matching exact template dimensions
+          const canvas = await renderLabelToCanvas(template, product);
           const dataUrl = canvas.toDataURL("image/png");
           const cleanBase64 = dataUrl.split(",")[1];
           const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));

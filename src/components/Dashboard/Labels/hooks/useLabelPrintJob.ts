@@ -160,7 +160,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
 
     for (const item of itemsToPrint) {
       try {
-        const canvas = await renderLabelToCanvas(template, item.product || {}, undefined, true); // forceHorizontal = true
+        const canvas = await renderLabelToCanvas(template, item.product || {});
         const dataUrl = canvas.toDataURL("image/png");
         const cleanBase64 = dataUrl.split(",")[1];
         const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
