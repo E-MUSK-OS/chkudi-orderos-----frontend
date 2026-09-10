@@ -3,7 +3,7 @@ import { LabelTemplate, PrintQueueItem } from "../types/label.types";
 import { chromeExtensionPrintService } from "../services/printAgent.service";
 import { labelService } from "../services/label.service";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, degrees } from "pdf-lib";
 
 type Step = "matching" | "review" | "printer" | "printing" | "summary";
 
@@ -177,6 +177,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           width: widthPoints,
           height: heightPoints,
         });
+        // Rotate PDF page 90 degrees anti-clockwise (270 degrees) for horizontal thermal print layout
+        page.setRotation(degrees(270));
 
         const pdfBase64 = await pdfDoc.saveAsBase64();
 

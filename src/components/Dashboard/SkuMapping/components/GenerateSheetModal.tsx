@@ -22,7 +22,7 @@ import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
 import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
 import { labelService } from "@/components/Dashboard/Labels/services/label.service";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, degrees } from "pdf-lib";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BadgeCheck } from "lucide-react";
 
@@ -227,6 +227,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             width: widthPoints,
             height: heightPoints,
           });
+          // Rotate PDF page 90 degrees anti-clockwise (270 degrees) for horizontal thermal print layout
+          page.setRotation(degrees(270));
 
           const pdfBase64 = await pdfDoc.saveAsBase64();
 
