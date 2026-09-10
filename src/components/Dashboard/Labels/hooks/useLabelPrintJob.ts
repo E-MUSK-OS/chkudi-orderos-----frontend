@@ -167,13 +167,10 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
         const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
 
         // Convert canvas image into a PDF document with exact sticker dimensions (points = mm / 25.4 * 72)
-        // Convert canvas pixels (at 96 DPI base) to PDF points (72 pt = 1 inch = 96 px)
-        const scale = (template.settings.dpi || 203) / 96;
-        const widthPoints = (canvas.width / scale) * (72 / 96);
-        const heightPoints = (canvas.height / scale) * (72 / 96);
-
         const pdfDoc = await PDFDocument.create();
         const embeddedImage = await pdfDoc.embedPng(imageBytes);
+        const widthPoints = (printDimensions.widthMm / 25.4) * 72;
+        const heightPoints = (printDimensions.heightMm / 25.4) * 72;
         const page = pdfDoc.addPage([widthPoints, heightPoints]);
         page.drawImage(embeddedImage, {
           x: 0,
