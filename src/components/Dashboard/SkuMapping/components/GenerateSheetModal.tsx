@@ -135,22 +135,37 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
       // 2. Fetch available printers
       const printers = await chromeExtensionPrintService.getPrinters();
+      const details = await chromeExtensionPrintService.getPrintersDetailed();
       const lastUsedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-      const targetPrinterName = lastUsedPrinter || (printers && printers.length > 0 ? printers[0] : "Printer");
+
+      const offlineMap = new Map<string, boolean>();
+      details.forEach((d) => {
+        if (d.name) offlineMap.set(d.name.toLowerCase(), !!d.isOffline);
+      });
+
+      let targetPrinter = "";
+      if (lastUsedPrinter && printers.includes(lastUsedPrinter) && offlineMap.get(lastUsedPrinter.toLowerCase()) !== true) {
+        targetPrinter = lastUsedPrinter;
+      } else {
+        const onlineThermal = printers.find((p) => {
+          const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
+          return isThermal && offlineMap.get(p.toLowerCase()) !== true;
+        });
+        targetPrinter = onlineThermal || lastUsedPrinter || (printers && printers.length > 0 ? printers[0] : "Printer");
+      }
 
       if (!printers || printers.length === 0) {
-        toast.error(`Print failed: Printer ${targetPrinterName} is disconnected or offline.`, { id: toastId, duration: 6000 });
+        toast.error(`Print failed: No connected printers found. Last connected printer "${targetPrinter}" is offline.`, { id: toastId, duration: 6000 });
         setIsPrintingDirectly(false);
         return;
       }
 
-      if (lastUsedPrinter && !printers.includes(lastUsedPrinter)) {
-        toast.error(`Print failed: Printer ${lastUsedPrinter} is disconnected or offline.`, { id: toastId, duration: 6000 });
+      const isTargetOffline = offlineMap.get(targetPrinter.toLowerCase()) === true;
+      if (isTargetOffline) {
+        toast.error(`Print failed: Printer "${targetPrinter}" is offline. Please check printer power/cable or select an online printer.`, { id: toastId, duration: 6000 });
         setIsPrintingDirectly(false);
         return;
       }
-
-      const targetPrinter = lastUsedPrinter || printers[0];
 
       // 3. Fetch template if not active
       toast.loading("Preparing label template...", { id: toastId });

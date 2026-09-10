@@ -95,6 +95,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       }
 
       const list = await chromeExtensionPrintService.getPrinters();
+      const details = await chromeExtensionPrintService.getPrintersDetailed();
       setPrinters(list);
       setHelperOnline(true);
       if (list.length === 0) {
@@ -102,10 +103,28 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       } else {
         setHelperStatus("online");
         const lastUsed = localStorage.getItem("lastUsedPrinter");
-        if (lastUsed && list.includes(lastUsed)) {
-          setSelectedPrinter(lastUsed);
+        const offlineMap = new Map<string, boolean>();
+        details.forEach((d) => {
+          if (d.name) offlineMap.set(d.name.toLowerCase(), !!d.isOffline);
+        });
+
+        const isLastUsedOnline = lastUsed && list.includes(lastUsed) && offlineMap.get(lastUsed.toLowerCase()) !== true;
+
+        if (isLastUsedOnline) {
+          setSelectedPrinter(lastUsed!);
         } else {
-          setSelectedPrinter(list[0]);
+          // Find an online thermal printer or physical printer
+          const onlineThermal = list.find((p) => {
+            const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
+            return isThermal && offlineMap.get(p.toLowerCase()) !== true;
+          });
+          if (onlineThermal) {
+            setSelectedPrinter(onlineThermal);
+          } else if (lastUsed && list.includes(lastUsed)) {
+            setSelectedPrinter(lastUsed);
+          } else {
+            setSelectedPrinter(list[0]);
+          }
         }
       }
     } catch (err) {

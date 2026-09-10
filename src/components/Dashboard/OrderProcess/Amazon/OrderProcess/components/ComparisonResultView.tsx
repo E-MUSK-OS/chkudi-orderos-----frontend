@@ -39,25 +39,55 @@ import {
 
 export type AmazonOrderTypeFilter = "all" | AmazonOrderType;
 
-function resolveTargetPrinter(availablePrinters: string[]): string {
+function resolveTargetPrinter(availablePrinters: string[], detailedPrinters?: any[]): string {
   if (!availablePrinters || availablePrinters.length === 0) return "";
   const saved = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+
+  const offlineMap = new Map<string, boolean>();
+  if (detailedPrinters && detailedPrinters.length > 0) {
+    detailedPrinters.forEach((dp) => {
+      if (dp.name) offlineMap.set(dp.name.toLowerCase(), !!dp.isOffline);
+    });
+  }
+
+  // 1. If saved printer is present and NOT offline, use saved printer
+  if (saved && availablePrinters.includes(saved)) {
+    const isSavedOffline = offlineMap.get(saved.toLowerCase()) === true;
+    if (!isSavedOffline) {
+      return saved;
+    }
+  }
+
+  // 2. Look for an ONLINE thermal/label printer (TSC, Zebra, DA310, etc.)
+  const onlineThermal = availablePrinters.find((p) => {
+    const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
+    const isOffline = offlineMap.get(p.toLowerCase()) === true;
+    return isThermal && !isOffline;
+  });
+  if (onlineThermal) return onlineThermal;
+
+  // 3. Prefer any thermal printer if status not explicitly offline
+  const anyThermal = availablePrinters.find((p) =>
+    /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p)
+  );
+  if (anyThermal && offlineMap.get(anyThermal.toLowerCase()) !== true) {
+    return anyThermal;
+  }
+
+  // 4. Prefer physical printers over virtual document printers
+  const physical = availablePrinters.find((p) => {
+    const isPhysical = !/pdf|onenote|fax|xps|document|writer/i.test(p);
+    const isOffline = offlineMap.get(p.toLowerCase()) === true;
+    return isPhysical && !isOffline;
+  });
+  if (physical) return physical;
+
+  // 5. Fallback to saved printer so user sees exact printer name if offline
   if (saved && availablePrinters.includes(saved)) {
     return saved;
   }
-  // Prefer thermal / label printers (TSC, Zebra, DA310, etc.)
-  const thermal = availablePrinters.find((p) =>
-    /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p)
-  );
-  if (thermal) return thermal;
 
-  // Prefer physical printers over virtual document printers
-  const physical = availablePrinters.find(
-    (p) => !/pdf|onenote|fax|xps|document|writer/i.test(p)
-  );
-  if (physical) return physical;
-
-  return availablePrinters[0];
+  return anyThermal || availablePrinters[0];
 }
 
 function renderItemListCell(val?: string) {
@@ -257,9 +287,10 @@ export default function ComparisonResultView({
     async function loadPrinters() {
       try {
         const list = await chromeExtensionPrintService.getPrinters();
+        const details = await chromeExtensionPrintService.getPrintersDetailed();
         if (list && list.length > 0) {
           setAvailablePrinters(list);
-          const preferred = resolveTargetPrinter(list);
+          const preferred = resolveTargetPrinter(list, details);
           setSelectedPrinter(preferred);
         }
       } catch (e) {
@@ -487,20 +518,38 @@ export default function ComparisonResultView({
           }
 
           const extPrinters = await chromeExtensionPrintService.getPrinters();
+          const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
           if (extPrinters.length > 0) {
             setAvailablePrinters(extPrinters);
           }
 
           const lastSavedPrinter = typeof window !== 'undefined' ? localStorage.getItem('lastUsedPrinter') : null;
-          const targetPrinter = selectedPrinter || resolveTargetPrinter(extPrinters) || lastSavedPrinter;
+          let targetPrinter = selectedPrinter || resolveTargetPrinter(extPrinters, detailedPrinters) || lastSavedPrinter;
 
-          if (!targetPrinter || extPrinters.length === 0) {
-            const fallbackName = targetPrinter || 'Printer';
-            throw new Error(`Print failed: Printer ${fallbackName} is disconnected or offline`);
+          // Check if targetPrinter is known offline
+          const targetDetail = detailedPrinters.find((d) => d.name?.toLowerCase() === targetPrinter?.toLowerCase());
+          if (targetDetail && targetDetail.isOffline) {
+            const onlineThermal = extPrinters.find((p) => {
+              const dt = detailedPrinters.find((d) => d.name?.toLowerCase() === p.toLowerCase());
+              const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
+              return isThermal && (!dt || !dt.isOffline);
+            });
+
+            if (onlineThermal) {
+              toast.info(`Printer "${targetPrinter}" is offline. Automatically switching to online printer "${onlineThermal}"...`);
+              targetPrinter = onlineThermal;
+              setSelectedPrinter(onlineThermal);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('lastUsedPrinter', onlineThermal);
+              }
+            } else {
+              throw new Error(`Print failed: Printer "${targetPrinter}" is offline. Please check printer power/cables.`);
+            }
           }
 
-          if (lastSavedPrinter && extPrinters.length > 0 && !extPrinters.includes(lastSavedPrinter)) {
-            throw new Error(`Print failed: Printer ${lastSavedPrinter} is disconnected or offline`);
+          if (!targetPrinter || extPrinters.length === 0) {
+            const fallbackName = lastSavedPrinter || targetPrinter || 'Printer';
+            throw new Error(`Print failed: No connected printer found. Last connected printer "${fallbackName}" is offline.`);
           }
 
           setSelectedPrinter(targetPrinter);
@@ -522,9 +571,41 @@ export default function ComparisonResultView({
 
             const chunkBase64 = await chunkDoc.saveAsBase64();
 
-            const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, targetPrinter, 1);
-            if (extRes && (extRes.success === false || extRes.error)) {
-              throw new Error(extRes.error || `PrintBridge reported print failure on pages ${i + 1}-${endIdx}`);
+            try {
+              const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, targetPrinter, 1);
+              if (extRes && (extRes.success === false || extRes.error)) {
+                throw new Error(extRes.error || `PrintBridge reported print failure on pages ${i + 1}-${endIdx}`);
+              }
+            } catch (printErr: any) {
+              const errMsg = printErr?.message || String(printErr);
+              const isSumatraError = errMsg.toLowerCase().includes("sumatrapdf exited") || errMsg.toLowerCase().includes("error code: 1");
+
+              if (isSumatraError) {
+                // Find an alternate connected thermal printer (like TSC 330)
+                const alternatePrinter = extPrinters.find((p) => {
+                  const dt = detailedPrinters.find((d) => d.name?.toLowerCase() === p.toLowerCase());
+                  const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
+                  return isThermal && p.toLowerCase() !== targetPrinter?.toLowerCase() && (!dt || !dt.isOffline);
+                }) || extPrinters.find((p) => p.toLowerCase() !== targetPrinter?.toLowerCase());
+
+                if (alternatePrinter) {
+                  toast.loading(`Printer "${targetPrinter}" is offline or failed. Retrying print on connected printer "${alternatePrinter}"...`, { id: 'print-prep' });
+                  const retryRes = await chromeExtensionPrintService.printPdf(chunkBase64, alternatePrinter, 1);
+                  if (retryRes && retryRes.success !== false && !retryRes.error) {
+                    targetPrinter = alternatePrinter;
+                    setSelectedPrinter(alternatePrinter);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('lastUsedPrinter', alternatePrinter);
+                    }
+                  } else {
+                    throw new Error(`Print failed: Printer "${targetPrinter}" is offline. Failed to fallback to "${alternatePrinter}".`);
+                  }
+                } else {
+                  throw new Error(`Print failed: Printer "${targetPrinter}" is offline. Please turn on printer or check USB cable.`);
+                }
+              } else {
+                throw printErr;
+              }
             }
           }
 

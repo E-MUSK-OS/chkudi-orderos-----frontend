@@ -17,6 +17,14 @@ export interface ExtensionPrintResponse {
   [key: string]: any;
 }
 
+export interface PrinterDetail {
+  name: string;
+  isDefault?: boolean;
+  isOnline?: boolean;
+  isOffline?: boolean;
+  status?: string;
+}
+
 export const chromeExtensionPrintService = {
   EXTENSION_ID,
 
@@ -91,6 +99,59 @@ export const chromeExtensionPrintService = {
                 ? response
                 : response.printers || response.data || [];
               resolve(list.map((p: any) => (typeof p === "string" ? p : p.name || p.id)));
+            }
+          }
+        );
+      } catch {
+        resolve([]);
+      }
+    });
+  },
+
+  /**
+   * Attempts to get detailed printer status list from the extension.
+   */
+  async getPrintersDetailed(): Promise<PrinterDetail[]> {
+    if (typeof window === "undefined") return [];
+    const chrome = (window as any).chrome;
+    if (!chrome?.runtime?.sendMessage) return [];
+
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage(
+          EXTENSION_ID,
+          { type: "GET_PRINTERS" },
+          (response: any) => {
+            if (chrome.runtime.lastError || !response) {
+              resolve([]);
+            } else if (response.success === false) {
+              resolve([]);
+            } else {
+              const rawList = Array.isArray(response)
+                ? response
+                : response.printers || response.data || [];
+              const parsed: PrinterDetail[] = rawList.map((p: any) => {
+                if (typeof p === "string") {
+                  return { name: p, isOnline: true, isOffline: false };
+                }
+                const name = p.name || p.id || String(p);
+                const statusStr = String(p.status || p.printerStatus || "").toLowerCase();
+                const isOffline =
+                  p.isOffline === true ||
+                  p.workOffline === true ||
+                  statusStr.includes("offline") ||
+                  statusStr.includes("disconnected") ||
+                  statusStr.includes("error");
+                const isOnline = p.isOnline === true || (!isOffline && p.isOnline !== false);
+                return {
+                  name,
+                  isDefault: !!p.isDefault,
+                  status: p.status || (isOffline ? "Offline" : "Ready"),
+                  isOnline: isOnline && !isOffline,
+                  isOffline,
+                };
+              });
+              resolve(parsed);
             }
           }
         );
