@@ -152,20 +152,22 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     const succeeded: PrintQueueItem[] = [];
     const failed: PrintQueueItem[] = [];
 
-    // Ensure horizontal print dimensions for thermal label printing
+    // For thermal printing: if template is landscape, swap dimensions to match portrait sticker
+    const isLandscapeTemplate = template.settings.widthMm > template.settings.heightMm;
     const printDimensions = {
-      widthMm: template.settings.widthMm,
-      heightMm: template.settings.heightMm,
+      widthMm: isLandscapeTemplate ? template.settings.heightMm : template.settings.widthMm,
+      heightMm: isLandscapeTemplate ? template.settings.widthMm : template.settings.heightMm,
     };
 
     for (const item of itemsToPrint) {
       try {
-        const canvas = await renderLabelToCanvas(template, item.product || {});
+        // Render canvas rotated 90° CCW for portrait thermal sticker
+        const canvas = await renderLabelToCanvas(template, item.product || {}, undefined, true);
         const dataUrl = canvas.toDataURL("image/png");
         const cleanBase64 = dataUrl.split(",")[1];
         const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
 
-        // Convert canvas image into a PDF document with exact label dimensions (points = mm / 25.4 * 72)
+        // Convert canvas image into a PDF document with exact sticker dimensions (points = mm / 25.4 * 72)
         const pdfDoc = await PDFDocument.create();
         const embeddedImage = await pdfDoc.embedPng(imageBytes);
         const widthPoints = (printDimensions.widthMm / 25.4) * 72;

@@ -78,7 +78,8 @@ const applyMonochromeThreshold = (ctx: CanvasRenderingContext2D, width: number, 
 export const renderLabelToCanvas = async (
   template: LabelTemplate,
   productData: ProductLookupResult,
-  scaleOverride?: number
+  scaleOverride?: number,
+  forThermalPrint = false
 ): Promise<HTMLCanvasElement> => {
   await document.fonts.ready;
 
@@ -106,15 +107,32 @@ export const renderLabelToCanvas = async (
   const logicalWidth = template.settings.widthMm * MM_TO_PX;
   const logicalHeight = template.settings.heightMm * MM_TO_PX;
 
-  canvas.width = logicalWidth * scale;
-  canvas.height = logicalHeight * scale;
+  // For thermal printing: if template is landscape (wider than tall), rotate 90° anti-clockwise
+  // to fit onto a portrait thermal sticker. Brand (top-left) goes to bottom-left of sticker.
+  const needsRotation = forThermalPrint && template.settings.widthMm > template.settings.heightMm;
+
+  if (needsRotation) {
+    // Portrait canvas: swap width/height to match physical sticker dimensions
+    canvas.width = logicalHeight * scale;
+    canvas.height = logicalWidth * scale;
+  } else {
+    canvas.width = logicalWidth * scale;
+    canvas.height = logicalHeight * scale;
+  }
 
   // Draw background white
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
-  ctx.scale(scale, scale);
+  if (needsRotation) {
+    // Rotate 90° anti-clockwise: translate to bottom-left, then rotate
+    ctx.translate(0, canvas.height);
+    ctx.rotate(-Math.PI / 2);
+    ctx.scale(scale, scale);
+  } else {
+    ctx.scale(scale, scale);
+  }
 
   // Draw Background Image
   if (template.backgroundImageUrl) {
