@@ -75,7 +75,7 @@ export default function InstallationSteps({
 
               <div className="flex flex-wrap items-center gap-3">
                 <a
-                  href={`https://chrome.google.com/webstore/detail/${extensionId}`}
+                  href={`https://chromewebstore.google.com/detail/printbridge/${extensionId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-10 items-center gap-2 bg-[#0A0E1A] px-4 text-xs font-semibold text-[#E8C16D] transition hover:bg-[#161D2E]"

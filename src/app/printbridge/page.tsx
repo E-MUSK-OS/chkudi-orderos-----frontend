@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Printer, Download, ShieldCheck, CheckCheck, RefreshCw, AlertCircle } from "lucide-react";
+import { Printer, Download, ExternalLink, ShieldCheck, CheckCheck, RefreshCw, AlertCircle } from "lucide-react";
 import DiagnosticPanel from "./components/DiagnosticPanel";
 import InstallationSteps from "./components/InstallationSteps";
 import TroubleshootingRef from "./components/TroubleshootingRef";
 import {
   DEFAULT_EXTENSION_ID,
   INSTALLER_URL,
+  STORE_URL,
   VIRTUAL_PRINTERS,
   askExtension,
   hasExtensionMessaging,
@@ -310,15 +311,28 @@ export default function PrintBridgePage() {
             </p>
           </div>
 
-          <a
-            id="downloadBtn"
-            href={INSTALLER_URL}
-            download
-            className="inline-flex h-12 items-center justify-center gap-2 border border-[#E8C16D] bg-[#E8C16D] px-6 text-sm font-bold text-[#0A0E1A] transition hover:bg-[#0A0E1A] hover:text-[#E8C16D]"
-          >
-            <Download className="h-4 w-4" />
-            Download PrintBridge Setup
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              id="installExtBtn"
+              href={STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 items-center justify-center gap-2 border border-[#0A0E1A] bg-[#0A0E1A] px-6 text-sm font-bold text-white transition hover:bg-[#E8C16D] hover:text-[#0A0E1A] dark:border-white dark:bg-slate-800 dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A]"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Install Extension
+            </a>
+
+            <a
+              id="downloadBtn"
+              href={INSTALLER_URL}
+              download
+              className="inline-flex h-12 items-center justify-center gap-2 border border-[#E8C16D] bg-[#E8C16D] px-6 text-sm font-bold text-[#0A0E1A] transition hover:bg-[#0A0E1A] hover:text-[#E8C16D]"
+            >
+              <Download className="h-4 w-4" />
+              Download PrintBridge Setup
+            </a>
+          </div>
         </div>
 
         {/* Chrome Safe Browsing Helper Note */}
