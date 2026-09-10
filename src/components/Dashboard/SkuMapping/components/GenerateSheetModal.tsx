@@ -193,12 +193,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
       toast.loading(`Direct printing ${selectedRowsList.length} label(s) to ${targetPrinter}...`, { id: toastId });
 
-      // For thermal printing on portrait roll: swap width and height to match rotated canvas
-      const printDimensions = {
-        widthMm: template.settings.heightMm || 50,
-        heightMm: template.settings.widthMm || 100,
-      };
-
       const succeededIds = new Set<number>();
       let successCount = 0;
 
@@ -210,7 +204,9 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const matches = await labelService.lookupProduct(query);
           const product = matches.length > 0 ? matches[0] : {};
 
-          // Render canvas rotated 90° CCW for portrait thermal sticker
+          // Render canvas with 90° CCW rotation applied — canvas.width/height already
+          // reflect the rotated (portrait) dimensions, so we derive PDF size from them
+          // directly instead of manually swapping template mm values.
           const canvas = await renderLabelToCanvas(template, product, undefined, true);
           const dataUrl = canvas.toDataURL("image/png");
           const cleanBase64 = dataUrl.split(",")[1];
@@ -218,8 +214,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
           const pdfDoc = await PDFDocument.create();
           const embeddedImage = await pdfDoc.embedPng(imageBytes);
-          const widthPoints = (printDimensions.widthMm / 25.4) * 72;
-          const heightPoints = (printDimensions.heightMm / 25.4) * 72;
+
+          // Use actual canvas pixel dimensions → convert to points (72 pt = 1 inch = 96 px)
+          const scale = (template.settings.dpi || 203) / 96;
+          const widthPoints = (canvas.width / scale / 25.4) * 72;
+          const heightPoints = (canvas.height / scale / 25.4) * 72;
+
           const page = pdfDoc.addPage([widthPoints, heightPoints]);
           page.drawImage(embeddedImage, {
             x: 0,
