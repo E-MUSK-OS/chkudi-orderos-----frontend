@@ -1,3 +1,5 @@
+import { StandardFonts, rgb } from "pdf-lib";
+
 /**
  * Check whether a word is a valid name token.
  * Valid name tokens contain ONLY alphabetic letters (no digits like A602, O9ff) and are not address keywords.
@@ -489,7 +491,6 @@ export async function drawSkuOnLabelPage(
   if (!formattedSku) return;
 
   try {
-    const { StandardFonts, rgb } = await import("pdf-lib");
     const font = await doc.embedFont(StandardFonts.HelveticaBold);
 
     const fontSize = 7.5;

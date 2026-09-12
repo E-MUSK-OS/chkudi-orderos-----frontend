@@ -63,11 +63,11 @@ export function resolveCurrentlyConnectedPrinter(
 
   const isPrinterOnline = (name: string): boolean => {
     if (isVirtualPrinter(name)) return false;
-    const detail = detailMap.get(name.toLowerCase().trim());
+    const detail = detailMap.get(String(name || "").toLowerCase().trim());
     if (detail) {
       if (detail.isOffline === true) return false;
       if (detail.isOnline === false) return false;
-      const status = (detail.status || "").toLowerCase();
+      const status = String(detail.status ?? "").toLowerCase();
       if (
         status.includes("offline") ||
         status.includes("disconnected") ||
@@ -234,7 +234,7 @@ export const chromeExtensionPrintService = {
                 return {
                   name,
                   isDefault: !!p.isDefault,
-                  status: p.status || (isOffline ? "Offline" : "Ready"),
+                  status: typeof p.status === "string" ? p.status : (isOffline ? "Offline" : "Ready"),
                   isOnline: isOnline && !isOffline,
                   isOffline,
                 };
