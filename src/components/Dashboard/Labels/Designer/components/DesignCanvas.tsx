@@ -52,9 +52,9 @@ export function DesignCanvas({
   return (
     <div
       className="relative flex-1 overflow-auto bg-[#F7F5F0] flex items-center justify-center p-8"
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
+      onPointerMove={previewSampleData ? undefined : handlePointerMove}
+      onPointerUp={previewSampleData ? undefined : handlePointerUp}
+      onPointerLeave={previewSampleData ? undefined : handlePointerUp}
     >
       <div className="relative pointer-events-none" style={{ width: canvasWidthPx, height: canvasHeightPx }}>
         {!previewSampleData && (
@@ -65,12 +65,12 @@ export function DesignCanvas({
 
         <div
           ref={containerRef}
-          onPointerDown={handlePointerDownCanvas}
+          onPointerDown={previewSampleData ? undefined : handlePointerDownCanvas}
           className="absolute inset-0 bg-white shadow-lg overflow-hidden shrink-0 pointer-events-auto"
           style={{
             width: canvasWidthPx,
             height: canvasHeightPx,
-            cursor: isInteracting ? 'move' : 'default',
+            cursor: previewSampleData ? 'default' : (isInteracting ? 'move' : 'default'),
             backgroundImage: !previewSampleData && settings.snapToGrid
               ? `linear-gradient(to right, #E7E0D2 1px, transparent 1px), linear-gradient(to bottom, #E7E0D2 1px, transparent 1px)`
               : 'none',
@@ -121,7 +121,7 @@ export function DesignCanvas({
           )}
 
           {/* Live smart guides */}
-          {activeGuides.map((g, i) => g.axis === 'x' ? (
+          {!previewSampleData && activeGuides.map((g, i) => g.axis === 'x' ? (
             <div key={i} className="absolute pointer-events-none" style={{
               left: mmToPx(g.positionMm, zoom) - 0.5,
               top: mmToPx(g.spanStartMm, zoom),
@@ -145,7 +145,7 @@ export function DesignCanvas({
         {/* Marquee rectangle - positioned in viewport (client) coords via a fixed overlay */}
       </div>
 
-      {marqueeRect && (
+      {!previewSampleData && marqueeRect && (
         <div
           className="fixed border border-[#E8C16D] bg-[#E8C16D]/10 pointer-events-none"
           style={{

@@ -5,6 +5,7 @@ import { LabelElement } from '../../types/label.types';
 import { mmToPx } from '../utils/coordinateMath';
 import { resolveVariable } from '../utils/sampleData';
 import { TransformHandle } from './TransformHandle';
+import { getFontFamily } from '@/lib/labelRenderer';
 
 interface ElementRendererProps {
   element: LabelElement;
@@ -98,7 +99,7 @@ export function ElementRenderer({
         setBarcodeError(e?.message || 'Invalid barcode format or content');
       }
     }
-  }, [element, previewSampleData]);
+  }, [element, previewSampleData, previewData]);
 
   const xPx = mmToPx(element.x, zoom);
   const yPx = mmToPx(element.y, zoom);
@@ -115,16 +116,16 @@ export function ElementRenderer({
     height: heightPx,
     transform: `rotate(${element.rotation}deg)`,
     zIndex: element.zIndex,
-    border: isMultiSelected
+    border: !previewSampleData && isMultiSelected
       ? '1px dashed rgba(232,193,109,0.6)'
-      : isPrimarySelection
+      : !previewSampleData && isPrimarySelection
         ? '1px dashed #E8C16D'
         : 'none',
     boxSizing: 'border-box',
-    cursor: element.locked ? 'default' : 'move',
+    cursor: previewSampleData ? 'default' : (element.locked ? 'default' : 'move'),
     opacity: contentOpacity,
     filter: element.locked && !previewSampleData ? 'grayscale(0.35)' : undefined,
-    pointerEvents: isEditing ? 'none' : 'auto',
+    pointerEvents: isEditing ? 'none' : (previewSampleData ? 'none' : 'auto'),
     userSelect: isEditing ? 'auto' : 'none',
     WebkitUserSelect: isEditing ? 'auto' : 'none',
   };
@@ -136,7 +137,7 @@ export function ElementRenderer({
           ? resolveVariable(element.content, element.variableSource, previewData)
           : previewSampleData 
             ? resolveVariable(element.content, element.variableSource) 
-            : element.content;
+            : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
 
         return (
           <div
@@ -145,7 +146,7 @@ export function ElementRenderer({
               width: '100%',
               height: '100%',
               fontSize: `${element.fontSize * zoom}pt`,
-              fontFamily: element.fontFamily,
+              fontFamily: getFontFamily(element.fontFamily),
               fontWeight: element.fontWeight === 'bold' ? 'bold' : 'normal',
               fontStyle: element.fontStyle === 'italic' ? 'italic' : 'normal',
               textDecoration: element.textDecoration === 'underline' ? 'underline' : 'none',
@@ -156,9 +157,9 @@ export function ElementRenderer({
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              border: !textContent && !isEditing ? '1px dashed #ccc' : 'none',
-              backgroundColor: !textContent && !isEditing ? 'rgba(0,0,0,0.05)' : 'transparent',
-              pointerEvents: 'auto',
+              border: !previewSampleData && !textContent && !isEditing ? '1px dashed #ccc' : 'none',
+              backgroundColor: !previewSampleData && !textContent && !isEditing ? 'rgba(0,0,0,0.05)' : 'transparent',
+              pointerEvents: previewSampleData ? 'none' : 'auto',
             }}
           >
             {isEditing ? (
@@ -185,7 +186,7 @@ export function ElementRenderer({
                 }}
               />
             ) : (
-              textContent || <span style={{ opacity: 0.5, fontSize: '0.8em' }}>[Empty Text]</span>
+              textContent || (previewSampleData ? null : <span style={{ opacity: 0.5, fontSize: '0.8em' }}>[Empty Text]</span>)
             )}
           </div>
         );
@@ -214,7 +215,7 @@ export function ElementRenderer({
         return (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <QRCodeSVG
-              value={qrContent}
+              value={qrContent || ' '}
               size={Math.min(widthPx, heightPx)}
               level={element.errorCorrectionLevel}
             />
@@ -224,8 +225,8 @@ export function ElementRenderer({
       case 'image':
         if (!element.imageUrl) {
           return (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6', border: '1px dashed #d1d5db', color: '#9ca3af', fontSize: '10px' }}>
-              No Image
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: previewSampleData ? 'transparent' : '#f3f4f6', border: previewSampleData ? 'none' : '1px dashed #d1d5db', color: previewSampleData ? 'transparent' : '#9ca3af', fontSize: '10px' }}>
+              {!previewSampleData && 'No Image'}
             </div>
           );
         }
@@ -242,7 +243,9 @@ export function ElementRenderer({
             onError={(e) => {
               e.currentTarget.style.display = 'none';
               if (e.currentTarget.parentElement) {
-                e.currentTarget.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background-color:#fef2f2;border:1px dashed #fca5a5;color:#ef4444;font-size:10px;">Error</div>';
+                e.currentTarget.parentElement.innerHTML = previewSampleData 
+                  ? '' 
+                  : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background-color:#fef2f2;border:1px dashed #fca5a5;color:#ef4444;font-size:10px;">Error</div>';
               }
             }}
           />
@@ -286,7 +289,7 @@ export function ElementRenderer({
     >
       {renderContent()}
       
-      {isPrimarySelection && !isMultiSelected && !element.locked && (
+      {!previewSampleData && isPrimarySelection && !isMultiSelected && !element.locked && (
         <TransformHandle onPointerDown={(e, handle) => onPointerDownResize(e, handle, element.id)} zoom={zoom} />
       )}
     </div>

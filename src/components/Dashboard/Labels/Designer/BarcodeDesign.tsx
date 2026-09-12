@@ -244,37 +244,22 @@ export function BarcodeDesign() {
             onBack={handleBack}
           />
 
-          {designer.state.previewSampleData ? (
-            <div className="flex-1 overflow-auto bg-[#F7F5F0] flex items-center justify-center p-8">
-              <LivePreview 
-                template={{ 
-                  id: '', 
-                  name: designer.state.templateName || '', 
-                  settings: designer.state.settings, 
-                  layoutJson: designer.state.elements, 
-                  backgroundImageUrl: designer.state.backgroundImageUrl 
-                }}
-                productData={previewData || sampleData}
-              />
-            </div>
-          ) : (
-            <DesignCanvas
-              settings={designer.state.settings}
-              elements={designer.state.elements}
-              selectedElementId={selectedElementId}
-              selectedIds={designer.state.selectedIds}
-              zoom={designer.state.zoom}
-              previewSampleData={designer.state.previewSampleData}
-              previewData={previewData}
-              backgroundImageUrl={designer.state.backgroundImageUrl}
-              onSelect={designer.selectElement}
-              onToggleSelect={designer.toggleSelect}
-              onSetSelection={designer.setSelection}
-              onUpdateElement={designer.updateElement}
-              onBatchUpdateElements={designer.batchUpdateElements}
-              commitHistory={designer.commitHistory}
-            />
-          )}
+          <DesignCanvas
+            settings={designer.state.settings}
+            elements={designer.state.elements}
+            selectedElementId={designer.state.previewSampleData ? null : selectedElementId}
+            selectedIds={designer.state.previewSampleData ? [] : designer.state.selectedIds}
+            zoom={designer.state.zoom}
+            previewSampleData={designer.state.previewSampleData}
+            previewData={designer.state.previewSampleData ? (previewData || sampleData) : null}
+            backgroundImageUrl={designer.state.backgroundImageUrl}
+            onSelect={designer.selectElement}
+            onToggleSelect={designer.toggleSelect}
+            onSetSelection={designer.setSelection}
+            onUpdateElement={designer.updateElement}
+            onBatchUpdateElements={designer.batchUpdateElements}
+            commitHistory={designer.commitHistory}
+          />
         </div>
 
         {designer.state.previewSampleData ? (

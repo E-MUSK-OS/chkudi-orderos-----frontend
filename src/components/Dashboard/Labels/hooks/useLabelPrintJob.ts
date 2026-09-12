@@ -291,6 +291,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           width: ${widthMm}mm !important;
           height: ${heightMm}mm !important;
           background: #ffffff !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
         body > *:not(#browser-print-container) {
           display: none !important;
@@ -348,7 +350,6 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           
           const img = document.createElement("img");
           img.src = canvas.toDataURL("image/png");
-          
           pageDiv.appendChild(img);
           printContainer.appendChild(pageDiv);
           
@@ -364,7 +365,20 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       }
 
       if (succeeded.length > 0) {
-        // Small delay to ensure all image elements are mounted in the DOM before opening print preview
+        if (document.fonts) {
+          await document.fonts.ready;
+        }
+        const images = printContainer.querySelectorAll('img');
+        if (images.length > 0) {
+          const imagePromises = Array.from(images).map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve;
+            });
+          });
+          await Promise.all(imagePromises);
+        }
         await new Promise((resolve) => setTimeout(resolve, 150));
 
         const cleanup = () => {

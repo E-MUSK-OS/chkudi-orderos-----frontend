@@ -280,5 +280,10 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
     }
   }
 
-  doc.save(`Amazon_Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.pdf`);
+  const fileName = `Amazon_Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.pdf`;
+  const blob = doc.output("blob");
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, "_blank");
+  doc.save(fileName);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 };

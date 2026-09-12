@@ -3,8 +3,25 @@ import { renderToString } from "react-dom/server";
 import { QRCodeSVG } from "qrcode.react";
 import React from "react";
 import { resolveVariable } from "@/components/Dashboard/Labels/Designer/utils/sampleData";
-
+import { mmToPx, MM_TO_PX } from "@/components/Dashboard/Labels/Designer/utils/coordinateMath";
 import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
+
+export const getFontFamily = (fontFamily?: string): string => {
+  if (!fontFamily || fontFamily === "Inter") {
+    return '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  }
+  if (fontFamily === "Arial") {
+    return "Arial, Helvetica, sans-serif";
+  }
+  if (fontFamily === "monospace") {
+    return "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+  }
+  if (fontFamily === "serif") {
+    return 'Georgia, "Times New Roman", Times, serif';
+  }
+  return `${fontFamily}, "DM Sans", sans-serif`;
+};
+
 export interface ProductLookupResult {
   productVariantId?: string;
   title?: string;
@@ -20,8 +37,6 @@ export interface ProductLookupResult {
   marketplaceId?: string | null;
   marketplaceName?: string | null;
 }
-
-const MM_TO_PX = 3.7795275591;
 
 // Load image helper
 const loadImage = (url: string): Promise<HTMLImageElement> => {
@@ -129,77 +144,120 @@ export const renderLabelToCanvas = async (
     }
     ctx.translate(-w / 2, -h / 2);
 
+    // Clip to element bounds like CSS overflow: hidden to prevent overlapping adjacent elements
+    ctx.beginPath();
+    ctx.rect(0, 0, w, h);
+    ctx.clip();
+
     if (el.type === "text") {
       const content = resolveVariable(el.content, el.variableSource, productRecord);
+      if (!content || !content.trim()) {
+        ctx.restore();
+        continue;
+      }
       
-      let fontSize = el.fontSize || 12;
+      const ptToPx = 96 / 72; // 1pt = 1.3333px at 96 DPI
+      const lineHeightMultiplier = el.lineHeight || 1.2;
+      let fontSizePx = (el.fontSize || 12) * ptToPx;
+      
       ctx.fillStyle = el.color || "#000000";
       ctx.textAlign = el.textAlign || "left";
-      ctx.textBaseline = "top";
+      ctx.textBaseline = "middle";
 
       const paragraphs = content.split("\n");
-      let wrappedLines: { text: string; width: number }[] = [];
       
-      // Auto-shrink and wrap loop
-      while (fontSize >= 4) {
-        const font = `${el.fontWeight === 'bold' ? "bold " : ""}${el.fontStyle === 'italic' ? "italic " : ""}${fontSize}px ${el.fontFamily || "Arial"}`;
+      // Auto-wrap lines at element width w
+      const wrapText = (fsPx: number) => {
+        const font = `${el.fontWeight === 'bold' ? "bold " : ""}${el.fontStyle === 'italic' ? "italic " : ""}${fsPx}px ${getFontFamily(el.fontFamily)}`;
         ctx.font = font;
-        
-        wrappedLines = [];
+        const lines: { text: string; width: number }[] = [];
         
         for (const paragraph of paragraphs) {
+          if (!paragraph) {
+            lines.push({ text: "", width: 0 });
+            continue;
+          }
           const words = paragraph.split(" ");
           let currentLine = "";
           
           for (let n = 0; n < words.length; n++) {
-            const testLine = currentLine + words[n] + " ";
+            const word = words[n];
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
             const metrics = ctx.measureText(testLine);
             
-            if (metrics.width > w && n > 0) {
-              wrappedLines.push({ text: currentLine, width: ctx.measureText(currentLine).width });
-              currentLine = words[n] + " ";
+            if (metrics.width > w && currentLine) {
+              lines.push({ text: currentLine, width: ctx.measureText(currentLine).width });
+              // Check if the single word itself is wider than w
+              if (ctx.measureText(word).width > w) {
+                let charLine = "";
+                for (let c = 0; c < word.length; c++) {
+                  if (ctx.measureText(charLine + word[c]).width > w && charLine) {
+                    lines.push({ text: charLine, width: ctx.measureText(charLine).width });
+                    charLine = word[c];
+                  } else {
+                    charLine += word[c];
+                  }
+                }
+                currentLine = charLine;
+              } else {
+                currentLine = word;
+              }
+            } else if (metrics.width > w && !currentLine) {
+              // Single word wider than box on empty line -> character wrap
+              let charLine = "";
+              for (let c = 0; c < word.length; c++) {
+                if (ctx.measureText(charLine + word[c]).width > w && charLine) {
+                  lines.push({ text: charLine, width: ctx.measureText(charLine).width });
+                  charLine = word[c];
+                } else {
+                  charLine += word[c];
+                }
+              }
+              currentLine = charLine;
             } else {
               currentLine = testLine;
             }
           }
-          wrappedLines.push({ text: currentLine, width: ctx.measureText(currentLine).width });
+          if (currentLine) {
+            lines.push({ text: currentLine, width: ctx.measureText(currentLine).width });
+          }
         }
-        
-        const maxLineWidth = Math.max(...wrappedLines.map(l => l.width));
-        const totalHeight = wrappedLines.length * (fontSize * 1.2);
-        
-        if ((maxLineWidth <= w && totalHeight <= h) || fontSize === 4) {
-          break; // Fits perfectly, or we hit the floor
-        }
-        
-        fontSize -= 1;
-      }
-      
-      // Final draw
-      const font = `${el.fontWeight === 'bold' ? "bold " : ""}${el.fontStyle === 'italic' ? "italic " : ""}${fontSize}px ${el.fontFamily || "Arial"}`;
+        return lines;
+      };
+
+      let wrappedLines = wrapText(fontSizePx);
+      let lineSpacing = fontSizePx * lineHeightMultiplier;
+      let totalTextHeight = wrappedLines.length * lineSpacing;
+
+      // Final font setting
+      const font = `${el.fontWeight === 'bold' ? "bold " : ""}${el.fontStyle === 'italic' ? "italic " : ""}${fontSizePx}px ${getFontFamily(el.fontFamily)}`;
       ctx.font = font;
-      
+
       const drawX = el.textAlign === "center" ? w / 2 : el.textAlign === "right" ? w : 0;
-      let lineY = 0;
+      
+      // Vertically center like ElementRenderer (justifyContent: 'center')
+      let lineY = Math.max(0, (h - totalTextHeight) / 2) + lineSpacing / 2;
       
       for (const lineObj of wrappedLines) {
-        if (lineY + fontSize * 1.2 > h) {
-          break; // Clip remaining lines
+        if (lineY - lineSpacing / 2 > h) {
+          break; // Clip lines that exceed box height
         }
-        ctx.fillText(lineObj.text, drawX, lineY);
-        
-        if (el.textDecoration === 'underline') {
-          const lineWidth = lineObj.width;
-          ctx.beginPath();
-          let startX = drawX;
-          if (el.textAlign === "center") startX -= lineWidth / 2;
-          else if (el.textAlign === "right") startX -= lineWidth;
+        if (lineObj.text) {
+          ctx.fillText(lineObj.text, drawX, lineY);
           
-          ctx.moveTo(startX, lineY + fontSize);
-          ctx.lineTo(startX + lineWidth, lineY + fontSize);
-          ctx.stroke();
+          if (el.textDecoration === 'underline') {
+            const lineWidth = lineObj.width;
+            ctx.beginPath();
+            let startX = drawX;
+            if (el.textAlign === "center") startX -= lineWidth / 2;
+            else if (el.textAlign === "right") startX -= lineWidth;
+            
+            ctx.moveTo(startX, lineY + fontSizePx / 2);
+            ctx.lineTo(startX + lineWidth, lineY + fontSizePx / 2);
+            ctx.stroke();
+          }
         }
-        lineY += fontSize * 1.2;
+        lineY += lineSpacing;
       }
 
     } else if (el.type === "barcode") {
@@ -285,4 +343,174 @@ export const renderLabelToCanvas = async (
   // Hard 128-thresholding causes sub-pixel text strokes to wash out and vanish.
 
   return canvas;
+};
+
+/**
+ * Creates an exact vector HTML DOM representation of a label page,
+ * using precise CSS millimeter and point units matching the Designer preview mode.
+ */
+export const createLabelDom = (
+  template: LabelTemplate,
+  productRecord: Record<string, string>
+): HTMLDivElement => {
+  const widthMm = template.settings.widthMm || 100;
+  const heightMm = template.settings.heightMm || 50;
+
+  const page = document.createElement("div");
+  page.className = "print-page font-sans antialiased";
+  page.style.cssText = `
+    position: relative;
+    width: ${widthMm}mm;
+    height: ${heightMm}mm;
+    min-width: ${widthMm}mm;
+    min-height: ${heightMm}mm;
+    max-width: ${widthMm}mm;
+    max-height: ${heightMm}mm;
+    background-color: #ffffff;
+    overflow: hidden;
+    box-sizing: border-box;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  `;
+
+  // Background Image
+  if (template.backgroundImageUrl) {
+    const bgImg = document.createElement("img");
+    bgImg.src = template.backgroundImageUrl;
+    bgImg.style.cssText = `
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      opacity: ${template.settings.backgroundOpacity ?? 1};
+      pointer-events: none;
+    `;
+    page.appendChild(bgImg);
+  }
+
+  const elements = [...(template.layoutJson || [])].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+  for (const el of elements) {
+    const xPx = mmToPx(el.x, 1);
+    const yPx = mmToPx(el.y, 1);
+    const widthPx = mmToPx(el.width, 1);
+    const heightPx = mmToPx(el.height, 1);
+    const contentOpacity = el.opacity ?? 1;
+
+    const elContainer = document.createElement("div");
+    elContainer.style.cssText = `
+      position: absolute;
+      left: ${xPx}px;
+      top: ${yPx}px;
+      width: ${widthPx}px;
+      height: ${heightPx}px;
+      transform: ${el.rotation ? `rotate(${el.rotation}deg)` : 'none'};
+      z-index: ${el.zIndex || 0};
+      opacity: ${contentOpacity};
+      box-sizing: border-box;
+      overflow: hidden;
+    `;
+
+    if (el.type === "text") {
+      const text = resolveVariable(el.content, el.variableSource, productRecord);
+      const textDiv = document.createElement("div");
+      const fontStack = getFontFamily(el.fontFamily);
+      textDiv.style.cssText = `
+        width: 100%;
+        height: 100%;
+        font-size: ${el.fontSize || 12}pt;
+        font-family: ${fontStack};
+        font-weight: ${el.fontWeight === 'bold' ? 'bold' : 'normal'};
+        font-style: ${el.fontStyle === 'italic' ? 'italic' : 'normal'};
+        text-decoration: ${el.textDecoration === 'underline' ? 'underline' : 'none'};
+        text-align: ${el.textAlign || 'left'};
+        line-height: ${el.lineHeight ? el.lineHeight : 'normal'};
+        color: ${el.color || '#000000'};
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
+      `;
+      textDiv.textContent = text;
+      elContainer.appendChild(textDiv);
+    } else if (el.type === "barcode") {
+      const content = resolveVariable(el.content, el.variableSource, productRecord);
+      if (content) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        svg.style.display = "block";
+        try {
+          JsBarcode(svg, content, {
+            format: el.barcodeFormat || "CODE128",
+            displayValue: el.showText !== false,
+            fontSize: el.fontSize || 12,
+            margin: 0,
+            width: 2,
+            height: Math.max(4, heightPx - (el.showText ? (el.fontSize || 12) : 0)),
+          });
+        } catch (e) {
+          console.warn("Barcode error:", e);
+        }
+        elContainer.appendChild(svg);
+      }
+    } else if (el.type === "qrcode") {
+      const content = resolveVariable(el.content, el.variableSource, productRecord);
+      if (content) {
+        const qrWrapper = document.createElement("div");
+        qrWrapper.style.cssText = "width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;";
+        qrWrapper.innerHTML = renderToString(
+          React.createElement(QRCodeSVG, {
+            value: content,
+            size: Math.min(widthPx, heightPx),
+            level: el.errorCorrectionLevel || "M",
+          })
+        );
+        elContainer.appendChild(qrWrapper);
+      }
+    } else if (el.type === "image") {
+      if (el.imageUrl) {
+        const img = document.createElement("img");
+        img.src = el.imageUrl;
+        img.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: ${el.keepAspectRatio ? 'contain' : 'fill'};
+          pointer-events: none;
+        `;
+        elContainer.appendChild(img);
+      }
+    } else if (el.type === "line") {
+      const strokePx = mmToPx(el.borderWidth || 1, 1);
+      const lineDiv = document.createElement("div");
+      lineDiv.style.cssText = `
+        width: 100%;
+        height: ${strokePx}px;
+        background-color: ${el.borderColor || '#000000'};
+        margin-top: ${(heightPx - strokePx) / 2}px;
+      `;
+      elContainer.appendChild(lineDiv);
+    } else if (el.type === "rectangle") {
+      const borderPx = mmToPx(el.borderWidth || 1, 1);
+      const rectDiv = document.createElement("div");
+      rectDiv.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border: ${borderPx}px solid ${el.borderColor || '#000000'};
+        background-color: ${el.fillColor || 'transparent'};
+        box-sizing: border-box;
+      `;
+      elContainer.appendChild(rectDiv);
+    }
+
+    page.appendChild(elContainer);
+  }
+
+  return page;
 };
