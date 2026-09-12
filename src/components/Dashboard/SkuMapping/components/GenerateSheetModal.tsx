@@ -873,7 +873,6 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             </Button>
           </div>
         </div>
-        </div>
         <div className="flex-1 overflow-hidden px-6 py-4">
           <div className="h-full overflow-auto border">
             <table className="w-full table-fixed border-collapse">
