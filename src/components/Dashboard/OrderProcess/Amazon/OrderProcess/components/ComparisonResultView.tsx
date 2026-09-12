@@ -131,6 +131,17 @@ async function generateUnmatchedPdfFromFiles(
   }
 }
 
+function fastBase64ToUint8Array(base64: string): Uint8Array {
+  const clean = base64.includes(",") ? base64.split(",")[1] : base64;
+  const binary = atob(clean);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 async function generateUnmatchedZplFromFiles(
   files: any,
   results: any[]
@@ -185,6 +196,46 @@ export default function ComparisonResultView({
 
   const [activeTab, setActiveTab] = useState<"table" | "pdf">("table");
   const [selectedPdfType, setSelectedPdfType] = useState<AmazonPdfViewType>("combined");
+
+  // Fast in-memory PDF document caching for instant barcode scan printing
+  const loadedPdfDocsRef = useRef<{
+    zplDoc: PDFDocument;
+    origDoc: PDFDocument;
+    cacheKey: string;
+  } | null>(null);
+  const isPreloadingDocsRef = useRef(false);
+
+  const getOrLoadParsedDocs = async (activeFiles: any) => {
+    const cacheKey = `${activeFiles?.convertedZplPdfBase64?.length || 0}_${activeFiles?.originalPdfBase64?.length || 0}`;
+    if (loadedPdfDocsRef.current && loadedPdfDocsRef.current.cacheKey === cacheKey) {
+      return loadedPdfDocsRef.current;
+    }
+
+    const zplBytes = fastBase64ToUint8Array(activeFiles.convertedZplPdfBase64);
+    const pdfBytes = fastBase64ToUint8Array(activeFiles.originalPdfBase64);
+
+    const [zplDoc, origDoc] = await Promise.all([
+      PDFDocument.load(zplBytes),
+      PDFDocument.load(pdfBytes),
+    ]);
+
+    loadedPdfDocsRef.current = { zplDoc, origDoc, cacheKey };
+    return loadedPdfDocsRef.current;
+  };
+
+  // Pre-load parsed PDF documents in background as soon as files are available
+  useEffect(() => {
+    if (!files?.convertedZplPdfBase64 || !files?.originalPdfBase64 || isPreloadingDocsRef.current) return;
+    const cacheKey = `${files.convertedZplPdfBase64.length}_${files.originalPdfBase64.length}`;
+    if (loadedPdfDocsRef.current?.cacheKey === cacheKey) return;
+
+    isPreloadingDocsRef.current = true;
+    getOrLoadParsedDocs(files)
+      .catch((e) => console.warn("Background PDF preload error:", e))
+      .finally(() => {
+        isPreloadingDocsRef.current = false;
+      });
+  }, [files]);
 
   // Ensure blob preview URLs are generated if files are present in store
   useEffect(() => {
@@ -598,17 +649,25 @@ export default function ComparisonResultView({
   // Printer selection state
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
   const [selectedPrinter, setSelectedPrinter] = useState<string>("");
+  const lastVerifiedPrinterRef = useRef<{
+    printerName: string;
+    timestamp: number;
+  } | null>(null);
 
   useEffect(() => {
     async function loadPrinters() {
       try {
-        const list = await chromeExtensionPrintService.getPrinters();
         const details = await chromeExtensionPrintService.getPrintersDetailed();
+        const list = details.map((p) => p.name);
         if (list && list.length > 0) {
           setAvailablePrinters(list);
           const { printer: preferred } = resolveCurrentlyConnectedPrinter(list, details);
           if (preferred) {
             setSelectedPrinter(preferred);
+            lastVerifiedPrinterRef.current = {
+              printerName: preferred,
+              timestamp: Date.now(),
+            };
           }
         }
       } catch (e) {
@@ -623,9 +682,11 @@ export default function ComparisonResultView({
   const [limit, setLimit] = useState(10);
 
   const handleReset = () => {
+    loadedPdfDocsRef.current = null;
+    lastVerifiedPrinterRef.current = null;
     setPrintedRows(new Set());
-    orderScanProgressRef.current.clear();
     setShowPrinted(false);
+    orderScanProgressRef.current.clear();
     if (onReset) {
       onReset();
     } else {
@@ -749,60 +810,77 @@ export default function ComparisonResultView({
       return;
     }
 
-    // 1. Verify extension is reachable
-    const extCheck = await chromeExtensionPrintService.checkExtension();
-    if (!extCheck.ok) {
-      toast.error("No printer connected. Please connect printer.", {
-        id: 'print-prep',
-        duration: 6000,
-      });
-      return;
+    // 1. Resolve target printer (fast-path using verified cache to avoid IPC lag during barcode scan)
+    let targetPrinter = selectedPrinter;
+    const isCacheFresh =
+      lastVerifiedPrinterRef.current &&
+      Date.now() - lastVerifiedPrinterRef.current.timestamp < 60000 &&
+      (!targetPrinter || targetPrinter.toLowerCase() === lastVerifiedPrinterRef.current.printerName.toLowerCase());
+
+    if (isCacheFresh && lastVerifiedPrinterRef.current) {
+      targetPrinter = lastVerifiedPrinterRef.current.printerName;
+    } else {
+      // 1. Verify PrintBridge extension is reachable
+      const extCheck = await chromeExtensionPrintService.checkExtension();
+      if (!extCheck.ok) {
+        lastVerifiedPrinterRef.current = null;
+        toast.error(
+          `PrintBridge is not running or not detected (${extCheck.error || 'Extension not responding'}). Please setup PrintBridge.`,
+          {
+            id: 'print-prep',
+            duration: 9000,
+            action: {
+              label: 'Setup PrintBridge',
+              onClick: () => window.open('/printbridge', '_blank'),
+            },
+          }
+        );
+        return;
+      }
+
+      if (extCheck.response?.silentPrinting === false) {
+        toast.warning(
+          "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
+          { duration: 8000 }
+        );
+      }
+
+      // 2. Fetch live printers directly connected to the PC right now
+      const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
+      const extPrinters = detailedPrinters.map((p) => p.name);
+      if (extPrinters.length > 0) {
+        setAvailablePrinters(extPrinters);
+      }
+
+      // 3. Resolve ONLY whichever real physical/thermal printer is CURRENTLY connected to the PC
+      const { printer: resolvedPrinter } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+
+      if (!resolvedPrinter) {
+        lastVerifiedPrinterRef.current = null;
+        toast.error("No printer connected. Please connect printer.", {
+          id: 'print-prep',
+          duration: 6000,
+        });
+        return;
+      }
+
+      targetPrinter = resolvedPrinter;
+      lastVerifiedPrinterRef.current = {
+        printerName: targetPrinter,
+        timestamp: Date.now(),
+      };
+      setSelectedPrinter(targetPrinter);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lastUsedPrinter', targetPrinter);
+      }
     }
 
-    if (extCheck.response?.silentPrinting === false) {
-      toast.error(
-        "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
-        { duration: 9000 }
-      );
-    }
-
-    // 2. Fetch live printers directly connected to the PC right now
-    const extPrinters = await chromeExtensionPrintService.getPrinters();
-    const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
-    if (extPrinters.length > 0) {
-      setAvailablePrinters(extPrinters);
-    }
-
-    // 3. Resolve ONLY whichever real physical/thermal printer is CURRENTLY connected to the PC
-    const { printer: targetPrinter } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
-
-    if (!targetPrinter) {
-      toast.error("No printer connected. Please connect printer.", {
-        id: 'print-prep',
-        duration: 6000,
-      });
-      return;
-    }
-
-    setSelectedPrinter(targetPrinter);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lastUsedPrinter', targetPrinter);
-    }
-
-    toast.loading(`Preparing 4" x 6" print for ${targetResults.length} order(s) on ${targetPrinter}...`, {
+    toast.loading(`Printing ${targetResults.length} order(s) on ${targetPrinter}...`, {
       id: 'print-prep',
     });
 
     try {
-      const zplBytes = Uint8Array.from(atob(activeFiles.convertedZplPdfBase64), (c) =>
-        c.charCodeAt(0)
-      );
-      const pdfBytes = Uint8Array.from(atob(activeFiles.originalPdfBase64), (c) =>
-        c.charCodeAt(0)
-      );
-
-      const zplDoc = await PDFDocument.load(zplBytes);
-      const origDoc = await PDFDocument.load(pdfBytes);
+      const { zplDoc, origDoc } = await getOrLoadParsedDocs(activeFiles);
       const printDoc = await PDFDocument.create();
 
       const TARGET_WIDTH = 4 * 72;
@@ -871,52 +949,30 @@ export default function ComparisonResultView({
       try {
         let currentPrinter = targetPrinter;
         const totalPages = printDoc.getPageCount();
-        const BATCH_SIZE = 5;
 
-        for (let i = 0; i < totalPages; i += BATCH_SIZE) {
-          const endIdx = Math.min(i + BATCH_SIZE, totalPages);
-          toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${currentPrinter}...`, { id: 'print-prep' });
+        if (totalPages <= 5) {
+          // Fast instant single-shot print for barcode scanning
+          const printBase64 = await printDoc.saveAsBase64();
+          const extRes = await chromeExtensionPrintService.printPdf(printBase64, currentPrinter, 1);
+          if (extRes && (extRes.success === false || extRes.error)) {
+            throw new Error(extRes.error || `Print failure on ${currentPrinter}`);
+          }
+        } else {
+          // Batch printing for large batches (5 pages per chunk)
+          const BATCH_SIZE = 5;
+          for (let i = 0; i < totalPages; i += BATCH_SIZE) {
+            const endIdx = Math.min(i + BATCH_SIZE, totalPages);
+            toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${currentPrinter}...`, { id: 'print-prep' });
 
-          const chunkDoc = await PDFDocument.create();
-          const pageIndices = Array.from({ length: endIdx - i }, (_, idx) => i + idx);
-          const copiedPages = await chunkDoc.copyPages(printDoc, pageIndices);
-          copiedPages.forEach((p) => chunkDoc.addPage(p));
+            const chunkDoc = await PDFDocument.create();
+            const pageIndices = Array.from({ length: endIdx - i }, (_, idx) => i + idx);
+            const copiedPages = await chunkDoc.copyPages(printDoc, pageIndices);
+            copiedPages.forEach((p) => chunkDoc.addPage(p));
 
-          const chunkBase64 = await chunkDoc.saveAsBase64();
-
-          try {
+            const chunkBase64 = await chunkDoc.saveAsBase64();
             const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, currentPrinter, 1);
             if (extRes && (extRes.success === false || extRes.error)) {
-              throw new Error(extRes.error || `PrintBridge reported print failure on pages ${i + 1}-${endIdx}`);
-            }
-          } catch (printErr: any) {
-            const errMsg = printErr?.message || String(printErr);
-            const isSumatraError = errMsg.toLowerCase().includes("sumatrapdf exited") || errMsg.toLowerCase().includes("error code: 1");
-
-            if (isSumatraError) {
-              // Find an alternate connected thermal printer
-              const alternatePrinter = extPrinters.find((p) => {
-                const dt = detailedPrinters.find((d) => d.name?.toLowerCase() === p.toLowerCase());
-                return isThermalOrLabelPrinter(p) && p.toLowerCase() !== currentPrinter.toLowerCase() && (!dt || !dt.isOffline);
-              });
-
-              if (alternatePrinter) {
-                toast.loading(`Printer "${currentPrinter}" failed. Retrying on connected printer "${alternatePrinter}"...`, { id: 'print-prep' });
-                const retryRes = await chromeExtensionPrintService.printPdf(chunkBase64, alternatePrinter, 1);
-                if (retryRes && retryRes.success !== false && !retryRes.error) {
-                  currentPrinter = alternatePrinter;
-                  setSelectedPrinter(alternatePrinter);
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('lastUsedPrinter', alternatePrinter);
-                  }
-                } else {
-                  throw new Error("No printer connected. Please connect printer.");
-                }
-              } else {
-                throw new Error("No printer connected. Please connect printer.");
-              }
-            } else {
-              throw printErr;
+              throw new Error(extRes.error || `Print failure on pages ${i + 1}-${endIdx}`);
             }
           }
         }
@@ -941,17 +997,48 @@ export default function ComparisonResultView({
       }
     } catch (err: any) {
       console.error('Print error:', err);
-      const msg = err?.message || 'No printer connected. Please connect printer.';
+      lastVerifiedPrinterRef.current = null;
+
+      const msg = String(err?.message || err || '');
+      const isPrintBridgeIssue =
+        msg.includes("PrintBridge") ||
+        msg.toLowerCase().includes("extension") ||
+        msg.includes("Receiving end does not exist") ||
+        msg.includes("Could not establish connection") ||
+        msg.includes("runtime is not available") ||
+        msg.includes("Failed to communicate");
+
+      if (isPrintBridgeIssue) {
+        toast.error(
+          "PrintBridge is not running or not detected. Please setup PrintBridge.",
+          {
+            id: 'print-prep',
+            duration: 9000,
+            action: {
+              label: 'Setup PrintBridge',
+              onClick: () => window.open('/printbridge', '_blank'),
+            },
+          }
+        );
+        return;
+      }
+
       const isConnectionIssue =
         msg.includes("No printer connected") ||
         msg.includes("offline") ||
         msg.includes("No connected printer") ||
-        msg.includes("Failed to communicate") ||
-        msg.includes("not ready");
-      toast.error(isConnectionIssue ? "No printer connected. Please connect printer." : msg, {
-        id: 'print-prep',
-        duration: 6000,
-      });
+        msg.includes("not ready") ||
+        msg.includes("SumatraPDF");
+
+      toast.error(
+        isConnectionIssue
+          ? "No printer connected. Please connect printer."
+          : msg || "Print failure occurred. Please check printer.",
+        {
+          id: 'print-prep',
+          duration: 6000,
+        }
+      );
     }
   };
 
@@ -1228,6 +1315,10 @@ export default function ComparisonResultView({
           duration: 4000,
         });
       }
+      setTimeout(() => {
+        autoPrintInputRef.current?.focus();
+        autoPrintInputRef.current?.select();
+      }, 50);
       return;
     }
 
@@ -1244,6 +1335,10 @@ export default function ComparisonResultView({
             duration: 4000,
           });
         }
+        setTimeout(() => {
+          autoPrintInputRef.current?.focus();
+          autoPrintInputRef.current?.select();
+        }, 50);
         return;
       } else {
         // Invoice scanned, but not all ASINs/pieces are scanned yet -> block print!
@@ -1346,6 +1441,10 @@ export default function ComparisonResultView({
         duration: 4000,
       });
     }
+    setTimeout(() => {
+      autoPrintInputRef.current?.focus();
+      autoPrintInputRef.current?.select();
+    }, 50);
   };
 
   if (!summary || results.length === 0) {
