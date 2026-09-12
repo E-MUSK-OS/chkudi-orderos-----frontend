@@ -131,6 +131,13 @@ export function resolveCurrentlyConnectedPrinter(
   return { printer: onlinePhysicalPrinters[0] };
 }
 
+let cachedPrintersDetailed: { data: PrinterDetail[]; timestamp: number } | null = null;
+const PRINTER_CACHE_TTL_MS = 15000; // 15s cache to avoid slow sequential Windows spooler lookups
+
+export function invalidatePrinterCache(): void {
+  cachedPrintersDetailed = null;
+}
+
 export const chromeExtensionPrintService = {
   EXTENSION_ID,
 
@@ -143,7 +150,7 @@ export const chromeExtensionPrintService = {
     }
     const chrome = (window as any).chrome;
     if (!chrome?.runtime?.sendMessage) {
-      return { ok: false, error: "chrome.runtime.sendMessage is not supported in this browser" };
+      return { ok: false, error: "PrintBridge extension is not installed or enabled in this browser" };
     }
 
     return new Promise((resolve) => {
@@ -216,11 +223,16 @@ export const chromeExtensionPrintService = {
 
   /**
    * Attempts to get detailed printer status list from the extension.
+   * Cached for 15s to ensure sub-second printing latency.
    */
-  async getPrintersDetailed(): Promise<PrinterDetail[]> {
+  async getPrintersDetailed(forceRefresh = false): Promise<PrinterDetail[]> {
     if (typeof window === "undefined") return [];
     const chrome = (window as any).chrome;
     if (!chrome?.runtime?.sendMessage) return [];
+
+    if (!forceRefresh && cachedPrintersDetailed && Date.now() - cachedPrintersDetailed.timestamp < PRINTER_CACHE_TTL_MS) {
+      return cachedPrintersDetailed.data;
+    }
 
     return new Promise((resolve) => {
       try {
@@ -257,6 +269,7 @@ export const chromeExtensionPrintService = {
                   isOffline,
                 };
               });
+              cachedPrintersDetailed = { data: parsed, timestamp: Date.now() };
               resolve(parsed);
             }
           }
@@ -274,7 +287,8 @@ export const chromeExtensionPrintService = {
   async printPdf(
     pdfBase64: string,
     printerName: string | null = null,
-    copies = 1
+    copies = 1,
+    skipOnlineVerification = false
   ): Promise<ExtensionPrintResponse> {
     if (typeof window === "undefined") {
       throw new Error("Window is not defined");
@@ -288,18 +302,22 @@ export const chromeExtensionPrintService = {
       throw new Error("No printer connected. Please connect printer.");
     }
 
-    // STRICT GUARD: Verify printer is connected and online right now before dispatching
-    try {
-      const livePrinters = await this.getPrintersDetailed();
-      if (livePrinters && livePrinters.length > 0) {
-        const isOnline = isPrinterConnectedAndOnline(printerName, livePrinters);
-        if (!isOnline) {
-          throw new Error(`Printer "${printerName}" is offline or not connected. Print cancelled to avoid queuing.`);
+    // STRICT GUARD: Verify printer is connected and online right now before dispatching (if not verified by caller)
+    if (!skipOnlineVerification) {
+      try {
+        const livePrinters = await this.getPrintersDetailed();
+        if (livePrinters && livePrinters.length > 0) {
+          const isOnline = isPrinterConnectedAndOnline(printerName, livePrinters);
+          if (!isOnline) {
+            invalidatePrinterCache();
+            throw new Error(`Printer "${printerName}" is offline or not connected. Print cancelled to avoid queuing.`);
+          }
         }
-      }
-    } catch (checkErr: any) {
-      if (checkErr.message?.includes("offline") || checkErr.message?.includes("not connected")) {
-        throw checkErr;
+      } catch (checkErr: any) {
+        if (checkErr.message?.includes("offline") || checkErr.message?.includes("not connected")) {
+          invalidatePrinterCache();
+          throw checkErr;
+        }
       }
     }
 

@@ -156,7 +156,14 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       const { printer: targetPrinter } = resolveCurrentlyConnectedPrinter(printers, details);
 
       if (!targetPrinter) {
-        toast.error("No printer connected. Please connect printer.", { id: toastId, duration: 6000 });
+        toast.error("No printer connected. Please connect printer.", {
+          id: toastId,
+          duration: 8000,
+          action: {
+            label: "Setup PrintBridge",
+            onClick: () => window.open("/printbridge", "_blank"),
+          },
+        });
         setIsPrintingDirectly(false);
         return;
       }

@@ -173,6 +173,9 @@ export async function enhanceInvoicePages(
         const isInvoice = items.some((it) => /Invoice|Description/i.test(it.str));
         if (!isInvoice) continue;
 
+        const fullPageText = items.map((it) => it.str).join(" ");
+        if (isAmazonTransporterOrFeePage(fullPageText)) continue;
+
         // Find table header row
         const unitPriceHeader = items.find((it) => {
           const s = it.str.trim();
@@ -512,6 +515,39 @@ export async function drawSkuOnLabelPage(
   }
 }
 
+/**
+ * Detects whether a PDF page is an Amazon Transporter Duplicate or Marketplace Fee invoice
+ * (e.g. "Tax Invoice/Bill of Supply/Cash Memo (Duplicate for Transporter)", Sold By: Amazon Seller Services,
+ * with digitally signed green tick and line item "Marketplace Fees").
+ * These pages must be strictly excluded from printing, combined match PDF, and comparison tables.
+ */
+export function isAmazonTransporterOrFeePage(text?: string): boolean {
+  if (!text) return false;
+  const upper = text.toUpperCase();
 
+  // 1. Must contain "MARKETPLACE FEES" or "MARKETPLACE FEE" (unique to this fee invoice)
+  if (upper.includes("MARKETPLACE FEES") || upper.includes("MARKETPLACE FEE")) {
+    return true;
+  }
 
+  // 2. Must be specifically "(Duplicate for Transporter)" AND sold by Amazon Seller Services / MKT- invoice
+  if (upper.includes("DUPLICATE FOR TRANSPORTER")) {
+    if (
+      /SOLD\s+BY\s*:\s*AMAZON\s+SELLER\s+SERVICES/i.test(text) ||
+      upper.includes("AMAZON SELLER SERVICES PRIVATE LIMITED") ||
+      upper.includes("MKT-")
+    ) {
+      return true;
+    }
+  }
 
+  // 3. Specifically Sold By Amazon Seller Services with MKT- invoice (never the merchant)
+  if (
+    /SOLD\s+BY\s*:\s*AMAZON\s+SELLER\s+SERVICES/i.test(text) &&
+    upper.includes("MKT-")
+  ) {
+    return true;
+  }
+
+  return false;
+}

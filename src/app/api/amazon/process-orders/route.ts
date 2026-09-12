@@ -1225,8 +1225,42 @@ function classifyOrderType(
 }
 
 /**
- * Main POST handler.
+ * Detects whether a PDF page is an Amazon Transporter Duplicate or Marketplace Fee invoice
+ * (e.g. "Tax Invoice/Bill of Supply/Cash Memo (Duplicate for Transporter)", Sold By: Amazon Seller Services,
+ * with digitally signed green tick and line item "Marketplace Fees").
+ * These pages must be strictly excluded from printing, combined match PDF, and comparison tables.
  */
+function isAmazonTransporterOrFeePage(text?: string): boolean {
+  if (!text) return false;
+  const upper = text.toUpperCase();
+
+  // 1. Must contain "MARKETPLACE FEES" or "MARKETPLACE FEE" (unique to this fee invoice)
+  if (upper.includes("MARKETPLACE FEES") || upper.includes("MARKETPLACE FEE")) {
+    return true;
+  }
+
+  // 2. Must be specifically "(Duplicate for Transporter)" AND sold by Amazon Seller Services / MKT- invoice
+  if (upper.includes("DUPLICATE FOR TRANSPORTER")) {
+    if (
+      /SOLD\s+BY\s*:\s*AMAZON\s+SELLER\s+SERVICES/i.test(text) ||
+      upper.includes("AMAZON SELLER SERVICES PRIVATE LIMITED") ||
+      upper.includes("MKT-")
+    ) {
+      return true;
+    }
+  }
+
+  // 3. Specifically Sold By Amazon Seller Services with MKT- invoice (never the merchant)
+  if (
+    /SOLD\s+BY\s*:\s*AMAZON\s+SELLER\s+SERVICES/i.test(text) &&
+    upper.includes("MKT-")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Helper to build comparison results from parsed ZPL labels and PDF text.
  */
@@ -1244,6 +1278,11 @@ function buildComparisonResponse(
   for (let index = 0; index < pagesArray.length; index++) {
     const pageNumber = index + 1;
     const text = pagesArray[index] || "";
+
+    // STRICT FILTER: Completely ignore Amazon Marketplace Fees / Transporter duplicate pages (green tick pages)
+    if (isAmazonTransporterOrFeePage(text)) {
+      continue;
+    }
 
     // Order number
     const orderMatch =
@@ -1553,12 +1592,14 @@ function buildComparisonResponse(
   const mismatchCount = mismatchedZplResults.length + mismatchedPdfResults.length;
   const matchPercentage = zplLabels.length > 0 ? Math.round((matchCount / zplLabels.length) * 100) : 0;
 
+  const validPdfPages = pagesArray.filter((t) => !isAmazonTransporterOrFeePage(t)).length;
+
   return NextResponse.json({
     success: true,
     summary: {
       totalZplLabels: zplLabels.length,
       totalPdfOrders: consolidatedPdfOrders.length,
-      totalPdfPages: pagesArray.length,
+      totalPdfPages: validPdfPages,
       matchedCount: matchCount,
       mismatchCount: mismatchCount,
       matchPercentage,

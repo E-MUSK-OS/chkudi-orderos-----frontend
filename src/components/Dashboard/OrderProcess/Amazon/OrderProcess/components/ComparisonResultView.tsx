@@ -36,7 +36,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { useAmazonOrderStore, loadFilesFromIDB } from "../store/useAmazonOrderStore";
-import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage } from "../utils";
+import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTransporterOrFeePage } from "../utils";
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
@@ -811,68 +811,81 @@ export default function ComparisonResultView({
       return;
     }
 
-    // 1. Verify PrintBridge extension is reachable
-    const extCheck = await chromeExtensionPrintService.checkExtension();
-    if (!extCheck.ok) {
-      lastVerifiedPrinterRef.current = null;
-      toast.error(
-        `PrintBridge is not running or not detected (${extCheck.error || 'Extension not responding'}). Please setup PrintBridge.`,
-        {
+    // 1. Strictly resolve whichever physical printer is CURRENTLY connected and online on the PC
+    const now = Date.now();
+    let targetPrinter: string | null = null;
+    const lastVerified = lastVerifiedPrinterRef.current;
+    const isRecentVerified =
+      lastVerified &&
+      now - lastVerified.timestamp < 15000 &&
+      lastVerified.printerName &&
+      (!selectedPrinter || selectedPrinter === lastVerified.printerName);
+
+    if (isRecentVerified && lastVerified) {
+      targetPrinter = lastVerified.printerName;
+    } else {
+      // Verify PrintBridge extension is reachable
+      const extCheck = await chromeExtensionPrintService.checkExtension();
+      if (!extCheck.ok) {
+        lastVerifiedPrinterRef.current = null;
+        toast.error("PrintBridge is not running or not detected. Please setup PrintBridge.", {
           id: 'print-prep',
-          duration: 9000,
+          duration: 8000,
           action: {
             label: 'Setup PrintBridge',
             onClick: () => window.open('/printbridge', '_blank'),
           },
-        }
-      );
-      return;
-    }
+        });
+        return;
+      }
 
-    if (extCheck.response?.silentPrinting === false) {
-      toast.warning(
-        "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
-        { duration: 8000 }
-      );
-    }
+      if (extCheck.response?.silentPrinting === false) {
+        toast.warning(
+          "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
+          { duration: 8000 }
+        );
+      }
 
-    // 2. Fetch live printers directly connected to the PC right now
-    const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
-    const extPrinters = detailedPrinters.map((p) => p.name);
-    if (extPrinters.length > 0) {
-      setAvailablePrinters(extPrinters);
-    }
+      // Fetch live printers directly connected to the PC right now
+      const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
+      const extPrinters = detailedPrinters.map((p) => p.name);
+      if (extPrinters.length > 0) {
+        setAvailablePrinters(extPrinters);
+      }
 
-    // 3. Strictly resolve ONLY whichever physical printer is CURRENTLY connected and online on the PC
-    let targetPrinter: string | null = null;
-
-    if (selectedPrinter && isPrinterConnectedAndOnline(selectedPrinter, detailedPrinters)) {
-      targetPrinter = selectedPrinter;
-    } else {
-      const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
-      if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
-        targetPrinter = onlineConnected;
-        setSelectedPrinter(onlineConnected);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lastUsedPrinter', onlineConnected);
+      // Strictly resolve ONLY whichever physical printer is CURRENTLY connected and online on the PC
+      if (selectedPrinter && isPrinterConnectedAndOnline(selectedPrinter, detailedPrinters)) {
+        targetPrinter = selectedPrinter;
+      } else {
+        const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+        if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
+          targetPrinter = onlineConnected;
+          setSelectedPrinter(onlineConnected);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastUsedPrinter', onlineConnected);
+          }
         }
       }
-    }
 
-    // 4. STRICT REQUIREMENT: If no physical printer is connected and online, DO NOT SEND TO QUEUE!
-    if (!targetPrinter || !isPrinterConnectedAndOnline(targetPrinter, detailedPrinters)) {
-      lastVerifiedPrinterRef.current = null;
-      toast.error("No printer connected. Print cancelled to avoid queuing.", {
-        id: 'print-prep',
-        duration: 6000,
-      });
-      return;
-    }
+      // STRICT REQUIREMENT: If no physical printer is connected and online, DO NOT SEND TO QUEUE!
+      if (!targetPrinter || !isPrinterConnectedAndOnline(targetPrinter, detailedPrinters)) {
+        lastVerifiedPrinterRef.current = null;
+        toast.error("No printer connected. Print cancelled to avoid queuing.", {
+          id: 'print-prep',
+          duration: 8000,
+          action: {
+            label: 'Setup PrintBridge',
+            onClick: () => window.open('/printbridge', '_blank'),
+          },
+        });
+        return;
+      }
 
-    lastVerifiedPrinterRef.current = {
-      printerName: targetPrinter,
-      timestamp: Date.now(),
-    };
+      lastVerifiedPrinterRef.current = {
+        printerName: targetPrinter,
+        timestamp: Date.now(),
+      };
+    }
 
     toast.loading(`Printing ${targetResults.length} order(s) on ${targetPrinter}...`, {
       id: 'print-prep',
@@ -952,7 +965,7 @@ export default function ComparisonResultView({
         if (totalPages <= 5) {
           // Fast instant single-shot print for barcode scanning
           const printBase64 = await printDoc.saveAsBase64();
-          const extRes = await chromeExtensionPrintService.printPdf(printBase64, currentPrinter, 1);
+          const extRes = await chromeExtensionPrintService.printPdf(printBase64, currentPrinter, 1, true);
           if (extRes && (extRes.success === false || extRes.error)) {
             throw new Error(extRes.error || `Print failure on ${currentPrinter}`);
           }
@@ -969,7 +982,7 @@ export default function ComparisonResultView({
             copiedPages.forEach((p) => chunkDoc.addPage(p));
 
             const chunkBase64 = await chunkDoc.saveAsBase64();
-            const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, currentPrinter, 1);
+            const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, currentPrinter, 1, true);
             if (extRes && (extRes.success === false || extRes.error)) {
               throw new Error(extRes.error || `Print failure on pages ${i + 1}-${endIdx}`);
             }
@@ -1037,7 +1050,11 @@ export default function ComparisonResultView({
           : msg || "Print failure occurred. Please check printer.",
         {
           id: 'print-prep',
-          duration: 6000,
+          duration: 8000,
+          action: {
+            label: 'Setup PrintBridge',
+            onClick: () => window.open('/printbridge', '_blank'),
+          },
         }
       );
     }

@@ -23,7 +23,7 @@ import ProcessingProgressModal from "./components/ProcessingProgressModal";
 import ComparisonResultView from "./components/ComparisonResultView";
 import { useAmazonOrderStore } from "./store/useAmazonOrderStore";
 import { AmazonProcessResponse, AmazonComparisonResult } from "./types";
-import { enhanceInvoicePages, mapAsinToSellerSku, drawSkuOnLabelPage } from "./utils";
+import { enhanceInvoicePages, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTransporterOrFeePage } from "./utils";
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
@@ -458,6 +458,9 @@ export default function OrderProcess() {
       if (processResponse.results) {
         processResponse.results = processResponse.results.map((item: AmazonComparisonResult) => ({
           ...item,
+          pdfPages: (item.pdfPages || []).filter(
+            (p) => !pageTextData[p - 1]?.text || !isAmazonTransporterOrFeePage(pageTextData[p - 1].text)
+          ),
           sellerSku: mapAsinToSellerSku(item.asin, asinToSkuMap),
         }));
       }
@@ -552,6 +555,9 @@ export default function OrderProcess() {
               if (item.pdfPages && item.pdfPages.length > 0) {
                 for (const p of item.pdfPages) {
                   const idx = p - 1;
+                  if (pageTextData && pageTextData[idx]?.text && isAmazonTransporterOrFeePage(pageTextData[idx].text)) {
+                    continue;
+                  }
                   if (idx >= 0 && idx < origDoc.getPageCount()) {
                     await addScaledPageToDoc(combinedDoc, origDoc.getPage(idx), false);
                   }
@@ -567,6 +573,9 @@ export default function OrderProcess() {
               if (item.pdfPages && item.pdfPages.length > 0) {
                 for (const p of item.pdfPages) {
                   const idx = p - 1;
+                  if (pageTextData && pageTextData[idx]?.text && isAmazonTransporterOrFeePage(pageTextData[idx].text)) {
+                    continue;
+                  }
                   if (idx >= 0 && idx < origDoc.getPageCount()) {
                     await addScaledPageToDoc(unmatchedPdfDoc, origDoc.getPage(idx), false);
                     hasUnmatchedPdf = true;
