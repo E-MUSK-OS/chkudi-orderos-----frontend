@@ -17,6 +17,7 @@ export interface AmazonComparisonResult {
   orderType?: AmazonOrderType;
   totalQuantity?: number;
   asinsCount?: number;
+  combinedPages?: number[];
 }
 
 export interface AmazonOrderSummary {

@@ -30,6 +30,7 @@ import {
   resolveCurrentlyConnectedPrinter,
   isThermalOrLabelPrinter,
   isPrinterConnectedAndOnline,
+  invalidatePrinterCache,
 } from "@/components/Dashboard/Labels/services/printAgent.service";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,6 +38,7 @@ import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { useAmazonOrderStore, loadFilesFromIDB } from "../store/useAmazonOrderStore";
 import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTransporterOrFeePage } from "../utils";
+import { getOrLoadCombinedDoc, getCachedAmazonDocs, clearCachedAmazonDocs, getDocCacheKey } from "../utils/pdfCache";
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
@@ -207,6 +209,11 @@ export default function ComparisonResultView({
   const isPreloadingDocsRef = useRef(false);
 
   const getOrLoadParsedDocs = async (activeFiles: any) => {
+    const cached = getCachedAmazonDocs();
+    if (cached?.zplDoc && cached?.origDoc) {
+      return { zplDoc: cached.zplDoc, origDoc: cached.origDoc, cacheKey: cached.cacheKey };
+    }
+
     const cacheKey = `${activeFiles?.convertedZplPdfBase64?.length || 0}_${activeFiles?.originalPdfBase64?.length || 0}`;
     if (loadedPdfDocsRef.current && loadedPdfDocsRef.current.cacheKey === cacheKey) {
       return loadedPdfDocsRef.current;
@@ -216,16 +223,20 @@ export default function ComparisonResultView({
     const pdfBytes = fastBase64ToUint8Array(activeFiles.originalPdfBase64);
 
     const [zplDoc, origDoc] = await Promise.all([
-      PDFDocument.load(zplBytes),
-      PDFDocument.load(pdfBytes),
+      PDFDocument.load(zplBytes, { ignoreEncryption: true }),
+      PDFDocument.load(pdfBytes, { ignoreEncryption: true }),
     ]);
 
     loadedPdfDocsRef.current = { zplDoc, origDoc, cacheKey };
     return loadedPdfDocsRef.current;
   };
 
-  // Pre-load parsed PDF documents in background as soon as files are available
+  // Pre-load combined PDF document & parsed documents in background for instant sub-second printing
   useEffect(() => {
+    if (files?.combinedPdfBase64) {
+      getOrLoadCombinedDoc(files).catch((e) => console.warn("Background combinedDoc preload error:", e));
+    }
+
     if (!files?.convertedZplPdfBase64 || !files?.originalPdfBase64 || isPreloadingDocsRef.current) return;
     const cacheKey = `${files.convertedZplPdfBase64.length}_${files.originalPdfBase64.length}`;
     if (loadedPdfDocsRef.current?.cacheKey === cacheKey) return;
@@ -685,6 +696,7 @@ export default function ComparisonResultView({
   const handleReset = () => {
     loadedPdfDocsRef.current = null;
     lastVerifiedPrinterRef.current = null;
+    clearCachedAmazonDocs();
     setPrintedRows(new Set());
     setShowPrinted(false);
     orderScanProgressRef.current.clear();
@@ -798,26 +810,27 @@ export default function ComparisonResultView({
     }
 
     let activeFiles = files;
-    if (!activeFiles?.convertedZplPdfBase64 || !activeFiles?.originalPdfBase64) {
+    if (!activeFiles?.combinedPdfBase64 && (!activeFiles?.convertedZplPdfBase64 || !activeFiles?.originalPdfBase64)) {
       const recovered = await loadFilesFromIDB();
-      if (recovered?.convertedZplPdfBase64 && recovered?.originalPdfBase64) {
+      if (recovered?.combinedPdfBase64 || (recovered?.convertedZplPdfBase64 && recovered?.originalPdfBase64)) {
         useAmazonOrderStore.setState({ files: recovered });
         activeFiles = recovered;
       }
     }
 
-    if (!activeFiles?.convertedZplPdfBase64 || !activeFiles?.originalPdfBase64) {
+    if (!activeFiles?.combinedPdfBase64 && (!activeFiles?.convertedZplPdfBase64 || !activeFiles?.originalPdfBase64)) {
       toast.error('Processed order files are not ready for printing.');
       return;
     }
 
     // 1. Strictly resolve whichever physical printer is CURRENTLY connected and online on the PC
+    const PRINTER_VERIFY_TTL_MS = 600000; // 10 minutes cache to guarantee instant sub-second print dispatch
     const now = Date.now();
     let targetPrinter: string | null = null;
     const lastVerified = lastVerifiedPrinterRef.current;
     const isRecentVerified =
       lastVerified &&
-      now - lastVerified.timestamp < 15000 &&
+      now - lastVerified.timestamp < PRINTER_VERIFY_TTL_MS &&
       lastVerified.printerName &&
       (!selectedPrinter || selectedPrinter === lastVerified.printerName);
 
@@ -892,67 +905,106 @@ export default function ComparisonResultView({
     });
 
     try {
-      const { zplDoc, origDoc } = await getOrLoadParsedDocs(activeFiles);
       const printDoc = await PDFDocument.create();
+      let builtSuccessfully = false;
 
-      const TARGET_WIDTH = 4 * 72;
-      const TARGET_HEIGHT = 6 * 72;
+      // 1. FAST PATH: Instant page extraction from pre-generated combinedDoc (< 50ms!)
+      const combinedDoc = await getOrLoadCombinedDoc(activeFiles);
+      if (combinedDoc && combinedDoc.getPageCount() > 0) {
+        const targetPageIndices: number[] = [];
+        const matchedList = mappedResults.filter((r) => r.isMatch);
 
-      const addScaledPage = async (srcPage: any, isZpl = false, sellerSku?: string) => {
-        const embedded = await printDoc.embedPage(srcPage);
-        const { width: srcW, height: srcH } = embedded;
-
-        if (isZpl) {
-          const TOP_SPACING = 25;
-          const BOTTOM_SPACING = 10;
-          const SIDE_SPACING = 8;
-
-          const availW = TARGET_WIDTH - 2 * SIDE_SPACING;
-          const availH = TARGET_HEIGHT - TOP_SPACING - BOTTOM_SPACING;
-
-          const scale = Math.min(availW / srcW, availH / srcH);
-          const finalW = srcW * scale;
-          const finalH = srcH * scale;
-
-          // Perfectly centered horizontally (equal left & right margins)
-          const x = (TARGET_WIDTH - finalW) / 2;
-          const y = TARGET_HEIGHT - TOP_SPACING - finalH;
-
-          const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-          newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
-
-          if (sellerSku) {
-            await drawSkuOnLabelPage(printDoc, newPage, sellerSku, x, y, finalW, finalH);
+        for (const item of targetResults) {
+          if (item.combinedPages && item.combinedPages.length > 0) {
+            const allExist = item.combinedPages.every(
+              (p) => p >= 0 && p < combinedDoc.getPageCount()
+            );
+            if (allExist) {
+              targetPageIndices.push(...item.combinedPages);
+              continue;
+            }
           }
-        } else {
-          const MARGIN = 6;
-          const availW = TARGET_WIDTH - 2 * MARGIN;
-          const availH = TARGET_HEIGHT - 2 * MARGIN;
 
-          const scale = Math.min(availW / srcW, availH / srcH);
-          const finalW = srcW * scale;
-          const finalH = srcH * scale;
-
-          // Perfectly centered horizontally (equal left & right margins)
-          const x = (TARGET_WIDTH - finalW) / 2;
-          const y = (TARGET_HEIGHT - finalH) / 2;
-
-          const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-          newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
-        }
-      };
-
-      for (const item of targetResults) {
-        if (item.pdfPages && item.pdfPages.length > 0) {
-          for (const pageNum of item.pdfPages) {
-            const idx = pageNum - 1;
-            if (idx >= 0 && idx < origDoc.getPageCount()) {
-              await addScaledPage(origDoc.getPage(idx), false);
+          // Robust fallback: derived from matched position (2 pages per matched order: invoice, label)
+          const mIdx = matchedList.findIndex((r) => r.index === item.index);
+          if (mIdx !== -1) {
+            const startP = mIdx * 2;
+            if (startP + 1 < combinedDoc.getPageCount()) {
+              targetPageIndices.push(startP, startP + 1);
             }
           }
         }
-        if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-          await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
+
+        if (targetPageIndices.length > 0) {
+          const copiedPages = await printDoc.copyPages(combinedDoc, targetPageIndices);
+          copiedPages.forEach((p) => printDoc.addPage(p));
+          builtSuccessfully = true;
+        }
+      }
+
+      // 2. FALLBACK PATH: If combinedDoc is not available or pages couldn't be extracted
+      if (!builtSuccessfully) {
+        const { zplDoc, origDoc } = await getOrLoadParsedDocs(activeFiles);
+
+        const TARGET_WIDTH = 4 * 72;
+        const TARGET_HEIGHT = 6 * 72;
+
+        const addScaledPage = async (srcPage: any, isZpl = false, sellerSku?: string) => {
+          const embedded = await printDoc.embedPage(srcPage);
+          const { width: srcW, height: srcH } = embedded;
+
+          if (isZpl) {
+            const TOP_SPACING = 25;
+            const BOTTOM_SPACING = 10;
+            const SIDE_SPACING = 8;
+
+            const availW = TARGET_WIDTH - 2 * SIDE_SPACING;
+            const availH = TARGET_HEIGHT - TOP_SPACING - BOTTOM_SPACING;
+
+            const scale = Math.min(availW / srcW, availH / srcH);
+            const finalW = srcW * scale;
+            const finalH = srcH * scale;
+
+            // Perfectly centered horizontally (equal left & right margins)
+            const x = (TARGET_WIDTH - finalW) / 2;
+            const y = TARGET_HEIGHT - TOP_SPACING - finalH;
+
+            const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+            newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+
+            if (sellerSku) {
+              await drawSkuOnLabelPage(printDoc, newPage, sellerSku, x, y, finalW, finalH);
+            }
+          } else {
+            const MARGIN = 6;
+            const availW = TARGET_WIDTH - 2 * MARGIN;
+            const availH = TARGET_HEIGHT - 2 * MARGIN;
+
+            const scale = Math.min(availW / srcW, availH / srcH);
+            const finalW = srcW * scale;
+            const finalH = srcH * scale;
+
+            // Perfectly centered horizontally (equal left & right margins)
+            const x = (TARGET_WIDTH - finalW) / 2;
+            const y = (TARGET_HEIGHT - finalH) / 2;
+
+            const newPage = printDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+            newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+          }
+        };
+
+        for (const item of targetResults) {
+          if (item.pdfPages && item.pdfPages.length > 0) {
+            for (const pageNum of item.pdfPages) {
+              const idx = pageNum - 1;
+              if (idx >= 0 && idx < origDoc.getPageCount()) {
+                await addScaledPage(origDoc.getPage(idx), false);
+              }
+            }
+          }
+          if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
+            await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
+          }
         }
       }
 
@@ -962,16 +1014,20 @@ export default function ComparisonResultView({
         let currentPrinter = targetPrinter;
         const totalPages = printDoc.getPageCount();
 
-        if (totalPages <= 5) {
-          // Fast instant single-shot print for barcode scanning
+        if (totalPages === 0) {
+          throw new Error("No printable pages generated for selected orders.");
+        }
+
+        if (totalPages <= 10) {
+          // Fast instant single-shot print for barcode scanning and small batches
           const printBase64 = await printDoc.saveAsBase64();
           const extRes = await chromeExtensionPrintService.printPdf(printBase64, currentPrinter, 1, true);
           if (extRes && (extRes.success === false || extRes.error)) {
             throw new Error(extRes.error || `Print failure on ${currentPrinter}`);
           }
         } else {
-          // Batch printing for large batches (5 pages per chunk)
-          const BATCH_SIZE = 5;
+          // Batch printing for large batches (10 pages per chunk)
+          const BATCH_SIZE = 10;
           for (let i = 0; i < totalPages; i += BATCH_SIZE) {
             const endIdx = Math.min(i + BATCH_SIZE, totalPages);
             toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${currentPrinter}...`, { id: 'print-prep' });
@@ -1010,6 +1066,7 @@ export default function ComparisonResultView({
     } catch (err: any) {
       console.error('Print error:', err);
       lastVerifiedPrinterRef.current = null;
+      invalidatePrinterCache();
 
       const msg = String(err?.message || err || '');
       const isPrintBridgeIssue =

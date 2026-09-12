@@ -132,7 +132,7 @@ export function resolveCurrentlyConnectedPrinter(
 }
 
 let cachedPrintersDetailed: { data: PrinterDetail[]; timestamp: number } | null = null;
-const PRINTER_CACHE_TTL_MS = 15000; // 15s cache to avoid slow sequential Windows spooler lookups
+const PRINTER_CACHE_TTL_MS = 600000; // 10 minutes cache to avoid slow sequential Windows spooler lookups
 
 export function invalidatePrinterCache(): void {
   cachedPrintersDetailed = null;

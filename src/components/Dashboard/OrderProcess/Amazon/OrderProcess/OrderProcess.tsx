@@ -27,6 +27,7 @@ import { enhanceInvoicePages, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTr
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
+import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs } from "./utils/pdfCache";
 
 export default function OrderProcess() {
   const router = useRouter();
@@ -225,6 +226,7 @@ export default function OrderProcess() {
     handleRemoveAllPdfs();
     handleRemoveAllZpls();
     clearProcessData();
+    clearCachedAmazonDocs();
     toast.info("Upload form cleared.");
   };
 
@@ -485,14 +487,18 @@ export default function OrderProcess() {
       let combinedPromise: Promise<Uint8Array> | null = null;
       let unmatchedPdfPromise: Promise<Uint8Array> | null = null;
       let unmatchedZplPromise: Promise<Uint8Array> | null = null;
+      let combinedDocInstance: any = null;
+      let zplDocInstance: any = null;
 
       if (processResponse.files?.convertedZplPdfBase64) {
         try {
           const zplBytes = Uint8Array.from(atob(processResponse.files.convertedZplPdfBase64), (c) =>
             c.charCodeAt(0)
           );
-          const zplDoc = await PDFDocument.load(zplBytes);
+          const zplDoc = await PDFDocument.load(zplBytes, { ignoreEncryption: true });
           const combinedDoc = await PDFDocument.create();
+          zplDocInstance = zplDoc;
+          combinedDocInstance = combinedDoc;
           const unmatchedPdfDoc = await PDFDocument.create();
           const unmatchedZplDoc = await PDFDocument.create();
           let hasUnmatchedPdf = false;
@@ -551,6 +557,7 @@ export default function OrderProcess() {
 
           for (const item of processResponse.results) {
             if (item.isMatch) {
+              const startPage = combinedDoc.getPageCount();
               // 1. Tax Invoice first
               if (item.pdfPages && item.pdfPages.length > 0) {
                 for (const p of item.pdfPages) {
@@ -567,6 +574,8 @@ export default function OrderProcess() {
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
                 await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
               }
+              const endPage = combinedDoc.getPageCount();
+              item.combinedPages = Array.from({ length: endPage - startPage }, (_, i) => startPage + i);
             } else {
               // Unmatched documents
               // 1. Unmatched PDF invoices (Missing in ZPL)
@@ -643,6 +652,16 @@ export default function OrderProcess() {
           pdfFiles.length === 1 ? pdfFiles[0].name : `${pdfFiles.length}_PDF_Invoices_Merged.pdf`;
         processResponse.summary.zplFileName =
           zplFiles.length === 1 ? zplFiles[0].name : `${zplFiles.length}_ZPL_Labels_Combined.zpl`;
+      }
+
+      if (processResponse.files?.combinedPdfBase64 && combinedDocInstance) {
+        setCachedAmazonDocs({
+          combinedDoc: combinedDocInstance,
+          combinedBytes: combinedBytes || null,
+          origDoc,
+          zplDoc: zplDocInstance,
+          cacheKey: getDocCacheKey(processResponse.files),
+        });
       }
 
       clearInterval(progressInterval);
