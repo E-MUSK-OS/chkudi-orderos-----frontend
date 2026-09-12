@@ -25,6 +25,12 @@ import { renderLabelToCanvas } from "@/lib/labelRenderer";
 import { PDFDocument, degrees } from "pdf-lib";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BadgeCheck } from "lucide-react";
+import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
+
+const PRINT_MODE_OPTIONS: SelectOption[] = [
+  { label: "Single Print", value: "single" },
+  { label: "Multiple Print", value: "multiple" },
+];
 
 interface Props {
   open: boolean;
@@ -34,6 +40,8 @@ interface Props {
 interface GenerateRow {
   id: number;
   shortSku: string;
+  fullSku?: string;
+  quantity?: number | string;
   barcodeSku: string;
   ordercookSku: string;
 
@@ -56,6 +64,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     {
       id: 1,
       shortSku: "",
+      fullSku: "",
+      quantity: 1,
       barcodeSku: "",
       ordercookSku: "",
       loading: false,
@@ -88,6 +98,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
   //   }
   // });
   const [rows, setRows] = useState<GenerateRow[]>(DEFAULT_ROWS);
+  const [printMode, setPrintMode] = useState<"single" | "multiple">("single");
 
   const saveDraftMutation = useSaveSheetDraft();
 
@@ -107,12 +118,17 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
   // const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [copiedRow, setCopiedRow] = useState<GenerateRow | null>(null);
   const [isLabelPickerOpen, setIsLabelPickerOpen] = useState(false);
-  
+
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
   const [printedRowIds, setPrintedRowIds] = useState<Set<number>>(new Set());
   const [isPrintExecutionOpen, setIsPrintExecutionOpen] = useState(false);
   const [activePrintTemplate, setActivePrintTemplate] = useState<LabelTemplate | null>(null);
   const [isPrintingDirectly, setIsPrintingDirectly] = useState(false);
+  const qtyInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
+
+  const selectedTotalQty = rows
+    .filter((r) => selectedRowIds.has(r.id))
+    .reduce((sum, r) => sum + (printMode === "multiple" ? Math.max(Number(r.quantity) || 1, 1) : 1), 0);
 
   const handleDirectPrint = async () => {
     const selectedRowsList = rows.filter((r) => selectedRowIds.has(r.id));
@@ -230,13 +246,14 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
           const pdfBase64 = await pdfDoc.saveAsBase64();
 
-          const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, targetPrinter, 1);
+          const copies = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
+          const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, targetPrinter, copies);
           if (extRes && (extRes.success === false || extRes.error)) {
             throw new Error(extRes.error || "Print extension reported print failure");
           }
 
           succeededIds.add(row.id);
-          successCount++;
+          successCount += copies;
         } catch (err: any) {
           console.error(`Failed to print row ${row.id}:`, err);
         }
@@ -281,6 +298,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       {
         id: Date.now(),
         shortSku: "",
+        fullSku: "",
+        quantity: 1,
         barcodeSku: "",
         ordercookSku: "",
 
@@ -398,11 +417,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       prev.map((row, i) =>
         i === index
           ? {
-              ...row,
-              loading: true,
-              error: false,
-              errorMessage: "",
-            }
+            ...row,
+            loading: true,
+            error: false,
+            errorMessage: "",
+          }
           : row,
       ),
     );
@@ -414,17 +433,19 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         prev.map((row, i) =>
           i === index
             ? {
-                ...row,
-                barcodeSku: response.data.barcodeSku,
+              ...row,
+              fullSku: response.data.fullSku || "",
 
-                ordercookSku: response.data.ordercookSku,
+              barcodeSku: response.data.barcodeSku,
 
-                loading: false,
+              ordercookSku: response.data.ordercookSku,
 
-                error: false,
+              loading: false,
 
-                errorMessage: "",
-              }
+              error: false,
+
+              errorMessage: "",
+            }
             : row,
         ),
       );
@@ -437,13 +458,14 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         prev.map((row, i) =>
           i === index
             ? {
-                ...row,
-                barcodeSku: "",
-                ordercookSku: "",
-                loading: false,
-                error: true,
-                errorMessage: "SKU Not Found",
-              }
+              ...row,
+              fullSku: "",
+              barcodeSku: "",
+              ordercookSku: "",
+              loading: false,
+              error: true,
+              errorMessage: "SKU Not Found",
+            }
             : row,
         ),
       );
@@ -497,6 +519,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       {
         header: "Short SKU",
         key: "shortSku",
+        width: 35,
+      },
+      {
+        header: "Full SKU",
+        key: "fullSku",
         width: 35,
       },
       {
@@ -603,12 +630,14 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           row.ordercookSku.trim(),
       )
       .forEach((row) => {
+        const qty = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
         worksheet.addRow({
           shortSku: row.shortSku,
+          fullSku: row.fullSku || "",
           barcodeSku: row.barcodeSku,
-          barcodeQty: 1,
+          barcodeQty: qty,
           ordercookSku: row.ordercookSku,
-          ordercookQty: 1,
+          ordercookQty: qty,
         });
       });
 
@@ -671,14 +700,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       .filter((row) => row.barcodeSku.trim() && row.ordercookSku.trim())
       .forEach((row) => {
         const key = `${row.barcodeSku}|${row.ordercookSku}`;
+        const qty = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
 
         if (summaryMap.has(key)) {
-          summaryMap.get(key)!.qty += 1;
+          summaryMap.get(key)!.qty += qty;
         } else {
           summaryMap.set(key, {
             barcodeSku: row.barcodeSku,
             ordercookSku: row.ordercookSku,
-            qty: 1,
+            qty,
           });
         }
       });
@@ -730,6 +760,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
           shortSku: row.shortSku,
 
+          fullSku: row.fullSku || "",
+
+          quantity: row.quantity !== undefined ? (Number(row.quantity) || 1) : 1,
+
           barcodeSku: row.barcodeSku,
 
           ordercookSku: row.ordercookSku,
@@ -754,6 +788,8 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         .filter((row) => row.shortSku.trim())
         .map((row) => ({
           shortSku: row.shortSku,
+          fullSku: row.fullSku || "",
+          quantity: row.quantity !== undefined ? (Number(row.quantity) || 1) : 1,
           barcodeSku: row.barcodeSku,
           ordercookSku: row.ordercookSku,
         }));
@@ -775,42 +811,59 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
               </DialogTitle>
 
               <p className="mt-1 text-lg text-white">
-                Scan or enter Short SKU. Barcode SKU and OrderCook SKU are
+                Scan or enter Short SKU. Full SKU, Barcode SKU and OrderCook SKU are
                 filled automatically.
               </p>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="flex justify-end items-center gap-3 pt-5 pr-7">
-          <Button 
-            variant="secondary" 
-            fullWidth={false} 
-            className="w-40" 
-            leftIcon={<Printer className="h-4 w-4" />} 
-            onClick={handleDirectPrint}
-            disabled={selectedRowIds.size === 0 || isPrintingDirectly}
-          >
-            {isPrintingDirectly ? "Printing..." : `Print (${selectedRowIds.size})`}
-          </Button>
-          <Button
-            variant="outline"
-            fullWidth={false}
-            className="w-44 truncate"
-            leftIcon={<Tag className="h-4 w-4" />}
-            onClick={() => setIsLabelPickerOpen(true)}
-            title={activePrintTemplate?.name ? `Current Template: ${activePrintTemplate.name}. Click to change.` : "Select label template"}
-          >
-            {activePrintTemplate?.name ? activePrintTemplate.name : "Select Template"}
-          </Button>
-          <Button variant="primary" fullWidth={false} className="w-40" leftIcon={<Trash2 className="h-4 w-4" />} onClick={clearSheet}>
-            Clear Sheet
-          </Button>
+        <div className="flex justify-between items-center gap-3 pt-5 px-6">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-slate-700">Print Mode:</span>
+            <div className="w-44">
+              <ReactSelect
+                options={PRINT_MODE_OPTIONS}
+                value={PRINT_MODE_OPTIONS.find((opt) => opt.value === printMode)}
+                onChange={(opt) => {
+                  if (opt) setPrintMode(opt.value as "single" | "multiple");
+                }}
+                height={38}
+                borderRadius={6}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              fullWidth={false}
+              className="w-40"
+              leftIcon={<Printer className="h-4 w-4" />}
+              onClick={handleDirectPrint}
+              disabled={selectedRowIds.size === 0 || isPrintingDirectly}
+            >
+              {isPrintingDirectly ? "Printing..." : `Print (${selectedTotalQty})`}
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth={false}
+              className="w-44 truncate"
+              leftIcon={<Tag className="h-4 w-4" />}
+              onClick={() => setIsLabelPickerOpen(true)}
+              title={activePrintTemplate?.name ? `Current Template: ${activePrintTemplate.name}. Click to change.` : "Select label template"}
+            >
+              {activePrintTemplate?.name ? activePrintTemplate.name : "Select Template"}
+            </Button>
+            <Button variant="primary" fullWidth={false} className="w-40" leftIcon={<Trash2 className="h-4 w-4" />} onClick={clearSheet}>
+              Clear Sheet
+            </Button>
+          </div>
         </div>
         <div className="flex-1 overflow-hidden px-6 py-4">
           <div className="h-full overflow-auto border">
             <table className="w-full table-fixed border-collapse">
-              <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-white text-lg">
+              <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-white">
                 <tr>
                   <th className="w-12 border px-4 py-3 text-center">
                     <Checkbox
@@ -821,15 +874,25 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                   </th>
                   <th className="w-16 border px-4 py-3 text-left">#</th>
 
-                  <th className="w-[40%] border px-4 py-3 text-left">
+                  <th className={printMode === "multiple" ? "w-[28%] border px-4 py-3 text-left" : "w-[30%] border px-4 py-3 text-left"}>
                     Short SKU
                   </th>
 
-                  <th className="w-[30%] border px-4 py-3 text-left">
+                  {printMode === "multiple" && (
+                    <th className="w-24 border px-4 py-3 text-center">
+                      Qty
+                    </th>
+                  )}
+
+                  <th className={printMode === "multiple" ? "w-[24%] border px-4 py-3 text-left" : "w-[26%] border px-4 py-3 text-left"}>
+                    Full SKU
+                  </th>
+
+                  <th className={printMode === "multiple" ? "w-[24%] border px-4 py-3 text-left" : "w-[22%] border px-4 py-3 text-left"}>
                     Barcode SKU
                   </th>
 
-                  <th className="w-[30%] border px-4 py-3 text-left">
+                  <th className={printMode === "multiple" ? "w-[24%] border px-4 py-3 text-left" : "w-[22%] border px-4 py-3 text-left"}>
                     OrderCook SKU
                   </th>
                   <th className="w-24 border px-4 py-3 text-center">Action</th>
@@ -929,6 +992,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                               updated[index] = {
                                 ...updated[index],
                                 shortSku: copiedRow.shortSku,
+                                fullSku: copiedRow.fullSku || "",
                                 barcodeSku: copiedRow.barcodeSku,
                                 ordercookSku: copiedRow.ordercookSku,
                                 error: false,
@@ -1080,11 +1144,24 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                               // Suggestion open na hoy to normal search
                               if (!row.shortSku.trim()) return;
 
+                              // Background search (autofills Full SKU, Barcode SKU, OrderCook SKU)
+                              searchSku(row.shortSku.trim(), index);
+
+                              if (printMode === "multiple") {
+                                setTimeout(() => {
+                                  qtyInputRefs.current[index]?.focus();
+                                  qtyInputRefs.current[index]?.select();
+                                }, 50);
+                                return;
+                              }
+
                               if (index === rows.length - 1) {
                                 addNewRow();
                               }
 
-                              searchSku(row.shortSku.trim(), index);
+                              setTimeout(() => {
+                                inputRefs.current[index + 1]?.focus();
+                              }, 100);
                             }
 
                             // ESC
@@ -1139,6 +1216,62 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                           </div>
                         )} */}
                       </div>
+                    </td>
+
+                    {printMode === "multiple" && (
+                      <td className="border px-4 py-3 text-center">
+                        <input
+                          ref={(el) => {
+                            qtyInputRefs.current[index] = el;
+                          }}
+                          type="number"
+                          min="1"
+                          value={row.quantity ?? 1}
+                          className="w-full border-none bg-transparent text-center font-medium text-slate-800 outline-none"
+                          onChange={(e) => {
+                            const val = e.target.value === "" ? "" : Math.max(1, parseInt(e.target.value, 10) || 1);
+                            const updated = [...rows];
+                            updated[index] = {
+                              ...updated[index],
+                              quantity: val,
+                            };
+                            setRows(updated);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+
+                              if (row.shortSku.trim() && (!row.barcodeSku || row.error)) {
+                                searchSku(row.shortSku.trim(), index);
+                              }
+
+                              if (index === rows.length - 1) {
+                                addNewRow();
+                              }
+
+                              setTimeout(() => {
+                                inputRefs.current[index + 1]?.focus();
+                              }, 100);
+                            } else if (e.key === "ArrowLeft") {
+                              inputRefs.current[index]?.focus();
+                            } else if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              if (index < rows.length - 1) {
+                                qtyInputRefs.current[index + 1]?.focus();
+                              }
+                            } else if (e.key === "ArrowUp") {
+                              e.preventDefault();
+                              if (index > 0) {
+                                qtyInputRefs.current[index - 1]?.focus();
+                              }
+                            }
+                          }}
+                        />
+                      </td>
+                    )}
+
+                    <td className="border px-4 py-3 text-slate-700">
+                      {row.loading ? "Searching..." : row.fullSku || "-"}
                     </td>
 
                     <td className="border px-4 py-3">

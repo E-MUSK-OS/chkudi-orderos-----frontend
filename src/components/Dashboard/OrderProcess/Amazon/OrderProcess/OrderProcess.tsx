@@ -24,6 +24,8 @@ import ComparisonResultView from "./components/ComparisonResultView";
 import { useAmazonOrderStore } from "./store/useAmazonOrderStore";
 import { AmazonProcessResponse, AmazonComparisonResult } from "./types";
 import { enhanceInvoicePages, mapAsinToSellerSku, drawSkuOnLabelPage } from "./utils";
+import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
+import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 
 export default function OrderProcess() {
@@ -45,11 +47,26 @@ export default function OrderProcess() {
     progress,
     currentStage,
     summary,
+    restoreProcessData,
     setProcessing,
     setProgress,
     setProcessData,
     clearProcessData,
   } = useAmazonOrderStore();
+
+  // If an active batch already exists (or is restored from storage), redirect to results!
+  useEffect(() => {
+    if (isProcessing) return;
+    if (summary) {
+      router.push("/dashboard/order-process/amazon/order-process/result");
+      return;
+    }
+    restoreProcessData().then((hasBatch) => {
+      if (hasBatch) {
+        router.push("/dashboard/order-process/amazon/order-process/result");
+      }
+    });
+  }, [summary, isProcessing, restoreProcessData, router]);
 
   // Helper to format file sizes
   const formatFileSize = (bytes: number): string => {
@@ -379,23 +396,63 @@ export default function OrderProcess() {
 
       const processResponse = compareData as AmazonProcessResponse;
 
-      // Resolve product variants from DB for Seller SKU mapping
+      // Resolve Seller SKU mapping from AsinImport table (primary) and products/variants (fallback)
       let asinToSkuMap = new Map<string, string>();
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
-        const varRes = await productVariantService.getAll(token);
-        if (varRes?.data && Array.isArray(varRes.data)) {
-          varRes.data.forEach((variant) => {
-            if (variant.asin) {
-              const cleanAsin = variant.asin.trim().toUpperCase();
-              if (cleanAsin) {
-                asinToSkuMap.set(cleanAsin, variant.variantSku ? variant.variantSku.trim() : "");
+
+        // 1. Primary: Fetch from AsinImport table
+        try {
+          const asinRes = await asinImportService.getAll("", token);
+          if (asinRes?.data && Array.isArray(asinRes.data)) {
+            asinRes.data.forEach((item) => {
+              if (item.asin) {
+                const cleanAsin = item.asin.trim().toUpperCase();
+                if (cleanAsin) {
+                  asinToSkuMap.set(cleanAsin, item.sku ? item.sku.trim() : "");
+                }
               }
-            }
-          });
+            });
+          }
+        } catch (aErr) {
+          console.warn("Could not fetch AsinImports in OrderProcess:", aErr);
         }
-      } catch (vErr) {
-        console.warn("Could not fetch product variants in OrderProcess:", vErr);
+
+        // 2. Fallback: Check products table (masterSku)
+        try {
+          const prodRes = await productService.getAll(token);
+          if (prodRes?.data && Array.isArray(prodRes.data)) {
+            prodRes.data.forEach((prod) => {
+              if (prod.asin) {
+                const cleanAsin = prod.asin.trim().toUpperCase();
+                if (cleanAsin && !asinToSkuMap.has(cleanAsin)) {
+                  asinToSkuMap.set(cleanAsin, prod.masterSku ? prod.masterSku.trim() : "");
+                }
+              }
+            });
+          }
+        } catch (pErr) {
+          console.warn("Could not fetch products in OrderProcess:", pErr);
+        }
+
+        // 3. Fallback: Check product variants table (variantSku)
+        try {
+          const varRes = await productVariantService.getAll(token);
+          if (varRes?.data && Array.isArray(varRes.data)) {
+            varRes.data.forEach((variant) => {
+              if (variant.asin) {
+                const cleanAsin = variant.asin.trim().toUpperCase();
+                if (cleanAsin && !asinToSkuMap.has(cleanAsin)) {
+                  asinToSkuMap.set(cleanAsin, variant.variantSku ? variant.variantSku.trim() : "");
+                }
+              }
+            });
+          }
+        } catch (vErr) {
+          console.warn("Could not fetch product variants in OrderProcess:", vErr);
+        }
+      } catch (err) {
+        console.warn("Could not resolve ASIN to Seller SKU in OrderProcess:", err);
       }
 
       if (processResponse.results) {
@@ -423,6 +480,8 @@ export default function OrderProcess() {
       setProgress(currentPct, "5. Generating Matched Dispatch PDF...");
 
       let combinedPromise: Promise<Uint8Array> | null = null;
+      let unmatchedPdfPromise: Promise<Uint8Array> | null = null;
+      let unmatchedZplPromise: Promise<Uint8Array> | null = null;
 
       if (processResponse.files?.convertedZplPdfBase64) {
         try {
@@ -431,6 +490,10 @@ export default function OrderProcess() {
           );
           const zplDoc = await PDFDocument.load(zplBytes);
           const combinedDoc = await PDFDocument.create();
+          const unmatchedPdfDoc = await PDFDocument.create();
+          const unmatchedZplDoc = await PDFDocument.create();
+          let hasUnmatchedPdf = false;
+          let hasUnmatchedZpl = false;
 
           const TARGET_WIDTH = 4 * 72; // 288 pt
           const TARGET_HEIGHT = 6 * 72; // 432 pt
@@ -438,16 +501,19 @@ export default function OrderProcess() {
           const AVAIL_WIDTH = TARGET_WIDTH - 2 * MARGIN;
           const AVAIL_HEIGHT = TARGET_HEIGHT - 2 * MARGIN;
 
-          const addScaledPage = async (srcPage: any, isZpl = false, sellerSku?: string) => {
-            const embedded = await combinedDoc.embedPage(srcPage);
+          const addScaledPageToDoc = async (
+            targetDoc: any,
+            srcPage: any,
+            isZpl = false,
+            sellerSku?: string
+          ) => {
+            const embedded = await targetDoc.embedPage(srcPage);
             const { width: srcW, height: srcH } = embedded;
 
             if (isZpl) {
-              // Adjust top spacing for ZPL barcode label so the top barcode has clean breathing room
-              const TOP_SPACING = 25; // 25 pt (~8.8 mm) top margin
+              const TOP_SPACING = 25;
               const BOTTOM_SPACING = 10;
               const SIDE_SPACING = 8;
-
               const availW = TARGET_WIDTH - 2 * SIDE_SPACING;
               const availH = TARGET_HEIGHT - TOP_SPACING - BOTTOM_SPACING;
 
@@ -455,19 +521,16 @@ export default function OrderProcess() {
               const finalW = srcW * scale;
               const finalH = srcH * scale;
 
-              // Perfectly centered horizontally (equal left & right margins)
               const x = (TARGET_WIDTH - finalW) / 2;
-              // In PDF coordinates (0,0 is bottom-left), distance from top edge is TOP_SPACING
               const y = TARGET_HEIGHT - TOP_SPACING - finalH;
 
-              const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+              const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
               newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
 
               if (sellerSku) {
-                await drawSkuOnLabelPage(combinedDoc, newPage, sellerSku, x, y, finalW, finalH);
+                await drawSkuOnLabelPage(targetDoc, newPage, sellerSku, x, y, finalW, finalH);
               }
             } else {
-              const MARGIN = 6;
               const availW = TARGET_WIDTH - 2 * MARGIN;
               const availH = TARGET_HEIGHT - 2 * MARGIN;
 
@@ -475,16 +538,14 @@ export default function OrderProcess() {
               const finalW = srcW * scale;
               const finalH = srcH * scale;
 
-              // Perfectly centered horizontally (equal left & right margins)
               const x = (TARGET_WIDTH - finalW) / 2;
               const y = (TARGET_HEIGHT - finalH) / 2;
 
-              const newPage = combinedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+              const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
               newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
             }
           };
 
-          // Matched only (interleaved: Tax Invoice FIRST, ZPL/JPL SECOND)
           for (const item of processResponse.results) {
             if (item.isMatch) {
               // 1. Tax Invoice first
@@ -492,34 +553,65 @@ export default function OrderProcess() {
                 for (const p of item.pdfPages) {
                   const idx = p - 1;
                   if (idx >= 0 && idx < origDoc.getPageCount()) {
-                    await addScaledPage(origDoc.getPage(idx), false);
+                    await addScaledPageToDoc(combinedDoc, origDoc.getPage(idx), false);
                   }
                 }
               }
               // 2. ZPL / JPL barcode label second
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-                await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
+                await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
+              }
+            } else {
+              // Unmatched documents
+              // 1. Unmatched PDF invoices (Missing in ZPL)
+              if (item.pdfPages && item.pdfPages.length > 0) {
+                for (const p of item.pdfPages) {
+                  const idx = p - 1;
+                  if (idx >= 0 && idx < origDoc.getPageCount()) {
+                    await addScaledPageToDoc(unmatchedPdfDoc, origDoc.getPage(idx), false);
+                    hasUnmatchedPdf = true;
+                  }
+                }
+              }
+              // 2. Unmatched ZPL labels (Missing in PDF)
+              if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
+                await addScaledPageToDoc(unmatchedZplDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
+                hasUnmatchedZpl = true;
               }
             }
           }
 
           combinedPromise = combinedDoc.save();
+          if (hasUnmatchedPdf) {
+            unmatchedPdfPromise = unmatchedPdfDoc.save();
+          }
+          if (hasUnmatchedZpl) {
+            unmatchedZplPromise = unmatchedZplDoc.save();
+          }
         } catch (genErr) {
           console.warn("Could not generate combined preview PDF client-side:", genErr);
         }
       }
 
       // Save documents concurrently in parallel
-      const [enhancedBytes, combinedBytes] = await Promise.all([
+      const [enhancedBytes, combinedBytes, unmatchedPdfBytes, unmatchedZplBytes] = await Promise.all([
         origDoc.save(),
         combinedPromise ? combinedPromise : Promise.resolve(null),
+        unmatchedPdfPromise ? unmatchedPdfPromise : Promise.resolve(null),
+        unmatchedZplPromise ? unmatchedZplPromise : Promise.resolve(null),
       ]);
 
       // Convert to base64 concurrently
-      const [originalPdfBase64, combinedPdfBase64] = await Promise.all([
+      const [originalPdfBase64, combinedPdfBase64, unmatchedPdfBase64, unmatchedZplBase64] = await Promise.all([
         fileToBase64(new Blob([enhancedBytes as unknown as BlobPart], { type: "application/pdf" })),
         combinedBytes
           ? fileToBase64(new Blob([combinedBytes as unknown as BlobPart], { type: "application/pdf" }))
+          : Promise.resolve(""),
+        unmatchedPdfBytes
+          ? fileToBase64(new Blob([unmatchedPdfBytes as unknown as BlobPart], { type: "application/pdf" }))
+          : Promise.resolve(""),
+        unmatchedZplBytes
+          ? fileToBase64(new Blob([unmatchedZplBytes as unknown as BlobPart], { type: "application/pdf" }))
           : Promise.resolve(""),
       ]);
 
@@ -528,10 +620,14 @@ export default function OrderProcess() {
           convertedZplPdfBase64: "",
           combinedPdfBase64: "",
           originalPdfBase64: "",
+          unmatchedPdfBase64: "",
+          unmatchedZplBase64: "",
         };
       }
       processResponse.files.originalPdfBase64 = originalPdfBase64;
       processResponse.files.combinedPdfBase64 = combinedPdfBase64;
+      processResponse.files.unmatchedPdfBase64 = unmatchedPdfBase64;
+      processResponse.files.unmatchedZplBase64 = unmatchedZplBase64;
 
       if (processResponse.summary) {
         processResponse.summary.pdfFileName =

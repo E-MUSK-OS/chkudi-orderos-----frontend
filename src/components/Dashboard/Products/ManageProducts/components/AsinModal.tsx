@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Barcode, Tag, MapPin, Pencil } from "lucide-react";
+import { Barcode, Tag, MapPin, Pencil, Plus } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import type { AsinImportItem } from "../types/asinImport.types";
-import { useUpdateAsinImport } from "../hooks/useAsinImports";
+import { useCreateAsinImport, useUpdateAsinImport } from "../hooks/useAsinImports";
 
 interface Props {
   open: boolean;
@@ -15,7 +15,9 @@ interface Props {
 }
 
 export default function AsinModal({ open, item, onClose }: Props) {
+  const createMutation = useCreateAsinImport();
   const updateMutation = useUpdateAsinImport();
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   const [asin, setAsin] = useState("");
   const [sku, setSku] = useState("");
@@ -23,28 +25,43 @@ export default function AsinModal({ open, item, onClose }: Props) {
   const [rackAddress, setRackAddress] = useState("");
 
   useEffect(() => {
-    if (item) {
-      setAsin(item.asin || "");
-      setSku(item.sku || "");
-      setGenerateBarcode(item.generateBarcode || "");
-      setRackAddress(item.rackAddress || "");
+    if (open) {
+      if (item) {
+        setAsin(item.asin || "");
+        setSku(item.sku || "");
+        setGenerateBarcode(item.generateBarcode || "");
+        setRackAddress(item.rackAddress || "");
+      } else {
+        setAsin("");
+        setSku("");
+        setGenerateBarcode("");
+        setRackAddress("");
+      }
     }
-  }, [item]);
+  }, [open, item]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!item) return;
 
     try {
-      await updateMutation.mutateAsync({
-        id: item.id,
-        data: {
-          asin,
-          sku,
-          generateBarcode,
-          rackAddress,
-        },
-      });
+      if (item) {
+        await updateMutation.mutateAsync({
+          id: item.id,
+          data: {
+            asin: asin.trim(),
+            sku: sku.trim(),
+            generateBarcode: generateBarcode.trim() || undefined,
+            rackAddress: rackAddress.trim() || undefined,
+          },
+        });
+      } else {
+        await createMutation.mutateAsync({
+          asin: asin.trim(),
+          sku: sku.trim(),
+          generateBarcode: generateBarcode.trim() || undefined,
+          rackAddress: rackAddress.trim() || undefined,
+        });
+      }
       onClose();
     } catch (error) {
       console.error(error);
@@ -57,7 +74,7 @@ export default function AsinModal({ open, item, onClose }: Props) {
         variant="secondary"
         fullWidth={false}
         onClick={onClose}
-        disabled={updateMutation.isPending}
+        disabled={isPending}
       >
         Cancel
       </Button>
@@ -66,9 +83,15 @@ export default function AsinModal({ open, item, onClose }: Props) {
         type="submit"
         form="asin-form"
         fullWidth={false}
-        disabled={updateMutation.isPending}
+        disabled={isPending}
       >
-        {updateMutation.isPending ? "Updating..." : "Update ASIN Record"}
+        {isPending
+          ? item
+            ? "Updating..."
+            : "Saving..."
+          : item
+            ? "Update ASIN Record"
+            : "Save ASIN Record"}
       </Button>
     </div>
   );
@@ -85,16 +108,18 @@ export default function AsinModal({ open, item, onClose }: Props) {
       <div className="border-b border-[#E7EAF0] px-6 py-5">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0A0E1A] text-[#E8C16D]">
-            <Pencil size={22} />
+            {item ? <Pencil size={22} /> : <Plus size={22} />}
           </div>
 
           <div>
             <h2 className="text-xl font-semibold text-[#0A0E1A]">
-              Edit ASIN Record
+              {item ? "Edit ASIN Record" : "Add ASIN Record"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Update ASIN code, SKU, barcode, and rack address information.
+              {item
+                ? "Update ASIN code, SKU, barcode, and rack address information."
+                : "Create a new ASIN-to-SKU mapping record."}
             </p>
           </div>
         </div>

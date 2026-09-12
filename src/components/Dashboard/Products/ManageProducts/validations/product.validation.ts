@@ -27,6 +27,8 @@ export const productSchema = z.object({
 
   rackAddress: z.string().optional().default(""),
 
+  generateBarcode: z.string().optional().default("No"),
+
   mrp: z.preprocess(
     (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
     z.number({ message: "MRP is required" }).min(0, "MRP must be non-negative")

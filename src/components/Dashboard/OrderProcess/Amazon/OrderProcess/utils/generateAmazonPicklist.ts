@@ -4,6 +4,8 @@ import { AmazonComparisonResult } from "../types";
 
 export interface PicklistItem {
   sku: string;
+  rackAddress: string;
+  generateBarcode: string;
   quantity: number;
 }
 
@@ -14,7 +16,8 @@ export interface PicklistResult {
 
 export const generateAmazonPicklist = (
   results: AmazonComparisonResult[],
-  selectedRows: Set<number>
+  selectedRows: Set<number>,
+  skuDetailsMap?: Map<string, { rackAddress?: string; generateBarcode?: string }>
 ): PicklistResult => {
   const selectedOrders = results.filter((r) => selectedRows.has(r.index));
 
@@ -53,10 +56,25 @@ export const generateAmazonPicklist = (
   });
 
   const items: PicklistItem[] = Array.from(skuMap.entries()).map(
-    ([sku, quantity]) => ({
-      sku,
-      quantity,
-    })
+    ([sku, quantity]) => {
+      const normSku = sku.toUpperCase();
+      const details = skuDetailsMap?.get(normSku) || skuDetailsMap?.get(sku);
+
+      const rawBarcode = details?.generateBarcode?.trim().toUpperCase() || "";
+      const isBarcodeYes =
+        rawBarcode === "YES" ||
+        rawBarcode === "Y" ||
+        rawBarcode === "TRUE" ||
+        rawBarcode === "1";
+      const generateBarcode = isBarcodeYes ? "Yes" : "No";
+
+      return {
+        sku,
+        rackAddress: details?.rackAddress?.trim() || "--",
+        generateBarcode,
+        quantity,
+      };
+    }
   );
 
   items.sort((a, b) => a.sku.localeCompare(b.sku));
@@ -161,11 +179,16 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
       margin: { left: LEFT_X },
       tableWidth: TABLE_WIDTH,
       pageBreak: "avoid",
-      head: [["SKU", "Qty"]],
-      body: leftItems.map((item) => [item.sku, item.quantity.toString()]),
+      head: [["SKU", "Rack Address", "Gen Barcode", "Qty"]],
+      body: leftItems.map((item) => [
+        item.sku,
+        item.rackAddress || "--",
+        item.generateBarcode || "No",
+        item.quantity.toString(),
+      ]),
       styles: {
-        fontSize: 8,
-        cellPadding: 1.4,
+        fontSize: 7.5,
+        cellPadding: 1.2,
         lineWidth: 0.1,
         minCellHeight: 6,
         overflow: "ellipsize",
@@ -178,10 +201,28 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
         minCellHeight: 6,
       },
       columnStyles: {
-        0: { cellWidth: 76, halign: "left" },
-        1: { cellWidth: 18, halign: "center", fontStyle: "bold" },
+        0: { cellWidth: 38, halign: "left" },
+        1: { cellWidth: 22, halign: "center" },
+        2: { cellWidth: 20, halign: "center" },
+        3: { cellWidth: 14, halign: "center", fontStyle: "bold" },
       },
       theme: "grid",
+      didParseCell: (data) => {
+        if (data.section === "body") {
+          if (data.column.index === 2) {
+            if (data.cell.raw === "Yes") {
+              data.cell.styles.fontStyle = "bold";
+              data.cell.styles.textColor = [16, 185, 129];
+            } else {
+              data.cell.styles.textColor = [100, 116, 139];
+            }
+          }
+          if (data.column.index === 1 && data.cell.raw !== "--") {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.textColor = [30, 41, 59];
+          }
+        }
+      },
     });
 
     // Right Column Table (Max 40 rows)
@@ -191,11 +232,16 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
         margin: { left: RIGHT_X },
         tableWidth: TABLE_WIDTH,
         pageBreak: "avoid",
-        head: [["SKU", "Qty"]],
-        body: rightItems.map((item) => [item.sku, item.quantity.toString()]),
+        head: [["SKU", "Rack Address", "Gen Barcode", "Qty"]],
+        body: rightItems.map((item) => [
+          item.sku,
+          item.rackAddress || "--",
+          item.generateBarcode || "No",
+          item.quantity.toString(),
+        ]),
         styles: {
-          fontSize: 8,
-          cellPadding: 1.4,
+          fontSize: 7.5,
+          cellPadding: 1.2,
           lineWidth: 0.1,
           minCellHeight: 6,
           overflow: "ellipsize",
@@ -208,10 +254,28 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
           minCellHeight: 6,
         },
         columnStyles: {
-          0: { cellWidth: 76, halign: "left" },
-          1: { cellWidth: 18, halign: "center", fontStyle: "bold" },
+          0: { cellWidth: 38, halign: "left" },
+          1: { cellWidth: 22, halign: "center" },
+          2: { cellWidth: 20, halign: "center" },
+          3: { cellWidth: 14, halign: "center", fontStyle: "bold" },
         },
         theme: "grid",
+        didParseCell: (data) => {
+          if (data.section === "body") {
+            if (data.column.index === 2) {
+              if (data.cell.raw === "Yes") {
+                data.cell.styles.fontStyle = "bold";
+                data.cell.styles.textColor = [16, 185, 129];
+              } else {
+                data.cell.styles.textColor = [100, 116, 139];
+              }
+            }
+            if (data.column.index === 1 && data.cell.raw !== "--") {
+              data.cell.styles.fontStyle = "bold";
+              data.cell.styles.textColor = [30, 41, 59];
+            }
+          }
+        },
       });
     }
   }

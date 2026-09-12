@@ -13,6 +13,20 @@ export const asinImportService = {
   },
 
   /**
+   * Create single ASIN import
+   */
+  create(
+    data: { asin: string; sku?: string; generateBarcode?: string; rackAddress?: string },
+    token?: string,
+  ) {
+    return api.post<{ success: boolean; message: string; data?: any }>(
+      BASE_URL,
+      data,
+      token,
+    );
+  },
+
+  /**
    * Import ASIN from Excel
    */
   importExcel(file: File, token?: string) {

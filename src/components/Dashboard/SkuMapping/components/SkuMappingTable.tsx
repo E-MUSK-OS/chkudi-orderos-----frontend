@@ -34,7 +34,7 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
   if (!data || data.data.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center text-slate-500">
-        No SKU Mapping Found
+        No Godown Inventory Records Found
       </div>
     );
   }
@@ -46,6 +46,8 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
           <thead className="bg-[#0A0E1A] text-white">
             <tr>
               <th className="px-4 py-3 text-left">Short SKU</th>
+
+              <th className="px-4 py-3 text-left">Full SKU</th>
 
               <th className="px-4 py-3 text-left">Barcode SKU</th>
 
@@ -59,6 +61,8 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
             {data.data.map((item) => (
               <tr key={item.id} className="border-t">
                 <td className="px-4 py-3">{item.shortSku}</td>
+
+                <td className="px-4 py-3 text-slate-700">{item.fullSku || "-"}</td>
 
                 <td className="px-4 py-3">{item.barcodeSku}</td>
 
@@ -94,7 +98,7 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
         pageSize={pageSize}
         totalPages={data.pagination.totalPages}
         totalRecords={data.pagination.total}
-        itemName="SKU Mappings"
+        itemName="Records"
         onPageChange={setPage}
         onPageSizeChange={(size) => {
           setPageSize(size);

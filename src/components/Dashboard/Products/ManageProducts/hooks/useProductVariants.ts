@@ -74,6 +74,7 @@ export function useCreateProductVariant() {
       queryClient.invalidateQueries({
         queryKey: [...QUERY_KEY, variables.productId],
       });
+      queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
         response?.message ??
@@ -120,6 +121,7 @@ export function useUpdateProductVariant() {
           ],
         });
       }
+      queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
         response?.message ??
@@ -163,6 +165,7 @@ export function useDeleteProductVariant() {
           variables.productId,
         ],
       });
+      queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
         response?.message ??

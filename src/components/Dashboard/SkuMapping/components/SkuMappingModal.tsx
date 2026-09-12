@@ -36,6 +36,7 @@ export default function SkuMappingModal({ open, onClose, skuMapping }: Props) {
     if (skuMapping) {
       reset({
         shortSku: skuMapping.shortSku,
+        fullSku: skuMapping.fullSku || "",
         barcodeSku: skuMapping.barcodeSku,
         ordercookSku: skuMapping.ordercookSku,
       });
@@ -79,6 +80,8 @@ export default function SkuMappingModal({ open, onClose, skuMapping }: Props) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6">
           <Input label="Short SKU" {...register("shortSku")} />
+
+          <Input label="Full SKU" {...register("fullSku")} />
 
           <Input label="Barcode SKU" {...register("barcodeSku")} />
 

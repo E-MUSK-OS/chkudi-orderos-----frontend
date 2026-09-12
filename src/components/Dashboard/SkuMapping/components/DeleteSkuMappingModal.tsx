@@ -53,7 +53,7 @@ export default function DeleteSkuMappingModal({
       <DialogContent className="max-w-xl overflow-hidden  border-0 p-0 shadow-2xl">
         <DialogHeader className="border-b bg-[#0A0E1A] px-6 py-5">
           <DialogTitle className="flex items-center gap-3 text-2xl font-semibold text-white">
-            Delete SKU Mapping
+            Delete Record
           </DialogTitle>
 
           <p className="mt-1 text-sm text-red-100">
@@ -65,7 +65,7 @@ export default function DeleteSkuMappingModal({
         <div className="space-y-6 p-6">
           <div className="border border-red-200 bg-red-50 px-4 py-3">
             <p className="text-sm font-medium text-red-700">
-              ⚠️ This SKU Mapping will be permanently removed from your account.
+              ⚠️ This record will be permanently removed from your account.
             </p>
           </div>
 

@@ -40,7 +40,7 @@ export default function SkuMappingPage() {
   }, []);
 
   return (
-    <DashboardLayout title="SKU Mapping">
+    <DashboardLayout title="Godown Inventory Sheet">
       <div className="space-y-6">
         <Toolbar
           search={search}

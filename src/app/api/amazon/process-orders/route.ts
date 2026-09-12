@@ -13,6 +13,7 @@ interface ZplLabelData {
   awb: string;
   customer: string;
   rawZpl: string;
+  shipToAddress?: string;
 }
 
 interface PdfOrderData {
@@ -25,6 +26,7 @@ interface PdfOrderData {
   customer: string;
   amount: string;
   date: string;
+  shippingAddress?: string;
 }
 
 interface ComparisonResult {
@@ -610,10 +612,10 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
 
     /**
      * Parse all:
-     * ^FOx,y...^FDtext^FS
+     * ^FOx,y...^FDtext^FS or ^FTx,y...^FDtext^FS
      */
     const fieldRegex =
-      /\^FO(\d+),(\d+).*?\^FD([^^]+)\^FS/gi;
+      /\^(?:FO|FT)(\d+),(\d+)[\s\S]*?\^FD([\s\S]*?)\^FS/gi;
 
     const fields: Array<{
       x: number;
@@ -624,10 +626,11 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
     let fm: RegExpExecArray | null;
 
     while ((fm = fieldRegex.exec(decoded)) !== null) {
+      const cleanText = fm[3].replace(/\\&/g, " ").trim();
       fields.push({
         x: parseInt(fm[1], 10),
         y: parseInt(fm[2], 10),
-        text: fm[3].trim(),
+        text: cleanText,
       });
     }
 
@@ -754,18 +757,23 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
     }
 
     // ---------------------------------------------------------
-    // STEP 5: Extract customer / recipient.
+    // STEP 5: Extract customer / recipient & Ship To address.
     // ---------------------------------------------------------
+
+    const shipToAddress = extractZplShipToAddress(decoded, fields);
 
     let customer = "";
 
     const customerMatch =
-      decoded.match(/\^FO50,360.*?\^FD(.*?)\^FS/i) ||
-      decoded.match(/\^FO40,445.*?\^FD(.*?)\^FS/i) ||
-      decoded.match(/Ship To:[\s\S]*?\^FD(.*?)\^FS/i);
+      decoded.match(/\^(?:FO|FT)50,360[\s\S]*?\^FD([\s\S]*?)\^FS/i) ||
+      decoded.match(/\^(?:FO|FT)40,445[\s\S]*?\^FD([\s\S]*?)\^FS/i) ||
+      decoded.match(/Ship To:[\s\S]*?\^FD([\s\S]*?)\^FS/i);
 
     if (customerMatch?.[1]) {
-      customer = cleanCustomerName(customerMatch[1]);
+      customer = cleanCustomerName(customerMatch[1].replace(/\\&/g, " "));
+    }
+    if (!customer && shipToAddress) {
+      customer = cleanCustomerName(shipToAddress);
     }
 
     // ---------------------------------------------------------
@@ -802,6 +810,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       awb,
       customer,
       rawZpl: fullLabel,
+      shipToAddress,
     });
   }
 
@@ -922,6 +931,235 @@ function normalizeInvoice(value: string): string {
 }
 
 /**
+ * Extract complete address following "Ship To:" from ZPL fields or decoded text.
+ */
+function extractZplShipToAddress(
+  decoded: string,
+  fields: Array<{ x: number; y: number; text: string }>
+): string {
+  // Strategy 1: Find field containing "Ship To"
+  const shipToField = fields.find((f) => /Ship\s*To/i.test(f.text));
+
+  if (shipToField) {
+    const afterShipTo = shipToField.text.replace(/Ship\s*To\s*[:\-]?\s*/i, "").trim();
+
+    // Collect all fields vertically below this Ship To header (within 650 vertical units, avoiding returns dock & label boilerplate)
+    const belowFields = fields
+      .filter(
+        (f) =>
+          f.y > shipToField.y &&
+          f.y <= shipToField.y + 650 &&
+          Math.abs(f.x - shipToField.x) <= 450 &&
+          !/^(?:ORDER|INVOICE|AWB|DATE|TOTAL|QTY|ITEM|PRICE|TAX|SHIP\s*DATE|RETURN|WEIGHT|COD|PREPAID|DELIVERY\s*STATION|SECTOR|SORTZONE|ATSPL|BOX\s+\d+|SUN\s+Closed|PDD\s*:|Customer\s*Returns|Shipped\s*By|Customer\s*Self\s*Declaration)/i.test(
+            f.text
+          ) &&
+          !/^\d{3}-\d{7}-\d{7}$/.test(f.text) &&
+          !/^ATS/i.test(f.text)
+      )
+      .sort((a, b) => a.y - b.y)
+      .map((f) => f.text);
+
+    const parts: string[] = [];
+    if (afterShipTo) {
+      parts.push(afterShipTo);
+    }
+    parts.push(...belowFields);
+
+    const combined = parts.join(" ").replace(/\\&/g, " ").replace(/\s+/g, " ").trim();
+    if (combined.length >= 4) {
+      return combined;
+    }
+  }
+
+  // Strategy 2: Regex extraction from raw decoded ZPL text
+  const inlineMatch = decoded.match(/Ship\s*To\s*[:\-]?\s*([^^]+)/i);
+  if (inlineMatch?.[1]) {
+    const cleaned = inlineMatch[1]
+      .replace(/\\&/g, " ")
+      .replace(/\^[A-Z0-9,]+/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (cleaned.length >= 4) {
+      return cleaned;
+    }
+  }
+
+  // Strategy 3: Multi-line match across ^FD tags after "Ship To", stopping before Return Address/Barcodes
+  const shipBlockMatch = decoded.match(
+    /Ship\s*To\s*[:\-]?([\s\S]*?)(?=(?:\^(?:FO|FT)\d+,\d+[\s\S]*?\^FD(?:ORDER|INVOICE|AWB|DATE|DELIVERY\s+STATION|SORTZONE|PREPAID|Customer\s+Returns|Shipped\s+By|Customer\s+Self\s+Declaration|\d{3}-\d{7}-\d{7})|\bCustomer\s+Returns\b|\bShipped\s+By\b|\bReturn\s+Address\b|\^BC|\^BX|\^XZ|$))/i
+  );
+  if (shipBlockMatch?.[1]) {
+    const fdTexts = Array.from(shipBlockMatch[1].matchAll(/\^FD([\s\S]*?)\^FS/g))
+      .map((m) => m[1].replace(/\\&/g, " ").trim())
+      .filter(
+        (t) =>
+          t &&
+          !/^(?:Ship\s*To|DELIVERY\s*STATION|SECTOR|SORTZONE|PREPAID|ATSPL|BOX\s*\d+|SUN|Closed|Customer\s*Returns|Shipped\s*By|Customer\s*Self)/i.test(
+            t
+          )
+      );
+
+    if (fdTexts.length > 0) {
+      return fdTexts.join(" ");
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Extract complete address following "Shipping Address :" from PDF text.
+ */
+function extractPdfShippingAddress(text: string): string {
+  if (!text) return "";
+
+  // Delimiter pattern with strict word boundaries to avoid truncating words like "COMPANY" on "PAN"
+  const delimiterPattern =
+    /(?=(?:\bBilling\s+Address\b|\bState(?:\/|\s*)UT\s+Code\b|\bPlace\s+of\s+(?:supply|delivery)\b|\bInvoice\s+(?:Number|No|Date|Details)\b|\bOrder\s+(?:Number|No|Date)\b|\bTax\s+Invoice\b|\bGSTIN\b|\bCIN\b|\bPAN\s*(?:No\.?)?[:\s]|\bPAN\b|\bDescription\s+of\s+Goods\b|\bSl\.?\s*No\b|$))/i;
+
+  // Strategy 1: "Shipping Address :" followed by address up to the next section delimiter
+  const shippingMatch = text.match(
+    new RegExp(/Shipping\s+Address\s*[:\-]?\s*([\s\S]*?)/.source + delimiterPattern.source, "i")
+  );
+
+  if (shippingMatch?.[1]) {
+    const cleaned = shippingMatch[1]
+      .replace(/[\r\n]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (cleaned.length >= 4) {
+      return cleaned;
+    }
+  }
+
+  // Strategy 2: "Ship To :" in PDF
+  const shipToMatch = text.match(
+    new RegExp(/Ship\s+To\s*[:\-]?\s*([\s\S]*?)/.source + delimiterPattern.source, "i")
+  );
+  if (shipToMatch?.[1]) {
+    const cleaned = shipToMatch[1]
+      .replace(/[\r\n]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (cleaned.length >= 4) {
+      return cleaned;
+    }
+  }
+
+  // Strategy 3: "Billing Address :" as fallback if Shipping Address not labeled
+  const billingMatch = text.match(
+    new RegExp(/Billing\s+Address\s*[:\-]?\s*([\s\S]*?)/.source + delimiterPattern.source, "i")
+  );
+  if (billingMatch?.[1]) {
+    const cleaned = billingMatch[1]
+      .replace(/[\r\n]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (cleaned.length >= 4) {
+      return cleaned;
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Normalize an address string for resilient, cross-platform matching.
+ */
+function normalizeAddress(addr: string): {
+  normalized: string;
+  tokens: Set<string>;
+  pinCode: string;
+} {
+  if (!addr) {
+    return { normalized: "", tokens: new Set(), pinCode: "" };
+  }
+
+  let cleaned = addr.toUpperCase();
+
+  // Remove common prefixes & noise
+  cleaned = cleaned
+    .replace(/^[\s\S]*?(?:Shipping\s+Address|Ship\s+To)\s*[:\-]?\s*/gi, "")
+    .replace(/\b(?:INDIA|IND|IN)\b/gi, " ")
+    .replace(/\b(?:PH|PHONE|TEL|MOB|MOBILE)\s*[:\-#]?\s*\d{10,12}\b/gi, " ");
+
+  // Extract 6-digit Indian PIN code (must start with 1-9)
+  const pinMatch = cleaned.match(/\b([1-9][0-9]{5})\b/);
+  const pinCode = pinMatch ? pinMatch[1] : "";
+
+  // Replace punctuation with spaces
+  cleaned = cleaned.replace(/[^A-Z0-9\s]/g, " ");
+
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  const tokens = new Set<string>();
+  const stopwords = ["THE", "AND", "FOR", "WITH", "NEAR", "OPP", "TO", "OF", "AT", "BY"];
+
+  for (const w of words) {
+    if (stopwords.includes(w)) continue;
+    if (w.length >= 2 || /^\d+$/.test(w)) {
+      tokens.add(w);
+    }
+  }
+
+  return {
+    normalized: words.join(" "),
+    tokens,
+    pinCode,
+  };
+}
+
+/**
+ * Compute similarity score between PDF Shipping Address and ZPL Ship To address.
+ * Returns score between 0.0 and 1.0.
+ */
+function computeAddressSimilarity(pdfAddr: string, zplAddr: string): number {
+  if (!pdfAddr || !zplAddr) return 0;
+
+  const pdf = normalizeAddress(pdfAddr);
+  const zpl = normalizeAddress(zplAddr);
+
+  if (pdf.tokens.size === 0 || zpl.tokens.size === 0) return 0;
+
+  // PIN code check: If both have 6-digit Indian PIN codes and they are different, they CANNOT be the same address
+  if (pdf.pinCode && zpl.pinCode && pdf.pinCode !== zpl.pinCode) {
+    return 0;
+  }
+
+  // Count common tokens
+  let commonCount = 0;
+  for (const token of zpl.tokens) {
+    if (pdf.tokens.has(token)) {
+      commonCount++;
+    }
+  }
+
+  const minTokens = Math.min(pdf.tokens.size, zpl.tokens.size);
+  if (minTokens === 0) return 0;
+
+  const overlapRatio = commonCount / minTokens;
+  const unionSize = pdf.tokens.size + zpl.tokens.size - commonCount;
+  const jaccard = unionSize > 0 ? commonCount / unionSize : 0;
+
+  let score = overlapRatio * 0.60 + jaccard * 0.40;
+
+  // Boost for matching PIN code
+  if (pdf.pinCode && zpl.pinCode && pdf.pinCode === zpl.pinCode) {
+    score += 0.30;
+  }
+
+  // Check substring containment
+  if (
+    pdf.normalized.length >= 10 &&
+    zpl.normalized.length >= 10 &&
+    (pdf.normalized.includes(zpl.normalized) || zpl.normalized.includes(pdf.normalized))
+  ) {
+    score = Math.max(score, 0.95);
+  }
+
+  return Math.min(score, 1.0);
+}
+
+/**
  * Categorize order composition into:
  * - "single_quantity": Exactly 1 ASIN and 1 piece/quantity total in invoice
  * - "multiple_asin": Multiple different ASINs in invoice
@@ -998,8 +1236,10 @@ function buildComparisonResponse(
   pagesArray: string[],
   zplFileName = "labels.zpl"
 ) {
-  const invoiceMap = new Map<string, PdfOrderData & { fullText?: string }>();
-  const pdfOrdersList: (PdfOrderData & { fullText?: string })[] = [];
+  // Consolidate PDF pages into distinct PDF orders
+  const consolidatedPdfOrders: (PdfOrderData & { fullText?: string })[] = [];
+  const invoiceToPdfIdx = new Map<string, number>();
+  const orderNumToPdfIdx = new Map<string, number>();
 
   for (let index = 0; index < pagesArray.length; index++) {
     const pageNumber = index + 1;
@@ -1013,6 +1253,9 @@ function buildComparisonResponse(
 
     // Invoice number
     const invoiceNumber = extractPdfInvoiceNumber(text);
+
+    // Shipping Address
+    const shippingAddress = extractPdfShippingAddress(text);
 
     // ASIN / ASI number
     const asin = extractAsin(text);
@@ -1041,59 +1284,89 @@ function buildComparisonResponse(
     if (billingMatch?.[1]) {
       customer = cleanCustomerName(billingMatch[1]);
     }
+    if (!customer && shippingAddress) {
+      customer = cleanCustomerName(shippingAddress);
+    }
 
-    const orderRecord = {
-      orderNumber,
-      sellerInvoice: invoiceNumber,
-      asin,
-      sellerSku,
-      allInvoices: invoiceNumber ? [invoiceNumber] : [],
-      pages: [pageNumber],
-      customer,
-      amount,
-      date,
-      fullText: text,
-    };
+    const invKey = invoiceNumber ? normalizeInvoice(invoiceNumber) : "";
+    const orderKey = orderNumber ? orderNumber.trim() : "";
 
-    pdfOrdersList.push(orderRecord);
+    // Check if this page belongs to an already encountered PDF order
+    let existingIdx = -1;
+    if (invKey && invoiceToPdfIdx.has(invKey)) {
+      existingIdx = invoiceToPdfIdx.get(invKey)!;
+    } else if (orderKey && orderNumToPdfIdx.has(orderKey)) {
+      existingIdx = orderNumToPdfIdx.get(orderKey)!;
+    }
 
-    if (invoiceNumber) {
-      const key = normalizeInvoice(invoiceNumber);
-      if (invoiceMap.has(key)) {
-        const existing = invoiceMap.get(key)!;
-        existing.pages.push(pageNumber);
-        existing.fullText = (existing.fullText || "") + "\n" + text;
-        if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
-        if (!existing.asin && asin) existing.asin = asin;
-        if (!existing.sellerSku && sellerSku) existing.sellerSku = sellerSku;
-        if (!existing.amount && amount) existing.amount = amount;
-        if (!existing.date && date) existing.date = date;
-        if (!existing.customer && customer) existing.customer = customer;
-        if (!existing.allInvoices.includes(invoiceNumber)) {
-          existing.allInvoices.push(invoiceNumber);
-        }
-      } else {
-        invoiceMap.set(key, { ...orderRecord });
+    if (existingIdx !== -1) {
+      const existing = consolidatedPdfOrders[existingIdx];
+      existing.pages.push(pageNumber);
+      existing.fullText = (existing.fullText || "") + "\n" + text;
+      if (!existing.sellerInvoice && invoiceNumber) existing.sellerInvoice = invoiceNumber;
+      if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
+      if (!existing.shippingAddress && shippingAddress) existing.shippingAddress = shippingAddress;
+      if (!existing.customer && customer) existing.customer = customer;
+      if (!existing.asin && asin) existing.asin = asin;
+      if (!existing.sellerSku && sellerSku) existing.sellerSku = sellerSku;
+      if (!existing.amount && amount) existing.amount = amount;
+      if (!existing.date && date) existing.date = date;
+      if (invoiceNumber && !existing.allInvoices.includes(invoiceNumber)) {
+        existing.allInvoices.push(invoiceNumber);
       }
+      if (invKey && !invoiceToPdfIdx.has(invKey)) {
+        invoiceToPdfIdx.set(invKey, existingIdx);
+      }
+    } else {
+      const newIdx = consolidatedPdfOrders.length;
+      const newOrder: PdfOrderData & { fullText?: string } = {
+        orderNumber,
+        sellerInvoice: invoiceNumber,
+        asin,
+        sellerSku,
+        allInvoices: invoiceNumber ? [invoiceNumber] : [],
+        pages: [pageNumber],
+        customer,
+        amount,
+        date,
+        fullText: text,
+        shippingAddress,
+      };
+      consolidatedPdfOrders.push(newOrder);
+      if (invKey) invoiceToPdfIdx.set(invKey, newIdx);
+      if (orderKey) orderNumToPdfIdx.set(orderKey, newIdx);
     }
   }
 
-  // Compare ZPL labels with PDF invoices
+  // ---------------------------------------------------------
+  // PASS 1: PRIORITY 1 - INVOICE NUMBER MATCHING
+  // ---------------------------------------------------------
+  const matchedZplIndices = new Set<number>();
+  const matchedPdfIndices = new Set<number>();
   const matchedResults: ComparisonResult[] = [];
-  const mismatchedZplResults: ComparisonResult[] = [];
-  const matchedPdfKeys = new Set<string>();
 
   for (let i = 0; i < zplLabels.length; i++) {
     const label = zplLabels[i];
-    let matchedOrder: (PdfOrderData & { fullText?: string }) | null = null;
+    if (!label.invoiceNumber) continue;
 
-    if (label.invoiceNumber) {
-      const key = normalizeInvoice(label.invoiceNumber);
-      matchedOrder = invoiceMap.get(key) || null;
-    }
+    const zplKey = normalizeInvoice(label.invoiceNumber);
+    if (!zplKey) continue;
 
-    if (matchedOrder) {
-      matchedPdfKeys.add(normalizeInvoice(matchedOrder.sellerInvoice));
+    const matchedIdx = consolidatedPdfOrders.findIndex((pdfOrder, idx) => {
+      if (matchedPdfIndices.has(idx)) return false;
+      if (pdfOrder.sellerInvoice && normalizeInvoice(pdfOrder.sellerInvoice) === zplKey) {
+        return true;
+      }
+      if (pdfOrder.allInvoices.some((inv) => normalizeInvoice(inv) === zplKey)) {
+        return true;
+      }
+      return false;
+    });
+
+    if (matchedIdx !== -1) {
+      const matchedOrder = consolidatedPdfOrders[matchedIdx];
+      matchedZplIndices.add(label.index);
+      matchedPdfIndices.add(matchedIdx);
 
       const extractedItems = extractAllItemsFromPdfText(matchedOrder.fullText || "");
       const classification = classifyOrderType(
@@ -1123,7 +1396,107 @@ function buildComparisonResponse(
         totalQuantity: classification.totalQuantity,
         asinsCount: classification.asinsCount,
       });
-    } else {
+    }
+  }
+
+  // ---------------------------------------------------------
+  // PASS 2: PRIORITY 2 - ADDRESS MATCHING (FALLBACK)
+  // PDF "Shipping Address :" vs ZPL "Ship To:"
+  // ---------------------------------------------------------
+  const unmatchedZpls = zplLabels.filter((l) => !matchedZplIndices.has(l.index));
+  const unmatchedPdfIndices = consolidatedPdfOrders
+    .map((_, idx) => idx)
+    .filter((idx) => !matchedPdfIndices.has(idx));
+
+  if (unmatchedZpls.length > 0 && unmatchedPdfIndices.length > 0) {
+    interface CandidateAddressPair {
+      zplLabel: ZplLabelData;
+      pdfIdx: number;
+      score: number;
+    }
+
+    const candidatePairs: CandidateAddressPair[] = [];
+
+    for (const zpl of unmatchedZpls) {
+      const zplAddr = [zpl.customer, zpl.shipToAddress].filter(Boolean).join(" ");
+      if (!zplAddr) continue;
+
+      for (const pdfIdx of unmatchedPdfIndices) {
+        const pdfOrder = consolidatedPdfOrders[pdfIdx];
+        const pdfAddr = [pdfOrder.customer, pdfOrder.shippingAddress].filter(Boolean).join(" ");
+        if (!pdfAddr) continue;
+
+        const score = computeAddressSimilarity(pdfAddr, zplAddr);
+        if (score >= 0.45) {
+          candidatePairs.push({
+            zplLabel: zpl,
+            pdfIdx,
+            score,
+          });
+        }
+      }
+    }
+
+    // Sort descending by similarity score so best matches pair first
+    candidatePairs.sort((a, b) => b.score - a.score);
+
+    for (const pair of candidatePairs) {
+      if (
+        matchedZplIndices.has(pair.zplLabel.index) ||
+        matchedPdfIndices.has(pair.pdfIdx)
+      ) {
+        continue;
+      }
+
+      matchedZplIndices.add(pair.zplLabel.index);
+      matchedPdfIndices.add(pair.pdfIdx);
+
+      const label = pair.zplLabel;
+      const matchedOrder = consolidatedPdfOrders[pair.pdfIdx];
+
+      const extractedItems = extractAllItemsFromPdfText(matchedOrder.fullText || "");
+      const classification = classifyOrderType(
+        matchedOrder.fullText || "",
+        extractedItems.asins,
+        extractedItems.sellerSkus
+      );
+
+      const asinVal = extractedItems.asinString || matchedOrder.asin || label.asin || "N/A";
+      const skuVal = extractedItems.sellerSkuString || matchedOrder.sellerSku || label.sellerSku || "N/A";
+
+      const resolvedInvoice = matchedOrder.sellerInvoice || label.invoiceNumber || "Address Matched";
+
+      matchedResults.push({
+        index: 0,
+        isMatch: true,
+        pdfInvoice: matchedOrder.sellerInvoice || resolvedInvoice,
+        zplInvoice: label.invoiceNumber || resolvedInvoice,
+        asin: asinVal,
+        sellerSku: skuVal,
+        orderNumber: matchedOrder.orderNumber || "N/A",
+        awb: label.awb || "N/A",
+        customer: matchedOrder.customer || label.customer || "N/A",
+        amount: matchedOrder.amount ? `₹${matchedOrder.amount}` : "N/A",
+        date: matchedOrder.date || "N/A",
+        pdfPages: matchedOrder.pages || [],
+        zplPage: label.index,
+        orderType: classification.orderType,
+        totalQuantity: classification.totalQuantity,
+        asinsCount: classification.asinsCount,
+      });
+
+      console.log(
+        `[Address Match Success] ZPL #${label.index} matched PDF order ${matchedOrder.orderNumber || resolvedInvoice} with score ${pair.score.toFixed(2)}`
+      );
+    }
+  }
+
+  // ---------------------------------------------------------
+  // PASS 3: COLLECT REMAINING UNMATCHED ZPL LABELS
+  // ---------------------------------------------------------
+  const mismatchedZplResults: ComparisonResult[] = [];
+  for (const label of zplLabels) {
+    if (!matchedZplIndices.has(label.index)) {
       mismatchedZplResults.push({
         index: 0,
         isMatch: false,
@@ -1142,15 +1515,12 @@ function buildComparisonResponse(
     }
   }
 
+  // ---------------------------------------------------------
+  // PASS 4: COLLECT REMAINING UNMATCHED PDF ORDERS
+  // ---------------------------------------------------------
   const mismatchedPdfResults: ComparisonResult[] = [];
-  const seenPdfKeys = new Set<string>();
-
-  for (const pdfOrder of pdfOrdersList) {
-    const key = normalizeInvoice(pdfOrder.sellerInvoice);
-    if (!key || seenPdfKeys.has(key)) continue;
-    seenPdfKeys.add(key);
-
-    if (!matchedPdfKeys.has(key)) {
+  consolidatedPdfOrders.forEach((pdfOrder, idx) => {
+    if (!matchedPdfIndices.has(idx)) {
       const extractedItems = extractAllItemsFromPdfText(pdfOrder.fullText || "");
       const asinVal = extractedItems.asinString || pdfOrder.asin || "N/A";
       const skuVal = extractedItems.sellerSkuString || pdfOrder.sellerSku || "N/A";
@@ -1171,7 +1541,7 @@ function buildComparisonResponse(
         zplPage: 0,
       });
     }
-  }
+  });
 
   const comparisonResults: ComparisonResult[] = [
     ...matchedResults,
@@ -1187,7 +1557,7 @@ function buildComparisonResponse(
     success: true,
     summary: {
       totalZplLabels: zplLabels.length,
-      totalPdfOrders: invoiceMap.size,
+      totalPdfOrders: consolidatedPdfOrders.length,
       totalPdfPages: pagesArray.length,
       matchedCount: matchCount,
       mismatchCount: mismatchCount,
