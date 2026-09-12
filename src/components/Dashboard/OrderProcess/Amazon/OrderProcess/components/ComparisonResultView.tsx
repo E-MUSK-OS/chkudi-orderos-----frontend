@@ -20,6 +20,8 @@ import {
   Zap,
   X,
   Filter,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
@@ -402,6 +404,7 @@ export default function ComparisonResultView({
   const autoPrintInputRef = useRef<HTMLInputElement>(null);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [printedRows, setPrintedRows] = useState<Set<number>>(new Set());
+  const [showPrinted, setShowPrinted] = useState(false);
   const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("all");
 
   // Fetch ASIN to Seller SKU mapping from AsinImport table (primary), products, and variants (fallback)
@@ -609,12 +612,17 @@ export default function ComparisonResultView({
     };
     mappedResults.forEach((item) => {
       if (!item.isMatch) return;
+      if (!showPrinted && printedRows.has(item.index)) return;
       counts.all++;
       const type = getOrderTypeForItem(item);
       counts[type]++;
     });
     return counts;
-  }, [mappedResults]);
+  }, [mappedResults, printedRows, showPrinted]);
+
+  const remainingMatchedCount = useMemo(() => {
+    return mappedResults.filter((i) => i.isMatch && !printedRows.has(i.index)).length;
+  }, [mappedResults, printedRows]);
 
   const orderTypeOptions: SelectOption[] = useMemo(
     () => [
@@ -653,6 +661,7 @@ export default function ComparisonResultView({
 
   const handleReset = () => {
     setPrintedRows(new Set());
+    setShowPrinted(false);
     if (onReset) {
       onReset();
     } else {
@@ -665,6 +674,9 @@ export default function ComparisonResultView({
     return mappedResults.filter((item) => {
       // Exclude unmatched items from table (viewed via PDF viewer)
       if (!item.isMatch) return false;
+
+      // Exclude already printed items unless showPrinted is toggled ON
+      if (!showPrinted && printedRows.has(item.index)) return false;
 
       // Filter by order composition type
       if (orderTypeFilter !== "all") {
@@ -686,7 +698,7 @@ export default function ComparisonResultView({
         item.customer.toLowerCase().includes(activeQuery)
       );
     });
-  }, [mappedResults, searchQuery, autoPrintQuery, orderTypeFilter]);
+  }, [mappedResults, searchQuery, autoPrintQuery, orderTypeFilter, printedRows, showPrinted]);
 
   // Pagination calculations (exact Myntra logic)
   const totalRecords = filteredResults.length;
@@ -966,6 +978,11 @@ export default function ComparisonResultView({
             targetResults.forEach((r) => next.add(r.index));
             return next;
           });
+          setSelectedRows((prev) => {
+            const next = new Set(prev);
+            targetResults.forEach((r) => next.delete(r.index));
+            return next;
+          });
         } else {
           extError = extCheck.error || 'Extension not responding';
           console.warn('Chrome print extension check failed:', extError);
@@ -1054,32 +1071,27 @@ export default function ComparisonResultView({
 
     if (matchingItems.length > 0) {
       const unprintedItems = matchingItems.filter((item) => !printedRows.has(item.index));
-      let targetItem: typeof mappedResults[0];
-      let seqNotice = "";
 
-      if (unprintedItems.length > 0) {
-        targetItem = unprintedItems[0];
-        const step = matchingItems.length - unprintedItems.length + 1;
-        if (matchingItems.length > 1) {
-          seqNotice = `Order ${step} of ${matchingItems.length}`;
-        }
-      } else {
-        // All matching items for this query have been printed once -> cycle restart
-        targetItem = matchingItems[0];
-        if (matchingItems.length > 1) {
-          seqNotice = `Cycle restart: Order 1 of ${matchingItems.length}`;
-          setPrintedRows((prev) => {
-            const next = new Set(prev);
-            matchingItems.forEach((m) => next.delete(m.index));
-            return next;
-          });
-        }
+      if (unprintedItems.length === 0) {
+        toast.warning(`All ${matchingItems.length} order(s) for "${query}" have already been printed and removed!`, {
+          id: "auto-print",
+          duration: 4000,
+        });
+        return;
+      }
+
+      const targetItem = unprintedItems[0];
+      const remainingAfterThis = unprintedItems.length - 1;
+      let seqNotice = "";
+      if (matchingItems.length > 1) {
+        const currentStep = matchingItems.length - unprintedItems.length + 1;
+        seqNotice = `Printed ${currentStep} of ${matchingItems.length} (${remainingAfterThis} remaining)`;
       }
 
       await executePrintForItems([targetItem]);
 
       if (seqNotice) {
-        toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
+        toast.info(`${seqNotice} • Customer: ${cleanCustomerName(targetItem.customer)}`, {
           duration: 4000,
         });
       }
@@ -1216,11 +1228,15 @@ export default function ComparisonResultView({
 
             <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
               <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
-                {summary.matchedCount}
+                {printedRows.size > 0
+                  ? `${remainingMatchedCount} / ${summary.matchedCount}`
+                  : summary.matchedCount}
               </h3>
 
               <span className="rounded bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
-                {summary.matchPercentage}%
+                {printedRows.size > 0
+                  ? `${printedRows.size} printed`
+                  : `${summary.matchPercentage}%`}
               </span>
             </div>
           </article>
@@ -1238,13 +1254,13 @@ export default function ComparisonResultView({
               setActiveTab("table");
               setPage(1);
             }}
-            className={`inline-flex h-12 sm:h-14 w-full sm:w-52 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+            className={`inline-flex h-12 sm:h-14 w-full sm:w-56 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
               activeTab === "table"
                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                 : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
             }`}
           >
-            Matched Orders ({summary.matchedCount})
+            Matched Orders ({showPrinted ? summary.matchedCount : remainingMatchedCount})
           </button>
 
           {/* Matched PDF Viewer Dropdown Selector */}
@@ -1428,6 +1444,31 @@ export default function ComparisonResultView({
                 Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${filteredResults.length})`}
               </button>
 
+              {printedRows.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowPrinted((prev) => !prev)}
+                  className={`inline-flex h-11 sm:h-14 items-center justify-center gap-1.5 border px-3.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                    showPrinted
+                      ? "border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-500/25"
+                      : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                  title="Toggle to view or hide already printed orders"
+                >
+                  {showPrinted ? (
+                    <>
+                      <EyeOff className="h-4 w-4" />
+                      <span>Hide Printed ({printedRows.size})</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <span>Show Printed ({printedRows.size})</span>
+                    </>
+                  )}
+                </button>
+              )}
+
               <button
                 type="button"
                 disabled={selectedRows.size === 0}
@@ -1463,8 +1504,21 @@ export default function ComparisonResultView({
             </div>
 
             {paginatedResults.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
-                No orders match your current search or filter.
+              <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground space-y-2">
+                <p>
+                  {printedRows.size > 0 && !showPrinted
+                    ? `All matched orders in this view have been printed! (${printedRows.size} printed)`
+                    : "No orders match your current search or filter."}
+                </p>
+                {printedRows.size > 0 && !showPrinted && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPrinted(true)}
+                    className="font-semibold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                  >
+                    View printed orders ({printedRows.size})
+                  </button>
+                )}
               </div>
             ) : (
               paginatedResults.map((item) => (
@@ -1592,7 +1646,23 @@ export default function ComparisonResultView({
                   {paginatedResults.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-muted-foreground">
-                        No orders match your current search.
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                          <p className="font-semibold text-foreground">
+                            {printedRows.size > 0 && !showPrinted
+                              ? `All matched orders in this view have been printed! (${printedRows.size} printed)`
+                              : "No orders match your current search."}
+                          </p>
+                          {printedRows.size > 0 && !showPrinted && (
+                            <button
+                              type="button"
+                              onClick={() => setShowPrinted(true)}
+                              className="text-xs font-semibold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                            >
+                              Click here to view printed orders ({printedRows.size})
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (
