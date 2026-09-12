@@ -23,6 +23,96 @@ export interface PrinterDetail {
   status?: string;
 }
 
+export function isVirtualPrinter(name: string): boolean {
+  if (!name) return true;
+  const n = name.toLowerCase().trim();
+  return (
+    n.includes("microsoft print to pdf") ||
+    n.includes("onenote") ||
+    n.includes("fax") ||
+    n.includes("xps document writer") ||
+    n.includes("root print queue") ||
+    n.includes("send to onenote") ||
+    n.includes("pdfcreator") ||
+    n.includes("foxit") ||
+    n.includes("adobe pdf")
+  );
+}
+
+export function isThermalOrLabelPrinter(name: string): boolean {
+  if (!name) return false;
+  return /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos|tvs|hprt|rollo|rongta|citizen|godex|datamax|bixolon|argox/i.test(name);
+}
+
+/**
+ * Resolves only whichever real printer is CURRENTLY connected and online on the PC.
+ * If no real physical/thermal printer is online and connected, returns printer: null.
+ */
+export function resolveCurrentlyConnectedPrinter(
+  availablePrinters: string[],
+  detailedPrinters: PrinterDetail[] = []
+): { printer: string | null; error?: string } {
+  if (!availablePrinters || availablePrinters.length === 0) {
+    return { printer: null, error: "No printer connected. Please connect printer." };
+  }
+
+  const detailMap = new Map<string, PrinterDetail>();
+  detailedPrinters.forEach((dp) => {
+    if (dp.name) detailMap.set(dp.name.toLowerCase().trim(), dp);
+  });
+
+  const isPrinterOnline = (name: string): boolean => {
+    if (isVirtualPrinter(name)) return false;
+    const detail = detailMap.get(name.toLowerCase().trim());
+    if (detail) {
+      if (detail.isOffline === true) return false;
+      if (detail.isOnline === false) return false;
+      const status = (detail.status || "").toLowerCase();
+      if (
+        status.includes("offline") ||
+        status.includes("disconnected") ||
+        status.includes("error") ||
+        status.includes("paused") ||
+        status.includes("not available")
+      ) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Only consider physical real printers that are CURRENTLY ONLINE
+  const onlinePhysicalPrinters = availablePrinters.filter(isPrinterOnline);
+
+  if (onlinePhysicalPrinters.length === 0) {
+    return { printer: null, error: "No printer connected. Please connect printer." };
+  }
+
+  // 1. Highest Priority: Currently connected ONLINE thermal/label printer (e.g. TSC DA310, Zebra)
+  const onlineThermal = onlinePhysicalPrinters.find(isThermalOrLabelPrinter);
+  if (onlineThermal) {
+    return { printer: onlineThermal };
+  }
+
+  // 2. Second Priority: If the last used printer is online and connected right now (and NOT virtual)
+  const saved = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+  if (saved && !isVirtualPrinter(saved)) {
+    const matchedSaved = onlinePhysicalPrinters.find((p) => p.toLowerCase().trim() === saved.toLowerCase().trim());
+    if (matchedSaved) {
+      return { printer: matchedSaved };
+    }
+  }
+
+  // 3. Third Priority: Windows default printer if it is physical and online
+  const defaultOnline = detailedPrinters.find((dp) => dp.isDefault && isPrinterOnline(dp.name));
+  if (defaultOnline) {
+    return { printer: defaultOnline.name };
+  }
+
+  // 4. Any other physical printer currently online
+  return { printer: onlinePhysicalPrinters[0] };
+}
+
 export const chromeExtensionPrintService = {
   EXTENSION_ID,
 
