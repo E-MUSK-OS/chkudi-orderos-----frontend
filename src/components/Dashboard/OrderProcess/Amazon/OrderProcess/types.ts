@@ -36,6 +36,8 @@ export interface AmazonProcessFiles {
   convertedZplPdfBase64: string;
   combinedPdfBase64: string;
   originalPdfBase64: string;
+  unmatchedPdfBase64?: string;
+  unmatchedZplBase64?: string;
 }
 
 export interface AmazonProcessResponse {

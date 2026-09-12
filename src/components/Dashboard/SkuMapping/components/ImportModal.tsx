@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import {
+  Download,
   FileSpreadsheet,
   Upload,
   X,
@@ -86,10 +87,18 @@ export default function ImportSkuMappingModal({
     >
       <DialogContent className="max-w-xl px-10 py-5">
 
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0">
           <DialogTitle>
-            Import SKU Mapping
+            Import Godown Inventory Sheet
           </DialogTitle>
+          <a
+            href="/demo-sku-mapping.xlsx"
+            download="demo-sku-mapping.xlsx"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C89B3C]/30 bg-[#FFF8E7] px-3 py-1.5 text-xs font-semibold text-[#C89B3C] transition-all hover:bg-[#C89B3C] hover:text-white"
+          >
+            <Download size={14} />
+            Download Demo Excel
+          </a>
         </DialogHeader>
 
         <div className="space-y-5 pt-5">

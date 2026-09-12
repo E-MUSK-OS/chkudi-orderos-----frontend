@@ -1,5 +1,7 @@
 export interface SheetDraftRow {
   shortSku: string;
+  fullSku?: string;
+  quantity?: number | string;
   barcodeSku: string;
   ordercookSku: string;
 }

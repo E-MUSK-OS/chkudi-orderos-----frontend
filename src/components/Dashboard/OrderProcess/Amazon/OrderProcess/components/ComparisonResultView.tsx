@@ -30,6 +30,8 @@ import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { useAmazonOrderStore, loadFilesFromIDB } from "../store/useAmazonOrderStore";
 import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage } from "../utils";
+import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
+import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 import { AmazonOrderType } from "../types";
 import {
@@ -38,6 +40,12 @@ import {
 } from "../utils/generateAmazonPicklist";
 
 export type AmazonOrderTypeFilter = "all" | AmazonOrderType;
+export type AmazonPdfViewType =
+  | "combined"
+  | "zpl"
+  | "original"
+  | "unmatched_pdf"
+  | "unmatched_zpl";
 
 function resolveTargetPrinter(availablePrinters: string[], detailedPrinters?: any[]): string {
   if (!availablePrinters || availablePrinters.length === 0) return "";
@@ -125,13 +133,270 @@ interface ComparisonResultViewProps {
   onReset?: () => void;
 }
 
+async function generateUnmatchedPdfFromFiles(
+  files: any,
+  results: any[]
+): Promise<string> {
+  if (!files?.originalPdfBase64) return "";
+  try {
+    const { PDFDocument } = await import("pdf-lib");
+    const unmatchedDoc = await PDFDocument.create();
+    let hasPages = false;
+
+    const origBytes = Uint8Array.from(atob(files.originalPdfBase64), (c) => c.charCodeAt(0));
+    const origDoc = await PDFDocument.load(origBytes, { ignoreEncryption: true });
+
+    for (const item of results) {
+      if (!item.isMatch && item.pdfPages && item.pdfPages.length > 0) {
+        const pageIndices = item.pdfPages
+          .map((p: number) => p - 1)
+          .filter((idx: number) => idx >= 0 && idx < origDoc.getPageCount());
+        if (pageIndices.length > 0) {
+          const copied = await unmatchedDoc.copyPages(origDoc, pageIndices);
+          copied.forEach((p: any) => unmatchedDoc.addPage(p));
+          hasPages = true;
+        }
+      }
+    }
+
+    if (!hasPages) return "";
+    const pdfBytes = await unmatchedDoc.save();
+    const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.warn("Failed to generate unmatched PDF on the fly:", err);
+    return "";
+  }
+}
+
+async function generateUnmatchedZplFromFiles(
+  files: any,
+  results: any[]
+): Promise<string> {
+  if (!files?.convertedZplPdfBase64) return "";
+  try {
+    const { PDFDocument } = await import("pdf-lib");
+    const unmatchedDoc = await PDFDocument.create();
+    let hasPages = false;
+
+    const zplBytes = Uint8Array.from(atob(files.convertedZplPdfBase64), (c) => c.charCodeAt(0));
+    const zplDoc = await PDFDocument.load(zplBytes, { ignoreEncryption: true });
+
+    for (const item of results) {
+      if (!item.isMatch && item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
+        const copied = await unmatchedDoc.copyPages(zplDoc, [item.zplPage - 1]);
+        copied.forEach((p: any) => unmatchedDoc.addPage(p));
+        hasPages = true;
+      }
+    }
+
+    if (!hasPages) return "";
+    const pdfBytes = await unmatchedDoc.save();
+    const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.warn("Failed to generate unmatched ZPL PDF on the fly:", err);
+    return "";
+  }
+}
+
 export default function ComparisonResultView({
   onReset,
 }: ComparisonResultViewProps) {
-  const { summary, results, files, combinedPdfUrl, downloadCombinedPdf, clearProcessData } =
-    useAmazonOrderStore();
+  const {
+    summary,
+    results,
+    files,
+    combinedPdfUrl,
+    convertedZplPdfUrl,
+    originalPdfUrl,
+    unmatchedPdfUrl,
+    unmatchedZplPdfUrl,
+    downloadCombinedPdf,
+    downloadConvertedZplPdf,
+    downloadOriginalPdf,
+    downloadUnmatchedPdf,
+    downloadUnmatchedZplPdf,
+    restoreProcessData,
+    clearProcessData,
+  } = useAmazonOrderStore();
 
-  const [activeTab, setActiveTab] = useState<"table" | "combinedPdf">("table");
+  const [activeTab, setActiveTab] = useState<"table" | "pdf">("table");
+  const [selectedPdfType, setSelectedPdfType] = useState<AmazonPdfViewType>("combined");
+
+  // Ensure blob preview URLs are generated if files are present in store
+  useEffect(() => {
+    if (!files) {
+      restoreProcessData();
+      return;
+    }
+    const updates: Partial<{
+      convertedZplPdfUrl: string;
+      combinedPdfUrl: string;
+      originalPdfUrl: string;
+      unmatchedPdfUrl: string;
+      unmatchedZplPdfUrl: string;
+    }> = {};
+
+    const base64ToBlobUrl = (base64Data: string, mimeType = "application/pdf"): string => {
+      try {
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+        return URL.createObjectURL(blob);
+      } catch (e) {
+        return "";
+      }
+    };
+
+    if (!convertedZplPdfUrl && files.convertedZplPdfBase64) {
+      const url = base64ToBlobUrl(files.convertedZplPdfBase64);
+      if (url) updates.convertedZplPdfUrl = url;
+    }
+    if (!combinedPdfUrl && files.combinedPdfBase64) {
+      const url = base64ToBlobUrl(files.combinedPdfBase64);
+      if (url) updates.combinedPdfUrl = url;
+    }
+    if (!originalPdfUrl && files.originalPdfBase64) {
+      const url = base64ToBlobUrl(files.originalPdfBase64);
+      if (url) updates.originalPdfUrl = url;
+    }
+    if (!unmatchedPdfUrl) {
+      if (files.unmatchedPdfBase64) {
+        const url = base64ToBlobUrl(files.unmatchedPdfBase64);
+        if (url) updates.unmatchedPdfUrl = url;
+      } else if (results.some((r) => !r.isMatch && r.pdfPages && r.pdfPages.length > 0)) {
+        generateUnmatchedPdfFromFiles(files, results).then((url) => {
+          if (url) useAmazonOrderStore.setState({ unmatchedPdfUrl: url });
+        });
+      }
+    }
+    if (!unmatchedZplPdfUrl) {
+      if (files.unmatchedZplBase64) {
+        const url = base64ToBlobUrl(files.unmatchedZplBase64);
+        if (url) updates.unmatchedZplPdfUrl = url;
+      } else if (results.some((r) => !r.isMatch && r.zplPage > 0)) {
+        generateUnmatchedZplFromFiles(files, results).then((url) => {
+          if (url) useAmazonOrderStore.setState({ unmatchedZplPdfUrl: url });
+        });
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      useAmazonOrderStore.setState(updates);
+    }
+  }, [files, convertedZplPdfUrl, combinedPdfUrl, originalPdfUrl, unmatchedPdfUrl, unmatchedZplPdfUrl, results]);
+
+  const unmatchedPdfCount = useMemo(
+    () => results.filter((r) => !r.isMatch && r.pdfPages && r.pdfPages.length > 0).length,
+    [results]
+  );
+  const unmatchedZplCount = useMemo(
+    () => results.filter((r) => !r.isMatch && r.zplPage > 0).length,
+    [results]
+  );
+
+  const unmatchedPdfOptions: SelectOption[] = useMemo(
+    () => [
+      {
+        label: `Unmatched PDF Invoices (${unmatchedPdfCount})`,
+        value: "unmatched_pdf",
+      },
+      {
+        label: `Unmatched ZPL Labels (${unmatchedZplCount})`,
+        value: "unmatched_zpl",
+      },
+    ],
+    [unmatchedPdfCount, unmatchedZplCount]
+  );
+
+  const pdfViewOptions: SelectOption[] = useMemo(
+    () => [
+      {
+        label: `Combined Matched Paired PDF (${summary?.matchedCount ?? 0})`,
+        value: "combined",
+      },
+      {
+        label: `All Converted ZPL PDF (${summary?.totalZplLabels ?? 0})`,
+        value: "zpl",
+      },
+      {
+        label: `Original Uploaded PDF (${summary?.totalPdfOrders ?? summary?.totalPdfPages ?? 0})`,
+        value: "original",
+      },
+    ],
+    [summary]
+  );
+
+  const currentPdfConfig = useMemo(() => {
+    switch (selectedPdfType) {
+      case "zpl":
+        return {
+          title: "All Converted ZPL Labels PDF",
+          description: `All Amazon shipping barcode labels converted from ZPL to PDF (${summary?.totalZplLabels ?? 0} labels)`,
+          downloadText: "Download Converted ZPL PDF",
+          onDownload: downloadConvertedZplPdf,
+          url: convertedZplPdfUrl,
+          unavailableText: "Converted ZPL PDF preview unavailable. Please use the download button above.",
+        };
+      case "original":
+        return {
+          title: "Original Uploaded Invoices PDF",
+          description: `Original customer invoice PDF uploaded for processing (${summary?.pdfFileName || "Uploaded PDF"} • ${summary?.totalPdfPages ?? 0} pages)`,
+          downloadText: "Download Uploaded PDF",
+          onDownload: downloadOriginalPdf,
+          url: originalPdfUrl,
+          unavailableText: "Original Uploaded PDF preview unavailable. Please use the download button above.",
+        };
+      case "unmatched_pdf":
+        return {
+          title: "Unmatched PDF Invoices",
+          description: `Customer tax invoices in uploaded PDF with no matching ZPL shipping label (${unmatchedPdfCount} orders)`,
+          downloadText: "Download Unmatched Invoices PDF",
+          onDownload: downloadUnmatchedPdf,
+          url: unmatchedPdfUrl,
+          unavailableText: "No unmatched PDF invoices found, or preview unavailable.",
+        };
+      case "unmatched_zpl":
+        return {
+          title: "Unmatched ZPL Shipping Labels",
+          description: `Amazon shipping barcode labels in ZPL with no matching PDF invoice (${unmatchedZplCount} labels)`,
+          downloadText: "Download Unmatched ZPL Labels",
+          onDownload: downloadUnmatchedZplPdf,
+          url: unmatchedZplPdfUrl,
+          unavailableText: "No unmatched ZPL shipping labels found, or preview unavailable.",
+        };
+      case "combined":
+      default:
+        return {
+          title: "Combined Matched Paired PDF",
+          description: `Interleaved dispatch document (Each ZPL barcode label is immediately followed by its matching invoice • ${summary?.matchedCount ?? 0} matched orders)`,
+          downloadText: "Download Matched PDF",
+          onDownload: downloadCombinedPdf,
+          url: combinedPdfUrl,
+          unavailableText: "Combined PDF preview unavailable. Please use the download button above.",
+        };
+    }
+  }, [
+    selectedPdfType,
+    summary,
+    unmatchedPdfCount,
+    unmatchedZplCount,
+    combinedPdfUrl,
+    convertedZplPdfUrl,
+    originalPdfUrl,
+    unmatchedPdfUrl,
+    unmatchedZplPdfUrl,
+    downloadCombinedPdf,
+    downloadConvertedZplPdf,
+    downloadOriginalPdf,
+    downloadUnmatchedPdf,
+    downloadUnmatchedZplPdf,
+  ]);
   const [searchQuery, setSearchQuery] = useState("");
   const [autoPrintQuery, setAutoPrintQuery] = useState("");
   const autoPrintInputRef = useRef<HTMLInputElement>(null);
@@ -139,34 +404,117 @@ export default function ComparisonResultView({
   const [printedRows, setPrintedRows] = useState<Set<number>>(new Set());
   const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("all");
 
-  // Fetch product variants from DB and map ASIN to variantSku (seller_sku)
+  // Fetch ASIN to Seller SKU mapping from AsinImport table (primary), products, and variants (fallback)
   const [asinToSkuMap, setAsinToSkuMap] = useState<Map<string, string>>(new Map());
+  const [skuDetailsMap, setSkuDetailsMap] = useState<
+    Map<string, { rackAddress?: string; generateBarcode?: string }>
+  >(new Map());
+  const [isMappingsLoading, setIsMappingsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    async function fetchProductVariants() {
+    async function fetchAsinMappings() {
+      setIsMappingsLoading(true);
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
-        const res = await productVariantService.getAll(token);
-        if (res && res.data && Array.isArray(res.data)) {
-          const map = new Map<string, string>();
-          res.data.forEach((variant) => {
-            if (variant.asin) {
-              const cleanAsin = variant.asin.trim().toUpperCase();
+        const map = new Map<string, string>();
+        const detailsMap = new Map<string, { rackAddress?: string; generateBarcode?: string }>();
+
+        // 1. Primary: Fetch from AsinImport table
+        try {
+          const asinRes = await asinImportService.getAll("", token);
+          if (asinRes?.data && Array.isArray(asinRes.data)) {
+            asinRes.data.forEach((item) => {
+              const cleanAsin = item.asin ? item.asin.trim().toUpperCase() : "";
+              const cleanSku = item.sku ? item.sku.trim() : "";
+              const normSku = cleanSku.toUpperCase();
+              const details = {
+                rackAddress: item.rackAddress ? item.rackAddress.trim() : "",
+                generateBarcode: item.generateBarcode ? item.generateBarcode.trim() : "",
+              };
+
               if (cleanAsin) {
-                map.set(cleanAsin, variant.variantSku ? variant.variantSku.trim() : "");
+                map.set(cleanAsin, cleanSku);
+                detailsMap.set(cleanAsin, details);
               }
-            }
-          });
-          if (isMounted) {
-            setAsinToSkuMap(map);
+              if (normSku) {
+                detailsMap.set(normSku, details);
+              }
+            });
           }
+        } catch (aErr) {
+          console.warn("Could not fetch AsinImports:", aErr);
+        }
+
+        // 2. Fallback: Check products table (masterSku)
+        try {
+          const prodRes = await productService.getAll(token);
+          if (prodRes?.data && Array.isArray(prodRes.data)) {
+            prodRes.data.forEach((prod) => {
+              const cleanAsin = prod.asin ? prod.asin.trim().toUpperCase() : "";
+              const cleanSku = prod.masterSku ? prod.masterSku.trim() : "";
+              const normSku = cleanSku.toUpperCase();
+              const rack = prod.rackAddress ? prod.rackAddress.trim() : "";
+
+              const barcode = prod.generateBarcode ? prod.generateBarcode.trim() : "";
+
+              if (cleanAsin && !map.has(cleanAsin)) {
+                map.set(cleanAsin, cleanSku);
+              }
+              if (rack || barcode) {
+                if (normSku && !detailsMap.has(normSku)) {
+                  detailsMap.set(normSku, { rackAddress: rack, generateBarcode: barcode });
+                }
+                if (cleanAsin && !detailsMap.has(cleanAsin)) {
+                  detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: barcode });
+                }
+              }
+            });
+          }
+        } catch (pErr) {
+          console.warn("Could not fetch products for ASIN mapping:", pErr);
+        }
+
+        // 3. Fallback: Check product variants table (variantSku)
+        try {
+          const varRes = await productVariantService.getAll(token);
+          if (varRes?.data && Array.isArray(varRes.data)) {
+            varRes.data.forEach((variant) => {
+              const cleanAsin = variant.asin ? variant.asin.trim().toUpperCase() : "";
+              const cleanSku = variant.variantSku ? variant.variantSku.trim() : "";
+              const normSku = cleanSku.toUpperCase();
+              const rack = variant.rackAddress ? variant.rackAddress.trim() : "";
+
+              if (cleanAsin && !map.has(cleanAsin)) {
+                map.set(cleanAsin, cleanSku);
+              }
+              if (rack) {
+                if (normSku && !detailsMap.has(normSku)) {
+                  detailsMap.set(normSku, { rackAddress: rack, generateBarcode: "" });
+                }
+                if (cleanAsin && !detailsMap.has(cleanAsin)) {
+                  detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: "" });
+                }
+              }
+            });
+          }
+        } catch (vErr) {
+          console.warn("Could not fetch product variants for ASIN mapping:", vErr);
+        }
+
+        if (isMounted) {
+          setAsinToSkuMap(map);
+          setSkuDetailsMap(detailsMap);
         }
       } catch (err) {
-        console.warn("Failed to fetch product variants for ASIN mapping:", err);
+        console.warn("Failed to fetch ASIN mappings:", err);
+      } finally {
+        if (isMounted) {
+          setIsMappingsLoading(false);
+        }
       }
     }
-    fetchProductVariants();
+    fetchAsinMappings();
     return () => {
       isMounted = false;
     };
@@ -175,17 +523,15 @@ export default function ComparisonResultView({
   // Map each order item's ASIN to the corresponding variantSku from DB
   const mappedResults = useMemo(() => {
     if (!asinToSkuMap || asinToSkuMap.size === 0) {
-      return results.map((item) => ({
-        ...item,
-        sellerSku: mapAsinToSellerSku(item.asin, asinToSkuMap),
-      }));
+      // Preserve already mapped sellerSku from OrderProcess if available
+      return results;
     }
 
     return results.map((item) => {
       const mappedSku = mapAsinToSellerSku(item.asin, asinToSkuMap);
       return {
         ...item,
-        sellerSku: mappedSku,
+        sellerSku: (mappedSku && mappedSku !== "N/A") ? mappedSku : (item.sellerSku && item.sellerSku !== "N/A" ? item.sellerSku : mappedSku),
       };
     });
   }, [results, asinToSkuMap]);
@@ -211,21 +557,22 @@ export default function ComparisonResultView({
     const uniqueAsins = Array.from(
       new Set(
         items
-          .map((i) => i.asin)
-          .filter((a): a is string => Boolean(a && a !== "N/A"))
+          .flatMap((i) => (i.asin ? i.asin.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()) : []))
+          .filter((a): a is string => Boolean(a && a !== "N/A" && a !== "-"))
       )
     );
+    if (uniqueAsins.length === 0) return;
     setModalMissingAsins(uniqueAsins);
     setIsMissingSkuModalOpen(true);
   };
 
-  // Show Missing SKU modal automatically once when missing SKUs exist
+  // Show Missing SKU modal automatically once ONLY AFTER mappings are fully loaded and genuine missing SKUs exist
   useEffect(() => {
-    if (missingSkuItems.length > 0 && !hasAlertedRef.current) {
+    if (!isMappingsLoading && missingSkuItems.length > 0 && !hasAlertedRef.current) {
       hasAlertedRef.current = true;
       triggerMissingSkuAlert(missingSkuItems);
     }
-  }, [missingSkuItems]);
+  }, [missingSkuItems, isMappingsLoading]);
 
   // Helper to get item's order type (with client fallback)
   const getOrderTypeForItem = (item: (typeof results)[0]): AmazonOrderType => {
@@ -313,10 +660,10 @@ export default function ComparisonResultView({
     }
   };
 
-  // Filter and search results (Only matched orders are displayed)
+  // Filter and search results (Only matched orders are displayed in table)
   const filteredResults = useMemo(() => {
     return mappedResults.filter((item) => {
-      // Exclude mismatched data completely
+      // Exclude unmatched items from table (viewed via PDF viewer)
       if (!item.isMatch) return false;
 
       // Filter by order composition type
@@ -671,7 +1018,7 @@ export default function ComparisonResultView({
       return;
     }
 
-    const picklist = generateAmazonPicklist(mappedResults, targetSet);
+    const picklist = generateAmazonPicklist(mappedResults, targetSet, skuDetailsMap);
     downloadAmazonPicklistPDF(picklist);
 
     if (selectedRows.size > 0) {
@@ -797,8 +1144,8 @@ export default function ComparisonResultView({
           {/* Card 1: Total ZPL */}
           <article
             onClick={() => {
-              setActiveTab("table");
-              setPage(1);
+              setSelectedPdfType("zpl");
+              setActiveTab("pdf");
             }}
             className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
           >
@@ -820,8 +1167,8 @@ export default function ComparisonResultView({
           {/* Card 2: Total PDF Orders */}
           <article
             onClick={() => {
-              setActiveTab("table");
-              setPage(1);
+              setSelectedPdfType("original");
+              setActiveTab("pdf");
             }}
             className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
           >
@@ -848,9 +1195,24 @@ export default function ComparisonResultView({
             }}
             className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
           >
-            <p className="text-xs sm:text-sm font-medium text-slate-500">
-              Matched Orders
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Matched Orders
+              </p>
+              {summary.mismatchCount > 0 && (
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPdfType(unmatchedPdfCount > 0 ? "unmatched_pdf" : "unmatched_zpl");
+                    setActiveTab("pdf");
+                  }}
+                  className="rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 hover:bg-red-200 cursor-pointer"
+                  title="Click to view unmatched documents in PDF viewer"
+                >
+                  {summary.mismatchCount} Unmatched
+                </span>
+              )}
+            </div>
 
             <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
               <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
@@ -876,26 +1238,82 @@ export default function ComparisonResultView({
               setActiveTab("table");
               setPage(1);
             }}
-            className={`inline-flex h-12 sm:h-14 w-full sm:w-64 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+            className={`inline-flex h-12 sm:h-14 w-full sm:w-52 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
               activeTab === "table"
                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                 : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
             }`}
           >
-            Matched Orders ({filteredResults.length})
+            Matched Orders ({summary.matchedCount})
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("combinedPdf")}
-            className={`inline-flex h-12 sm:h-14 w-full sm:w-64 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
-              activeTab === "combinedPdf"
-                ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-                : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+          {/* Matched PDF Viewer Dropdown Selector */}
+          <div
+            className={`w-full sm:w-72 lg:w-80 transition-all ${
+              activeTab === "pdf" && !selectedPdfType.startsWith("unmatched") ? "ring-2 ring-[#E8C16D]" : ""
             }`}
+            onClick={() => {
+              if (activeTab !== "pdf" || selectedPdfType.startsWith("unmatched")) {
+                setSelectedPdfType("combined");
+                setActiveTab("pdf");
+              }
+            }}
           >
-            Combined Matched PDF
-          </button>
+            <ReactSelect
+              options={pdfViewOptions}
+              value={
+                pdfViewOptions.find((opt) => opt.value === selectedPdfType) ??
+                pdfViewOptions[0]
+              }
+              onChange={(opt) => {
+                if (opt?.value) {
+                  setSelectedPdfType(opt.value as AmazonPdfViewType);
+                  setActiveTab("pdf");
+                }
+              }}
+              height={56}
+              borderColor={activeTab === "pdf" && !selectedPdfType.startsWith("unmatched") ? "#E8C16D" : "#0A0E1A"}
+              backgroundColor="#0A0E1A"
+              textColor="#E8C16D"
+              placeholderColor="#E8C16D"
+              menuBackgroundColor="#0A0E1A"
+              optionHoverColor="#161D2E"
+              optionSelectedColor="#E8C16D"
+              optionSelectedTextColor="#0A0E1A"
+            />
+          </div>
+
+          {/* Unmatched Orders Dropdown (1. PDF and 2. ZPL) */}
+          {summary.mismatchCount > 0 && (
+            <div
+              className={`w-full sm:w-64 lg:w-72 transition-all ${
+                activeTab === "pdf" && selectedPdfType.startsWith("unmatched") ? "ring-2 ring-[#E8C16D]" : ""
+              }`}
+            >
+              <ReactSelect
+                options={unmatchedPdfOptions}
+                value={
+                  unmatchedPdfOptions.find((opt) => opt.value === selectedPdfType) ??
+                  unmatchedPdfOptions[0]
+                }
+                onChange={(opt) => {
+                  if (opt?.value) {
+                    setSelectedPdfType(opt.value as AmazonPdfViewType);
+                    setActiveTab("pdf");
+                  }
+                }}
+                height={56}
+                borderColor={activeTab === "pdf" && selectedPdfType.startsWith("unmatched") ? "#E8C16D" : "#0A0E1A"}
+                backgroundColor="#0A0E1A"
+                textColor="#E8C16D"
+                placeholderColor="#E8C16D"
+                menuBackgroundColor="#0A0E1A"
+                optionHoverColor="#161D2E"
+                optionSelectedColor="#E8C16D"
+                optionSelectedTextColor="#0A0E1A"
+              />
+            </div>
+          )}
         </div>
 
         {/* Rightside Corner: Instant Auto-Print Search Bar */}
@@ -1194,16 +1612,30 @@ export default function ComparisonResultView({
                           </div>
                         </td>
                         <td className="w-44 min-w-[160px] px-4 py-3 text-center font-medium whitespace-nowrap">
-                          {item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
-                            item.pdfInvoice
-                          ) : item.zplInvoice &&
-                            item.zplInvoice !== "Not Found in ZPL" &&
-                            item.zplInvoice !== "N/A" ? (
-                            item.zplInvoice
+                          {item.isMatch ? (
+                            item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
+                              item.pdfInvoice
+                            ) : item.zplInvoice &&
+                              item.zplInvoice !== "Not Found in ZPL" &&
+                              item.zplInvoice !== "N/A" ? (
+                              item.zplInvoice
+                            ) : (
+                              <span className="italic text-muted-foreground">N/A</span>
+                            )
+                          ) : item.zplInvoice === "Not Found in ZPL" ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="font-semibold">{item.pdfInvoice || "N/A"}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">
+                                Missing in ZPL
+                              </span>
+                            </div>
                           ) : (
-                            <span className="italic text-muted-foreground">
-                              N/A
-                            </span>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="font-semibold">{item.zplInvoice || "N/A"}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                Missing in PDF
+                              </span>
+                            </div>
                           )}
                         </td>
                         <td className="w-52 min-w-[190px] px-4 py-3 text-center font-medium whitespace-nowrap">
@@ -1311,40 +1743,74 @@ export default function ComparisonResultView({
       )}
 
       {/* ======================================================== */}
-      {/* TAB 2: COMBINED MATCHED PDF VIEWER */}
+      {/* TAB 2: PDF VIEWER (COMBINED / CONVERTED ZPL / ORIGINAL UPLOADED) */}
       {/* ======================================================== */}
-      {activeTab === "combinedPdf" && (
+      {activeTab === "pdf" && (
         <div className="space-y-4 border border-border bg-card p-4 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-foreground">
-                Combined Matched Paired PDF
+              <h3 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+                {selectedPdfType.startsWith("unmatched") ? (
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                ) : (
+                  <FileText className="h-5 w-5 text-[#E8C16D]" />
+                )}
+                {currentPdfConfig.title}
               </h3>
-              <p className="text-xs text-muted-foreground">
-                Interleaved dispatch document (Each ZPL barcode label is immediately followed by its matching invoice)
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {currentPdfConfig.description}
               </p>
             </div>
-            <Button
-              type="button"
-              onClick={downloadCombinedPdf}
-              leftIcon={<Download className="h-4 w-4" />}
-              className="w-full sm:w-auto border-[#E8C16D] bg-[#E8C16D] text-xs sm:text-sm font-semibold text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D]"
-            >
-              Download PDF
-            </Button>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {selectedPdfType.startsWith("unmatched") && (
+                <div className="w-56 sm:w-64">
+                  <ReactSelect
+                    options={unmatchedPdfOptions}
+                    value={
+                      unmatchedPdfOptions.find((opt) => opt.value === selectedPdfType) ??
+                      unmatchedPdfOptions[0]
+                    }
+                    onChange={(opt) => {
+                      if (opt?.value) {
+                        setSelectedPdfType(opt.value as AmazonPdfViewType);
+                      }
+                    }}
+                    height={44}
+                    borderColor="#E8C16D"
+                    backgroundColor="#0A0E1A"
+                    textColor="#E8C16D"
+                    placeholderColor="#E8C16D"
+                    menuBackgroundColor="#0A0E1A"
+                    optionHoverColor="#161D2E"
+                    optionSelectedColor="#E8C16D"
+                    optionSelectedTextColor="#0A0E1A"
+                  />
+                </div>
+              )}
+
+              <Button
+                type="button"
+                onClick={currentPdfConfig.onDownload}
+                leftIcon={<Download className="h-4 w-4" />}
+                className="w-full sm:w-auto border-[#E8C16D] bg-[#E8C16D] text-xs sm:text-sm font-semibold text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D]"
+              >
+                {currentPdfConfig.downloadText}
+              </Button>
+            </div>
           </div>
 
-          {combinedPdfUrl ? (
+          {currentPdfConfig.url ? (
             <div className="h-[480px] sm:h-[650px] lg:h-[750px] w-full overflow-hidden border border-border bg-[#0A0E1A]">
               <iframe
-                src={`${combinedPdfUrl}#toolbar=1&navpanes=1&statusbar=1`}
+                src={`${currentPdfConfig.url}#toolbar=1&navpanes=1&statusbar=1`}
                 className="h-full w-full border-none"
-                title="Combined Matched PDF"
+                title={currentPdfConfig.title}
               />
             </div>
           ) : (
             <div className="py-16 text-center text-xs sm:text-sm text-muted-foreground">
-              PDF preview unavailable. Please use the download button above.
+              {currentPdfConfig.unavailableText}
             </div>
           )}
         </div>

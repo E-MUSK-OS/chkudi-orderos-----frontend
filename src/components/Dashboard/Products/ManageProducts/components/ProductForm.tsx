@@ -36,6 +36,11 @@ const gstOptions: SelectOption[] = [
   { label: "40%", value: "40" },
 ];
 
+const generateBarcodeOptions: SelectOption[] = [
+  { label: "Yes", value: "Yes" },
+  { label: "No", value: "No" },
+];
+
 const defaultValues: ProductFormValues = {
   productName: "",
   masterSku: "",
@@ -45,6 +50,7 @@ const defaultValues: ProductFormValues = {
   description: "",
   asin: "",
   rackAddress: "",
+  generateBarcode: "No",
   mrp: undefined as unknown as number,
   hsnCode: "",
   gstRate: undefined as unknown as number,
@@ -89,6 +95,7 @@ export default function ProductForm({
         description: product.description ?? "",
         asin: product.asin ?? "",
         rackAddress: product.rackAddress ?? "",
+        generateBarcode: product.generateBarcode ?? "No",
         mrp: (product.mrp ?? undefined) as unknown as number,
         hsnCode: product.hsnCode ?? "",
         gstRate: (product.gstRate ?? undefined) as unknown as number,
@@ -172,18 +179,6 @@ export default function ProductForm({
             )}
           />
 
-          <Controller
-            name="rackAddress"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                value={field.value ?? ""}
-                label="Rack Address"
-                error={errors.rackAddress?.message}
-              />
-            )}
-          />
 
           <Controller
             name="mrp"
@@ -217,6 +212,54 @@ export default function ProductForm({
               />
             )}
           />
+
+          <div className="space-y-2">
+            <Controller
+              name="generateBarcode"
+              control={control}
+              render={({ field }) => {
+                const hasValue =
+                  field.value !== undefined &&
+                  field.value !== null &&
+                  field.value !== "";
+                return (
+                  <div className="relative group">
+                    <ReactSelect
+                      height={56}
+                      borderColor="#e2e8f0"
+                      placeholder={hasValue ? "Select Yes / No" : " "}
+                      options={generateBarcodeOptions}
+                      value={
+                        generateBarcodeOptions.find(
+                          (option) =>
+                            option.value.toLowerCase() ===
+                            (field.value || "No").toLowerCase(),
+                        ) ?? generateBarcodeOptions[1]
+                      }
+                      onChange={(option) => {
+                        field.onChange(option ? option.value : "No");
+                      }}
+                    />
+                    <label
+                      className={cn(
+                        "pointer-events-none absolute left-4 bg-white px-1 transition-all duration-200 z-10",
+                        hasValue
+                          ? "-top-2 text-[11px] text-slate-500 font-medium"
+                          : "top-1/2 -translate-y-1/2 text-[15px] text-slate-400",
+                      )}
+                    >
+                      Generate Barcode
+                    </label>
+                  </div>
+                );
+              }}
+            />
+            {errors.generateBarcode && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.generateBarcode.message}
+              </p>
+            )}
+          </div>
         </div>
 
         <Controller

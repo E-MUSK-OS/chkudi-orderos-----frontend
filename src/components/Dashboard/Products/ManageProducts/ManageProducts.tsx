@@ -210,10 +210,16 @@ const ManageProducts = () => {
     <DashboardLayout title="Products">
       <div className="space-y-6">
         <ProductHeader
+          buttonLabel={importType === "asin" ? "Add ASIN" : "Add Product"}
           onAddProduct={() => {
-            setModalMode("create");
-            setSelectedProduct(null);
-            setProductModalOpen(true);
+            if (importType === "asin") {
+              setSelectedAsin(null);
+              setAsinModalOpen(true);
+            } else {
+              setModalMode("create");
+              setSelectedProduct(null);
+              setProductModalOpen(true);
+            }
           }}
         />
 
@@ -287,6 +293,8 @@ const ManageProducts = () => {
         onSuccess={() => {
           setProductModalOpen(false);
           setSelectedProduct(null);
+          refetchProducts();
+          refetchAsin();
         }}
       />
 

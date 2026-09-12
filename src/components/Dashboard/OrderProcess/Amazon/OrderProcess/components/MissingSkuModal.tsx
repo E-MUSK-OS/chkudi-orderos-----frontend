@@ -1,8 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, ShieldAlert, Sparkles, ArrowRight, X } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Sparkles, ArrowRight, X, FileDown } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+import { toast } from "sonner";
 
 interface MissingSkuModalProps {
   isOpen: boolean;
@@ -22,6 +25,57 @@ export default function MissingSkuModal({
   const handleGoToProducts = () => {
     onClose();
     router.push("/dashboard/products/manage-products");
+  };
+
+  const handleDownloadExcel = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("ASIN Import");
+
+      // Columns exactly matching screenshot 2:
+      // ASIN | SKU | GenerateBarCode | RackAddress
+      worksheet.columns = [
+        { header: "ASIN", key: "asin", width: 22 },
+        { header: "SKU", key: "sku", width: 20 },
+        { header: "GenerateBarCode", key: "generateBarcode", width: 20 },
+        { header: "RackAddress", key: "rackAddress", width: 20 },
+      ];
+
+      // Style header row (blue table header style matching screenshot)
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF3370A6" },
+      };
+      headerRow.alignment = { vertical: "middle", horizontal: "left" };
+
+      // Add missing ASIN rows with empty SKU, GenerateBarCode, RackAddress
+      missingAsins.forEach((asin) => {
+        worksheet.addRow({
+          asin,
+          sku: "",
+          generateBarcode: "",
+          rackAddress: "",
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `missing-asins-${new Date().toISOString().split("T")[0]}.xlsx`;
+
+      saveAs(
+        new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        fileName
+      );
+
+      toast.success("Missing ASINs Excel downloaded successfully.");
+    } catch (err) {
+      console.error("Failed to download missing ASINs excel", err);
+      toast.error("Failed to generate Excel file.");
+    }
   };
 
   return (
@@ -114,19 +168,31 @@ export default function MissingSkuModal({
           </div>
 
           {/* Production Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-2.5">
-            <button
-              type="button"
-              onClick={handleGoToProducts}
-              className="w-full sm:flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E8C16D] to-[#D4A343] hover:from-[#d8b05c] hover:to-[#c29235] px-5 text-xs sm:text-sm font-extrabold text-[#0A0E1A] shadow-sm hover:shadow transition-all active:scale-[0.98] cursor-pointer"
-            >
-              <span>Go to Products Section</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+          <div className="space-y-2.5">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleDownloadExcel}
+                className="w-full sm:flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100/80 px-4 text-xs sm:text-sm font-bold text-emerald-800 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+              >
+                <FileDown className="h-4 w-4 text-emerald-700" />
+                <span>Download Excel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGoToProducts}
+                className="w-full sm:flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E8C16D] to-[#D4A343] hover:from-[#d8b05c] hover:to-[#c29235] px-4 text-xs sm:text-sm font-extrabold text-[#0A0E1A] shadow-sm hover:shadow transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span>Go to Products Section</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-28 inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-5 text-xs sm:text-sm font-bold text-slate-700 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+              className="w-full inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-5 text-xs sm:text-sm font-semibold text-slate-600 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
             >
               Dismiss
             </button>

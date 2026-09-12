@@ -55,6 +55,7 @@ export function useCreateProduct() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(response?.message || "Product created successfully");
     },
@@ -85,6 +86,7 @@ export function useUpdateProduct() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(response?.message || "Product updated successfully");
     },
@@ -110,6 +112,7 @@ export function useDeleteProduct() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(response?.message || "Product deleted successfully");
     },
@@ -178,6 +181,7 @@ export function useImportProductsExcel() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(response?.message || "Excel file imported successfully");
     },

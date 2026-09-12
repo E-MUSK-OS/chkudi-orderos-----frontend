@@ -23,6 +23,8 @@ interface AmazonOrderState {
   convertedZplPdfUrl: string | null;
   combinedPdfUrl: string | null;
   originalPdfUrl: string | null;
+  unmatchedPdfUrl: string | null;
+  unmatchedZplPdfUrl: string | null;
 
   // Actions
   setProcessing: (isProcessing: boolean) => void;
@@ -35,12 +37,16 @@ interface AmazonOrderState {
   downloadConvertedZplPdf: () => void;
   downloadCombinedPdf: () => void;
   downloadOriginalPdf: () => void;
+  downloadUnmatchedPdf: () => void;
+  downloadUnmatchedZplPdf: () => void;
   exportToExcel: () => void;
+  restoreProcessData: () => Promise<boolean>;
 }
 
 const SESSION_STORAGE_KEY = "amazon_order_process_data_v1";
+const METADATA_STORAGE_KEY = "amazon_order_process_metadata_v1";
 
-const IDB_NAME = "chkudi_orderos_idb";
+const IDB_NAME = "chkudi_orderos_idb_v2";
 const IDB_STORE = "amazon_files";
 const IDB_KEY = "latest_files";
 
@@ -139,6 +145,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
   convertedZplPdfUrl: null,
   combinedPdfUrl: null,
   originalPdfUrl: null,
+  unmatchedPdfUrl: null,
+  unmatchedZplPdfUrl: null,
 
   setProcessing: (isProcessing) =>
     set({
@@ -158,15 +166,32 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     }),
 
   setProcessData: async (data) => {
-    // Save files base64 payload to IndexedDB for reliable persistence across 5MB quota limits
+    // 1. Save files base64 payload to IndexedDB for reliable persistence across tabs and quota limits
     if (data.files) {
       await saveFilesToIDB(data.files);
     }
 
-    // Generate blob URLs
+    // 2. Save metadata (summary + results) to localStorage (shared across all browser tabs) & sessionStorage
+    try {
+      if (typeof window !== "undefined") {
+        const metadataPayload = JSON.stringify({
+          success: data.success,
+          summary: data.summary,
+          results: data.results,
+        });
+        localStorage.setItem(METADATA_STORAGE_KEY, metadataPayload);
+        sessionStorage.setItem(SESSION_STORAGE_KEY, metadataPayload);
+      }
+    } catch (e) {
+      console.warn("Failed to store process metadata in storage:", e);
+    }
+
+    // 3. Generate blob URLs for preview in current tab
     let zplUrl = null;
     let combUrl = null;
     let origUrl = null;
+    let unmatchUrl = null;
+    let unmatchZplUrl = null;
 
     if (data.files?.convertedZplPdfBase64) {
       zplUrl = base64ToBlobUrl(data.files.convertedZplPdfBase64);
@@ -177,26 +202,11 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     if (data.files?.originalPdfBase64) {
       origUrl = base64ToBlobUrl(data.files.originalPdfBase64);
     }
-
-    // Save to sessionStorage (fallback to metadata-only if base64 exceeds quota)
-    try {
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
-        } catch {
-          // If base64 strings exceed 5MB quota, store only summary & results
-          sessionStorage.setItem(
-            SESSION_STORAGE_KEY,
-            JSON.stringify({
-              success: data.success,
-              summary: data.summary,
-              results: data.results,
-            })
-          );
-        }
-      }
-    } catch (e) {
-      // Storage unavailable or completely full
+    if (data.files?.unmatchedPdfBase64) {
+      unmatchUrl = base64ToBlobUrl(data.files.unmatchedPdfBase64);
+    }
+    if (data.files?.unmatchedZplBase64) {
+      unmatchZplUrl = base64ToBlobUrl(data.files.unmatchedZplBase64);
     }
 
     set({
@@ -206,86 +216,112 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       convertedZplPdfUrl: zplUrl,
       combinedPdfUrl: combUrl,
       originalPdfUrl: origUrl,
+      unmatchedPdfUrl: unmatchUrl,
+      unmatchedZplPdfUrl: unmatchZplUrl,
     });
   },
 
-  loadFromSessionStorage: () => {
+  restoreProcessData: async (): Promise<boolean> => {
     try {
       if (typeof window === "undefined") return false;
-      const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
-      if (!stored) return false;
 
-      const data: AmazonProcessResponse = JSON.parse(stored);
-      if (!data || !data.summary || !data.results) return false;
+      // 1. Check if summary & results are in memory or in localStorage / sessionStorage
+      let currentSummary = get().summary;
+      let currentResults = get().results;
+      let currentFiles = get().files;
 
-      const currentFiles = data.files || get().files;
+      if (!currentSummary || currentResults.length === 0) {
+        let stored = localStorage.getItem(METADATA_STORAGE_KEY);
+        if (!stored) {
+          stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        }
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.summary && parsed.results) {
+              currentSummary = parsed.summary;
+              currentResults = parsed.results;
+              if (parsed.files) {
+                currentFiles = parsed.files;
+              }
+            }
+          } catch (e) {
+            console.warn("Failed to parse stored process metadata:", e);
+          }
+        }
+      }
 
-      let zplUrl = null;
-      let combUrl = null;
-      let origUrl = null;
+      if (!currentSummary || currentResults.length === 0) {
+        return false;
+      }
 
-      if (currentFiles?.convertedZplPdfBase64) {
+      // 2. Asynchronously restore files from IndexedDB if not in memory
+      if (!currentFiles || (!currentFiles.originalPdfBase64 && !currentFiles.combinedPdfBase64)) {
+        const idbFiles = await loadFilesFromIDB();
+        if (idbFiles) {
+          currentFiles = idbFiles;
+        }
+      }
+
+      // 3. Generate Blob URLs for the current document context
+      let zplUrl = get().convertedZplPdfUrl;
+      let combUrl = get().combinedPdfUrl;
+      let origUrl = get().originalPdfUrl;
+      let unmatchUrl = get().unmatchedPdfUrl;
+      let unmatchZplUrl = get().unmatchedZplPdfUrl;
+
+      if (!zplUrl && currentFiles?.convertedZplPdfBase64) {
         zplUrl = base64ToBlobUrl(currentFiles.convertedZplPdfBase64);
       }
-      if (currentFiles?.combinedPdfBase64) {
+      if (!combUrl && currentFiles?.combinedPdfBase64) {
         combUrl = base64ToBlobUrl(currentFiles.combinedPdfBase64);
       }
-      if (currentFiles?.originalPdfBase64) {
+      if (!origUrl && currentFiles?.originalPdfBase64) {
         origUrl = base64ToBlobUrl(currentFiles.originalPdfBase64);
+      }
+      if (!unmatchUrl && currentFiles?.unmatchedPdfBase64) {
+        unmatchUrl = base64ToBlobUrl(currentFiles.unmatchedPdfBase64);
+      }
+      if (!unmatchZplUrl && currentFiles?.unmatchedZplBase64) {
+        unmatchZplUrl = base64ToBlobUrl(currentFiles.unmatchedZplBase64);
       }
 
       set({
-        summary: data.summary,
-        results: data.results,
+        summary: currentSummary,
+        results: currentResults,
         files: currentFiles,
         convertedZplPdfUrl: zplUrl,
         combinedPdfUrl: combUrl,
         originalPdfUrl: origUrl,
+        unmatchedPdfUrl: unmatchUrl,
+        unmatchedZplPdfUrl: unmatchZplUrl,
       });
-
-      // Asynchronously restore files from IndexedDB if not present in sessionStorage
-      if (!currentFiles) {
-        loadFilesFromIDB().then((idbFiles) => {
-          if (idbFiles) {
-            let idbZplUrl = null;
-            let idbCombUrl = null;
-            let idbOrigUrl = null;
-
-            if (idbFiles.convertedZplPdfBase64) {
-              idbZplUrl = base64ToBlobUrl(idbFiles.convertedZplPdfBase64);
-            }
-            if (idbFiles.combinedPdfBase64) {
-              idbCombUrl = base64ToBlobUrl(idbFiles.combinedPdfBase64);
-            }
-            if (idbFiles.originalPdfBase64) {
-              idbOrigUrl = base64ToBlobUrl(idbFiles.originalPdfBase64);
-            }
-
-            set({
-              files: idbFiles,
-              convertedZplPdfUrl: idbZplUrl,
-              combinedPdfUrl: idbCombUrl,
-              originalPdfUrl: idbOrigUrl,
-            });
-          }
-        });
-      }
 
       return true;
     } catch (e) {
-      console.error("Failed to load from sessionStorage:", e);
+      console.error("Failed to restore process data:", e);
       return false;
     }
   },
 
+  loadFromSessionStorage: () => {
+    get().restoreProcessData();
+    const hasMem = !!get().summary;
+    const hasStorage = typeof window !== "undefined" && (!!localStorage.getItem(METADATA_STORAGE_KEY) || !!sessionStorage.getItem(SESSION_STORAGE_KEY));
+    return hasMem || hasStorage;
+  },
+
   clearProcessData: () => {
-    const { convertedZplPdfUrl, combinedPdfUrl, originalPdfUrl } = get();
+    const { convertedZplPdfUrl, combinedPdfUrl, originalPdfUrl, unmatchedPdfUrl, unmatchedZplPdfUrl } = get();
     if (convertedZplPdfUrl) URL.revokeObjectURL(convertedZplPdfUrl);
     if (combinedPdfUrl) URL.revokeObjectURL(combinedPdfUrl);
     if (originalPdfUrl) URL.revokeObjectURL(originalPdfUrl);
+    if (unmatchedPdfUrl) URL.revokeObjectURL(unmatchedPdfUrl);
+    if (unmatchedZplPdfUrl) URL.revokeObjectURL(unmatchedZplPdfUrl);
 
     try {
       if (typeof window !== "undefined") {
+        localStorage.removeItem(METADATA_STORAGE_KEY);
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
       }
     } catch (e) {}
@@ -302,6 +338,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       convertedZplPdfUrl: null,
       combinedPdfUrl: null,
       originalPdfUrl: null,
+      unmatchedPdfUrl: null,
+      unmatchedZplPdfUrl: null,
     });
   },
 
@@ -324,6 +362,20 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     if (!files?.originalPdfBase64) return;
     const filename = summary?.pdfFileName || `Amazon_Original_Invoices_${Date.now()}.pdf`;
     downloadBase64File(files.originalPdfBase64, filename);
+  },
+
+  downloadUnmatchedPdf: () => {
+    const { files } = get();
+    if (!files?.unmatchedPdfBase64) return;
+    const filename = `Amazon_Unmatched_Invoices_${Date.now()}.pdf`;
+    downloadBase64File(files.unmatchedPdfBase64, filename);
+  },
+
+  downloadUnmatchedZplPdf: () => {
+    const { files } = get();
+    if (!files?.unmatchedZplBase64) return;
+    const filename = `Amazon_Unmatched_ZPL_Labels_${Date.now()}.pdf`;
+    downloadBase64File(files.unmatchedZplBase64, filename);
   },
 
   exportToExcel: () => {

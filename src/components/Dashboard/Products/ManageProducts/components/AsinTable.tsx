@@ -20,30 +20,30 @@ export default function AsinTable({
   return (
     <div className="w-full overflow-hidden rounded-lg border border-[#E7EAF0] bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[950px] text-left text-sm">
+        <table className="w-full min-w-[950px]">
           <thead className="bg-[#0A0E1A] text-white">
             <tr>
-              <th className="px-5 py-3.5 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wider text-white">
+              <th className="px-4 py-3 text-left">
                 ASIN
               </th>
 
-              <th className="px-5 py-3.5 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wider text-white">
+              <th className="px-4 py-3 text-left">
                 SKU
               </th>
 
-              <th className="px-5 py-3.5 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wider text-white">
+              <th className="px-4 py-3 text-left">
                 Generate Barcode
               </th>
 
-              <th className="px-5 py-3.5 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wider text-white">
+              <th className="px-4 py-3 text-left">
                 Rack Address
               </th>
 
-              <th className="px-5 py-3.5 sm:px-6 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider text-white">
+              <th className="px-4 py-3 text-left">
                 Created
               </th>
 
-              <th className="px-5 py-3.5 sm:px-6 sm:py-4 text-center text-xs font-semibold uppercase tracking-wider text-white">
+              <th className="px-4 py-3 text-center">
                 Actions
               </th>
             </tr>
@@ -53,23 +53,23 @@ export default function AsinTable({
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="animate-pulse">
-                  <td className="px-5 py-4 sm:px-6 sm:py-5">
+                  <td className="px-4 py-3">
                     <div className="h-4 w-28 rounded bg-slate-200" />
                   </td>
-                  <td className="px-5 py-4 sm:px-6 sm:py-5">
+                  <td className="px-4 py-3">
                     <div className="h-4 w-24 rounded bg-slate-200" />
                   </td>
-                  <td className="px-5 py-4 sm:px-6 sm:py-5">
+                  <td className="px-4 py-3">
                     <div className="h-4 w-24 rounded bg-slate-200" />
                   </td>
-                  <td className="px-5 py-4 sm:px-6 sm:py-5">
+                  <td className="px-4 py-3">
                     <div className="h-4 w-20 rounded bg-slate-200" />
                   </td>
-                  <td className="px-5 py-4 sm:px-6 sm:py-5">
+                  <td className="px-4 py-3">
                     <div className="h-4 w-20 rounded bg-slate-200" />
                   </td>
-                  <td className="px-5 py-4 sm:px-6 sm:py-5 text-center">
-                    <div className="mx-auto h-9 w-9 rounded-md bg-slate-200" />
+                  <td className="px-4 py-3 text-center">
+                    <div className="mx-auto h-8 w-8 rounded-md bg-slate-200" />
                   </td>
                 </tr>
               ))
@@ -77,7 +77,7 @@ export default function AsinTable({
               <tr>
                 <td
                   colSpan={6}
-                  className="px-5 py-12 text-center text-sm font-medium text-slate-500"
+                  className="px-4 py-12 text-center text-slate-500"
                 >
                   No ASIN import records found.
                 </td>
@@ -86,33 +86,25 @@ export default function AsinTable({
               items.map((item) => (
                 <tr
                   key={item.id}
-                  className="transition-colors hover:bg-slate-50/80"
+                  className="border-t transition-colors hover:bg-slate-50"
                 >
-                  <td className="px-5 py-4 sm:px-6 sm:py-5 align-middle">
-                    <p className="font-semibold text-[#0A0E1A]">
-                      {item.asin || "—"}
-                    </p>
+                  <td className="px-4 py-3 font-semibold text-[#0A0E1A]">
+                    {item.asin || "—"}
                   </td>
 
-                  <td className="px-5 py-4 sm:px-6 sm:py-5 align-middle">
-                    <span className="font-medium text-slate-700">
-                      {item.sku || "—"}
-                    </span>
+                  <td className="px-4 py-3 text-slate-700">
+                    {item.sku || "—"}
                   </td>
 
-                  <td className="px-5 py-4 sm:px-6 sm:py-5 align-middle">
-                    <span className="text-slate-700">
-                      {item.generateBarcode || item.sku || item.asin || "—"}
-                    </span>
+                  <td className="px-4 py-3 text-slate-700">
+                    {item.generateBarcode || item.sku || item.asin || "—"}
                   </td>
 
-                  <td className="px-5 py-4 sm:px-6 sm:py-5 align-middle">
-                    <span className="text-slate-700">
-                      {item.rackAddress || "—"}
-                    </span>
+                  <td className="px-4 py-3 text-slate-700">
+                    {item.rackAddress || "—"}
                   </td>
 
-                  <td className="px-5 py-4 sm:px-6 sm:py-5 align-middle text-slate-700">
+                  <td className="px-4 py-3 text-slate-700">
                     {item.createdAt
                       ? new Date(item.createdAt).toLocaleDateString("en-IN", {
                           day: "2-digit",
@@ -122,7 +114,7 @@ export default function AsinTable({
                       : "—"}
                   </td>
 
-                  <td className="px-5 py-4 sm:px-6 sm:py-5 align-middle text-center">
+                  <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center">
                       <ActionMenu
                         items={[

@@ -1,6 +1,7 @@
 export interface SkuMapping {
   id: string;
   shortSku: string;
+  fullSku?: string | null;
   barcodeSku: string;
   ordercookSku: string;
   createdAt: string;
@@ -29,6 +30,7 @@ export interface SkuMappingResponse {
 
 export interface UpdateSkuMappingPayload {
   shortSku: string;
+  fullSku?: string;
   barcodeSku: string;
   ordercookSku: string;
 }

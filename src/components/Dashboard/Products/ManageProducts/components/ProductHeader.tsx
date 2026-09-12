@@ -5,9 +5,10 @@ import { Package, Plus } from "lucide-react";
 
 interface Props {
   onAddProduct: () => void;
+  buttonLabel?: string;
 }
 
-export default function ProductHeader({ onAddProduct }: Props) {
+export default function ProductHeader({ onAddProduct, buttonLabel = "Add Product" }: Props) {
   return (
     <section className="flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex-1">
@@ -37,7 +38,7 @@ export default function ProductHeader({ onAddProduct }: Props) {
           leftIcon={<Plus size={18} />}
           onClick={onAddProduct}
         >
-          Add Product
+          {buttonLabel}
         </Button>
       </div>
     </section>

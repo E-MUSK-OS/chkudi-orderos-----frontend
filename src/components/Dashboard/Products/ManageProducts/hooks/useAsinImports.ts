@@ -44,6 +44,29 @@ export function useImportAsinExcel() {
 }
 
 /**
+ * Create ASIN Import Item
+ */
+export function useCreateAsinImport() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { asin: string; sku?: string; generateBarcode?: string; rackAddress?: string }) =>
+      asinImportService.create(data, getToken()),
+
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success(response?.message || "ASIN record created successfully");
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error?.message || error?.response?.data?.message || "Failed to create ASIN record",
+      );
+    },
+  });
+}
+
+/**
  * Delete ASIN Import Item
  */
 export function useDeleteAsinImport() {

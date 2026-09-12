@@ -28,6 +28,7 @@ export default function ProductVariantInline({
   const [editing, setEditing] = useState(false);
   const [variantSku, setVariantSku] = useState("");
   const [asin, setAsin] = useState("");
+  const [rackAddress, setRackAddress] = useState("");
   const [isSkuManuallyEdited, setIsSkuManuallyEdited] = useState(false);
   const [attributeValues, setAttributeValues] = useState<
     Record<string, string>
@@ -39,6 +40,7 @@ export default function ProductVariantInline({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editSku, setEditSku] = useState("");
   const [editAsin, setEditAsin] = useState("");
+  const [editRackAddress, setEditRackAddress] = useState("");
   const [editAttributes, setEditAttributes] = useState<Record<string, string>>(
     {},
   );
@@ -51,7 +53,7 @@ export default function ProductVariantInline({
   );
 
   const [activeFocusKey, setActiveFocusKey] = useState<
-    string | "sku" | "asin" | null
+    string | "sku" | "asin" | "rack" | null
   >(null);
 
   const handleAttributeChange = (attrId: string, value: string) => {
@@ -74,7 +76,7 @@ export default function ProductVariantInline({
     }
   };
 
-  const handleStartAdd = (focusKey: string | "sku" | "asin" = "sku") => {
+  const handleStartAdd = (focusKey: string | "sku" | "asin" | "rack" = "sku") => {
     setEditing(true);
     setActiveFocusKey(focusKey);
     if (!variantSku && masterSku) {
@@ -87,6 +89,7 @@ export default function ProductVariantInline({
       productId,
       variantSku,
       asin: asin.trim() || undefined,
+      rackAddress: rackAddress.trim() || undefined,
       isActive,
       attributes: Object.entries(attributeValues).map(
         ([productAttributeId, attributeValue]) => ({
@@ -102,6 +105,7 @@ export default function ProductVariantInline({
     setActiveFocusKey(null);
     setVariantSku("");
     setAsin("");
+    setRackAddress("");
     setIsSkuManuallyEdited(false);
     setAttributeValues({});
     setIsActive(true);
@@ -114,6 +118,7 @@ export default function ProductVariantInline({
         productId,
         variantSku: editSku,
         asin: editAsin.trim() || undefined,
+        rackAddress: editRackAddress.trim() || undefined,
         isActive: editStatus,
         attributes: Object.entries(editAttributes).map(
           ([productAttributeId, attributeValue]) => ({
@@ -169,6 +174,11 @@ export default function ProductVariantInline({
                 ASIN
               </th>
 
+              {/* RACK ADDRESS */}
+              <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-200">
+                Rack Address
+              </th>
+
               <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-200">
                 Status
               </th>
@@ -183,7 +193,7 @@ export default function ProductVariantInline({
             {isLoading ? (
               <tr>
                 <td
-                  colSpan={attributes.length + 4}
+                  colSpan={attributes.length + 5}
                   className="py-6 text-center text-sm text-slate-500"
                 >
                   Loading variants...
@@ -255,6 +265,22 @@ export default function ProductVariantInline({
                     )}
                   </td>
 
+                  {/* RACK ADDRESS */}
+                  <td className="px-6 py-4 align-middle text-sm text-slate-700">
+                    {editingId === variant.id ? (
+                      <input
+                        value={editRackAddress}
+                        onChange={(e) => setEditRackAddress(e.target.value)}
+                        placeholder="Rack Address"
+                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                      />
+                    ) : (
+                      <span className="font-medium text-slate-700">
+                        {variant.rackAddress || "--"}
+                      </span>
+                    )}
+                  </td>
+
                   <td className="px-6 py-4 align-middle text-center">
                     <div className="flex items-center justify-center">
                       {editingId === variant.id ? (
@@ -304,6 +330,7 @@ export default function ProductVariantInline({
                               setEditingId(variant.id);
                               setEditSku(variant.variantSku);
                               setEditAsin(variant.asin || "");
+                              setEditRackAddress(variant.rackAddress || "");
                               setEditStatus(variant.isActive);
 
                               const values: Record<string, string> = {};
@@ -424,6 +451,28 @@ export default function ProductVariantInline({
                 )}
               </td>
 
+              {/* RACK ADDRESS */}
+              <td
+                className={`px-6 py-4 align-middle text-sm ${
+                  !editing ? "cursor-pointer" : ""
+                }`}
+                onClick={!editing ? () => handleStartAdd("rack") : undefined}
+              >
+                {editing ? (
+                  <input
+                    autoFocus={activeFocusKey === "rack"}
+                    value={rackAddress}
+                    onChange={(e) => setRackAddress(e.target.value)}
+                    placeholder="Rack Address"
+                    className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                  />
+                ) : (
+                  <span className="font-medium text-slate-400 transition-colors hover:text-slate-600">
+                    {rackAddress || "--"}
+                  </span>
+                )}
+              </td>
+
               {/* Status */}
               <td className="px-6 py-4 align-middle text-center">
                 <div className="flex items-center justify-center">
@@ -458,6 +507,7 @@ export default function ProductVariantInline({
                           setActiveFocusKey(null);
                           setVariantSku("");
                           setAsin("");
+                          setRackAddress("");
                           setIsSkuManuallyEdited(false);
                           setAttributeValues({});
                           setIsActive(true);
