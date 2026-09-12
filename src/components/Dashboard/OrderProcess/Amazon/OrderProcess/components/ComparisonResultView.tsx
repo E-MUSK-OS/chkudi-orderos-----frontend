@@ -47,6 +47,13 @@ export type AmazonPdfViewType =
   | "unmatched_pdf"
   | "unmatched_zpl";
 
+export interface OrderItemRequirement {
+  asin: string;
+  sku: string;
+  requiredQty: number;
+  scannedQty: number;
+}
+
 function resolveTargetPrinter(availablePrinters: string[], detailedPrinters?: any[]): string {
   if (!availablePrinters || availablePrinters.length === 0) return "";
   const saved = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
@@ -400,6 +407,7 @@ export default function ComparisonResultView({
   const [searchQuery, setSearchQuery] = useState("");
   const [autoPrintQuery, setAutoPrintQuery] = useState("");
   const autoPrintInputRef = useRef<HTMLInputElement>(null);
+  const orderScanProgressRef = useRef<Map<number, OrderItemRequirement[]>>(new Map());
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [printedRows, setPrintedRows] = useState<Set<number>>(new Set());
   const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("all");
@@ -653,12 +661,17 @@ export default function ComparisonResultView({
 
   const handleReset = () => {
     setPrintedRows(new Set());
+    orderScanProgressRef.current.clear();
     if (onReset) {
       onReset();
     } else {
       clearProcessData();
     }
   };
+
+  useEffect(() => {
+    orderScanProgressRef.current.clear();
+  }, [results]);
 
   // Filter and search results (Only matched orders are displayed in table)
   const filteredResults = useMemo(() => {
@@ -1028,63 +1041,369 @@ export default function ComparisonResultView({
     }
   };
 
+  // Helper to construct order requirements for scanning verification
+  const buildOrderRequirements = (item: (typeof mappedResults)[0]): OrderItemRequirement[] => {
+    const rawAsins = (item.asin && item.asin !== "N/A" ? item.asin : "")
+      .split(/[\r\n]+|\s+\/\s+/)
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+
+    const rawSkus = (item.sellerSku && item.sellerSku !== "N/A" && item.sellerSku !== "-" ? item.sellerSku : "")
+      .split(/[\r\n]+|\s+\/\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const orderType = getOrderTypeForItem(item);
+    const totalQty = Math.max(item.totalQuantity || 0, rawAsins.length, rawSkus.length, 1);
+
+    if (orderType === "single_quantity") {
+      return [
+        {
+          asin: rawAsins[0] || (item.asin && item.asin !== "N/A" ? item.asin.trim().toUpperCase() : "") || "N/A",
+          sku: rawSkus[0] || (item.sellerSku && item.sellerSku !== "N/A" ? item.sellerSku.trim() : "") || "N/A",
+          requiredQty: 1,
+          scannedQty: 0,
+        },
+      ];
+    }
+
+    if (orderType === "multiple_pieces" && new Set(rawAsins).size <= 1) {
+      const singleAsin = rawAsins[0] || (item.asin && item.asin !== "N/A" ? item.asin.trim().toUpperCase() : "") || "N/A";
+      const singleSku = rawSkus[0] || (item.sellerSku && item.sellerSku !== "N/A" ? item.sellerSku.trim() : "") || "N/A";
+      return [
+        {
+          asin: singleAsin,
+          sku: singleSku,
+          requiredQty: totalQty,
+          scannedQty: 0,
+        },
+      ];
+    }
+
+    // Multiple ASINs (or multiple items with distinct ASINs)
+    if (rawAsins.length > 0) {
+      const asinCounts = new Map<string, number>();
+      rawAsins.forEach((a) => {
+        asinCounts.set(a, (asinCounts.get(a) || 0) + 1);
+      });
+
+      const reqs: OrderItemRequirement[] = [];
+      asinCounts.forEach((count, asin) => {
+        const asinIdx = rawAsins.indexOf(asin);
+        const sku = asinIdx !== -1 && rawSkus[asinIdx] ? rawSkus[asinIdx] : (asinToSkuMap.get(asin) || "N/A");
+        reqs.push({
+          asin,
+          sku,
+          requiredQty: count,
+          scannedQty: 0,
+        });
+      });
+
+      const currentSum = reqs.reduce((sum, r) => sum + r.requiredQty, 0);
+      if (totalQty > currentSum && reqs.length > 0) {
+        reqs[0].requiredQty += totalQty - currentSum;
+      }
+
+      return reqs;
+    }
+
+    if (rawSkus.length > 0) {
+      const skuCounts = new Map<string, number>();
+      rawSkus.forEach((s) => {
+        skuCounts.set(s, (skuCounts.get(s) || 0) + 1);
+      });
+      const reqs: OrderItemRequirement[] = [];
+      skuCounts.forEach((count, sku) => {
+        reqs.push({
+          asin: "N/A",
+          sku,
+          requiredQty: count,
+          scannedQty: 0,
+        });
+      });
+      return reqs;
+    }
+
+    return [
+      {
+        asin: "N/A",
+        sku: "N/A",
+        requiredQty: totalQty,
+        scannedQty: 0,
+      },
+    ];
+  };
+
+  const isReqMatch = (req: OrderItemRequirement, query: string): boolean => {
+    const qN = query.trim().toUpperCase();
+    if (!qN) return false;
+
+    // 1. ASIN match
+    if (req.asin && req.asin !== "N/A") {
+      if (req.asin.toUpperCase() === qN) return true;
+      if (qN.length >= 6 && req.asin.toUpperCase().includes(qN)) return true;
+    }
+
+    // 2. Seller SKU match
+    if (req.sku && req.sku !== "N/A" && req.sku !== "-") {
+      const skuNorm = req.sku.toUpperCase();
+      if (skuNorm === qN) return true;
+      if (qN.length >= 3 && skuNorm.includes(qN)) return true;
+    }
+
+    // 3. Barcode match from skuDetailsMap
+    if (req.asin && req.asin !== "N/A") {
+      const details = skuDetailsMap.get(req.asin.toUpperCase());
+      if (details?.generateBarcode && details.generateBarcode.toUpperCase() === qN) return true;
+    }
+    if (req.sku && req.sku !== "N/A" && req.sku !== "-") {
+      const details = skuDetailsMap.get(req.sku.toUpperCase());
+      if (details?.generateBarcode && details.generateBarcode.toUpperCase() === qN) return true;
+    }
+
+    return false;
+  };
+
+  const isOrderLevelMatch = (item: (typeof mappedResults)[0], query: string): boolean => {
+    const qN = query.trim().toUpperCase();
+    if (!qN) return false;
+
+    const orderNum = (item.orderNumber || "").trim().toUpperCase();
+    const pdfInv = (item.pdfInvoice || "").trim().toUpperCase();
+    const zplInv = (item.zplInvoice || "").trim().toUpperCase();
+    const awb = (item.awb || "").trim().toUpperCase();
+
+    if (orderNum && (orderNum === qN || (qN.length >= 8 && orderNum.includes(qN)))) return true;
+    if (pdfInv && pdfInv !== "N/A" && pdfInv !== "NOT FOUND IN PDF" && (pdfInv === qN || (qN.length >= 6 && pdfInv.includes(qN)))) return true;
+    if (zplInv && zplInv !== "N/A" && zplInv !== "NOT FOUND IN ZPL" && (zplInv === qN || (qN.length >= 6 && zplInv.includes(qN)))) return true;
+    if (awb && awb !== "N/A" && (awb === qN || (qN.length >= 8 && awb.includes(qN)))) return true;
+
+    return false;
+  };
+
+  const doesOrderMatchQuery = (item: (typeof mappedResults)[0], query: string): boolean => {
+    const qL = query.trim().toLowerCase();
+    if (!qL) return false;
+
+    if (isOrderLevelMatch(item, query)) return true;
+
+    const reqs = orderScanProgressRef.current.get(item.index) || buildOrderRequirements(item);
+    if (reqs.some((r) => isReqMatch(r, query))) return true;
+
+    const asinMatch = item.asin && item.asin.toLowerCase().includes(qL);
+    const skuMatch = item.sellerSku && item.sellerSku.toLowerCase().includes(qL);
+    return !!(asinMatch || skuMatch);
+  };
+
   const handleAutoPrintSearch = async (query: string) => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) return;
 
     // Immediately select all written text when user leaves writing / submits
     autoPrintInputRef.current?.focus();
     autoPrintInputRef.current?.select();
 
-    const matchingItems = mappedResults.filter((item) => {
-      const asinMatch = item.asin && item.asin.toLowerCase() === q;
-      const skuMatch = item.sellerSku && item.sellerSku.toLowerCase() === q;
-      const orderMatch = item.orderNumber && item.orderNumber.toLowerCase() === q;
-      const awbMatch = item.awb && item.awb.toLowerCase() === q;
-      const pdfMatch = item.pdfInvoice && item.pdfInvoice.toLowerCase() === q;
-      const zplMatch = item.zplInvoice && item.zplInvoice.toLowerCase() === q;
+    // 1. Check if an order is currently in-progress (partially scanned, unprinted)
+    // and the scanned query matches one of its remaining requirements or order identifiers.
+    let targetItem: (typeof mappedResults)[0] | undefined;
+    let seqNotice = "";
 
-      const partialOrder = q.length >= 6 && item.orderNumber && item.orderNumber.toLowerCase().includes(q);
-      const partialAwb = q.length >= 6 && item.awb && item.awb.toLowerCase().includes(q);
-      const partialAsin = q.length >= 6 && item.asin && item.asin.toLowerCase().includes(q);
-      const partialSku = q.length >= 3 && item.sellerSku && item.sellerSku.toLowerCase().includes(q);
+    const inProgressEntries = Array.from(orderScanProgressRef.current.entries()).filter(
+      ([index, reqs]) => {
+        if (printedRows.has(index)) return false;
+        const hasScanned = reqs.some((r) => r.scannedQty > 0);
+        const hasRemaining = reqs.some((r) => r.scannedQty < r.requiredQty);
+        return hasScanned && hasRemaining;
+      }
+    );
 
-      return asinMatch || skuMatch || orderMatch || awbMatch || pdfMatch || zplMatch || partialOrder || partialAwb || partialAsin || partialSku;
-    });
+    // Prioritize in-progress order if scanned query matches its remaining requirement or order ID
+    for (const [inProgIdx, reqs] of inProgressEntries) {
+      const item = mappedResults.find((m) => m.index === inProgIdx);
+      if (!item) continue;
 
-    if (matchingItems.length > 0) {
-      const unprintedItems = matchingItems.filter((item) => !printedRows.has(item.index));
-      let targetItem: typeof mappedResults[0];
-      let seqNotice = "";
+      const matchesRemainingReq = reqs.some(
+        (r) => r.scannedQty < r.requiredQty && isReqMatch(r, q)
+      );
+      const matchesAnyReq = reqs.some((r) => isReqMatch(r, q));
+      const matchesOrderId = isOrderLevelMatch(item, q);
 
-      if (unprintedItems.length > 0) {
-        targetItem = unprintedItems[0];
-        const step = matchingItems.length - unprintedItems.length + 1;
-        if (matchingItems.length > 1) {
-          seqNotice = `Order ${step} of ${matchingItems.length}`;
-        }
-      } else {
-        // All matching items for this query have been printed once -> cycle restart
-        targetItem = matchingItems[0];
-        if (matchingItems.length > 1) {
-          seqNotice = `Cycle restart: Order 1 of ${matchingItems.length}`;
-          setPrintedRows((prev) => {
-            const next = new Set(prev);
-            matchingItems.forEach((m) => next.delete(m.index));
-            return next;
-          });
+      if (matchesRemainingReq || matchesAnyReq || matchesOrderId) {
+        targetItem = item;
+        break;
+      }
+    }
+
+    // 2. If no in-progress order matched, find matching unprinted orders in mappedResults
+    if (!targetItem) {
+      const matchingItems = mappedResults.filter((item) => doesOrderMatchQuery(item, q));
+
+      if (matchingItems.length > 0) {
+        const unprintedItems = matchingItems.filter((item) => !printedRows.has(item.index));
+
+        if (unprintedItems.length > 0) {
+          targetItem = unprintedItems[0];
+          const step = matchingItems.length - unprintedItems.length + 1;
+          if (matchingItems.length > 1) {
+            seqNotice = `Order ${step} of ${matchingItems.length}`;
+          }
+        } else {
+          // All matching items for this query have been printed once -> cycle restart
+          targetItem = matchingItems[0];
+          if (matchingItems.length > 1) {
+            seqNotice = `Cycle restart: Order 1 of ${matchingItems.length}`;
+            setPrintedRows((prev) => {
+              const next = new Set(prev);
+              matchingItems.forEach((m) => next.delete(m.index));
+              return next;
+            });
+            // Clear scan progress for restarted items
+            matchingItems.forEach((m) => orderScanProgressRef.current.delete(m.index));
+          }
         }
       }
+    }
 
+    if (!targetItem) {
+      toast.error(`No matching order found for "${query}"`);
+      return;
+    }
+
+    // 3. Retrieve or initialize requirement list for this order
+    let reqs = orderScanProgressRef.current.get(targetItem.index);
+    if (!reqs) {
+      reqs = buildOrderRequirements(targetItem);
+      orderScanProgressRef.current.set(targetItem.index, reqs);
+    }
+
+    const orderType = getOrderTypeForItem(targetItem);
+
+    // 4. If single quantity order, immediately print
+    if (orderType === "single_quantity") {
+      orderScanProgressRef.current.delete(targetItem.index);
       await executePrintForItems([targetItem]);
-
       if (seqNotice) {
         toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
           duration: 4000,
         });
       }
-    } else {
-      toast.error(`No matching order found for "${query}"`);
+      return;
+    }
+
+    // 5. For multiple_asin and multiple_pieces:
+    // If user scanned an order-level identifier (Invoice #, Order ID, AWB) directly:
+    const isOrderScan = isOrderLevelMatch(targetItem, q);
+    if (isOrderScan) {
+      const allScanned = reqs.every((r) => r.scannedQty >= r.requiredQty);
+      if (allScanned) {
+        orderScanProgressRef.current.delete(targetItem.index);
+        await executePrintForItems([targetItem]);
+        if (seqNotice) {
+          toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
+            duration: 4000,
+          });
+        }
+        return;
+      } else {
+        // Invoice scanned, but not all ASINs/pieces are scanned yet -> block print!
+        const remainingReqs = reqs.filter((r) => r.scannedQty < r.requiredQty);
+        const remainingAsins = remainingReqs
+          .map((r) => (r.asin !== "N/A" ? r.asin : r.sku))
+          .filter(Boolean);
+        const remainingPieces = remainingReqs.reduce(
+          (sum, r) => sum + (r.requiredQty - r.scannedQty),
+          0
+        );
+
+        toast.warning(
+          `Cannot print Invoice ${targetItem.pdfInvoice || targetItem.zplInvoice || targetItem.orderNumber}: ASIN is remaining: ${remainingAsins.join(", ")} (${remainingPieces} piece(s) remain). Please scan all ASINs first.`,
+          { duration: 7000 }
+        );
+        return;
+      }
+    }
+
+    // 6. User scanned an ASIN / SKU / Barcode:
+    // Find requirement matching query (preferring one that still needs scans)
+    let matchingReq = reqs.find((r) => r.scannedQty < r.requiredQty && isReqMatch(r, q));
+
+    if (!matchingReq) {
+      matchingReq = reqs.find((r) => isReqMatch(r, q));
+    }
+
+    if (!matchingReq) {
+      toast.error(
+        `Scanned item "${q}" does not match any ASIN/SKU for Order ${targetItem.orderNumber || targetItem.pdfInvoice}`
+      );
+      return;
+    }
+
+    // Check if this specific item is already fully scanned
+    if (matchingReq.scannedQty >= matchingReq.requiredQty) {
+      const remainingReqs = reqs.filter((r) => r.scannedQty < r.requiredQty);
+      const remainingAsins = remainingReqs
+        .map((r) => (r.asin !== "N/A" ? r.asin : r.sku))
+        .filter(Boolean);
+      const remainingPieces = remainingReqs.reduce(
+        (sum, r) => sum + (r.requiredQty - r.scannedQty),
+        0
+      );
+
+      toast.info(
+        `ASIN ${matchingReq.asin} is already fully scanned for this order. ASIN is remaining: ${remainingAsins.join(", ")} (${remainingPieces} piece(s) remain). Please scan remaining ASIN.`,
+        { duration: 6000 }
+      );
+      return;
+    }
+
+    // Record the scan for this requirement
+    matchingReq.scannedQty++;
+
+    const remainingReqs = reqs.filter((r) => r.scannedQty < r.requiredQty);
+    const totalRequired = reqs.reduce((sum, r) => sum + r.requiredQty, 0);
+    const totalScanned = reqs.reduce((sum, r) => sum + r.scannedQty, 0);
+
+    // If items still remain, do NOT print -> show toast of remaining ASIN(s)
+    if (remainingReqs.length > 0) {
+      const remainingAsins = remainingReqs
+        .map((r) => (r.asin !== "N/A" ? r.asin : r.sku))
+        .filter(Boolean);
+      const remainingPieces = remainingReqs.reduce(
+        (sum, r) => sum + (r.requiredQty - r.scannedQty),
+        0
+      );
+
+      if (orderType === "multiple_asin") {
+        toast.warning(
+          `ASIN is remaining: ${remainingAsins.join(", ")} (${totalScanned}/${totalRequired} scanned for Order ${targetItem.orderNumber || targetItem.pdfInvoice}). Scan remaining ASIN to print.`,
+          { duration: 7000 }
+        );
+      } else {
+        // multiple_pieces
+        toast.warning(
+          `ASIN is remaining: ${remainingAsins.join(", ")} (${remainingPieces} piece(s) remaining, ${totalScanned}/${totalRequired} scanned for Order ${targetItem.orderNumber || targetItem.pdfInvoice}). Scan remaining piece to print.`,
+          { duration: 7000 }
+        );
+      }
+      return;
+    }
+
+    // ALL items/pieces for this order have been scanned!
+    toast.success(
+      `All ASINs scanned (${totalScanned}/${totalRequired}) for Order ${targetItem.orderNumber || targetItem.pdfInvoice}! Printing shipping label and invoice...`,
+      { duration: 4000 }
+    );
+
+    // Clear progress for completed order
+    orderScanProgressRef.current.delete(targetItem.index);
+
+    // Trigger print
+    await executePrintForItems([targetItem]);
+
+    if (seqNotice) {
+      toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
+        duration: 4000,
+      });
     }
   };
 
