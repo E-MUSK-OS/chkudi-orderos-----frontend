@@ -194,11 +194,19 @@ export function PropertiesPanel({
             <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
               options={ORIENTATIONS}
               value={ORIENTATIONS.find(o => o.value === settings.orientation) || ORIENTATIONS[0]}
-              onChange={(opt) => opt && handleSettingsChange('orientation', opt.value)}
+              onChange={(opt) => {
+                if (opt) {
+                  handleSettingsChange('orientation', opt.value);
+                  const w = settings.widthMm;
+                  const h = settings.heightMm;
+                  if (opt.value === 'portrait' && w > h) {
+                    updateSettings({ widthMm: h, heightMm: w });
+                  } else if (opt.value === 'landscape' && h > w) {
+                    updateSettings({ widthMm: h, heightMm: w });
+                  }
+                }
+              }}
             />
-            <p className="text-[11px] text-gray-500">
-              Portrait rotates the final printed/exported label 90°. This canvas always shows your unrotated layout.
-            </p>
           </div>
 
           <div className="space-y-2">

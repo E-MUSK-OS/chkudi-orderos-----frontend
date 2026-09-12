@@ -35,46 +35,6 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
   const [successfulJobs, setSuccessfulJobs] = useState<PrintQueueItem[]>([]);
   const [failedJobs, setFailedJobs] = useState<PrintQueueItem[]>([]);
 
-  const runMatching = useCallback(async () => {
-    setStep("matching");
-    const results = await Promise.allSettled(
-      rows.map(async (row): Promise<PrintQueueItem> => {
-        const query = row.barcodeSku?.trim() || row.shortSku?.trim();
-        if (!query) return { rowId: row.id, status: "error", errorMessage: "No SKU to look up", lookupSku: "" };
-        try {
-          const matches = await labelService.lookupProduct(query);
-          if (matches.length === 0) return { rowId: row.id, status: "not_found", lookupSku: query };
-          if (matches.length > 1) return { rowId: row.id, status: "multiple_matches", lookupSku: query, product: matches[0] };
-          return { rowId: row.id, status: "matched", lookupSku: query, product: matches[0] };
-        } catch (err) {
-          return { rowId: row.id, status: "not_found", lookupSku: query, errorMessage: (err as Error).message };
-        }
-      })
-    );
-
-    const newQueue = results.map(r => r.status === "fulfilled" ? r.value : null).filter(Boolean) as PrintQueueItem[];
-    setQueue(newQueue);
-
-    // Default select rows that were successfully matched (or multiple matches)
-    const selected = new Set<number>();
-    newQueue.forEach(item => {
-      if (item.status === "matched" || item.status === "multiple_matches") {
-        selected.add(item.rowId);
-      }
-    });
-    setSelectedForPrint(selected);
-    setStep("review");
-  }, [rows]);
-
-  const toggleQueueRow = useCallback((rowId: number, checked: boolean) => {
-    setSelectedForPrint(prev => {
-      const next = new Set(prev);
-      if (checked) next.add(rowId);
-      else next.delete(rowId);
-      return next;
-    });
-  }, []);
-
   const refreshPrinters = useCallback(async () => {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       setPrinters([]);
@@ -104,20 +64,29 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
         setHelperStatus("online");
         const lastUsed = localStorage.getItem("lastUsedPrinter");
         const offlineMap = new Map<string, boolean>();
+        let defaultPrinterName = "";
+
         details.forEach((d) => {
-          if (d.name) offlineMap.set(d.name.toLowerCase(), !!d.isOffline);
+          if (d.name) {
+            offlineMap.set(d.name.toLowerCase(), !!d.isOffline);
+            if (d.isDefault) {
+              defaultPrinterName = d.name;
+            }
+          }
         });
 
+        const isThermal = (name: string) => /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(name);
+
+        const defaultIsThermalAndOnline = defaultPrinterName && isThermal(defaultPrinterName) && offlineMap.get(defaultPrinterName.toLowerCase()) !== true;
         const isLastUsedOnline = lastUsed && list.includes(lastUsed) && offlineMap.get(lastUsed.toLowerCase()) !== true;
 
-        if (isLastUsedOnline) {
+        if (defaultIsThermalAndOnline) {
+          setSelectedPrinter(defaultPrinterName);
+        } else if (isLastUsedOnline) {
           setSelectedPrinter(lastUsed!);
         } else {
           // Find an online thermal printer or physical printer
-          const onlineThermal = list.find((p) => {
-            const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
-            return isThermal && offlineMap.get(p.toLowerCase()) !== true;
-          });
+          const onlineThermal = list.find((p) => isThermal(p) && offlineMap.get(p.toLowerCase()) !== true);
           if (onlineThermal) {
             setSelectedPrinter(onlineThermal);
           } else if (lastUsed && list.includes(lastUsed)) {
@@ -134,6 +103,68 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       console.warn("Chrome print extension check failed:", err);
     }
   }, []);
+  const runMatching = useCallback(async () => {
+    setStep("matching");
+    const results = await Promise.allSettled(
+      rows.map(async (row): Promise<PrintQueueItem> => {
+        const query = row.barcodeSku?.trim() || row.shortSku?.trim() || row.ordercookSku?.trim() || "";
+        if (!query) {
+          return {
+            rowId: row.id,
+            status: "matched",
+            lookupSku: String(row.id),
+            product: { sku: String(row.id), title: "Label" },
+          };
+        }
+        try {
+          const matches = await labelService.lookupProduct(query);
+          if (!matches || matches.length === 0) {
+            return {
+              rowId: row.id,
+              status: "matched",
+              lookupSku: query,
+              product: { sku: query, masterSku: query, title: query },
+            };
+          }
+          return {
+            rowId: row.id,
+            status: matches.length > 1 ? "multiple_matches" : "matched",
+            lookupSku: query,
+            product: matches[0],
+          };
+        } catch (err) {
+          return {
+            rowId: row.id,
+            status: "matched",
+            lookupSku: query,
+            product: { sku: query, masterSku: query, title: query },
+          };
+        }
+      })
+    );
+
+    const newQueue = results.map(r => r.status === "fulfilled" ? r.value : null).filter(Boolean) as PrintQueueItem[];
+    setQueue(newQueue);
+
+    // Default select all valid rows so they are immediately ready to print
+    const selected = new Set<number>();
+    newQueue.forEach(item => {
+      selected.add(item.rowId);
+    });
+    setSelectedForPrint(selected);
+    setStep("printer");
+    refreshPrinters();
+  }, [rows, refreshPrinters]);
+
+  const toggleQueueRow = useCallback((rowId: number, checked: boolean) => {
+    setSelectedForPrint(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(rowId);
+      else next.delete(rowId);
+      return next;
+    });
+  }, []);
+
 
   const proceedToPrinter = useCallback(() => {
     setStep("printer");
@@ -145,32 +176,29 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     setStep("printing");
     localStorage.setItem("lastUsedPrinter", printerName);
 
-    const itemsToPrint = queue.filter(q => selectedForPrint.has(q.rowId) && q.status !== "pending");
-    // Reset status of jobs to be printed to pending to indicate they are starting
-    setQueue(prev => prev.map(q => selectedForPrint.has(q.rowId) ? { ...q, status: "pending" } : q));
+    const targetIds = selectedForPrint.size > 0 ? selectedForPrint : new Set(queue.map(q => q.rowId));
+    const itemsToPrint = queue.filter(q => targetIds.has(q.rowId));
+    setQueue(prev => prev.map(q => targetIds.has(q.rowId) ? { ...q, status: "pending" } : q));
     
     const succeeded: PrintQueueItem[] = [];
     const failed: PrintQueueItem[] = [];
 
-    // For thermal printing on portrait roll: swap width and height to match rotated canvas
-    const printDimensions = {
-      widthMm: template.settings.heightMm || 50,
-      heightMm: template.settings.widthMm || 100,
-    };
-
     for (const item of itemsToPrint) {
       try {
-        // Render canvas rotated 90° CCW for portrait thermal sticker
-        const canvas = await renderLabelToCanvas(template, item.product || {}, undefined, true);
+        const productData = item.product || {
+          sku: item.lookupSku,
+          masterSku: item.lookupSku,
+          title: item.lookupSku,
+        };
+        const canvas = await renderLabelToCanvas(template, productData, undefined, false);
         const dataUrl = canvas.toDataURL("image/png");
         const cleanBase64 = dataUrl.split(",")[1];
         const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
 
-        // Convert canvas image into a PDF document with exact sticker dimensions (points = mm / 25.4 * 72)
         const pdfDoc = await PDFDocument.create();
         const embeddedImage = await pdfDoc.embedPng(imageBytes);
-        const widthPoints = (printDimensions.widthMm / 25.4) * 72;
-        const heightPoints = (printDimensions.heightMm / 25.4) * 72;
+        const widthPoints = (template.settings.widthMm || 100) / 25.4 * 72;
+        const heightPoints = (template.settings.heightMm || 50) / 25.4 * 72;
         const page = pdfDoc.addPage([widthPoints, heightPoints]);
         page.drawImage(embeddedImage, {
           x: 0,
@@ -231,47 +259,73 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     if (!template) return;
     setStep("printing");
 
-    const itemsToPrint = queue.filter(q => selectedForPrint.has(q.rowId) && q.status !== "pending");
-    setQueue(prev => prev.map(q => selectedForPrint.has(q.rowId) ? { ...q, status: "pending" } : q));
+    const targetIds = selectedForPrint.size > 0 ? selectedForPrint : new Set(queue.map(q => q.rowId));
+    const itemsToPrint = queue.filter(q => targetIds.has(q.rowId));
+    setQueue(prev => prev.map(q => targetIds.has(q.rowId) ? { ...q, status: "pending" } : q));
     
     const succeeded: PrintQueueItem[] = [];
     const failed: PrintQueueItem[] = [];
 
+    const widthMm = template.settings.widthMm || 100;
+    const heightMm = template.settings.heightMm || 50;
+
     // Create a hidden print container
     const printContainer = document.createElement("div");
     printContainer.id = "browser-print-container";
-    printContainer.style.display = "none";
     document.body.appendChild(printContainer);
 
     // Style for print media
     const style = document.createElement("style");
     style.innerHTML = `
+      @page {
+        size: ${widthMm}mm ${heightMm}mm;
+        margin: 0 !important;
+      }
+      @media screen {
+        #browser-print-container { display: none !important; }
+      }
       @media print {
-        body * { display: none !important; }
-        #browser-print-container, #browser-print-container * { display: block !important; }
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: ${widthMm}mm !important;
+          height: ${heightMm}mm !important;
+          background: #ffffff !important;
+        }
+        body > *:not(#browser-print-container) {
+          display: none !important;
+        }
         #browser-print-container {
-          position: absolute;
-          left: 0;
-          top: 0;
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          /* Force full color output — without this Chrome strips colors for ink saving */
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          color-adjust: exact !important;
+          display: block !important;
+          position: static !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: ${widthMm}mm !important;
         }
         .print-page {
-          page-break-after: always;
-          display: flex !important;
-          justify-content: center;
-          align-items: center;
+          display: block !important;
+          width: ${widthMm}mm !important;
+          height: ${heightMm}mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          page-break-after: always !important;
+          break-after: page !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
+        }
+        .print-page:last-child {
+          page-break-after: avoid !important;
+          break-after: avoid !important;
         }
         .print-page img {
-          max-width: 100%;
-          max-height: 100vh;
-          object-fit: contain;
-          /* Ensure the canvas image itself is not desaturated by the browser */
+          display: block !important;
+          width: ${widthMm}mm !important;
+          height: ${heightMm}mm !important;
+          object-fit: fill !important;
+          margin: 0 !important;
+          padding: 0 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
@@ -282,7 +336,12 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     try {
       for (const item of itemsToPrint) {
         try {
-          const canvas = await renderLabelToCanvas(template, item.product || {});
+          const productData = item.product || {
+            sku: item.lookupSku,
+            masterSku: item.lookupSku,
+            title: item.lookupSku,
+          };
+          const canvas = await renderLabelToCanvas(template, productData, undefined, false);
           
           const pageDiv = document.createElement("div");
           pageDiv.className = "print-page";
@@ -305,26 +364,41 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       }
 
       if (succeeded.length > 0) {
+        // Small delay to ensure all image elements are mounted in the DOM before opening print preview
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        const cleanup = () => {
+          if (document.body.contains(printContainer)) {
+            document.body.removeChild(printContainer);
+          }
+          if (document.head.contains(style)) {
+            document.head.removeChild(style);
+          }
+          window.removeEventListener('afterprint', cleanup);
+        };
+        
+        window.addEventListener('afterprint', cleanup);
+        
         // Trigger browser print
         window.print();
-      }
-    } finally {
-      // Cleanup DOM
-      document.body.removeChild(printContainer);
-      document.head.removeChild(style);
-    }
-
-    setSuccessfulJobs(prev => [...prev, ...succeeded]);
-    setFailedJobs(prev => {
-      const newFailed = prev.filter(p => !succeeded.find(s => s.rowId === p.rowId));
-      for (const fail of failed) {
-        if (!newFailed.find(f => f.rowId === fail.rowId)) {
-          newFailed.push(fail);
+        
+        // Fallback cleanup in case afterprint doesn't fire
+        setTimeout(cleanup, 120000); // 2 minutes
+      } else {
+        // If nothing succeeded, cleanup immediately
+        if (document.body.contains(printContainer)) {
+          document.body.removeChild(printContainer);
+        }
+        if (document.head.contains(style)) {
+          document.head.removeChild(style);
         }
       }
-      return newFailed;
-    });
+    } finally {
+      // We don't clean up synchronously anymore.
+    }
 
+    // We don't track success/failure for browser print accurately because JS can't detect it reliably.
+    // However, we log what was attempted.
     if (succeeded.length > 0) {
       const itemsMap = new Map<string, number>();
       succeeded.forEach(j => {
@@ -337,7 +411,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       } catch (err) {}
     }
 
-    setStep("summary");
+    // Return to the printer step so the user has the options again.
+    setStep("printer");
   }, [template, queue, selectedForPrint]);
 
   const retryFailed = useCallback(() => {

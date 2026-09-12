@@ -44,35 +44,7 @@ const svgStringToImage = (svgString: string): Promise<HTMLImageElement> => {
   });
 };
 
-// Pure Black and White threshold
-const applyMonochromeThreshold = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const alpha = data[i + 3];
-
-    if (alpha === 0) {
-      data[i] = 255;
-      data[i + 1] = 255;
-      data[i + 2] = 255;
-      data[i + 3] = 255;
-      continue;
-    }
-
-    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-    const threshold = 128;
-    const value = luminance < threshold ? 0 : 255;
-
-    data[i] = value;
-    data[i + 1] = value;
-    data[i + 2] = value;
-    data[i + 3] = 255; // Solid opacity
-  }
-  ctx.putImageData(imageData, 0, 0);
-};
+// Removed applyMonochromeThreshold
 
 // Render logic
 export const renderLabelToCanvas = async (
@@ -92,47 +64,33 @@ export const renderLabelToCanvas = async (
     sku: productData.sku || "",
     masterSku: productData.masterSku || "",
     fullSku: productData.masterSku || "",
+    barcode: productData.sku || productData.asin || "",
     brand: productData.brand || "",
     size: productData.size || "",
+    color: productData.color || "",
     mrp: productData.mrp !== null && productData.mrp !== undefined ? String(productData.mrp) : "",
-    asin: productData.asin || "",
+    asin: productData.asin || productData.sku || "",
+    articleNo: productData.asin || productData.sku || "",
+    styleNo: productData.asin || productData.sku || "",
     manufacturingMonth: productData.manufacturingMonth || "",
     printDate: new Date().toLocaleDateString(),
   };
 
   // Calculate raw pixels
   // We apply a basic DPI scale to ensure crisp thermal printing (e.g. 203 dpi usually ~8 dots/mm)
-  // But we stick to MM_TO_PX for logical layout, then scale
   const scale = scaleOverride || (template.settings.dpi || 203) / 96; 
   const logicalWidth = template.settings.widthMm * MM_TO_PX;
   const logicalHeight = template.settings.heightMm * MM_TO_PX;
 
-  // For thermal printing: always rotate 90° anti-clockwise so the label fills portrait thermal sticker.
-  // Brand (top-left in design) -> bottom-left of sticker.
-  const needsRotation = forThermalPrint;
-
-  if (needsRotation) {
-    // Portrait canvas: swap width/height to match physical sticker dimensions
-    canvas.width = logicalHeight * scale;
-    canvas.height = logicalWidth * scale;
-  } else {
-    canvas.width = logicalWidth * scale;
-    canvas.height = logicalHeight * scale;
-  }
+  canvas.width = Math.round(logicalWidth * scale);
+  canvas.height = Math.round(logicalHeight * scale);
 
   // Draw background white
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
-  if (needsRotation) {
-    // Rotate 90° anti-clockwise: translate to bottom-left, then rotate
-    ctx.translate(0, canvas.height);
-    ctx.rotate(-Math.PI / 2);
-    ctx.scale(scale, scale);
-  } else {
-    ctx.scale(scale, scale);
-  }
+  ctx.scale(scale, scale);
 
   // Draw Background Image
   if (template.backgroundImageUrl) {
@@ -321,11 +279,10 @@ export const renderLabelToCanvas = async (
 
   ctx.restore();
 
-  // Apply monochrome thresholding only for thermal (B&W) printers.
-  // Color mode labels skip this step so colors are preserved in the print output.
-  if ((template.settings.colorMode ?? "color") === "monochrome") {
-    applyMonochromeThreshold(ctx, canvas.width, canvas.height);
-  }
+  // Removed monochrome thresholding step entirely.
+  // Thermal printer drivers (Windows Spooler) perform their own Floyd-Steinberg dithering
+  // on grayscale anti-aliased text, which produces vastly superior and legible results.
+  // Hard 128-thresholding causes sub-pixel text strokes to wash out and vanish.
 
   return canvas;
 };

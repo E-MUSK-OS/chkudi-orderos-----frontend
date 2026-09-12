@@ -6,7 +6,7 @@ import {
   Verdict,
 } from "../types";
 
-export const DEFAULT_EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "nlcjdcpoibicgiejjhfdmfioojaaapng").trim();
+export const DEFAULT_EXTENSION_ID = (process.env.NEXT_PUBLIC_PRINT_EXTENSION_ID || "dedcmkepbiimcbagdhghapmkbafoohal").trim();
 export const INSTALLER_URL = "/downloads/PrintBridge-Setup.exe";
 export const STORE_URL = `https://chromewebstore.google.com/detail/printbridge/${DEFAULT_EXTENSION_ID}`;
 const PROBE_TIMEOUT_MS = 5000;

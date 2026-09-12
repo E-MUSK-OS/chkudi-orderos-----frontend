@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PDFDocument } from "pdf-lib";
 import Button from "@/components/ui/Button";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -22,7 +23,6 @@ import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
 import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
 import { labelService } from "@/components/Dashboard/Labels/services/label.service";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
-import { PDFDocument, degrees } from "pdf-lib";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BadgeCheck } from "lucide-react";
 
@@ -139,23 +139,34 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       const lastUsedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
 
       const offlineMap = new Map<string, boolean>();
+      let defaultPrinterName = "";
+
       details.forEach((d) => {
-        if (d.name) offlineMap.set(d.name.toLowerCase(), !!d.isOffline);
+        if (d.name) {
+          offlineMap.set(d.name.toLowerCase(), !!d.isOffline);
+          if (d.isDefault) {
+            defaultPrinterName = d.name;
+          }
+        }
       });
 
       let targetPrinter = "";
-      if (lastUsedPrinter && printers.includes(lastUsedPrinter) && offlineMap.get(lastUsedPrinter.toLowerCase()) !== true) {
+      
+      const isThermal = (name: string) => /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(name);
+      
+      const defaultIsThermalAndOnline = defaultPrinterName && isThermal(defaultPrinterName) && offlineMap.get(defaultPrinterName.toLowerCase()) !== true;
+
+      if (defaultIsThermalAndOnline) {
+        targetPrinter = defaultPrinterName;
+      } else if (lastUsedPrinter && printers.includes(lastUsedPrinter) && offlineMap.get(lastUsedPrinter.toLowerCase()) !== true) {
         targetPrinter = lastUsedPrinter;
       } else {
-        const onlineThermal = printers.find((p) => {
-          const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
-          return isThermal && offlineMap.get(p.toLowerCase()) !== true;
-        });
+        const onlineThermal = printers.find((p) => isThermal(p) && offlineMap.get(p.toLowerCase()) !== true);
         targetPrinter = onlineThermal || lastUsedPrinter || (printers && printers.length > 0 ? printers[0] : "Printer");
       }
 
       if (!printers || printers.length === 0) {
-        toast.error(`Print failed: No connected printers found. Last connected printer "${targetPrinter}" is offline.`, { id: toastId, duration: 6000 });
+        toast.error(`Print failed: PrintBridge extension could not detect any printers on your system. Please check your printer connections.`, { id: toastId, duration: 6000 });
         setIsPrintingDirectly(false);
         return;
       }
@@ -204,10 +215,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const matches = await labelService.lookupProduct(query);
           const product = matches.length > 0 ? matches[0] : {};
 
-          // Render canvas with 90° CCW rotation applied — canvas.width/height already
-          // reflect the rotated (portrait) dimensions, so we derive PDF size from them
-          // directly instead of manually swapping template mm values.
-          const canvas = await renderLabelToCanvas(template, product, undefined, true);
+          // Render canvas WITHOUT rotation — label stays in its natural orientation.
+          // SumatraPDF is configured with -print-settings noscale so it will not
+          // auto-rotate or scale. The PDF page dimensions match the label exactly.
+          const canvas = await renderLabelToCanvas(template, product, undefined, false);
           const dataUrl = canvas.toDataURL("image/png");
           const cleanBase64 = dataUrl.split(",")[1];
           const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
@@ -215,18 +226,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const pdfDoc = await PDFDocument.create();
           const embeddedImage = await pdfDoc.embedPng(imageBytes);
 
-          // Use actual canvas pixel dimensions → convert to points (72 pt = 1 inch = 96 px)
-          const scale = (template.settings.dpi || 203) / 96;
-          const widthPoints = (canvas.width / scale / 25.4) * 72;
-          const heightPoints = (canvas.height / scale / 25.4) * 72;
+          const MM_TO_PT = 72 / 25.4;
+          const widthPoints = (template.settings.widthMm || 100) * MM_TO_PT;
+          const heightPoints = (template.settings.heightMm || 50) * MM_TO_PT;
 
           const page = pdfDoc.addPage([widthPoints, heightPoints]);
-          page.drawImage(embeddedImage, {
-            x: 0,
-            y: 0,
-            width: widthPoints,
-            height: heightPoints,
-          });
+          page.drawImage(embeddedImage, { x: 0, y: 0, width: widthPoints, height: heightPoints });
 
           const pdfBase64 = await pdfDoc.saveAsBase64();
 
@@ -788,20 +793,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             fullWidth={false} 
             className="w-40" 
             leftIcon={<Printer className="h-4 w-4" />} 
-            onClick={handleDirectPrint}
+            onClick={() => {
+              const selectedRowsList = rows.filter((r) => selectedRowIds.has(r.id));
+              if (selectedRowsList.length === 0) return;
+              
+              setIsLabelPickerOpen(true);
+            }}
             disabled={selectedRowIds.size === 0 || isPrintingDirectly}
           >
             {isPrintingDirectly ? "Printing..." : `Print (${selectedRowIds.size})`}
-          </Button>
-          <Button
-            variant="outline"
-            fullWidth={false}
-            className="w-44 truncate"
-            leftIcon={<Tag className="h-4 w-4" />}
-            onClick={() => setIsLabelPickerOpen(true)}
-            title={activePrintTemplate?.name ? `Current Template: ${activePrintTemplate.name}. Click to change.` : "Select label template"}
-          >
-            {activePrintTemplate?.name ? activePrintTemplate.name : "Select Template"}
           </Button>
           <Button variant="primary" fullWidth={false} className="w-40" leftIcon={<Trash2 className="h-4 w-4" />} onClick={clearSheet}>
             Clear Sheet
@@ -1196,7 +1196,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             localStorage.setItem("lastUsedLabelTemplateId", template.id);
           }
           setTimeout(() => {
-            handleDirectPrint();
+            setIsPrintExecutionOpen(true);
           }, 100);
         }}
       />

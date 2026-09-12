@@ -138,9 +138,11 @@ export default function PrintExecutionModal({
   };
 
   const renderPrinter = () => {
+    const labelCount = selectedForPrint.size > 0 ? selectedForPrint.size : queue.length;
+
     return (
       <div className="flex flex-col space-y-6">
-        <p className="text-[#0A0E1A]">Select a printer to send {selectedForPrint.size} labels to.</p>
+        <p className="text-[#0A0E1A]">Select a printer to send {labelCount} labels to.</p>
         
         <div className="flex items-center space-x-3 p-4 bg-slate-100 rounded border">
           <div className={`w-3 h-3 rounded-full ${helperOnline ? "bg-green-500" : helperStatus === "checking" ? "bg-yellow-400 animate-pulse" : "bg-red-500"}`} />
@@ -217,19 +219,19 @@ export default function PrintExecutionModal({
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             variant="secondary"
-            onClick={printViaBrowser}
-            disabled={selectedForPrint.size === 0}
+            onClick={() => startPrinting(selectedPrinter)}
+            disabled={labelCount === 0}
             leftIcon={<Printer className="w-4 h-4" />}
           >
-            Browser Print
+            Silent Print (Extension)
           </Button>
           <Button
             variant="primary"
-            onClick={() => startPrinting(selectedPrinter)}
-            disabled={!helperOnline || printers.length === 0 || !selectedPrinter}
+            onClick={printViaBrowser}
+            disabled={labelCount === 0}
             leftIcon={<Printer className="w-4 h-4" />}
           >
-            Print {selectedForPrint.size} Labels
+            Browser Print (Default)
           </Button>
         </div>
       </div>
@@ -237,8 +239,8 @@ export default function PrintExecutionModal({
   };
 
   const renderPrinting = () => {
-    const total = selectedForPrint.size;
-    const completed = queue.filter(q => selectedForPrint.has(q.rowId) && q.status !== "pending").length;
+    const total = selectedForPrint.size > 0 ? selectedForPrint.size : queue.length;
+    const completed = queue.filter(q => (selectedForPrint.size > 0 ? selectedForPrint.has(q.rowId) : true) && q.status !== "pending").length;
 
     return (
       <div className="flex flex-col h-full space-y-6">
@@ -252,7 +254,7 @@ export default function PrintExecutionModal({
         <div className="overflow-x-auto border rounded max-h-64">
           <table className="w-full text-left border-collapse text-sm">
             <tbody>
-              {queue.filter(q => selectedForPrint.has(q.rowId)).map(item => (
+              {queue.filter(q => (selectedForPrint.size > 0 ? selectedForPrint.has(q.rowId) : true)).map(item => (
                 <tr key={item.rowId} className="border-b hover:bg-slate-50">
                   <td className="px-4 py-2 font-medium">{item.lookupSku}</td>
                   <td className="px-4 py-2 text-right">
@@ -270,7 +272,7 @@ export default function PrintExecutionModal({
   };
 
   const renderSummary = () => {
-    const total = selectedForPrint.size;
+    const total = selectedForPrint.size > 0 ? selectedForPrint.size : queue.length;
     const failed = failedJobs.length;
     const success = successfulJobs.length;
 
