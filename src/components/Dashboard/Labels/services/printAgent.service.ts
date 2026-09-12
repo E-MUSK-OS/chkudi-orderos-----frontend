@@ -45,6 +45,47 @@ export function isThermalOrLabelPrinter(name: string): boolean {
 }
 
 /**
+ * Strictly verifies whether a specific printer is currently physical, connected, and online on the PC.
+ */
+export function isPrinterConnectedAndOnline(
+  name: string,
+  detailedPrinters: PrinterDetail[] = []
+): boolean {
+  if (!name || isVirtualPrinter(name)) return false;
+
+  const target = String(name).toLowerCase().trim();
+  const detail = detailedPrinters.find((d) => d.name && d.name.toLowerCase().trim() === target);
+
+  if (detailedPrinters.length > 0 && !detail) {
+    return false;
+  }
+
+  if (detail) {
+    if (detail.isOffline === true) return false;
+    if (detail.isOnline === false) return false;
+    const status = String(detail.status ?? "").toLowerCase();
+    if (
+      status.includes("offline") ||
+      status.includes("disconnected") ||
+      status.includes("error") ||
+      status.includes("paused") ||
+      status.includes("intervention") ||
+      status.includes("not available") ||
+      status.includes("unknown") ||
+      status.includes("stop") ||
+      status.includes("inactive") ||
+      status.includes("door") ||
+      status.includes("paper") ||
+      status.includes("jam")
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Resolves only whichever real printer is CURRENTLY connected and online on the PC.
  * If no real physical/thermal printer is online and connected, returns printer: null.
  */
@@ -56,33 +97,10 @@ export function resolveCurrentlyConnectedPrinter(
     return { printer: null, error: "No printer connected. Please connect printer." };
   }
 
-  const detailMap = new Map<string, PrinterDetail>();
-  detailedPrinters.forEach((dp) => {
-    if (dp.name) detailMap.set(dp.name.toLowerCase().trim(), dp);
-  });
-
-  const isPrinterOnline = (name: string): boolean => {
-    if (isVirtualPrinter(name)) return false;
-    const detail = detailMap.get(String(name || "").toLowerCase().trim());
-    if (detail) {
-      if (detail.isOffline === true) return false;
-      if (detail.isOnline === false) return false;
-      const status = String(detail.status ?? "").toLowerCase();
-      if (
-        status.includes("offline") ||
-        status.includes("disconnected") ||
-        status.includes("error") ||
-        status.includes("paused") ||
-        status.includes("not available")
-      ) {
-        return false;
-      }
-    }
-    return true;
-  };
-
   // Only consider physical real printers that are CURRENTLY ONLINE
-  const onlinePhysicalPrinters = availablePrinters.filter(isPrinterOnline);
+  const onlinePhysicalPrinters = availablePrinters.filter((p) =>
+    isPrinterConnectedAndOnline(p, detailedPrinters)
+  );
 
   if (onlinePhysicalPrinters.length === 0) {
     return { printer: null, error: "No printer connected. Please connect printer." };
@@ -104,7 +122,7 @@ export function resolveCurrentlyConnectedPrinter(
   }
 
   // 3. Third Priority: Windows default printer if it is physical and online
-  const defaultOnline = detailedPrinters.find((dp) => dp.isDefault && isPrinterOnline(dp.name));
+  const defaultOnline = detailedPrinters.find((dp) => dp.isDefault && isPrinterConnectedAndOnline(dp.name, detailedPrinters));
   if (defaultOnline) {
     return { printer: defaultOnline.name };
   }
@@ -251,6 +269,7 @@ export const chromeExtensionPrintService = {
 
   /**
    * Sends a PDF base64 string to the Chrome extension (PrintBridge) for direct silent printing without dialogs.
+   * STRICTLY sends to connected, online printers only; will NEVER send or queue to offline/disconnected printers.
    */
   async printPdf(
     pdfBase64: string,
@@ -263,6 +282,25 @@ export const chromeExtensionPrintService = {
     const chrome = (window as any).chrome;
     if (!chrome?.runtime?.sendMessage) {
       throw new Error("Chrome extension runtime is not available");
+    }
+
+    if (!printerName || isVirtualPrinter(printerName)) {
+      throw new Error("No printer connected. Please connect printer.");
+    }
+
+    // STRICT GUARD: Verify printer is connected and online right now before dispatching
+    try {
+      const livePrinters = await this.getPrintersDetailed();
+      if (livePrinters && livePrinters.length > 0) {
+        const isOnline = isPrinterConnectedAndOnline(printerName, livePrinters);
+        if (!isOnline) {
+          throw new Error(`Printer "${printerName}" is offline or not connected. Print cancelled to avoid queuing.`);
+        }
+      }
+    } catch (checkErr: any) {
+      if (checkErr.message?.includes("offline") || checkErr.message?.includes("not connected")) {
+        throw checkErr;
+      }
     }
 
     const cleanBase64 = pdfBase64.includes(",") ? pdfBase64.split(",")[1] : pdfBase64;
@@ -278,7 +316,7 @@ export const chromeExtensionPrintService = {
           {
             type: "PRINT_PDF",
             pdf: cleanBase64,
-            printer: printerName || null,
+            printer: printerName,
             options: {
               copies: copies || 1,
             },

@@ -29,6 +29,7 @@ import {
   chromeExtensionPrintService,
   resolveCurrentlyConnectedPrinter,
   isThermalOrLabelPrinter,
+  isPrinterConnectedAndOnline,
 } from "@/components/Dashboard/Labels/services/printAgent.service";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -810,70 +811,68 @@ export default function ComparisonResultView({
       return;
     }
 
-    // 1. Resolve target printer (fast-path using verified cache to avoid IPC lag during barcode scan)
-    let targetPrinter = selectedPrinter;
-    const isCacheFresh =
-      lastVerifiedPrinterRef.current &&
-      Date.now() - lastVerifiedPrinterRef.current.timestamp < 60000 &&
-      (!targetPrinter || targetPrinter.toLowerCase() === lastVerifiedPrinterRef.current.printerName.toLowerCase());
-
-    if (isCacheFresh && lastVerifiedPrinterRef.current) {
-      targetPrinter = lastVerifiedPrinterRef.current.printerName;
-    } else {
-      // 1. Verify PrintBridge extension is reachable
-      const extCheck = await chromeExtensionPrintService.checkExtension();
-      if (!extCheck.ok) {
-        lastVerifiedPrinterRef.current = null;
-        toast.error(
-          `PrintBridge is not running or not detected (${extCheck.error || 'Extension not responding'}). Please setup PrintBridge.`,
-          {
-            id: 'print-prep',
-            duration: 9000,
-            action: {
-              label: 'Setup PrintBridge',
-              onClick: () => window.open('/printbridge', '_blank'),
-            },
-          }
-        );
-        return;
-      }
-
-      if (extCheck.response?.silentPrinting === false) {
-        toast.warning(
-          "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
-          { duration: 8000 }
-        );
-      }
-
-      // 2. Fetch live printers directly connected to the PC right now
-      const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
-      const extPrinters = detailedPrinters.map((p) => p.name);
-      if (extPrinters.length > 0) {
-        setAvailablePrinters(extPrinters);
-      }
-
-      // 3. Resolve ONLY whichever real physical/thermal printer is CURRENTLY connected to the PC
-      const { printer: resolvedPrinter } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
-
-      if (!resolvedPrinter) {
-        lastVerifiedPrinterRef.current = null;
-        toast.error("No printer connected. Please connect printer.", {
+    // 1. Verify PrintBridge extension is reachable
+    const extCheck = await chromeExtensionPrintService.checkExtension();
+    if (!extCheck.ok) {
+      lastVerifiedPrinterRef.current = null;
+      toast.error(
+        `PrintBridge is not running or not detected (${extCheck.error || 'Extension not responding'}). Please setup PrintBridge.`,
+        {
           id: 'print-prep',
-          duration: 6000,
-        });
-        return;
-      }
+          duration: 9000,
+          action: {
+            label: 'Setup PrintBridge',
+            onClick: () => window.open('/printbridge', '_blank'),
+          },
+        }
+      );
+      return;
+    }
 
-      targetPrinter = resolvedPrinter;
-      lastVerifiedPrinterRef.current = {
-        printerName: targetPrinter,
-        timestamp: Date.now(),
-      };
-      setSelectedPrinter(targetPrinter);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('lastUsedPrinter', targetPrinter);
+    if (extCheck.response?.silentPrinting === false) {
+      toast.warning(
+        "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
+        { duration: 8000 }
+      );
+    }
+
+    // 2. Fetch live printers directly connected to the PC right now
+    const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
+    const extPrinters = detailedPrinters.map((p) => p.name);
+    if (extPrinters.length > 0) {
+      setAvailablePrinters(extPrinters);
+    }
+
+    // 3. Strictly resolve ONLY whichever physical printer is CURRENTLY connected and online on the PC
+    let targetPrinter: string | null = null;
+
+    if (selectedPrinter && isPrinterConnectedAndOnline(selectedPrinter, detailedPrinters)) {
+      targetPrinter = selectedPrinter;
+    } else {
+      const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+      if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
+        targetPrinter = onlineConnected;
+        setSelectedPrinter(onlineConnected);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastUsedPrinter', onlineConnected);
+        }
       }
     }
+
+    // 4. STRICT REQUIREMENT: If no physical printer is connected and online, DO NOT SEND TO QUEUE!
+    if (!targetPrinter || !isPrinterConnectedAndOnline(targetPrinter, detailedPrinters)) {
+      lastVerifiedPrinterRef.current = null;
+      toast.error("No printer connected. Print cancelled to avoid queuing.", {
+        id: 'print-prep',
+        duration: 6000,
+      });
+      return;
+    }
+
+    lastVerifiedPrinterRef.current = {
+      printerName: targetPrinter,
+      timestamp: Date.now(),
+    };
 
     toast.loading(`Printing ${targetResults.length} order(s) on ${targetPrinter}...`, {
       id: 'print-prep',
@@ -978,7 +977,7 @@ export default function ComparisonResultView({
         }
 
         toast.success(
-          `Sent ${totalPages} page(s) (4" x 6") to ${currentPrinter} (Queued in Print Spooler)!`,
+          `Printed ${totalPages} page(s) (4" x 6") directly on ${currentPrinter}!`,
           { id: 'print-prep' }
         );
         printedSuccessfully = true;
@@ -1026,13 +1025,15 @@ export default function ComparisonResultView({
       const isConnectionIssue =
         msg.includes("No printer connected") ||
         msg.includes("offline") ||
+        msg.includes("not connected") ||
+        msg.includes("disconnected") ||
         msg.includes("No connected printer") ||
         msg.includes("not ready") ||
         msg.includes("SumatraPDF");
 
       toast.error(
         isConnectionIssue
-          ? "No printer connected. Please connect printer."
+          ? "No printer connected. Print cancelled to avoid queuing."
           : msg || "Print failure occurred. Please check printer.",
         {
           id: 'print-prep',

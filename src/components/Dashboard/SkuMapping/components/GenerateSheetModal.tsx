@@ -238,7 +238,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       if (successCount > 0) {
         setPrintedRowIds((prev) => new Set([...prev, ...succeededIds]));
         setSelectedRowIds(new Set());
-        toast.success(`Sent ${successCount} label(s) to ${targetPrinter} (Queued in Print Spooler)!`, { id: toastId });
+        toast.success(`Printed ${successCount} label(s) directly on ${targetPrinter}!`, { id: toastId });
       } else {
         toast.error("Failed to print labels. Please check printer connection.", { id: toastId });
       }
