@@ -25,7 +25,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
-import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
+import {
+  chromeExtensionPrintService,
+  resolveCurrentlyConnectedPrinter,
+  isThermalOrLabelPrinter,
+} from "@/components/Dashboard/Labels/services/printAgent.service";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
@@ -48,57 +52,6 @@ export type AmazonPdfViewType =
   | "original"
   | "unmatched_pdf"
   | "unmatched_zpl";
-
-function resolveTargetPrinter(availablePrinters: string[], detailedPrinters?: any[]): string {
-  if (!availablePrinters || availablePrinters.length === 0) return "";
-  const saved = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-
-  const offlineMap = new Map<string, boolean>();
-  if (detailedPrinters && detailedPrinters.length > 0) {
-    detailedPrinters.forEach((dp) => {
-      if (dp.name) offlineMap.set(dp.name.toLowerCase(), !!dp.isOffline);
-    });
-  }
-
-  // 1. If saved printer is present and NOT offline, use saved printer
-  if (saved && availablePrinters.includes(saved)) {
-    const isSavedOffline = offlineMap.get(saved.toLowerCase()) === true;
-    if (!isSavedOffline) {
-      return saved;
-    }
-  }
-
-  // 2. Look for an ONLINE thermal/label printer (TSC, Zebra, DA310, etc.)
-  const onlineThermal = availablePrinters.find((p) => {
-    const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
-    const isOffline = offlineMap.get(p.toLowerCase()) === true;
-    return isThermal && !isOffline;
-  });
-  if (onlineThermal) return onlineThermal;
-
-  // 3. Prefer any thermal printer if status not explicitly offline
-  const anyThermal = availablePrinters.find((p) =>
-    /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p)
-  );
-  if (anyThermal && offlineMap.get(anyThermal.toLowerCase()) !== true) {
-    return anyThermal;
-  }
-
-  // 4. Prefer physical printers over virtual document printers
-  const physical = availablePrinters.find((p) => {
-    const isPhysical = !/pdf|onenote|fax|xps|document|writer/i.test(p);
-    const isOffline = offlineMap.get(p.toLowerCase()) === true;
-    return isPhysical && !isOffline;
-  });
-  if (physical) return physical;
-
-  // 5. Fallback to saved printer so user sees exact printer name if offline
-  if (saved && availablePrinters.includes(saved)) {
-    return saved;
-  }
-
-  return anyThermal || availablePrinters[0];
-}
 
 function renderItemListCell(val?: string) {
   if (!val || val === "N/A") {
@@ -645,8 +598,10 @@ export default function ComparisonResultView({
         const details = await chromeExtensionPrintService.getPrintersDetailed();
         if (list && list.length > 0) {
           setAvailablePrinters(list);
-          const preferred = resolveTargetPrinter(list, details);
-          setSelectedPrinter(preferred);
+          const { printer: preferred } = resolveCurrentlyConnectedPrinter(list, details);
+          if (preferred) {
+            setSelectedPrinter(preferred);
+          }
         }
       } catch (e) {
         console.warn("Failed to load initial printers:", e);
@@ -781,7 +736,47 @@ export default function ComparisonResultView({
       return;
     }
 
-    toast.loading(`Preparing 4" x 6" print for ${targetResults.length} order(s)...`, {
+    // 1. Verify extension is reachable
+    const extCheck = await chromeExtensionPrintService.checkExtension();
+    if (!extCheck.ok) {
+      toast.error("No printer connected. Please connect printer.", {
+        id: 'print-prep',
+        duration: 6000,
+      });
+      return;
+    }
+
+    if (extCheck.response?.silentPrinting === false) {
+      toast.error(
+        "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
+        { duration: 9000 }
+      );
+    }
+
+    // 2. Fetch live printers directly connected to the PC right now
+    const extPrinters = await chromeExtensionPrintService.getPrinters();
+    const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
+    if (extPrinters.length > 0) {
+      setAvailablePrinters(extPrinters);
+    }
+
+    // 3. Resolve ONLY whichever real physical/thermal printer is CURRENTLY connected to the PC
+    const { printer: targetPrinter } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+
+    if (!targetPrinter) {
+      toast.error("No printer connected. Please connect printer.", {
+        id: 'print-prep',
+        duration: 6000,
+      });
+      return;
+    }
+
+    setSelectedPrinter(targetPrinter);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastUsedPrinter', targetPrinter);
+    }
+
+    toast.loading(`Preparing 4" x 6" print for ${targetResults.length} order(s) on ${targetPrinter}...`, {
       id: 'print-prep',
     });
 
@@ -858,157 +853,91 @@ export default function ComparisonResultView({
         }
       }
 
-      if (printDoc.getPageCount() === 0) {
-        toast.error('Selected orders have no valid pages to print.', { id: 'print-prep' });
-        return;
-      }
-
       let printedSuccessfully = false;
-      let extError = '';
 
       try {
-        const extCheck = await chromeExtensionPrintService.checkExtension();
-        if (extCheck.ok) {
-          if (extCheck.response?.silentPrinting === false) {
-            toast.error(
-              "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
-              { duration: 9000 }
-            );
-          }
+        let currentPrinter = targetPrinter;
+        const totalPages = printDoc.getPageCount();
+        const BATCH_SIZE = 5;
 
-          const extPrinters = await chromeExtensionPrintService.getPrinters();
-          const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
-          if (extPrinters.length > 0) {
-            setAvailablePrinters(extPrinters);
-          }
+        for (let i = 0; i < totalPages; i += BATCH_SIZE) {
+          const endIdx = Math.min(i + BATCH_SIZE, totalPages);
+          toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${currentPrinter}...`, { id: 'print-prep' });
 
-          const lastSavedPrinter = typeof window !== 'undefined' ? localStorage.getItem('lastUsedPrinter') : null;
-          let targetPrinter = selectedPrinter || resolveTargetPrinter(extPrinters, detailedPrinters) || lastSavedPrinter;
+          const chunkDoc = await PDFDocument.create();
+          const pageIndices = Array.from({ length: endIdx - i }, (_, idx) => i + idx);
+          const copiedPages = await chunkDoc.copyPages(printDoc, pageIndices);
+          copiedPages.forEach((p) => chunkDoc.addPage(p));
 
-          // Check if targetPrinter is known offline
-          const targetDetail = detailedPrinters.find((d) => d.name?.toLowerCase() === targetPrinter?.toLowerCase());
-          if (targetDetail && targetDetail.isOffline) {
-            const onlineThermal = extPrinters.find((p) => {
-              const dt = detailedPrinters.find((d) => d.name?.toLowerCase() === p.toLowerCase());
-              const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
-              return isThermal && (!dt || !dt.isOffline);
-            });
+          const chunkBase64 = await chunkDoc.saveAsBase64();
 
-            if (onlineThermal) {
-              toast.info(`Printer "${targetPrinter}" is offline. Automatically switching to online printer "${onlineThermal}"...`);
-              targetPrinter = onlineThermal;
-              setSelectedPrinter(onlineThermal);
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('lastUsedPrinter', onlineThermal);
-              }
-            } else {
-              throw new Error(`Print failed: Printer "${targetPrinter}" is offline. Please check printer power/cables.`);
+          try {
+            const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, currentPrinter, 1);
+            if (extRes && (extRes.success === false || extRes.error)) {
+              throw new Error(extRes.error || `PrintBridge reported print failure on pages ${i + 1}-${endIdx}`);
             }
-          }
+          } catch (printErr: any) {
+            const errMsg = printErr?.message || String(printErr);
+            const isSumatraError = errMsg.toLowerCase().includes("sumatrapdf exited") || errMsg.toLowerCase().includes("error code: 1");
 
-          if (!targetPrinter || extPrinters.length === 0) {
-            const fallbackName = lastSavedPrinter || targetPrinter || 'Printer';
-            throw new Error(`Print failed: No connected printer found. Last connected printer "${fallbackName}" is offline.`);
-          }
+            if (isSumatraError) {
+              // Find an alternate connected thermal printer
+              const alternatePrinter = extPrinters.find((p) => {
+                const dt = detailedPrinters.find((d) => d.name?.toLowerCase() === p.toLowerCase());
+                return isThermalOrLabelPrinter(p) && p.toLowerCase() !== currentPrinter.toLowerCase() && (!dt || !dt.isOffline);
+              });
 
-          setSelectedPrinter(targetPrinter);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('lastUsedPrinter', targetPrinter);
-          }
-
-          const totalPages = printDoc.getPageCount();
-          const BATCH_SIZE = 5;
-
-          for (let i = 0; i < totalPages; i += BATCH_SIZE) {
-            const endIdx = Math.min(i + BATCH_SIZE, totalPages);
-            toast.loading(`Direct printing label ${i + 1} to ${endIdx} of ${totalPages} to ${targetPrinter}...`, { id: 'print-prep' });
-
-            const chunkDoc = await PDFDocument.create();
-            const pageIndices = Array.from({ length: endIdx - i }, (_, idx) => i + idx);
-            const copiedPages = await chunkDoc.copyPages(printDoc, pageIndices);
-            copiedPages.forEach((p) => chunkDoc.addPage(p));
-
-            const chunkBase64 = await chunkDoc.saveAsBase64();
-
-            try {
-              const extRes = await chromeExtensionPrintService.printPdf(chunkBase64, targetPrinter, 1);
-              if (extRes && (extRes.success === false || extRes.error)) {
-                throw new Error(extRes.error || `PrintBridge reported print failure on pages ${i + 1}-${endIdx}`);
-              }
-            } catch (printErr: any) {
-              const errMsg = printErr?.message || String(printErr);
-              const isSumatraError = errMsg.toLowerCase().includes("sumatrapdf exited") || errMsg.toLowerCase().includes("error code: 1");
-
-              if (isSumatraError) {
-                // Find an alternate connected thermal printer (like TSC 330)
-                const alternatePrinter = extPrinters.find((p) => {
-                  const dt = detailedPrinters.find((d) => d.name?.toLowerCase() === p.toLowerCase());
-                  const isThermal = /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(p);
-                  return isThermal && p.toLowerCase() !== targetPrinter?.toLowerCase() && (!dt || !dt.isOffline);
-                }) || extPrinters.find((p) => p.toLowerCase() !== targetPrinter?.toLowerCase());
-
-                if (alternatePrinter) {
-                  toast.loading(`Printer "${targetPrinter}" is offline or failed. Retrying print on connected printer "${alternatePrinter}"...`, { id: 'print-prep' });
-                  const retryRes = await chromeExtensionPrintService.printPdf(chunkBase64, alternatePrinter, 1);
-                  if (retryRes && retryRes.success !== false && !retryRes.error) {
-                    targetPrinter = alternatePrinter;
-                    setSelectedPrinter(alternatePrinter);
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('lastUsedPrinter', alternatePrinter);
-                    }
-                  } else {
-                    throw new Error(`Print failed: Printer "${targetPrinter}" is offline. Failed to fallback to "${alternatePrinter}".`);
+              if (alternatePrinter) {
+                toast.loading(`Printer "${currentPrinter}" failed. Retrying on connected printer "${alternatePrinter}"...`, { id: 'print-prep' });
+                const retryRes = await chromeExtensionPrintService.printPdf(chunkBase64, alternatePrinter, 1);
+                if (retryRes && retryRes.success !== false && !retryRes.error) {
+                  currentPrinter = alternatePrinter;
+                  setSelectedPrinter(alternatePrinter);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('lastUsedPrinter', alternatePrinter);
                   }
                 } else {
-                  throw new Error(`Print failed: Printer "${targetPrinter}" is offline. Please turn on printer or check USB cable.`);
+                  throw new Error("No printer connected. Please connect printer.");
                 }
               } else {
-                throw printErr;
+                throw new Error("No printer connected. Please connect printer.");
               }
+            } else {
+              throw printErr;
             }
           }
-
-          toast.success(
-            `Sent ${totalPages} page(s) (4" x 6") to ${targetPrinter} (Queued in Print Spooler)!`,
-            { id: 'print-prep' }
-          );
-          printedSuccessfully = true;
-          setPrintedRows((prev) => {
-            const next = new Set(prev);
-            targetResults.forEach((r) => next.add(r.index));
-            return next;
-          });
-          setSelectedRows((prev) => {
-            const next = new Set(prev);
-            targetResults.forEach((r) => next.delete(r.index));
-            return next;
-          });
-        } else {
-          extError = extCheck.error || 'Extension not responding';
-          console.warn('Chrome print extension check failed:', extError);
         }
-      } catch (extErr: any) {
-        extError = extErr?.message || String(extErr);
-        console.warn('Chrome extension print failed:', extErr);
-      }
 
-      if (!printedSuccessfully) {
-        toast.error(
-          `Direct print failed: ${extError || 'Extension not responding'}`,
-          {
-            id: 'print-prep',
-            duration: 10000,
-            action: {
-              label: 'Setup PrintBridge',
-              onClick: () => window.open('/printbridge', '_blank'),
-            },
-          }
+        toast.success(
+          `Sent ${totalPages} page(s) (4" x 6") to ${currentPrinter} (Queued in Print Spooler)!`,
+          { id: 'print-prep' }
         );
+        printedSuccessfully = true;
+        setPrintedRows((prev) => {
+          const next = new Set(prev);
+          targetResults.forEach((r) => next.add(r.index));
+          return next;
+        });
+        setSelectedRows((prev) => {
+          const next = new Set(prev);
+          targetResults.forEach((r) => next.delete(r.index));
+          return next;
+        });
+      } catch (printLoopErr: any) {
+        throw printLoopErr;
       }
     } catch (err: any) {
       console.error('Print error:', err);
-      toast.error(err?.message || 'Failed to prepare print.', {
+      const msg = err?.message || 'No printer connected. Please connect printer.';
+      const isConnectionIssue =
+        msg.includes("No printer connected") ||
+        msg.includes("offline") ||
+        msg.includes("No connected printer") ||
+        msg.includes("Failed to communicate") ||
+        msg.includes("not ready");
+      toast.error(isConnectionIssue ? "No printer connected. Please connect printer." : msg, {
         id: 'print-prep',
+        duration: 6000,
       });
     }
   };

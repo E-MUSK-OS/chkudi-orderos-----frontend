@@ -20,7 +20,7 @@ import { useDeleteSheetDraft, useSaveSheetDraft, useSheetDraft } from "../hooks/
 import LabelSelectionModal from "@/components/Dashboard/Labels/components/LabelSelectionModal";
 import PrintExecutionModal from "@/components/Dashboard/Labels/components/PrintExecutionModal";
 import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
-import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
+import { chromeExtensionPrintService, resolveCurrentlyConnectedPrinter } from "@/components/Dashboard/Labels/services/printAgent.service";
 import { labelService } from "@/components/Dashboard/Labels/services/label.service";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -149,49 +149,20 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         return;
       }
 
-      // 2. Fetch available printers
+      // 2. Fetch available printers & resolve currently connected printer
       const printers = await chromeExtensionPrintService.getPrinters();
       const details = await chromeExtensionPrintService.getPrintersDetailed();
-      const lastUsedPrinter = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
 
-      const offlineMap = new Map<string, boolean>();
-      let defaultPrinterName = "";
+      const { printer: targetPrinter } = resolveCurrentlyConnectedPrinter(printers, details);
 
-      details.forEach((d) => {
-        if (d.name) {
-          offlineMap.set(d.name.toLowerCase(), !!d.isOffline);
-          if (d.isDefault) {
-            defaultPrinterName = d.name;
-          }
-        }
-      });
-
-      let targetPrinter = "";
-      
-      const isThermal = (name: string) => /tsc|zebra|thermal|barcode|da310|xprinter|gprinter|label|pos/i.test(name);
-      
-      const defaultIsThermalAndOnline = defaultPrinterName && isThermal(defaultPrinterName) && offlineMap.get(defaultPrinterName.toLowerCase()) !== true;
-
-      if (defaultIsThermalAndOnline) {
-        targetPrinter = defaultPrinterName;
-      } else if (lastUsedPrinter && printers.includes(lastUsedPrinter) && offlineMap.get(lastUsedPrinter.toLowerCase()) !== true) {
-        targetPrinter = lastUsedPrinter;
-      } else {
-        const onlineThermal = printers.find((p) => isThermal(p) && offlineMap.get(p.toLowerCase()) !== true);
-        targetPrinter = onlineThermal || lastUsedPrinter || (printers && printers.length > 0 ? printers[0] : "Printer");
-      }
-
-      if (!printers || printers.length === 0) {
-        toast.error(`Print failed: PrintBridge extension could not detect any printers on your system. Please check your printer connections.`, { id: toastId, duration: 6000 });
+      if (!targetPrinter) {
+        toast.error("No printer connected. Please connect printer.", { id: toastId, duration: 6000 });
         setIsPrintingDirectly(false);
         return;
       }
 
-      const isTargetOffline = offlineMap.get(targetPrinter.toLowerCase()) === true;
-      if (isTargetOffline) {
-        toast.error(`Print failed: Printer "${targetPrinter}" is offline. Please check printer power/cable or select an online printer.`, { id: toastId, duration: 6000 });
-        setIsPrintingDirectly(false);
-        return;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("lastUsedPrinter", targetPrinter);
       }
 
       // 3. Fetch template if not active
