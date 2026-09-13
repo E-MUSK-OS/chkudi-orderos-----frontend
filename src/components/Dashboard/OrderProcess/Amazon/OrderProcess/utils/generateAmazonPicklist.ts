@@ -216,12 +216,12 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
       margin: { left: LEFT_X },
       tableWidth: TABLE_WIDTH,
       pageBreak: "avoid",
-      head: [["SKU", "Rack Address", "Gen Barcode", "Qty"]],
+      head: [["Rack Address", "SKU", "Qty", "Gen Barcode"]],
       body: leftItems.map((item) => [
-        item.sku,
         item.rackAddress || "--",
-        item.generateBarcode || "No",
+        item.sku,
         item.quantity.toString(),
+        item.generateBarcode || "No",
       ]),
       styles: {
         fontSize: 7.5,
@@ -238,25 +238,37 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
         minCellHeight: 6,
       },
       columnStyles: {
-        0: { cellWidth: 38, halign: "left" },
-        1: { cellWidth: 22, halign: "center" },
-        2: { cellWidth: 20, halign: "center" },
-        3: { cellWidth: 14, halign: "center", fontStyle: "bold" },
+        0: { cellWidth: 19, halign: "center" },
+        1: { cellWidth: 48, halign: "left" },
+        2: { cellWidth: 10, halign: "center", fontStyle: "bold" },
+        3: { cellWidth: 17, halign: "center" },
       },
       theme: "grid",
       didParseCell: (data) => {
         if (data.section === "body") {
+          // Column 0: Rack Address
+          if (data.column.index === 0 && data.cell.raw !== "--") {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.textColor = [30, 41, 59];
+          }
+          // Column 1: SKU
+          if (data.column.index === 1) {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.textColor = [15, 23, 42];
+          }
+          // Column 2: Qty
           if (data.column.index === 2) {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.textColor = [0, 0, 0];
+          }
+          // Column 3: Gen Barcode
+          if (data.column.index === 3) {
             if (data.cell.raw === "Yes") {
               data.cell.styles.fontStyle = "bold";
               data.cell.styles.textColor = [16, 185, 129];
             } else {
               data.cell.styles.textColor = [100, 116, 139];
             }
-          }
-          if (data.column.index === 1 && data.cell.raw !== "--") {
-            data.cell.styles.fontStyle = "bold";
-            data.cell.styles.textColor = [30, 41, 59];
           }
         }
       },
@@ -269,12 +281,12 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
         margin: { left: RIGHT_X },
         tableWidth: TABLE_WIDTH,
         pageBreak: "avoid",
-        head: [["SKU", "Rack Address", "Gen Barcode", "Qty"]],
+        head: [["Rack Address", "SKU", "Qty", "Gen Barcode"]],
         body: rightItems.map((item) => [
-          item.sku,
           item.rackAddress || "--",
-          item.generateBarcode || "No",
+          item.sku,
           item.quantity.toString(),
+          item.generateBarcode || "No",
         ]),
         styles: {
           fontSize: 7.5,
@@ -291,25 +303,37 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
           minCellHeight: 6,
         },
         columnStyles: {
-          0: { cellWidth: 38, halign: "left" },
-          1: { cellWidth: 22, halign: "center" },
-          2: { cellWidth: 20, halign: "center" },
-          3: { cellWidth: 14, halign: "center", fontStyle: "bold" },
+          0: { cellWidth: 19, halign: "center" },
+          1: { cellWidth: 48, halign: "left" },
+          2: { cellWidth: 10, halign: "center", fontStyle: "bold" },
+          3: { cellWidth: 17, halign: "center" },
         },
         theme: "grid",
         didParseCell: (data) => {
           if (data.section === "body") {
+            // Column 0: Rack Address
+            if (data.column.index === 0 && data.cell.raw !== "--") {
+              data.cell.styles.fontStyle = "bold";
+              data.cell.styles.textColor = [30, 41, 59];
+            }
+            // Column 1: SKU
+            if (data.column.index === 1) {
+              data.cell.styles.fontStyle = "bold";
+              data.cell.styles.textColor = [15, 23, 42];
+            }
+            // Column 2: Qty
             if (data.column.index === 2) {
+              data.cell.styles.fontStyle = "bold";
+              data.cell.styles.textColor = [0, 0, 0];
+            }
+            // Column 3: Gen Barcode
+            if (data.column.index === 3) {
               if (data.cell.raw === "Yes") {
                 data.cell.styles.fontStyle = "bold";
                 data.cell.styles.textColor = [16, 185, 129];
               } else {
                 data.cell.styles.textColor = [100, 116, 139];
               }
-            }
-            if (data.column.index === 1 && data.cell.raw !== "--") {
-              data.cell.styles.fontStyle = "bold";
-              data.cell.styles.textColor = [30, 41, 59];
             }
           }
         },

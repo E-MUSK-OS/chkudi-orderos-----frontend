@@ -672,9 +672,18 @@ export default function ComparisonResultView({
     [orderTypeCounts]
   );
 
-  // Printer selection state
+  // Printer selection state with persistent local storage retention
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
-  const [selectedPrinter, setSelectedPrinter] = useState<string>("");
+  const [selectedPrinter, setSelectedPrinter] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return (
+        localStorage.getItem("amazon_selected_printer") ||
+        localStorage.getItem("lastUsedPrinter") ||
+        ""
+      );
+    }
+    return "";
+  });
   const lastVerifiedPrinterRef = useRef<{
     printerName: string;
     timestamp: number;
@@ -700,22 +709,34 @@ export default function ComparisonResultView({
         }
         if (isMounted && list && list.length > 0) {
           setAvailablePrinters(list);
-          const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
-          if (lastUsed && list.includes(lastUsed)) {
-            setSelectedPrinter(lastUsed);
-            lastVerifiedPrinterRef.current = {
-              printerName: lastUsed,
-              timestamp: Date.now(),
-            };
-          } else {
+
+          const saved = typeof window !== "undefined"
+            ? (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
+            : null;
+
+          setSelectedPrinter((current) => {
+            const candidate = current || saved;
+            if (candidate) {
+              const matched = list.find(
+                (p) => p.toLowerCase().trim() === candidate.toLowerCase().trim()
+              );
+              if (matched) {
+                lastVerifiedPrinterRef.current = {
+                  printerName: matched,
+                  timestamp: Date.now(),
+                };
+                return matched;
+              }
+            }
+
             const { printer: preferred } = resolveCurrentlyConnectedPrinter(list, details);
             const chosen = preferred && list.includes(preferred) ? preferred : list[0];
-            setSelectedPrinter(chosen);
             lastVerifiedPrinterRef.current = {
               printerName: chosen,
               timestamp: Date.now(),
             };
-          }
+            return chosen;
+          });
         }
       } catch (e) {
         console.warn("Failed to load initial printers:", e);
@@ -915,20 +936,33 @@ export default function ComparisonResultView({
         setAvailablePrinters(extPrinters);
       }
 
-      // Strictly resolve ONLY whichever physical printer is CURRENTLY connected and online on the PC
+      // Strictly resolve target printer
       if (selectedPrinter) {
         targetPrinter = selectedPrinter;
       } else {
-        const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
-        if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
-          targetPrinter = onlineConnected;
-          setSelectedPrinter(onlineConnected);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('lastUsedPrinter', onlineConnected);
+        const saved = typeof window !== 'undefined'
+          ? (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
+          : null;
+        if (saved) {
+          const matched = extPrinters.find(p => p.toLowerCase().trim() === saved.toLowerCase().trim());
+          if (matched) {
+            targetPrinter = matched;
+            setSelectedPrinter(matched);
           }
-        } else if (extPrinters.length > 0) {
-          targetPrinter = extPrinters[0];
-          setSelectedPrinter(extPrinters[0]);
+        }
+        if (!targetPrinter) {
+          const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+          if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
+            targetPrinter = onlineConnected;
+            setSelectedPrinter(onlineConnected);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('amazon_selected_printer', onlineConnected);
+              localStorage.setItem('lastUsedPrinter', onlineConnected);
+            }
+          } else if (extPrinters.length > 0) {
+            targetPrinter = extPrinters[0];
+            setSelectedPrinter(extPrinters[0]);
+          }
         }
       }
 
@@ -1953,6 +1987,7 @@ export default function ComparisonResultView({
                     if (opt?.value) {
                       setSelectedPrinter(opt.value);
                       if (typeof window !== "undefined") {
+                        localStorage.setItem("amazon_selected_printer", opt.value);
                         localStorage.setItem("lastUsedPrinter", opt.value);
                       }
                       lastVerifiedPrinterRef.current = {
