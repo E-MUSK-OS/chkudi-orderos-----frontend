@@ -16,7 +16,8 @@ import { sampleData } from './utils/sampleData';
 import ConfirmModal from './components/ConfirmModal';
 import { PreviewPanel } from './components/PreviewPanel';
 import { LivePreview } from './components/LivePreview';
-import { ProductLookupResult, LabelElement } from '../types/label.types';
+import { ProductLookupResult, LabelElement, LabelTemplate } from '../types/label.types';
+import { TestPrintModal } from './components/TestPrintModal';
 
 export function BarcodeDesign() {
   const searchParams = useSearchParams();
@@ -25,6 +26,7 @@ export function BarcodeDesign() {
   const designer = useDesignerState(templateId || undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [previewData, setPreviewData] = useState<Record<string, string> | null>(null);
+  const [isTestPrintOpen, setIsTestPrintOpen] = useState(false);
 
   const [showClearModal, setShowClearModal] = useState(false);
   const [showBackModal, setShowBackModal] = useState(false);
@@ -242,6 +244,7 @@ export function BarcodeDesign() {
             templateName={designer.state.templateName}
             updateTemplateName={designer.updateTemplateName}
             onBack={handleBack}
+            onTestPrint={() => setIsTestPrintOpen(true)}
           />
 
           <DesignCanvas
@@ -251,7 +254,7 @@ export function BarcodeDesign() {
             selectedIds={designer.state.previewSampleData ? [] : designer.state.selectedIds}
             zoom={designer.state.zoom}
             previewSampleData={designer.state.previewSampleData}
-            previewData={designer.state.previewSampleData ? (previewData || sampleData) : null}
+            previewData={designer.state.previewSampleData ? previewData : null}
             backgroundImageUrl={designer.state.backgroundImageUrl}
             onSelect={designer.selectElement}
             onToggleSelect={designer.toggleSelect}
@@ -263,7 +266,10 @@ export function BarcodeDesign() {
         </div>
 
         {designer.state.previewSampleData ? (
-          <PreviewPanel onSelectData={setPreviewData} />
+          <PreviewPanel
+            onSelectData={setPreviewData}
+            onTestPrint={() => setIsTestPrintOpen(true)}
+          />
         ) : (
           <PropertiesPanel
             settings={designer.state.settings}
@@ -303,6 +309,19 @@ export function BarcodeDesign() {
         title="Discard Unsaved Changes?"
         description="You have unsaved changes. Are you sure you want to leave? Your changes will be lost."
         confirmLabel="Discard Changes"
+      />
+
+      <TestPrintModal
+        open={isTestPrintOpen}
+        onClose={() => setIsTestPrintOpen(false)}
+        template={{
+          id: designer.state.templateId || "test-template",
+          name: designer.state.templateName || "Untitled Template",
+          settings: designer.state.settings,
+          layoutJson: designer.state.elements,
+          backgroundImageUrl: designer.state.backgroundImageUrl,
+        }}
+        previewData={previewData}
       />
     </DashboardLayout>
   );

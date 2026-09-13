@@ -126,8 +126,8 @@ export default function Header({
   }, [unreadCount]);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-4 py-4 backdrop-blur md:px-8">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-3 sm:px-4 md:px-8 py-3 sm:py-4 backdrop-blur">
+      <div className="flex items-center gap-2.5 sm:gap-4">
         <button
           type="button"
           aria-label="Open Sidebar"

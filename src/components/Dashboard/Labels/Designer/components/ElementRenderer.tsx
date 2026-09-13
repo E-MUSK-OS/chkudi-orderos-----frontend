@@ -81,9 +81,7 @@ export function ElementRenderer({
     if (element.type === 'barcode' && barcodeRef.current) {
       const content = previewData 
         ? resolveVariable(element.content, element.variableSource, previewData)
-        : previewSampleData
-          ? resolveVariable(element.content, element.variableSource) 
-          : element.content;
+        : element.content;
 
       try {
         setBarcodeError(null);
@@ -135,9 +133,7 @@ export function ElementRenderer({
       case 'text': {
         const textContent = previewData
           ? resolveVariable(element.content, element.variableSource, previewData)
-          : previewSampleData 
-            ? resolveVariable(element.content, element.variableSource) 
-            : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
+          : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
 
         return (
           <div
@@ -208,9 +204,7 @@ export function ElementRenderer({
       case 'qrcode': {
         const qrContent = previewData
           ? resolveVariable(element.content, element.variableSource, previewData)
-          : previewSampleData 
-            ? resolveVariable(element.content, element.variableSource) 
-            : element.content;
+          : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
 
         return (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

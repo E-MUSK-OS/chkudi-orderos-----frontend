@@ -22,7 +22,11 @@ export default function NotificationDropdown({ onClose }: Props) {
         right-0
         top-14
         z-50
-        w-[420px]
+        w-[calc(100vw-1.5rem)]
+        sm:w-[420px]
+        max-w-sm
+        sm:max-w-md
+        rounded-lg
         overflow-hidden
         border
         border-gray-200

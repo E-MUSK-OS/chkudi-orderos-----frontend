@@ -1922,7 +1922,7 @@ export default function ComparisonResultView({
                 <button
                   type="button"
                   onClick={() => triggerMissingSkuAlert(missingSkuItems)}
-                  className="inline-flex h-11 sm:h-14 items-center justify-center border border-red-500/50 bg-red-500/10 px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
+                  className="inline-flex h-11 sm:h-14 w-full sm:w-auto items-center justify-center border border-red-500/50 bg-red-500/10 px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
                   title="Click to view ASINs missing Seller SKU in database"
                 >
                   <span>Missing Sku ({missingSkuItems.length})</span>
@@ -1932,7 +1932,7 @@ export default function ComparisonResultView({
               <button
                 type="button"
                 onClick={handleGeneratePicklist}
-                className="inline-flex h-11 sm:h-14 w-full sm:w-52 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                className="inline-flex h-11 sm:h-14 w-full sm:w-auto sm:px-5 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
               >
                 <FileText className="h-4 w-4" />
                 Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${filteredResults.length})`}
@@ -1942,7 +1942,7 @@ export default function ComparisonResultView({
                 <button
                   type="button"
                   onClick={() => setShowPrinted((prev) => !prev)}
-                  className={`inline-flex h-11 sm:h-14 items-center justify-center gap-1.5 border px-3.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  className={`inline-flex h-11 sm:h-14 w-full sm:w-auto items-center justify-center gap-1.5 border px-3.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     showPrinted
                       ? "border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-500/25"
                       : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -1967,7 +1967,7 @@ export default function ComparisonResultView({
                 type="button"
                 disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
-                className={`inline-flex h-11 sm:h-14 w-full sm:w-44 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                className={`inline-flex h-11 sm:h-14 w-full sm:w-auto sm:px-6 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   selectedRows.size > 0
                     ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
                     : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"

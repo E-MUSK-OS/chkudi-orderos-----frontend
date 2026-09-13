@@ -785,15 +785,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="flex h-[90vh] w-[calc(100vw-22rem)] max-w-none flex-col p-0">
-        <DialogHeader className="border-b bg-[#0A0E1A] px-6 py-5">
+      <DialogContent className="flex h-[92dvh] sm:h-[90vh] w-[95vw] lg:w-[calc(100vw-6rem)] xl:w-[calc(100vw-18rem)] max-w-7xl flex-col p-0">
+        <DialogHeader className="border-b bg-[#0A0E1A] px-4 sm:px-6 py-4 sm:py-5">
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle className="text-2xl font-semibold text-[#E8C16D]">
+              <DialogTitle className="text-xl sm:text-2xl font-semibold text-[#E8C16D]">
                 Generate Excel Sheet
               </DialogTitle>
 
-              <p className="mt-1 text-lg text-white">
+              <p className="mt-1 text-xs sm:text-sm text-slate-200">
                 Scan or enter Short SKU. Full SKU, Barcode SKU and OrderCook SKU are
                 filled automatically.
               </p>
@@ -801,10 +801,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </div>
         </DialogHeader>
 
-        <div className="flex justify-between items-center gap-3 pt-5 px-6">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 sm:pt-5 px-4 sm:px-6">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-semibold text-slate-700">Print Mode:</span>
-            <div className="w-44">
+            <div className="w-full sm:w-44 min-w-[140px]">
               <ReactSelect
                 options={PRINT_MODE_OPTIONS}
                 value={PRINT_MODE_OPTIONS.find((opt) => opt.value === printMode)}
@@ -817,11 +817,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button
               variant="secondary"
               fullWidth={false}
-              className="w-40"
+              className="flex-1 sm:flex-initial sm:w-auto min-w-[120px]"
               leftIcon={<Printer className="h-4 w-4" />}
               onClick={() => {
                 const selectedRowsList = rows.filter((r) => selectedRowIds.has(r.id));
@@ -839,21 +839,27 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             <Button
               variant="outline"
               fullWidth={false}
-              className="w-44 truncate"
+              className="flex-1 sm:flex-initial sm:w-auto min-w-[130px] truncate"
               leftIcon={<Tag className="h-4 w-4" />}
               onClick={() => setIsLabelPickerOpen(true)}
               title={activePrintTemplate?.name ? `Current Template: ${activePrintTemplate.name}. Click to change.` : "Select label template"}
             >
               {activePrintTemplate?.name ? activePrintTemplate.name : "Select Template"}
             </Button>
-            <Button variant="primary" fullWidth={false} className="w-40" leftIcon={<Trash2 className="h-4 w-4" />} onClick={clearSheet}>
+            <Button
+              variant="primary"
+              fullWidth={false}
+              className="flex-1 sm:flex-initial sm:w-auto min-w-[120px]"
+              leftIcon={<Trash2 className="h-4 w-4" />}
+              onClick={clearSheet}
+            >
               Clear Sheet
             </Button>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden px-6 py-4">
+        <div className="flex-1 overflow-hidden px-4 sm:px-6 py-3 sm:py-4">
           <div className="h-full overflow-auto border">
-            <table className="w-full table-fixed border-collapse">
+            <table className="min-w-[750px] w-full table-fixed border-collapse">
               <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-white">
                 <tr>
                   <th className="w-12 border px-4 py-3 text-center">
@@ -1290,13 +1296,14 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </div>
         </div>
 
-        <div className="border-t bg-white px-6 py-4">
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={onClose}>
+        <div className="border-t bg-white px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={onClose}>
               Close
             </Button>
 
             <Button
+              className="w-full sm:w-auto"
               onClick={exportExcel}
               disabled={
                 rows.filter(

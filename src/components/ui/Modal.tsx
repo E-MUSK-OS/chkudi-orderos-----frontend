@@ -69,7 +69,7 @@ export default function Modal({
     w-[95vw]
     p-0
     overflow-hidden
-    max-h-[90vh]
+    max-h-[92dvh] sm:max-h-[90vh]
     flex
     flex-col
   `}
@@ -82,28 +82,17 @@ export default function Modal({
     z-10
     border-b
     bg-white
-    px-6
-    py-5
+    px-4 sm:px-6
+    py-3.5 sm:py-5
   "
           >
-            {title && <DialogTitle>{title}</DialogTitle>}
+            {title && <DialogTitle className="text-lg sm:text-xl font-bold text-[#0A0E1A]">{title}</DialogTitle>}
 
             {description && (
-              <DialogDescription>{description}</DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm text-slate-500">{description}</DialogDescription>
             )}
           </DialogHeader>
         )}
-        {/* <div
-          className="
-    overflow-y-auto
-    max-h-[calc(90vh-140px)]
-    scrollbar-thin
-    scrollbar-thumb-[#0A0E1A]
-    scrollbar-track-transparent
-  "
-        >
-          {children}
-        </div> */}
 
         <div
           className="
@@ -111,8 +100,8 @@ export default function Modal({
     overflow-y-auto
     flex-1
     min-h-0
-    px-6
-    py-6
+    px-4 sm:px-6
+    py-4 sm:py-6
   "
         >
           {children}
@@ -126,8 +115,8 @@ export default function Modal({
       z-10
       border-t
       bg-white
-      px-6
-      py-4
+      px-4 sm:px-6
+      py-3 sm:py-4
     "
           >
             {footer}

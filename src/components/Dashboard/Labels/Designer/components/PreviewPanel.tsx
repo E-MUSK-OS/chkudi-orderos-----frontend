@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Search, Loader2, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, AlertTriangle, Printer } from 'lucide-react';
 import { labelService } from '../../services/label.service';
 import { ProductLookupResult } from '../../types/label.types';
 import { toast } from 'sonner';
 
 interface Props {
   onSelectData: (data: Record<string, string> | null) => void;
+  onTestPrint?: () => void;
 }
 
 const WORST_CASE_DATA: ProductLookupResult = {
@@ -20,7 +21,7 @@ const WORST_CASE_DATA: ProductLookupResult = {
   manufacturingMonth: "December 2029",
 };
 
-export function PreviewPanel({ onSelectData }: Props) {
+export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ProductLookupResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -118,18 +119,42 @@ export function PreviewPanel({ onSelectData }: Props) {
               {product.title || 'Unknown Title'}
             </div>
             <div className="text-xs text-stone-500 mt-1">SKU: {product.sku}</div>
-            <div className="text-xs text-stone-500 flex justify-between mt-1">
+            <div className="text-xs text-stone-500 flex justify-between items-center mt-1">
               <span>{product.color} {product.size}</span>
-              {product.mrp && <span>₹{product.mrp}</span>}
+              <div className="flex items-center gap-2">
+                {product.mrp && <span>₹{product.mrp}</span>}
+                {selectedProduct?.sku === product.sku && onTestPrint && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTestPrint();
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-semibold bg-[#E8C16D] text-[#0A0E1A] px-2 py-0.5 rounded hover:bg-[#d4ae5c] transition-colors"
+                  >
+                    <Printer size={12} />
+                    Print
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="p-4 border-t border-stone-800 bg-[#111827]">
+      <div className="p-4 border-t border-stone-800 bg-[#111827] space-y-2.5">
+        {onTestPrint && (
+          <button
+            onClick={onTestPrint}
+            className="w-full py-2.5 px-4 text-sm font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#d4ae5c] rounded transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-[0.99]"
+          >
+            <Printer size={16} />
+            {selectedProduct ? `Test Print (${selectedProduct.sku})` : "Test Print Label"}
+          </button>
+        )}
         <button
           onClick={clearSelection}
-          className="w-full py-2 text-sm text-stone-300 border border-stone-700 rounded hover:bg-stone-800 transition-colors"
+          className="w-full py-1.5 text-xs text-stone-400 border border-stone-700 rounded hover:bg-stone-800 hover:text-stone-200 transition-colors"
         >
           Clear Data
         </button>

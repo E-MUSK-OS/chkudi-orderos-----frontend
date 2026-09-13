@@ -40,9 +40,9 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
   }
 
   return (
-    <div className="overflow-hidden border border-slate-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="min-w-full">
+        <table className="w-full min-w-[650px]">
           <thead className="bg-[#0A0E1A] text-white">
             <tr>
               <th className="px-4 py-3 text-left">Short SKU</th>

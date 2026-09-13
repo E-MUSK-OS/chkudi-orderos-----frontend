@@ -31,7 +31,7 @@ export default function DashboardLayout({
           setSidebarOpen={setSidebarOpen}
         />
 
-        <section className="flex min-w-0 flex-1 flex-col">
+        <section className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
 
           <Header
             title={title}
@@ -41,7 +41,7 @@ export default function DashboardLayout({
             setLogoutOpen={setLogoutModalOpen}
           />
 
-          <div className="flex-1 px-4 py-6 md:px-8 lg:py-8">
+          <div className="flex-1 px-3 sm:px-5 md:px-8 py-4 sm:py-6 lg:py-8">
             {children}
           </div>
 

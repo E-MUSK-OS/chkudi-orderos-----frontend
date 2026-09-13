@@ -111,7 +111,7 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
                 duration: 0.22,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="absolute right-0 top-14 z-30 w-80 origin-top-right border border-[#E7E0D2] bg-white p-3 shadow-xl"
+              className="absolute right-0 top-14 z-30 w-[calc(100vw-2rem)] sm:w-80 max-w-xs sm:max-w-sm rounded-lg origin-top-right border border-[#E7E0D2] bg-white p-3 shadow-xl"
             >
               <div className="border-b border-[#E7E0D2] px-2 pb-3">
                 <p className="truncate text-sm font-bold text-[#0A0E1A]">

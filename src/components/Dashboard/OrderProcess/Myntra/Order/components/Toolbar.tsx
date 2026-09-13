@@ -57,13 +57,13 @@ const Toolbar = ({
   ] as const;
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-6 gap-3">
+    <div className="space-y-4 sm:space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
         {buttons.map((button) => (
           <Button
             key={button.key}
             onClick={() => onStatusChange(button.key)}
-            className={`h-14 border transition-all duration-200 ${status === button.key
+            className={`h-12 sm:h-14 border text-xs sm:text-sm font-semibold transition-all duration-200 ${status === button.key
                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:text-white hover:bg-[#0A0E1A]"
                 : "bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
               }`}
@@ -74,21 +74,23 @@ const Toolbar = ({
       </div>
 
       {/* Search & Actions */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full max-w-md">
+      <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
           <Input
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder="Search Order ID..."
-            className="pl-10"
+            className="pl-10 text-sm"
           />
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
           {(status === "OPEN" || status === "PRIORITY") && (
             <Button
+              fullWidth={false}
+              className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
               disabled={selectedRows.length === 0}
               onClick={onMoveToPicking}
             >
@@ -98,27 +100,27 @@ const Toolbar = ({
           )}
 
           {status === "PICKING" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Button
-                  variant="secondary"
-                  disabled={selectedRows.length === 0}
-                  onClick={onGeneratePicklist}
-                >
-                  <Printer className="mr-2 h-4 w-4" />
-                  Generate Picklist ({selectedRows.length})
-                </Button>
-              </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                fullWidth={false}
+                className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
+                disabled={selectedRows.length === 0}
+                onClick={onGeneratePicklist}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Generate Picklist ({selectedRows.length})
+              </Button>
 
-              <div>
-                <Button
-                  disabled={selectedRows.length === 0}
-                  onClick={() => {}}
-                >
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                  Process ({selectedRows.length})
-                </Button>
-              </div>
+              <Button
+                fullWidth={false}
+                className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
+                disabled={selectedRows.length === 0}
+                onClick={() => {}}
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                Process ({selectedRows.length})
+              </Button>
             </div>
           )}
         </div>

@@ -74,21 +74,23 @@ export const renderLabelToCanvas = async (
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("Could not get 2d context");
 
+  const rawData = (productData || {}) as unknown as Record<string, string>;
   const productRecord: Record<string, string> = {
-    title: productData.title || "",
-    sku: productData.sku || "",
-    masterSku: productData.masterSku || "",
-    fullSku: productData.masterSku || "",
-    barcode: productData.sku || productData.asin || "",
-    brand: productData.brand || "",
-    size: productData.size || "",
-    color: productData.color || "",
-    mrp: productData.mrp !== null && productData.mrp !== undefined ? String(productData.mrp) : "",
-    asin: productData.asin || productData.sku || "",
-    articleNo: productData.asin || productData.sku || "",
-    styleNo: productData.asin || productData.sku || "",
-    manufacturingMonth: productData.manufacturingMonth || "",
-    printDate: new Date().toLocaleDateString(),
+    ...rawData,
+    title: productData.title || rawData.title || "",
+    sku: productData.sku || rawData.sku || "",
+    masterSku: productData.masterSku || rawData.masterSku || "",
+    fullSku: productData.masterSku || rawData.fullSku || rawData.masterSku || "",
+    barcode: rawData.barcode || productData.sku || productData.asin || "",
+    brand: productData.brand || rawData.brand || "",
+    size: productData.size || rawData.size || "",
+    color: productData.color || rawData.color || "",
+    mrp: productData.mrp !== null && productData.mrp !== undefined ? String(productData.mrp) : (rawData.mrp || ""),
+    asin: productData.asin || productData.sku || rawData.asin || "",
+    articleNo: rawData.articleNo || productData.asin || productData.sku || "",
+    styleNo: rawData.styleNo || productData.asin || productData.sku || "",
+    manufacturingMonth: productData.manufacturingMonth || rawData.manufacturingMonth || "",
+    printDate: rawData.printDate || new Date().toLocaleDateString(),
   };
 
   // Calculate raw pixels

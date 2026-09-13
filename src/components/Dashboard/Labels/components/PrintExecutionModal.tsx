@@ -128,9 +128,9 @@ export default function PrintExecutionModal({
             </tbody>
           </table>
         </div>
-        <div className="flex justify-between items-center pt-4">
-          <span className="text-[#0A0E1A] font-medium">{readyCount} of {queue.length} ready to print</span>
-          <Button variant="primary" onClick={proceedToPrinter} disabled={readyCount === 0}>
+        <div className="flex flex-col sm:flex-row sm:justify-between items-stretch sm:items-center gap-2 pt-4">
+          <span className="text-[#0A0E1A] font-medium text-xs sm:text-sm">{readyCount} of {queue.length} ready to print</span>
+          <Button variant="primary" onClick={proceedToPrinter} disabled={readyCount === 0} className="w-full sm:w-auto">
             Continue
           </Button>
         </div>
@@ -225,13 +225,14 @@ export default function PrintExecutionModal({
           />
         </div>
 
-        <div className="flex justify-end space-x-3 pt-4">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 pt-4">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
           <Button
             variant="secondary"
             onClick={() => startPrinting(selectedPrinter)}
-            disabled={labelCount === 0}
+            disabled={labelCount === 0 || !selectedPrinter}
             leftIcon={<Printer className="w-4 h-4" />}
+            className="w-full sm:w-auto"
           >
             Silent Print (Extension)
           </Button>
@@ -240,6 +241,7 @@ export default function PrintExecutionModal({
             onClick={printViaBrowser}
             disabled={labelCount === 0}
             leftIcon={<Printer className="w-4 h-4" />}
+            className="w-full sm:w-auto"
           >
             Browser Print (Default)
           </Button>

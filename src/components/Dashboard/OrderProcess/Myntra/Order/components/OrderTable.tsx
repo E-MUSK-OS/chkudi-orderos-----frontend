@@ -35,10 +35,10 @@ const OrderTable = ({ orders, selectedRows, onSelectionChange }: Props) => {
   };
 
   return (
-    <div className="overflow-hidden border border-border bg-card">
+    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-[#0A0E1A] text-lg text-[#E8C16D]">
+        <table className="w-full min-w-[750px]">
+          <thead className="bg-[#0A0E1A] text-sm sm:text-base text-[#E8C16D]">
             <tr className="border-b border-border">
               <th className="w-14 px-4 py-4 text-left">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />

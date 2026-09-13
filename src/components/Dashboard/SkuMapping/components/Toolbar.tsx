@@ -145,20 +145,21 @@ export default function Toolbar({
     }
   };
   return (
-    <div className="flex flex-col gap-4 border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
       {/* Left */}
 
-      <div className="flex flex-1 items-center gap-3">
-        <div className="relative max-w-md flex-1">
+      <div className="flex flex-1 items-center">
+        <div className="relative w-full max-w-md">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10"
           />
 
           <Input
             value={search}
             placeholder="Search Short SKU / Full SKU / Barcode SKU / OrderCook SKU"
-            className="pl-10"
+            className="h-11 pl-10 text-sm"
+            containerClassName="space-y-0"
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
@@ -166,29 +167,39 @@ export default function Toolbar({
 
       {/* Right */}
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 border border-slate-200 bg-slate-50 px-4 py-3">
-          <span className="text-md text-slate-500">Total</span>
+      <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <div className="flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4">
+          <span className="text-sm font-medium text-slate-500">Total</span>
 
-          <span className="bg-[#0A0E1A] px-2 py-0.5 text-md font-semibold text-[#E8C16D]">
+          <span className="rounded bg-[#0A0E1A] px-2 py-0.5 text-sm font-semibold text-[#E8C16D]">
             {total}
           </span>
         </div>
 
-        <Button variant="outline" onClick={onGenerateSheet}>
+        <Button
+          variant="outline"
+          fullWidth={false}
+          className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
+          onClick={onGenerateSheet}
+        >
           Generate Sheet
         </Button>
 
         <Button
           variant="outline"
+          fullWidth={false}
           onClick={handleDownloadDemoSheet}
-          className="flex items-center gap-2 border-[#C89B3C]/50 text-[#C89B3C] hover:bg-[#FFF8E7] hover:border-[#C89B3C]"
+          className="h-11 px-5 text-sm rounded-lg whitespace-nowrap flex items-center gap-2 border-[#C89B3C]/50 text-[#C89B3C] hover:bg-[#FFF8E7] hover:border-[#C89B3C]"
         >
           <Download size={16} />
           Demo Sheet
         </Button>
 
-        <Button onClick={onImport} className="flex items-center gap-2">
+        <Button
+          fullWidth={false}
+          className="h-11 px-5 text-sm rounded-lg whitespace-nowrap flex items-center gap-2"
+          onClick={onImport}
+        >
           <Upload size={16} />
           Import Excel
         </Button>

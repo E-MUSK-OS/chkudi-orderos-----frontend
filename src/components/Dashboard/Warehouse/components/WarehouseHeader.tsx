@@ -35,6 +35,7 @@ export default function WarehouseHeader({ onAddWarehouse }: Props) {
 
       <Button
         fullWidth={false}
+        className="w-full sm:w-auto"
         leftIcon={<Plus size={18} />}
         onClick={onAddWarehouse}
       >

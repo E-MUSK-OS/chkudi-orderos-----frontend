@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Undo, Redo, Eye, Save, Trash2, RotateCcw, ArrowLeft, Loader2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo, Redo, Eye, Save, Trash2, RotateCcw, ArrowLeft, Loader2, Printer } from 'lucide-react';
 
 interface TopToolbarProps {
   zoom: number;
@@ -15,6 +15,7 @@ interface TopToolbarProps {
   templateName: string;
   updateTemplateName: (name: string) => void;
   onBack: () => void;
+  onTestPrint?: () => void;
 }
 
 export function TopToolbar({
@@ -31,7 +32,8 @@ export function TopToolbar({
   isSaving,
   templateName,
   updateTemplateName,
-  onBack
+  onBack,
+  onTestPrint,
 }: TopToolbarProps) {
   return (
     <div className="flex items-center justify-between h-14 bg-[#111827] border-b border-stone-800 px-4 shrink-0">
@@ -97,6 +99,16 @@ export function TopToolbar({
       </div>
 
       <div className="flex items-center gap-3">
+        {previewSampleData && onTestPrint && (
+          <button
+            onClick={onTestPrint}
+            className="flex items-center gap-2 px-3.5 py-1.5 text-sm font-medium border border-stone-700 bg-[#111827] text-stone-300 hover:border-amber-500 hover:text-amber-500 rounded transition-colors shadow-sm active:scale-[0.99]"
+            title="Test print this label to your printer"
+          >
+            <Printer size={16} />
+            Test Print
+          </button>
+        )}
         <button
           onClick={togglePreview}
           className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-sm border ${

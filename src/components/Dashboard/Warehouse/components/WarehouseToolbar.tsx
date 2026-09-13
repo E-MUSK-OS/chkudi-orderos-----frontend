@@ -76,10 +76,10 @@ export default function WarehouseToolbar({
   onRefresh,
 }: Props) {
   return (
-    <div className="mb-6 flex flex-col gap-4 border border-slate-700 bg-[#0F172A] p-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mb-6 flex flex-col gap-4 rounded-lg border border-slate-700 bg-[#0F172A] p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between shadow-sm">
       {/* Left */}
 
-      <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+      <div className="flex flex-1 flex-col gap-3.5 sm:gap-4 lg:flex-row">
         {/* Search */}
 
         <div className="relative w-full lg:max-w-sm">
@@ -95,11 +95,13 @@ export default function WarehouseToolbar({
             className="
               h-12
               w-full
+              rounded-md
               border
               border-slate-700
               bg-[#111827]
               pl-11
               pr-4
+              text-sm
               text-white
               outline-none
               transition
@@ -157,11 +159,11 @@ export default function WarehouseToolbar({
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
-
+      <div className="flex items-center justify-stretch sm:justify-end gap-3 w-full lg:w-auto">
         <Button
           variant="secondary"
           fullWidth={false}
+          className="w-full sm:w-auto"
           leftIcon={<RotateCw size={18} />}
           onClick={onRefresh}
         >

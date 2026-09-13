@@ -254,16 +254,16 @@ export default function LabelSelectionModal({
       description="Choose the label design you want to print for the selected orders."
       size="4xl"
       footer={
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-sm text-muted-foreground">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 w-full">
+          <span className="text-xs sm:text-sm text-center sm:text-left text-muted-foreground">
             {selectedId ? "1 template selected" : "Select a template to continue"}
           </span>
-          <div className="flex gap-3">
-            <Button variant="outline" fullWidth={false} size="sm" onClick={onClose}>
+          <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto" size="sm" onClick={onClose}>
               Cancel
             </Button>
             <Button
-              fullWidth={false}
+              className="w-full sm:w-auto"
               size="sm"
               disabled={!selectedId}
               onClick={() => handleConfirm()}

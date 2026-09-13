@@ -72,9 +72,9 @@ export default function WarehouseTable({
   });
 
   return (
-    <div className="overflow-hidden border border-[#E7EAF0] bg-white shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-[#E7EAF0] bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="min-w-full">
+        <table className="w-full min-w-[750px]">
           <thead className="border-b border-[#E7EAF0] bg-[#0A0E1A]">
             <tr>
               <th className="px-6 py-4 text-left text-lg font-semibold text-white">
