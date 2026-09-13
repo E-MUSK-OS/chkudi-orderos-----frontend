@@ -21,12 +21,38 @@ export interface SavePrintedOrdersResponse {
   };
 }
 
+export interface AmazonOrderItem {
+  id: string;
+  invoice: string;
+  orderId: string;
+  awb: string;
+  asin: string;
+  sellerSku: string;
+  customer: string;
+  packingScanStatus: "PENDING" | "SCANNED";
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+}
+
 export interface GetAmazonOrdersResponse {
   success: boolean;
-  data: any[];
+  data: AmazonOrderItem[];
   total: number;
+  summary?: {
+    total: number;
+    pending: number;
+    scanned: number;
+  };
   page: number;
   totalPages: number;
+}
+
+export interface UpdateScanStatusResponse {
+  success: boolean;
+  message: string;
+  data: AmazonOrderItem;
 }
 
 export const amazonOrderService = {
@@ -70,11 +96,11 @@ export const amazonOrderService = {
     awb: string,
     status: "PENDING" | "SCANNED" = "SCANNED",
     token?: string
-  ) {
+  ): Promise<UpdateScanStatusResponse> {
     const userToken =
       token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
 
-    return api.patch(
+    return api.patch<UpdateScanStatusResponse>(
       `${BASE_URL}/scan/${encodeURIComponent(awb)}`,
       { status },
       userToken

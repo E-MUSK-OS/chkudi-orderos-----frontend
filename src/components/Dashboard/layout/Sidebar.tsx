@@ -142,6 +142,10 @@ const navItems: NavItem[] = [
             label: "Order Process",
             href: "/dashboard/order-process/amazon/order-process",
           },
+          {
+            label: "AWB Scan",
+            href: "/dashboard/order-process/amazon/awb-scan",
+          },
         ],
       },
     ],
