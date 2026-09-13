@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { LabelTemplate, PrintQueueItem } from "../types/label.types";
 import { chromeExtensionPrintService } from "../services/printAgent.service";
 import { labelService } from "../services/label.service";
-import { renderLabelToCanvas } from "@/lib/labelRenderer";
+import { renderLabelToCanvas, rotateCanvas, PrintRotation } from "@/lib/labelRenderer";
 import { PDFDocument, degrees } from "pdf-lib";
 
 type Step = "matching" | "review" | "printer" | "printing" | "summary";
@@ -34,6 +34,25 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
   const [selectedPrinter, setSelectedPrinter] = useState<string>("");
   const [successfulJobs, setSuccessfulJobs] = useState<PrintQueueItem[]>([]);
   const [failedJobs, setFailedJobs] = useState<PrintQueueItem[]>([]);
+
+  // Print rotation state (0 = normal, 90 = clockwise, 270 = counter-clockwise)
+  // Defaults to 90 if template is landscape (width > height), which is standard for 50x100mm thermal rolls
+  const [printRotation, setPrintRotationState] = useState<PrintRotation>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("label_print_rotation");
+      if (saved === "90" || saved === "180" || saved === "270" || saved === "0") {
+        return Number(saved) as PrintRotation;
+      }
+    }
+    return (template && (template.settings.widthMm || 100) > (template.settings.heightMm || 50)) ? 90 : 0;
+  });
+
+  const setPrintRotation = useCallback((rot: PrintRotation) => {
+    setPrintRotationState(rot);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("label_print_rotation", String(rot));
+    }
+  }, []);
 
   const refreshPrinters = useCallback(async () => {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -190,15 +209,22 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           masterSku: item.lookupSku,
           title: item.lookupSku,
         };
-        const canvas = await renderLabelToCanvas(template, productData, undefined, false);
+        const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
+        const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
         const dataUrl = canvas.toDataURL("image/png");
         const cleanBase64 = dataUrl.split(",")[1];
         const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
 
+        const isPerpendicular = printRotation === 90 || printRotation === 270;
+        const effectiveWidthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
+        const effectiveHeightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
+
+        const MM_TO_PT = 72 / 25.4;
+        const widthPoints = effectiveWidthMm * MM_TO_PT;
+        const heightPoints = effectiveHeightMm * MM_TO_PT;
+
         const pdfDoc = await PDFDocument.create();
         const embeddedImage = await pdfDoc.embedPng(imageBytes);
-        const widthPoints = (template.settings.widthMm || 100) / 25.4 * 72;
-        const heightPoints = (template.settings.heightMm || 50) / 25.4 * 72;
         const page = pdfDoc.addPage([widthPoints, heightPoints]);
         page.drawImage(embeddedImage, {
           x: 0,
@@ -266,8 +292,9 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     const succeeded: PrintQueueItem[] = [];
     const failed: PrintQueueItem[] = [];
 
-    const widthMm = template.settings.widthMm || 100;
-    const heightMm = template.settings.heightMm || 50;
+    const isPerpendicular = printRotation === 90 || printRotation === 270;
+    const widthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
+    const heightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
 
     // Create a hidden print container
     const printContainer = document.createElement("div");
@@ -343,7 +370,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
             masterSku: item.lookupSku,
             title: item.lookupSku,
           };
-          const canvas = await renderLabelToCanvas(template, productData, undefined, false);
+          const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
+          const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
           
           const pageDiv = document.createElement("div");
           pageDiv.className = "print-page";
@@ -454,5 +482,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     startPrinting,
     printViaBrowser,
     retryFailed,
+    printRotation,
+    setPrintRotation,
   };
 }

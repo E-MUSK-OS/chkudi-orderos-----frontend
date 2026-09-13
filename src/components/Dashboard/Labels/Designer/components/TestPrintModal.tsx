@@ -19,7 +19,7 @@ import {
   isThermalOrLabelPrinter,
   PrinterDetail,
 } from "../../services/printAgent.service";
-import { renderLabelToCanvas, ProductLookupResult } from "@/lib/labelRenderer";
+import { renderLabelToCanvas, rotateCanvas, PrintRotation, ProductLookupResult } from "@/lib/labelRenderer";
 import { PDFDocument } from "pdf-lib";
 import { labelService } from "../../services/label.service";
 import { toast } from "sonner";
@@ -45,7 +45,26 @@ export function TestPrintModal({
     "checking" | "online" | "extension-missing" | "no-printers" | "error"
   >("checking");
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
-  const [isRenderingPreview, setIsRenderingPreview] = useState<boolean>(false);
+  const [isRenderingPreview, setIsRenderingPreview] = useState<boolean>(true);
+
+  // Print rotation state (0 = normal, 90 = clockwise, 270 = counter-clockwise)
+  // Defaults to 90 if template is landscape (width > height), which is standard for 50x100mm thermal rolls
+  const [printRotation, setPrintRotation] = useState<PrintRotation>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("label_print_rotation");
+      if (saved === "90" || saved === "180" || saved === "270" || saved === "0") {
+        return Number(saved) as PrintRotation;
+      }
+    }
+    return (template && (template.settings.widthMm || 100) > (template.settings.heightMm || 50)) ? 90 : 0;
+  });
+
+  const handleRotationChange = (rot: PrintRotation) => {
+    setPrintRotation(rot);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("label_print_rotation", String(rot));
+    }
+  };
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -126,12 +145,13 @@ export function TestPrintModal({
       .then((renderedCanvas) => {
         if (!isMounted || !canvasRef.current) return;
         const targetCanvas = canvasRef.current;
-        targetCanvas.width = renderedCanvas.width;
-        targetCanvas.height = renderedCanvas.height;
+        const finalCanvas = printRotation ? rotateCanvas(renderedCanvas, printRotation) : renderedCanvas;
+        targetCanvas.width = finalCanvas.width;
+        targetCanvas.height = finalCanvas.height;
         const ctx = targetCanvas.getContext("2d");
         if (ctx) {
           ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-          ctx.drawImage(renderedCanvas, 0, 0);
+          ctx.drawImage(finalCanvas, 0, 0);
         }
       })
       .catch((err) => {
@@ -144,7 +164,7 @@ export function TestPrintModal({
     return () => {
       isMounted = false;
     };
-  }, [open, template, previewData]);
+  }, [open, template, previewData, printRotation]);
 
   // Handle Silent Print via PrintBridge Chrome Extension
   const handleSilentPrint = async () => {
@@ -162,7 +182,8 @@ export function TestPrintModal({
       }
 
       // Render 1:1 canvas for thermal printing
-      const canvas = await renderLabelToCanvas(template, productData, undefined, false);
+      const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
+      const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
       const dataUrl = canvas.toDataURL("image/png");
       const cleanBase64 = dataUrl.split(",")[1];
       const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
@@ -170,9 +191,13 @@ export function TestPrintModal({
       const pdfDoc = await PDFDocument.create();
       const embeddedImage = await pdfDoc.embedPng(imageBytes);
 
+      const isPerpendicular = printRotation === 90 || printRotation === 270;
+      const effectiveWidthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
+      const effectiveHeightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
+
       const MM_TO_PT = 72 / 25.4;
-      const widthPoints = (template.settings.widthMm || 100) * MM_TO_PT;
-      const heightPoints = (template.settings.heightMm || 50) * MM_TO_PT;
+      const widthPoints = effectiveWidthMm * MM_TO_PT;
+      const heightPoints = effectiveHeightMm * MM_TO_PT;
 
       const page = pdfDoc.addPage([widthPoints, heightPoints]);
       page.drawImage(embeddedImage, {
@@ -217,10 +242,12 @@ export function TestPrintModal({
   const handleBrowserPrint = async () => {
     setIsPrinting(true);
     try {
-      const widthMm = template.settings.widthMm || 100;
-      const heightMm = template.settings.heightMm || 50;
+      const isPerpendicular = printRotation === 90 || printRotation === 270;
+      const widthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
+      const heightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
 
-      const canvas = await renderLabelToCanvas(template, productData, undefined, false);
+      const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
+      const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
       const dataUrl = canvas.toDataURL("image/png");
 
       const printContainer = document.createElement("div");
@@ -497,6 +524,36 @@ export function TestPrintModal({
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Print Orientation Selection */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+              Print Orientation / દિશા
+            </label>
+            <span className="text-[11px] text-slate-500 font-medium">૫૦×૧૦૦mm રોલ માટે Rotate 90° સિલેક્ટ કરો</span>
+          </div>
+          <ReactSelect
+            menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
+            options={[
+              { label: "Rotate 90° Clockwise (આડી પ્રિન્ટ / 50×100 Roll)", value: "90" },
+              { label: "Rotate 270° Counter-Clockwise (આડી પ્રિન્ટ)", value: "270" },
+              { label: "Normal (0° - સીધી પ્રિન્ટ)", value: "0" },
+            ]}
+            value={{
+              label:
+                printRotation === 90
+                  ? "Rotate 90° Clockwise (આડી પ્રિન્ટ / 50×100 Roll)"
+                  : printRotation === 270
+                  ? "Rotate 270° Counter-Clockwise (આડી પ્રિન્ટ)"
+                  : "Normal (0° - સીધી પ્રિન્ટ)",
+              value: String(printRotation),
+            }}
+            onChange={(opt) => handleRotationChange(Number(opt?.value || 0) as PrintRotation)}
+            borderRadius={6}
+            height={42}
+          />
         </div>
 
         {/* Action Buttons */}

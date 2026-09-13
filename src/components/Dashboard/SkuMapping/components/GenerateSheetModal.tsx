@@ -22,7 +22,7 @@ import PrintExecutionModal from "@/components/Dashboard/Labels/components/PrintE
 import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
 import { chromeExtensionPrintService, resolveCurrentlyConnectedPrinter } from "@/components/Dashboard/Labels/services/printAgent.service";
 import { labelService } from "@/components/Dashboard/Labels/services/label.service";
-import { renderLabelToCanvas } from "@/lib/labelRenderer";
+import { renderLabelToCanvas, rotateCanvas, PrintRotation } from "@/lib/labelRenderer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BadgeCheck } from "lucide-react";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
@@ -209,10 +209,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const matches = await labelService.lookupProduct(query);
           const product = matches.length > 0 ? matches[0] : {};
 
-          // Render canvas WITHOUT rotation — label stays in its natural orientation.
-          // SumatraPDF is configured with -print-settings noscale so it will not
-          // auto-rotate or scale. The PDF page dimensions match the label exactly.
-          const canvas = await renderLabelToCanvas(template, product, undefined, false);
+          const rotationSaved = typeof window !== "undefined" ? localStorage.getItem("label_print_rotation") : null;
+          const shouldRotate90 = rotationSaved === "90" || (!rotationSaved && (template.settings.widthMm || 100) > (template.settings.heightMm || 50));
+          const printRot: PrintRotation = shouldRotate90 ? 90 : 0;
+
+          const baseCanvas = await renderLabelToCanvas(template, product, undefined, false);
+          const canvas = printRot ? rotateCanvas(baseCanvas, printRot) : baseCanvas;
           const dataUrl = canvas.toDataURL("image/png");
           const cleanBase64 = dataUrl.split(",")[1];
           const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
@@ -220,9 +222,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const pdfDoc = await PDFDocument.create();
           const embeddedImage = await pdfDoc.embedPng(imageBytes);
 
+          const isPerpendicular = printRot === 90;
+          const effectiveWidthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
+          const effectiveHeightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
+
           const MM_TO_PT = 72 / 25.4;
-          const widthPoints = (template.settings.widthMm || 100) * MM_TO_PT;
-          const heightPoints = (template.settings.heightMm || 50) * MM_TO_PT;
+          const widthPoints = effectiveWidthMm * MM_TO_PT;
+          const heightPoints = effectiveHeightMm * MM_TO_PT;
 
           const page = pdfDoc.addPage([widthPoints, heightPoints]);
           page.drawImage(embeddedImage, { x: 0, y: 0, width: widthPoints, height: heightPoints });

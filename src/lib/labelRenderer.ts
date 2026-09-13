@@ -516,3 +516,39 @@ export const createLabelDom = (
 
   return page;
 };
+
+export type PrintRotation = 0 | 90 | 180 | 270;
+
+export const rotateCanvas = (
+  srcCanvas: HTMLCanvasElement,
+  rotation: PrintRotation
+): HTMLCanvasElement => {
+  if (!rotation) return srcCanvas;
+
+  const rotCanvas = document.createElement("canvas");
+  const isPerpendicular = rotation === 90 || rotation === 270;
+  rotCanvas.width = isPerpendicular ? srcCanvas.height : srcCanvas.width;
+  rotCanvas.height = isPerpendicular ? srcCanvas.width : srcCanvas.height;
+
+  const ctx = rotCanvas.getContext("2d");
+  if (!ctx) return srcCanvas;
+
+  ctx.save();
+  if (rotation === 90) {
+    // 90 deg clockwise (rotates landscape 100x50 to fit 50x100 vertical roll)
+    ctx.translate(rotCanvas.width, 0);
+    ctx.rotate((90 * Math.PI) / 180);
+  } else if (rotation === 180) {
+    ctx.translate(rotCanvas.width, rotCanvas.height);
+    ctx.rotate(Math.PI);
+  } else if (rotation === 270) {
+    // 90 deg counter-clockwise
+    ctx.translate(0, rotCanvas.height);
+    ctx.rotate((-90 * Math.PI) / 180);
+  }
+
+  ctx.drawImage(srcCanvas, 0, 0);
+  ctx.restore();
+
+  return rotCanvas;
+};
