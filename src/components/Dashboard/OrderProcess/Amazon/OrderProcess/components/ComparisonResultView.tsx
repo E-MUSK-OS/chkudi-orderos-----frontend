@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import MissingSkuModal from "./MissingSkuModal";
 import {
@@ -22,6 +22,8 @@ import {
   Filter,
   Eye,
   EyeOff,
+  ShieldAlert,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
@@ -42,6 +44,7 @@ import { getOrLoadCombinedDoc, getCachedAmazonDocs, clearCachedAmazonDocs, getDo
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
+import { amazonOrderService } from "../services/amazonOrder.service";
 import { AmazonOrderType } from "../types";
 import {
   generateAmazonPicklist,
@@ -438,114 +441,144 @@ export default function ComparisonResultView({
   >(new Map());
   const [isMappingsLoading, setIsMappingsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchAsinMappings() {
-      setIsMappingsLoading(true);
+  // Missing SKU modal state
+  const [isMissingSkuModalOpen, setIsMissingSkuModalOpen] = useState(false);
+  const [modalMissingAsins, setModalMissingAsins] = useState<string[]>([]);
+
+  // Strictly compute unique missing ASINs across all matched orders
+  const computeMissingAsins = useCallback((currentMap: Map<string, string>) => {
+    const missing = new Set<string>();
+    results.forEach((item) => {
+      if (!item.isMatch || !item.asin) return;
+      const rawAsins = item.asin.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
+      rawAsins.forEach((asin) => {
+        const norm = asin.toUpperCase();
+        if (norm === "N/A" || norm === "-") return;
+        const sku = currentMap.get(norm)?.trim();
+        if (!sku || sku === "N/A" || sku === "-") {
+          missing.add(norm);
+        }
+      });
+    });
+    return Array.from(missing);
+  }, [results]);
+
+  // Refetch ASIN mappings from database (AsinImport, Products, Variants)
+  const fetchAsinMappings = useCallback(async (): Promise<{ success: boolean; remainingCount: number }> => {
+    setIsMappingsLoading(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
+      const map = new Map<string, string>();
+      const detailsMap = new Map<string, { rackAddress?: string; generateBarcode?: string }>();
+
+      // 1. Primary: Fetch from AsinImport table
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
-        const map = new Map<string, string>();
-        const detailsMap = new Map<string, { rackAddress?: string; generateBarcode?: string }>();
+        const asinRes = await asinImportService.getAll("", token);
+        if (asinRes?.data && Array.isArray(asinRes.data)) {
+          asinRes.data.forEach((item) => {
+            const cleanAsin = item.asin ? item.asin.trim().toUpperCase() : "";
+            const cleanSku = item.sku ? item.sku.trim() : "";
+            const normSku = cleanSku.toUpperCase();
+            const details = {
+              rackAddress: item.rackAddress ? item.rackAddress.trim() : "",
+              generateBarcode: item.generateBarcode ? item.generateBarcode.trim() : "",
+            };
 
-        // 1. Primary: Fetch from AsinImport table
-        try {
-          const asinRes = await asinImportService.getAll("", token);
-          if (asinRes?.data && Array.isArray(asinRes.data)) {
-            asinRes.data.forEach((item) => {
-              const cleanAsin = item.asin ? item.asin.trim().toUpperCase() : "";
-              const cleanSku = item.sku ? item.sku.trim() : "";
-              const normSku = cleanSku.toUpperCase();
-              const details = {
-                rackAddress: item.rackAddress ? item.rackAddress.trim() : "",
-                generateBarcode: item.generateBarcode ? item.generateBarcode.trim() : "",
-              };
-
-              if (cleanAsin) {
-                map.set(cleanAsin, cleanSku);
-                detailsMap.set(cleanAsin, details);
-              }
-              if (normSku) {
-                detailsMap.set(normSku, details);
-              }
-            });
-          }
-        } catch (aErr) {
-          console.warn("Could not fetch AsinImports:", aErr);
+            if (cleanAsin) {
+              map.set(cleanAsin, cleanSku);
+              detailsMap.set(cleanAsin, details);
+            }
+            if (normSku) {
+              detailsMap.set(normSku, details);
+            }
+          });
         }
-
-        // 2. Fallback: Check products table (masterSku)
-        try {
-          const prodRes = await productService.getAll(token);
-          if (prodRes?.data && Array.isArray(prodRes.data)) {
-            prodRes.data.forEach((prod) => {
-              const cleanAsin = prod.asin ? prod.asin.trim().toUpperCase() : "";
-              const cleanSku = prod.masterSku ? prod.masterSku.trim() : "";
-              const normSku = cleanSku.toUpperCase();
-              const rack = prod.rackAddress ? prod.rackAddress.trim() : "";
-
-              const barcode = prod.generateBarcode ? prod.generateBarcode.trim() : "";
-
-              if (cleanAsin && !map.has(cleanAsin)) {
-                map.set(cleanAsin, cleanSku);
-              }
-              if (rack || barcode) {
-                if (normSku && !detailsMap.has(normSku)) {
-                  detailsMap.set(normSku, { rackAddress: rack, generateBarcode: barcode });
-                }
-                if (cleanAsin && !detailsMap.has(cleanAsin)) {
-                  detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: barcode });
-                }
-              }
-            });
-          }
-        } catch (pErr) {
-          console.warn("Could not fetch products for ASIN mapping:", pErr);
-        }
-
-        // 3. Fallback: Check product variants table (variantSku)
-        try {
-          const varRes = await productVariantService.getAll(token);
-          if (varRes?.data && Array.isArray(varRes.data)) {
-            varRes.data.forEach((variant) => {
-              const cleanAsin = variant.asin ? variant.asin.trim().toUpperCase() : "";
-              const cleanSku = variant.variantSku ? variant.variantSku.trim() : "";
-              const normSku = cleanSku.toUpperCase();
-              const rack = variant.rackAddress ? variant.rackAddress.trim() : "";
-
-              if (cleanAsin && !map.has(cleanAsin)) {
-                map.set(cleanAsin, cleanSku);
-              }
-              if (rack) {
-                if (normSku && !detailsMap.has(normSku)) {
-                  detailsMap.set(normSku, { rackAddress: rack, generateBarcode: "" });
-                }
-                if (cleanAsin && !detailsMap.has(cleanAsin)) {
-                  detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: "" });
-                }
-              }
-            });
-          }
-        } catch (vErr) {
-          console.warn("Could not fetch product variants for ASIN mapping:", vErr);
-        }
-
-        if (isMounted) {
-          setAsinToSkuMap(map);
-          setSkuDetailsMap(detailsMap);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch ASIN mappings:", err);
-      } finally {
-        if (isMounted) {
-          setIsMappingsLoading(false);
-        }
+      } catch (aErr) {
+        console.warn("Could not fetch AsinImports:", aErr);
       }
+
+      // 2. Fallback: Check products table (masterSku)
+      try {
+        const prodRes = await productService.getAll(token);
+        if (prodRes?.data && Array.isArray(prodRes.data)) {
+          prodRes.data.forEach((prod) => {
+            const cleanAsin = prod.asin ? prod.asin.trim().toUpperCase() : "";
+            const cleanSku = prod.masterSku ? prod.masterSku.trim() : "";
+            const normSku = cleanSku.toUpperCase();
+            const rack = prod.rackAddress ? prod.rackAddress.trim() : "";
+            const barcode = prod.generateBarcode ? prod.generateBarcode.trim() : "";
+
+            if (cleanAsin && !map.has(cleanAsin)) {
+              map.set(cleanAsin, cleanSku);
+            }
+            if (rack || barcode) {
+              if (normSku && !detailsMap.has(normSku)) {
+                detailsMap.set(normSku, { rackAddress: rack, generateBarcode: barcode });
+              }
+              if (cleanAsin && !detailsMap.has(cleanAsin)) {
+                detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: barcode });
+              }
+            }
+          });
+        }
+      } catch (pErr) {
+        console.warn("Could not fetch products for ASIN mapping:", pErr);
+      }
+
+      // 3. Fallback: Check product variants table (variantSku)
+      try {
+        const varRes = await productVariantService.getAll(token);
+        if (varRes?.data && Array.isArray(varRes.data)) {
+          varRes.data.forEach((variant) => {
+            const cleanAsin = variant.asin ? variant.asin.trim().toUpperCase() : "";
+            const cleanSku = variant.variantSku ? variant.variantSku.trim() : "";
+            const normSku = cleanSku.toUpperCase();
+            const rack = variant.rackAddress ? variant.rackAddress.trim() : "";
+
+            if (cleanAsin && !map.has(cleanAsin)) {
+              map.set(cleanAsin, cleanSku);
+            }
+            if (rack) {
+              if (normSku && !detailsMap.has(normSku)) {
+                detailsMap.set(normSku, { rackAddress: rack, generateBarcode: "" });
+              }
+              if (cleanAsin && !detailsMap.has(cleanAsin)) {
+                detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: "" });
+              }
+            }
+          });
+        }
+      } catch (vErr) {
+        console.warn("Could not fetch product variants for ASIN mapping:", vErr);
+      }
+
+      setAsinToSkuMap(map);
+      setSkuDetailsMap(detailsMap);
+
+      const stillMissing = computeMissingAsins(map);
+      setModalMissingAsins(stillMissing);
+
+      if (stillMissing.length === 0) {
+        // Clear cached PDF document so newly resolved Seller SKUs will be printed!
+        clearCachedAmazonDocs();
+        loadedPdfDocsRef.current = null;
+        setIsMissingSkuModalOpen(false);
+        return { success: true, remainingCount: 0 };
+      } else {
+        setIsMissingSkuModalOpen(true);
+        return { success: false, remainingCount: stillMissing.length };
+      }
+    } catch (err) {
+      console.warn("Failed to fetch ASIN mappings:", err);
+      return { success: false, remainingCount: modalMissingAsins.length };
+    } finally {
+      setIsMappingsLoading(false);
     }
+  }, [computeMissingAsins, modalMissingAsins.length]);
+
+  useEffect(() => {
     fetchAsinMappings();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  }, [fetchAsinMappings]);
 
   // Map each order item's ASIN to the corresponding variantSku from DB
   const mappedResults = useMemo(() => {
@@ -564,42 +597,23 @@ export default function ComparisonResultView({
   }, [results, asinToSkuMap]);
 
   const router = useRouter();
-  const hasAlertedRef = useRef(false);
 
-  // Missing SKU modal state
-  const [isMissingSkuModalOpen, setIsMissingSkuModalOpen] = useState(false);
-  const [modalMissingAsins, setModalMissingAsins] = useState<string[]>([]);
-
-  // Missing SKU items detection
+  // Missing SKU items detection: strictly checks if sellerSku is missing or any part is N/A
   const missingSkuItems = useMemo(() => {
-    return mappedResults.filter(
-      (item) => item.isMatch && (!item.sellerSku || item.sellerSku === "N/A" || item.sellerSku === "-")
-    );
+    return mappedResults.filter((item) => {
+      if (!item.isMatch) return false;
+      if (!item.sellerSku || item.sellerSku === "N/A" || item.sellerSku === "-") return true;
+      const parts = item.sellerSku.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim());
+      return parts.some((p) => !p || p === "N/A" || p === "-");
+    });
   }, [mappedResults]);
 
-  // Modal trigger function for missing Seller SKU
-  const triggerMissingSkuAlert = (items = missingSkuItems) => {
-    if (items.length === 0) return;
-
-    const uniqueAsins = Array.from(
-      new Set(
-        items
-          .flatMap((i) => (i.asin ? i.asin.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()) : []))
-          .filter((a): a is string => Boolean(a && a !== "N/A" && a !== "-"))
-      )
-    );
-    if (uniqueAsins.length === 0) return;
-    setModalMissingAsins(uniqueAsins);
-    setIsMissingSkuModalOpen(true);
-  };
-
-  // Show Missing SKU modal automatically once ONLY AFTER mappings are fully loaded and genuine missing SKUs exist
+  // Automatically keep modal open as long as genuine missing ASINs exist and mappings are loaded
   useEffect(() => {
-    if (!isMappingsLoading && missingSkuItems.length > 0 && !hasAlertedRef.current) {
-      hasAlertedRef.current = true;
-      triggerMissingSkuAlert(missingSkuItems);
+    if (!isMappingsLoading && modalMissingAsins.length > 0) {
+      setIsMissingSkuModalOpen(true);
     }
-  }, [missingSkuItems, isMappingsLoading]);
+  }, [isMappingsLoading, modalMissingAsins.length]);
 
   // Helper to get item's order type (with client fallback)
   const getOrderTypeForItem = (item: (typeof results)[0]): AmazonOrderType => {
@@ -833,6 +847,12 @@ export default function ComparisonResultView({
   };
 
   const executePrintForItems = async (targetResults: typeof mappedResults) => {
+    if (modalMissingAsins.length > 0) {
+      toast.error(`Cannot print orders: ${modalMissingAsins.length} ASIN(s) are missing Seller SKU. Please resolve missing SKUs first.`);
+      setIsMissingSkuModalOpen(true);
+      return;
+    }
+
     if (targetResults.length === 0) {
       toast.error('No orders found to print.');
       return;
@@ -1092,6 +1112,30 @@ export default function ComparisonResultView({
           targetResults.forEach((r) => next.delete(r.index));
           return next;
         });
+
+        // Automatically store printed Amazon orders in backend database (7-day retention)
+        try {
+          const ordersToSave = targetResults.map((item) => ({
+            invoice:
+              item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF"
+                ? item.pdfInvoice
+                : item.zplInvoice && item.zplInvoice !== "Not Found in ZPL"
+                ? item.zplInvoice
+                : "N/A",
+            orderId: item.orderNumber || "N/A",
+            awb: item.awb || "N/A",
+            asin: item.asin || "N/A",
+            sellerSku: item.sellerSku || "N/A",
+            customer: cleanCustomerName(item.customer) || "N/A",
+            packingScanStatus: "PENDING" as const,
+          }));
+
+          amazonOrderService.savePrintedOrders(ordersToSave).catch((saveErr) => {
+            console.warn("Background Amazon order save error:", saveErr);
+          });
+        } catch (savePrepErr) {
+          console.warn("Failed to prepare Amazon orders for database saving:", savePrepErr);
+        }
       } catch (printLoopErr: any) {
         throw printLoopErr;
       }
@@ -1150,6 +1194,12 @@ export default function ComparisonResultView({
   };
 
   const handlePrintSelected = async () => {
+    if (modalMissingAsins.length > 0) {
+      toast.error(`Cannot print orders: ${modalMissingAsins.length} ASIN(s) are missing Seller SKU.`);
+      setIsMissingSkuModalOpen(true);
+      return;
+    }
+
     if (selectedRows.size === 0) {
       toast.error('Please select at least one order to print.');
       return;
@@ -1160,6 +1210,12 @@ export default function ComparisonResultView({
   };
 
   const handleGeneratePicklist = () => {
+    if (modalMissingAsins.length > 0) {
+      toast.error(`Cannot generate picklist: ${modalMissingAsins.length} ASIN(s) are missing Seller SKU.`);
+      setIsMissingSkuModalOpen(true);
+      return;
+    }
+
     // If specific rows are selected, use selected rows; otherwise fallback to ALL matched orders
     const targetSet =
       selectedRows.size > 0
@@ -1338,6 +1394,12 @@ export default function ComparisonResultView({
   const handleAutoPrintSearch = async (query: string) => {
     const q = query.trim();
     if (!q) return;
+
+    if (modalMissingAsins.length > 0) {
+      toast.error(`Scanning locked: ${modalMissingAsins.length} ASIN(s) are missing Seller SKU. Please resolve SKUs first.`);
+      setIsMissingSkuModalOpen(true);
+      return;
+    }
 
     // Immediately select all written text when user leaves writing / submits
     autoPrintInputRef.current?.focus();
@@ -1602,6 +1664,33 @@ export default function ComparisonResultView({
             </button>
           </div>
         </div>
+
+        {/* Persistent Warning Banner if any Seller SKU is missing */}
+        {modalMissingAsins.length > 0 && (
+          <div className="mt-5 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-rose-100 text-rose-700">
+                <ShieldAlert className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-rose-900">
+                  Strict Guard Active: {modalMissingAsins.length} ASIN(s) Missing Seller SKU
+                </h4>
+                <p className="text-xs text-rose-700">
+                  Order dispatch and label printing are locked until all Seller SKUs are mapped in Products.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMissingSkuModalOpen(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A0E1A] hover:bg-[#1b253b] px-4 py-2 text-xs font-bold text-[#E8C16D] shadow-sm transition active:scale-95 cursor-pointer"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              <span>Resolve Missing SKUs ({modalMissingAsins.length})</span>
+            </button>
+          </div>
+        )}
 
         {/* =================================================== */}
         {/* STATS CARDS */}
@@ -1921,7 +2010,7 @@ export default function ComparisonResultView({
               {missingSkuItems.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => triggerMissingSkuAlert(missingSkuItems)}
+                  onClick={() => setIsMissingSkuModalOpen(true)}
                   className="inline-flex h-11 sm:h-14 w-full sm:w-auto items-center justify-center border border-red-500/50 bg-red-500/10 px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
                   title="Click to view ASINs missing Seller SKU in database"
                 >
@@ -2385,6 +2474,8 @@ export default function ComparisonResultView({
         isOpen={isMissingSkuModalOpen}
         onClose={() => setIsMissingSkuModalOpen(false)}
         missingAsins={modalMissingAsins}
+        onRefreshMappings={fetchAsinMappings}
+        onReset={handleReset}
       />
     </div>
   );

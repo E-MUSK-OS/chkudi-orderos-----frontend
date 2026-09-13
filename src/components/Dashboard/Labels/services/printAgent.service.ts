@@ -349,7 +349,7 @@ export const chromeExtensionPrintService = {
               return reject(
                 new Error(
                   chrome.runtime.lastError.message ||
-                    "Failed to communicate with Chrome print extension"
+                  "Failed to communicate with Chrome print extension"
                 )
               );
             }
