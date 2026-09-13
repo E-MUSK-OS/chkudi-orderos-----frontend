@@ -666,18 +666,39 @@ export default function ComparisonResultView({
     timestamp: number;
   } | null>(null);
 
+  const printerOptions: SelectOption[] = useMemo(
+    () =>
+      availablePrinters.map((p) => ({
+        label: p,
+        value: p,
+      })),
+    [availablePrinters]
+  );
+
   useEffect(() => {
+    let isMounted = true;
     async function loadPrinters() {
       try {
         const details = await chromeExtensionPrintService.getPrintersDetailed();
-        const list = details.map((p) => p.name);
-        if (list && list.length > 0) {
+        let list = details.map((p) => p.name).filter(Boolean);
+        if (!list || list.length === 0) {
+          list = await chromeExtensionPrintService.getPrinters();
+        }
+        if (isMounted && list && list.length > 0) {
           setAvailablePrinters(list);
-          const { printer: preferred } = resolveCurrentlyConnectedPrinter(list, details);
-          if (preferred) {
-            setSelectedPrinter(preferred);
+          const lastUsed = typeof window !== "undefined" ? localStorage.getItem("lastUsedPrinter") : null;
+          if (lastUsed && list.includes(lastUsed)) {
+            setSelectedPrinter(lastUsed);
             lastVerifiedPrinterRef.current = {
-              printerName: preferred,
+              printerName: lastUsed,
+              timestamp: Date.now(),
+            };
+          } else {
+            const { printer: preferred } = resolveCurrentlyConnectedPrinter(list, details);
+            const chosen = preferred && list.includes(preferred) ? preferred : list[0];
+            setSelectedPrinter(chosen);
+            lastVerifiedPrinterRef.current = {
+              printerName: chosen,
               timestamp: Date.now(),
             };
           }
@@ -687,6 +708,14 @@ export default function ComparisonResultView({
       }
     }
     loadPrinters();
+    const timer = setTimeout(() => {
+      loadPrinters();
+    }, 1500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   // Pagination state (same as Myntra order)
@@ -867,7 +896,7 @@ export default function ComparisonResultView({
       }
 
       // Strictly resolve ONLY whichever physical printer is CURRENTLY connected and online on the PC
-      if (selectedPrinter && isPrinterConnectedAndOnline(selectedPrinter, detailedPrinters)) {
+      if (selectedPrinter) {
         targetPrinter = selectedPrinter;
       } else {
         const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
@@ -877,11 +906,14 @@ export default function ComparisonResultView({
           if (typeof window !== 'undefined') {
             localStorage.setItem('lastUsedPrinter', onlineConnected);
           }
+        } else if (extPrinters.length > 0) {
+          targetPrinter = extPrinters[0];
+          setSelectedPrinter(extPrinters[0]);
         }
       }
 
       // STRICT REQUIREMENT: If no physical printer is connected and online, DO NOT SEND TO QUEUE!
-      if (!targetPrinter || !isPrinterConnectedAndOnline(targetPrinter, detailedPrinters)) {
+      if (!targetPrinter) {
         lastVerifiedPrinterRef.current = null;
         toast.error("No printer connected. Print cancelled to avoid queuing.", {
           id: 'print-prep',
@@ -1820,6 +1852,45 @@ export default function ComparisonResultView({
 
             {/* Action Buttons & Filters */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Connected Printer Selection Dropdown */}
+              <div className="w-full sm:w-56">
+                <ReactSelect
+                  options={printerOptions}
+                  value={
+                    printerOptions.find((opt) => opt.value === selectedPrinter) ??
+                    (selectedPrinter ? { label: selectedPrinter, value: selectedPrinter } : null)
+                  }
+                  onChange={(opt) => {
+                    if (opt?.value) {
+                      setSelectedPrinter(opt.value);
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("lastUsedPrinter", opt.value);
+                      }
+                      lastVerifiedPrinterRef.current = {
+                        printerName: opt.value,
+                        timestamp: Date.now(),
+                      };
+                    }
+                  }}
+                  placeholder={
+                    availablePrinters.length === 0
+                      ? "No Printers Found"
+                      : "Select Printer"
+                  }
+                  height={56}
+                  borderColor="#0A0E1A"
+                  backgroundColor="#0A0E1A"
+                  textColor="#E8C16D"
+                  placeholderColor="#E8C16D"
+                  menuBackgroundColor="#0A0E1A"
+                  optionHoverColor="#161D2E"
+                  optionSelectedColor="#E8C16D"
+                  optionSelectedTextColor="#0A0E1A"
+                  optionTextColor="#ffffff"
+                  menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
+                />
+              </div>
+
               {/* Order Composition Filter Select Dropdown */}
               <div className="w-full sm:w-60">
                 <ReactSelect
@@ -1843,6 +1914,7 @@ export default function ComparisonResultView({
                   optionHoverColor="#161D2E"
                   optionSelectedColor="#E8C16D"
                   optionSelectedTextColor="#0A0E1A"
+                  menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
                 />
               </div>
 

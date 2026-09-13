@@ -62,9 +62,10 @@ export default function ReactSelect({
       height,
       borderRadius,
       borderColor: state.isFocused ? borderColor : borderColor,
-      backgroundColor,
+      backgroundColor: state.isDisabled ? "#F3F4F6" : backgroundColor,
       boxShadow: "none",
-      cursor: "pointer",
+      cursor: state.isDisabled ? "not-allowed" : "pointer",
+      opacity: state.isDisabled ? 0.7 : 1,
       "&:hover": {
         borderColor,
       },
@@ -113,6 +114,11 @@ export default function ReactSelect({
       borderRadius,
       overflow: "hidden",
       zIndex: 100,
+    }),
+
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
     }),
 
     option: (base, state) => ({

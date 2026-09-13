@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { Loader2, Printer, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { LabelTemplate, ProductLookupResult } from "../types/label.types";
 import { GenerateRow, useLabelPrintJob } from "../hooks/useLabelPrintJob";
@@ -139,6 +140,13 @@ export default function PrintExecutionModal({
 
   const renderPrinter = () => {
     const labelCount = selectedForPrint.size > 0 ? selectedForPrint.size : queue.length;
+    const printerOptions: SelectOption[] = printers.map((p) => ({
+      label: p,
+      value: p,
+    }));
+    const currentPrinterOption =
+      printerOptions.find((p) => p.value === selectedPrinter) ??
+      (selectedPrinter ? { label: selectedPrinter, value: selectedPrinter } : null);
 
     return (
       <div className="flex flex-col space-y-6">
@@ -199,20 +207,22 @@ export default function PrintExecutionModal({
 
         <div className="space-y-2">
           <label className="text-sm font-semibold text-[#0A0E1A]">Printer</label>
-          <select
-            value={selectedPrinter}
-            onChange={(e) => setSelectedPrinter(e.target.value)}
-            disabled={!helperOnline || printers.length === 0}
-            className="w-full border rounded p-2 bg-white disabled:bg-slate-100 text-[#0A0E1A]"
-          >
-            {printers.length > 0 ? (
-              printers.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))
-            ) : (
-              <option value="">{helperOnline ? "No printers found" : "Offline"}</option>
-            )}
-          </select>
+          <ReactSelect
+            menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
+            options={printerOptions}
+            value={currentPrinterOption}
+            onChange={(opt) => setSelectedPrinter(opt?.value ?? "")}
+            isDisabled={!helperOnline || printers.length === 0}
+            placeholder={
+              !helperOnline
+                ? "Offline"
+                : printers.length === 0
+                ? "No printers found"
+                : "Select a printer..."
+            }
+            borderRadius={6}
+            height={44}
+          />
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">

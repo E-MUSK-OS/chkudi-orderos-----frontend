@@ -77,7 +77,44 @@ export const generateAmazonPicklist = (
     }
   );
 
-  items.sort((a, b) => a.sku.localeCompare(b.sku));
+  const normalizeRackAddress = (rack?: string | null): string => {
+    if (!rack) return "";
+    const trimmed = rack.trim().toUpperCase();
+    if (trimmed === "--" || trimmed === "-" || trimmed === "N/A" || trimmed === "NA") {
+      return "";
+    }
+    return trimmed;
+  };
+
+  items.sort((a, b) => {
+    const rackA = normalizeRackAddress(a.rackAddress);
+    const rackB = normalizeRackAddress(b.rackAddress);
+
+    // Both have valid rack addresses -> natural alphanumeric sort (A1, A2, ..., B1, ...)
+    if (rackA && rackB) {
+      const rackComparison = rackA.localeCompare(rackB, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (rackComparison !== 0) {
+        return rackComparison;
+      }
+      return a.sku.localeCompare(b.sku, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    }
+
+    // Items with assigned rack addresses come first ("pela A1, A2, ...")
+    if (rackA && !rackB) return -1;
+    if (!rackA && rackB) return 1;
+
+    // Both unassigned ("--") -> sort by SKU
+    return a.sku.localeCompare(b.sku, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
 
   return {
     items,
