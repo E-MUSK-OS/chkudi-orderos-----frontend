@@ -10,6 +10,7 @@ import {
   Search,
   Layers,
   FileText,
+  FileSpreadsheet,
   Barcode,
   RotateCcw,
   Sparkles,
@@ -48,10 +49,23 @@ import { amazonOrderService } from "../services/amazonOrder.service";
 import { AmazonOrderType } from "../types";
 import {
   generateAmazonPicklist,
-  downloadAmazonPicklistPDF,
+  downloadAmazonPicklistExcel,
 } from "../utils/generateAmazonPicklist";
 
-export type AmazonOrderTypeFilter = "all" | AmazonOrderType;
+export type AmazonOrderTypeFilter = AmazonOrderType;
+
+export const getOrderTypeLabel = (type: AmazonOrderType | AmazonOrderTypeFilter | string): string => {
+  switch (type) {
+    case "single_quantity":
+      return "Single Quantity";
+    case "multiple_asin":
+      return "Multiple ASIN";
+    case "multiple_pieces":
+      return "Multiple Pieces";
+    default:
+      return "Single Quantity";
+  }
+};
 export type AmazonPdfViewType =
   | "combined"
   | "zpl"
@@ -440,14 +454,29 @@ export default function ComparisonResultView({
   const orderScanProgressRef = useRef<Map<number, OrderItemRequirement[]>>(new Map());
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [printedRows, setPrintedRows] = useState<Set<number>>(new Set());
+  const printedRowsRef = useRef<Set<number>>(new Set());
+  const printQueuePromiseRef = useRef<Promise<void>>(Promise.resolve());
+  const orderPrintPdfCacheRef = useRef<Map<number, string>>(new Map());
+
+  const markRowsAsPrinted = useCallback((indices: number[]) => {
+    indices.forEach((idx) => printedRowsRef.current.add(idx));
+    setPrintedRows(new Set(printedRowsRef.current));
+  }, []);
+
+  const unmarkRowsAsPrinted = useCallback((indices: number[]) => {
+    indices.forEach((idx) => printedRowsRef.current.delete(idx));
+    setPrintedRows(new Set(printedRowsRef.current));
+  }, []);
+
   const [showPrinted, setShowPrinted] = useState(false);
-  const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("all");
+  const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("single_quantity");
 
   // Fetch ASIN to Seller SKU mapping from AsinImport table (primary), products, and variants (fallback)
   const [asinToSkuMap, setAsinToSkuMap] = useState<Map<string, string>>(new Map());
   const [skuDetailsMap, setSkuDetailsMap] = useState<
     Map<string, { rackAddress?: string; generateBarcode?: string }>
   >(new Map());
+  const skuDetailsMapRef = useRef<Map<string, { rackAddress?: string; generateBarcode?: string }>>(new Map());
   const [isMappingsLoading, setIsMappingsLoading] = useState(true);
 
   // Missing SKU modal state
@@ -480,25 +509,49 @@ export default function ComparisonResultView({
       const map = new Map<string, string>();
       const detailsMap = new Map<string, { rackAddress?: string; generateBarcode?: string }>();
 
+      const mergeDetails = (key: string, rack?: string | null, barcode?: string | null) => {
+        if (!key) return;
+        const trimmedKey = String(key).trim();
+        const normKey = trimmedKey.toUpperCase();
+        if (!normKey) return;
+
+        const cleanRack = rack && typeof rack === "string" ? rack.trim() : "";
+        const cleanBarcode = barcode && typeof barcode === "string" ? barcode.trim() : "";
+
+        const existing =
+          detailsMap.get(normKey) ||
+          detailsMap.get(trimmedKey) ||
+          { rackAddress: "", generateBarcode: "" };
+
+        const updated = {
+          rackAddress: cleanRack || existing.rackAddress || "",
+          generateBarcode: cleanBarcode || existing.generateBarcode || "",
+        };
+
+        detailsMap.set(normKey, updated);
+        if (trimmedKey !== normKey) {
+          detailsMap.set(trimmedKey, updated);
+        }
+      };
+
       // 1. Primary: Fetch from AsinImport table
       try {
         const asinRes = await asinImportService.getAll("", token);
         if (asinRes?.data && Array.isArray(asinRes.data)) {
-          asinRes.data.forEach((item) => {
-            const cleanAsin = item.asin ? item.asin.trim().toUpperCase() : "";
-            const cleanSku = item.sku ? item.sku.trim() : "";
-            const normSku = cleanSku.toUpperCase();
-            const details = {
-              rackAddress: item.rackAddress ? item.rackAddress.trim() : "",
-              generateBarcode: item.generateBarcode ? item.generateBarcode.trim() : "",
-            };
+          asinRes.data.forEach((item: any) => {
+            const cleanAsin = item.asin ? String(item.asin).trim().toUpperCase() : "";
+            const cleanSku = (item.sku ? String(item.sku).trim() : "") || (item.sellerSku ? String(item.sellerSku).trim() : "");
+            const rawRack = item.rackAddress || item.rack_address || item.rack || "";
+            const rawBarcode = item.generateBarcode || item.generate_barcode || item.generateBarCode || "";
 
-            if (cleanAsin) {
+            if (cleanAsin && cleanSku) {
               map.set(cleanAsin, cleanSku);
-              detailsMap.set(cleanAsin, details);
             }
-            if (normSku) {
-              detailsMap.set(normSku, details);
+            if (cleanAsin) {
+              mergeDetails(cleanAsin, rawRack, rawBarcode);
+            }
+            if (cleanSku) {
+              mergeDetails(cleanSku, rawRack, rawBarcode);
             }
           });
         }
@@ -510,23 +563,40 @@ export default function ComparisonResultView({
       try {
         const prodRes = await productService.getAll(token);
         if (prodRes?.data && Array.isArray(prodRes.data)) {
-          prodRes.data.forEach((prod) => {
-            const cleanAsin = prod.asin ? prod.asin.trim().toUpperCase() : "";
-            const cleanSku = prod.masterSku ? prod.masterSku.trim() : "";
-            const normSku = cleanSku.toUpperCase();
-            const rack = prod.rackAddress ? prod.rackAddress.trim() : "";
-            const barcode = prod.generateBarcode ? prod.generateBarcode.trim() : "";
+          prodRes.data.forEach((prod: any) => {
+            const cleanAsin = prod.asin ? String(prod.asin).trim().toUpperCase() : "";
+            const cleanSku = (prod.masterSku ? String(prod.masterSku).trim() : "") || (prod.sku ? String(prod.sku).trim() : "");
+            const rawRack = prod.rackAddress || prod.rack_address || prod.rack || "";
+            const rawBarcode = prod.generateBarcode || prod.generate_barcode || prod.generateBarCode || "";
 
-            if (cleanAsin && !map.has(cleanAsin)) {
+            if (cleanAsin && !map.has(cleanAsin) && cleanSku) {
               map.set(cleanAsin, cleanSku);
             }
-            if (rack || barcode) {
-              if (normSku && !detailsMap.has(normSku)) {
-                detailsMap.set(normSku, { rackAddress: rack, generateBarcode: barcode });
-              }
-              if (cleanAsin && !detailsMap.has(cleanAsin)) {
-                detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: barcode });
-              }
+            if (cleanAsin) {
+              mergeDetails(cleanAsin, rawRack, rawBarcode);
+            }
+            if (cleanSku) {
+              mergeDetails(cleanSku, rawRack, rawBarcode);
+            }
+
+            // Also check nested variants if any
+            if (Array.isArray(prod.variants)) {
+              prod.variants.forEach((v: any) => {
+                const vAsin = v.asin ? String(v.asin).trim().toUpperCase() : "";
+                const vSku = (v.variantSku ? String(v.variantSku).trim() : "") || (v.sku ? String(v.sku).trim() : "");
+                const vRack = v.rackAddress || v.rack_address || v.rack || "";
+                const vBarcode = v.generateBarcode || v.generate_barcode || v.generateBarCode || "";
+
+                if (vAsin && !map.has(vAsin) && vSku) {
+                  map.set(vAsin, vSku);
+                }
+                if (vAsin) {
+                  mergeDetails(vAsin, vRack, vBarcode);
+                }
+                if (vSku) {
+                  mergeDetails(vSku, vRack, vBarcode);
+                }
+              });
             }
           });
         }
@@ -538,22 +608,20 @@ export default function ComparisonResultView({
       try {
         const varRes = await productVariantService.getAll(token);
         if (varRes?.data && Array.isArray(varRes.data)) {
-          varRes.data.forEach((variant) => {
-            const cleanAsin = variant.asin ? variant.asin.trim().toUpperCase() : "";
-            const cleanSku = variant.variantSku ? variant.variantSku.trim() : "";
-            const normSku = cleanSku.toUpperCase();
-            const rack = variant.rackAddress ? variant.rackAddress.trim() : "";
+          varRes.data.forEach((variant: any) => {
+            const cleanAsin = variant.asin ? String(variant.asin).trim().toUpperCase() : "";
+            const cleanSku = (variant.variantSku ? String(variant.variantSku).trim() : "") || (variant.sku ? String(variant.sku).trim() : "");
+            const rawRack = variant.rackAddress || variant.rack_address || variant.rack || "";
+            const rawBarcode = variant.generateBarcode || variant.generate_barcode || variant.generateBarCode || "";
 
-            if (cleanAsin && !map.has(cleanAsin)) {
+            if (cleanAsin && !map.has(cleanAsin) && cleanSku) {
               map.set(cleanAsin, cleanSku);
             }
-            if (rack) {
-              if (normSku && !detailsMap.has(normSku)) {
-                detailsMap.set(normSku, { rackAddress: rack, generateBarcode: "" });
-              }
-              if (cleanAsin && !detailsMap.has(cleanAsin)) {
-                detailsMap.set(cleanAsin, { rackAddress: rack, generateBarcode: "" });
-              }
+            if (cleanAsin) {
+              mergeDetails(cleanAsin, rawRack, rawBarcode);
+            }
+            if (cleanSku) {
+              mergeDetails(cleanSku, rawRack, rawBarcode);
             }
           });
         }
@@ -561,6 +629,7 @@ export default function ComparisonResultView({
         console.warn("Could not fetch product variants for ASIN mapping:", vErr);
       }
 
+      skuDetailsMapRef.current = detailsMap;
       setAsinToSkuMap(map);
       setSkuDetailsMap(detailsMap);
 
@@ -568,9 +637,12 @@ export default function ComparisonResultView({
       setModalMissingAsins(stillMissing);
 
       if (stillMissing.length === 0) {
-        // Clear cached PDF document so newly resolved Seller SKUs will be printed!
-        clearCachedAmazonDocs();
-        loadedPdfDocsRef.current = null;
+        // Only invalidate cached PDF document if missing SKUs were previously active and resolved
+        if (modalMissingAsins.length > 0) {
+          clearCachedAmazonDocs();
+          orderPrintPdfCacheRef.current.clear();
+          loadedPdfDocsRef.current = null;
+        }
         setIsMissingSkuModalOpen(false);
         return { success: true, remainingCount: 0 };
       } else {
@@ -652,7 +724,6 @@ export default function ComparisonResultView({
   // Order composition filter counts
   const orderTypeCounts = useMemo(() => {
     const counts = {
-      all: 0,
       single_quantity: 0,
       multiple_asin: 0,
       multiple_pieces: 0,
@@ -660,7 +731,6 @@ export default function ComparisonResultView({
     mappedResults.forEach((item) => {
       if (!item.isMatch) return;
       if (!showPrinted && printedRows.has(item.index)) return;
-      counts.all++;
       const type = getOrderTypeForItem(item);
       counts[type]++;
     });
@@ -673,7 +743,6 @@ export default function ComparisonResultView({
 
   const orderTypeOptions: SelectOption[] = useMemo(
     () => [
-      { label: `All Orders (${orderTypeCounts.all})`, value: "all" },
       { label: `Single Quantity (${orderTypeCounts.single_quantity})`, value: "single_quantity" },
       { label: `Multiple ASIN (${orderTypeCounts.multiple_asin})`, value: "multiple_asin" },
       { label: `Multiple Pieces (${orderTypeCounts.multiple_pieces})`, value: "multiple_pieces" },
@@ -770,8 +839,12 @@ export default function ComparisonResultView({
     loadedPdfDocsRef.current = null;
     lastVerifiedPrinterRef.current = null;
     clearCachedAmazonDocs();
+    orderPrintPdfCacheRef.current.clear();
+    printedRowsRef.current.clear();
     setPrintedRows(new Set());
     setShowPrinted(false);
+    setOrderTypeFilter("single_quantity");
+    setPage(1);
     orderScanProgressRef.current.clear();
     if (onReset) {
       onReset();
@@ -781,8 +854,63 @@ export default function ComparisonResultView({
   };
 
   useEffect(() => {
+    printedRowsRef.current.clear();
+    orderPrintPdfCacheRef.current.clear();
+    setPrintedRows(new Set());
+    setOrderTypeFilter("single_quantity");
+    setPage(1);
     orderScanProgressRef.current.clear();
   }, [results]);
+
+  // Background preheating of single-order printable PDF base64 cache for instant < 0.5s barcode scanning prints
+  useEffect(() => {
+    let isCancelled = false;
+    async function preheatOrderCache() {
+      if (!files?.combinedPdfBase64) return;
+      const combinedDoc = await getOrLoadCombinedDoc(files);
+      if (!combinedDoc || isCancelled) return;
+
+      const matchedList = mappedResults.filter((r) => r.isMatch);
+      for (const item of matchedList) {
+        if (isCancelled) break;
+        if (orderPrintPdfCacheRef.current.has(item.index)) continue;
+
+        let pages: number[] = [];
+        if (item.combinedPages && item.combinedPages.length > 0) {
+          pages = item.combinedPages.filter((p) => p >= 0 && p < combinedDoc.getPageCount());
+        } else {
+          const mIdx = matchedList.findIndex((r) => r.index === item.index);
+          if (mIdx !== -1) {
+            const startP = mIdx * 2;
+            if (startP + 1 < combinedDoc.getPageCount()) {
+              pages = [startP, startP + 1];
+            }
+          }
+        }
+
+        if (pages.length > 0) {
+          try {
+            const singleDoc = await PDFDocument.create();
+            const copied = await singleDoc.copyPages(combinedDoc, pages);
+            copied.forEach((p) => singleDoc.addPage(p));
+            const b64 = await singleDoc.saveAsBase64();
+            if (!isCancelled) {
+              orderPrintPdfCacheRef.current.set(item.index, b64);
+            }
+          } catch {
+            // Ignore background preheat errors
+          }
+          // Yield to UI thread every order so browser remains 100% responsive
+          await new Promise((r) => setTimeout(r, 10));
+        }
+      }
+    }
+
+    preheatOrderCache();
+    return () => {
+      isCancelled = true;
+    };
+  }, [mappedResults, files]);
 
   // Filter and search results (Only matched orders are displayed in table)
   const filteredResults = useMemo(() => {
@@ -794,10 +922,8 @@ export default function ComparisonResultView({
       if (!showPrinted && printedRows.has(item.index)) return false;
 
       // Filter by order composition type
-      if (orderTypeFilter !== "all") {
-        const type = getOrderTypeForItem(item);
-        if (type !== orderTypeFilter) return false;
-      }
+      const type = getOrderTypeForItem(item);
+      if (type !== orderTypeFilter) return false;
 
       const activeQuery = (autoPrintQuery || searchQuery).trim().toLowerCase();
 
@@ -913,7 +1039,13 @@ export default function ComparisonResultView({
       lastVerified.printerName &&
       (!selectedPrinter || selectedPrinter === lastVerified.printerName);
 
-    if (isRecentVerified && lastVerified) {
+    if (selectedPrinter) {
+      targetPrinter = selectedPrinter;
+      lastVerifiedPrinterRef.current = {
+        printerName: selectedPrinter,
+        timestamp: now,
+      };
+    } else if (isRecentVerified && lastVerified) {
       targetPrinter = lastVerified.printerName;
     } else {
       // Verify PrintBridge extension is reachable
@@ -1000,6 +1132,82 @@ export default function ComparisonResultView({
     });
 
     try {
+      let currentPrinter = targetPrinter;
+
+      // 0. ULTRA-FAST SUB-SECOND PATH for single order (Barcode scan / single row direct print)
+      if (targetResults.length === 1) {
+        const singleItem = targetResults[0];
+        let singlePdfBase64 = orderPrintPdfCacheRef.current.get(singleItem.index);
+
+        if (!singlePdfBase64) {
+          const combinedDoc = await getOrLoadCombinedDoc(activeFiles);
+          if (combinedDoc && combinedDoc.getPageCount() > 0) {
+            let pages: number[] = [];
+            if (singleItem.combinedPages && singleItem.combinedPages.length > 0) {
+              pages = singleItem.combinedPages.filter((p) => p >= 0 && p < combinedDoc.getPageCount());
+            } else {
+              const matchedList = mappedResults.filter((r) => r.isMatch);
+              const mIdx = matchedList.findIndex((r) => r.index === singleItem.index);
+              if (mIdx !== -1) {
+                const startP = mIdx * 2;
+                if (startP + 1 < combinedDoc.getPageCount()) {
+                  pages = [startP, startP + 1];
+                }
+              }
+            }
+
+            if (pages.length > 0) {
+              const singleDoc = await PDFDocument.create();
+              const copiedPages = await singleDoc.copyPages(combinedDoc, pages);
+              copiedPages.forEach((p) => singleDoc.addPage(p));
+              singlePdfBase64 = await singleDoc.saveAsBase64();
+              orderPrintPdfCacheRef.current.set(singleItem.index, singlePdfBase64);
+            }
+          }
+        }
+
+        if (singlePdfBase64) {
+          const extRes = await chromeExtensionPrintService.printPdf(singlePdfBase64, currentPrinter, 1, true);
+          if (extRes && (extRes.success === false || extRes.error)) {
+            throw new Error(extRes.error || `Print failure on ${currentPrinter}`);
+          }
+
+          toast.success(`Printed order (4" x 6") directly on ${currentPrinter}!`, { id: "print-prep" });
+          markRowsAsPrinted([singleItem.index]);
+          setSelectedRows((prev) => {
+            const next = new Set(prev);
+            next.delete(singleItem.index);
+            return next;
+          });
+
+          // Automatically store printed Amazon orders in backend database (7-day retention)
+          try {
+            const orderToSave = {
+              invoice:
+                singleItem.pdfInvoice && singleItem.pdfInvoice !== "Not Found in PDF"
+                  ? singleItem.pdfInvoice
+                  : singleItem.zplInvoice && singleItem.zplInvoice !== "Not Found in ZPL"
+                  ? singleItem.zplInvoice
+                  : "N/A",
+              orderId: singleItem.orderNumber || "N/A",
+              awb: singleItem.awb || "N/A",
+              asin: singleItem.asin || "N/A",
+              sellerSku: singleItem.sellerSku || "N/A",
+              customer: cleanCustomerName(singleItem.customer) || "N/A",
+              packingScanStatus: "PENDING" as const,
+            };
+
+            amazonOrderService.savePrintedOrders([orderToSave]).catch((saveErr) => {
+              console.warn("Background Amazon order save error:", saveErr);
+            });
+          } catch (savePrepErr) {
+            console.warn("Failed to prepare Amazon orders for database saving:", savePrepErr);
+          }
+
+          return;
+        }
+      }
+
       const printDoc = await PDFDocument.create();
       let builtSuccessfully = false;
 
@@ -1145,11 +1353,7 @@ export default function ComparisonResultView({
           { id: 'print-prep' }
         );
         printedSuccessfully = true;
-        setPrintedRows((prev) => {
-          const next = new Set(prev);
-          targetResults.forEach((r) => next.add(r.index));
-          return next;
-        });
+        markRowsAsPrinted(targetResults.map((r) => r.index));
         setSelectedRows((prev) => {
           const next = new Set(prev);
           targetResults.forEach((r) => next.delete(r.index));
@@ -1252,14 +1456,14 @@ export default function ComparisonResultView({
     await executePrintForItems(targetResults);
   };
 
-  const handleGeneratePicklist = () => {
+  const handleGeneratePicklist = async () => {
     if (modalMissingAsins.length > 0) {
       toast.error(`Cannot generate picklist: ${modalMissingAsins.length} ASIN(s) are missing Seller SKU.`);
       setIsMissingSkuModalOpen(true);
       return;
     }
 
-    // If specific rows are selected, use selected rows; otherwise fallback to ALL matched orders
+    // If specific rows are selected, use selected rows; otherwise fallback to filtered orders
     const targetSet =
       selectedRows.size > 0
         ? selectedRows
@@ -1270,13 +1474,30 @@ export default function ComparisonResultView({
       return;
     }
 
-    const picklist = generateAmazonPicklist(mappedResults, targetSet, skuDetailsMap);
-    downloadAmazonPicklistPDF(picklist);
+    try {
+      let currentDetailsMap = skuDetailsMapRef.current.size > 0 ? skuDetailsMapRef.current : skuDetailsMap;
+      if (currentDetailsMap.size === 0) {
+        await fetchAsinMappings();
+        currentDetailsMap = skuDetailsMapRef.current.size > 0 ? skuDetailsMapRef.current : skuDetailsMap;
+      }
 
-    if (selectedRows.size > 0) {
-      toast.success(`Generated picklist for ${selectedRows.size} selected order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`);
-    } else {
-      toast.success(`Generated picklist for ALL ${targetSet.size} matched order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`);
+      const picklist = generateAmazonPicklist(mappedResults, targetSet, currentDetailsMap);
+
+      // Download Excel (.xlsx) picklist
+      await downloadAmazonPicklistExcel(picklist);
+
+      if (selectedRows.size > 0) {
+        toast.success(
+          `Downloaded Excel picklist for ${selectedRows.size} selected order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`
+        );
+      } else {
+        toast.success(
+          `Downloaded Excel picklist for ALL ${targetSet.size} matched order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`
+        );
+      }
+    } catch (err) {
+      console.error("Failed to generate picklist:", err);
+      toast.error("Failed to generate Excel picklist.");
     }
   };
 
@@ -1434,6 +1655,31 @@ export default function ComparisonResultView({
     return !!(asinMatch || skuMatch);
   };
 
+  const enqueuePrint = useCallback(
+    (item: (typeof mappedResults)[0]) => {
+      // 1. Immediately and synchronously mark row as printed so any subsequent scans
+      // (even within milliseconds) see this order as already printed!
+      markRowsAsPrinted([item.index]);
+
+      // 2. Chain print execution to serialize printer calls
+      const printTask = printQueuePromiseRef.current
+        .catch(() => {})
+        .then(async () => {
+          try {
+            await executePrintForItems([item]);
+          } catch (err) {
+            // If printing threw an error, unmark so the user can re-scan and retry
+            unmarkRowsAsPrinted([item.index]);
+            throw err;
+          }
+        });
+
+      printQueuePromiseRef.current = printTask;
+      return printTask;
+    },
+    [markRowsAsPrinted, unmarkRowsAsPrinted, executePrintForItems]
+  );
+
   const handleAutoPrintSearch = async (query: string) => {
     const q = query.trim();
     if (!q) return;
@@ -1444,25 +1690,80 @@ export default function ComparisonResultView({
       return;
     }
 
-    // Immediately select all written text when user leaves writing / submits
+    // Immediately clear input field to prevent duplicate scans from trailing Enter/carriage return
+    setAutoPrintQuery("");
     autoPrintInputRef.current?.focus();
-    autoPrintInputRef.current?.select();
 
-    // 1. Check if an order is currently in-progress (partially scanned, unprinted)
-    // and the scanned query matches one of its remaining requirements or order identifiers.
+    // 1. Find all matched orders in the uploaded dataset matching query q
+    const allMatchingOrders = mappedResults.filter((item) => item.isMatch && doesOrderMatchQuery(item, q));
+
+    if (allMatchingOrders.length === 0) {
+      toast.error(`No matching order found for "${query}"`);
+      return;
+    }
+
+    // 2. Enforce active Order Composition Filter (single_quantity, multiple_asin, multiple_pieces)
+    const candidateOrders = allMatchingOrders.filter(
+      (item) => getOrderTypeForItem(item) === orderTypeFilter
+    );
+
+    if (candidateOrders.length === 0) {
+      // Scanned item exists in batch but NOT in the active filter mode
+      const otherTypes = Array.from(
+        new Set(allMatchingOrders.map((item) => getOrderTypeForItem(item)))
+      ).map(getOrderTypeLabel);
+
+      toast.warning(
+        `Only ${getOrderTypeLabel(orderTypeFilter)} orders allowed in this mode! Scanned item belongs to a ${otherTypes.join(" / ")} order.`,
+        { id: "order-type-mismatch", duration: 6000 }
+      );
+      return;
+    }
+
+    // 3. Filter candidate orders to unprinted ones
+    const unprintedCandidates = candidateOrders.filter(
+      (item) => !printedRowsRef.current.has(item.index)
+    );
+
+    if (unprintedCandidates.length === 0) {
+      const otherUnprintedOrders = allMatchingOrders.filter(
+        (item) => !printedRowsRef.current.has(item.index) && getOrderTypeForItem(item) !== orderTypeFilter
+      );
+
+      if (otherUnprintedOrders.length > 0) {
+        const otherTypes = Array.from(
+          new Set(otherUnprintedOrders.map((item) => getOrderTypeForItem(item)))
+        ).map(getOrderTypeLabel);
+
+        toast.warning(
+          `All ${candidateOrders.length} ${getOrderTypeLabel(orderTypeFilter)} order(s) for "${query}" have already been printed! (Item also exists in ${otherTypes.join(" / ")} - switch filter to process).`,
+          { id: "auto-print", duration: 6000 }
+        );
+        return;
+      }
+
+      toast.warning(
+        `All ${candidateOrders.length} ${getOrderTypeLabel(orderTypeFilter)} order(s) for "${query}" have already been printed and removed!`,
+        { id: "auto-print", duration: 4000 }
+      );
+      return;
+    }
+
+    // 4. Check if any unprinted candidate order is currently in-progress (partially scanned)
     let targetItem: (typeof mappedResults)[0] | undefined;
     let seqNotice = "";
 
+    const unprintedIndexes = new Set(unprintedCandidates.map((c) => c.index));
     const inProgressEntries = Array.from(orderScanProgressRef.current.entries()).filter(
       ([index, reqs]) => {
-        if (printedRows.has(index)) return false;
+        if (!unprintedIndexes.has(index)) return false;
         const hasScanned = reqs.some((r) => r.scannedQty > 0);
         const hasRemaining = reqs.some((r) => r.scannedQty < r.requiredQty);
         return hasScanned && hasRemaining;
       }
     );
 
-    // Prioritize in-progress order if scanned query matches its remaining requirement or order ID
+    // Prioritize in-progress candidate order if scanned query matches its remaining requirement or order ID
     for (const [inProgIdx, reqs] of inProgressEntries) {
       const item = mappedResults.find((m) => m.index === inProgIdx);
       if (!item) continue;
@@ -1479,28 +1780,15 @@ export default function ComparisonResultView({
       }
     }
 
-    // 2. If no in-progress order matched, find matching unprinted orders in mappedResults
+    // 5. If no in-progress candidate matched, pick via deterministic FIFO sorting by index ascending
     if (!targetItem) {
-      const matchingItems = mappedResults.filter((item) => doesOrderMatchQuery(item, q));
-
-      if (matchingItems.length > 0) {
-        const unprintedItems = matchingItems.filter((item) => !printedRows.has(item.index));
-
-        if (unprintedItems.length === 0) {
-          toast.warning(`All ${matchingItems.length} order(s) for "${query}" have already been printed and removed!`, {
-            id: "auto-print",
-            duration: 4000,
-          });
-          return;
-        }
-
-        targetItem = unprintedItems[0];
-        const remainingAfterThis = unprintedItems.length - 1;
-        seqNotice = "";
-        if (matchingItems.length > 1) {
-          const currentStep = matchingItems.length - unprintedItems.length + 1;
-          seqNotice = `Printed ${currentStep} of ${matchingItems.length} (${remainingAfterThis} remaining)`;
-        }
+      unprintedCandidates.sort((a, b) => a.index - b.index);
+      targetItem = unprintedCandidates[0];
+      const remainingAfterThis = unprintedCandidates.length - 1;
+      seqNotice = "";
+      if (candidateOrders.length > 1) {
+        const currentStep = candidateOrders.length - unprintedCandidates.length + 1;
+        seqNotice = `Printed ${currentStep} of ${candidateOrders.length} (${remainingAfterThis} remaining)`;
       }
     }
 
@@ -1521,11 +1809,15 @@ export default function ComparisonResultView({
     // 4. If single quantity order, immediately print
     if (orderType === "single_quantity") {
       orderScanProgressRef.current.delete(targetItem.index);
-      await executePrintForItems([targetItem]);
-      if (seqNotice) {
-        toast.info(`${seqNotice} • Customer: ${cleanCustomerName(targetItem.customer)}`, {
-          duration: 4000,
-        });
+      try {
+        await enqueuePrint(targetItem);
+        if (seqNotice) {
+          toast.info(`${seqNotice} • Customer: ${cleanCustomerName(targetItem.customer)}`, {
+            duration: 4000,
+          });
+        }
+      } catch (err) {
+        console.error("Auto print error for single_quantity item:", err);
       }
       setTimeout(() => {
         autoPrintInputRef.current?.focus();
@@ -1541,11 +1833,15 @@ export default function ComparisonResultView({
       const allScanned = reqs.every((r) => r.scannedQty >= r.requiredQty);
       if (allScanned) {
         orderScanProgressRef.current.delete(targetItem.index);
-        await executePrintForItems([targetItem]);
-        if (seqNotice) {
-          toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
-            duration: 4000,
-          });
+        try {
+          await enqueuePrint(targetItem);
+          if (seqNotice) {
+            toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
+              duration: 4000,
+            });
+          }
+        } catch (err) {
+          console.error("Auto print error for order-level item:", err);
         }
         setTimeout(() => {
           autoPrintInputRef.current?.focus();
@@ -1646,12 +1942,15 @@ export default function ComparisonResultView({
     orderScanProgressRef.current.delete(targetItem.index);
 
     // Trigger print
-    await executePrintForItems([targetItem]);
-
-    if (seqNotice) {
-      toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
-        duration: 4000,
-      });
+    try {
+      await enqueuePrint(targetItem);
+      if (seqNotice) {
+        toast.info(`Sequential Print (${seqNotice}): Customer ${cleanCustomerName(targetItem.customer)}`, {
+          duration: 4000,
+        });
+      }
+    } catch (err) {
+      console.error("Auto print error for multi-item order:", err);
     }
     setTimeout(() => {
       autoPrintInputRef.current?.focus();
@@ -1924,7 +2223,13 @@ export default function ComparisonResultView({
           <input
             ref={autoPrintInputRef}
             type="text"
-            placeholder="Print with ASIN, Order ID and AWB Direct with Pressing Enter"
+            placeholder={
+              orderTypeFilter === "single_quantity"
+                ? "Scan Single Quantity ASIN, Order ID, or AWB to print..."
+                : orderTypeFilter === "multiple_asin"
+                ? "Scan Multiple ASIN items to print..."
+                : "Scan Multiple Pieces items to print..."
+            }
             value={autoPrintQuery}
             onChange={(e) => setAutoPrintQuery(e.target.value)}
             onFocus={(e) => e.target.select()}
@@ -1932,8 +2237,9 @@ export default function ComparisonResultView({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                autoPrintInputRef.current?.select();
-                handleAutoPrintSearch(autoPrintQuery);
+                const q = autoPrintQuery;
+                setAutoPrintQuery("");
+                handleAutoPrintSearch(q);
               }
             }}
             className="h-12 sm:h-14 w-full border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#0A0E1A] pl-10 pr-10 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 placeholder:font-normal outline-none transition focus:ring-2 focus:ring-[#E8C16D]"
@@ -2066,9 +2372,10 @@ export default function ComparisonResultView({
                 type="button"
                 onClick={handleGeneratePicklist}
                 className="inline-flex h-11 sm:h-14 w-full sm:w-auto sm:px-5 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                title="Download Excel picklist"
               >
                 <FileText className="h-4 w-4" />
-                Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${filteredResults.length})`}
+                <span>Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${filteredResults.length})`}</span>
               </button>
 
               {printedRows.size > 0 && (

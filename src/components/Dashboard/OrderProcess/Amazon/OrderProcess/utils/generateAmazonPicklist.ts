@@ -1,9 +1,12 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import { AmazonComparisonResult } from "../types";
 
 export interface PicklistItem {
   sku: string;
+  asin?: string;
   rackAddress: string;
   generateBarcode: string;
   quantity: number;
@@ -22,6 +25,7 @@ export const generateAmazonPicklist = (
   const selectedOrders = results.filter((r) => selectedRows.has(r.index));
 
   const skuMap = new Map<string, number>();
+  const skuToAsinMap = new Map<string, string>();
   let totalQuantity = 0;
 
   selectedOrders.forEach((item) => {
@@ -36,6 +40,20 @@ export const generateAmazonPicklist = (
       .split(/[\n\r]+|\s+\/\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
+
+    const rawAsin = item.asin && item.asin !== "N/A" ? item.asin.trim() : "";
+    if (rawAsin) {
+      const asins = rawAsin.split(/[\n\r]+|\s+\/\s+/).map((a) => a.trim()).filter(Boolean);
+      skus.forEach((sku, idx) => {
+        const assignedAsin = asins[idx] || asins[0] || rawAsin;
+        if (!skuToAsinMap.has(sku)) {
+          skuToAsinMap.set(sku, assignedAsin);
+        }
+        if (!skuToAsinMap.has(sku.toUpperCase())) {
+          skuToAsinMap.set(sku.toUpperCase(), assignedAsin);
+        }
+      });
+    }
 
     if (skus.length === 0) {
       const currentQty = skuMap.get("UNKNOWN-SKU") ?? 0;
@@ -57,10 +75,56 @@ export const generateAmazonPicklist = (
 
   const items: PicklistItem[] = Array.from(skuMap.entries()).map(
     ([sku, quantity]) => {
-      const normSku = sku.toUpperCase();
-      const details = skuDetailsMap?.get(normSku) || skuDetailsMap?.get(sku);
+      const trimmedSku = sku.trim();
+      const normSku = trimmedSku.toUpperCase();
+      const itemAsin = (
+        skuToAsinMap.get(trimmedSku) ||
+        skuToAsinMap.get(normSku) ||
+        skuToAsinMap.get(sku) ||
+        ""
+      ).trim();
+      const normAsin = itemAsin.toUpperCase();
 
-      const rawBarcode = details?.generateBarcode?.trim().toUpperCase() || "";
+      // Look up in skuDetailsMap by SKU and then by ASIN
+      const skuDetails =
+        skuDetailsMap?.get(normSku) ||
+        skuDetailsMap?.get(trimmedSku) ||
+        skuDetailsMap?.get(sku);
+
+      const asinDetails =
+        (normAsin ? skuDetailsMap?.get(normAsin) : undefined) ||
+        (itemAsin ? skuDetailsMap?.get(itemAsin) : undefined);
+
+      let rack = skuDetails?.rackAddress?.trim() || asinDetails?.rackAddress?.trim() || "";
+      if (rack === "-" || rack === "N/A" || rack === "NA") {
+        rack = "";
+      }
+
+      // Case-insensitive fallback scan if rackAddress not found
+      if (!rack && skuDetailsMap && skuDetailsMap.size > 0) {
+        for (const [key, val] of skuDetailsMap.entries()) {
+          const kNorm = key.trim().toUpperCase();
+          if (
+            (kNorm === normSku || (normAsin && kNorm === normAsin)) &&
+            val.rackAddress &&
+            val.rackAddress.trim() &&
+            val.rackAddress.trim() !== "-" &&
+            val.rackAddress.trim() !== "N/A"
+          ) {
+            rack = val.rackAddress.trim();
+            break;
+          }
+        }
+      }
+
+      const rackAddress = rack || "--";
+
+      const rawBarcode = (
+        skuDetails?.generateBarcode?.trim() ||
+        asinDetails?.generateBarcode?.trim() ||
+        ""
+      ).toUpperCase();
+
       const isBarcodeYes =
         rawBarcode === "YES" ||
         rawBarcode === "Y" ||
@@ -69,8 +133,9 @@ export const generateAmazonPicklist = (
       const generateBarcode = isBarcodeYes ? "Yes" : "No";
 
       return {
-        sku,
-        rackAddress: details?.rackAddress?.trim() || "--",
+        sku: trimmedSku,
+        asin: itemAsin || normAsin || "--",
+        rackAddress,
         generateBarcode,
         quantity,
       };
@@ -122,7 +187,9 @@ export const generateAmazonPicklist = (
   };
 };
 
-export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
+export const buildAmazonPicklistPDFDoc = (
+  picklist: PicklistResult
+): { doc: jsPDF; picklistNo: string; now: Date } => {
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -341,10 +408,273 @@ export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
     }
   }
 
+  return { doc, picklistNo, now };
+};
+
+export const openAmazonPicklistPDF = (picklist: PicklistResult) => {
+  const { doc } = buildAmazonPicklistPDFDoc(picklist);
+  const blob = doc.output("blob");
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, "_blank");
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+};
+
+export const downloadAmazonPicklistPDF = (picklist: PicklistResult) => {
+  const { doc, picklistNo, now } = buildAmazonPicklistPDFDoc(picklist);
   const fileName = `Amazon_Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.pdf`;
   const blob = doc.output("blob");
   const blobUrl = URL.createObjectURL(blob);
   window.open(blobUrl, "_blank");
   doc.save(fileName);
   setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+};
+
+export const openAmazonPicklistTab = (picklist: PicklistResult) => {
+  const now = new Date();
+  const picklistNo = `PL${Date.now()}`;
+  const formattedDate = now.toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const rowsHtml = picklist.items
+    .map(
+      (item) => `
+      <tr>
+        <td style="text-align: center;">${item.rackAddress || "--"}</td>
+        <td style="text-align: center; font-family: monospace;">${item.asin || "--"}</td>
+        <td style="text-align: left; font-weight: bold;">${item.sku}</td>
+        <td style="text-align: center; font-weight: bold;">${item.quantity}</td>
+        <td style="text-align: center;">${item.generateBarcode || "No"}</td>
+      </tr>`
+    )
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Amazon Picklist - ${picklistNo}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 20px;
+      color: #000;
+      background: #f8fafc;
+    }
+    .sheet-wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+    }
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #000;
+    }
+    .sheet-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .sheet-meta {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .sheet-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+      text-decoration: none;
+    }
+    .btn:hover { background: #f1f5f9; }
+    .btn-print {
+      background: #0f172a;
+      color: #fff;
+      border: 1px solid #0f172a;
+    }
+    .btn-print:hover { background: #1e293b; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      border: 1px solid #d4d4d8;
+      border-bottom: 2px solid #000;
+      padding: 8px 12px;
+      font-weight: bold;
+      background: #f8fafc;
+      color: #000;
+    }
+    td {
+      border: 1px solid #e2e8f0;
+      padding: 7px 12px;
+      vertical-align: middle;
+      color: #000;
+    }
+    .total-row td {
+      border-top: 1px solid #000;
+      border-bottom: 3px double #000;
+      font-weight: bold;
+      font-size: 13.5px;
+      background: #f8fafc;
+    }
+    @media print {
+      body { margin: 0; background: #fff; }
+      .sheet-wrapper { box-shadow: none; border: none; padding: 0; max-width: 100%; }
+      .sheet-actions { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet-wrapper">
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title">Amazon Picklist (${picklistNo})</div>
+        <div class="sheet-meta">Generated on ${formattedDate} &bull; Total Orders: ${picklist.items.length} SKUs (${picklist.totalQuantity} Units)</div>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-print" onclick="window.print()">Print Picklist</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 16%;">Rack Address</th>
+          <th style="width: 20%;">ASIN</th>
+          <th style="width: 38%; text-align: left;">Seller SKU</th>
+          <th style="width: 12%;">Quantity</th>
+          <th style="width: 14%;">Generate Barcode</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+        <tr class="total-row">
+          <td></td>
+          <td></td>
+          <td style="text-align: right;">TOTAL QUANTITY</td>
+          <td style="text-align: center;">${picklist.totalQuantity}</td>
+          <td style="text-align: center;">${picklist.items.length} Unique SKUs</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, "_blank");
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+};
+
+export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Amazon Picklist");
+
+  const now = new Date();
+  const picklistNo = `PL${Date.now()}`;
+
+  // Columns specification (Sr No removed as requested)
+  worksheet.columns = [
+    { header: "Rack Address", key: "rackAddress", width: 18 },
+    { header: "ASIN", key: "asin", width: 18 },
+    { header: "Seller SKU", key: "sku", width: 40 },
+    { header: "Quantity", key: "quantity", width: 14 },
+    { header: "Generate Barcode", key: "generateBarcode", width: 18 },
+  ];
+
+  // Header row styling: standard Excel background (no fill), bold black text
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 24;
+  headerRow.eachCell((cell, colNumber) => {
+    cell.font = { bold: true, color: { argb: "FF000000" }, size: 11, name: "Calibri" };
+    cell.alignment = { vertical: "middle", horizontal: colNumber === 3 ? "left" : "center" };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFD4D4D8" } },
+      left: { style: "thin", color: { argb: "FFD4D4D8" } },
+      bottom: { style: "medium", color: { argb: "FF000000" } },
+      right: { style: "thin", color: { argb: "FFD4D4D8" } },
+    };
+  });
+
+  // Data rows: standard Excel background and clean borders
+  picklist.items.forEach((item) => {
+    const row = worksheet.addRow({
+      rackAddress: item.rackAddress || "--",
+      asin: item.asin || "--",
+      sku: item.sku,
+      quantity: item.quantity,
+      generateBarcode: item.generateBarcode || "No",
+    });
+
+    row.height = 20;
+
+    row.eachCell((cell, colNumber) => {
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE2E8F0" } },
+        left: { style: "thin", color: { argb: "FFE2E8F0" } },
+        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+        right: { style: "thin", color: { argb: "FFE2E8F0" } },
+      };
+      cell.alignment = { vertical: "middle", horizontal: colNumber === 3 ? "left" : "center" };
+      cell.font = { size: 10.5, name: "Calibri", color: { argb: "FF000000" } };
+
+      if (colNumber === 3) {
+        cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF000000" } };
+      }
+    });
+  });
+
+  // Total Summary Row: standard Excel background (no fill), bold black text
+  const totalRow = worksheet.addRow({
+    rackAddress: "",
+    asin: "",
+    sku: "TOTAL QUANTITY",
+    quantity: picklist.totalQuantity,
+    generateBarcode: `${picklist.items.length} Unique SKUs`,
+  });
+
+  totalRow.height = 24;
+  totalRow.eachCell((cell, colNumber) => {
+    cell.border = {
+      top: { style: "thin", color: { argb: "FF000000" } },
+      bottom: { style: "double", color: { argb: "FF000000" } },
+      left: { style: "thin", color: { argb: "FFE2E8F0" } },
+      right: { style: "thin", color: { argb: "FFE2E8F0" } },
+    };
+    cell.font = { bold: true, size: 11, name: "Calibri", color: { argb: "FF000000" } };
+    cell.alignment = { vertical: "middle", horizontal: colNumber === 3 ? "right" : "center" };
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const fileName = `Amazon_Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.xlsx`;
+
+  saveAs(
+    new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }),
+    fileName
+  );
 };

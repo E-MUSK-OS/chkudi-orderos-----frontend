@@ -36,6 +36,18 @@ export function clearCachedAmazonDocs(): void {
   docsCache = null;
 }
 
+export async function fastBase64ToUint8ArrayAsync(base64: string): Promise<Uint8Array> {
+  const clean = base64.includes(",") ? base64.split(",")[1] : base64;
+  try {
+    // Native browser C++ decoding is orders of magnitude faster than JS loops for 10MB-50MB strings
+    const res = await fetch(`data:application/octet-stream;base64,${clean}`);
+    const buffer = await res.arrayBuffer();
+    return new Uint8Array(buffer);
+  } catch {
+    return fastBase64ToUint8Array(clean);
+  }
+}
+
 export function fastBase64ToUint8Array(base64: string): Uint8Array {
   const clean = base64.includes(",") ? base64.split(",")[1] : base64;
   const binary = atob(clean);
@@ -66,7 +78,10 @@ export async function getOrLoadCombinedDoc(activeFiles: any): Promise<PDFDocumen
   loadingCombinedPromise = (async () => {
     try {
       const { PDFDocument } = await import("pdf-lib");
-      const bytes = fastBase64ToUint8Array(activeFiles.combinedPdfBase64);
+      let bytes = docsCache?.combinedBytes;
+      if (!bytes || docsCache?.cacheKey !== currentKey) {
+        bytes = await fastBase64ToUint8ArrayAsync(activeFiles.combinedPdfBase64);
+      }
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       setCachedAmazonDocs({
         combinedDoc: doc,

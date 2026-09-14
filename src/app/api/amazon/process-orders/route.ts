@@ -8,6 +8,7 @@ export const maxDuration = 60;
 interface ZplLabelData {
   index: number;
   invoiceNumber: string;
+  orderNumber?: string;
   asin?: string;
   sellerSku?: string;
   awb: string;
@@ -777,11 +778,16 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
     }
 
     // ---------------------------------------------------------
-    // STEP 6: Extract ASIN / ASI number.
+    // STEP 6: Extract ASIN / ASI number and Order Number.
     // ---------------------------------------------------------
 
     const asin = extractAsin(decoded);
     const sellerSku = extractSellerSku(decoded);
+
+    const orderMatch =
+      decoded.match(/ORDER[#\s:]*([0-9-]{17,19})/i) ||
+      decoded.match(/\b(\d{3}-\d{7}-\d{7})\b/);
+    const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
 
     // ---------------------------------------------------------
     // Logging.
@@ -791,7 +797,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       console.log(
         `[ZPL Parse] Label ${
           labels.length + 1
-        }: Invoice="${invoiceNumber}", ASIN="${asin}", SKU="${sellerSku}", AWB="${awb}"`
+        }: Invoice="${invoiceNumber}", Order="${orderNumber}", ASIN="${asin}", SKU="${sellerSku}", AWB="${awb}"`
       );
     } else {
       console.log(
@@ -805,6 +811,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
     labels.push({
       index: labels.length + 1,
       invoiceNumber,
+      orderNumber,
       asin,
       sellerSku,
       awb,
@@ -1271,9 +1278,16 @@ function buildComparisonResponse(
   zplFileName = "labels.zpl"
 ) {
   // Consolidate PDF pages into distinct PDF orders
-  const consolidatedPdfOrders: (PdfOrderData & { fullText?: string })[] = [];
-  const invoiceToPdfIdx = new Map<string, number>();
-  const orderNumToPdfIdx = new Map<string, number>();
+  interface ConsolidatedOrder extends PdfOrderData {
+    fullText?: string;
+    totalPages?: number;
+    hasCompletedFooter?: boolean;
+  }
+
+  const consolidatedPdfOrders: ConsolidatedOrder[] = [];
+  const invoiceToPdfIndices = new Map<string, number[]>();
+  const orderNumToPdfIndices = new Map<string, number[]>();
+  let lastValidPageNumber = 0;
 
   for (let index = 0; index < pagesArray.length; index++) {
     const pageNumber = index + 1;
@@ -1330,18 +1344,80 @@ function buildComparisonResponse(
     const invKey = invoiceNumber ? normalizeInvoice(invoiceNumber) : "";
     const orderKey = orderNumber ? orderNumber.trim() : "";
 
-    // Check if this page belongs to an already encountered PDF order
+    // Extract page numbering (e.g., "Page 1 of 2", "Page 2 of 2", "Page 1 of 1")
+    const pageInfoMatch =
+      text.match(/(?:Page|pg\.?)\s*[:\-]?\s*(\d+)\s*(?:of|\/)\s*(\d+)/i) ||
+      text.match(/\b(\d+)\s*(?:of|\/)\s*(\d+)\s*(?:pages)?\b/i);
+
+    let docPageNum = 0;
+    let docTotalPages = 0;
+    if (pageInfoMatch) {
+      docPageNum = parseInt(pageInfoMatch[1], 10);
+      docTotalPages = parseInt(pageInfoMatch[2], 10);
+    } else {
+      const singlePageMatch = text.match(/(?:Page|pg\.?)\s*[:\-]?\s*(\d+)\b/i);
+      if (singlePageMatch) {
+        docPageNum = parseInt(singlePageMatch[1], 10);
+      }
+    }
+
+    const hasStandaloneHeader =
+      /Tax\s+Invoice/i.test(text) &&
+      (/Sold\s+By/i.test(text) || /Billing\s+Address/i.test(text) || /PAN\s+No/i.test(text) || /GST/i.test(text));
+
+    const hasCompletedFooter =
+      /TOTAL\s*:/i.test(text) ||
+      /Invoice\s+Value\s*:/i.test(text) ||
+      /Grand\s+Total/i.test(text) ||
+      /Amount\s+in\s+Words/i.test(text) ||
+      /Authorized\s+Signatory/i.test(text);
+
+    // Determine if this page can be a continuation page of an earlier order
     let existingIdx = -1;
-    if (invKey && invoiceToPdfIdx.has(invKey)) {
-      existingIdx = invoiceToPdfIdx.get(invKey)!;
-    } else if (orderKey && orderNumToPdfIdx.has(orderKey)) {
-      existingIdx = orderNumToPdfIdx.get(orderKey)!;
+    const canBeContinuation =
+      docPageNum > 1 ||
+      (docPageNum === 0 && !(hasStandaloneHeader && hasCompletedFooter));
+
+    if (canBeContinuation) {
+      const candidateIndices = [
+        ...(orderKey && orderNumToPdfIndices.has(orderKey) ? orderNumToPdfIndices.get(orderKey)! : []),
+        ...(invKey && invoiceToPdfIndices.has(invKey) ? invoiceToPdfIndices.get(invKey)! : []),
+      ];
+      const uniqueCandidates = Array.from(new Set(candidateIndices));
+
+      for (const cIdx of uniqueCandidates) {
+        const existing = consolidatedPdfOrders[cIdx];
+        if (!existing) continue;
+
+        // If existing order already reached its declared total pages, it is completed
+        if (existing.totalPages && existing.pages.length >= existing.totalPages) {
+          continue;
+        }
+
+        // If docPageNum is specified (>1), existing order must have exactly docPageNum - 1 pages
+        if (docPageNum > 1 && existing.pages.length !== docPageNum - 1) {
+          continue;
+        }
+
+        // If docPageNum is 0 (unspecified), page must be consecutive with the existing order's last page
+        if (docPageNum === 0) {
+          const lastPageOfOrder = existing.pages[existing.pages.length - 1];
+          if (lastPageOfOrder !== lastValidPageNumber || existing.hasCompletedFooter) {
+            continue;
+          }
+        }
+
+        existingIdx = cIdx;
+        break;
+      }
     }
 
     if (existingIdx !== -1) {
       const existing = consolidatedPdfOrders[existingIdx];
       existing.pages.push(pageNumber);
       existing.fullText = (existing.fullText || "") + "\n" + text;
+      if (docTotalPages > 0) existing.totalPages = docTotalPages;
+      if (hasCompletedFooter) existing.hasCompletedFooter = true;
       if (!existing.sellerInvoice && invoiceNumber) existing.sellerInvoice = invoiceNumber;
       if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
       if (!existing.shippingAddress && shippingAddress) existing.shippingAddress = shippingAddress;
@@ -1353,12 +1429,23 @@ function buildComparisonResponse(
       if (invoiceNumber && !existing.allInvoices.includes(invoiceNumber)) {
         existing.allInvoices.push(invoiceNumber);
       }
-      if (invKey && !invoiceToPdfIdx.has(invKey)) {
-        invoiceToPdfIdx.set(invKey, existingIdx);
+      if (invKey) {
+        const list = invoiceToPdfIndices.get(invKey) || [];
+        if (!list.includes(existingIdx)) {
+          list.push(existingIdx);
+          invoiceToPdfIndices.set(invKey, list);
+        }
+      }
+      if (orderKey) {
+        const list = orderNumToPdfIndices.get(orderKey) || [];
+        if (!list.includes(existingIdx)) {
+          list.push(existingIdx);
+          orderNumToPdfIndices.set(orderKey, list);
+        }
       }
     } else {
       const newIdx = consolidatedPdfOrders.length;
-      const newOrder: PdfOrderData & { fullText?: string } = {
+      const newOrder: ConsolidatedOrder = {
         orderNumber,
         sellerInvoice: invoiceNumber,
         asin,
@@ -1370,15 +1457,30 @@ function buildComparisonResponse(
         date,
         fullText: text,
         shippingAddress,
+        totalPages: docTotalPages > 0 ? docTotalPages : undefined,
+        hasCompletedFooter,
       };
       consolidatedPdfOrders.push(newOrder);
-      if (invKey) invoiceToPdfIdx.set(invKey, newIdx);
-      if (orderKey) orderNumToPdfIdx.set(orderKey, newIdx);
+
+      if (invKey) {
+        const list = invoiceToPdfIndices.get(invKey) || [];
+        list.push(newIdx);
+        invoiceToPdfIndices.set(invKey, list);
+      }
+      if (orderKey) {
+        const list = orderNumToPdfIndices.get(orderKey) || [];
+        list.push(newIdx);
+        orderNumToPdfIndices.set(orderKey, list);
+      }
     }
+
+    lastValidPageNumber = pageNumber;
   }
 
   // ---------------------------------------------------------
   // PASS 1: PRIORITY 1 - INVOICE NUMBER MATCHING
+  // If duplicate ZPL labels or duplicate PDF invoices exist, treat
+  // each as a DIFFERENT ENTITY and match each 1-to-1 to its invoice.
   // ---------------------------------------------------------
   const matchedZplIndices = new Set<number>();
   const matchedPdfIndices = new Set<number>();
@@ -1391,21 +1493,79 @@ function buildComparisonResponse(
     const zplKey = normalizeInvoice(label.invoiceNumber);
     if (!zplKey) continue;
 
-    const matchedIdx = consolidatedPdfOrders.findIndex((pdfOrder, idx) => {
-      if (matchedPdfIndices.has(idx)) return false;
-      if (pdfOrder.sellerInvoice && normalizeInvoice(pdfOrder.sellerInvoice) === zplKey) {
-        return true;
+    // 1. Find all UNMATCHED PDF orders with this invoice number
+    const candidateIndices = consolidatedPdfOrders
+      .map((_, idx) => idx)
+      .filter((idx) => {
+        if (matchedPdfIndices.has(idx)) return false;
+        const pdfOrder = consolidatedPdfOrders[idx];
+        if (pdfOrder.sellerInvoice && normalizeInvoice(pdfOrder.sellerInvoice) === zplKey) {
+          return true;
+        }
+        if (pdfOrder.allInvoices.some((inv) => normalizeInvoice(inv) === zplKey)) {
+          return true;
+        }
+        return false;
+      });
+
+    let matchedIdx = -1;
+
+    if (candidateIndices.length === 1) {
+      matchedIdx = candidateIndices[0];
+    } else if (candidateIndices.length > 1) {
+      // Pick best matching candidate by customer, shipping address, or order number
+      let bestIdx = candidateIndices[0];
+      let bestScore = -1;
+      const zplAddr = [label.customer, label.shipToAddress].filter(Boolean).join(" ");
+
+      for (const cIdx of candidateIndices) {
+        const pdfOrder = consolidatedPdfOrders[cIdx];
+        let score = 0;
+        if (label.orderNumber && pdfOrder.orderNumber && label.orderNumber === pdfOrder.orderNumber) {
+          score += 20;
+        }
+        if (label.customer && pdfOrder.customer && label.customer.toLowerCase() === pdfOrder.customer.toLowerCase()) {
+          score += 10;
+        }
+        const pdfAddr = [pdfOrder.customer, pdfOrder.shippingAddress].filter(Boolean).join(" ");
+        if (zplAddr && pdfAddr) {
+          score += computeAddressSimilarity(pdfAddr, zplAddr) * 10;
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          bestIdx = cIdx;
+        }
       }
-      if (pdfOrder.allInvoices.some((inv) => normalizeInvoice(inv) === zplKey)) {
-        return true;
+      matchedIdx = bestIdx;
+    }
+
+    // 2. Rare Edge Case Fallback: If all PDF orders with this invoice number are already matched
+    // (e.g. 2 ZPL labels for 1 physical invoice), treat this duplicate ZPL label as a different entity
+    // and match it with the invoice (without combining or discarding)
+    let isSharedFallback = false;
+    if (matchedIdx === -1) {
+      const duplicateIdx = consolidatedPdfOrders.findIndex((pdfOrder) => {
+        if (pdfOrder.sellerInvoice && normalizeInvoice(pdfOrder.sellerInvoice) === zplKey) {
+          return true;
+        }
+        if (pdfOrder.allInvoices.some((inv) => normalizeInvoice(inv) === zplKey)) {
+          return true;
+        }
+        return false;
+      });
+
+      if (duplicateIdx !== -1) {
+        matchedIdx = duplicateIdx;
+        isSharedFallback = true;
       }
-      return false;
-    });
+    }
 
     if (matchedIdx !== -1) {
       const matchedOrder = consolidatedPdfOrders[matchedIdx];
       matchedZplIndices.add(label.index);
-      matchedPdfIndices.add(matchedIdx);
+      if (!isSharedFallback) {
+        matchedPdfIndices.add(matchedIdx);
+      }
 
       const extractedItems = extractAllItemsFromPdfText(matchedOrder.fullText || "");
       const classification = classifyOrderType(
@@ -1424,7 +1584,7 @@ function buildComparisonResponse(
         zplInvoice: label.invoiceNumber,
         asin: asinVal,
         sellerSku: skuVal,
-        orderNumber: matchedOrder.orderNumber || "N/A",
+        orderNumber: matchedOrder.orderNumber || label.orderNumber || "N/A",
         awb: label.awb || "N/A",
         customer: matchedOrder.customer || label.customer || "N/A",
         amount: matchedOrder.amount ? `₹${matchedOrder.amount}` : "N/A",
