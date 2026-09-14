@@ -92,6 +92,7 @@ export interface ScannerResult {
   success: boolean;
   trackingId: string;
   message: string;
+  isQr?: boolean;
 }
 
 export interface ScannerConfig {

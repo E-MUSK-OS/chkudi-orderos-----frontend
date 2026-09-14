@@ -7,3 +7,4 @@ export { default as CameraPreview } from "./CameraPreview";
 export { default as SessionInfo } from "./SessionInfo";
 export { default as UploadQueue } from "./UploadQueue";
 export { default as RecentScans } from "./RecentScans";
+export { default as QrCodeModal } from "./QrCodeModal";

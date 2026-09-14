@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { ScanHistoryItem } from "../types/vms.types";
 import { SCANNER_CONFIG } from "../utils/scanner.constants";
 import type { ScannerResult, ScannerStatus } from "../types/vms.types";
+import { validateTrackingId as validateTrackingHelper, isQrCode } from "../utils/validateTracking";
 
 export const useScanner = () => {
   const [lastScan, setLastScan] = useState<string | null>(null);
@@ -22,26 +23,14 @@ export const useScanner = () => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scanTimer = useRef<NodeJS.Timeout | null>(null);
   const lastKeyTime = useRef(0);
+  const isHumanTyping = useRef(false);
+
   const validateTrackingId = useCallback((trackingId: string) => {
-    const value = trackingId.trim();
-
-    if (!value) {
-      return {
-        success: false,
-        message: "Tracking ID is required.",
-      };
-    }
-
-    if (value.length < SCANNER_CONFIG.MIN_LENGTH) {
-      return {
-        success: false,
-        message: `Tracking ID must be at least ${SCANNER_CONFIG.MIN_LENGTH} characters.`,
-      };
-    }
-
+    const res = validateTrackingHelper(trackingId, SCANNER_CONFIG.MIN_LENGTH);
     return {
-      success: true,
-      message: "Valid tracking ID.",
+      success: res.isValid,
+      isQr: res.isQr,
+      message: res.message,
     };
   }, []);
   const isDuplicate = useCallback((trackingId: string) => {
@@ -80,6 +69,7 @@ export const useScanner = () => {
         if (!validation.success) {
           return {
             success: false,
+            isQr: validation.isQr,
             trackingId,
             message: validation.message,
           };
@@ -168,30 +158,113 @@ export const useScanner = () => {
   }, []);
 
   const processKeyboardInput = useCallback(
-    (key: string, onComplete: (trackingId: string) => void) => {
-      if (key === "Enter") {
-        if (scanBuffer.current.trim()) {
-          onComplete(scanBuffer.current.trim());
+    (
+      key: string,
+      onComplete: (trackingId: string) => void,
+      onManualTypingAttempt?: () => void,
+    ) => {
+      // Barcode scanners send keys in rapid bursts (10-35ms).
+      // Any delay > 60ms between consecutive keys indicates manual human typing.
+      const MAX_SCANNER_INTERVAL = 60; // ms
+      const SCAN_FINISH_TIMEOUT = 120; // ms: timeout to complete if scanner has no Enter suffix
 
-          scanBuffer.current = "";
+      if (key === "Enter") {
+        const now = Date.now();
+        const diff = lastKeyTime.current ? now - lastKeyTime.current : 999;
+        const code = scanBuffer.current.trim();
+        const wasHuman = isHumanTyping.current;
+
+        // Reset buffer and states
+        scanBuffer.current = "";
+        isHumanTyping.current = false;
+        lastKeyTime.current = 0;
+        if (scanTimer.current) {
+          clearTimeout(scanTimer.current);
+          scanTimer.current = null;
         }
 
+        // If manual typing was detected, or buffer is too short, or Enter was pressed slowly (> 80ms after last char)
+        if (wasHuman || code.length < SCANNER_CONFIG.MIN_LENGTH || diff > 80) {
+          if (wasHuman || code.length > 0) {
+            onManualTypingAttempt?.();
+          }
+          return;
+        }
+
+        // Valid hardware barcode scanner input
+        updateScannerStatus("usb");
+        resetScannerTimeout();
+        onComplete(code);
         return;
       }
 
-      if (key.length !== 1) return;
+      // Ignore non-character keys (Shift, Control, Alt, CapsLock, Tab, Arrow keys, etc.)
+      if (key.length !== 1) {
+        return;
+      }
 
+      const now = Date.now();
+      const diff = lastKeyTime.current ? now - lastKeyTime.current : 0;
+      lastKeyTime.current = now;
+
+      // First character of a scan sequence
+      if (scanBuffer.current === "") {
+        isHumanTyping.current = false;
+        scanBuffer.current = key;
+
+        if (scanTimer.current) clearTimeout(scanTimer.current);
+        scanTimer.current = setTimeout(() => {
+          const finalCode = scanBuffer.current.trim();
+          const wasHuman = isHumanTyping.current;
+          scanBuffer.current = "";
+          isHumanTyping.current = false;
+          lastKeyTime.current = 0;
+
+          // If scanner without Enter suffix (fast burst and >= MIN_LENGTH)
+          if (!wasHuman && finalCode.length >= SCANNER_CONFIG.MIN_LENGTH) {
+            updateScannerStatus("usb");
+            resetScannerTimeout();
+            onComplete(finalCode);
+          } else if (finalCode.length > 0) {
+            onManualTypingAttempt?.();
+          }
+        }, SCAN_FINISH_TIMEOUT);
+        return;
+      }
+
+      // 2nd, 3rd, 4th... characters:
+      // If gap between consecutive keys exceeds MAX_SCANNER_INTERVAL, it's manual human typing!
+      if (diff > MAX_SCANNER_INTERVAL) {
+        isHumanTyping.current = true;
+        scanBuffer.current = ""; // Wipe buffer immediately
+        lastKeyTime.current = 0;
+        if (scanTimer.current) {
+          clearTimeout(scanTimer.current);
+          scanTimer.current = null;
+        }
+        onManualTypingAttempt?.();
+        return;
+      }
+
+      // Fast keystrokes from barcode scanner
       scanBuffer.current += key;
 
-      resetTimer(() => {
-        if (scanBuffer.current.trim()) {
-          onComplete(scanBuffer.current.trim());
+      if (scanTimer.current) clearTimeout(scanTimer.current);
+      scanTimer.current = setTimeout(() => {
+        const finalCode = scanBuffer.current.trim();
+        const wasHuman = isHumanTyping.current;
+        scanBuffer.current = "";
+        isHumanTyping.current = false;
+        lastKeyTime.current = 0;
 
-          scanBuffer.current = "";
+        if (!wasHuman && finalCode.length >= SCANNER_CONFIG.MIN_LENGTH) {
+          updateScannerStatus("usb");
+          resetScannerTimeout();
+          onComplete(finalCode);
         }
-      });
+      }, SCAN_FINISH_TIMEOUT);
     },
-    [resetTimer],
+    [updateScannerStatus, resetScannerTimeout],
   );
 
   return {

@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useVMSStore } from "../store/vmsStore";
 import { useUploadQueue } from "./useUploadQueue";
+import { isQrCode } from "../utils/validateTracking";
 
 export const useRecorder = () => {
   const { processQueue } = useUploadQueue();
@@ -12,19 +13,12 @@ export const useRecorder = () => {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // const pendingRecordingRef = useRef<
-  //   {
-  //     stream: MediaStream;
-  //     trackingId: string;
-  //   }[]
-  // >([]);
   const nextRecordingRef = useRef<{
     stream: MediaStream;
     trackingId: string;
   } | null>(null);
   const {
     recording,
-
     setRecording,
   } = useVMSStore();
 
@@ -40,6 +34,10 @@ export const useRecorder = () => {
 
   const startRecording = useCallback(
     (stream: MediaStream, trackingId: string) => {
+      if (isQrCode(trackingId)) {
+        console.warn("Attempted to record QR code - blocked:", trackingId);
+        return;
+      }
       console.log("START =", trackingId);
       console.log("RECORDER START =>", trackingId);
       console.log("START TIME =", Date.now());
@@ -193,6 +191,10 @@ export const useRecorder = () => {
   // };
 
   const queueNextRecording = (stream: MediaStream, trackingId: string) => {
+    if (isQrCode(trackingId)) {
+      console.warn("Attempted to queue QR code - blocked:", trackingId);
+      return;
+    }
     nextRecordingRef.current = {
       stream,
       trackingId,
