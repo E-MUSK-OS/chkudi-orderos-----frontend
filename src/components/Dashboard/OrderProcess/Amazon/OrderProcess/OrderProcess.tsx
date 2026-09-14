@@ -28,6 +28,8 @@ import { asinImportService } from "@/components/Dashboard/Products/ManageProduct
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs, startBackgroundOrderPdfPrewarming } from "./utils/pdfCache";
+import AmazonProcessHistoryDropdown from "./components/AmazonProcessHistoryDropdown";
+import { amazonOrderService } from "./services/amazonOrder.service";
 
 export default function OrderProcess() {
   const router = useRouter();
@@ -648,7 +650,7 @@ export default function OrderProcess() {
         unmatchedZplPromise ? unmatchedZplPromise : Promise.resolve(null),
       ]);
 
-      // Convert to base64 concurrently
+      // Convert to base64 concurrently for store preview/state
       const [originalPdfBase64, combinedPdfBase64, unmatchedPdfBase64, unmatchedZplBase64] = await Promise.all([
         fileToBase64(new Blob([enhancedBytes as unknown as BlobPart], { type: "application/pdf" })),
         combinedBytes
@@ -694,6 +696,79 @@ export default function OrderProcess() {
         startBackgroundOrderPdfPrewarming(processResponse.results, combinedDocInstance);
       }
 
+      // Save processed batch to backend database with 7-day retention (expires at 6 PM on Day 7)
+      setProgress(95, "Saving batch to 7-day database...");
+      try {
+        const formData = new FormData();
+        formData.append("summary", JSON.stringify(processResponse.summary));
+        formData.append("results", JSON.stringify(processResponse.results));
+
+        if (combinedBytes) {
+          const combinedFile = new File([new Blob([combinedBytes as unknown as BlobPart])], "combined_match.pdf", {
+            type: "application/pdf",
+          });
+          formData.append("combinedPdf", combinedFile);
+        }
+
+        if (zplDocInstance) {
+          const zplBytes = await zplDocInstance.save();
+          const zplFile = new File([new Blob([zplBytes as unknown as BlobPart])], "converted_zpl.pdf", {
+            type: "application/pdf",
+          });
+          formData.append("zplPdf", zplFile);
+        } else if (processResponse.files?.convertedZplPdfBase64) {
+          const cleanB64 = processResponse.files.convertedZplPdfBase64.includes(",")
+            ? processResponse.files.convertedZplPdfBase64.split(",")[1]
+            : processResponse.files.convertedZplPdfBase64;
+          const res = await fetch(`data:application/pdf;base64,${cleanB64}`);
+          const blob = await res.blob();
+          formData.append("zplPdf", new File([blob], "converted_zpl.pdf", { type: "application/pdf" }));
+        }
+
+        if (enhancedBytes) {
+          const origFile = new File([new Blob([enhancedBytes as unknown as BlobPart])], "original_invoices.pdf", {
+            type: "application/pdf",
+          });
+          formData.append("originalPdf", origFile);
+        }
+
+        if (unmatchedPdfBytes) {
+          const unmatchedPdfFile = new File([new Blob([unmatchedPdfBytes as unknown as BlobPart])], "unmatched_invoices.pdf", {
+            type: "application/pdf",
+          });
+          formData.append("unmatchedPdf", unmatchedPdfFile);
+        } else if (processResponse.files?.unmatchedPdfBase64) {
+          const cleanB64 = processResponse.files.unmatchedPdfBase64.includes(",")
+            ? processResponse.files.unmatchedPdfBase64.split(",")[1]
+            : processResponse.files.unmatchedPdfBase64;
+          const res = await fetch(`data:application/pdf;base64,${cleanB64}`);
+          const blob = await res.blob();
+          formData.append("unmatchedPdf", new File([blob], "unmatched_invoices.pdf", { type: "application/pdf" }));
+        }
+
+        if (unmatchedZplBytes) {
+          const unmatchedZplFile = new File([new Blob([unmatchedZplBytes as unknown as BlobPart])], "unmatched_zpl.pdf", {
+            type: "application/pdf",
+          });
+          formData.append("unmatchedZplPdf", unmatchedZplFile);
+        } else if (processResponse.files?.unmatchedZplBase64) {
+          const cleanB64 = processResponse.files.unmatchedZplBase64.includes(",")
+            ? processResponse.files.unmatchedZplBase64.split(",")[1]
+            : processResponse.files.unmatchedZplBase64;
+          const res = await fetch(`data:application/pdf;base64,${cleanB64}`);
+          const blob = await res.blob();
+          formData.append("unmatchedZplPdf", new File([blob], "unmatched_zpl.pdf", { type: "application/pdf" }));
+        }
+
+        const saveRes = await amazonOrderService.saveBatch(formData);
+        if (saveRes?.success) {
+          useAmazonOrderStore.getState().fetchHistoryBatches();
+        }
+      } catch (saveErr) {
+        console.error("Failed to save batch to 7-day database:", saveErr);
+        toast.warning("Verification complete, but failed to save to 7-day cloud history.");
+      }
+
       clearInterval(progressInterval);
       setProgress(100, "5. Processing Complete!");
       await setProcessData(processResponse);
@@ -703,7 +778,7 @@ export default function OrderProcess() {
       );
 
       // Smooth pause to let user see the 100% completion state before navigating
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 400));
 
       router.push("/dashboard/order-process/amazon/order-process/result");
     } catch (err: unknown) {
@@ -748,9 +823,10 @@ export default function OrderProcess() {
                   </p>
                 </div>
 
-                {/* Progress Badge */}
-                <div className="flex items-center gap-3 self-start md:self-center">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 sm:px-5 py-2.5 sm:py-3.5 text-left md:text-right shadow-2xs w-full md:w-auto">
+                {/* Progress Badge & 7-Day History Dropdown */}
+                <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
+                  <AmazonProcessHistoryDropdown />
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 sm:px-5 py-2.5 sm:py-3.5 text-left md:text-right shadow-2xs w-full sm:w-auto">
                     <div className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       Files Ready
                     </div>

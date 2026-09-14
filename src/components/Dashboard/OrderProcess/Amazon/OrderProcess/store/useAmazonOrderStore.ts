@@ -10,6 +10,7 @@ import {
   AmazonProcessResponse,
 } from "../types";
 import { cleanCustomerName } from "../utils";
+import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
 
 interface AmazonOrderState {
   isProcessing: boolean;
@@ -41,6 +42,13 @@ interface AmazonOrderState {
   downloadUnmatchedZplPdf: () => void;
   exportToExcel: () => void;
   restoreProcessData: () => Promise<boolean>;
+
+  // 7-Day Batch History
+  historyBatches: AmazonBatchHistoryItem[];
+  isLoadingHistory: boolean;
+  activeHistoryBatchId: string | null;
+  fetchHistoryBatches: () => Promise<AmazonBatchHistoryItem[]>;
+  loadBatchFromHistory: (batchId: string) => Promise<boolean>;
 }
 
 const SESSION_STORAGE_KEY = "amazon_order_process_data_v1";
@@ -163,6 +171,11 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
   originalPdfUrl: null,
   unmatchedPdfUrl: null,
   unmatchedZplPdfUrl: null,
+
+  // 7-Day History state
+  historyBatches: [],
+  isLoadingHistory: false,
+  activeHistoryBatchId: null,
 
   setProcessing: (isProcessing) =>
     set({
@@ -360,7 +373,117 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       originalPdfUrl: null,
       unmatchedPdfUrl: null,
       unmatchedZplPdfUrl: null,
+      activeHistoryBatchId: null,
     });
+  },
+
+  fetchHistoryBatches: async () => {
+    set({ isLoadingHistory: true });
+    try {
+      const res = await amazonOrderService.getBatchHistory(7);
+      if (res?.data && Array.isArray(res.data)) {
+        set({ historyBatches: res.data, isLoadingHistory: false });
+        return res.data;
+      }
+      set({ historyBatches: [], isLoadingHistory: false });
+      return [];
+    } catch (err) {
+      console.warn("Failed to fetch Amazon batch history:", err);
+      set({ historyBatches: [], isLoadingHistory: false });
+      return [];
+    }
+  },
+
+  loadBatchFromHistory: async (batchId: string) => {
+    set({ isProcessing: true, progress: 15, currentStage: "Loading batch from history..." });
+    try {
+      const res = await amazonOrderService.getBatchById(batchId);
+      const batch = res?.data;
+      if (!batch || !batch.summary || !batch.results) {
+        throw new Error("Invalid batch data received from server");
+      }
+
+      set({ progress: 45, currentStage: "Fetching batch documents (PDFs & ZPL)..." });
+
+      const fetchBlobAsBase64 = async (
+        fileUrl?: string | null,
+        fileType?: "combined" | "zpl" | "original" | "unmatched-pdf" | "unmatched-zpl" | string
+      ): Promise<string> => {
+        try {
+          let blob: Blob | null = null;
+          if (fileType) {
+            try {
+              blob = await amazonOrderService.fetchBatchFileBlob(batchId, fileType);
+            } catch (e) {}
+          }
+          if (!blob && fileUrl) {
+            const hostUrl = fileUrl.startsWith("http")
+              ? fileUrl
+              : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "") || "http://localhost:5000"}${fileUrl.startsWith("/") ? "" : "/"}${fileUrl}`;
+            const r = await fetch(hostUrl);
+            if (r.ok) blob = await r.blob();
+          }
+          if (!blob) return "";
+
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const str = reader.result as string;
+              resolve(str || "");
+            };
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(blob);
+          });
+        } catch (e) {
+          console.warn("Error fetching batch file blob:", e);
+          return "";
+        }
+      };
+
+      const [
+        combinedPdfBase64,
+        convertedZplPdfBase64,
+        originalPdfBase64,
+        unmatchedPdfBase64,
+        unmatchedZplBase64,
+      ] = await Promise.all([
+        fetchBlobAsBase64(batch.combinedPdfUrl, "combined"),
+        fetchBlobAsBase64(batch.zplPdfUrl, "zpl"),
+        fetchBlobAsBase64(batch.originalPdfUrl, "original"),
+        fetchBlobAsBase64(batch.unmatchedPdfUrl, "unmatched-pdf"),
+        fetchBlobAsBase64(batch.unmatchedZplPdfUrl, "unmatched-zpl"),
+      ]);
+
+      set({ progress: 85, currentStage: "Restoring order verification..." });
+
+      const files: AmazonProcessFiles = {
+        combinedPdfBase64,
+        convertedZplPdfBase64,
+        originalPdfBase64,
+        unmatchedPdfBase64,
+        unmatchedZplBase64,
+      };
+
+      await get().setProcessData({
+        success: true,
+        summary: batch.summary,
+        results: batch.results,
+        files,
+      });
+
+      set({
+        activeHistoryBatchId: batch.id,
+        isProcessing: false,
+        progress: 100,
+        currentStage: "Loaded!",
+      });
+
+      return true;
+    } catch (err) {
+      console.error("Failed to load batch from history:", err);
+      set({ isProcessing: false, progress: 0, currentStage: "" });
+      return false;
+    }
   },
 
   downloadConvertedZplPdf: () => {

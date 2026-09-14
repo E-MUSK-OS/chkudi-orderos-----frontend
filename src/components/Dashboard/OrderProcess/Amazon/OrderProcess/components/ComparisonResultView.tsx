@@ -27,6 +27,8 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "sonner";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import { PDFDocument } from "pdf-lib";
 import {
   chromeExtensionPrintService,
@@ -99,7 +101,6 @@ import { AmazonOrderType } from "../types";
 import {
   generateAmazonPicklist,
   downloadAmazonPicklistExcel,
-  openAmazonPicklistTab,
 } from "../utils/generateAmazonPicklist";
 
 export type AmazonOrderTypeFilter = AmazonOrderType;
@@ -1699,10 +1700,7 @@ export default function ComparisonResultView({
 
       const picklist = generateAmazonPicklist(mappedResults, targetSet, currentDetailsMap);
 
-      // Open Excel picklist spreadsheet view in a new tab
-      openAmazonPicklistTab(picklist);
-
-      // Download Excel (.xlsx) picklist
+      // Download Excel (.xlsx) picklist directly without opening a new tab
       await downloadAmazonPicklistExcel(picklist);
 
       if (selectedRows.size > 0) {
@@ -1718,6 +1716,190 @@ export default function ComparisonResultView({
       console.error("Failed to generate picklist:", err);
       toast.error("Failed to generate Excel picklist.");
     }
+  };
+
+  // Helper to cleanly format multiple ASINs or SKUs without raw newlines
+  const formatCleanList = (val?: string): string => {
+    if (!val || val === "N/A" || val === "-") return "N/A";
+    const rawItems = val
+      .split(/[\r\n]+|\s+\/\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const items = Array.from(new Set(rawItems));
+    if (items.length === 0) return "N/A";
+    return items.join(" / ");
+  };
+
+  // Reusable Excel exporter for matched unprinted or printed Amazon orders
+  const exportOrdersToExcel = async (
+    targetOrders: typeof mappedResults,
+    sheetTitle: string,
+    filePrefix: string,
+    totalLabel: string,
+    toastId: string
+  ) => {
+    try {
+      toast.loading(`Generating Excel for ${targetOrders.length} order(s)...`, {
+        id: toastId,
+      });
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(sheetTitle);
+
+      // Columns specification matching table layout (Sr No removed as requested)
+      worksheet.columns = [
+        { header: "Invoices", key: "invoice", width: 24 },
+        { header: "Amazon Order ID", key: "orderId", width: 26 },
+        { header: "AWB Tracking", key: "awb", width: 22 },
+        { header: "ASIN", key: "asin", width: 20 },
+        { header: "Seller SKU", key: "sellerSku", width: 36 },
+        { header: "Customer", key: "customer", width: 26 },
+        { header: "Order Type", key: "orderType", width: 18 },
+      ];
+
+      // Header row styling: standard Excel background (no fill), bold black text (matching picklist)
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 24;
+      headerRow.eachCell((cell, colNumber) => {
+        cell.font = { bold: true, color: { argb: "FF000000" }, size: 11, name: "Calibri" };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: colNumber === 5 || colNumber === 6 ? "left" : "center",
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFD4D4D8" } },
+          left: { style: "thin", color: { argb: "FFD4D4D8" } },
+          bottom: { style: "medium", color: { argb: "FF000000" } },
+          right: { style: "thin", color: { argb: "FFD4D4D8" } },
+        };
+      });
+
+      // Add Data Rows
+      targetOrders.forEach((item) => {
+        const invoiceVal =
+          item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" && item.pdfInvoice !== "N/A"
+            ? item.pdfInvoice.trim()
+            : item.zplInvoice && item.zplInvoice !== "Not Found in ZPL" && item.zplInvoice !== "N/A"
+            ? item.zplInvoice.trim()
+            : "N/A";
+
+        const orderTypeLabel = getOrderTypeLabel(getOrderTypeForItem(item));
+        const cleanAsin = formatCleanList(item.asin);
+        const cleanSku = formatCleanList(item.sellerSku);
+        const cleanCust = cleanCustomerName(item.customer) || "N/A";
+
+        const row = worksheet.addRow({
+          invoice: invoiceVal,
+          orderId: item.orderNumber || "N/A",
+          awb: item.awb || "N/A",
+          asin: cleanAsin,
+          sellerSku: cleanSku,
+          customer: cleanCust,
+          orderType: orderTypeLabel,
+        });
+
+        row.height = 20;
+
+        row.eachCell((cell, colNumber) => {
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFD4D4D8" } },
+            left: { style: "thin", color: { argb: "FFD4D4D8" } },
+            bottom: { style: "thin", color: { argb: "FFD4D4D8" } },
+            right: { style: "thin", color: { argb: "FFD4D4D8" } },
+          };
+          cell.font = { size: 10, name: "Calibri", color: { argb: "FF000000" } };
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: colNumber === 5 || colNumber === 6 ? "left" : "center",
+          };
+        });
+      });
+
+      // Total Summary Row
+      const totalRow = worksheet.addRow({
+        invoice: "",
+        orderId: "",
+        awb: "",
+        asin: "",
+        sellerSku: totalLabel,
+        customer: `${targetOrders.length} Orders`,
+        orderType: "",
+      });
+
+      totalRow.height = 24;
+      totalRow.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF000000" } },
+          bottom: { style: "double", color: { argb: "FF000000" } },
+          left: { style: "thin", color: { argb: "FFD4D4D8" } },
+          right: { style: "thin", color: { argb: "FFD4D4D8" } },
+        };
+        cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF000000" } };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: colNumber === 5 ? "right" : colNumber === 6 ? "left" : "center",
+        };
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `${filePrefix}_${targetOrders.length}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      saveAs(
+        new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        fileName
+      );
+
+      toast.success(`Downloaded ${targetOrders.length} order(s) in Excel!`, {
+        id: toastId,
+      });
+    } catch (err) {
+      console.error(`Failed to export ${sheetTitle} excel:`, err);
+      toast.error(`Failed to generate ${sheetTitle} Excel file.`, {
+        id: toastId,
+      });
+    }
+  };
+
+  // Download unprinted matched orders in Excel format matching the table
+  const handleDownloadUnprintedExcel = async () => {
+    const unprintedOrders = mappedResults.filter(
+      (item) => item.isMatch && !printedRows.has(item.index)
+    );
+
+    if (unprintedOrders.length === 0) {
+      toast.info("All matched orders have already been printed!");
+      return;
+    }
+
+    await exportOrdersToExcel(
+      unprintedOrders,
+      "Unprinted Orders",
+      "Amazon_Unprinted_Orders",
+      "TOTAL UNPRINTED",
+      "download-unprinted-excel"
+    );
+  };
+
+  // Download printed matched orders in Excel format matching the table
+  const handleDownloadPrintedExcel = async () => {
+    const printedOrders = mappedResults.filter(
+      (item) => item.isMatch && printedRows.has(item.index)
+    );
+
+    if (printedOrders.length === 0) {
+      toast.info("No matched orders have been printed yet!");
+      return;
+    }
+
+    await exportOrdersToExcel(
+      printedOrders,
+      "Printed Orders",
+      "Amazon_Printed_Orders",
+      "TOTAL PRINTED",
+      "download-printed-excel"
+    );
   };
 
   // Helper to construct order requirements for scanning verification
@@ -2263,20 +2445,22 @@ export default function ComparisonResultView({
               setSelectedPdfType("zpl");
               setActiveTab("pdf");
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
           >
-            <p className="text-xs sm:text-sm font-medium text-slate-500">
-              ZPL Labels
-            </p>
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                ZPL Labels
+              </p>
 
-            <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
-                {summary.totalZplLabels}
-              </h3>
+              <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+                <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
+                  {summary.totalZplLabels}
+                </h3>
 
-              <span className="rounded bg-amber-100 px-2 py-1 text-xs font-bold text-amber-800">
-                Converted
-              </span>
+                <span className="rounded bg-amber-100 px-2 py-1 text-xs font-bold text-amber-800">
+                  Converted
+                </span>
+              </div>
             </div>
           </article>
 
@@ -2286,62 +2470,110 @@ export default function ComparisonResultView({
               setSelectedPdfType("original");
               setActiveTab("pdf");
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
           >
-            <p className="text-xs sm:text-sm font-medium text-slate-500">
-              PDF Orders
-            </p>
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                PDF Orders
+              </p>
 
-            <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
-                {summary.totalPdfOrders}
-              </h3>
+              <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+                <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
+                  {summary.totalPdfOrders}
+                </h3>
 
-              <span className="rounded bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">
-                {summary.totalPdfPages} pgs
-              </span>
+                <span className="rounded bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">
+                  {summary.totalPdfPages} pgs
+                </span>
+              </div>
             </div>
           </article>
 
-          {/* Card 3: Matched Rate */}
+          {/* Card 3: Matched Orders */}
           <article
             onClick={() => {
               setActiveTab("table");
               setPage(1);
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
           >
-            <div className="flex items-center justify-between">
-              <p className="text-xs sm:text-sm font-medium text-slate-500">
-                Matched Orders
-              </p>
-              {summary.mismatchCount > 0 && (
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPdfType(unmatchedPdfCount > 0 ? "unmatched_pdf" : "unmatched_zpl");
-                    setActiveTab("pdf");
-                  }}
-                  className="rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 hover:bg-red-200 cursor-pointer"
-                  title="Click to view unmatched documents in PDF viewer"
-                >
-                  {summary.mismatchCount} Unmatched
+            <div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs sm:text-sm font-medium text-slate-500">
+                  Matched Orders
+                </p>
+                {summary.mismatchCount > 0 && (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPdfType(unmatchedPdfCount > 0 ? "unmatched_pdf" : "unmatched_zpl");
+                      setActiveTab("pdf");
+                    }}
+                    className="rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 hover:bg-red-200 cursor-pointer"
+                    title="Click to view unmatched documents in PDF viewer"
+                  >
+                    {summary.mismatchCount} Unmatched
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+                <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
+                  {printedRows.size > 0
+                    ? `${remainingMatchedCount} / ${summary.matchedCount}`
+                    : summary.matchedCount}
+                </h3>
+
+                <span className="rounded bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                  {printedRows.size > 0
+                    ? `${printedRows.size} printed`
+                    : `${summary.matchPercentage}%`}
                 </span>
-              )}
+              </div>
             </div>
 
-            <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">
-                {printedRows.size > 0
-                  ? `${remainingMatchedCount} / ${summary.matchedCount}`
-                  : summary.matchedCount}
-              </h3>
-
-              <span className="rounded bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
-                {printedRows.size > 0
-                  ? `${printedRows.size} printed`
-                  : `${summary.matchPercentage}%`}
+            {/* Bottom Row: Improvised Sleek Excel Export Actions */}
+            <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <FileSpreadsheet className="h-3.5 w-3.5 text-slate-400" />
+                <span>Excel</span>
               </span>
+
+              <div className="inline-flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadUnprintedExcel();
+                  }}
+                  disabled={remainingMatchedCount === 0}
+                  className="group relative inline-flex items-center gap-1.5 rounded-lg border border-amber-200/90 bg-amber-50/80 hover:bg-amber-100/90 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs hover:shadow-xs hover:border-amber-300 active:scale-95 transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer"
+                  title={`Download ${remainingMatchedCount} unprinted order(s) in Excel`}
+                >
+                  <Download className="h-3 w-3 text-amber-700 group-hover:-translate-y-0.5 transition-transform" />
+                  <span>Unprinted</span>
+                  <span className="inline-flex items-center justify-center rounded-full bg-amber-200/90 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-950">
+                    {remainingMatchedCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadPrintedExcel();
+                  }}
+                  disabled={printedRows.size === 0}
+                  className="group relative inline-flex items-center gap-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50/80 hover:bg-emerald-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 shadow-2xs hover:shadow-xs hover:border-emerald-300 active:scale-95 transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer"
+                  title={`Download ${printedRows.size} printed order(s) in Excel`}
+                >
+                  <Download className="h-3 w-3 text-emerald-700 group-hover:-translate-y-0.5 transition-transform" />
+                  <span>Printed</span>
+                  <span className="inline-flex items-center justify-center rounded-full bg-emerald-200/90 px-1.5 py-0.2 text-[10px] font-extrabold text-emerald-950">
+                    {printedRows.size}
+                  </span>
+                </button>
+              </div>
             </div>
           </article>
         </div>
