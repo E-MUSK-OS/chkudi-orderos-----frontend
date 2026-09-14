@@ -1266,7 +1266,7 @@ function isAmazonTransporterOrFeePage(text?: string): boolean {
  */
 function buildComparisonResponse(
   zplLabels: ZplLabelData[],
-  convertedZplPdfBase64: string,
+  convertedZplPdfBase64 = "",
   pagesArray: string[],
   zplFileName = "labels.zpl"
 ) {

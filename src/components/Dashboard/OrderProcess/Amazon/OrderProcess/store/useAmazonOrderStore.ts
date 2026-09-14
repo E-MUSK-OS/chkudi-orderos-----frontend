@@ -102,17 +102,36 @@ export async function loadFilesFromIDB(): Promise<AmazonProcessFiles | null> {
   }
 }
 
+// Helper to convert base64 string to Blob safely without hitting array length limits
+const base64ToBlob = (base64Data: string, mimeType = "application/pdf"): Blob | null => {
+  try {
+    if (!base64Data) return null;
+    const clean = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
+    const binary = atob(clean);
+    const sliceSize = 1024 * 1024; // 1MB chunks
+    const byteArrays: Uint8Array[] = [];
+
+    for (let offset = 0; offset < binary.length; offset += sliceSize) {
+      const slice = binary.slice(offset, offset + sliceSize);
+      const byteNumbers = new Uint8Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      byteArrays.push(byteNumbers);
+    }
+
+    return new Blob(byteArrays as any[], { type: mimeType });
+  } catch (e) {
+    console.error("Failed to convert base64 to Blob:", e);
+    return null;
+  }
+};
+
 // Helper to convert base64 string to a Blob URL
 const base64ToBlobUrl = (base64Data: string, mimeType = "application/pdf"): string => {
   try {
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: mimeType });
-    return URL.createObjectURL(blob);
+    const blob = base64ToBlob(base64Data, mimeType);
+    return blob ? URL.createObjectURL(blob) : "";
   } catch (e) {
     console.error("Failed to convert base64 to Blob URL:", e);
     return "";
@@ -122,14 +141,10 @@ const base64ToBlobUrl = (base64Data: string, mimeType = "application/pdf"): stri
 // Helper to download base64 file
 const downloadBase64File = (base64Data: string, filename: string, mimeType = "application/pdf") => {
   try {
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    const blob = base64ToBlob(base64Data, mimeType);
+    if (blob) {
+      saveAs(blob, filename);
     }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: mimeType });
-    saveAs(blob, filename);
   } catch (e) {
     console.error("Failed to download file:", e);
   }

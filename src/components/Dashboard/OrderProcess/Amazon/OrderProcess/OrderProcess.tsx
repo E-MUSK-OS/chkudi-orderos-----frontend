@@ -293,7 +293,17 @@ export default function OrderProcess() {
         method: "POST",
         body: zplFormData,
       }).then(async (res) => {
-        const data = await res.json();
+        const text = await res.text();
+        let data: any;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(
+            res.status === 413
+              ? "Uploaded ZPL files exceed the maximum allowed size (413 Request Entity Too Large)."
+              : `Server error (${res.status}): ${text.slice(0, 150)}`
+          );
+        }
         if (!res.ok || !data.success) {
           throw new Error(data.error || "Failed to convert ZPL barcode labels.");
         }
@@ -385,18 +395,37 @@ export default function OrderProcess() {
         body: JSON.stringify({
           action: "compare",
           zplLabels: zplResult.zplLabels,
-          convertedZplPdfBase64: zplResult.convertedZplPdfBase64,
           pdfTextArray,
           zplFileName: combinedZplFile.name,
         }),
       });
 
-      const compareData = await compareRes.json();
+      const responseText = await compareRes.text();
+      let compareData: any;
+      try {
+        compareData = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          compareRes.status === 413
+            ? "Request Entity Too Large: The payload exceeded server limits."
+            : `Failed to parse server response (${compareRes.status}): ${responseText.slice(0, 150)}`
+        );
+      }
       if (!compareRes.ok || !compareData.success) {
         throw new Error(compareData.error || "Failed to cross-verify orders.");
       }
 
       const processResponse = compareData as AmazonProcessResponse;
+      // Re-attach converted ZPL PDF base64 already available in client memory
+      if (!processResponse.files) {
+        processResponse.files = {
+          convertedZplPdfBase64: zplResult.convertedZplPdfBase64,
+          combinedPdfBase64: "",
+          originalPdfBase64: "",
+        };
+      } else {
+        processResponse.files.convertedZplPdfBase64 = zplResult.convertedZplPdfBase64;
+      }
 
       // Resolve Seller SKU mapping from AsinImport table (primary) and products/variants (fallback)
       let asinToSkuMap = new Map<string, string>();

@@ -268,13 +268,22 @@ export default function ComparisonResultView({
 
     const base64ToBlobUrl = (base64Data: string, mimeType = "application/pdf"): string => {
       try {
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        if (!base64Data) return "";
+        const clean = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
+        const binary = atob(clean);
+        const sliceSize = 1024 * 1024;
+        const byteArrays: Uint8Array[] = [];
+
+        for (let offset = 0; offset < binary.length; offset += sliceSize) {
+          const slice = binary.slice(offset, offset + sliceSize);
+          const byteNumbers = new Uint8Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          byteArrays.push(byteNumbers);
         }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: mimeType });
+
+        const blob = new Blob(byteArrays as any[], { type: mimeType });
         return URL.createObjectURL(blob);
       } catch (e) {
         return "";
