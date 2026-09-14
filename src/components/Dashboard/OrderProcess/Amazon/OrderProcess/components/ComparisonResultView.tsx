@@ -681,6 +681,42 @@ export default function ComparisonResultView({
     fetchAsinMappings();
   }, [fetchAsinMappings]);
 
+  // Automatically focus and keep scan input ready for handheld barcode scanners
+  useEffect(() => {
+    if (activeTab === "table") {
+      const timer = setTimeout(() => {
+        autoPrintInputRef.current?.focus();
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
+
+  // Global scanner redirect: if operator pulls scanner trigger without clicking input, automatically focus the scan box
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.ctrlKey || e.altKey || e.metaKey || e.key.length > 1) {
+        return;
+      }
+
+      if (activeTab === "table" && autoPrintInputRef.current) {
+        autoPrintInputRef.current.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [activeTab]);
+
   // Map each order item's ASIN to the corresponding variantSku from DB
   const mappedResults = useMemo(() => {
     if (!asinToSkuMap || asinToSkuMap.size === 0) {
@@ -2312,6 +2348,7 @@ export default function ComparisonResultView({
           <input
             ref={autoPrintInputRef}
             type="text"
+            autoFocus
             placeholder={
               orderTypeFilter === "single_quantity"
                 ? "Scan Single Quantity ASIN, Order ID, or AWB to print..."
