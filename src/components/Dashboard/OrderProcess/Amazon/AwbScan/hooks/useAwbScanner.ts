@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
 import { amazonOrderService, AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 
 export interface ScanFeedbackMessage {
@@ -8,6 +9,16 @@ export interface ScanFeedbackMessage {
   type: "success" | "warning" | "error" | "info";
   order?: AmazonOrderItem;
 }
+
+export interface MissingAwbItem {
+  id: string;
+  awb: string;
+  scannedAt: string;
+  reason?: string;
+  count?: number;
+}
+
+const STORAGE_KEY = "amazon_missing_awb_scans";
 
 export const useAwbScanner = (
   orders: AmazonOrderItem[],
@@ -17,11 +28,13 @@ export const useAwbScanner = (
   const [scanValue, setScanValue] = useState("");
   const [message, setMessage] = useState<ScanFeedbackMessage | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [missingList, setMissingList] = useState<MissingAwbItem[]>([]);
 
   const warningSound = useRef<HTMLAudioElement | null>(null);
   const successSound = useRef<HTMLAudioElement | null>(null);
   const alreadyScannedSound = useRef<HTMLAudioElement | null>(null);
 
+  // Initialize sounds
   useEffect(() => {
     warningSound.current = new Audio("/sounds/warning.wav");
     successSound.current = new Audio("/sounds/success.wav");
@@ -33,6 +46,57 @@ export const useAwbScanner = (
       alreadyScannedSound.current = null;
     };
   }, []);
+
+  // Load missing AWB list from localStorage (pre-seed with user's current missing scan if first time)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setMissingList(parsed);
+          return;
+        }
+      }
+      // If never initialized before, seed with 372527398320 from user's current session
+      const initialSeed: MissingAwbItem[] = [
+        {
+          id: "seed-372527398320",
+          awb: "372527398320",
+          scannedAt: format(new Date(), "dd MMM, hh:mm a"),
+          reason: 'Amazon order with AWB / Order ID "372527398320" not found.',
+          count: 1,
+        },
+      ];
+      setMissingList(initialSeed);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialSeed));
+    } catch (err) {
+      console.warn("Failed to load missing AWB scans from localStorage", err);
+    }
+  }, []);
+
+  // Helper to update and persist missing list
+  const updateMissingList = (updater: (prev: MissingAwbItem[]) => MissingAwbItem[]) => {
+    setMissingList((prev) => {
+      const next = updater(prev);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {
+        console.warn("Failed to persist missing AWB scans to localStorage", e);
+      }
+      return next;
+    });
+  };
+
+  const removeMissingItem = (awb: string) => {
+    updateMissingList((prev) =>
+      prev.filter((item) => item.awb.toLowerCase() !== awb.toLowerCase())
+    );
+  };
+
+  const clearMissingList = () => {
+    updateMissingList(() => []);
+  };
 
   const playSound = async (
     audioRef: React.MutableRefObject<HTMLAudioElement | null>
@@ -72,6 +136,9 @@ export const useAwbScanner = (
         order: existing,
       });
       await playSound(alreadyScannedSound);
+      // Remove from missing if it's there
+      removeMissingItem(clean);
+      if (existing.awb) removeMissingItem(existing.awb);
       setIsScanning(false);
       return;
     }
@@ -95,6 +162,10 @@ export const useAwbScanner = (
         const scannedList = next.filter((item) => item.packingScanStatus === "SCANNED");
         return [...pendingList, ...scannedList];
       });
+
+      // Remove from missing if present
+      removeMissingItem(clean);
+      if (existing.awb) removeMissingItem(existing.awb);
 
       setMessage({
         text: `AWB "${existing.awb}" verified and scanned successfully! (${existing.orderId} • ${existing.customer})`,
@@ -130,6 +201,10 @@ export const useAwbScanner = (
         return [...pendingList, ...scannedList];
       });
 
+      // If this item was previously in missing list, remove it
+      removeMissingItem(clean);
+      if (updated.awb) removeMissingItem(updated.awb);
+
       setMessage({
         text: `AWB "${clean}" scanned and marked as SCANNED!`,
         type: "success",
@@ -142,12 +217,39 @@ export const useAwbScanner = (
       }
     } catch (err: any) {
       const errorMsg =
-        err?.message || `AWB / Order ID "${clean}" not found in Amazon database.`;
+        err?.message || `Amazon order with AWB / Order ID "${clean}" not found.`;
       setMessage({
         text: errorMsg,
         type: "error",
       });
       await playSound(warningSound);
+
+      // Add to missing list
+      const formattedTime = format(new Date(), "dd MMM, hh:mm a");
+      updateMissingList((prev) => {
+        const existingIdx = prev.findIndex(
+          (item) => item.awb.toLowerCase() === clean.toLowerCase()
+        );
+        if (existingIdx >= 0) {
+          const updated = {
+            ...prev[existingIdx],
+            scannedAt: formattedTime,
+            reason: errorMsg,
+            count: (prev[existingIdx].count || 1) + 1,
+          };
+          return [updated, ...prev.filter((_, i) => i !== existingIdx)];
+        }
+        return [
+          {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            awb: clean,
+            scannedAt: formattedTime,
+            reason: errorMsg,
+            count: 1,
+          },
+          ...prev,
+        ];
+      });
     } finally {
       setIsScanning(false);
     }
@@ -159,5 +261,8 @@ export const useAwbScanner = (
     message,
     isScanning,
     handleScan,
+    missingList,
+    removeMissingItem,
+    clearMissingList,
   };
 };

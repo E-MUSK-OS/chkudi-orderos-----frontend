@@ -4,28 +4,63 @@ interface Props {
   total: number;
   pending: number;
   scanned: number;
+  missing?: number;
 }
 
-export default function AwbScanSummary({ total, pending, scanned }: Props) {
+export default function AwbScanSummary({ total, pending, scanned, missing = 0 }: Props) {
+  const hasMissing = missing > 0;
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div
+      className={`grid grid-cols-1 gap-3 sm:gap-4 ${
+        hasMissing ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
+      }`}
+    >
       {/* Total Card */}
-      <div className="border border-blue-500/20 bg-[#0F172A] p-5">
-        <p className="text-sm text-blue-300 font-medium">Total</p>
-        <h2 className="mt-2 text-4xl font-bold text-blue-400">{total}</h2>
-      </div>
+      <article className="border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
+        <p className="text-xs sm:text-sm font-medium text-slate-500">Total Orders</p>
+        <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+          <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">{total}</h3>
+          <span className="rounded bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
+            Total
+          </span>
+        </div>
+      </article>
 
       {/* Scanned Card */}
-      <div className="border border-green-500/20 bg-[#0F172A] p-5">
-        <p className="text-sm text-green-300 font-medium">Scanned</p>
-        <h2 className="mt-2 text-4xl font-bold text-green-400">{scanned}</h2>
-      </div>
+      <article className="border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
+        <p className="text-xs sm:text-sm font-medium text-slate-500">Scanned Orders</p>
+        <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+          <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">{scanned}</h3>
+          <span className="rounded bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">
+            Scanned
+          </span>
+        </div>
+      </article>
 
       {/* Pending Card */}
-      <div className="border border-yellow-500/20 bg-[#0F172A] p-5">
-        <p className="text-sm text-yellow-300 font-medium">Pending</p>
-        <h2 className="mt-2 text-4xl font-bold text-yellow-400">{pending}</h2>
-      </div>
+      <article className="border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
+        <p className="text-xs sm:text-sm font-medium text-slate-500">Pending Orders</p>
+        <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+          <h3 className="text-2xl sm:text-3xl font-bold text-[#0A0E1A]">{pending}</h3>
+          <span className="rounded bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+            Pending
+          </span>
+        </div>
+      </article>
+
+      {/* Missing Card */}
+      {hasMissing && (
+        <article className="border border-red-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
+          <p className="text-xs sm:text-sm font-medium text-red-600">Missing / Unmatched</p>
+          <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+            <h3 className="text-2xl sm:text-3xl font-bold text-red-600">{missing}</h3>
+            <span className="rounded bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+              Unmatched
+            </span>
+          </div>
+        </article>
+      )}
     </div>
   );
 }

@@ -41,21 +41,25 @@ export default function DateRangePicker({
       <PopoverTrigger>
         <div
           className="
-      flex
-      h-12
-      min-w-[260px]
-      cursor-pointer
-      items-center
-      gap-2
-      border
-      border-slate-700
-      bg-[#111827]
-      px-4
-      text-white
-      hover:bg-[#1E293B]
-    "
+            flex
+            h-12
+            min-w-[260px]
+            cursor-pointer
+            items-center
+            gap-2
+            border
+            border-[#E7E0D2]
+            bg-white
+            px-4
+            text-slate-800
+            hover:bg-[#FDFBF7]
+            transition
+            font-medium
+            text-sm
+            rounded-lg
+          "
         >
-          <CalendarIcon size={18} />
+          <CalendarIcon size={18} className="text-slate-400" />
 
           <span>{label}</span>
         </div>
@@ -66,9 +70,11 @@ export default function DateRangePicker({
         className="
           w-auto
           border
-          border-slate-700
-          bg-[#111827]
+          border-[#E7E0D2]
+          bg-white
           p-3
+          shadow-xl
+          rounded-xl
         "
       >
         <Calendar

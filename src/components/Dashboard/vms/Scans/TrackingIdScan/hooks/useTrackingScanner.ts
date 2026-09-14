@@ -174,10 +174,20 @@ export const useTrackingScanner = (
     }
   };
 
+  const removeMissingId = (id: string) => {
+    setMissingIds((prev) => prev.filter((item) => item.toLowerCase() !== id.toLowerCase()));
+  };
+
+  const clearMissingIds = () => {
+    setMissingIds([]);
+  };
+
   return {
     scanValue,
     setScanValue,
     missingIds,
+    removeMissingId,
+    clearMissingIds,
     message,
     handleScan,
   };

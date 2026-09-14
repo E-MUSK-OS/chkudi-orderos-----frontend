@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clock, PackageCheck, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 import { AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 
@@ -27,10 +27,10 @@ export default function AwbTable({
   const startIndex = total === 0 ? 0 : (page - 1) * limit;
   const endIndex = Math.min(startIndex + limit, total);
 
-  // Helper to render ASINs or SKUs with neat chips if multi-line
-  const renderChips = (value: string, color: "gold" | "slate") => {
+  // Helper to render ASINs or SKUs with neat styling if multi-line
+  const renderChips = (value: string, isAsin = false) => {
     if (!value || value === "N/A" || value === "-") {
-      return <span className="text-slate-500 italic">N/A</span>;
+      return <span className="text-slate-400 italic text-sm">N/A</span>;
     }
 
     const items = value
@@ -41,8 +41,8 @@ export default function AwbTable({
     if (items.length <= 1) {
       return (
         <span
-          className={`font-mono text-xs font-bold ${
-            color === "gold" ? "text-[#E8C16D]" : "text-slate-300"
+          className={`text-sm sm:text-base font-semibold ${
+            isAsin ? "font-mono text-[#0A0E1A]" : "text-slate-800"
           }`}
         >
           {items[0] || value}
@@ -51,14 +51,12 @@ export default function AwbTable({
     }
 
     return (
-      <div className="flex flex-wrap items-center justify-center gap-1">
+      <div className="flex flex-col items-center justify-center gap-1 py-1">
         {items.map((it, idx) => (
           <span
             key={idx}
-            className={`px-1.5 py-0.5 font-mono text-[11px] font-bold ${
-              color === "gold"
-                ? "bg-[#E8C16D]/15 text-[#E8C16D] border border-[#E8C16D]/30"
-                : "bg-slate-800 text-slate-300 border border-slate-700"
+            className={`rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 ${
+              isAsin ? "font-mono" : ""
             }`}
           >
             {it}
@@ -69,39 +67,39 @@ export default function AwbTable({
   };
 
   return (
-    <div className="border border-slate-700 bg-[#0F172A]">
+    <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden">
       <div className="w-full overflow-x-auto">
         <table className="w-full min-w-[1000px] border-collapse text-left">
-          <thead className="bg-[#0A0E1A] text-xs font-bold tracking-wider text-[#E8C16D] uppercase">
-            <tr className="border-b border-slate-700/80">
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">Invoices</th>
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">Amazon Order ID</th>
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">AWB Tracking</th>
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">ASIN</th>
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">Seller SKU</th>
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">Customer</th>
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">Packing Scan Status</th>
-              <th className="px-4 py-3.5 text-center whitespace-nowrap">Time</th>
+          <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
+            <tr>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Invoices</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Amazon Order ID</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">AWB Tracking</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">ASIN</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Seller SKU</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Packing Scan Status</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Time</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-800 text-xs sm:text-sm">
+          <tbody className="divide-y divide-[#E7E0D2] bg-white text-sm sm:text-base">
             {isLoading && orders.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-16 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
-                    <span>Loading Amazon orders...</span>
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
+                    <span className="text-base font-semibold text-slate-600">Loading Amazon orders...</span>
                   </div>
                 </td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center text-slate-400">
+                <td colSpan={8} className="py-16 text-center text-slate-500">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <PackageCheck className="h-8 w-8 text-slate-600" />
-                    <p className="font-semibold text-slate-300">No Amazon orders found.</p>
-                    <p className="text-xs text-slate-500">
+                    <PackageCheck className="h-10 w-10 text-slate-400" />
+                    <p className="text-base font-bold text-slate-700">No Amazon orders found.</p>
+                    <p className="text-sm text-slate-400">
                       Orders are automatically added here when printed in Amazon Order Process.
                     </p>
                   </div>
@@ -118,59 +116,59 @@ export default function AwbTable({
                 return (
                   <tr
                     key={item.id}
-                    className={`transition-colors hover:bg-slate-800/40 ${
-                      isScanned ? "bg-emerald-950/10" : ""
+                    className={`transition-colors hover:bg-slate-50/80 ${
+                      isScanned ? "bg-emerald-50/25" : ""
                     }`}
                   >
                     {/* Invoice */}
-                    <td className="px-4 py-3.5 text-center font-semibold text-slate-300 whitespace-nowrap">
+                    <td className="px-4 py-4 text-center font-semibold text-slate-700 whitespace-nowrap text-sm sm:text-base">
                       {item.invoice || "N/A"}
                     </td>
 
                     {/* Amazon Order ID */}
-                    <td className="px-4 py-3.5 text-center font-mono font-semibold text-white whitespace-nowrap">
+                    <td className="px-4 py-4 text-center font-mono font-bold text-[#0A0E1A] whitespace-nowrap text-sm sm:text-base">
                       {item.orderId}
                     </td>
 
                     {/* AWB Tracking */}
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                      <span className="border border-slate-700 bg-slate-800/80 px-2.5 py-1 font-mono text-xs font-bold text-white tracking-wider">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                      <span className="font-mono font-bold text-slate-900 tracking-wider text-sm sm:text-base">
                         {item.awb}
                       </span>
                     </td>
 
                     {/* ASIN */}
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                      {renderChips(item.asin, "slate")}
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                      {renderChips(item.asin, true)}
                     </td>
 
                     {/* Seller SKU */}
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                      {renderChips(item.sellerSku, "gold")}
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                      {renderChips(item.sellerSku, false)}
                     </td>
 
                     {/* Customer */}
-                    <td className="px-4 py-3.5 text-center font-medium text-slate-200 whitespace-nowrap">
+                    <td className="px-4 py-4 text-center font-semibold text-slate-800 whitespace-nowrap text-sm sm:text-base">
                       {item.customer || "N/A"}
                     </td>
 
                     {/* Packing Scan Status */}
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       {isScanned ? (
-                        <span className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 text-xs font-bold text-emerald-400">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                        <span className="inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-100 px-3 py-1.5 text-xs sm:text-sm font-bold text-green-700">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
                           <span>SCANNED</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-amber-300">
-                          <Clock className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+                        <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-100 px-3 py-1.5 text-xs sm:text-sm font-bold text-amber-800">
+                          <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
                           <span>PENDING</span>
                         </span>
                       )}
                     </td>
 
                     {/* Time */}
-                    <td className="px-4 py-3.5 text-center text-xs text-slate-400 whitespace-nowrap">
+                    <td className="px-4 py-4 text-center font-mono text-xs sm:text-sm font-semibold text-slate-600 whitespace-nowrap">
                       {formattedTime}
                     </td>
                   </tr>
@@ -182,21 +180,21 @@ export default function AwbTable({
       </div>
 
       {/* Pagination Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-700/80 bg-[#0A0E1A] px-5 py-3.5">
-        <div className="text-xs text-slate-400">
-          Showing <strong className="text-white">{startIndex + 1}</strong> -{" "}
-          <strong className="text-white">{endIndex}</strong> of{" "}
-          <strong className="text-white">{total}</strong> orders
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#E7E0D2] bg-white px-5 py-3.5">
+        <div className="text-xs text-slate-500">
+          Showing <strong className="text-[#0A0E1A]">{startIndex + 1}</strong> -{" "}
+          <strong className="text-[#0A0E1A]">{endIndex}</strong> of{" "}
+          <strong className="text-[#0A0E1A]">{total}</strong> orders
         </div>
 
         <div className="flex items-center gap-3">
           {/* Rows per page */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <span>Rows:</span>
             <select
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="border border-slate-700 bg-[#111827] px-2 py-1 text-xs font-bold text-white outline-none cursor-pointer"
+              className="border border-[#E7E0D2] bg-white px-2 py-1 text-xs font-bold text-[#0A0E1A] outline-none cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -211,18 +209,18 @@ export default function AwbTable({
               type="button"
               disabled={page <= 1 || isLoading}
               onClick={() => onPageChange(page - 1)}
-              className="border border-slate-700 bg-[#111827] px-3 py-1 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="border border-[#0A0E1A] bg-[#0A0E1A] px-3 py-1 text-xs font-bold text-[#E8C16D] transition hover:bg-[#161D2E] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
             >
               Prev
             </button>
-            <span className="bg-slate-800 px-3 py-1 text-xs font-bold text-white">
+            <span className="border border-[#E7E0D2] bg-[#FFF9EC] px-3 py-1 text-xs font-bold text-[#0A0E1A]">
               {page} / {totalPages}
             </span>
             <button
               type="button"
               disabled={page >= totalPages || isLoading}
               onClick={() => onPageChange(page + 1)}
-              className="border border-slate-700 bg-[#111827] px-3 py-1 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="border border-[#0A0E1A] bg-[#0A0E1A] px-3 py-1 text-xs font-bold text-[#E8C16D] transition hover:bg-[#161D2E] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
             >
               Next
             </button>

@@ -1,15 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
 import { useVMS } from "../../VMS/Admin/hooks/useVMS";
 import { useTrackingScanner } from "../hooks/useTrackingScanner";
-
 import TrackingScanner from "./TrackingScanner";
-import DataTable from "../../VMS/Admin/components/DataTable";
-import Pagination from "../../VMS/Admin/components/Pagination";
-
-import { trackingColumns } from "./TrackingColumns";
+import TrackingTable from "./TrackingTable";
 import MissingTrackingList from "./MissingTrackingList";
 import { useOperators } from "../../../Admin/User/operator/hooks/useOperators";
 import { useAccounts } from "../../../Admin/Account/hooks/useAccounts";
@@ -19,29 +14,24 @@ import ScanSummary from "./ScanSummary";
 export default function TrackingList() {
   const { data, loading, userId, refetch } = useVMS();
 
-  const { scanValue, setScanValue, missingIds, message, handleScan } =
-    useTrackingScanner(userId, refetch, data);
+  const {
+    scanValue,
+    setScanValue,
+    missingIds,
+    removeMissingId,
+    clearMissingIds,
+    message,
+    handleScan,
+  } = useTrackingScanner(userId, refetch, data);
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-
   const [operator, setOperator] = useState("");
-
   const [account, setAccount] = useState("");
-
-  //   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
   const { operators, fetchOperators } = useOperators();
-
   const { accounts, fetchAccounts } = useAccounts();
-
   const [limit, setLimit] = useState(10);
-  //   const tableData = useMemo(() => {
-  //     return data.map((item) => ({
-  //       ...item,
-  //       scanStatus: scannedIds.includes(item.trackingId) ? "SCANNED" : "PENDING",
-  //     }));
-  //   }, [data, scannedIds]);
 
   const filteredData = useMemo(() => {
     const filtered = data.filter((item) => {
@@ -50,7 +40,6 @@ export default function TrackingList() {
         .includes(search.toLowerCase());
 
       const matchOperator = !operator || item.operatorId === operator;
-
       const matchAccount = !account || item.accountId === account;
 
       let matchDate = true;
@@ -67,12 +56,11 @@ export default function TrackingList() {
       return matchSearch && matchOperator && matchAccount && matchDate;
     });
 
-    // Pending ઉપર, Scanned નીચે
+    // Pending first, Scanned below
     filtered.sort((a, b) => {
       if (a.packingScanStatus === b.packingScanStatus) {
         return 0;
       }
-
       return a.packingScanStatus === "PENDING" ? -1 : 1;
     });
 
@@ -85,18 +73,14 @@ export default function TrackingList() {
       pending: filteredData.filter(
         (item) => item.packingScanStatus === "PENDING",
       ).length,
-
       scanned: filteredData.filter(
         (item) => item.packingScanStatus === "SCANNED",
       ).length,
     };
   }, [filteredData]);
 
-  const totalPages = Math.ceil(filteredData.length / limit);
-
   const paginatedData = useMemo(() => {
     const start = (page - 1) * limit;
-
     return filteredData.slice(start, start + limit);
   }, [filteredData, page, limit]);
 
@@ -104,6 +88,7 @@ export default function TrackingList() {
     fetchOperators();
     fetchAccounts();
   }, []);
+
   useEffect(() => {
     setPage(1);
   }, [search, operator, account, selectedDate, limit]);
@@ -155,7 +140,9 @@ export default function TrackingList() {
         total={scanSummary.total}
         pending={scanSummary.pending}
         scanned={scanSummary.scanned}
+        missing={missingIds.length}
       />
+
       <TrackingScanner
         value={scanValue}
         onChange={setScanValue}
@@ -165,25 +152,26 @@ export default function TrackingList() {
         }}
       />
 
-      <MissingTrackingList trackingIds={missingIds} />
+      <MissingTrackingList
+        trackingIds={missingIds}
+        onRemoveItem={removeMissingId}
+        onClearAll={clearMissingIds}
+      />
 
       <div className="mt-6">
-        <DataTable
-          columns={trackingColumns}
+        <TrackingTable
           data={paginatedData}
-          loading={loading}
+          isLoading={loading}
+          total={filteredData.length}
+          page={page}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
         />
       </div>
-
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        totalRecords={filteredData.length}
-        limit={limit}
-        pageSize={limit}
-        onPageSizeChange={setLimit}
-        onPageChange={setPage}
-      />
     </>
   );
 }

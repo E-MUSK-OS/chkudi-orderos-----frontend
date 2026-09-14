@@ -34,8 +34,8 @@ export default function DataTable<TData>({
   // Prevent hydration mismatch
   if (!mounted) {
     return (
-      <div className="overflow-hidden rounded-2xl border border-slate-700 bg-[#0F172A] shadow-lg">
-        <div className="flex h-80 items-center justify-center text-gray-400">
+      <div className="overflow-hidden rounded-xl border border-[#E7E0D2] bg-white shadow-sm">
+        <div className="flex h-80 items-center justify-center text-slate-400">
           Loading...
         </div>
       </div>
@@ -43,15 +43,15 @@ export default function DataTable<TData>({
   }
 
   return (
-    <div className="overflow-hidden border border-slate-700 bg-[#0F172A] shadow-lg">
+    <div className="overflow-hidden rounded-xl border border-[#E7E0D2] bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           {/* Header */}
-          <thead className="sticky top-0 bg-[#111827]">
+          <thead className="sticky top-0 bg-[#0A0E1A] text-[#E8C16D] border-b border-[#E7E0D2]">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="border-b border-slate-700"
+                className="border-b border-[#E7E0D2]"
               >
                 {headerGroup.headers.map((header) => (
                   <th
@@ -61,9 +61,11 @@ export default function DataTable<TData>({
                       px-5
                       py-4
                       text-left
-                      text-sm
-                      font-semibold
-                      text-gray-200
+                      text-xs sm:text-sm
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-[#E8C16D]
                     "
                   >
                     {header.isPlaceholder
@@ -79,21 +81,22 @@ export default function DataTable<TData>({
           </thead>
 
           {/* Body */}
-          <tbody>
+          <tbody className="bg-white divide-y divide-[#E7E0D2]">
             {loading ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-16 text-center text-gray-400"
+                  className="py-16 text-center text-slate-500"
                 >
-                  Loading...
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#0A0E1A] border-r-transparent mb-3" />
+                  <p className="text-sm font-medium">Loading VMS records...</p>
                 </td>
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-16 text-center text-gray-400"
+                  className="py-16 text-center text-slate-500 font-semibold text-base"
                 >
                   No VMS Records Found
                 </td>
@@ -103,10 +106,8 @@ export default function DataTable<TData>({
                 <tr
                   key={row.id}
                   className="
-                    border-b
-                    border-slate-800
                     transition-colors
-                    hover:bg-slate-800/40
+                    hover:bg-[#FDFBF7]
                   "
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -116,8 +117,8 @@ export default function DataTable<TData>({
                         px-5
                         py-4
                         align-middle
-                        text-sm
-                        text-gray-300
+                        text-sm sm:text-base
+                        text-slate-700
                       "
                     >
                       {flexRender(
