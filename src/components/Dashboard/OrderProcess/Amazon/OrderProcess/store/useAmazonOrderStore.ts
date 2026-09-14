@@ -45,6 +45,7 @@ interface AmazonOrderState {
 
 const SESSION_STORAGE_KEY = "amazon_order_process_data_v1";
 const METADATA_STORAGE_KEY = "amazon_order_process_metadata_v1";
+export const AMAZON_PRINTED_STORAGE_KEY = "amazon_order_process_printed_rows_v1";
 
 const IDB_NAME = "chkudi_orderos_idb_v2";
 const IDB_STORE = "amazon_files";
@@ -196,6 +197,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         });
         localStorage.setItem(METADATA_STORAGE_KEY, metadataPayload);
         sessionStorage.setItem(SESSION_STORAGE_KEY, metadataPayload);
+        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
+        sessionStorage.removeItem("amazon_show_printed_active");
       }
     } catch (e) {
       console.warn("Failed to store process metadata in storage:", e);
@@ -338,6 +341,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       if (typeof window !== "undefined") {
         localStorage.removeItem(METADATA_STORAGE_KEY);
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
+        sessionStorage.removeItem("amazon_show_printed_active");
       }
     } catch (e) {}
 

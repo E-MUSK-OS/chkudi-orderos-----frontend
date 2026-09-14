@@ -39,7 +39,48 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
-import { useAmazonOrderStore, loadFilesFromIDB } from "../store/useAmazonOrderStore";
+import { useAmazonOrderStore, loadFilesFromIDB, AMAZON_PRINTED_STORAGE_KEY } from "../store/useAmazonOrderStore";
+
+const getBatchKey = (summary: any, resultsLen: number): string => {
+  if (!summary) return `batch_${resultsLen}`;
+  return `${summary.pdfFileName || ""}_${summary.zplFileName || ""}_${summary.totalPdfOrders || summary.totalZplLabels || resultsLen}`;
+};
+
+const getStoredPrintedRows = (batchKey: string): Set<number> => {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(AMAZON_PRINTED_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.indices)) {
+        if (parsed.batchKey === batchKey) {
+          return new Set(parsed.indices);
+        }
+        if (batchKey === "batch_0" && parsed.batchKey) {
+          return new Set(parsed.indices);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to load printed rows from storage:", e);
+  }
+  return new Set();
+};
+
+const savePrintedRowsToStorage = (batchKey: string, set: Set<number>) => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      AMAZON_PRINTED_STORAGE_KEY,
+      JSON.stringify({
+        batchKey,
+        indices: Array.from(set),
+      })
+    );
+  } catch (e) {
+    console.warn("Failed to save printed rows to storage:", e);
+  }
+};
 import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTransporterOrFeePage } from "../utils";
 import {
   getOrLoadCombinedDoc,
@@ -473,22 +514,49 @@ export default function ComparisonResultView({
   const autoPrintInputRef = useRef<HTMLInputElement>(null);
   const orderScanProgressRef = useRef<Map<number, OrderItemRequirement[]>>(new Map());
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
-  const [printedRows, setPrintedRows] = useState<Set<number>>(new Set());
+  const batchKey = useMemo(() => getBatchKey(summary, results.length), [summary, results.length]);
+  const [printedRows, setPrintedRows] = useState<Set<number>>(() => getStoredPrintedRows(batchKey));
   const printedRowsRef = useRef<Set<number>>(new Set());
   const printQueuePromiseRef = useRef<Promise<void>>(Promise.resolve());
   const orderPrintPdfCacheRef = useRef<Map<number, string>>(new Map());
 
-  const markRowsAsPrinted = useCallback((indices: number[]) => {
-    indices.forEach((idx) => printedRowsRef.current.add(idx));
-    setPrintedRows(new Set(printedRowsRef.current));
-  }, []);
+  // Restore printed rows when batchKey or results are initialized
+  useEffect(() => {
+    const stored = getStoredPrintedRows(batchKey);
+    printedRowsRef.current = stored;
+    setPrintedRows(stored);
+  }, [batchKey]);
 
-  const unmarkRowsAsPrinted = useCallback((indices: number[]) => {
-    indices.forEach((idx) => printedRowsRef.current.delete(idx));
-    setPrintedRows(new Set(printedRowsRef.current));
-  }, []);
+  const markRowsAsPrinted = useCallback(
+    (indices: number[]) => {
+      indices.forEach((idx) => printedRowsRef.current.add(idx));
+      const newSet = new Set(printedRowsRef.current);
+      setPrintedRows(newSet);
+      savePrintedRowsToStorage(batchKey, newSet);
+    },
+    [batchKey]
+  );
 
-  const [showPrinted, setShowPrinted] = useState(false);
+  const unmarkRowsAsPrinted = useCallback(
+    (indices: number[]) => {
+      indices.forEach((idx) => printedRowsRef.current.delete(idx));
+      const newSet = new Set(printedRowsRef.current);
+      setPrintedRows(newSet);
+      savePrintedRowsToStorage(batchKey, newSet);
+    },
+    [batchKey]
+  );
+
+  const [showPrinted, setShowPrinted] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("amazon_show_printed_active") === "true";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("amazon_show_printed_active", showPrinted ? "true" : "false");
+    }
+  }, [showPrinted]);
   const [orderTypeFilter, setOrderTypeFilter] = useState<AmazonOrderTypeFilter>("single_quantity");
 
   // Fetch ASIN to Seller SKU mapping from AsinImport table (primary), products, and variants (fallback)
@@ -786,7 +854,11 @@ export default function ComparisonResultView({
     };
     mappedResults.forEach((item) => {
       if (!item.isMatch) return;
-      if (!showPrinted && printedRows.has(item.index)) return;
+      if (showPrinted) {
+        if (!printedRows.has(item.index)) return;
+      } else {
+        if (printedRows.has(item.index)) return;
+      }
       const type = getOrderTypeForItem(item);
       counts[type]++;
     });
@@ -915,6 +987,12 @@ export default function ComparisonResultView({
     orderPrintPdfCacheRef.current.clear();
     printedRowsRef.current.clear();
     setPrintedRows(new Set());
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
+        sessionStorage.removeItem("amazon_show_printed_active");
+      } catch (e) {}
+    }
     setShowPrinted(false);
     setOrderTypeFilter("single_quantity");
     setPage(1);
@@ -926,14 +1004,15 @@ export default function ComparisonResultView({
     }
   };
 
+  const prevBatchKeyRef = useRef<string>(batchKey);
   useEffect(() => {
-    printedRowsRef.current.clear();
-    orderPrintPdfCacheRef.current.clear();
-    setPrintedRows(new Set());
-    setOrderTypeFilter("single_quantity");
-    setPage(1);
-    orderScanProgressRef.current.clear();
-  }, [results]);
+    if (prevBatchKeyRef.current !== batchKey) {
+      prevBatchKeyRef.current = batchKey;
+      orderPrintPdfCacheRef.current.clear();
+      orderScanProgressRef.current.clear();
+      setPage(1);
+    }
+  }, [batchKey]);
 
   // Background preheating of single-order printable PDF base64 cache for instant < 0.5s barcode scanning prints
   useEffect(() => {
@@ -991,8 +1070,14 @@ export default function ComparisonResultView({
       // Exclude unmatched items from table (viewed via PDF viewer)
       if (!item.isMatch) return false;
 
-      // Exclude already printed items unless showPrinted is toggled ON
-      if (!showPrinted && printedRows.has(item.index)) return false;
+      // Filter by printed status:
+      // When showPrinted is TRUE: show ONLY already printed items
+      // When showPrinted is FALSE: show ONLY pending / unprinted items
+      if (showPrinted) {
+        if (!printedRows.has(item.index)) return false;
+      } else {
+        if (printedRows.has(item.index)) return false;
+      }
 
       // Filter by order composition type
       const type = getOrderTypeForItem(item);
@@ -1013,6 +1098,19 @@ export default function ComparisonResultView({
       );
     });
   }, [mappedResults, searchQuery, autoPrintQuery, orderTypeFilter, printedRows, showPrinted]);
+
+  const currentTypeOrders = useMemo(
+    () => mappedResults.filter((r) => r.isMatch && getOrderTypeForItem(r) === orderTypeFilter),
+    [mappedResults, orderTypeFilter]
+  );
+  const printedInCurrentTypeCount = useMemo(
+    () => currentTypeOrders.filter((r) => printedRows.has(r.index)).length,
+    [currentTypeOrders, printedRows]
+  );
+  const unprintedInCurrentTypeCount = useMemo(
+    () => currentTypeOrders.filter((r) => !printedRows.has(r.index)).length,
+    [currentTypeOrders, printedRows]
+  );
 
   // Pagination calculations (exact Myntra logic)
   const totalRecords = filteredResults.length;
@@ -1214,11 +1312,7 @@ export default function ComparisonResultView({
         }
 
         toast.success(`Printed order (4" x 6") directly on ${targetPrinter}!`, { id: "print-prep" });
-        setPrintedRows((prev) => {
-          const next = new Set(prev);
-          next.add(singleItem.index);
-          return next;
-        });
+        markRowsAsPrinted([singleItem.index]);
         setSelectedRows((prev) => {
           const next = new Set(prev);
           next.delete(singleItem.index);
@@ -2528,23 +2622,27 @@ export default function ComparisonResultView({
               {printedRows.size > 0 && (
                 <button
                   type="button"
-                  onClick={() => setShowPrinted((prev) => !prev)}
+                  onClick={() => {
+                    setShowPrinted((prev) => !prev);
+                    setPage(1);
+                    setSelectedRows(new Set());
+                  }}
                   className={`inline-flex h-11 sm:h-14 w-full sm:w-auto items-center justify-center gap-1.5 border px-3.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     showPrinted
-                      ? "border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-500/25"
-                      : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
+                      : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
                   }`}
-                  title="Toggle to view or hide already printed orders"
+                  title={showPrinted ? "Return to unprinted orders" : "View only already printed orders"}
                 >
                   {showPrinted ? (
                     <>
                       <EyeOff className="h-4 w-4" />
-                      <span>Hide Printed ({printedRows.size})</span>
+                      <span>Back to Unprinted ({unprintedInCurrentTypeCount})</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      <span>Show Printed ({printedRows.size})</span>
+                      <span>Show Printed Only ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})</span>
                     </>
                   )}
                 </button>
@@ -2565,6 +2663,32 @@ export default function ComparisonResultView({
               </button>
             </div>
           </div>
+
+          {/* Active "Show Printed Only" Banner Indicator */}
+          {showPrinted && (
+            <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs sm:text-sm text-emerald-800 dark:text-emerald-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                <span className="font-semibold">
+                  Viewing Printed Orders Only ({filteredResults.length})
+                </span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  — Displaying only orders that have already been printed.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPrinted(false);
+                  setPage(1);
+                  setSelectedRows(new Set());
+                }}
+                className="font-bold underline underline-offset-4 hover:opacity-80 cursor-pointer text-xs ml-2 shrink-0 text-emerald-700 dark:text-emerald-400"
+              >
+                Back to Unprinted ({unprintedInCurrentTypeCount})
+              </button>
+            </div>
+          )}
 
           {/* =================================================== */}
           {/* MOBILE VIEW: RESPONSIVE ORDER CARDS (< 768px) */}
@@ -2587,19 +2711,37 @@ export default function ComparisonResultView({
             {paginatedResults.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground space-y-2">
                 <p>
-                  {printedRows.size > 0 && !showPrinted
-                    ? `All matched orders in this view have been printed! (${printedRows.size} printed)`
+                  {showPrinted
+                    ? "No printed orders match your current search or filter."
+                    : printedRows.size > 0
+                    ? `All matched orders in this view have been printed! (${printedInCurrentTypeCount} printed)`
                     : "No orders match your current search or filter."}
                 </p>
-                {printedRows.size > 0 && !showPrinted && (
+                {printedRows.size > 0 && !showPrinted ? (
                   <button
                     type="button"
-                    onClick={() => setShowPrinted(true)}
+                    onClick={() => {
+                      setShowPrinted(true);
+                      setPage(1);
+                      setSelectedRows(new Set());
+                    }}
                     className="font-semibold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
                   >
-                    View printed orders ({printedRows.size})
+                    View printed orders ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})
                   </button>
-                )}
+                ) : showPrinted ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPrinted(false);
+                      setPage(1);
+                      setSelectedRows(new Set());
+                    }}
+                    className="font-semibold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                  >
+                    Return to unprinted orders ({unprintedInCurrentTypeCount})
+                  </button>
+                ) : null}
               </div>
             ) : (
               paginatedResults.map((item) => (
@@ -2730,19 +2872,37 @@ export default function ComparisonResultView({
                         <div className="flex flex-col items-center justify-center gap-2">
                           <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                           <p className="font-semibold text-foreground">
-                            {printedRows.size > 0 && !showPrinted
-                              ? `All matched orders in this view have been printed! (${printedRows.size} printed)`
-                              : "No orders match your current search."}
+                            {showPrinted
+                              ? "No printed orders match your current search or filter."
+                              : printedRows.size > 0
+                              ? `All matched orders in this view have been printed! (${printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size} printed)`
+                              : "No orders match your current search or filter."}
                           </p>
-                          {printedRows.size > 0 && !showPrinted && (
+                          {printedRows.size > 0 && !showPrinted ? (
                             <button
                               type="button"
-                              onClick={() => setShowPrinted(true)}
+                              onClick={() => {
+                                setShowPrinted(true);
+                                setPage(1);
+                                setSelectedRows(new Set());
+                              }}
                               className="text-xs font-semibold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
                             >
-                              Click here to view printed orders ({printedRows.size})
+                              Click here to view printed orders ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})
                             </button>
-                          )}
+                          ) : showPrinted ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowPrinted(false);
+                                setPage(1);
+                                setSelectedRows(new Set());
+                              }}
+                              className="text-xs font-semibold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                            >
+                              Click here to return to unprinted orders ({unprintedInCurrentTypeCount})
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
