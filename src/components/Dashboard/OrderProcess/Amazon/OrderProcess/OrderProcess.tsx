@@ -27,7 +27,7 @@ import { enhanceInvoicePages, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTr
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
-import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs } from "./utils/pdfCache";
+import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs, startBackgroundOrderPdfPrewarming } from "./utils/pdfCache";
 
 export default function OrderProcess() {
   const router = useRouter();
@@ -691,6 +691,7 @@ export default function OrderProcess() {
           zplDoc: zplDocInstance,
           cacheKey: getDocCacheKey(processResponse.files),
         });
+        startBackgroundOrderPdfPrewarming(processResponse.results, combinedDocInstance);
       }
 
       clearInterval(progressInterval);

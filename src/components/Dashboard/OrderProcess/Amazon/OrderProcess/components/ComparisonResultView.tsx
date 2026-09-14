@@ -41,7 +41,15 @@ import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { useAmazonOrderStore, loadFilesFromIDB } from "../store/useAmazonOrderStore";
 import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTransporterOrFeePage } from "../utils";
-import { getOrLoadCombinedDoc, getCachedAmazonDocs, clearCachedAmazonDocs, getDocCacheKey } from "../utils/pdfCache";
+import {
+  getOrLoadCombinedDoc,
+  getCachedAmazonDocs,
+  clearCachedAmazonDocs,
+  getDocCacheKey,
+  getCachedOrderPdf,
+  getOrGenerateSingleOrderPdf,
+  startBackgroundOrderPdfPrewarming,
+} from "../utils/pdfCache";
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
@@ -50,6 +58,7 @@ import { AmazonOrderType } from "../types";
 import {
   generateAmazonPicklist,
   downloadAmazonPicklistExcel,
+  openAmazonPicklistTab,
 } from "../utils/generateAmazonPicklist";
 
 export type AmazonOrderTypeFilter = AmazonOrderType;
@@ -250,10 +259,21 @@ export default function ComparisonResultView({
 
   // Pre-load combined PDF document & parsed documents in background for instant sub-second printing
   useEffect(() => {
-    if (files?.combinedPdfBase64) {
-      getOrLoadCombinedDoc(files).catch((e) => console.warn("Background combinedDoc preload error:", e));
+    const existingCache = getCachedAmazonDocs();
+    if (existingCache?.combinedDoc && results && results.length > 0) {
+      startBackgroundOrderPdfPrewarming(results, existingCache.combinedDoc);
+    } else if (files?.combinedPdfBase64) {
+      getOrLoadCombinedDoc(files)
+        .then((doc) => {
+          if (doc && results && results.length > 0) {
+            startBackgroundOrderPdfPrewarming(results, doc);
+          }
+        })
+        .catch((e) => console.warn("Background combinedDoc preload error:", e));
     }
+  }, [files, results]);
 
+  useEffect(() => {
     if (!files?.convertedZplPdfBase64 || !files?.originalPdfBase64 || isPreloadingDocsRef.current) return;
     const cacheKey = `${files.convertedZplPdfBase64.length}_${files.originalPdfBase64.length}`;
     if (loadedPdfDocsRef.current?.cacheKey === cacheKey) return;
@@ -765,7 +785,16 @@ export default function ComparisonResultView({
   const lastVerifiedPrinterRef = useRef<{
     printerName: string;
     timestamp: number;
-  } | null>(null);
+  } | null>(
+    typeof window !== "undefined" &&
+      (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
+      ? {
+          printerName: (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))!,
+          timestamp: Date.now(),
+        }
+      : null
+  );
+  const autoScanTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const printerOptions: SelectOption[] = useMemo(
     () =>
@@ -803,6 +832,10 @@ export default function ComparisonResultView({
                   printerName: matched,
                   timestamp: Date.now(),
                 };
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("amazon_selected_printer", matched);
+                  localStorage.setItem("lastUsedPrinter", matched);
+                }
                 return matched;
               }
             }
@@ -813,6 +846,10 @@ export default function ComparisonResultView({
               printerName: chosen,
               timestamp: Date.now(),
             };
+            if (typeof window !== "undefined" && chosen) {
+              localStorage.setItem("amazon_selected_printer", chosen);
+              localStorage.setItem("lastUsedPrinter", chosen);
+            }
             return chosen;
           });
         }
@@ -821,13 +858,13 @@ export default function ComparisonResultView({
       }
     }
     loadPrinters();
-    const timer = setTimeout(() => {
-      loadPrinters();
-    }, 1500);
+    const t1 = setTimeout(loadPrinters, 400);
+    const t2 = setTimeout(loadPrinters, 1500);
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
+      clearTimeout(t1);
+      clearTimeout(t2);
     };
   }, []);
 
@@ -1029,24 +1066,22 @@ export default function ComparisonResultView({
     }
 
     // 1. Strictly resolve whichever physical printer is CURRENTLY connected and online on the PC
-    const PRINTER_VERIFY_TTL_MS = 600000; // 10 minutes cache to guarantee instant sub-second print dispatch
     const now = Date.now();
-    let targetPrinter: string | null = null;
-    const lastVerified = lastVerifiedPrinterRef.current;
-    const isRecentVerified =
-      lastVerified &&
-      now - lastVerified.timestamp < PRINTER_VERIFY_TTL_MS &&
-      lastVerified.printerName &&
-      (!selectedPrinter || selectedPrinter === lastVerified.printerName);
+    let targetPrinter: string | null =
+      selectedPrinter ||
+      lastVerifiedPrinterRef.current?.printerName ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter")
+        : null);
 
-    if (selectedPrinter) {
-      targetPrinter = selectedPrinter;
+    if (targetPrinter) {
       lastVerifiedPrinterRef.current = {
-        printerName: selectedPrinter,
+        printerName: targetPrinter,
         timestamp: now,
       };
-    } else if (isRecentVerified && lastVerified) {
-      targetPrinter = lastVerified.printerName;
+      if (!selectedPrinter) {
+        setSelectedPrinter(targetPrinter);
+      }
     } else {
       // Verify PrintBridge extension is reachable
       const extCheck = await chromeExtensionPrintService.checkExtension();
@@ -1078,32 +1113,28 @@ export default function ComparisonResultView({
       }
 
       // Strictly resolve target printer
-      if (selectedPrinter) {
-        targetPrinter = selectedPrinter;
-      } else {
-        const saved = typeof window !== 'undefined'
-          ? (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
-          : null;
-        if (saved) {
-          const matched = extPrinters.find(p => p.toLowerCase().trim() === saved.toLowerCase().trim());
-          if (matched) {
-            targetPrinter = matched;
-            setSelectedPrinter(matched);
-          }
+      const saved = typeof window !== 'undefined'
+        ? (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
+        : null;
+      if (saved) {
+        const matched = extPrinters.find(p => p.toLowerCase().trim() === saved.toLowerCase().trim());
+        if (matched) {
+          targetPrinter = matched;
+          setSelectedPrinter(matched);
         }
-        if (!targetPrinter) {
-          const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
-          if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
-            targetPrinter = onlineConnected;
-            setSelectedPrinter(onlineConnected);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('amazon_selected_printer', onlineConnected);
-              localStorage.setItem('lastUsedPrinter', onlineConnected);
-            }
-          } else if (extPrinters.length > 0) {
-            targetPrinter = extPrinters[0];
-            setSelectedPrinter(extPrinters[0]);
+      }
+      if (!targetPrinter) {
+        const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+        if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
+          targetPrinter = onlineConnected;
+          setSelectedPrinter(onlineConnected);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('amazon_selected_printer', onlineConnected);
+            localStorage.setItem('lastUsedPrinter', onlineConnected);
           }
+        } else if (extPrinters.length > 0) {
+          targetPrinter = extPrinters[0];
+          setSelectedPrinter(extPrinters[0]);
         }
       }
 
@@ -1125,6 +1156,61 @@ export default function ComparisonResultView({
         printerName: targetPrinter,
         timestamp: Date.now(),
       };
+    }
+
+    // 2. ULTRA-FAST SUB-SECOND PATH FOR SINGLE ORDER (Barcode ASIN scan print):
+    if (targetResults.length === 1) {
+      const singleItem = targetResults[0];
+      let singlePrintBase64 = getCachedOrderPdf(singleItem.index);
+
+      if (!singlePrintBase64) {
+        const combinedDoc = await getOrLoadCombinedDoc(activeFiles);
+        if (combinedDoc) {
+          singlePrintBase64 = await getOrGenerateSingleOrderPdf(singleItem, combinedDoc);
+        }
+      }
+
+      if (singlePrintBase64) {
+        toast.loading(`Printing order on ${targetPrinter}...`, { id: "print-prep" });
+        const extRes = await chromeExtensionPrintService.printPdf(singlePrintBase64, targetPrinter, 1, true);
+        if (extRes && (extRes.success === false || extRes.error)) {
+          throw new Error(extRes.error || `Print failure on ${targetPrinter}`);
+        }
+
+        toast.success(`Printed order (4" x 6") directly on ${targetPrinter}!`, { id: "print-prep" });
+        setPrintedRows((prev) => {
+          const next = new Set(prev);
+          next.add(singleItem.index);
+          return next;
+        });
+        setSelectedRows((prev) => {
+          const next = new Set(prev);
+          next.delete(singleItem.index);
+          return next;
+        });
+
+        // Background database save
+        try {
+          const ordersToSave = [{
+            invoice: singleItem.pdfInvoice && singleItem.pdfInvoice !== "Not Found in PDF"
+              ? singleItem.pdfInvoice
+              : singleItem.zplInvoice && singleItem.zplInvoice !== "Not Found in ZPL"
+              ? singleItem.zplInvoice
+              : "N/A",
+            orderId: singleItem.orderNumber || "N/A",
+            awb: singleItem.awb || "N/A",
+            asin: singleItem.asin || "N/A",
+            sellerSku: singleItem.sellerSku || "N/A",
+            customer: cleanCustomerName(singleItem.customer) || "N/A",
+            packingScanStatus: "PENDING" as const,
+          }];
+          amazonOrderService.savePrintedOrders(ordersToSave).catch((err) =>
+            console.warn("Background order save error:", err)
+          );
+        } catch (e) {}
+
+        return;
+      }
     }
 
     toast.loading(`Printing ${targetResults.length} order(s) on ${targetPrinter}...`, {
@@ -1483,16 +1569,19 @@ export default function ComparisonResultView({
 
       const picklist = generateAmazonPicklist(mappedResults, targetSet, currentDetailsMap);
 
+      // Open Excel picklist spreadsheet view in a new tab
+      openAmazonPicklistTab(picklist);
+
       // Download Excel (.xlsx) picklist
       await downloadAmazonPicklistExcel(picklist);
 
       if (selectedRows.size > 0) {
         toast.success(
-          `Downloaded Excel picklist for ${selectedRows.size} selected order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`
+          `Generated picklist for ${selectedRows.size} selected order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`
         );
       } else {
         toast.success(
-          `Downloaded Excel picklist for ALL ${targetSet.size} matched order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`
+          `Generated picklist for ALL ${targetSet.size} matched order(s) (${picklist.items.length} unique SKUs, ${picklist.totalQuantity} total qty).`
         );
       }
     } catch (err) {
@@ -2231,15 +2320,36 @@ export default function ComparisonResultView({
                 : "Scan Multiple Pieces items to print..."
             }
             value={autoPrintQuery}
-            onChange={(e) => setAutoPrintQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setAutoPrintQuery(val);
+              if (autoScanTimerRef.current) {
+                clearTimeout(autoScanTimerRef.current);
+              }
+              const trimmed = val.trim();
+              if (trimmed.length >= 10) {
+                autoScanTimerRef.current = setTimeout(() => {
+                  const currentInput = autoPrintInputRef.current?.value.trim();
+                  if (currentInput && currentInput === trimmed) {
+                    autoPrintInputRef.current?.select();
+                    handleAutoPrintSearch(currentInput);
+                  }
+                }, 180);
+              }
+            }}
             onFocus={(e) => e.target.select()}
             onClick={(e) => e.currentTarget.select()}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                const q = autoPrintQuery;
-                setAutoPrintQuery("");
-                handleAutoPrintSearch(q);
+                if (autoScanTimerRef.current) {
+                  clearTimeout(autoScanTimerRef.current);
+                }
+                const raw = e.currentTarget.value.trim() || autoPrintQuery.trim();
+                if (raw) {
+                  autoPrintInputRef.current?.select();
+                  handleAutoPrintSearch(raw);
+                }
               }
             }}
             className="h-12 sm:h-14 w-full border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#0A0E1A] pl-10 pr-10 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 placeholder:font-normal outline-none transition focus:ring-2 focus:ring-[#E8C16D]"
