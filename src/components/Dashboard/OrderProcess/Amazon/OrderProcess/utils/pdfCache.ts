@@ -32,8 +32,119 @@ export function getCachedAmazonDocs(): AmazonDocsCache | null {
   return docsCache;
 }
 
+// In-memory cache for individual pre-generated order print PDFs (indexed by item.index)
+const orderPrintPdfCache = new Map<number, string>();
+
+export function getCachedOrderPdf(orderIndex: number): string | null {
+  return orderPrintPdfCache.get(orderIndex) || null;
+}
+
+export function setCachedOrderPdf(orderIndex: number, base64: string): void {
+  orderPrintPdfCache.set(orderIndex, base64);
+}
+
+export function clearOrderPdfCache(): void {
+  orderPrintPdfCache.clear();
+}
+
 export function clearCachedAmazonDocs(): void {
   docsCache = null;
+  clearOrderPdfCache();
+}
+
+/**
+ * Fast single-order 2-page PDF extractor & memoizer.
+ * Returns pre-generated base64 in 0ms if cached, or extracts in ~40ms and caches it.
+ */
+export async function getOrGenerateSingleOrderPdf(
+  item: any,
+  combinedDoc: PDFDocument
+): Promise<string | null> {
+  if (!item || !combinedDoc) return null;
+
+  if (orderPrintPdfCache.has(item.index)) {
+    return orderPrintPdfCache.get(item.index)!;
+  }
+
+  try {
+    const { PDFDocument } = await import("pdf-lib");
+    const printDoc = await PDFDocument.create();
+
+    const pageCount = combinedDoc.getPageCount();
+    let targetPages: number[] = [];
+
+    if (item.combinedPages && item.combinedPages.length > 0) {
+      targetPages = item.combinedPages.filter((p: number) => p >= 0 && p < pageCount);
+    }
+
+    if (targetPages.length === 0) {
+      return null;
+    }
+
+    const copiedPages = await printDoc.copyPages(combinedDoc, targetPages);
+    copiedPages.forEach((p) => printDoc.addPage(p));
+
+    const base64 = await printDoc.saveAsBase64();
+    orderPrintPdfCache.set(item.index, base64);
+    return base64;
+  } catch (err) {
+    console.warn(`Failed to generate single order PDF for index ${item?.index}:`, err);
+    return null;
+  }
+}
+
+let isWarmingCache = false;
+
+/**
+ * Pre-warms individual order PDFs in idle time batches of 5 so that by the time
+ * the operator scans an ASIN, the printable 2-page PDF base64 is already sitting in RAM.
+ */
+export function startBackgroundOrderPdfPrewarming(
+  results: any[],
+  combinedDoc: PDFDocument
+): void {
+  if (isWarmingCache || !combinedDoc || !results || results.length === 0) return;
+  isWarmingCache = true;
+
+  const matched = results.filter((r) => r.isMatch && r.combinedPages && r.combinedPages.length > 0);
+  let idx = 0;
+
+  const processNextBatch = () => {
+    if (!docsCache?.combinedDoc && !combinedDoc) {
+      isWarmingCache = false;
+      return;
+    }
+
+    const end = Math.min(idx + 5, matched.length);
+    const promises: Promise<any>[] = [];
+
+    for (let i = idx; i < end; i++) {
+      const item = matched[i];
+      if (!orderPrintPdfCache.has(item.index)) {
+        promises.push(getOrGenerateSingleOrderPdf(item, combinedDoc));
+      }
+    }
+
+    idx = end;
+    Promise.all(promises).then(() => {
+      if (idx < matched.length) {
+        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+          (window as any).requestIdleCallback(processNextBatch, { timeout: 1000 });
+        } else {
+          setTimeout(processNextBatch, 50);
+        }
+      } else {
+        isWarmingCache = false;
+        console.log(`⚡ All ${matched.length} Amazon order PDFs pre-warmed in cache for instant (<1s) printing!`);
+      }
+    });
+  };
+
+  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+    (window as any).requestIdleCallback(processNextBatch, { timeout: 500 });
+  } else {
+    setTimeout(processNextBatch, 100);
+  }
 }
 
 export function fastBase64ToUint8Array(base64: string): Uint8Array {
@@ -86,3 +197,4 @@ export async function getOrLoadCombinedDoc(activeFiles: any): Promise<PDFDocumen
 
   return loadingCombinedPromise;
 }
+
