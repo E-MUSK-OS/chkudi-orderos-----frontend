@@ -10,11 +10,11 @@ export default function ScansVMS() {
       <div className="space-y-6">
 
         <div>
-          <h1 className="text-4xl">
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#0A0E1A]">
             VMS Scans
           </h1>
 
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-slate-500">
             Manage all uploaded scan recordings.
           </p>
         </div>

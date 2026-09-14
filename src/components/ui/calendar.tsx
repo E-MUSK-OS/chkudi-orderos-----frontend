@@ -59,11 +59,11 @@ function Calendar({
           defaultClassNames.nav,
         ),
         button_previous: cn(
-          "flex h-9 w-9 items-center justify-center border border-slate-700 bg-[#E8C16D] text-black hover:bg-[#E8C16D]",
+          "flex h-9 w-9 items-center justify-center border border-[#E7E0D2] bg-[#E8C16D] text-black hover:bg-[#ddb75d] rounded-md transition",
           defaultClassNames.button_previous,
         ),
         button_next: cn(
-          "flex h-9 w-9 items-center justify-center border border-slate-700 bg-[#E8C16D] text-black hover:bg-[#E8C16D]",
+          "flex h-9 w-9 items-center justify-center border border-[#E7E0D2] bg-[#E8C16D] text-black hover:bg-[#ddb75d] rounded-md transition",
           defaultClassNames.button_next,
         ),
         month_caption: cn(
@@ -83,16 +83,16 @@ function Calendar({
           defaultClassNames.dropdown,
         ),
         caption_label: cn(
-          "font-semibold select-none text-[#E8C16D]",
+          "font-bold select-none text-[#0A0E1A]",
           captionLayout === "label"
             ? "text-base"
-            : "flex items-center gap-1 rounded-(--cell-radius) text-base text-[#E8C16D] [&>svg]:size-3.5 [&>svg]:text-[#E8C16D]",
+            : "flex items-center gap-1 rounded-(--cell-radius) text-base text-[#0A0E1A] [&>svg]:size-3.5 [&>svg]:text-[#0A0E1A]",
           defaultClassNames.caption_label,
         ),
         month_grid: cn("w-full border-collapse", defaultClassNames.month_grid),
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
-          "flex-1 rounded-(--cell-radius) text-[0.8rem] font-medium text-white select-none",
+          "flex-1 rounded-(--cell-radius) text-[0.8rem] font-bold text-slate-700 select-none",
           defaultClassNames.weekday,
         ),
         week: cn("mt-2 flex w-full", defaultClassNames.week),
@@ -105,7 +105,7 @@ function Calendar({
           defaultClassNames.week_number,
         ),
         day: cn(
-          "group/day relative aspect-square h-full w-full rounded-(--cell-radius) p-0 text-center text-white select-none [&:last-child[data-selected=true]_button]:rounded-r-(--cell-radius)",
+          "group/day relative aspect-square h-full w-full rounded-(--cell-radius) p-0 text-center text-slate-800 select-none [&:last-child[data-selected=true]_button]:rounded-r-(--cell-radius)",
           props.showWeekNumber
             ? "[&:nth-child(2)[data-selected=true]_button]:rounded-l-(--cell-radius)"
             : "[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)",
@@ -121,14 +121,14 @@ function Calendar({
           defaultClassNames.range_end,
         ),
         today: cn(
-          "rounded-(--cell-radius) border border-[#E8C16D] bg-[#E8C16D]/10 text-[#E8C16D] data-[selected=true]:rounded-none",
+          "rounded-(--cell-radius) border border-[#E8C16D] bg-[#E8C16D]/15 text-slate-900 font-bold data-[selected=true]:rounded-none",
           defaultClassNames.today,
         ),
         outside: cn(
-          "text-white/30 aria-selected:text-white/30",
+          "text-slate-300 aria-selected:text-slate-300",
           defaultClassNames.outside,
         ),
-        disabled: cn("text-white/20 opacity-50", defaultClassNames.disabled),
+        disabled: cn("text-slate-300 opacity-50", defaultClassNames.disabled),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
       }}
@@ -227,13 +227,13 @@ function CalendarDayButton({
 
     border-0
 
-    text-white
+    text-slate-800
 
-    hover:text-white
+    hover:text-slate-900
 
     hover:bg-[#E8C16D]/20
 
-    font-normal
+    font-semibold
 
     data-[selected-single=true]:bg-[#E8C16D]
     data-[selected-single=true]:text-black
@@ -245,7 +245,7 @@ function CalendarDayButton({
     data-[range-end=true]:text-black
 
     data-[range-middle=true]:bg-[#E8C16D]/20
-    data-[range-middle=true]:text-white
+    data-[range-middle=true]:text-slate-900
     `,
         className,
       )}

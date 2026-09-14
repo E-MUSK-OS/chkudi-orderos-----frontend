@@ -32,7 +32,9 @@ export const getColumns = ({
     header: "Tracking ID",
 
     cell: ({ row }) => (
-      <span className="font-medium text-white">{row.original.trackingId}</span>
+      <span className="font-mono font-bold text-[#0A0E1A] text-sm sm:text-base">
+        {row.original.trackingId}
+      </span>
     ),
   },
 
@@ -41,7 +43,11 @@ export const getColumns = ({
 
     header: "Date",
 
-    cell: ({ row }) => format(new Date(row.original.createdAt), "dd MMM yyyy"),
+    cell: ({ row }) => (
+      <span className="text-sm sm:text-base font-semibold text-slate-700 whitespace-nowrap">
+        {format(new Date(row.original.createdAt), "dd MMM yyyy")}
+      </span>
+    ),
   },
 
   {
@@ -49,7 +55,11 @@ export const getColumns = ({
 
     header: "Time",
 
-    cell: ({ row }) => format(new Date(row.original.createdAt), "hh:mm:ss aa"),
+    cell: ({ row }) => (
+      <span className="text-sm sm:text-base font-semibold text-slate-600 whitespace-nowrap">
+        {format(new Date(row.original.createdAt), "hh:mm:ss aa")}
+      </span>
+    ),
   },
 
   {
@@ -58,7 +68,9 @@ export const getColumns = ({
     header: "Operator",
 
     cell: ({ row }) => (
-      <span>{row.original.operator?.operatorName ?? "-"}</span>
+      <span className="text-sm sm:text-base font-bold text-slate-800">
+        {row.original.operator?.operatorName ?? "-"}
+      </span>
     ),
   },
 
@@ -67,7 +79,11 @@ export const getColumns = ({
 
     header: "Account",
 
-    cell: ({ row }) => <span>{row.original.account?.accountName ?? "-"}</span>,
+    cell: ({ row }) => (
+      <span className="text-sm sm:text-base font-semibold text-slate-700">
+        {row.original.account?.accountName ?? "-"}
+      </span>
+    ),
   },
 
   {
@@ -75,29 +91,10 @@ export const getColumns = ({
 
     header: "Thumbnail",
 
-    // cell: ({ row }) => {
-    //   if (!row.original.thumbnailUrl) {
-    //     return <div className="h-[70px] w-[100px] bg-slate-800" />;
-    //   }
-
-    //   return (
-    //     <Image
-    //       src={row.original.thumbnailUrl}
-    //       alt="thumbnail"
-    //       width={90}
-    //       height={60}
-    //       className="object-cover border border-slate-700"
-    //     />
-    //   );
-    // },
-
     cell: ({ row }) => {
-      console.log("VMS ITEM:", row.original);
-      console.log("THUMBNAIL:", row.original.thumbnailUrl);
-
       if (!row.original.thumbnailUrl) {
         return (
-          <div className="h-[70px] w-[100px] bg-red-500 text-white">
+          <div className="flex h-[60px] w-[90px] items-center justify-center rounded border border-[#E7E0D2] bg-slate-100 text-xs font-medium text-slate-400">
             No Thumbnail
           </div>
         );
@@ -109,7 +106,7 @@ export const getColumns = ({
           alt="thumbnail"
           width={90}
           height={60}
-          className="h-[60px] w-[90px] border border-slate-700 object-cover"
+          className="h-[60px] w-[90px] rounded border border-[#E7E0D2] object-cover shadow-xs"
         />
       );
     },
@@ -129,6 +126,7 @@ export const getColumns = ({
         fullWidth={false}
         leftIcon={<Eye size={16} />}
         onClick={() => onPreview(row.original)}
+        className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
       >
         Preview
       </Button>
@@ -148,6 +146,7 @@ export const getColumns = ({
           fullWidth={false}
           leftIcon={<Download size={16} />}
           onClick={() => onDownload(row.original)}
+          className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
         >
           Download
         </Button>
@@ -158,6 +157,7 @@ export const getColumns = ({
           fullWidth={false}
           leftIcon={<Trash2 size={16} />}
           onClick={() => onDelete(row.original)}
+          className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
         >
           Delete
         </Button>

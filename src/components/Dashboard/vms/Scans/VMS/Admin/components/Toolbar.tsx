@@ -79,7 +79,7 @@ export default function Toolbar({
   onRefresh,
 }: Props) {
   return (
-    <div className="mb-6 flex flex-col gap-4 border border-slate-700 bg-[#0F172A] p-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mb-6 flex flex-col gap-4 border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm rounded-xl lg:flex-row lg:items-center lg:justify-between">
       {/* Left */}
 
       <div className="flex flex-1 flex-col gap-4 lg:flex-row">
@@ -88,7 +88,7 @@ export default function Toolbar({
         <div className="relative w-full lg:max-w-sm">
           <Search
             size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
           />
 
           <input
@@ -99,14 +99,18 @@ export default function Toolbar({
               h-12
               w-full
               border
-              border-slate-700
-              bg-[#111827]
+              border-[#E7E0D2]
+              bg-white
               pl-11
               pr-4
-              text-white
+              text-slate-800
+              placeholder:text-slate-400
               outline-none
               transition
               focus:border-[#E8C16D]
+              focus:ring-1
+              focus:ring-[#E8C16D]
+              rounded-lg
             "
           />
         </div>
@@ -123,14 +127,16 @@ export default function Toolbar({
             onChange={(option) => onStatusChange(option?.value ?? "")}
             placeholder="Status"
             height={48}
-            borderColor="#334155"
-            backgroundColor="#111827"
-            textColor="#ffffff"
+            borderColor="#E7E0D2"
+            backgroundColor="#ffffff"
+            textColor="#0A0E1A"
             placeholderColor="#94A3B8"
-            menuBackgroundColor="#111827"
-            optionHoverColor="#1E293B"
-            // optionSelectedColor="#2563EB"
-            optionSelectedTextColor="#ffffff"
+            menuBackgroundColor="#ffffff"
+            optionHoverColor="#FDFBF7"
+            optionSelectedColor="#E8C16D"
+            optionSelectedTextColor="#0A0E1A"
+            optionTextColor="#0A0E1A"
+            borderRadius={8}
           />
         </div>
 
@@ -144,13 +150,16 @@ export default function Toolbar({
             onChange={(option) => onOperatorChange(option?.value ?? "")}
             placeholder="Operator"
             height={48}
-            borderColor="#334155"
-            backgroundColor="#111827"
-            textColor="#ffffff"
+            borderColor="#E7E0D2"
+            backgroundColor="#ffffff"
+            textColor="#0A0E1A"
             placeholderColor="#94A3B8"
-            menuBackgroundColor="#111827"
-            optionHoverColor="#1E293B"
-            optionSelectedTextColor="#ffffff"
+            menuBackgroundColor="#ffffff"
+            optionHoverColor="#FDFBF7"
+            optionSelectedColor="#E8C16D"
+            optionSelectedTextColor="#0A0E1A"
+            optionTextColor="#0A0E1A"
+            borderRadius={8}
           />
         </div>
 
@@ -164,13 +173,16 @@ export default function Toolbar({
             onChange={(option) => onAccountChange(option?.value ?? "")}
             placeholder="Account"
             height={48}
-            borderColor="#334155"
-            backgroundColor="#111827"
-            textColor="#ffffff"
+            borderColor="#E7E0D2"
+            backgroundColor="#ffffff"
+            textColor="#0A0E1A"
             placeholderColor="#94A3B8"
-            menuBackgroundColor="#111827"
-            optionHoverColor="#1E293B"
-            optionSelectedTextColor="#ffffff"
+            menuBackgroundColor="#ffffff"
+            optionHoverColor="#FDFBF7"
+            optionSelectedColor="#E8C16D"
+            optionSelectedTextColor="#0A0E1A"
+            optionTextColor="#0A0E1A"
+            borderRadius={8}
           />
         </div>
 
@@ -194,6 +206,7 @@ export default function Toolbar({
           fullWidth={false}
           leftIcon={<Download size={18} />}
           onClick={onDownload}
+          className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
         >
           Download
         </Button>
@@ -203,6 +216,7 @@ export default function Toolbar({
           fullWidth={false}
           leftIcon={<RotateCw size={18} />}
           onClick={onRefresh}
+          className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
         >
           Refresh
         </Button>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import AwbScanner from "./components/AwbScanner";
+import AwbMissingTable from "./components/AwbMissingTable";
 import AwbScanSummary from "./components/AwbScanSummary";
 import AwbToolbar from "./components/AwbToolbar";
 import AwbTable from "./components/AwbTable";
@@ -60,7 +61,16 @@ export default function AwbScan() {
   }, [fetchOrders]);
 
   // Hook for barcode scanning & audio playback
-  const { scanValue, setScanValue, message, isScanning, handleScan } = useAwbScanner(
+  const {
+    scanValue,
+    setScanValue,
+    message,
+    isScanning,
+    handleScan,
+    missingList,
+    removeMissingItem,
+    clearMissingList,
+  } = useAwbScanner(
     orders,
     setOrders,
     () => {
@@ -115,6 +125,7 @@ export default function AwbScan() {
           total={summaryCounts.total}
           pending={summaryCounts.pending}
           scanned={summaryCounts.scanned}
+          missing={missingList.length}
         />
 
         {/* Barcode Scanner Input */}
@@ -124,6 +135,13 @@ export default function AwbScan() {
           onScan={() => handleScan()}
           isScanning={isScanning}
           message={message}
+        />
+
+        {/* Missing / Unmatched AWB Scans Table */}
+        <AwbMissingTable
+          missingList={missingList}
+          onRemoveItem={removeMissingItem}
+          onClearAll={clearMissingList}
         />
 
         {/* Orders Data Table */}

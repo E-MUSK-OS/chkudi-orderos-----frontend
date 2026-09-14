@@ -4,71 +4,73 @@ import { useState } from "react";
 import { AlertCircle, Copy, Check, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { MissingAwbItem } from "../hooks/useAwbScanner";
 
 interface Props {
-  trackingIds: string[];
-  onRemoveItem?: (id: string) => void;
-  onClearAll?: () => void;
+  missingList: MissingAwbItem[];
+  onRemoveItem: (awb: string) => void;
+  onClearAll: () => void;
 }
 
-export default function MissingTrackingList({
-  trackingIds,
+export default function AwbMissingTable({
+  missingList,
   onRemoveItem,
   onClearAll,
 }: Props) {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedAwb, setCopiedAwb] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
 
-  if (trackingIds.length === 0) {
+  if (missingList.length === 0) {
     return null;
   }
 
-  // Copy single Tracking ID to clipboard
-  const handleCopySingle = async (id: string) => {
+  // Copy single AWB to clipboard
+  const handleCopySingle = async (awb: string) => {
     try {
-      await navigator.clipboard.writeText(id);
-      setCopiedId(id);
-      toast.success(`Copied "${id}" to clipboard`);
+      await navigator.clipboard.writeText(awb);
+      setCopiedAwb(awb);
+      toast.success(`Copied "${awb}" to clipboard`);
       setTimeout(() => {
-        setCopiedId((current) => (current === id ? null : current));
+        setCopiedAwb((current) => (current === awb ? null : current));
       }, 1500);
     } catch {
-      toast.error("Failed to copy Tracking ID");
+      toast.error("Failed to copy AWB");
     }
   };
 
-  // Copy all Tracking IDs to clipboard
+  // Copy all AWBs to clipboard
   const handleCopyAll = async () => {
     try {
-      const text = trackingIds.join("\n");
+      const text = missingList.map((item) => item.awb).join("\n");
       await navigator.clipboard.writeText(text);
       setCopiedAll(true);
-      toast.success(`Copied all ${trackingIds.length} missing Tracking ID(s) to clipboard`);
+      toast.success(`Copied all ${missingList.length} missing AWB(s) to clipboard`);
       setTimeout(() => setCopiedAll(false), 2000);
     } catch {
-      toast.error("Failed to copy all Tracking IDs");
+      toast.error("Failed to copy all AWBs");
     }
   };
 
-  // Export missing tracking IDs to Excel file
+  // Export missing AWBs to Excel file
   const handleExportExcel = () => {
     try {
-      const rows = trackingIds.map((id, index) => ({
+      const rows = missingList.map((item, index) => ({
         "NO.": index + 1,
-        "Tracking ID": id,
+        "AWB / Tracking ID": item.awb,
         "Status": "NOT FOUND",
-        "Reason": "No VMS Record Found",
+        "Scan Time": item.scannedAt,
+        "Reason": item.reason || "Not found in Amazon orders database",
       }));
 
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Missing_Tracking_IDs");
+      XLSX.utils.book_append_sheet(wb, ws, "Missing_AWBs");
 
       const today = new Date().toISOString().split("T")[0];
-      const fileName = `Missing_Tracking_IDs_${today}.xlsx`;
+      const fileName = `Amazon_Missing_AWBs_${today}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
-      toast.success(`Exported ${trackingIds.length} missing Tracking ID(s) to Excel`);
+      toast.success(`Exported ${missingList.length} missing AWB(s) to Excel`);
     } catch (err) {
       console.error("Failed to export Excel", err);
       toast.error("Failed to export Excel file");
@@ -76,7 +78,7 @@ export default function MissingTrackingList({
   };
 
   return (
-    <div className="mb-6 border border-red-200 bg-white shadow-sm transition-all overflow-hidden">
+    <div className="border border-red-200 bg-white shadow-sm transition-all overflow-hidden">
       {/* Header bar */}
       <div className="flex flex-col gap-3 border-b border-red-100 bg-red-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
@@ -86,14 +88,14 @@ export default function MissingTrackingList({
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-base sm:text-lg font-bold text-red-950 tracking-wide">
-                Missing / Unmatched Tracking IDs
+                Missing / Unmatched AWB Scans
               </h2>
               <span className="rounded bg-red-100 border border-red-200 px-2.5 py-0.5 text-xs font-bold text-red-700">
-                {trackingIds.length} Missing
+                {missingList.length} Missing
               </span>
             </div>
             <p className="mt-0.5 text-xs text-red-700">
-              These Tracking IDs were scanned but no matching VMS record was found.
+              These tracking numbers or barcodes were scanned but were not found in the Amazon orders database.
             </p>
           </div>
         </div>
@@ -119,7 +121,7 @@ export default function MissingTrackingList({
               cursor-pointer
               shadow-xs
             "
-            title="Download Excel file of missing Tracking IDs"
+            title="Download Excel file of missing AWBs"
           >
             <Download className="h-3.5 w-3.5" />
             <span>Excel</span>
@@ -146,7 +148,7 @@ export default function MissingTrackingList({
               cursor-pointer
               shadow-xs
             "
-            title="Copy all missing Tracking IDs to clipboard"
+            title="Copy all missing AWBs to clipboard"
           >
             {copiedAll ? (
               <>
@@ -162,57 +164,54 @@ export default function MissingTrackingList({
           </button>
 
           {/* Clear List */}
-          {onClearAll && (
-            <button
-              type="button"
-              onClick={onClearAll}
-              className="
-                flex
-                h-9
-                items-center
-                gap-1.5
-                border
-                border-red-300
-                bg-white
-                hover:bg-red-50
-                px-3.5
-                text-xs
-                font-bold
-                text-red-700
-                transition
-                cursor-pointer
-                shadow-xs
-              "
-              title="Clear missing Tracking IDs list"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span>Clear</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="
+              flex
+              h-9
+              items-center
+              gap-1.5
+              border
+              border-red-300
+              bg-white
+              hover:bg-red-50
+              px-3.5
+              text-xs
+              font-bold
+              text-red-700
+              transition
+              cursor-pointer
+              shadow-xs
+            "
+            title="Clear missing AWBs list"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Clear</span>
+          </button>
         </div>
       </div>
 
       {/* Table Content */}
       <div className="max-h-72 w-full overflow-y-auto overflow-x-auto">
-        <table className="w-full min-w-[600px] border-collapse text-left">
+        <table className="w-full min-w-[700px] border-collapse text-left">
           <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] uppercase border-b border-slate-800">
             <tr>
               <th className="px-4 py-3 text-center whitespace-nowrap w-14">NO.</th>
-              <th className="px-4 py-3 text-center whitespace-nowrap">Scanned Tracking ID</th>
+              <th className="px-4 py-3 text-center whitespace-nowrap">Scanned AWB / Tracking ID</th>
               <th className="px-4 py-3 text-center whitespace-nowrap">Status</th>
-              {onRemoveItem && (
-                <th className="px-4 py-3 text-center whitespace-nowrap w-20">Action</th>
-              )}
+              <th className="px-4 py-3 text-center whitespace-nowrap">Scan Time</th>
+              <th className="px-4 py-3 text-center whitespace-nowrap w-20">Action</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm">
-            {trackingIds.map((id, index) => {
-              const isCopied = copiedId === id;
+            {missingList.map((item, index) => {
+              const isCopied = copiedAwb === item.awb;
 
               return (
                 <tr
-                  key={id}
+                  key={item.id || item.awb}
                   className="transition-colors hover:bg-red-50/40"
                 >
                   {/* NO. */}
@@ -220,17 +219,17 @@ export default function MissingTrackingList({
                     {index + 1}
                   </td>
 
-                  {/* Scanned Tracking ID */}
+                  {/* Scanned AWB / Barcode */}
                   <td className="px-4 py-3 text-center whitespace-nowrap">
                     <div className="inline-flex items-center gap-2">
                       <span className="border border-red-200 bg-red-50 px-3 py-1 font-mono text-xs sm:text-sm font-bold text-red-950 tracking-wider">
-                        {id}
+                        {item.awb}
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleCopySingle(id)}
+                        onClick={() => handleCopySingle(item.awb)}
                         className="p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                        title="Copy Tracking ID"
+                        title="Copy AWB"
                       >
                         {isCopied ? (
                           <Check className="h-3.5 w-3.5 text-emerald-600" />
@@ -249,19 +248,22 @@ export default function MissingTrackingList({
                     </span>
                   </td>
 
+                  {/* Scan Time */}
+                  <td className="px-4 py-3 text-center font-mono text-xs text-slate-600 whitespace-nowrap">
+                    {item.scannedAt}
+                  </td>
+
                   {/* Action */}
-                  {onRemoveItem && (
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => onRemoveItem(id)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer hover:bg-red-100 rounded"
-                        title="Remove from missing list"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  )}
+                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => onRemoveItem(item.awb)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer hover:bg-red-100 rounded"
+                      title="Remove from missing list"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </td>
                 </tr>
               );
             })}
