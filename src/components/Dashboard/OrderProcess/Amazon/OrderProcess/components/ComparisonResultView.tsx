@@ -41,21 +41,48 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
-import { useAmazonOrderStore, loadFilesFromIDB, AMAZON_PRINTED_STORAGE_KEY } from "../store/useAmazonOrderStore";
+import {
+  useAmazonOrderStore,
+  loadFilesFromIDB,
+  AMAZON_PRINTED_STORAGE_KEY,
+  AMAZON_PRINTED_BATCHES_MAP_KEY,
+  getPrintedBatchesMap,
+  StoredBatchPrintedRecord,
+} from "../store/useAmazonOrderStore";
 
-const getBatchKey = (summary: any, resultsLen: number): string => {
+const getBatchKey = (summary: any, resultsLen: number, batchId?: string | null): string => {
+  if (batchId) return `batch_${batchId}`;
   if (!summary) return `batch_${resultsLen}`;
   return `${summary.pdfFileName || ""}_${summary.zplFileName || ""}_${summary.totalPdfOrders || summary.totalZplLabels || resultsLen}`;
 };
 
-const getStoredPrintedRows = (batchKey: string): Set<number> => {
+const getStoredPrintedRows = (
+  batchKey: string,
+  batchId?: string | null,
+  summary?: any
+): Set<number> => {
   if (typeof window === "undefined") return new Set();
   try {
+    // 1. Check if summary itself has printedIndices (from backend)
+    if (summary && Array.isArray(summary.printedIndices) && summary.printedIndices.length > 0) {
+      return new Set(summary.printedIndices);
+    }
+
+    // 2. Check multi-batch persistent map
+    const map = getPrintedBatchesMap();
+    if (batchId && map[batchId]?.indices) {
+      return new Set(map[batchId].indices);
+    }
+    if (batchKey && map[batchKey]?.indices) {
+      return new Set(map[batchKey].indices);
+    }
+
+    // 3. Fallback to legacy single key if matching
     const raw = localStorage.getItem(AMAZON_PRINTED_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.indices)) {
-        if (parsed.batchKey === batchKey) {
+        if (parsed.batchKey === batchKey || (batchId && parsed.batchKey === batchId)) {
           return new Set(parsed.indices);
         }
         if (batchKey === "batch_0" && parsed.batchKey) {
@@ -69,21 +96,59 @@ const getStoredPrintedRows = (batchKey: string): Set<number> => {
   return new Set();
 };
 
-const savePrintedRowsToStorage = (batchKey: string, set: Set<number>) => {
+const savePrintedRowsToStorage = (
+  batchKey: string,
+  set: Set<number>,
+  batchId?: string | null,
+  items?: { index: number; orderNumber?: string; awb?: string }[]
+) => {
   if (typeof window === "undefined") return;
   try {
+    const indices = Array.from(set);
+    const printedOrderNumbers: string[] = [];
+    const printedAwbs: string[] = [];
+
+    if (items) {
+      items.forEach((item) => {
+        if (set.has(item.index)) {
+          if (item.orderNumber && item.orderNumber !== "N/A") printedOrderNumbers.push(item.orderNumber);
+          if (item.awb && item.awb !== "N/A") printedAwbs.push(item.awb);
+        }
+      });
+    }
+
+    const record: StoredBatchPrintedRecord = {
+      indices,
+      count: indices.length,
+      orderNumbers: printedOrderNumbers,
+      awbs: printedAwbs,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    const map = getPrintedBatchesMap();
+    if (batchKey) map[batchKey] = record;
+    if (batchId) map[batchId] = record;
+    localStorage.setItem(AMAZON_PRINTED_BATCHES_MAP_KEY, JSON.stringify(map));
+
+    // Also update legacy single key for backward compatibility
     localStorage.setItem(
       AMAZON_PRINTED_STORAGE_KEY,
       JSON.stringify({
-        batchKey,
-        indices: Array.from(set),
+        batchKey: batchId || batchKey,
+        indices,
       })
     );
   } catch (e) {
     console.warn("Failed to save printed rows to storage:", e);
   }
 };
-import { cleanCustomerName, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTransporterOrFeePage } from "../utils";
+import {
+  cleanCustomerName,
+  mapAsinToSellerSku,
+  drawSkuOnLabelPage,
+  isAmazonTransporterOrFeePage,
+  addInvoicePagesToDoc,
+} from "../utils";
 import {
   getOrLoadCombinedDoc,
   getCachedAmazonDocs,
@@ -263,6 +328,9 @@ export default function ComparisonResultView({
     downloadUnmatchedZplPdf,
     restoreProcessData,
     clearProcessData,
+    activeHistoryBatchId,
+    initialShowPrinted,
+    setInitialShowPrinted,
   } = useAmazonOrderStore();
 
   const [activeTab, setActiveTab] = useState<"table" | "pdf">("table");
@@ -413,20 +481,6 @@ export default function ComparisonResultView({
     [results]
   );
 
-  const unmatchedPdfOptions: SelectOption[] = useMemo(
-    () => [
-      {
-        label: `Unmatched PDF Invoices (${unmatchedPdfCount})`,
-        value: "unmatched_pdf",
-      },
-      {
-        label: `Unmatched ZPL Labels (${unmatchedZplCount})`,
-        value: "unmatched_zpl",
-      },
-    ],
-    [unmatchedPdfCount, unmatchedZplCount]
-  );
-
   const pdfViewOptions: SelectOption[] = useMemo(
     () => [
       {
@@ -441,8 +495,16 @@ export default function ComparisonResultView({
         label: `Original Uploaded PDF (${summary?.totalPdfOrders ?? summary?.totalPdfPages ?? 0})`,
         value: "original",
       },
+      {
+        label: `Unmatched PDF Invoices (${unmatchedPdfCount})`,
+        value: "unmatched_pdf",
+      },
+      {
+        label: `Unmatched ZPL Labels (${unmatchedZplCount})`,
+        value: "unmatched_zpl",
+      },
     ],
-    [summary]
+    [summary, unmatchedPdfCount, unmatchedZplCount]
   );
 
   const currentPdfConfig = useMemo(() => {
@@ -515,27 +577,34 @@ export default function ComparisonResultView({
   const autoPrintInputRef = useRef<HTMLInputElement>(null);
   const orderScanProgressRef = useRef<Map<number, OrderItemRequirement[]>>(new Map());
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
-  const batchKey = useMemo(() => getBatchKey(summary, results.length), [summary, results.length]);
-  const [printedRows, setPrintedRows] = useState<Set<number>>(() => getStoredPrintedRows(batchKey));
+  const batchKey = useMemo(
+    () => getBatchKey(summary, results.length, activeHistoryBatchId),
+    [summary, results.length, activeHistoryBatchId]
+  );
+  const [printedRows, setPrintedRows] = useState<Set<number>>(() =>
+    getStoredPrintedRows(batchKey, activeHistoryBatchId, summary)
+  );
   const printedRowsRef = useRef<Set<number>>(new Set());
   const printQueuePromiseRef = useRef<Promise<void>>(Promise.resolve());
   const orderPrintPdfCacheRef = useRef<Map<number, string>>(new Map());
 
-  // Restore printed rows when batchKey or results are initialized
+  // Restore printed rows when batchKey, activeHistoryBatchId, or summary changes
   useEffect(() => {
-    const stored = getStoredPrintedRows(batchKey);
+    const stored = getStoredPrintedRows(batchKey, activeHistoryBatchId, summary);
     printedRowsRef.current = stored;
     setPrintedRows(stored);
-  }, [batchKey]);
+    setSelectedRows(new Set());
+    setPage(1);
+  }, [batchKey, activeHistoryBatchId, summary]);
 
   const markRowsAsPrinted = useCallback(
     (indices: number[]) => {
       indices.forEach((idx) => printedRowsRef.current.add(idx));
       const newSet = new Set(printedRowsRef.current);
       setPrintedRows(newSet);
-      savePrintedRowsToStorage(batchKey, newSet);
+      savePrintedRowsToStorage(batchKey, newSet, activeHistoryBatchId, results);
     },
-    [batchKey]
+    [batchKey, activeHistoryBatchId, results]
   );
 
   const unmarkRowsAsPrinted = useCallback(
@@ -543,15 +612,24 @@ export default function ComparisonResultView({
       indices.forEach((idx) => printedRowsRef.current.delete(idx));
       const newSet = new Set(printedRowsRef.current);
       setPrintedRows(newSet);
-      savePrintedRowsToStorage(batchKey, newSet);
+      savePrintedRowsToStorage(batchKey, newSet, activeHistoryBatchId, results);
     },
-    [batchKey]
+    [batchKey, activeHistoryBatchId, results]
   );
 
   const [showPrinted, setShowPrinted] = useState<boolean>(() => {
+    if (initialShowPrinted) return true;
     if (typeof window === "undefined") return false;
     return sessionStorage.getItem("amazon_show_printed_active") === "true";
   });
+
+  // Automatically activate showPrinted if batch was opened via "Show Printed" action from History
+  useEffect(() => {
+    if (initialShowPrinted) {
+      setShowPrinted(true);
+      setInitialShowPrinted(false);
+    }
+  }, [initialShowPrinted, setInitialShowPrinted]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -794,7 +872,7 @@ export default function ComparisonResultView({
     }
 
     return results.map((item) => {
-      const mappedSku = mapAsinToSellerSku(item.asin, asinToSkuMap);
+      const mappedSku = mapAsinToSellerSku(item.asin, asinToSkuMap, item.sellerSku);
       return {
         ...item,
         sellerSku: (mappedSku && mappedSku !== "N/A") ? mappedSku : (item.sellerSku && item.sellerSku !== "N/A" ? item.sellerSku : mappedSku),
@@ -803,6 +881,101 @@ export default function ComparisonResultView({
   }, [results, asinToSkuMap]);
 
   const router = useRouter();
+
+  // Helper to reliably persist printed orders directly into backend database for immediate AWB Scan verification
+  const persistPrintedOrdersToAwbScan = useCallback(
+    async (items: typeof mappedResults) => {
+      if (!items || items.length === 0) return;
+      try {
+        const ordersToSave = items.map((item) => ({
+          invoice:
+            item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF"
+              ? item.pdfInvoice
+              : item.zplInvoice && item.zplInvoice !== "Not Found in ZPL" && item.zplInvoice !== "N/A"
+              ? item.zplInvoice
+              : "N/A",
+          orderId: item.orderNumber || "N/A",
+          awb: item.awb || "N/A",
+          asin: item.asin || "N/A",
+          sellerSku: item.sellerSku || "N/A",
+          customer: cleanCustomerName(item.customer) || "N/A",
+          packingScanStatus: "PENDING" as const,
+        }));
+
+        await amazonOrderService.savePrintedOrders(
+          ordersToSave,
+          undefined,
+          activeHistoryBatchId || undefined
+        );
+      } catch (saveErr) {
+        console.warn("Background Amazon order save error for AWB scan:", saveErr);
+      }
+    },
+    [activeHistoryBatchId]
+  );
+
+  // Synchronize any existing printed orders into AWB Scan database in background so none are left behind
+  useEffect(() => {
+    if (mappedResults.length > 0 && printedRows.size > 0) {
+      const alreadyPrintedItems = mappedResults.filter((r) => printedRows.has(r.index));
+      if (alreadyPrintedItems.length > 0) {
+        persistPrintedOrdersToAwbScan(alreadyPrintedItems);
+      }
+    }
+  }, [mappedResults, printedRows, persistPrintedOrdersToAwbScan]);
+
+  // Auto-sync printed status from database for historical batches so all printed orders appear in the table
+  useEffect(() => {
+    let isCancelled = false;
+    const syncPrintedFromDb = async () => {
+      if (!mappedResults || mappedResults.length === 0) return;
+      try {
+        const res = await amazonOrderService.getOrders("?limit=1000");
+        if (isCancelled || !res?.data || !Array.isArray(res.data)) return;
+
+        const dbPrintedOrderIds = new Set<string>();
+        const dbPrintedAwbs = new Set<string>();
+
+        res.data.forEach((o) => {
+          if (o.orderId && o.orderId !== "N/A" && o.orderId !== "-") {
+            dbPrintedOrderIds.add(o.orderId.trim());
+          }
+          if (o.awb && o.awb !== "N/A" && o.awb !== "-") {
+            dbPrintedAwbs.add(o.awb.trim());
+          }
+        });
+
+        let hasNewPrinted = false;
+        mappedResults.forEach((item) => {
+          if (!item.isMatch) return;
+          const cleanOrder = (item.orderNumber || "").trim();
+          const cleanAwb = (item.awb || "").trim();
+
+          const isPrintedInDb =
+            (cleanOrder && dbPrintedOrderIds.has(cleanOrder)) ||
+            (cleanAwb && dbPrintedAwbs.has(cleanAwb));
+
+          if (isPrintedInDb && !printedRowsRef.current.has(item.index)) {
+            printedRowsRef.current.add(item.index);
+            hasNewPrinted = true;
+          }
+        });
+
+        if (hasNewPrinted && !isCancelled) {
+          const updated = new Set(printedRowsRef.current);
+          setPrintedRows(updated);
+          savePrintedRowsToStorage(batchKey, updated, activeHistoryBatchId, mappedResults);
+        }
+      } catch (err) {
+        console.warn("Failed to sync printed orders from DB:", err);
+      }
+    };
+
+    syncPrintedFromDb();
+    return () => {
+      isCancelled = true;
+    };
+  }, [mappedResults, batchKey, activeHistoryBatchId]);
 
   // Missing SKU items detection: strictly checks if sellerSku is missing or any part is N/A
   const missingSkuItems = useMemo(() => {
@@ -990,7 +1163,6 @@ export default function ComparisonResultView({
     setPrintedRows(new Set());
     if (typeof window !== "undefined") {
       try {
-        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
         sessionStorage.removeItem("amazon_show_printed_active");
       } catch (e) {}
     }
@@ -1032,12 +1204,21 @@ export default function ComparisonResultView({
         if (item.combinedPages && item.combinedPages.length > 0) {
           pages = item.combinedPages.filter((p) => p >= 0 && p < combinedDoc.getPageCount());
         } else {
-          const mIdx = matchedList.findIndex((r) => r.index === item.index);
-          if (mIdx !== -1) {
-            const startP = mIdx * 2;
-            if (startP + 1 < combinedDoc.getPageCount()) {
-              pages = [startP, startP + 1];
+          let startP = 0;
+          for (const m of matchedList) {
+            const expectedPages =
+              m.combinedPages && m.combinedPages.length > 0
+                ? m.combinedPages.length
+                : (m.pdfPages && m.pdfPages.length > 1 && (Math.max(m.asinsCount || 0, m.totalQuantity || 0) > 4))
+                ? 3
+                : 2;
+            if (m.index === item.index) {
+              for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
+                pages.push(p);
+              }
+              break;
             }
+            startP += expectedPages;
           }
         }
 
@@ -1323,7 +1504,14 @@ export default function ComparisonResultView({
           throw new Error(extRes.error || `Print failure on ${targetPrinter}`);
         }
 
-        toast.success(`Printed order (4" x 6") directly on ${targetPrinter}!`, { id: "print-prep" });
+        toast.success(`Printed order (4" x 6") directly on ${targetPrinter}!`, {
+          id: "print-prep",
+          duration: 6000,
+          action: {
+            label: "Go to AWB Scan →",
+            onClick: () => router.push("/dashboard/order-process/amazon/awb-scan"),
+          },
+        });
         markRowsAsPrinted([singleItem.index]);
         setSelectedRows((prev) => {
           const next = new Set(prev);
@@ -1331,25 +1519,8 @@ export default function ComparisonResultView({
           return next;
         });
 
-        // Background database save
-        try {
-          const ordersToSave = [{
-            invoice: singleItem.pdfInvoice && singleItem.pdfInvoice !== "Not Found in PDF"
-              ? singleItem.pdfInvoice
-              : singleItem.zplInvoice && singleItem.zplInvoice !== "Not Found in ZPL"
-              ? singleItem.zplInvoice
-              : "N/A",
-            orderId: singleItem.orderNumber || "N/A",
-            awb: singleItem.awb || "N/A",
-            asin: singleItem.asin || "N/A",
-            sellerSku: singleItem.sellerSku || "N/A",
-            customer: cleanCustomerName(singleItem.customer) || "N/A",
-            packingScanStatus: "PENDING" as const,
-          }];
-          amazonOrderService.savePrintedOrders(ordersToSave).catch((err) =>
-            console.warn("Background order save error:", err)
-          );
-        } catch (e) {}
+        // Direct database save for AWB scan
+        await persistPrintedOrdersToAwbScan([singleItem]);
 
         return;
       }
@@ -1375,12 +1546,21 @@ export default function ComparisonResultView({
               pages = singleItem.combinedPages.filter((p) => p >= 0 && p < combinedDoc.getPageCount());
             } else {
               const matchedList = mappedResults.filter((r) => r.isMatch);
-              const mIdx = matchedList.findIndex((r) => r.index === singleItem.index);
-              if (mIdx !== -1) {
-                const startP = mIdx * 2;
-                if (startP + 1 < combinedDoc.getPageCount()) {
-                  pages = [startP, startP + 1];
+              let startP = 0;
+              for (const m of matchedList) {
+                const expectedPages =
+                  m.combinedPages && m.combinedPages.length > 0
+                    ? m.combinedPages.length
+                    : (m.pdfPages && m.pdfPages.length > 1 && (Math.max(m.asinsCount || 0, m.totalQuantity || 0) > 4))
+                    ? 3
+                    : 2;
+                if (m.index === singleItem.index) {
+                  for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
+                    pages.push(p);
+                  }
+                  break;
                 }
+                startP += expectedPages;
               }
             }
 
@@ -1400,7 +1580,14 @@ export default function ComparisonResultView({
             throw new Error(extRes.error || `Print failure on ${currentPrinter}`);
           }
 
-          toast.success(`Printed order (4" x 6") directly on ${currentPrinter}!`, { id: "print-prep" });
+          toast.success(`Printed order (4" x 6") directly on ${currentPrinter}!`, {
+            id: "print-prep",
+            duration: 6000,
+            action: {
+              label: "Go to AWB Scan →",
+              onClick: () => router.push("/dashboard/order-process/amazon/awb-scan"),
+            },
+          });
           markRowsAsPrinted([singleItem.index]);
           setSelectedRows((prev) => {
             const next = new Set(prev);
@@ -1408,29 +1595,8 @@ export default function ComparisonResultView({
             return next;
           });
 
-          // Automatically store printed Amazon orders in backend database (7-day retention)
-          try {
-            const orderToSave = {
-              invoice:
-                singleItem.pdfInvoice && singleItem.pdfInvoice !== "Not Found in PDF"
-                  ? singleItem.pdfInvoice
-                  : singleItem.zplInvoice && singleItem.zplInvoice !== "Not Found in ZPL"
-                  ? singleItem.zplInvoice
-                  : "N/A",
-              orderId: singleItem.orderNumber || "N/A",
-              awb: singleItem.awb || "N/A",
-              asin: singleItem.asin || "N/A",
-              sellerSku: singleItem.sellerSku || "N/A",
-              customer: cleanCustomerName(singleItem.customer) || "N/A",
-              packingScanStatus: "PENDING" as const,
-            };
-
-            amazonOrderService.savePrintedOrders([orderToSave]).catch((saveErr) => {
-              console.warn("Background Amazon order save error:", saveErr);
-            });
-          } catch (savePrepErr) {
-            console.warn("Failed to prepare Amazon orders for database saving:", savePrepErr);
-          }
+          // Direct database save for AWB scan
+          await persistPrintedOrdersToAwbScan([singleItem]);
 
           return;
         }
@@ -1456,13 +1622,22 @@ export default function ComparisonResultView({
             }
           }
 
-          // Robust fallback: derived from matched position (2 pages per matched order: invoice, label)
-          const mIdx = matchedList.findIndex((r) => r.index === item.index);
-          if (mIdx !== -1) {
-            const startP = mIdx * 2;
-            if (startP + 1 < combinedDoc.getPageCount()) {
-              targetPageIndices.push(startP, startP + 1);
+          // Robust fallback: compute dynamic page range based on prior matched items
+          let startP = 0;
+          for (const m of matchedList) {
+            const expectedPages =
+              m.combinedPages && m.combinedPages.length > 0
+                ? m.combinedPages.length
+                : (m.pdfPages && m.pdfPages.length > 1 && (Math.max(m.asinsCount || 0, m.totalQuantity || 0) > 4))
+                ? 3
+                : 2;
+            if (m.index === item.index) {
+              for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
+                targetPageIndices.push(p);
+              }
+              break;
             }
+            startP += expectedPages;
           }
         }
 
@@ -1526,12 +1701,20 @@ export default function ComparisonResultView({
 
         for (const item of targetResults) {
           if (item.pdfPages && item.pdfPages.length > 0) {
-            for (const pageNum of item.pdfPages) {
-              const idx = pageNum - 1;
-              if (idx >= 0 && idx < origDoc.getPageCount()) {
-                await addScaledPage(origDoc.getPage(idx), false);
-              }
-            }
+            const itemCount = Math.max(
+              item.asinsCount || 0,
+              item.totalQuantity || 0,
+              item.asin ? item.asin.split(/[\r\n]+|\s+\/\s+/).filter(Boolean).length : 0,
+              1
+            );
+
+            await addInvoicePagesToDoc(
+              printDoc,
+              origDoc,
+              item.pdfPages,
+              undefined,
+              { totalAmount: item.amount, itemCount }
+            );
           }
           if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
             await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
@@ -1577,8 +1760,15 @@ export default function ComparisonResultView({
         }
 
         toast.success(
-          `Printed ${totalPages} page(s) (4" x 6") directly on ${currentPrinter}!`,
-          { id: 'print-prep' }
+          `Printed ${totalPages} page(s) (4" x 6") directly on ${currentPrinter}! All printed orders sent to AWB Scan.`,
+          {
+            id: 'print-prep',
+            duration: 8000,
+            action: {
+              label: 'Go to AWB Scan →',
+              onClick: () => router.push('/dashboard/order-process/amazon/awb-scan'),
+            },
+          }
         );
         printedSuccessfully = true;
         markRowsAsPrinted(targetResults.map((r) => r.index));
@@ -1588,29 +1778,8 @@ export default function ComparisonResultView({
           return next;
         });
 
-        // Automatically store printed Amazon orders in backend database (7-day retention)
-        try {
-          const ordersToSave = targetResults.map((item) => ({
-            invoice:
-              item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF"
-                ? item.pdfInvoice
-                : item.zplInvoice && item.zplInvoice !== "Not Found in ZPL"
-                ? item.zplInvoice
-                : "N/A",
-            orderId: item.orderNumber || "N/A",
-            awb: item.awb || "N/A",
-            asin: item.asin || "N/A",
-            sellerSku: item.sellerSku || "N/A",
-            customer: cleanCustomerName(item.customer) || "N/A",
-            packingScanStatus: "PENDING" as const,
-          }));
-
-          amazonOrderService.savePrintedOrders(ordersToSave).catch((saveErr) => {
-            console.warn("Background Amazon order save error:", saveErr);
-          });
-        } catch (savePrepErr) {
-          console.warn("Failed to prepare Amazon orders for database saving:", savePrepErr);
-        }
+        // Direct database save for AWB scan
+        await persistPrintedOrdersToAwbScan(targetResults);
       } catch (printLoopErr: any) {
         throw printLoopErr;
       }
@@ -1680,7 +1849,16 @@ export default function ComparisonResultView({
       return;
     }
 
-    const targetResults = mappedResults.filter((r) => selectedRows.has(r.index));
+    const targetResults = mappedResults.filter((r) => selectedRows.has(r.index) && r.isMatch);
+    if (targetResults.length === 0) {
+      toast.error('No printable matched orders selected.');
+      return;
+    }
+
+    // Ensure selected orders are immediately saved to AWB Scan database
+    await persistPrintedOrdersToAwbScan(targetResults);
+
+    // Send to printer
     await executePrintForItems(targetResults);
   };
 
@@ -2532,19 +2710,21 @@ export default function ComparisonResultView({
                 <p className="text-xs sm:text-sm font-medium text-slate-500">
                   Matched Orders
                 </p>
-                {summary.mismatchCount > 0 && (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPdfType(unmatchedPdfCount > 0 ? "unmatched_pdf" : "unmatched_zpl");
-                      setActiveTab("pdf");
-                    }}
-                    className="rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 hover:bg-red-200 cursor-pointer"
-                    title="Click to view unmatched documents in PDF viewer"
-                  >
-                    {summary.mismatchCount} Unmatched
-                  </span>
-                )}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPdfType(unmatchedPdfCount > 0 ? "unmatched_pdf" : "unmatched_zpl");
+                    setActiveTab("pdf");
+                  }}
+                  className={`rounded px-2 py-0.5 text-xs font-bold cursor-pointer ${
+                    summary.mismatchCount > 0
+                      ? "bg-red-100 text-red-700 hover:bg-red-200"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  }`}
+                  title="Click to view unmatched documents in PDF viewer"
+                >
+                  {summary.mismatchCount} Unmatched
+                </span>
               </div>
 
               <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
@@ -2629,14 +2809,13 @@ export default function ComparisonResultView({
             Matched Orders ({showPrinted ? summary.matchedCount : remainingMatchedCount})
           </button>
 
-          {/* Matched PDF Viewer Dropdown Selector */}
+          {/* Unified PDF Viewer Dropdown Selector (Matched, All ZPL, Original, Unmatched PDF, Unmatched ZPL) */}
           <div
-            className={`w-full sm:w-72 lg:w-80 transition-all ${
-              activeTab === "pdf" && !selectedPdfType.startsWith("unmatched") ? "ring-2 ring-[#E8C16D]" : ""
+            className={`w-full sm:w-80 lg:w-96 transition-all ${
+              activeTab === "pdf" ? "ring-2 ring-[#E8C16D]" : ""
             }`}
             onClick={() => {
-              if (activeTab !== "pdf" || selectedPdfType.startsWith("unmatched")) {
-                setSelectedPdfType("combined");
+              if (activeTab !== "pdf") {
                 setActiveTab("pdf");
               }
             }}
@@ -2654,7 +2833,7 @@ export default function ComparisonResultView({
                 }
               }}
               height={56}
-              borderColor={activeTab === "pdf" && !selectedPdfType.startsWith("unmatched") ? "#E8C16D" : "#0A0E1A"}
+              borderColor={activeTab === "pdf" ? "#E8C16D" : "#0A0E1A"}
               backgroundColor="#0A0E1A"
               textColor="#E8C16D"
               placeholderColor="#E8C16D"
@@ -2664,38 +2843,6 @@ export default function ComparisonResultView({
               optionSelectedTextColor="#0A0E1A"
             />
           </div>
-
-          {/* Unmatched Orders Dropdown (1. PDF and 2. ZPL) */}
-          {summary.mismatchCount > 0 && (
-            <div
-              className={`w-full sm:w-64 lg:w-72 transition-all ${
-                activeTab === "pdf" && selectedPdfType.startsWith("unmatched") ? "ring-2 ring-[#E8C16D]" : ""
-              }`}
-            >
-              <ReactSelect
-                options={unmatchedPdfOptions}
-                value={
-                  unmatchedPdfOptions.find((opt) => opt.value === selectedPdfType) ??
-                  unmatchedPdfOptions[0]
-                }
-                onChange={(opt) => {
-                  if (opt?.value) {
-                    setSelectedPdfType(opt.value as AmazonPdfViewType);
-                    setActiveTab("pdf");
-                  }
-                }}
-                height={56}
-                borderColor={activeTab === "pdf" && selectedPdfType.startsWith("unmatched") ? "#E8C16D" : "#0A0E1A"}
-                backgroundColor="#0A0E1A"
-                textColor="#E8C16D"
-                placeholderColor="#E8C16D"
-                menuBackgroundColor="#0A0E1A"
-                optionHoverColor="#161D2E"
-                optionSelectedColor="#E8C16D"
-                optionSelectedTextColor="#0A0E1A"
-              />
-            </div>
-          )}
         </div>
 
         {/* Rightside Corner: Instant Auto-Print Search Bar */}
@@ -3336,31 +3483,29 @@ export default function ComparisonResultView({
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              {selectedPdfType.startsWith("unmatched") && (
-                <div className="w-56 sm:w-64">
-                  <ReactSelect
-                    options={unmatchedPdfOptions}
-                    value={
-                      unmatchedPdfOptions.find((opt) => opt.value === selectedPdfType) ??
-                      unmatchedPdfOptions[0]
+              <div className="w-56 sm:w-72">
+                <ReactSelect
+                  options={pdfViewOptions}
+                  value={
+                    pdfViewOptions.find((opt) => opt.value === selectedPdfType) ??
+                    pdfViewOptions[0]
+                  }
+                  onChange={(opt) => {
+                    if (opt?.value) {
+                      setSelectedPdfType(opt.value as AmazonPdfViewType);
                     }
-                    onChange={(opt) => {
-                      if (opt?.value) {
-                        setSelectedPdfType(opt.value as AmazonPdfViewType);
-                      }
-                    }}
-                    height={44}
-                    borderColor="#E8C16D"
-                    backgroundColor="#0A0E1A"
-                    textColor="#E8C16D"
-                    placeholderColor="#E8C16D"
-                    menuBackgroundColor="#0A0E1A"
-                    optionHoverColor="#161D2E"
-                    optionSelectedColor="#E8C16D"
-                    optionSelectedTextColor="#0A0E1A"
-                  />
-                </div>
-              )}
+                  }}
+                  height={44}
+                  borderColor="#E8C16D"
+                  backgroundColor="#0A0E1A"
+                  textColor="#E8C16D"
+                  placeholderColor="#E8C16D"
+                  menuBackgroundColor="#0A0E1A"
+                  optionHoverColor="#161D2E"
+                  optionSelectedColor="#E8C16D"
+                  optionSelectedTextColor="#0A0E1A"
+                />
+              </div>
 
               <Button
                 type="button"

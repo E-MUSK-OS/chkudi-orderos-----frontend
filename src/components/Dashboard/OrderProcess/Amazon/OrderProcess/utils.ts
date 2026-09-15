@@ -419,67 +419,109 @@ export async function enhanceInvoicePages(
  * - If ASIN matches in DB but variantSku is empty/null -> returns "-"
  * - If ASIN does not match in DB (or missing/N/A) -> returns "N/A"
  */
+export function getCleanSkuList(sellerSku?: string): string[] {
+  if (
+    !sellerSku ||
+    sellerSku === "N/A" ||
+    sellerSku === "-" ||
+    sellerSku === "[ N/A ]" ||
+    sellerSku === "[ NA ]" ||
+    sellerSku === "[ - ]"
+  ) {
+    return [];
+  }
+
+  const rawTokens = sellerSku
+    .split(/[\r\n]+|\s+\/\s+|,\s+/)
+    .map((s) => s.trim().replace(/^\[\s*|\s*\]$/g, "").trim())
+    .filter((s) => s && !/^(?:N\/?A|-)$/i.test(s));
+
+  const uniqueSkus: string[] = [];
+  const seen = new Set<string>();
+  for (const t of rawTokens) {
+    const upper = t.toUpperCase();
+    if (!seen.has(upper)) {
+      seen.add(upper);
+      uniqueSkus.push(t);
+    }
+  }
+
+  return uniqueSkus;
+}
+
+/**
+ * Maps extracted ASINs in Amazon orders to internal seller SKUs (variantSku) stored in DB ProductVariant model.
+ * If ASIN does not match in DB, falls back to the sellerSku extracted from the invoice PDF description!
+ */
 export function mapAsinToSellerSku(
   asinValue?: string,
-  asinToSkuMap?: Map<string, string>
+  asinToSkuMap?: Map<string, string>,
+  fallbackSku?: string
 ): string {
-  if (!asinValue || asinValue === "N/A") {
-    return "N/A";
-  }
+  const fallbackList = (fallbackSku && fallbackSku !== "N/A" && fallbackSku !== "-")
+    ? fallbackSku
+        .split(/[\r\n]+|\s+\/\s+/)
+        .map((s) => s.trim())
+        .filter((s) => s && s !== "N/A" && s !== "-")
+    : [];
 
-  if (!asinToSkuMap || asinToSkuMap.size === 0) {
-    return "N/A";
-  }
+  const rawAsins = (asinValue && asinValue !== "N/A")
+    ? asinValue.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean)
+    : [];
 
-  const delimiter = asinValue.includes("\n") ? "\n" : asinValue.includes(" / ") ? " / " : "\n";
-  const rawAsins = asinValue
-    .split(/[\r\n]+|\s+\/\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const resultSkus: string[] = [];
+  const maxLen = Math.max(rawAsins.length, fallbackList.length, 1);
 
-  if (rawAsins.length === 0) {
-    return "N/A";
-  }
+  for (let i = 0; i < maxLen; i++) {
+    const asin = rawAsins[i];
+    let sku = "";
 
-  const mappedSkus = rawAsins.map((asin) => {
-    const normAsin = asin.toUpperCase();
-    if (asinToSkuMap.has(normAsin)) {
-      const skuInDb = asinToSkuMap.get(normAsin)?.trim();
-      return skuInDb && skuInDb.length > 0 ? skuInDb : "-";
+    if (asin && asinToSkuMap && asinToSkuMap.size > 0) {
+      const normAsin = asin.toUpperCase();
+      if (asinToSkuMap.has(normAsin)) {
+        const val = asinToSkuMap.get(normAsin)?.trim();
+        if (val && val !== "N/A" && val !== "-") {
+          sku = val;
+        }
+      }
     }
-    return "N/A";
-  });
 
-  return mappedSkus.join(delimiter);
+    // Fallback to invoice-extracted SKU if DB doesn't have it
+    if (!sku && fallbackList[i]) {
+      sku = fallbackList[i];
+    } else if (!sku && fallbackList.length === 1) {
+      sku = fallbackList[0];
+    }
+
+    if (sku && sku !== "N/A" && sku !== "-") {
+      resultSkus.push(sku);
+    }
+  }
+
+  if (resultSkus.length === 0 && fallbackList.length > 0) {
+    return fallbackList.join("\n");
+  }
+
+  return resultSkus.length > 0 ? resultSkus.join("\n") : (fallbackSku || "N/A");
 }
 
 /**
- * Formats a Seller SKU for display on labels: [ Mens-Hoodie-5047-White-M ]
+ * Formats Seller SKUs for display on labels: each SKU is displayed in [ <seller_sku> ].
+ * Never displays [NA] or [N/A].
  */
 export function formatSkuForLabel(sellerSku?: string): string {
-  if (!sellerSku || sellerSku === "N/A") {
-    return "[ N/A ]";
+  const skus = getCleanSkuList(sellerSku);
+  if (skus.length === 0) {
+    return "";
   }
-  if (sellerSku === "-") {
-    return "[ - ]";
-  }
-  const items = sellerSku
-    .split(/[\r\n]+|\s+\/\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  if (items.length <= 1) {
-    const sku = items[0] || sellerSku;
-    return sku.startsWith("[") && sku.endsWith("]") ? sku : `[ ${sku} ]`;
-  }
-
-  return items
-    .map((item) => (item.startsWith("[") && item.endsWith("]") ? item : `[ ${item} ]`))
-    .join(" ");
+  return skus.map((s) => `[ ${s} ]`).join(" ");
 }
 
 /**
- * Draws the formatted Seller SKU [ <seller_sku> ] on a 4" x 6" label page exact below "Sold on : www.amazon.in".
+ * Draws formatted Seller SKUs on a 4" x 6" label page below "Sold on : www.amazon.in".
+ * - Every SKU is shown inside [ ... ].
+ * - Never prints [NA] or [N/A].
+ * - If more than 3 SKUs come, adjusts font size according to count and wraps cleanly across 2 lines.
  */
 export async function drawSkuOnLabelPage(
   doc: any,
@@ -490,26 +532,68 @@ export async function drawSkuOnLabelPage(
   labelW: number,
   labelH: number
 ): Promise<void> {
-  const formattedSku = formatSkuForLabel(sellerSku);
-  if (!formattedSku) return;
+  const skus = getCleanSkuList(sellerSku);
+  if (skus.length === 0) return; // Do NOT print [NA] or [N/A]!
+
+  const formattedSkus = skus.map((s) => `[ ${s} ]`);
+  const count = formattedSkus.length;
 
   try {
     const font = await doc.embedFont(StandardFonts.HelveticaBold);
-
-    const fontSize = 7.5;
-
-    // Exact placement below "Sold on : www.amazon.in" at bottom left of label
     const skuX = labelX + 16;
-    const skuY = labelY + 2.5;
+    const maxAvailableW = labelW - 28;
 
-    // Plain text matching www.amazon.in font size (no surrounding rectangle)
-    page.drawText(formattedSku, {
-      x: skuX,
-      y: skuY,
-      size: fontSize,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    if (count <= 3) {
+      const fullText = formattedSkus.join(" ");
+      let fontSize = count === 1 ? 7.5 : count === 2 ? 6.8 : 5.8;
+
+      const textWidth = font.widthOfTextAtSize(fullText, fontSize);
+      if (textWidth > maxAvailableW) {
+        fontSize = Math.max(4.5, (maxAvailableW / textWidth) * fontSize);
+      }
+
+      page.drawText(fullText, {
+        x: skuX,
+        y: labelY + 2.5,
+        size: fontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    } else {
+      // More than 3 SKUs (e.g. 4, 5, 6+):
+      // Adjust size according to how many SKUs come, and wrap onto 2 compact lines
+      const half = Math.ceil(count / 2);
+      const line1Tokens = formattedSkus.slice(0, half);
+      const line2Tokens = formattedSkus.slice(half);
+
+      const line1Text = line1Tokens.join(" ");
+      const line2Text = line2Tokens.join(" ");
+
+      let fontSize = count === 4 ? 5.2 : count === 5 ? 4.7 : 4.2;
+
+      const w1 = font.widthOfTextAtSize(line1Text, fontSize);
+      const w2 = font.widthOfTextAtSize(line2Text, fontSize);
+      const maxW = Math.max(w1, w2);
+      if (maxW > maxAvailableW) {
+        fontSize = Math.max(3.8, (maxAvailableW / maxW) * fontSize);
+      }
+
+      page.drawText(line1Text, {
+        x: skuX,
+        y: labelY + 6.5,
+        size: fontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+
+      page.drawText(line2Text, {
+        x: skuX,
+        y: labelY + 1.0,
+        size: fontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    }
   } catch (err) {
     console.warn("Could not draw SKU on label page:", err);
   }
@@ -550,4 +634,309 @@ export function isAmazonTransporterOrFeePage(text?: string): boolean {
   }
 
   return false;
+}
+
+export interface AddInvoicePageOptions {
+  targetWidth?: number;
+  targetHeight?: number;
+  margin?: number;
+  totalAmount?: string;
+  itemCount?: number;
+}
+
+/**
+ * Adds an Amazon Tax Invoice to a target PDFDocument, guaranteeing that the entire invoice
+ * (including header, all line items, and the TOTAL price footer) fits onto
+ * EXACTLY ONE 4" x 6" page.
+ *
+ * - If the invoice is 1 page: scales and centers it neatly onto a 4" x 6" page.
+ * - If the invoice has multiple pages and order has MORE THAN 3 items (itemCount > 3):
+ *   intelligently crops out duplicated headers and whitespace, stacking the sections
+ *   vertically so all line items and the TOTAL price block fit onto the single 4" x 6" page.
+ * - If the order has <= 3 items: does NOT combine pages, rendering each page individually.
+ */
+export async function addInvoicePagesToDoc(
+  targetDoc: any,
+  origDoc: any,
+  pdfPages: number[],
+  pageTextData?: Array<{ text: string; items: any[] }>,
+  options: AddInvoicePageOptions = {}
+): Promise<any> {
+  const TARGET_WIDTH = options.targetWidth || 4 * 72; // 288 pt
+  const TARGET_HEIGHT = options.targetHeight || 6 * 72; // 432 pt
+  const MARGIN = options.margin !== undefined ? options.margin : 5; // 5 pt margin
+  const availW = TARGET_WIDTH - 2 * MARGIN;
+  const availH = TARGET_HEIGHT - 2 * MARGIN;
+
+  const validPageNumbers = (pdfPages || []).filter((p) => {
+    const idx = p - 1;
+    if (idx < 0 || idx >= origDoc.getPageCount()) return false;
+    if (pageTextData && pageTextData[idx]?.text && isAmazonTransporterOrFeePage(pageTextData[idx].text)) {
+      return false;
+    }
+    return true;
+  });
+
+  if (validPageNumbers.length === 0) return null;
+
+  // Resolve item count to determine whether multi-page combination is allowed
+  let resolvedItemCount = options.itemCount;
+  if (pageTextData) {
+    const combinedText = validPageNumbers.map((p) => pageTextData[p - 1]?.text || "").join("\n");
+    const asinMatches = combinedText.match(/\bB0[A-Z0-9]{8}\b/g);
+    const asinCount = asinMatches ? asinMatches.length : 0;
+    const uniqueAsinCount = asinMatches ? new Set(asinMatches).size : 0;
+    const textCount = Math.max(asinCount, uniqueAsinCount);
+    if (textCount > 0) {
+      resolvedItemCount = Math.max(resolvedItemCount || 0, textCount);
+    }
+  }
+
+  // CRITICAL USER REQUIREMENT:
+  // "no need to compress and combine both pages use different page for more than 4 orders"
+  // We completely disable page combination (compression) so that any multi-page invoice 
+  // is just printed on separate pages (up to 2 pages).
+  const shouldCombine = false;
+
+  // If only 1 page OR order has <= 3 items OR > 4 items (not allowed to combine):
+  // Render each page individually as a standard 4" x 6" page!
+  if (!shouldCombine) {
+    let lastAddedPage = null;
+    // For orders with > 4 items (or multi-page invoices), user requested: "use 2 pages for perfect showing of data"
+    const pagesToRender = validPageNumbers.length > 2 ? validPageNumbers.slice(0, 2) : validPageNumbers;
+    for (const pageNum of pagesToRender) {
+      const pageIdx = pageNum - 1;
+      const srcPage = origDoc.getPage(pageIdx);
+      const embedded = await targetDoc.embedPage(srcPage);
+      const { width: srcW, height: srcH } = embedded;
+
+      const scale = Math.min(availW / srcW, availH / srcH);
+      const finalW = srcW * scale;
+      const finalH = srcH * scale;
+
+      const x = (TARGET_WIDTH - finalW) / 2;
+      const y = (TARGET_HEIGHT - finalH) / 2;
+
+      const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+      newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+      lastAddedPage = newPage;
+    }
+    return lastAddedPage;
+  }
+
+  // --------------------------------------------------------------------------
+  // CASE 2: Multi-page invoice (5+ items spanning 2 or more pages)
+  // Dynamically compress and stack all pages into EXACTLY ONE 4" x 6" page
+  // showing all line items from Page 1 through Page 2 down to the TOTAL price!
+  // --------------------------------------------------------------------------
+  try {
+    const sections: Array<{
+      embedded: any;
+      cropW: number;
+      cropH: number;
+    }> = [];
+
+    for (let i = 0; i < validPageNumbers.length; i++) {
+      const pageNum = validPageNumbers[i];
+      const pageIdx = pageNum - 1;
+      const srcPage = origDoc.getPage(pageIdx);
+      const srcW = srcPage.getWidth();
+      const srcH = srcPage.getHeight();
+
+      const isFirst = i === 0;
+      const isLast = i === validPageNumbers.length - 1;
+
+      const items = pageTextData && pageTextData[pageIdx]?.items ? pageTextData[pageIdx].items : [];
+
+      let top = srcH;
+      let bottom = 0;
+
+      if (items.length > 0) {
+        if (isFirst) {
+          // Page 1: Keep from top header through table items.
+          // Cut off EXACTLY at the bottom line of the last line item table row on Page 1!
+          top = srcH;
+
+          const tableHeaderIt = items.find((it: any) =>
+            /^(?:Description|Unit\s*Price|Sl\.?\s*No)$/i.test(it.str?.trim() || "")
+          );
+          const headerY = tableHeaderIt?.transform ? tableHeaderIt.transform[5] : 620;
+
+          // Collect valid line item elements
+          const lineItemElements = items.filter((it: any) => {
+            const y = it.transform ? it.transform[5] : 0;
+            const x = it.transform ? it.transform[4] : 0;
+            const s = it.str ? it.str.trim() : "";
+            if (!s) return false;
+            if (y >= headerY - 4) return false;
+            if (y < 130) return false; // Line items are always above y = 130; disclaimer is below y = 130
+            if (/ASSPL|Amazon Retail|Seller Services|fulfillment center|availing input GST|Business account|Page\s*\d+|Continued/i.test(s)) {
+              return false;
+            }
+            if (x < 25 || x > 575) return false;
+            return true;
+          });
+
+          if (lineItemElements.length > 0) {
+            const minLineItemY = Math.min(...lineItemElements.map((it: any) => it.transform[5]));
+            bottom = Math.max(120, minLineItemY - 3.5);
+          } else {
+            const validItems = items.filter((it: any) => {
+              const y = it.transform ? it.transform[5] : 0;
+              const s = it.str ? it.str.trim() : "";
+              if (y < 130 || y >= headerY - 4) return false;
+              if (/ASSPL|Seller Services|GST credit|Business account/i.test(s)) return false;
+              return true;
+            });
+            if (validItems.length > 0) {
+              bottom = Math.max(120, Math.min(...validItems.map((it: any) => it.transform[5])) - 3.5);
+            } else {
+              bottom = srcH * 0.40;
+            }
+          }
+        } else {
+          // Continuation page (Page 2+):
+          // Check if Page 2 has continuation line items (e.g. Item 6) or starts directly at TOTAL
+          const tableHeaderIt2 = items.find((it: any) =>
+            /^(?:Description|Unit\s*Price|Sl\.?\s*No)$/i.test(it.str?.trim() || "")
+          );
+          const headerBottomY2 = tableHeaderIt2?.transform ? tableHeaderIt2.transform[5] - 3.5 : 0;
+
+          // Check if there are line items below this table header on Page 2
+          const page2LineItems = items.filter((it: any) => {
+            const y = it.transform ? it.transform[5] : 0;
+            const s = it.str ? it.str.trim() : "";
+            if (!s) return false;
+            if (headerBottomY2 > 0 && y >= headerBottomY2) return false;
+            if (y < 130) return false;
+            if (/^TOTAL/i.test(s) || /Amount\s+in\s+Words/i.test(s) || /Signatory/i.test(s)) return false;
+            if (/ASSPL|Seller Services|GST credit/i.test(s)) return false;
+            return true;
+          });
+
+          if (page2LineItems.length > 0 && headerBottomY2 > 0) {
+            // Continuation items exist (e.g. Item 6).
+            // Start right at the bottom gridline of the duplicate table header,
+            // so Item 6 connects directly to Item 5 without repeating the table header row!
+            top = headerBottomY2;
+          } else {
+            // Starts directly at the TOTAL row (e.g. 4-item orders where TOTAL was pushed to Page 2).
+            const totalRowIt = items.find((it: any) =>
+              /^(?:TOTAL|Total|Invoice\s*Total|Grand\s*Total)/i.test(it.str?.trim() || "")
+            );
+            if (totalRowIt?.transform) {
+              top = totalRowIt.transform[5] + (totalRowIt.height || 12) + 6;
+            } else {
+              top = headerBottomY2 > 0 ? headerBottomY2 : srcH * 0.85;
+            }
+          }
+
+          // Cut off exactly below the bottom-most invoice footer table (Payment Transaction box / Reverse charge / Signatory)
+          // Exclude only the faint disclaimer at the bottom of Page 2!
+          const bottomFooterElements = items.filter((it: any) => {
+            const y = it.transform ? it.transform[5] : 0;
+            const s = it.str ? it.str.trim() : "";
+            if (!s) return false;
+            // Exclude disclaimer text at very bottom
+            if (/ASSPL|Amazon Retail|Seller Services|fulfillment center|availing input GST|Business account|Page\s*\d+|Continued/i.test(s)) {
+              return false;
+            }
+            // Must be footer tokens or in the lower section
+            if (
+              /Payment\s+Transaction/i.test(s) ||
+              /Mode\s+of\s+Payment/i.test(s) ||
+              /Invoice\s+Value/i.test(s) ||
+              /reverse\s+charge/i.test(s) ||
+              /tax\s+is\s+payable/i.test(s) ||
+              /Authorized\s+Signatory/i.test(s) ||
+              /Signatory/i.test(s) ||
+              /Amount\s+in\s+Words/i.test(s) ||
+              /TOTAL/i.test(s) ||
+              (y > 30 && y < 350)
+            ) {
+              return true;
+            }
+            return false;
+          });
+
+          if (bottomFooterElements.length > 0) {
+            const minFooterY = Math.min(...bottomFooterElements.map((it: any) => it.transform[5]));
+            bottom = Math.max(30, minFooterY - 8);
+          } else {
+            bottom = 40;
+          }
+        }
+      } else {
+        if (isFirst) {
+          top = srcH;
+          bottom = srcH * 0.40;
+        } else {
+          top = srcH * 0.85;
+          bottom = 40;
+        }
+      }
+
+      if (top <= bottom + 40) {
+        top = Math.min(srcH, bottom + 120);
+      }
+
+      const cropBox = { left: 0, bottom, right: srcW, top };
+      const embedded = await targetDoc.embedPage(srcPage, cropBox);
+      sections.push({
+        embedded,
+        cropW: srcW,
+        cropH: top - bottom,
+      });
+    }
+
+    const GAP = 0; // ZERO GAP between sections!
+    const totalCropH = sections.reduce((sum, s) => sum + s.cropH, 0);
+    const maxCropW = Math.max(...sections.map((s) => s.cropW));
+    // Scale to our exact regular full-width size
+    const scale = Math.min(availW / maxCropW, availH / totalCropH);
+    const finalW = maxCropW * scale;
+    const totalDrawnH = totalCropH * scale;
+
+    const x = (TARGET_WIDTH - finalW) / 2;
+    // Align neatly from top margin so size and layout match regular 1-page invoice exactly
+    let currentY = TARGET_HEIGHT - MARGIN;
+
+    const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+
+    for (let i = 0; i < sections.length; i++) {
+      const sec = sections[i];
+      const drawnH = sec.cropH * scale;
+      const drawY = currentY - drawnH;
+
+      newPage.drawPage(sec.embedded, {
+        x,
+        y: drawY,
+        width: finalW,
+        height: drawnH,
+      });
+
+      currentY = drawY; // Next section connects seamlessly with 0 gap!
+    }
+
+    return newPage;
+  } catch (compressErr) {
+    console.warn("Error compressing multi-page invoice, falling back to 2 pages:", compressErr);
+    let lastAddedPage = null;
+    const pagesToRender = validPageNumbers.length > 2 ? validPageNumbers.slice(0, 2) : validPageNumbers;
+    for (const pageNum of pagesToRender) {
+      const pageIdx = pageNum - 1;
+      const srcPage = origDoc.getPage(pageIdx);
+      const embedded = await targetDoc.embedPage(srcPage);
+      const { width: srcW, height: srcH } = embedded;
+      const scale = Math.min(availW / srcW, availH / srcH);
+      const finalW = srcW * scale;
+      const finalH = srcH * scale;
+      const x = (TARGET_WIDTH - finalW) / 2;
+      const y = (TARGET_HEIGHT - finalH) / 2;
+      const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+      newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
+      lastAddedPage = newPage;
+    }
+    return lastAddedPage;
+  }
 }

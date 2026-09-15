@@ -9,13 +9,14 @@ import AwbToolbar from "./components/AwbToolbar";
 import AwbTable from "./components/AwbTable";
 import { useAwbScanner } from "./hooks/useAwbScanner";
 import { amazonOrderService, AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
+import { getTodayDateStringIST } from "./timeUtils";
 
 export default function AwbScan() {
   const [orders, setOrders] = useState<AmazonOrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "SCANNED">("ALL");
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateStringIST);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
   const [total, setTotal] = useState(0);
@@ -89,13 +90,21 @@ export default function AwbScan() {
     <DashboardLayout title="Amazon AWB Scan">
       <div className="space-y-6">
         {/* Page Header */}
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-            Amazon AWB Scan
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Verify packed Amazon orders in real-time by scanning AWB tracking numbers. Records are retained for 7 days.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              Amazon AWB Scan
+            </h1>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+              Verify packed Amazon orders in real-time by scanning AWB tracking numbers. Records are retained for 7 days.
+            </p>
+          </div>
+          <a
+            href="/dashboard/order-process/amazon/order-process"
+            className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2.5 rounded-lg border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm hover:bg-[#E8C16D] hover:text-[#0A0E1A] transition"
+          >
+            ← Back to Order Process
+          </a>
         </div>
 
         {/* Toolbar: Search, Status Filter, Date, Refresh */}

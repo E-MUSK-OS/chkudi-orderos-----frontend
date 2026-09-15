@@ -47,13 +47,40 @@ interface AmazonOrderState {
   historyBatches: AmazonBatchHistoryItem[];
   isLoadingHistory: boolean;
   activeHistoryBatchId: string | null;
+  initialShowPrinted: boolean;
+  setInitialShowPrinted: (val: boolean) => void;
   fetchHistoryBatches: () => Promise<AmazonBatchHistoryItem[]>;
-  loadBatchFromHistory: (batchId: string) => Promise<boolean>;
+  loadBatchFromHistory: (batchId: string, options?: { showPrinted?: boolean }) => Promise<boolean>;
 }
 
 const SESSION_STORAGE_KEY = "amazon_order_process_data_v1";
 const METADATA_STORAGE_KEY = "amazon_order_process_metadata_v1";
 export const AMAZON_PRINTED_STORAGE_KEY = "amazon_order_process_printed_rows_v1";
+export const AMAZON_PRINTED_BATCHES_MAP_KEY = "amazon_printed_batches_map_v2";
+
+export interface StoredBatchPrintedRecord {
+  indices: number[];
+  count: number;
+  orderNumbers?: string[];
+  awbs?: string[];
+  lastUpdated?: string;
+}
+
+export const getPrintedBatchesMap = (): Record<string, StoredBatchPrintedRecord> => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(AMAZON_PRINTED_BATCHES_MAP_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to parse printed batches map:", e);
+  }
+  return {};
+};
 
 const IDB_NAME = "chkudi_orderos_idb_v2";
 const IDB_STORE = "amazon_files";
@@ -176,6 +203,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
   historyBatches: [],
   isLoadingHistory: false,
   activeHistoryBatchId: null,
+  initialShowPrinted: false,
+  setInitialShowPrinted: (val: boolean) => set({ initialShowPrinted: val }),
 
   setProcessing: (isProcessing) =>
     set({
@@ -210,8 +239,6 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         });
         localStorage.setItem(METADATA_STORAGE_KEY, metadataPayload);
         sessionStorage.setItem(SESSION_STORAGE_KEY, metadataPayload);
-        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
-        sessionStorage.removeItem("amazon_show_printed_active");
       }
     } catch (e) {
       console.warn("Failed to store process metadata in storage:", e);
@@ -394,7 +421,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     }
   },
 
-  loadBatchFromHistory: async (batchId: string) => {
+  loadBatchFromHistory: async (batchId: string, options?: { showPrinted?: boolean }) => {
     set({ isProcessing: true, progress: 15, currentStage: "Loading batch from history..." });
     try {
       const res = await amazonOrderService.getBatchById(batchId);
@@ -473,6 +500,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
 
       set({
         activeHistoryBatchId: batch.id,
+        initialShowPrinted: !!options?.showPrinted,
         isProcessing: false,
         progress: 100,
         currentStage: "Loaded!",

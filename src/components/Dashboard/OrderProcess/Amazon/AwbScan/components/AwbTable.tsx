@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Clock, PackageCheck } from "lucide-react";
-import { format } from "date-fns";
+import { formatToIST } from "../timeUtils";
 import { AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 
 interface Props {
@@ -41,9 +41,8 @@ export default function AwbTable({
     if (items.length <= 1) {
       return (
         <span
-          className={`text-sm sm:text-base font-semibold ${
-            isAsin ? "font-mono text-[#0A0E1A]" : "text-slate-800"
-          }`}
+          className={`text-sm sm:text-base font-semibold ${isAsin ? "font-mono text-[#0A0E1A]" : "text-slate-800"
+            }`}
         >
           {items[0] || value}
         </span>
@@ -55,9 +54,8 @@ export default function AwbTable({
         {items.map((it, idx) => (
           <span
             key={idx}
-            className={`rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 ${
-              isAsin ? "font-mono" : ""
-            }`}
+            className={`rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 ${isAsin ? "font-mono" : ""
+              }`}
           >
             {it}
           </span>
@@ -108,17 +106,13 @@ export default function AwbTable({
             ) : (
               orders.map((item) => {
                 const isScanned = item.packingScanStatus === "SCANNED";
-                let formattedTime = "-";
-                try {
-                  formattedTime = format(new Date(item.createdAt), "dd MMM, hh:mm a");
-                } catch (e) {}
+                const formattedTime = formatToIST(isScanned ? (item.updatedAt || item.createdAt) : item.createdAt);
 
                 return (
                   <tr
                     key={item.id}
-                    className={`transition-colors hover:bg-slate-50/80 ${
-                      isScanned ? "bg-emerald-50/25" : ""
-                    }`}
+                    className={`transition-colors hover:bg-slate-50/80 ${isScanned ? "bg-emerald-50/25" : ""
+                      }`}
                   >
                     {/* Invoice */}
                     <td className="px-4 py-4 text-center font-semibold text-slate-700 whitespace-nowrap text-sm sm:text-base">

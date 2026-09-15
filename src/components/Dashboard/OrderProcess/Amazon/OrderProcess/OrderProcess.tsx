@@ -23,7 +23,13 @@ import ProcessingProgressModal from "./components/ProcessingProgressModal";
 import ComparisonResultView from "./components/ComparisonResultView";
 import { useAmazonOrderStore } from "./store/useAmazonOrderStore";
 import { AmazonProcessResponse, AmazonComparisonResult } from "./types";
-import { enhanceInvoicePages, mapAsinToSellerSku, drawSkuOnLabelPage, isAmazonTransporterOrFeePage } from "./utils";
+import {
+  enhanceInvoicePages,
+  mapAsinToSellerSku,
+  drawSkuOnLabelPage,
+  isAmazonTransporterOrFeePage,
+  addInvoicePagesToDoc,
+} from "./utils";
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
@@ -494,7 +500,7 @@ export default function OrderProcess() {
           pdfPages: (item.pdfPages || []).filter(
             (p) => !pageTextData[p - 1]?.text || !isAmazonTransporterOrFeePage(pageTextData[p - 1].text)
           ),
-          sellerSku: mapAsinToSellerSku(item.asin, asinToSkuMap),
+          sellerSku: mapAsinToSellerSku(item.asin, asinToSkuMap, item.sellerSku),
         }));
       }
 
@@ -587,21 +593,26 @@ export default function OrderProcess() {
           };
 
           for (const item of processResponse.results) {
+            const itemCount = Math.max(
+              item.asinsCount || 0,
+              item.totalQuantity || 0,
+              item.asin ? item.asin.split(/[\r\n]+|\s+\/\s+/).filter(Boolean).length : 0,
+              1
+            );
+
             if (item.isMatch) {
               const startPage = combinedDoc.getPageCount();
-              // 1. Tax Invoice first
+              // 1. Tax Invoice first: fits into EXACTLY ONE 4" x 6" page with all items and TOTAL price (if > 3 items)
               if (item.pdfPages && item.pdfPages.length > 0) {
-                for (const p of item.pdfPages) {
-                  const idx = p - 1;
-                  if (pageTextData && pageTextData[idx]?.text && isAmazonTransporterOrFeePage(pageTextData[idx].text)) {
-                    continue;
-                  }
-                  if (idx >= 0 && idx < origDoc.getPageCount()) {
-                    await addScaledPageToDoc(combinedDoc, origDoc.getPage(idx), false);
-                  }
-                }
+                await addInvoicePagesToDoc(
+                  combinedDoc,
+                  origDoc,
+                  item.pdfPages,
+                  pageTextData,
+                  { totalAmount: item.amount, itemCount }
+                );
               }
-              // 2. ZPL / JPL barcode label second
+              // 2. ZPL / JPL barcode label second (EXACTLY ONE 4" x 6" page)
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
                 await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
               }
@@ -609,17 +620,17 @@ export default function OrderProcess() {
               item.combinedPages = Array.from({ length: endPage - startPage }, (_, i) => startPage + i);
             } else {
               // Unmatched documents
-              // 1. Unmatched PDF invoices (Missing in ZPL)
+              // 1. Unmatched PDF invoices (Missing in ZPL): fits into EXACTLY ONE 4" x 6" page with all items and TOTAL (if > 3 items)
               if (item.pdfPages && item.pdfPages.length > 0) {
-                for (const p of item.pdfPages) {
-                  const idx = p - 1;
-                  if (pageTextData && pageTextData[idx]?.text && isAmazonTransporterOrFeePage(pageTextData[idx].text)) {
-                    continue;
-                  }
-                  if (idx >= 0 && idx < origDoc.getPageCount()) {
-                    await addScaledPageToDoc(unmatchedPdfDoc, origDoc.getPage(idx), false);
-                    hasUnmatchedPdf = true;
-                  }
+                const added = await addInvoicePagesToDoc(
+                  unmatchedPdfDoc,
+                  origDoc,
+                  item.pdfPages,
+                  pageTextData,
+                  { totalAmount: item.amount, itemCount }
+                );
+                if (added) {
+                  hasUnmatchedPdf = true;
                 }
               }
               // 2. Unmatched ZPL labels (Missing in PDF)
@@ -762,6 +773,9 @@ export default function OrderProcess() {
 
         const saveRes = await amazonOrderService.saveBatch(formData);
         if (saveRes?.success) {
+          if (saveRes.data?.id) {
+            useAmazonOrderStore.setState({ activeHistoryBatchId: saveRes.data.id });
+          }
           useAmazonOrderStore.getState().fetchHistoryBatches();
         }
       } catch (saveErr) {

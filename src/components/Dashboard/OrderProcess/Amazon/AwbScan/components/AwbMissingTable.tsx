@@ -5,6 +5,7 @@ import { AlertCircle, Copy, Check, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { MissingAwbItem } from "../hooks/useAwbScanner";
+import { getTodayDateStringIST } from "../timeUtils";
 
 interface Props {
   missingList: MissingAwbItem[];
@@ -66,7 +67,7 @@ export default function AwbMissingTable({
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Missing_AWBs");
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayDateStringIST();
       const fileName = `Amazon_Missing_AWBs_${today}.xlsx`;
       XLSX.writeFile(wb, fileName);
 

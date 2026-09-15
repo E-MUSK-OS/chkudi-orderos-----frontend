@@ -414,9 +414,8 @@ function extractSellerSku(text: string): string {
 
   for (const m of asinMatches) {
     if (m.index !== undefined) {
-      // Get text segment immediately preceding the ASIN (up to 250 characters before)
-      const beforeText = targetText.substring(Math.max(0, m.index - 250), m.index);
-
+      // Get text segment immediately preceding the ASIN (up to 500 characters before)
+      const beforeText = targetText.substring(Math.max(0, m.index - 500), m.index);
       // Find all parenthesized strings (...) in the text before ASIN
       const parenMatches = Array.from(beforeText.matchAll(/\(([^()]{2,100})\)/g));
       if (parenMatches.length > 0) {
@@ -498,7 +497,7 @@ function extractAllItemsFromPdfText(text: string): {
 
     let extractedSku = "";
     if (m.index !== undefined) {
-      const beforeText = targetText.substring(Math.max(0, m.index - 250), m.index);
+      const beforeText = targetText.substring(Math.max(0, m.index - 500), m.index);
       const parenMatches = Array.from(beforeText.matchAll(/\(([^()]{2,100})\)/g));
       if (parenMatches.length > 0) {
         const rawContent = parenMatches[parenMatches.length - 1][1].trim();
@@ -1374,11 +1373,15 @@ function buildComparisonResponse(
 
     // Determine if this page can be a continuation page of an earlier order
     let existingIdx = -1;
-    const canBeContinuation =
-      docPageNum > 1 ||
-      (docPageNum === 0 && !(hasStandaloneHeader && hasCompletedFooter));
+
+    // A page CANNOT be a continuation page if:
+    // 1) It is explicitly Page 1 (docPageNum === 1)
+    // 2) It has a standalone header (hasStandaloneHeader: "Tax Invoice" + "Sold By" / "Billing Address" / "PAN No" / "GST")
+    // Every distinct tax invoice starts with these headers and must NOT be swallowed into preceding orders!
+    const canBeContinuation = !hasStandaloneHeader && docPageNum !== 1;
 
     if (canBeContinuation) {
+      // 1. Candidate orders with matching orderNumber or invoiceNumber
       const candidateIndices = [
         ...(orderKey && orderNumToPdfIndices.has(orderKey) ? orderNumToPdfIndices.get(orderKey)! : []),
         ...(invKey && invoiceToPdfIndices.has(invKey) ? invoiceToPdfIndices.get(invKey)! : []),
@@ -1399,16 +1402,34 @@ function buildComparisonResponse(
           continue;
         }
 
-        // If docPageNum is 0 (unspecified), page must be consecutive with the existing order's last page
-        if (docPageNum === 0) {
-          const lastPageOfOrder = existing.pages[existing.pages.length - 1];
-          if (lastPageOfOrder !== lastValidPageNumber || existing.hasCompletedFooter) {
-            continue;
+        // Only accept continuation if docPageNum > 1 or existing explicitly expects more pages
+        if (docPageNum > 1 || (existing.totalPages && existing.pages.length < existing.totalPages)) {
+          existingIdx = cIdx;
+          break;
+        }
+      }
+
+      // 2. Fallback continuation: check consecutive page of immediately preceding uncompleted order
+      // ONLY allow if it clearly belongs to lastOrder (matching orderKey/invKey if present, AND explicit docPageNum or declared totalPages)
+      if (existingIdx === -1 && consolidatedPdfOrders.length > 0) {
+        const lastOrderIdx = consolidatedPdfOrders.length - 1;
+        const lastOrder = consolidatedPdfOrders[lastOrderIdx];
+        const isConsecutive = lastOrder && lastOrder.pages[lastOrder.pages.length - 1] === lastValidPageNumber;
+
+        if (isConsecutive) {
+          const orderMatches = !orderKey || !lastOrder.orderNumber || orderKey === lastOrder.orderNumber;
+          const invoiceMatches = !invKey || !lastOrder.sellerInvoice || invKey === normalizeInvoice(lastOrder.sellerInvoice);
+
+          if (orderMatches && invoiceMatches) {
+            const canContinueLast =
+              (docPageNum > 1 && docPageNum === lastOrder.pages.length + 1) ||
+              (lastOrder.totalPages && lastOrder.totalPages > 1 && lastOrder.pages.length < lastOrder.totalPages);
+
+            if (canContinueLast) {
+              existingIdx = lastOrderIdx;
+            }
           }
         }
-
-        existingIdx = cIdx;
-        break;
       }
     }
 
@@ -1422,9 +1443,23 @@ function buildComparisonResponse(
       if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
       if (!existing.shippingAddress && shippingAddress) existing.shippingAddress = shippingAddress;
       if (!existing.customer && customer) existing.customer = customer;
-      if (!existing.asin && asin) existing.asin = asin;
-      if (!existing.sellerSku && sellerSku) existing.sellerSku = sellerSku;
-      if (!existing.amount && amount) existing.amount = amount;
+      // Combine ASINs and Seller SKUs across pages without losing earlier items
+      if (asin) {
+        const existingAsins = (existing.asin || "").split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
+        if (!existingAsins.includes(asin.trim())) {
+          existing.asin = existing.asin ? `${existing.asin}\n${asin}` : asin;
+        }
+      }
+      if (sellerSku) {
+        const existingSkus = (existing.sellerSku || "").split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
+        if (!existingSkus.includes(sellerSku.trim())) {
+          existing.sellerSku = existing.sellerSku ? `${existing.sellerSku}\n${sellerSku}` : sellerSku;
+        }
+      }
+      // Amount: Take the final total amount from the footer
+      if (amount) {
+        existing.amount = amount;
+      }
       if (!existing.date && date) existing.date = date;
       if (invoiceNumber && !existing.allInvoices.includes(invoiceNumber)) {
         existing.allInvoices.push(invoiceNumber);
@@ -1446,8 +1481,8 @@ function buildComparisonResponse(
     } else {
       const newIdx = consolidatedPdfOrders.length;
       const newOrder: ConsolidatedOrder = {
-        orderNumber,
-        sellerInvoice: invoiceNumber,
+        orderNumber: orderNumber || "N/A",
+        sellerInvoice: invoiceNumber || `Page ${pageNumber}`,
         asin,
         sellerSku,
         allInvoices: invoiceNumber ? [invoiceNumber] : [],

@@ -67,6 +67,12 @@ export interface AmazonBatchHistoryItem {
   matchPercentage: number;
   pdfFileName: string | null;
   zplFileName: string | null;
+  summary?: AmazonOrderSummary & {
+    printedCount?: number;
+    printedOrderIds?: string[];
+    printedAwbs?: string[];
+    printedIndices?: number[];
+  };
   combinedPdfUrl?: string | null;
   zplPdfUrl?: string | null;
   originalPdfUrl?: string | null;
@@ -180,14 +186,15 @@ export const amazonOrderService = {
    */
   async savePrintedOrders(
     orders: AmazonPrintedOrderPayload[],
-    token?: string
+    token?: string,
+    batchId?: string
   ): Promise<SavePrintedOrdersResponse> {
     const userToken =
       token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
 
     return api.post<SavePrintedOrdersResponse>(
       `${BASE_URL}/save-printed`,
-      { orders },
+      { orders, batchId },
       userToken
     );
   },

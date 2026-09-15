@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { format } from "date-fns";
+import { formatToIST, getNowIsoIST } from "../timeUtils";
 import { amazonOrderService, AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 
 export interface ScanFeedbackMessage {
@@ -47,7 +47,7 @@ export const useAwbScanner = (
     };
   }, []);
 
-  // Load missing AWB list from localStorage (pre-seed with user's current missing scan if first time)
+  // Load missing AWB list from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -58,18 +58,7 @@ export const useAwbScanner = (
           return;
         }
       }
-      // If never initialized before, seed with 372527398320 from user's current session
-      const initialSeed: MissingAwbItem[] = [
-        {
-          id: "seed-372527398320",
-          awb: "372527398320",
-          scannedAt: format(new Date(), "dd MMM, hh:mm a"),
-          reason: 'Amazon order with AWB / Order ID "372527398320" not found.',
-          count: 1,
-        },
-      ];
-      setMissingList(initialSeed);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialSeed));
+      setMissingList([]);
     } catch (err) {
       console.warn("Failed to load missing AWB scans from localStorage", err);
     }
@@ -89,8 +78,9 @@ export const useAwbScanner = (
   };
 
   const removeMissingItem = (awb: string) => {
+    const cleanLower = (awb || "").trim().toLowerCase();
     updateMissingList((prev) =>
-      prev.filter((item) => item.awb.toLowerCase() !== awb.toLowerCase())
+      prev.filter((item) => item.awb.toLowerCase() !== cleanLower)
     );
   };
 
@@ -120,13 +110,20 @@ export const useAwbScanner = (
     setIsScanning(true);
 
     const clean = raw.trim();
+    const cleanLower = clean.toLowerCase();
 
-    // Check if item exists in local state
-    const existing = orders.find(
-      (item) =>
-        item.awb.toLowerCase() === clean.toLowerCase() ||
-        item.orderId.toLowerCase() === clean.toLowerCase()
-    );
+    // Check if item exists in local state (supports Order ID, exact AWB, or multi-AWB lines)
+    const existing = orders.find((item) => {
+      const oId = (item.orderId || "").trim().toLowerCase();
+      if (oId === cleanLower) return true;
+
+      const awbVal = (item.awb || "").trim().toLowerCase();
+      if (awbVal === cleanLower) return true;
+
+      // Handle multi-AWB strings separated by /, newline, space, or comma
+      const parts = awbVal.split(/[\r\n]+|\s+\/\s+|\s*,\s*/).map((p) => p.trim()).filter(Boolean);
+      return parts.includes(cleanLower) || (cleanLower.length >= 8 && awbVal.includes(cleanLower));
+    });
 
     // Case 1: Already scanned
     if (existing && existing.packingScanStatus === "SCANNED") {
@@ -139,6 +136,7 @@ export const useAwbScanner = (
       // Remove from missing if it's there
       removeMissingItem(clean);
       if (existing.awb) removeMissingItem(existing.awb);
+      if (existing.orderId) removeMissingItem(existing.orderId);
       setIsScanning(false);
       return;
     }
@@ -148,15 +146,13 @@ export const useAwbScanner = (
       const updatedOrder: AmazonOrderItem = {
         ...existing,
         packingScanStatus: "SCANNED",
-        updatedAt: new Date().toISOString(),
+        updatedAt: getNowIsoIST(),
       };
 
       // Optimistic update local state (keep pending on top, scanned below)
       setOrders((prev) => {
         const next = prev.map((item) =>
-          item.id === existing.id || item.awb.toLowerCase() === clean.toLowerCase()
-            ? updatedOrder
-            : item
+          item.id === existing.id ? updatedOrder : item
         );
         const pendingList = next.filter((item) => item.packingScanStatus === "PENDING");
         const scannedList = next.filter((item) => item.packingScanStatus === "SCANNED");
@@ -166,6 +162,7 @@ export const useAwbScanner = (
       // Remove from missing if present
       removeMissingItem(clean);
       if (existing.awb) removeMissingItem(existing.awb);
+      if (existing.orderId) removeMissingItem(existing.orderId);
 
       setMessage({
         text: `AWB "${existing.awb}" verified and scanned successfully! (${existing.orderId} • ${existing.customer})`,
@@ -176,8 +173,14 @@ export const useAwbScanner = (
 
       // Async backend update
       try {
-        await amazonOrderService.updateScanStatusByAwb(existing.awb, "SCANNED");
-        if (onSuccessCallback) onSuccessCallback(updatedOrder);
+        const targetAwb = existing.awb && existing.awb !== "N/A" ? existing.awb : (existing.orderId || clean);
+        const res = await amazonOrderService.updateScanStatusByAwb(targetAwb, "SCANNED");
+        if (res?.data) {
+          setOrders((prev) =>
+            prev.map((item) => (item.id === res.data.id ? { ...item, ...res.data } : item))
+          );
+        }
+        if (onSuccessCallback) onSuccessCallback(res?.data || updatedOrder);
       } catch (err) {
         console.warn("Background AWB scan update failed:", err);
       } finally {
@@ -204,6 +207,7 @@ export const useAwbScanner = (
       // If this item was previously in missing list, remove it
       removeMissingItem(clean);
       if (updated.awb) removeMissingItem(updated.awb);
+      if (updated.orderId) removeMissingItem(updated.orderId);
 
       setMessage({
         text: `AWB "${clean}" scanned and marked as SCANNED!`,
@@ -225,7 +229,7 @@ export const useAwbScanner = (
       await playSound(warningSound);
 
       // Add to missing list
-      const formattedTime = format(new Date(), "dd MMM, hh:mm a");
+      const formattedTime = formatToIST(new Date());
       updateMissingList((prev) => {
         const existingIdx = prev.findIndex(
           (item) => item.awb.toLowerCase() === clean.toLowerCase()

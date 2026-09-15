@@ -589,15 +589,20 @@ export const printLabelsViaBrowser = async (
     const iframe = document.createElement("iframe");
     iframe.id = "label-browser-print-frame";
     iframe.setAttribute("aria-hidden", "true");
+    // Visible to rendering engine with full opacity (not transparent or offscreen)
+    // 1px x 1px in corner so it does not interfere with screen UI
     iframe.style.position = "fixed";
-    iframe.style.top = "0";
-    iframe.style.left = "-9999px";
-    iframe.style.width = `${widthMm}mm`;
-    iframe.style.height = `${heightMm}mm`;
+    iframe.style.bottom = "0";
+    iframe.style.right = "0";
+    iframe.style.width = "1px";
+    iframe.style.height = "1px";
     iframe.style.border = "none";
-    iframe.style.opacity = "0";
-    iframe.style.pointerEvents = "none";
-    iframe.style.zIndex = "-9999";
+    iframe.style.margin = "0";
+    iframe.style.padding = "0";
+    iframe.style.overflow = "hidden";
+    iframe.style.visibility = "visible";
+    iframe.style.opacity = "1";
+    iframe.style.zIndex = "-1";
 
     document.body.appendChild(iframe);
 
@@ -637,8 +642,7 @@ export const printLabelsViaBrowser = async (
       margin: 0 !important;
       padding: 0 !important;
       width: ${widthMm}mm !important;
-      height: auto !important;
-      min-height: 0 !important;
+      height: 100% !important;
       background: #ffffff !important;
       overflow: visible !important;
       -webkit-print-color-adjust: exact !important;
@@ -652,6 +656,8 @@ export const printLabelsViaBrowser = async (
       break-after: page !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
+      margin: 0 !important;
+      padding: 0 !important;
       overflow: hidden !important;
       background: #ffffff !important;
     }
@@ -678,16 +684,22 @@ export const printLabelsViaBrowser = async (
     iframeDoc.write(html);
     iframeDoc.close();
 
-    let cleanedUp = false;
-    const cleanup = () => {
-      if (cleanedUp) return;
-      cleanedUp = true;
-      try {
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe);
-        }
-      } catch (e) {}
+    let isDone = false;
+    const finish = () => {
+      if (isDone) return;
+      isDone = true;
       resolve(true);
+
+      // CRITICAL: In Chromium, removing the iframe immediately inside afterprint
+      // cancels the Windows Print Spooler background task before it reaches the printer!
+      // We keep the iframe in the DOM and only clean it up after 2 minutes.
+      setTimeout(() => {
+        try {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        } catch (e) {}
+      }, 120000);
     };
 
     const runPrint = async () => {
@@ -720,25 +732,25 @@ export const printLabelsViaBrowser = async (
         }
 
         // Delay for rendering layout calculations
-        await new Promise((r) => setTimeout(r, 150));
+        await new Promise((r) => setTimeout(r, 250));
 
-        iframeWin.addEventListener("afterprint", cleanup);
-        window.addEventListener("afterprint", cleanup);
+        iframeWin.addEventListener("afterprint", finish);
+        window.addEventListener("afterprint", finish);
 
         iframeWin.focus();
         iframeWin.print();
 
-        // Fallback cleanup if afterprint does not fire
-        setTimeout(cleanup, 120000);
+        // Fallback resolution if afterprint does not fire in some browsers
+        setTimeout(finish, 120000);
       } catch (err) {
         console.error("Iframe print error:", err);
-        cleanup();
+        finish();
       }
     };
 
     // Give iframe document a tick to mount
     setTimeout(() => {
-      runPrint().catch(() => cleanup());
-    }, 60);
+      runPrint().catch(() => finish());
+    }, 80);
   });
 };

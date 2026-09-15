@@ -14,10 +14,13 @@ import {
   Loader2,
   ArrowRight,
   ShieldAlert,
+  Printer,
+  Eye,
+  Table,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAmazonOrderStore } from "../store/useAmazonOrderStore";
-import { AmazonBatchHistoryItem } from "../services/amazonOrder.service";
+import { useAmazonOrderStore, getPrintedBatchesMap } from "../store/useAmazonOrderStore";
+import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
 
 interface AmazonProcessHistoryDropdownProps {
   className?: string;
@@ -29,6 +32,8 @@ export default function AmazonProcessHistoryDropdown({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
+  const [dbPrintedOrders, setDbPrintedOrders] = useState<{ orderId: string; awb: string }[]>([]);
 
   const {
     historyBatches,
@@ -40,10 +45,20 @@ export default function AmazonProcessHistoryDropdown({
 
   const [loadingBatchId, setLoadingBatchId] = useState<string | null>(null);
 
-  // Fetch batches when dropdown opens or initially
+  // Fetch batches and printed orders when dropdown opens or initially
   useEffect(() => {
     fetchHistoryBatches();
-  }, [fetchHistoryBatches]);
+    if (isOpen) {
+      amazonOrderService
+        .getOrders("?limit=1000")
+        .then((res) => {
+          if (res?.data && Array.isArray(res.data)) {
+            setDbPrintedOrders(res.data.map((o) => ({ orderId: o.orderId, awb: o.awb })));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [fetchHistoryBatches, isOpen]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -60,21 +75,64 @@ export default function AmazonProcessHistoryDropdown({
     };
   }, [isOpen]);
 
-  // Handle selecting a historical batch
-  const handleSelectBatch = async (batch: AmazonBatchHistoryItem) => {
+  // Helper to determine printed count and printed orders list for a batch
+  const getBatchPrintedInfo = (batch: AmazonBatchHistoryItem) => {
+    const map = getPrintedBatchesMap();
+    const stored =
+      (batch.id ? map[batch.id] : null) ||
+      map[`batch_${batch.id}`] ||
+      map[`${batch.pdfFileName || ""}_${batch.zplFileName || ""}_${batch.totalOrders}`] ||
+      map[`batch_${batch.totalOrders}`];
+
+    let count = batch.summary?.printedCount ?? stored?.count ?? stored?.indices?.length ?? 0;
+    const printedOrderNumbers = stored?.orderNumbers || batch.summary?.printedOrderIds || [];
+    const printedAwbs = stored?.awbs || batch.summary?.printedAwbs || [];
+
+    // Fallback: cross-reference with dbPrintedOrders if count is 0 and batch has results
+    if (count === 0 && dbPrintedOrders.length > 0 && Array.isArray((batch as any).results)) {
+      const dbOrderSet = new Set(dbPrintedOrders.map((o) => o.orderId).filter(Boolean));
+      const dbAwbSet = new Set(dbPrintedOrders.map((o) => o.awb).filter(Boolean));
+      const matched = (batch as any).results.filter(
+        (r: any) =>
+          (r.orderNumber && dbOrderSet.has(r.orderNumber)) || (r.awb && dbAwbSet.has(r.awb))
+      );
+      if (matched.length > 0) {
+        count = matched.length;
+      }
+    }
+
+    return {
+      count,
+      printedOrderNumbers,
+      printedAwbs,
+    };
+  };
+
+  // Handle selecting a historical batch (with option to directly show printed orders in table)
+  const handleSelectBatch = async (batch: AmazonBatchHistoryItem, showPrintedOnly = false) => {
     try {
       setLoadingBatchId(batch.id);
       setIsOpen(false);
-      toast.loading(`Loading batch from ${formatBatchDate(batch.batchDate || batch.createdAt)}...`, {
-        id: "load-history-batch",
-      });
+      toast.loading(
+        showPrintedOnly
+          ? `Opening printed orders table from ${formatBatchDate(batch.batchDate || batch.createdAt)}...`
+          : `Loading batch from ${formatBatchDate(batch.batchDate || batch.createdAt)}...`,
+        {
+          id: "load-history-batch",
+        }
+      );
 
-      const success = await loadBatchFromHistory(batch.id);
+      const success = await loadBatchFromHistory(batch.id, { showPrinted: showPrintedOnly });
 
       if (success) {
-        toast.success(`Loaded batch with ${batch.totalOrders} order(s)!`, {
-          id: "load-history-batch",
-        });
+        toast.success(
+          showPrintedOnly
+            ? `Viewing printed orders table for batch from ${formatBatchDate(batch.batchDate || batch.createdAt)}!`
+            : `Loaded batch with ${batch.totalOrders} order(s)!`,
+          {
+            id: "load-history-batch",
+          }
+        );
         // Automatically navigate to the result page with the matched orders table!
         router.push("/dashboard/order-process/amazon/order-process/result");
       } else {
@@ -230,11 +288,14 @@ export default function AmazonProcessHistoryDropdown({
               historyBatches.map((batch) => {
                 const isActive = activeHistoryBatchId === batch.id;
                 const isItemLoading = loadingBatchId === batch.id;
+                const printedInfo = getBatchPrintedInfo(batch);
+                const printedCount = printedInfo.count;
+                const isExpanded = expandedBatchId === batch.id;
 
                 return (
                   <div
                     key={batch.id}
-                    onClick={() => !isItemLoading && handleSelectBatch(batch)}
+                    onClick={() => !isItemLoading && handleSelectBatch(batch, false)}
                     className={`group relative flex flex-col gap-2 rounded-2xl border p-3 text-left transition-all cursor-pointer ${
                       isActive
                         ? "border-[#E8C16D] bg-[#FFF9EC]/60 shadow-2xs"
@@ -265,9 +326,9 @@ export default function AmazonProcessHistoryDropdown({
                       </div>
                     </div>
 
-                    {/* Middle Row: Metrics & File Names */}
+                    {/* Middle Row: Metrics & Printed Count Badge */}
                     <div className="flex items-center justify-between text-[11px] text-slate-600 pt-0.5">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-[#0A0E1A]">
                           {batch.totalOrders} Order{batch.totalOrders !== 1 ? "s" : ""}
                         </span>
@@ -283,32 +344,123 @@ export default function AmazonProcessHistoryDropdown({
                             </span>
                           </>
                         )}
+                        <span className="text-slate-300">•</span>
+                        {printedCount > 0 ? (
+                          <span className="inline-flex items-center gap-1 font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
+                            <CheckCircle2 className="h-3 w-3 text-blue-500" />
+                            {printedCount >= batch.matchedCount ? "All Printed" : `${printedCount} Printed`}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-medium text-[10px]">0 Printed</span>
+                        )}
                       </div>
 
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-400 shrink-0">
                         {formatExpiryNotice(batch.expiresAt)}
                       </span>
                     </div>
 
-                    {/* Bottom Row: File Name & Action Arrow */}
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 text-[10px] text-slate-500">
-                      <span className="truncate max-w-[240px]" title={batch.pdfFileName || ""}>
+                    {/* Bottom Row: File Name & Action Buttons */}
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 text-[10px] text-slate-500 gap-2">
+                      <span className="truncate max-w-[130px] sm:max-w-[160px]" title={batch.pdfFileName || ""}>
                         {batch.pdfFileName || "Amazon Invoices"}
                       </span>
 
-                      <div className="inline-flex items-center gap-1 font-bold text-[#B88728] group-hover:translate-x-0.5 transition-transform">
-                        {isItemLoading ? (
-                          <span className="inline-flex items-center gap-1 text-slate-500">
-                            <Loader2 className="h-3 w-3 animate-spin" /> Loading...
-                          </span>
-                        ) : (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {printedCount > 0 && (
                           <>
-                            <span>View Result</span>
-                            <ArrowRight className="h-3 w-3" />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedBatchId((prev) => (prev === batch.id ? null : batch.id));
+                              }}
+                              className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold transition cursor-pointer border ${
+                                isExpanded
+                                  ? "bg-[#0A0E1A] text-[#E8C16D] border-[#0A0E1A]"
+                                  : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
+                              }`}
+                              title="Toggle inline printed orders table preview"
+                            >
+                              <Table className="h-3 w-3" />
+                              <span>{isExpanded ? "Hide Table" : "Table Preview"}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isItemLoading) handleSelectBatch(batch, true);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800 transition cursor-pointer shadow-2xs"
+                              title="Open full result page showing only printed orders in table"
+                            >
+                              <Printer className="h-3 w-3 text-emerald-600" />
+                              <span>Show Printed ({printedCount})</span>
+                            </button>
                           </>
                         )}
+
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isItemLoading) handleSelectBatch(batch, false);
+                          }}
+                          className="inline-flex items-center gap-1 font-bold text-[#B88728] hover:text-[#0A0E1A] transition text-xs cursor-pointer ml-1"
+                          title="View full matched orders table"
+                        >
+                          {isItemLoading ? (
+                            <span className="inline-flex items-center gap-1 text-slate-500">
+                              <Loader2 className="h-3 w-3 animate-spin" /> Loading...
+                            </span>
+                          ) : (
+                            <>
+                              <span>View Table</span>
+                              <ArrowRight className="h-3 w-3" />
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Inline Expandable Printed Orders Table Preview */}
+                    {isExpanded && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 rounded-xl border border-slate-200 bg-white p-2.5 text-xs shadow-inner"
+                      >
+                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-600">
+                          <span className="uppercase tracking-wider">Printed Orders Table Preview ({printedCount})</span>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectBatch(batch, true)}
+                            className="text-blue-600 hover:underline inline-flex items-center gap-1 font-bold text-[10px] cursor-pointer"
+                          >
+                            <Eye className="h-3 w-3" />
+                            Open In Full Result Page
+                          </button>
+                        </div>
+
+                        <div className="max-h-36 overflow-y-auto divide-y divide-slate-100 pt-1 text-[11px]">
+                          {(printedInfo.printedOrderNumbers.length > 0
+                            ? printedInfo.printedOrderNumbers
+                            : ["Printed Order"]
+                          ).map((ordNum, idx) => (
+                            <div key={idx} className="flex items-center justify-between py-1 px-1">
+                              <span className="font-mono text-slate-800 font-semibold truncate max-w-[140px]">
+                                {ordNum}
+                              </span>
+                              <span className="text-slate-400 font-mono text-[10px] truncate max-w-[120px]">
+                                {printedInfo.printedAwbs[idx] || "—"}
+                              </span>
+                              <span className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700">
+                                <CheckCircle2 className="h-2.5 w-2.5" /> Printed
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })
