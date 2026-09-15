@@ -10,6 +10,8 @@ export interface PicklistItem {
   rackAddress: string;
   generateBarcode: string;
   quantity: number;
+  orderType?: "single_quantity" | "multiple_asin" | "multiple_pieces";
+  orderTypeLabel?: string;
 }
 
 export interface PicklistResult {
@@ -24,57 +26,104 @@ export const generateAmazonPicklist = (
 ): PicklistResult => {
   const selectedOrders = results.filter((r) => selectedRows.has(r.index));
 
-  const skuMap = new Map<string, number>();
-  const skuToAsinMap = new Map<string, string>();
+  const resolveOrderType = (item: AmazonComparisonResult): "single_quantity" | "multiple_asin" | "multiple_pieces" => {
+    if (item.orderType) return item.orderType;
+
+    let totalQty = item.totalQuantity || 0;
+    let asinsCount = item.asinsCount || 0;
+    let skusCount = 1;
+
+    if (item.asin && item.asin !== "N/A") {
+      const rawAsins = item.asin.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
+      asinsCount = new Set(rawAsins).size;
+      if (!totalQty) totalQty = rawAsins.length;
+    }
+
+    if (item.sellerSku && item.sellerSku !== "N/A") {
+      const rawSkus = item.sellerSku.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
+      skusCount = new Set(rawSkus).size;
+      if (rawSkus.length > totalQty) totalQty = rawSkus.length;
+    }
+
+    if (asinsCount > 1) return "multiple_asin";
+    if (skusCount > 1 || totalQty > 1) return "multiple_pieces";
+    return "single_quantity";
+  };
+
+  const normalizeRackAddress = (rack?: string | null): string => {
+    if (!rack) return "";
+    const trimmed = rack.trim().toUpperCase();
+    if (trimmed === "--" || trimmed === "-" || trimmed === "N/A" || trimmed === "NA") {
+      return "";
+    }
+    return trimmed;
+  };
+
+  const ORDER_GROUPS: {
+    type: "single_quantity" | "multiple_asin" | "multiple_pieces";
+    label: string;
+  }[] = [
+    { type: "single_quantity", label: "Single Quantity" },
+    { type: "multiple_asin", label: "Multiple Quantity" },
+    { type: "multiple_pieces", label: "Multiple Pieces" },
+  ];
+
   let totalQuantity = 0;
+  const allItems: PicklistItem[] = [];
 
-  selectedOrders.forEach((item) => {
-    const rawSkuStr =
-      item.sellerSku && item.sellerSku !== "N/A"
-        ? item.sellerSku
-        : item.asin && item.asin !== "N/A"
-        ? item.asin
-        : "UNKNOWN-SKU";
+  ORDER_GROUPS.forEach((grp) => {
+    const groupOrders = selectedOrders.filter((o) => resolveOrderType(o) === grp.type);
+    if (groupOrders.length === 0) return;
 
-    const skus = rawSkuStr
-      .split(/[\n\r]+|\s+\/\s+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const skuMap = new Map<string, number>();
+    const skuToAsinMap = new Map<string, string>();
 
-    const rawAsin = item.asin && item.asin !== "N/A" ? item.asin.trim() : "";
-    if (rawAsin) {
-      const asins = rawAsin.split(/[\n\r]+|\s+\/\s+/).map((a) => a.trim()).filter(Boolean);
-      skus.forEach((sku, idx) => {
-        const assignedAsin = asins[idx] || asins[0] || rawAsin;
-        if (!skuToAsinMap.has(sku)) {
-          skuToAsinMap.set(sku, assignedAsin);
-        }
-        if (!skuToAsinMap.has(sku.toUpperCase())) {
-          skuToAsinMap.set(sku.toUpperCase(), assignedAsin);
-        }
-      });
-    }
+    groupOrders.forEach((item) => {
+      const rawSkuStr =
+        item.sellerSku && item.sellerSku !== "N/A"
+          ? item.sellerSku
+          : item.asin && item.asin !== "N/A"
+          ? item.asin
+          : "UNKNOWN-SKU";
 
-    if (skus.length === 0) {
-      const currentQty = skuMap.get("UNKNOWN-SKU") ?? 0;
-      skuMap.set("UNKNOWN-SKU", currentQty + 1);
-      totalQuantity += 1;
-    } else if (skus.length === 1) {
-      const qtyToAdd = item.totalQuantity && item.totalQuantity > 1 ? item.totalQuantity : 1;
-      const currentQty = skuMap.get(skus[0]) ?? 0;
-      skuMap.set(skus[0], currentQty + qtyToAdd);
-      totalQuantity += qtyToAdd;
-    } else {
-      skus.forEach((sku) => {
-        const currentQty = skuMap.get(sku) ?? 0;
-        skuMap.set(sku, currentQty + 1);
+      const skus = rawSkuStr
+        .split(/[\n\r]+|\s+\/\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const rawAsin = item.asin && item.asin !== "N/A" ? item.asin.trim() : "";
+      if (rawAsin) {
+        const asins = rawAsin.split(/[\n\r]+|\s+\/\s+/).map((a) => a.trim()).filter(Boolean);
+        skus.forEach((sku, idx) => {
+          const assignedAsin = asins[idx] || asins[0] || rawAsin;
+          if (!skuToAsinMap.has(sku)) {
+            skuToAsinMap.set(sku, assignedAsin);
+          }
+          if (!skuToAsinMap.has(sku.toUpperCase())) {
+            skuToAsinMap.set(sku.toUpperCase(), assignedAsin);
+          }
+        });
+      }
+
+      if (skus.length === 0) {
+        const currentQty = skuMap.get("UNKNOWN-SKU") ?? 0;
+        skuMap.set("UNKNOWN-SKU", currentQty + 1);
         totalQuantity += 1;
-      });
-    }
-  });
+      } else if (skus.length === 1) {
+        const qtyToAdd = item.totalQuantity && item.totalQuantity > 1 ? item.totalQuantity : 1;
+        const currentQty = skuMap.get(skus[0]) ?? 0;
+        skuMap.set(skus[0], currentQty + qtyToAdd);
+        totalQuantity += qtyToAdd;
+      } else {
+        skus.forEach((sku) => {
+          const currentQty = skuMap.get(sku) ?? 0;
+          skuMap.set(sku, currentQty + 1);
+          totalQuantity += 1;
+        });
+      }
+    });
 
-  const items: PicklistItem[] = Array.from(skuMap.entries()).map(
-    ([sku, quantity]) => {
+    const groupItems: PicklistItem[] = Array.from(skuMap.entries()).map(([sku, quantity]) => {
       const trimmedSku = sku.trim();
       const normSku = trimmedSku.toUpperCase();
       const itemAsin = (
@@ -85,7 +134,6 @@ export const generateAmazonPicklist = (
       ).trim();
       const normAsin = itemAsin.toUpperCase();
 
-      // Look up in skuDetailsMap by SKU and then by ASIN
       const skuDetails =
         skuDetailsMap?.get(normSku) ||
         skuDetailsMap?.get(trimmedSku) ||
@@ -100,7 +148,6 @@ export const generateAmazonPicklist = (
         rack = "";
       }
 
-      // Case-insensitive fallback scan if rackAddress not found
       if (!rack && skuDetailsMap && skuDetailsMap.size > 0) {
         for (const [key, val] of skuDetailsMap.entries()) {
           const kNorm = key.trim().toUpperCase();
@@ -138,51 +185,52 @@ export const generateAmazonPicklist = (
         rackAddress,
         generateBarcode,
         quantity,
+        orderType: grp.type,
+        orderTypeLabel: grp.label,
       };
-    }
-  );
+    });
 
-  const normalizeRackAddress = (rack?: string | null): string => {
-    if (!rack) return "";
-    const trimmed = rack.trim().toUpperCase();
-    if (trimmed === "--" || trimmed === "-" || trimmed === "N/A" || trimmed === "NA") {
-      return "";
-    }
-    return trimmed;
-  };
+    // Sorting within category:
+    // 1. Generate Barcode === "Yes" FIRST
+    // 2. Rack Address natural sort
+    // 3. Seller SKU natural sort
+    groupItems.sort((a, b) => {
+      const aYes = a.generateBarcode === "Yes";
+      const bYes = b.generateBarcode === "Yes";
+      if (aYes && !bYes) return -1;
+      if (!aYes && bYes) return 1;
 
-  items.sort((a, b) => {
-    const rackA = normalizeRackAddress(a.rackAddress);
-    const rackB = normalizeRackAddress(b.rackAddress);
+      const rackA = normalizeRackAddress(a.rackAddress);
+      const rackB = normalizeRackAddress(b.rackAddress);
 
-    // Both have valid rack addresses -> natural alphanumeric sort (A1, A2, ..., B1, ...)
-    if (rackA && rackB) {
-      const rackComparison = rackA.localeCompare(rackB, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      });
-      if (rackComparison !== 0) {
-        return rackComparison;
+      if (rackA && rackB) {
+        const rackComparison = rackA.localeCompare(rackB, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+        if (rackComparison !== 0) {
+          return rackComparison;
+        }
+        return a.sku.localeCompare(b.sku, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
       }
+
+      if (rackA && !rackB) return -1;
+      if (!rackA && rackB) return 1;
+
       return a.sku.localeCompare(b.sku, undefined, {
         numeric: true,
         sensitivity: "base",
       });
-    }
-
-    // Items with assigned rack addresses come first ("pela A1, A2, ...")
-    if (rackA && !rackB) return -1;
-    if (!rackA && rackB) return 1;
-
-    // Both unassigned ("--") -> sort by SKU
-    return a.sku.localeCompare(b.sku, undefined, {
-      numeric: true,
-      sensitivity: "base",
     });
+
+    allItems.push(...groupItems);
   });
 
   return {
-    items,
+    items: allItems,
     totalQuantity,
   };
 };
@@ -442,10 +490,9 @@ export const openAmazonPicklistTab = (picklist: PicklistResult) => {
       (item) => `
       <tr>
         <td style="text-align: center;">${item.rackAddress || "--"}</td>
-        <td style="text-align: center; font-family: monospace;">${item.asin || "--"}</td>
         <td style="text-align: left; font-weight: bold;">${item.sku}</td>
         <td style="text-align: center; font-weight: bold;">${item.quantity}</td>
-        <td style="text-align: center;">${item.generateBarcode || "No"}</td>
+        <td style="text-align: center; ${item.generateBarcode === "Yes" ? "font-weight: bold; color: #16a34a;" : "color: #64748b;"}">${item.generateBarcode || "No"}</td>
       </tr>`
     )
     .join("");
@@ -561,17 +608,15 @@ export const openAmazonPicklistTab = (picklist: PicklistResult) => {
     <table>
       <thead>
         <tr>
-          <th style="width: 16%;">Rack Address</th>
-          <th style="width: 20%;">ASIN</th>
-          <th style="width: 38%; text-align: left;">Seller SKU</th>
-          <th style="width: 12%;">Quantity</th>
-          <th style="width: 14%;">Generate Barcode</th>
+          <th style="width: 18%;">Rack Address</th>
+          <th style="width: 48%; text-align: left;">Seller SKU</th>
+          <th style="width: 16%;">Quantity</th>
+          <th style="width: 18%;">Generate Barcode</th>
         </tr>
       </thead>
       <tbody>
         ${rowsHtml}
         <tr class="total-row">
-          <td></td>
           <td></td>
           <td style="text-align: right;">TOTAL QUANTITY</td>
           <td style="text-align: center;">${picklist.totalQuantity}</td>
@@ -596,21 +641,20 @@ export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
   const now = new Date();
   const picklistNo = `PL${Date.now()}`;
 
-  // Columns specification (Sr No removed as requested)
+  // Columns specification: Rack Address, Seller SKU, Quantity, Generate Barcode
   worksheet.columns = [
-    { header: "Rack Address", key: "rackAddress", width: 18 },
-    { header: "ASIN", key: "asin", width: 18 },
-    { header: "Seller SKU", key: "sku", width: 40 },
+    { header: "Rack Address", key: "rackAddress", width: 20 },
+    { header: "Seller SKU", key: "sku", width: 44 },
     { header: "Quantity", key: "quantity", width: 14 },
     { header: "Generate Barcode", key: "generateBarcode", width: 18 },
   ];
 
-  // Header row styling: standard Excel background (no fill), bold black text
+  // Header row styling: bold black text, clean borders, height 26
   const headerRow = worksheet.getRow(1);
-  headerRow.height = 24;
+  headerRow.height = 26;
   headerRow.eachCell((cell, colNumber) => {
     cell.font = { bold: true, color: { argb: "FF000000" }, size: 11, name: "Calibri" };
-    cell.alignment = { vertical: "middle", horizontal: colNumber === 3 ? "left" : "center" };
+    cell.alignment = { vertical: "middle", horizontal: colNumber === 2 ? "left" : "center" };
     cell.border = {
       top: { style: "thin", color: { argb: "FFD4D4D8" } },
       left: { style: "thin", color: { argb: "FFD4D4D8" } },
@@ -619,11 +663,45 @@ export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
     };
   });
 
-  // Data rows: standard Excel background and clean borders
+  let activeSection = "";
+
+  // Data rows with section divider rows
   picklist.items.forEach((item) => {
+    const itemSection = item.orderTypeLabel || "Single Quantity";
+
+    if (itemSection !== activeSection) {
+      activeSection = itemSection;
+      const sectionItems = picklist.items.filter(
+        (i) => (i.orderTypeLabel || "Single Quantity") === activeSection
+      );
+      const sectionQty = sectionItems.reduce((acc, i) => acc + i.quantity, 0);
+
+      const dividerRow = worksheet.addRow({
+        rackAddress: `▶ ${activeSection.toUpperCase()}`,
+        sku: `${sectionItems.length} Unique SKUs (${sectionQty} Units)`,
+        quantity: sectionQty,
+        generateBarcode: "",
+      });
+
+      dividerRow.height = 22;
+      dividerRow.eachCell((cell) => {
+        cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF0F172A" } };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF1F5F9" },
+        };
+        cell.border = {
+          top: { style: "medium", color: { argb: "FF0A0E1A" } },
+          bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+          left: { style: "thin", color: { argb: "FFCBD5E1" } },
+          right: { style: "thin", color: { argb: "FFCBD5E1" } },
+        };
+      });
+    }
+
     const row = worksheet.addRow({
       rackAddress: item.rackAddress || "--",
-      asin: item.asin || "--",
       sku: item.sku,
       quantity: item.quantity,
       generateBarcode: item.generateBarcode || "No",
@@ -638,11 +716,19 @@ export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
         bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
         right: { style: "thin", color: { argb: "FFE2E8F0" } },
       };
-      cell.alignment = { vertical: "middle", horizontal: colNumber === 3 ? "left" : "center" };
+      cell.alignment = { vertical: "middle", horizontal: colNumber === 2 ? "left" : "center" };
       cell.font = { size: 10.5, name: "Calibri", color: { argb: "FF000000" } };
 
-      if (colNumber === 3) {
+      if (colNumber === 2) {
         cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF000000" } };
+      }
+
+      if (colNumber === 4) {
+        if (item.generateBarcode === "Yes") {
+          cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF16A34A" } };
+        } else {
+          cell.font = { size: 10.5, name: "Calibri", color: { argb: "FF64748B" } };
+        }
       }
     });
   });
@@ -650,7 +736,6 @@ export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
   // Total Summary Row: standard Excel background (no fill), bold black text
   const totalRow = worksheet.addRow({
     rackAddress: "",
-    asin: "",
     sku: "TOTAL QUANTITY",
     quantity: picklist.totalQuantity,
     generateBarcode: `${picklist.items.length} Unique SKUs`,
@@ -665,8 +750,27 @@ export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
       right: { style: "thin", color: { argb: "FFE2E8F0" } },
     };
     cell.font = { bold: true, size: 11, name: "Calibri", color: { argb: "FF000000" } };
-    cell.alignment = { vertical: "middle", horizontal: colNumber === 3 ? "right" : "center" };
+    cell.alignment = { vertical: "middle", horizontal: colNumber === 2 ? "right" : "center" };
   });
+
+  // Auto-fit column widths so columns fit content snugly without unnecessary spaces
+  const maxRackLen = picklist.items.reduce(
+    (max, i) => Math.max(max, (i.rackAddress && i.rackAddress !== "--" ? i.rackAddress : "").length),
+    "Rack Address".length
+  );
+  const maxSkuLen = picklist.items.reduce(
+    (max, i) => Math.max(max, (i.sku || "").length),
+    "Seller SKU".length
+  );
+
+  // Column 1: Rack Address (snug fit for "Rack Address" or longest address)
+  worksheet.getColumn(1).width = Math.max(maxRackLen + 3, 14);
+  // Column 2: Seller SKU (snug fit for longest SKU in this batch instead of huge 44 width)
+  worksheet.getColumn(2).width = Math.max(maxSkuLen + 3, 16);
+  // Column 3: Quantity (fits "Quantity" snugly with no wasted space)
+  worksheet.getColumn(3).width = 11;
+  // Column 4: Generate Barcode (fits "Generate Barcode" snugly with no wasted space)
+  worksheet.getColumn(4).width = 17;
 
   const buffer = await workbook.xlsx.writeBuffer();
   const fileName = `Amazon_Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.xlsx`;

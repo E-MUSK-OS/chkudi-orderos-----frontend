@@ -19,7 +19,7 @@ import {
   isThermalOrLabelPrinter,
   PrinterDetail,
 } from "../../services/printAgent.service";
-import { renderLabelToCanvas, rotateCanvas, PrintRotation, ProductLookupResult } from "@/lib/labelRenderer";
+import { renderLabelToCanvas, rotateCanvas, PrintRotation, ProductLookupResult, printLabelsViaBrowser } from "@/lib/labelRenderer";
 import { PDFDocument } from "pdf-lib";
 import { labelService } from "../../services/label.service";
 import { toast } from "sonner";
@@ -250,95 +250,17 @@ export function TestPrintModal({
       const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
       const dataUrl = canvas.toDataURL("image/png");
 
-      const printContainer = document.createElement("div");
-      printContainer.id = "designer-test-print-container";
-      document.body.appendChild(printContainer);
-
-      const style = document.createElement("style");
-      style.innerHTML = `
-        @page {
-          size: ${widthMm}mm ${heightMm}mm;
-          margin: 0 !important;
-        }
-        @media screen {
-          #designer-test-print-container { display: none !important; }
-        }
-        @media print {
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: ${widthMm}mm !important;
-            height: ${heightMm}mm !important;
-            background: #ffffff !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          body > *:not(#designer-test-print-container) {
-            display: none !important;
-          }
-          #designer-test-print-container {
-            display: block !important;
-            position: static !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: ${widthMm}mm !important;
-          }
-          .print-page {
-            display: block !important;
-            width: ${widthMm}mm !important;
-            height: ${heightMm}mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            page-break-after: always !important;
-            break-after: page !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            overflow: hidden !important;
-            box-sizing: border-box !important;
-          }
-          .print-page:last-child {
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-          }
-          .print-page img {
-            display: block !important;
-            width: ${widthMm}mm !important;
-            height: ${heightMm}mm !important;
-            object-fit: fill !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-
-      for (let i = 0; i < copies; i++) {
-        const pageDiv = document.createElement("div");
-        pageDiv.className = "print-page";
-        const img = document.createElement("img");
-        img.src = dataUrl;
-        pageDiv.appendChild(img);
-        printContainer.appendChild(pageDiv);
+      const urls: string[] = [];
+      const numCopies = Math.max(copies || 1, 1);
+      for (let i = 0; i < numCopies; i++) {
+        urls.push(dataUrl);
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      const cleanup = () => {
-        if (document.body.contains(printContainer)) {
-          document.body.removeChild(printContainer);
-        }
-        if (document.head.contains(style)) {
-          document.head.removeChild(style);
-        }
-        window.removeEventListener("afterprint", cleanup);
-      };
-
-      window.addEventListener("afterprint", cleanup);
-      window.print();
-      setTimeout(cleanup, 60000);
-      onClose();
+      await printLabelsViaBrowser(urls, {
+        widthMm,
+        heightMm,
+        title: `Test Print - ${template.name || "Label"}`,
+      });
     } catch (err: any) {
       console.error("Browser print failed:", err);
       toast.error(err?.message || "Browser print failed");
@@ -530,24 +452,24 @@ export function TestPrintModal({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-              Print Orientation / દિશા
+              Print Orientation
             </label>
-            <span className="text-[11px] text-slate-500 font-medium">૫૦×૧૦૦mm રોલ માટે Rotate 90° સિલેક્ટ કરો</span>
+            <span className="text-[11px] text-slate-500 font-medium">Select Rotate 90° for 50×100mm roll</span>
           </div>
           <ReactSelect
             menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
             options={[
-              { label: "Rotate 90° Clockwise (આડી પ્રિન્ટ / 50×100 Roll)", value: "90" },
-              { label: "Rotate 270° Counter-Clockwise (આડી પ્રિન્ટ)", value: "270" },
-              { label: "Normal (0° - સીધી પ્રિન્ટ)", value: "0" },
+              { label: "Rotate 90° Clockwise (50×100 Roll)", value: "90" },
+              { label: "Rotate 270° Counter-Clockwise", value: "270" },
+              { label: "Normal (0°)", value: "0" },
             ]}
             value={{
               label:
                 printRotation === 90
-                  ? "Rotate 90° Clockwise (આડી પ્રિન્ટ / 50×100 Roll)"
+                  ? "Rotate 90° Clockwise (50×100 Roll)"
                   : printRotation === 270
-                  ? "Rotate 270° Counter-Clockwise (આડી પ્રિન્ટ)"
-                  : "Normal (0° - સીધી પ્રિન્ટ)",
+                  ? "Rotate 270° Counter-Clockwise"
+                  : "Normal (0°)",
               value: String(printRotation),
             }}
             onChange={(opt) => handleRotationChange(Number(opt?.value || 0) as PrintRotation)}

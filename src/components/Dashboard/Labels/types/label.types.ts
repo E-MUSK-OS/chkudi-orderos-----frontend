@@ -118,5 +118,6 @@ export interface PrintQueueItem {
   lookupSku: string;
   status: "pending" | "matched" | "not_found" | "multiple_matches" | "error";
   product?: ProductLookupResult;
+  quantity?: number;
   errorMessage?: string;
 }

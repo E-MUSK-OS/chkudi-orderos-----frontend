@@ -68,7 +68,12 @@ export const renderLabelToCanvas = async (
   scaleOverride?: number,
   forThermalPrint = false
 ): Promise<HTMLCanvasElement> => {
-  await document.fonts.ready;
+  if (typeof document !== "undefined" && document.fonts) {
+    await Promise.race([
+      document.fonts.ready,
+      new Promise((resolve) => setTimeout(resolve, 800)),
+    ]);
+  }
 
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -551,4 +556,189 @@ export const rotateCanvas = (
   ctx.restore();
 
   return rotCanvas;
+};
+
+export interface PrintBrowserOptions {
+  widthMm: number;
+  heightMm: number;
+  title?: string;
+}
+
+/**
+ * Universally reliable browser printing using an isolated hidden iframe.
+ * Completely immune to modal scroll-locks (overflow: hidden), SPA DOM mutation,
+ * Base UI dialog backdrops, and premature unmounting conflicts.
+ */
+export const printLabelsViaBrowser = async (
+  imageDataUrls: string[],
+  options: PrintBrowserOptions
+): Promise<boolean> => {
+  if (!imageDataUrls || imageDataUrls.length === 0) {
+    throw new Error("No labels provided for printing");
+  }
+
+  const { widthMm, heightMm, title = "Print Labels" } = options;
+
+  return new Promise<boolean>((resolve, reject) => {
+    // Clean up any stale iframe from previous attempts
+    const existing = document.getElementById("label-browser-print-frame");
+    if (existing && existing.parentNode) {
+      existing.parentNode.removeChild(existing);
+    }
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "label-browser-print-frame";
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.style.position = "fixed";
+    iframe.style.top = "0";
+    iframe.style.left = "-9999px";
+    iframe.style.width = `${widthMm}mm`;
+    iframe.style.height = `${heightMm}mm`;
+    iframe.style.border = "none";
+    iframe.style.opacity = "0";
+    iframe.style.pointerEvents = "none";
+    iframe.style.zIndex = "-9999";
+
+    document.body.appendChild(iframe);
+
+    const iframeWin = iframe.contentWindow;
+    const iframeDoc = iframe.contentDocument || iframeWin?.document;
+    if (!iframeDoc || !iframeWin) {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      reject(new Error("Unable to access print iframe document"));
+      return;
+    }
+
+    const pagesHtml = imageDataUrls
+      .map(
+        (url, idx) => `
+        <div class="print-page">
+          <img src="${url}" alt="Label ${idx + 1}" />
+        </div>`
+      )
+      .join("\n");
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <style>
+    @page {
+      size: ${widthMm}mm ${heightMm}mm;
+      margin: 0mm !important;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: ${widthMm}mm !important;
+      height: auto !important;
+      min-height: 0 !important;
+      background: #ffffff !important;
+      overflow: visible !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .print-page {
+      display: block !important;
+      width: ${widthMm}mm !important;
+      height: ${heightMm}mm !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      overflow: hidden !important;
+      background: #ffffff !important;
+    }
+    .print-page:last-child {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    .print-page img {
+      display: block !important;
+      width: ${widthMm}mm !important;
+      height: ${heightMm}mm !important;
+      object-fit: fill !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  </style>
+</head>
+<body>
+  ${pagesHtml}
+</body>
+</html>`;
+
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    let cleanedUp = false;
+    const cleanup = () => {
+      if (cleanedUp) return;
+      cleanedUp = true;
+      try {
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
+        }
+      } catch (e) {}
+      resolve(true);
+    };
+
+    const runPrint = async () => {
+      try {
+        const imgs = Array.from(iframeDoc.images);
+        if (imgs.length > 0) {
+          await Promise.all(
+            imgs.map(async (img) => {
+              if (img.complete) {
+                if (img.decode) {
+                  try {
+                    await img.decode();
+                  } catch (e) {}
+                }
+                return;
+              }
+              return new Promise<void>((imgDone) => {
+                img.onload = async () => {
+                  if (img.decode) {
+                    try {
+                      await img.decode();
+                    } catch (e) {}
+                  }
+                  imgDone();
+                };
+                img.onerror = () => imgDone();
+              });
+            })
+          );
+        }
+
+        // Delay for rendering layout calculations
+        await new Promise((r) => setTimeout(r, 150));
+
+        iframeWin.addEventListener("afterprint", cleanup);
+        window.addEventListener("afterprint", cleanup);
+
+        iframeWin.focus();
+        iframeWin.print();
+
+        // Fallback cleanup if afterprint does not fire
+        setTimeout(cleanup, 120000);
+      } catch (err) {
+        console.error("Iframe print error:", err);
+        cleanup();
+      }
+    };
+
+    // Give iframe document a tick to mount
+    setTimeout(() => {
+      runPrint().catch(() => cleanup());
+    }, 60);
+  });
 };

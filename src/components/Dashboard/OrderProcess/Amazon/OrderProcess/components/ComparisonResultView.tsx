@@ -1113,6 +1113,17 @@ export default function ComparisonResultView({
     [currentTypeOrders, printedRows]
   );
 
+  // All matched orders eligible for picklist across ALL order types (Single Quantity, Multiple Pieces, Multiple ASIN)
+  const allPicklistOrders = useMemo(() => {
+    const unprintedMatched = mappedResults.filter((r) => r.isMatch && !printedRows.has(r.index));
+    if (!showPrinted) {
+      return unprintedMatched.length > 0
+        ? unprintedMatched
+        : mappedResults.filter((r) => r.isMatch);
+    }
+    return mappedResults.filter((r) => r.isMatch && printedRows.has(r.index));
+  }, [mappedResults, printedRows, showPrinted]);
+
   // Pagination calculations (exact Myntra logic)
   const totalRecords = filteredResults.length;
   const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
@@ -1680,11 +1691,11 @@ export default function ComparisonResultView({
       return;
     }
 
-    // If specific rows are selected, use selected rows; otherwise fallback to filtered orders
+    // If specific rows are selected, use selected rows; otherwise include ALL matched orders across all quantity types
     const targetSet =
       selectedRows.size > 0
         ? selectedRows
-        : new Set(filteredResults.map((item) => item.index));
+        : new Set(allPicklistOrders.map((item) => item.index));
 
     if (targetSet.size === 0) {
       toast.error('No matched orders available to generate a picklist.');
@@ -2250,23 +2261,41 @@ export default function ComparisonResultView({
         }, 50);
         return;
       } else {
-        // Invoice scanned, but not all ASINs/pieces are scanned yet -> block print!
+        // Invoice scanned, but not all Seller SKUs/pieces are scanned yet -> block print!
+        const getReqSellerSku = (r: OrderItemRequirement): string => {
+          if (r.sku && r.sku !== "N/A" && r.sku !== "-") return r.sku;
+          if (r.asin && r.asin !== "N/A") {
+            const mapped = asinToSkuMap.get(r.asin) || asinToSkuMap.get(r.asin.toUpperCase());
+            if (mapped && mapped !== "N/A" && mapped !== "-") return mapped;
+          }
+          return r.asin !== "N/A" ? r.asin : "SKU";
+        };
+
         const remainingReqs = reqs.filter((r) => r.scannedQty < r.requiredQty);
-        const remainingAsins = remainingReqs
-          .map((r) => (r.asin !== "N/A" ? r.asin : r.sku))
-          .filter(Boolean);
+        const remainingSkus = Array.from(
+          new Set(remainingReqs.map((r) => getReqSellerSku(r)).filter(Boolean))
+        );
         const remainingPieces = remainingReqs.reduce(
           (sum, r) => sum + (r.requiredQty - r.scannedQty),
           0
         );
 
         toast.warning(
-          `Cannot print Invoice ${targetItem.pdfInvoice || targetItem.zplInvoice || targetItem.orderNumber}: ASIN is remaining: ${remainingAsins.join(", ")} (${remainingPieces} piece(s) remain). Please scan all ASINs first.`,
+          `Cannot print Invoice ${targetItem.pdfInvoice || targetItem.zplInvoice || targetItem.orderNumber}: Seller SKU is remaining: ${remainingSkus.join(", ")} (${remainingPieces} piece(s) remain). Please scan all Seller SKUs first.`,
           { duration: 7000 }
         );
         return;
       }
     }
+
+    const getReqSellerSku = (r: OrderItemRequirement): string => {
+      if (r.sku && r.sku !== "N/A" && r.sku !== "-") return r.sku;
+      if (r.asin && r.asin !== "N/A") {
+        const mapped = asinToSkuMap.get(r.asin) || asinToSkuMap.get(r.asin.toUpperCase());
+        if (mapped && mapped !== "N/A" && mapped !== "-") return mapped;
+      }
+      return r.asin !== "N/A" ? r.asin : "SKU";
+    };
 
     // 6. User scanned an ASIN / SKU / Barcode:
     // Find requirement matching query (preferring one that still needs scans)
@@ -2278,7 +2307,7 @@ export default function ComparisonResultView({
 
     if (!matchingReq) {
       toast.error(
-        `Scanned item "${q}" does not match any ASIN/SKU for Order ${targetItem.orderNumber || targetItem.pdfInvoice}`
+        `Scanned item "${q}" does not match any Seller SKU/Barcode for Order ${targetItem.orderNumber || targetItem.pdfInvoice}`
       );
       return;
     }
@@ -2286,16 +2315,17 @@ export default function ComparisonResultView({
     // Check if this specific item is already fully scanned
     if (matchingReq.scannedQty >= matchingReq.requiredQty) {
       const remainingReqs = reqs.filter((r) => r.scannedQty < r.requiredQty);
-      const remainingAsins = remainingReqs
-        .map((r) => (r.asin !== "N/A" ? r.asin : r.sku))
-        .filter(Boolean);
+      const remainingSkus = Array.from(
+        new Set(remainingReqs.map((r) => getReqSellerSku(r)).filter(Boolean))
+      );
       const remainingPieces = remainingReqs.reduce(
         (sum, r) => sum + (r.requiredQty - r.scannedQty),
         0
       );
+      const currentItemSku = getReqSellerSku(matchingReq);
 
       toast.info(
-        `ASIN ${matchingReq.asin} is already fully scanned for this order. ASIN is remaining: ${remainingAsins.join(", ")} (${remainingPieces} piece(s) remain). Please scan remaining ASIN.`,
+        `Seller SKU ${currentItemSku} is already fully scanned for this order. Seller SKU is remaining: ${remainingSkus.join(", ")} (${remainingPieces} piece(s) remain). Please scan remaining Seller SKU.`,
         { duration: 6000 }
       );
       return;
@@ -2308,11 +2338,11 @@ export default function ComparisonResultView({
     const totalRequired = reqs.reduce((sum, r) => sum + r.requiredQty, 0);
     const totalScanned = reqs.reduce((sum, r) => sum + r.scannedQty, 0);
 
-    // If items still remain, do NOT print -> show toast of remaining ASIN(s)
+    // If items still remain, do NOT print -> show toast of remaining Seller SKU(s)
     if (remainingReqs.length > 0) {
-      const remainingAsins = remainingReqs
-        .map((r) => (r.asin !== "N/A" ? r.asin : r.sku))
-        .filter(Boolean);
+      const remainingSkus = Array.from(
+        new Set(remainingReqs.map((r) => getReqSellerSku(r)).filter(Boolean))
+      );
       const remainingPieces = remainingReqs.reduce(
         (sum, r) => sum + (r.requiredQty - r.scannedQty),
         0
@@ -2320,13 +2350,13 @@ export default function ComparisonResultView({
 
       if (orderType === "multiple_asin") {
         toast.warning(
-          `ASIN is remaining: ${remainingAsins.join(", ")} (${totalScanned}/${totalRequired} scanned for Order ${targetItem.orderNumber || targetItem.pdfInvoice}). Scan remaining ASIN to print.`,
+          `Seller SKU is remaining: ${remainingSkus.join(", ")} (${totalScanned}/${totalRequired} scanned for Order ${targetItem.orderNumber || targetItem.pdfInvoice}). Scan remaining Seller SKU to print.`,
           { duration: 7000 }
         );
       } else {
         // multiple_pieces
         toast.warning(
-          `ASIN is remaining: ${remainingAsins.join(", ")} (${remainingPieces} piece(s) remaining, ${totalScanned}/${totalRequired} scanned for Order ${targetItem.orderNumber || targetItem.pdfInvoice}). Scan remaining piece to print.`,
+          `Seller SKU is remaining: ${remainingSkus.join(", ")} (${remainingPieces} piece(s) remaining, ${totalScanned}/${totalRequired} scanned for Order ${targetItem.orderNumber || targetItem.pdfInvoice}). Scan remaining piece to print.`,
           { duration: 7000 }
         );
       }
@@ -2335,7 +2365,7 @@ export default function ComparisonResultView({
 
     // ALL items/pieces for this order have been scanned!
     toast.success(
-      `All ASINs scanned (${totalScanned}/${totalRequired}) for Order ${targetItem.orderNumber || targetItem.pdfInvoice}! Printing shipping label and invoice...`,
+      `All Seller SKUs scanned (${totalScanned}/${totalRequired}) for Order ${targetItem.orderNumber || targetItem.pdfInvoice}! Printing shipping label and invoice...`,
       { duration: 4000 }
     );
 
@@ -2848,7 +2878,7 @@ export default function ComparisonResultView({
                 title="Download Excel picklist"
               >
                 <FileText className="h-4 w-4" />
-                <span>Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${filteredResults.length})`}</span>
+                <span>Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${allPicklistOrders.length})`}</span>
               </button>
 
               {printedRows.size > 0 && (

@@ -229,23 +229,23 @@ export default function PrintExecutionModal({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-[#0A0E1A]">Print Orientation / દિશા</label>
-            <span className="text-xs text-slate-500 font-medium">૫૦×૧૦૦mm રોલ માટે આડી પ્રિન્ટ</span>
+            <label className="text-sm font-semibold text-[#0A0E1A]">Print Orientation</label>
+            <span className="text-xs text-slate-500 font-medium">For 50×100mm roll</span>
           </div>
           <ReactSelect
             menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
             options={[
-              { label: "Rotate 90° Clockwise (આડી પ્રિન્ટ / 50×100 Roll)", value: "90" },
-              { label: "Rotate 270° Counter-Clockwise (આડી પ્રિન્ટ)", value: "270" },
-              { label: "Normal (0° - સીધી પ્રિન્ટ)", value: "0" },
+              { label: "Rotate 90° Clockwise (50×100 Roll)", value: "90" },
+              { label: "Rotate 270° Counter-Clockwise", value: "270" },
+              { label: "Normal (0°)", value: "0" },
             ]}
             value={{
               label:
                 printRotation === 90
-                  ? "Rotate 90° Clockwise (આડી પ્રિન્ટ / 50×100 Roll)"
+                  ? "Rotate 90° Clockwise (50×100 Roll)"
                   : printRotation === 270
-                  ? "Rotate 270° Counter-Clockwise (આડી પ્રિન્ટ)"
-                  : "Normal (0° - સીધી પ્રિન્ટ)",
+                  ? "Rotate 270° Counter-Clockwise"
+                  : "Normal (0°)",
               value: String(printRotation),
             }}
             onChange={(opt) => setPrintRotation(Number(opt?.value || 0) as PrintRotation)}

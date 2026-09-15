@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { LabelTemplate, PrintQueueItem } from "../types/label.types";
 import { chromeExtensionPrintService } from "../services/printAgent.service";
 import { labelService } from "../services/label.service";
-import { renderLabelToCanvas, rotateCanvas, PrintRotation } from "@/lib/labelRenderer";
+import { renderLabelToCanvas, rotateCanvas, PrintRotation, printLabelsViaBrowser } from "@/lib/labelRenderer";
 import { PDFDocument, degrees } from "pdf-lib";
 
 type Step = "matching" | "review" | "printer" | "printing" | "summary";
@@ -22,6 +22,7 @@ export interface GenerateRow {
   shortSku: string;
   barcodeSku: string;
   ordercookSku: string;
+  quantity?: number | string;
 }
 
 export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateRow[]) {
@@ -127,12 +128,14 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     const results = await Promise.allSettled(
       rows.map(async (row): Promise<PrintQueueItem> => {
         const query = row.barcodeSku?.trim() || row.shortSku?.trim() || row.ordercookSku?.trim() || "";
+        const rowQuantity = Math.max(Number(row.quantity) || 1, 1);
         if (!query) {
           return {
             rowId: row.id,
             status: "matched",
             lookupSku: String(row.id),
             product: { sku: String(row.id), title: "Label" },
+            quantity: rowQuantity,
           };
         }
         try {
@@ -143,6 +146,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
               status: "matched",
               lookupSku: query,
               product: { sku: query, masterSku: query, title: query },
+              quantity: rowQuantity,
             };
           }
           return {
@@ -150,6 +154,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
             status: matches.length > 1 ? "multiple_matches" : "matched",
             lookupSku: query,
             product: matches[0],
+            quantity: rowQuantity,
           };
         } catch (err) {
           return {
@@ -157,6 +162,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
             status: "matched",
             lookupSku: query,
             product: { sku: query, masterSku: query, title: query },
+            quantity: rowQuantity,
           };
         }
       })
@@ -235,7 +241,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
 
         const pdfBase64 = await pdfDoc.saveAsBase64();
 
-        const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, printerName, 1);
+        const copies = item.quantity && item.quantity > 0 ? item.quantity : 1;
+        const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, printerName, copies);
         if (extRes && (extRes.success === false || extRes.error)) {
           throw new Error(extRes.error || "Print extension reported print failure");
         }
@@ -291,160 +298,53 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     
     const succeeded: PrintQueueItem[] = [];
     const failed: PrintQueueItem[] = [];
+    const dataUrls: string[] = [];
 
     const isPerpendicular = printRotation === 90 || printRotation === 270;
     const widthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
     const heightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
 
-    // Create a hidden print container
-    const printContainer = document.createElement("div");
-    printContainer.id = "browser-print-container";
-    document.body.appendChild(printContainer);
-
-    // Style for print media
-    const style = document.createElement("style");
-    style.innerHTML = `
-      @page {
-        size: ${widthMm}mm ${heightMm}mm;
-        margin: 0 !important;
-      }
-      @media screen {
-        #browser-print-container { display: none !important; }
-      }
-      @media print {
-        html, body {
-          margin: 0 !important;
-          padding: 0 !important;
-          width: ${widthMm}mm !important;
-          height: ${heightMm}mm !important;
-          background: #ffffff !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-        body > *:not(#browser-print-container) {
-          display: none !important;
-        }
-        #browser-print-container {
-          display: block !important;
-          position: static !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          width: ${widthMm}mm !important;
-        }
-        .print-page {
-          display: block !important;
-          width: ${widthMm}mm !important;
-          height: ${heightMm}mm !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          page-break-after: always !important;
-          break-after: page !important;
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          overflow: hidden !important;
-          box-sizing: border-box !important;
-        }
-        .print-page:last-child {
-          page-break-after: avoid !important;
-          break-after: avoid !important;
-        }
-        .print-page img {
-          display: block !important;
-          width: ${widthMm}mm !important;
-          height: ${heightMm}mm !important;
-          object-fit: fill !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-
-    try {
-      for (const item of itemsToPrint) {
-        try {
-          const productData = item.product || {
-            sku: item.lookupSku,
-            masterSku: item.lookupSku,
-            title: item.lookupSku,
-          };
-          const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
-          const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
-          
-          const pageDiv = document.createElement("div");
-          pageDiv.className = "print-page";
-          
-          const img = document.createElement("img");
-          img.src = canvas.toDataURL("image/png");
-          pageDiv.appendChild(img);
-          printContainer.appendChild(pageDiv);
-          
-          succeeded.push(item);
-          setQueue(prev => prev.map(q => q.rowId === item.rowId ? { ...q, status: "matched" } : q));
-        } catch (err) {
-          console.error(err);
-          const errorMessage = (err as Error).message || "Print failed";
-          const failedItem = { ...item, errorMessage, status: "error" as const };
-          failed.push(failedItem);
-          setQueue(prev => prev.map(q => q.rowId === item.rowId ? failedItem : q));
-        }
-      }
-
-      if (succeeded.length > 0) {
-        if (document.fonts) {
-          await document.fonts.ready;
-        }
-        const images = printContainer.querySelectorAll('img');
-        if (images.length > 0) {
-          const imagePromises = Array.from(images).map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise(resolve => {
-              img.onload = resolve;
-              img.onerror = resolve;
-            });
-          });
-          await Promise.all(imagePromises);
-        }
-        await new Promise((resolve) => setTimeout(resolve, 150));
-
-        const cleanup = () => {
-          if (document.body.contains(printContainer)) {
-            document.body.removeChild(printContainer);
-          }
-          if (document.head.contains(style)) {
-            document.head.removeChild(style);
-          }
-          window.removeEventListener('afterprint', cleanup);
+    for (const item of itemsToPrint) {
+      try {
+        const productData = item.product || {
+          sku: item.lookupSku,
+          masterSku: item.lookupSku,
+          title: item.lookupSku,
         };
+        const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
+        const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
+        const dataUrl = canvas.toDataURL("image/png");
         
-        window.addEventListener('afterprint', cleanup);
-        
-        // Trigger browser print
-        window.print();
-        
-        // Fallback cleanup in case afterprint doesn't fire
-        setTimeout(cleanup, 120000); // 2 minutes
-      } else {
-        // If nothing succeeded, cleanup immediately
-        if (document.body.contains(printContainer)) {
-          document.body.removeChild(printContainer);
+        const count = item.quantity && item.quantity > 0 ? item.quantity : 1;
+        for (let c = 0; c < count; c++) {
+          dataUrls.push(dataUrl);
         }
-        if (document.head.contains(style)) {
-          document.head.removeChild(style);
-        }
+
+        succeeded.push(item);
+        setQueue(prev => prev.map(q => q.rowId === item.rowId ? { ...q, status: "matched" } : q));
+      } catch (err) {
+        console.error("Browser print label render error:", err);
+        const errorMessage = (err as Error).message || "Print render failed";
+        const failedItem = { ...item, errorMessage, status: "error" as const };
+        failed.push(failedItem);
+        setQueue(prev => prev.map(q => q.rowId === item.rowId ? failedItem : q));
       }
-    } finally {
-      // We don't clean up synchronously anymore.
     }
 
-    // We don't track success/failure for browser print accurately because JS can't detect it reliably.
-    // However, we log what was attempted.
-    if (succeeded.length > 0) {
+    if (dataUrls.length > 0) {
+      try {
+        await printLabelsViaBrowser(dataUrls, {
+          widthMm,
+          heightMm,
+          title: `Print ${dataUrls.length} Labels`,
+        });
+      } catch (err) {
+        console.error("Browser print execution failed:", err);
+      }
+
       const itemsMap = new Map<string, number>();
       succeeded.forEach(j => {
-        itemsMap.set(j.lookupSku, (itemsMap.get(j.lookupSku) || 0) + 1);
+        itemsMap.set(j.lookupSku, (itemsMap.get(j.lookupSku) || 0) + (j.quantity || 1));
       });
       const items = Array.from(itemsMap.entries()).map(([sku, count]) => ({ sku, count }));
       
@@ -453,9 +353,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       } catch (err) {}
     }
 
-    // Return to the printer step so the user has the options again.
     setStep("printer");
-  }, [template, queue, selectedForPrint]);
+  }, [template, queue, selectedForPrint, printRotation]);
 
   const retryFailed = useCallback(() => {
     const failedIds = new Set(failedJobs.map(f => f.rowId));
