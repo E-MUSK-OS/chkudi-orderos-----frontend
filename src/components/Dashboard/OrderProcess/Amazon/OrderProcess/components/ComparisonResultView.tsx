@@ -979,7 +979,8 @@ export default function ComparisonResultView({
   useEffect(() => {
     let isCancelled = false;
     const syncPrintedFromDb = async () => {
-      const targetBatchId = activeHistoryBatchId || summary?.id || summary?.batchId;
+      const targetBatchId =
+        activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId;
       if (!targetBatchId) return;
       if (!mappedResults || mappedResults.length === 0) return;
       try {

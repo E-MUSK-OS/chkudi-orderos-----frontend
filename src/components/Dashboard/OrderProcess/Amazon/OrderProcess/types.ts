@@ -21,6 +21,14 @@ export interface AmazonComparisonResult {
 }
 
 export interface AmazonOrderSummary {
+  id?: string;
+  batchId?: string;
+  batchSessionId?: string;
+  printedIndices?: number[];
+  printedCount?: number;
+  printedOrderIds?: string[];
+  printedAwbs?: string[];
+  createdAt?: string;
   totalZplLabels: number;
   totalPdfOrders: number;
   totalPdfPages: number;
