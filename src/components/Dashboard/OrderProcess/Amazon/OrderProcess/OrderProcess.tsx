@@ -26,13 +26,12 @@ import { AmazonProcessResponse, AmazonComparisonResult } from "./types";
 import {
   enhanceInvoicePages,
   mapAsinToSellerSku,
+  loadAsinToSkuMap,
   drawSkuOnLabelPage,
   isAmazonTransporterOrFeePage,
+  isTransporterDuplicatePage,
   addInvoicePagesToDoc,
 } from "./utils";
-import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
-import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
-import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs, startBackgroundOrderPdfPrewarming } from "./utils/pdfCache";
 import AmazonProcessHistoryDropdown from "./components/AmazonProcessHistoryDropdown";
 import { amazonOrderService } from "./services/amazonOrder.service";
@@ -443,61 +442,11 @@ export default function OrderProcess() {
         processResponse.files.convertedZplPdfBase64 = zplResult.convertedZplPdfBase64;
       }
 
-      // Resolve Seller SKU mapping from AsinImport table (primary) and products/variants (fallback)
+      // Resolve Seller SKU mapping from AsinImport, Products, and Variants table
       let asinToSkuMap = new Map<string, string>();
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
-
-        // 1. Primary: Fetch from AsinImport table
-        try {
-          const asinRes = await asinImportService.getAll("", token);
-          if (asinRes?.data && Array.isArray(asinRes.data)) {
-            asinRes.data.forEach((item) => {
-              if (item.asin) {
-                const cleanAsin = item.asin.trim().toUpperCase();
-                if (cleanAsin) {
-                  asinToSkuMap.set(cleanAsin, item.sku ? item.sku.trim() : "");
-                }
-              }
-            });
-          }
-        } catch (aErr) {
-          console.warn("Could not fetch AsinImports in OrderProcess:", aErr);
-        }
-
-        // 2. Fallback: Check products table (masterSku)
-        try {
-          const prodRes = await productService.getAll(token);
-          if (prodRes?.data && Array.isArray(prodRes.data)) {
-            prodRes.data.forEach((prod) => {
-              if (prod.asin) {
-                const cleanAsin = prod.asin.trim().toUpperCase();
-                if (cleanAsin && !asinToSkuMap.has(cleanAsin)) {
-                  asinToSkuMap.set(cleanAsin, prod.masterSku ? prod.masterSku.trim() : "");
-                }
-              }
-            });
-          }
-        } catch (pErr) {
-          console.warn("Could not fetch products in OrderProcess:", pErr);
-        }
-
-        // 3. Fallback: Check product variants table (variantSku)
-        try {
-          const varRes = await productVariantService.getAll(token);
-          if (varRes?.data && Array.isArray(varRes.data)) {
-            varRes.data.forEach((variant) => {
-              if (variant.asin) {
-                const cleanAsin = variant.asin.trim().toUpperCase();
-                if (cleanAsin && !asinToSkuMap.has(cleanAsin)) {
-                  asinToSkuMap.set(cleanAsin, variant.variantSku ? variant.variantSku.trim() : "");
-                }
-              }
-            });
-          }
-        } catch (vErr) {
-          console.warn("Could not fetch product variants in OrderProcess:", vErr);
-        }
+        asinToSkuMap = await loadAsinToSkuMap(token);
       } catch (err) {
         console.warn("Could not resolve ASIN to Seller SKU in OrderProcess:", err);
       }
@@ -610,16 +559,64 @@ export default function OrderProcess() {
 
             if (item.isMatch) {
               const startPage = combinedDoc.getPageCount();
-              // 1. Tax Invoice first: fits into EXACTLY ONE 4" x 6" page with all items and TOTAL price (if > 3 items)
+
+              // USER REQUIREMENT:
+              // "this type of page not goes inside matched combined pdf but it goes into unmatched pdf
+              //  and only for more than 4+ order and needed then page 2 came other than that no need of page 2"
               if (item.pdfPages && item.pdfPages.length > 0) {
-                await addInvoicePagesToDoc(
-                  combinedDoc,
-                  origDoc,
-                  item.pdfPages,
-                  pageTextData,
-                  { totalAmount: item.amount, itemCount }
-                );
+                // Separate genuine invoice pages from transporter duplicate / non-item pages
+                const genuinePages = item.pdfPages.filter((p) => {
+                  const txt = pageTextData[p - 1]?.text || "";
+                  return !isAmazonTransporterOrFeePage(txt) && !isTransporterDuplicatePage(txt);
+                });
+
+                const transporterPages = item.pdfPages.filter((p) => {
+                  const txt = pageTextData[p - 1]?.text || "";
+                  return isAmazonTransporterOrFeePage(txt) || isTransporterDuplicatePage(txt);
+                });
+
+                let matchedPages: number[] = [];
+                let unneededPages: number[] = [...transporterPages];
+
+                if (itemCount > 4) {
+                  // For > 4 items, include up to 2 genuine invoice pages
+                  matchedPages = genuinePages.slice(0, 2);
+                  if (genuinePages.length > 2) {
+                    unneededPages.push(...genuinePages.slice(2));
+                  }
+                } else {
+                  // For <= 4 items, ONLY Page 1 is needed; any extra page goes to unmatched PDF
+                  matchedPages = genuinePages.slice(0, 1);
+                  if (genuinePages.length > 1) {
+                    unneededPages.push(...genuinePages.slice(1));
+                  }
+                }
+
+                if (matchedPages.length > 0) {
+                  await addInvoicePagesToDoc(
+                    combinedDoc,
+                    origDoc,
+                    matchedPages,
+                    pageTextData,
+                    { totalAmount: item.amount, itemCount }
+                  );
+                }
+
+                // Any excluded transporter or unneeded pages for this matched order go into unmatched PDF!
+                if (unneededPages.length > 0) {
+                  const added = await addInvoicePagesToDoc(
+                    unmatchedPdfDoc,
+                    origDoc,
+                    unneededPages,
+                    pageTextData,
+                    { totalAmount: item.amount, itemCount, allowTransporter: true }
+                  );
+                  if (added) {
+                    hasUnmatchedPdf = true;
+                  }
+                }
               }
+
               // 2. ZPL / JPL barcode label second (EXACTLY ONE 4" x 6" page)
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
                 await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
@@ -628,14 +625,14 @@ export default function OrderProcess() {
               item.combinedPages = Array.from({ length: endPage - startPage }, (_, i) => startPage + i);
             } else {
               // Unmatched documents
-              // 1. Unmatched PDF invoices (Missing in ZPL): fits into EXACTLY ONE 4" x 6" page with all items and TOTAL (if > 3 items)
+              // 1. Unmatched PDF invoices (Missing in ZPL)
               if (item.pdfPages && item.pdfPages.length > 0) {
                 const added = await addInvoicePagesToDoc(
                   unmatchedPdfDoc,
                   origDoc,
                   item.pdfPages,
                   pageTextData,
-                  { totalAmount: item.amount, itemCount }
+                  { totalAmount: item.amount, itemCount, allowTransporter: true }
                 );
                 if (added) {
                   hasUnmatchedPdf = true;

@@ -1,4 +1,7 @@
 import { StandardFonts, rgb } from "pdf-lib";
+import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
+import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
+import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 
 /**
  * Check whether a word is a valid name token.
@@ -434,7 +437,7 @@ export function getCleanSkuList(sellerSku?: string): string[] {
   const rawTokens = sellerSku
     .split(/[\r\n]+|\s+\/\s+|,\s+/)
     .map((s) => s.trim().replace(/^\[\s*|\s*\]$/g, "").trim())
-    .filter((s) => s && !/^(?:N\/?A|-)$/i.test(s));
+    .filter((s) => s && !/^(?:N\/?A|-)$/i.test(s) && !/^B0[A-Z0-9]{8}$/i.test(s));
 
   const uniqueSkus: string[] = [];
   const seen = new Set<string>();
@@ -450,8 +453,112 @@ export function getCleanSkuList(sellerSku?: string): string[] {
 }
 
 /**
- * Maps extracted ASINs in Amazon orders to internal seller SKUs (variantSku) stored in DB ProductVariant model.
- * If ASIN does not match in DB, falls back to the sellerSku extracted from the invoice PDF description!
+ * Loads the complete ASIN-to-SellerSKU mapping from database.
+ * Combines AsinImport (primary), Products (masterSku & variants), and ProductVariants table.
+ * Strictly ignores any values that are ASINs, "N/A", or empty, ensuring exact matching.
+ */
+export async function loadAsinToSkuMap(token: string): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+
+  // 1. Primary: Fetch from AsinImport table
+  try {
+    const asinRes = await asinImportService.getAll("", token);
+    if (asinRes?.data && Array.isArray(asinRes.data)) {
+      asinRes.data.forEach((item: any) => {
+        const cleanAsin = item.asin ? String(item.asin).trim().toUpperCase() : "";
+        const cleanSku =
+          (item.sku ? String(item.sku).trim() : "") ||
+          (item.sellerSku ? String(item.sellerSku).trim() : "");
+        if (
+          cleanAsin &&
+          cleanSku &&
+          !/^B0[A-Z0-9]{8}$/i.test(cleanSku) &&
+          cleanSku !== "N/A" &&
+          cleanSku !== "-"
+        ) {
+          map.set(cleanAsin, cleanSku);
+        }
+      });
+    }
+  } catch (aErr) {
+    console.warn("Could not fetch AsinImports for mapping:", aErr);
+  }
+
+  // 2. Fallback: Check products table (masterSku & nested variants)
+  try {
+    const prodRes = await productService.getAll(token);
+    if (prodRes?.data && Array.isArray(prodRes.data)) {
+      prodRes.data.forEach((prod: any) => {
+        const cleanAsin = prod.asin ? String(prod.asin).trim().toUpperCase() : "";
+        const cleanSku =
+          (prod.masterSku ? String(prod.masterSku).trim() : "") ||
+          (prod.sku ? String(prod.sku).trim() : "");
+        if (
+          cleanAsin &&
+          !map.has(cleanAsin) &&
+          cleanSku &&
+          !/^B0[A-Z0-9]{8}$/i.test(cleanSku) &&
+          cleanSku !== "N/A" &&
+          cleanSku !== "-"
+        ) {
+          map.set(cleanAsin, cleanSku);
+        }
+
+        if (Array.isArray(prod.variants)) {
+          prod.variants.forEach((v: any) => {
+            const vAsin = v.asin ? String(v.asin).trim().toUpperCase() : "";
+            const vSku =
+              (v.variantSku ? String(v.variantSku).trim() : "") ||
+              (v.sku ? String(v.sku).trim() : "");
+            if (
+              vAsin &&
+              !map.has(vAsin) &&
+              vSku &&
+              !/^B0[A-Z0-9]{8}$/i.test(vSku) &&
+              vSku !== "N/A" &&
+              vSku !== "-"
+            ) {
+              map.set(vAsin, vSku);
+            }
+          });
+        }
+      });
+    }
+  } catch (pErr) {
+    console.warn("Could not fetch products for ASIN mapping:", pErr);
+  }
+
+  // 3. Fallback: Check product variants table (variantSku & sku)
+  try {
+    const varRes = await productVariantService.getAll(token);
+    if (varRes?.data && Array.isArray(varRes.data)) {
+      varRes.data.forEach((variant: any) => {
+        const cleanAsin = variant.asin ? String(variant.asin).trim().toUpperCase() : "";
+        const cleanSku =
+          (variant.variantSku ? String(variant.variantSku).trim() : "") ||
+          (variant.sku ? String(variant.sku).trim() : "");
+        if (
+          cleanAsin &&
+          !map.has(cleanAsin) &&
+          cleanSku &&
+          !/^B0[A-Z0-9]{8}$/i.test(cleanSku) &&
+          cleanSku !== "N/A" &&
+          cleanSku !== "-"
+        ) {
+          map.set(cleanAsin, cleanSku);
+        }
+      });
+    }
+  } catch (vErr) {
+    console.warn("Could not fetch product variants for ASIN mapping:", vErr);
+  }
+
+  return map;
+}
+
+/**
+ * Maps extracted ASINs in Amazon orders to internal seller SKUs (variantSku) stored in DB.
+ * Never allows an ASIN to be returned as a Seller SKU.
  */
 export function mapAsinToSellerSku(
   asinValue?: string,
@@ -460,13 +567,13 @@ export function mapAsinToSellerSku(
 ): string {
   const fallbackList = (fallbackSku && fallbackSku !== "N/A" && fallbackSku !== "-")
     ? fallbackSku
-        .split(/[\r\n]+|\s+\/\s+/)
+        .split(/[\r\n]+|\s+\/\s+|\s*,\s+/)
         .map((s) => s.trim())
-        .filter((s) => s && s !== "N/A" && s !== "-")
+        .filter((s) => s && s !== "N/A" && s !== "-" && !/^B0[A-Z0-9]{8}$/i.test(s))
     : [];
 
   const rawAsins = (asinValue && asinValue !== "N/A")
-    ? asinValue.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean)
+    ? asinValue.split(/[\r\n]+|\s+\/\s+|\s*,\s+/).map((s) => s.trim().toUpperCase()).filter(Boolean)
     : [];
 
   const resultSkus: string[] = [];
@@ -477,32 +584,33 @@ export function mapAsinToSellerSku(
     let sku = "";
 
     if (asin && asinToSkuMap && asinToSkuMap.size > 0) {
-      const normAsin = asin.toUpperCase();
+      const normAsin = asin.toUpperCase().trim();
       if (asinToSkuMap.has(normAsin)) {
         const val = asinToSkuMap.get(normAsin)?.trim();
-        if (val && val !== "N/A" && val !== "-") {
+        if (val && val !== "N/A" && val !== "-" && !/^B0[A-Z0-9]{8}$/i.test(val)) {
           sku = val;
         }
       }
     }
 
-    // Fallback to invoice-extracted SKU if DB doesn't have it
-    if (!sku && fallbackList[i]) {
+    // Fallback to invoice-extracted SKU only if valid and not an ASIN
+    if (!sku && fallbackList[i] && !/^B0[A-Z0-9]{8}$/i.test(fallbackList[i])) {
       sku = fallbackList[i];
-    } else if (!sku && fallbackList.length === 1) {
+    } else if (!sku && fallbackList.length === 1 && !/^B0[A-Z0-9]{8}$/i.test(fallbackList[0])) {
       sku = fallbackList[0];
     }
 
-    if (sku && sku !== "N/A" && sku !== "-") {
+    if (sku && sku !== "N/A" && sku !== "-" && !/^B0[A-Z0-9]{8}$/i.test(sku)) {
       resultSkus.push(sku);
     }
   }
 
   if (resultSkus.length === 0 && fallbackList.length > 0) {
-    return fallbackList.join("\n");
+    const validFallback = fallbackList.filter((s) => !/^B0[A-Z0-9]{8}$/i.test(s));
+    if (validFallback.length > 0) return validFallback.join("\n");
   }
 
-  return resultSkus.length > 0 ? resultSkus.join("\n") : (fallbackSku || "N/A");
+  return resultSkus.length > 0 ? resultSkus.join("\n") : "N/A";
 }
 
 /**
@@ -636,12 +744,38 @@ export function isAmazonTransporterOrFeePage(text?: string): boolean {
   return false;
 }
 
+/**
+ * Detects whether a page is a Transporter Duplicate / Delivery copy
+ * (e.g. "Tax Invoice/Bill of Supply/Cash Memo (Duplicate for Transporter)").
+ * These pages must NEVER go inside matched combined PDF, but go into unmatched PDF.
+ */
+export function isTransporterDuplicatePage(text?: string): boolean {
+  if (!text) return false;
+  // A genuine page with items is NEVER an empty transporter copy!
+  const hasItems =
+    /\bB0[A-Z0-9]{8}\b/i.test(text) ||
+    (/(?:Description|Unit\s*Price|Gross\s*Amount|Taxable\s*Value)/i.test(text) &&
+      /(?:HSN|SAC|\b\d+\s*\|\s*₹|\bQty\b|\bQuantity\b)/i.test(text));
+  if (hasItems) return false;
+
+  const upper = text.toUpperCase();
+  return (
+    upper.includes("DUPLICATE FOR TRANSPORTER") ||
+    upper.includes("TRANSPORTER COPY") ||
+    upper.includes("DELIVERY COPY") ||
+    upper.includes("CARRIER COPY") ||
+    upper.includes("FOR CARRIER USE") ||
+    (upper.includes("AUTHORIZED SIGNATORY") && (upper.includes("REVERSE CHARGE") || upper.includes("DEMAND FOR PAYMENT")))
+  );
+}
+
 export interface AddInvoicePageOptions {
   targetWidth?: number;
   targetHeight?: number;
   margin?: number;
   totalAmount?: string;
   itemCount?: number;
+  allowTransporter?: boolean;
 }
 
 /**
@@ -671,7 +805,11 @@ export async function addInvoicePagesToDoc(
   const validPageNumbers = (pdfPages || []).filter((p) => {
     const idx = p - 1;
     if (idx < 0 || idx >= origDoc.getPageCount()) return false;
-    if (pageTextData && pageTextData[idx]?.text && isAmazonTransporterOrFeePage(pageTextData[idx].text)) {
+    const txt = pageTextData && pageTextData[idx]?.text;
+    if (txt && isAmazonTransporterOrFeePage(txt)) {
+      return false;
+    }
+    if (!options.allowTransporter && txt && isTransporterDuplicatePage(txt)) {
       return false;
     }
     return true;
@@ -693,17 +831,21 @@ export async function addInvoicePagesToDoc(
   }
 
   // CRITICAL USER REQUIREMENT:
-  // "no need to compress and combine both pages use different page for more than 4 orders"
-  // We completely disable page combination (compression) so that any multi-page invoice 
-  // is just printed on separate pages (up to 2 pages).
+  // "this type of page not goes inside matched combined pdf but it goes into unmatched pdf
+  //  and only for more than 4+ order and needed then page 2 came other than that no need of page 2"
   const shouldCombine = false;
 
-  // If only 1 page OR order has <= 3 items OR > 4 items (not allowed to combine):
+  // If only 1 page OR order has <= 4 items OR > 4 items:
   // Render each page individually as a standard 4" x 6" page!
   if (!shouldCombine) {
     let lastAddedPage = null;
-    // For orders with > 4 items (or multi-page invoices), user requested: "use 2 pages for perfect showing of data"
-    const pagesToRender = validPageNumbers.length > 2 ? validPageNumbers.slice(0, 2) : validPageNumbers;
+    // For <= 4 items, only 1 page is rendered; for > 4 items, up to 2 pages are rendered
+    let pagesToRender = validPageNumbers;
+    if (resolvedItemCount !== undefined && resolvedItemCount <= 4 && !options.allowTransporter) {
+      pagesToRender = validPageNumbers.slice(0, 1);
+    } else if (validPageNumbers.length > 2) {
+      pagesToRender = validPageNumbers.slice(0, 2);
+    }
     for (const pageNum of pagesToRender) {
       const pageIdx = pageNum - 1;
       const srcPage = origDoc.getPage(pageIdx);

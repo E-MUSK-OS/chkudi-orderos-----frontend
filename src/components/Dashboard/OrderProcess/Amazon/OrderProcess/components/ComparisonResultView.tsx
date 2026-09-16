@@ -916,11 +916,13 @@ export default function ComparisonResultView({
       return results;
     }
 
+    const isAsin = (s?: string) => Boolean(s && /^B0[A-Z0-9]{8}$/i.test(s.trim()));
     return results.map((item) => {
       const mappedSku = mapAsinToSellerSku(item.asin, asinToSkuMap, item.sellerSku);
+      const validExisting = item.sellerSku && item.sellerSku !== "N/A" && item.sellerSku !== "-" && !isAsin(item.sellerSku) ? item.sellerSku : "";
       return {
         ...item,
-        sellerSku: (mappedSku && mappedSku !== "N/A") ? mappedSku : (item.sellerSku && item.sellerSku !== "N/A" ? item.sellerSku : mappedSku),
+        sellerSku: (mappedSku && mappedSku !== "N/A" && !isAsin(mappedSku)) ? mappedSku : (validExisting || mappedSku || "N/A"),
       };
     });
   }, [results, asinToSkuMap]);
@@ -931,6 +933,7 @@ export default function ComparisonResultView({
   const persistPrintedOrdersToAwbScan = useCallback(
     async (items: typeof mappedResults) => {
       if (!items || items.length === 0) return;
+      items.forEach((item) => persistedIndicesRef.current.add(item.index));
       try {
         const nowIso = new Date().toISOString();
         const ordersToSave = items.map((item) => ({
@@ -953,13 +956,13 @@ export default function ComparisonResultView({
         await amazonOrderService.savePrintedOrders(
           ordersToSave,
           undefined,
-          activeHistoryBatchId || undefined
+          activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId || undefined
         );
       } catch (saveErr) {
         console.warn("Background Amazon order save error for AWB scan:", saveErr);
       }
     },
-    [activeHistoryBatchId]
+    [activeHistoryBatchId, summary]
   );
 
   // Synchronize newly printed orders into AWB Scan database in background so none are left behind
@@ -1005,9 +1008,11 @@ export default function ComparisonResultView({
           const cleanOrder = (item.orderNumber || "").trim();
           const cleanAwb = (item.awb || "").trim();
 
+          // Verify print strictly by AWB Tracking (not Amazon order id, because same person can have multiple orders)
           const isPrintedInDb =
-            (cleanOrder && dbPrintedOrderIds.has(cleanOrder)) ||
-            (cleanAwb && dbPrintedAwbs.has(cleanAwb));
+            cleanAwb && cleanAwb !== "N/A" && cleanAwb !== "-"
+              ? dbPrintedAwbs.has(cleanAwb)
+              : false;
 
           if (isPrintedInDb) {
             persistedIndicesRef.current.add(item.index);
@@ -1264,12 +1269,15 @@ export default function ComparisonResultView({
         } else {
           let startP = 0;
           for (const m of matchedList) {
+            const mCount = Math.max(m.asinsCount || 0, m.totalQuantity || 0);
             const expectedPages =
               m.combinedPages && m.combinedPages.length > 0
                 ? m.combinedPages.length
-                : (m.pdfPages && m.pdfPages.length > 1 && (Math.max(m.asinsCount || 0, m.totalQuantity || 0) > 4))
-                ? 3
-                : 2;
+                : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
+                ? 2 + (m.zplPage > 0 ? 1 : 0)
+                : m.zplPage > 0
+                ? 2
+                : 1;
             if (m.index === item.index) {
               for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
                 pages.push(p);
@@ -1606,12 +1614,15 @@ export default function ComparisonResultView({
               const matchedList = mappedResults.filter((r) => r.isMatch);
               let startP = 0;
               for (const m of matchedList) {
+                const mCount = Math.max(m.asinsCount || 0, m.totalQuantity || 0);
                 const expectedPages =
                   m.combinedPages && m.combinedPages.length > 0
                     ? m.combinedPages.length
-                    : (m.pdfPages && m.pdfPages.length > 1 && (Math.max(m.asinsCount || 0, m.totalQuantity || 0) > 4))
-                    ? 3
-                    : 2;
+                    : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
+                    ? 2 + (m.zplPage > 0 ? 1 : 0)
+                    : m.zplPage > 0
+                    ? 2
+                    : 1;
                 if (m.index === singleItem.index) {
                   for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
                     pages.push(p);
@@ -1683,12 +1694,15 @@ export default function ComparisonResultView({
           // Robust fallback: compute dynamic page range based on prior matched items
           let startP = 0;
           for (const m of matchedList) {
+            const mCount = Math.max(m.asinsCount || 0, m.totalQuantity || 0);
             const expectedPages =
               m.combinedPages && m.combinedPages.length > 0
                 ? m.combinedPages.length
-                : (m.pdfPages && m.pdfPages.length > 1 && (Math.max(m.asinsCount || 0, m.totalQuantity || 0) > 4))
-                ? 3
-                : 2;
+                : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
+                ? 2 + (m.zplPage > 0 ? 1 : 0)
+                : m.zplPage > 0
+                ? 2
+                : 1;
             if (m.index === item.index) {
               for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
                 targetPageIndices.push(p);
@@ -1775,7 +1789,8 @@ export default function ComparisonResultView({
             );
           }
           if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-            await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
+            const mappedItem = mappedResults.find((m) => m.index === item.index) || item;
+            await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, mappedItem.sellerSku);
           }
         }
       }
@@ -2322,7 +2337,10 @@ export default function ComparisonResultView({
       // (even within milliseconds) see this order as already printed!
       markRowsAsPrinted([item.index]);
 
-      // 2. Chain print execution to serialize printer calls
+      // 2. Immediately persist to AWB Scan database so direct barcode scan enters AWB Scan
+      persistPrintedOrdersToAwbScan([item]);
+
+      // 3. Chain print execution to serialize printer calls
       const printTask = printQueuePromiseRef.current
         .catch(() => {})
         .then(async () => {
@@ -2338,7 +2356,7 @@ export default function ComparisonResultView({
       printQueuePromiseRef.current = printTask;
       return printTask;
     },
-    [markRowsAsPrinted, unmarkRowsAsPrinted, executePrintForItems]
+    [markRowsAsPrinted, persistPrintedOrdersToAwbScan, unmarkRowsAsPrinted, executePrintForItems]
   );
 
   const handleAutoPrintSearch = async (query: string) => {
@@ -3248,14 +3266,6 @@ export default function ComparisonResultView({
                         {item.orderNumber}
                       </span>
                     </label>
-
-                    <div className="flex items-center gap-1.5">
-                      {printedRows.has(item.index) && (
-                        <span className="rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" /> Printed
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   {/* Card Detail Grid */}
@@ -3303,9 +3313,16 @@ export default function ComparisonResultView({
                       <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
                         AWB Tracking
                       </span>
-                      <span className="font-medium text-foreground truncate block">
-                        {item.awb || "N/A"}
-                      </span>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-medium text-foreground truncate block">
+                          {item.awb || "N/A"}
+                        </span>
+                        {printedRows.has(item.index) && (
+                          <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 shrink-0">
+                            <CheckCircle2 className="h-3 w-3" /> Printed
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Customer */}
@@ -3340,8 +3357,8 @@ export default function ComparisonResultView({
                       </div>
                     </th>
                     <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Invoices</th>
-                    <th className="w-52 min-w-[190px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Amazon Order ID</th>
-                    <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">AWB Tracking</th>
+                    <th className="w-48 min-w-[170px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Amazon Order ID</th>
+                    <th className="w-52 min-w-[190px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">AWB Tracking</th>
                     <th className="w-36 min-w-[140px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">ASIN</th>
                     <th className="w-44 min-w-[170px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Seller SKU</th>
                     <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
@@ -3431,18 +3448,18 @@ export default function ComparisonResultView({
                             </div>
                           )}
                         </td>
+                        <td className="w-48 min-w-[170px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                          <span>{item.orderNumber}</span>
+                        </td>
                         <td className="w-52 min-w-[190px] px-4 py-3 text-center font-medium whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
-                            <span>{item.orderNumber}</span>
+                            <span>{item.awb}</span>
                             {printedRows.has(item.index) && (
                               <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">
                                 <CheckCircle2 className="h-3 w-3" /> Printed
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td className="w-44 min-w-[160px] px-4 py-3 text-center font-medium whitespace-nowrap">
-                          {item.awb}
                         </td>
                         <td className="w-36 min-w-[140px] px-4 py-3 text-center font-medium whitespace-nowrap">
                           {renderItemListCell(item.asin)}

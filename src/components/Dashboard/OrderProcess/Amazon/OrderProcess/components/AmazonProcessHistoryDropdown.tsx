@@ -90,11 +90,9 @@ export default function AmazonProcessHistoryDropdown({
 
     // Fallback: cross-reference with dbPrintedOrders if count is 0 and batch has results
     if (count === 0 && dbPrintedOrders.length > 0 && Array.isArray((batch as any).results)) {
-      const dbOrderSet = new Set(dbPrintedOrders.map((o) => o.orderId).filter(Boolean));
       const dbAwbSet = new Set(dbPrintedOrders.map((o) => o.awb).filter(Boolean));
       const matched = (batch as any).results.filter(
-        (r: any) =>
-          (r.orderNumber && dbOrderSet.has(r.orderNumber)) || (r.awb && dbAwbSet.has(r.awb))
+        (r: any) => r.awb && r.awb !== "N/A" && r.awb !== "-" && dbAwbSet.has(r.awb)
       );
       if (matched.length > 0) {
         count = matched.length;

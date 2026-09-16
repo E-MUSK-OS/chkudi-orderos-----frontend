@@ -96,7 +96,7 @@ export default function AwbScanner({
         <div>
           <label className="mb-2 flex items-center gap-2 text-base sm:text-lg font-bold text-[#0A0E1A]">
             <Barcode className="h-5 w-5 text-[#B88728]" />
-            <span>Scan Amazon AWB Tracking Barcode</span>
+            <span>Scan Amazon AWB Tracking Barcode (AWB Only)</span>
           </label>
 
           <div className="relative flex items-center">
@@ -108,7 +108,7 @@ export default function AwbScanner({
               onKeyDown={handleKeyDown}
               onFocus={focusAndSelectInput}
               onClick={focusAndSelectInput}
-              placeholder="Scan AWB barcode or enter tracking ID..."
+              placeholder="Scan Amazon AWB tracking barcode only..."
               autoComplete="off"
               spellCheck={false}
               className="
@@ -156,6 +156,9 @@ export default function AwbScanner({
               {isScanning ? "Scanning..." : "Submit"}
             </button>
           </div>
+          <p className="mt-1.5 text-xs font-medium text-slate-500">
+            Only the shipping AWB tracking barcode is valid.
+          </p>
         </div>
 
         {/* Live Feedback Banner */}

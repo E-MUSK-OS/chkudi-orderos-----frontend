@@ -535,7 +535,7 @@ function extractAllItemsFromPdfText(text: string): {
     }
 
     rawAsins.push(asinCandidate);
-    rawSellerSkus.push(extractedSku || asinCandidate);
+    rawSellerSkus.push(extractedSku || "");
   }
 
   // Deduplicate consecutive identical ASIN & SKU pairs resulting from duplicate matches on the same line item
@@ -552,14 +552,16 @@ function extractAllItemsFromPdfText(text: string): {
       continue;
     }
     asins.push(curAsin);
-    sellerSkus.push(curSku);
+    if (curSku) {
+      sellerSkus.push(curSku);
+    }
   }
 
   if (asins.length === 0) {
     const singleAsin = extractAsin(text);
     const singleSku = extractSellerSku(text);
     if (singleAsin) asins.push(singleAsin);
-    if (singleSku) sellerSkus.push(singleSku);
+    if (singleSku && !/^B0[A-Z0-9]{8}$/i.test(singleSku)) sellerSkus.push(singleSku);
   }
 
   const asinString = asins.join("\n");
@@ -1268,6 +1270,44 @@ function isAmazonTransporterOrFeePage(text?: string): boolean {
 }
 
 /**
+ * Checks if a PDF page contains actual product line items (ASINs, product descriptions, or table rows).
+ */
+function hasInvoiceLineItems(text?: string): boolean {
+  if (!text) return false;
+  // Check for ASIN pattern
+  if (/\bB0[A-Z0-9]{8}\b/i.test(text)) return true;
+  // Check for table header keywords combined with line item indicators
+  if (
+    /(?:Description|Unit\s*Price|Gross\s*Amount|Taxable\s*Value|Item\s*Description)/i.test(text) &&
+    /(?:HSN|SAC|\b\d+\s*\|\s*₹|\bQty\b|\bQuantity\b|Rate)/i.test(text)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Detects whether a page is an empty transporter copy / signature overflow page
+ * (e.g. Page 2 with only Authorized Signatory and NO product line items).
+ * These pages must NEVER go inside matched combined PDF, but go into unmatched PDF.
+ */
+function isTransporterDuplicatePage(text?: string): boolean {
+  if (!text) return false;
+  // A genuine page with items is NEVER an empty transporter copy!
+  if (hasInvoiceLineItems(text)) return false;
+
+  const upper = text.toUpperCase();
+  return (
+    upper.includes("DUPLICATE FOR TRANSPORTER") ||
+    upper.includes("TRANSPORTER COPY") ||
+    upper.includes("DELIVERY COPY") ||
+    upper.includes("CARRIER COPY") ||
+    upper.includes("FOR CARRIER USE") ||
+    (upper.includes("AUTHORIZED SIGNATORY") && (upper.includes("REVERSE CHARGE") || upper.includes("DEMAND FOR PAYMENT")))
+  );
+}
+
+/**
  * Helper to build comparison results from parsed ZPL labels and PDF text.
  */
 function buildComparisonResponse(
@@ -1374,11 +1414,28 @@ function buildComparisonResponse(
     // Determine if this page can be a continuation page of an earlier order
     let existingIdx = -1;
 
-    // A page CANNOT be a continuation page if:
-    // 1) It is explicitly Page 1 (docPageNum === 1)
-    // 2) It has a standalone header (hasStandaloneHeader: "Tax Invoice" + "Sold By" / "Billing Address" / "PAN No" / "GST")
-    // Every distinct tax invoice starts with these headers and must NOT be swallowed into preceding orders!
-    const canBeContinuation = !hasStandaloneHeader && docPageNum !== 1;
+    const isTransporterDup = isTransporterDuplicatePage(text);
+    const hasLineItems = hasInvoiceLineItems(text);
+
+    // CRITICAL USER REQUIREMENT:
+    // "this type of page not goes inside matched combined pdf but it goes into unmatched pdf
+    //  and only for more than 4+ order and needed then page 2 came other than that no need of page 2"
+    // 1. Transporter duplicate pages ("(Duplicate for Transporter)", "Transporter Copy", etc.)
+    //    can NEVER be continuation pages. They must remain independent and go into unmatched PDF!
+    // 2. Continuation pages without line items (e.g. empty Authorized Signatory overflow)
+    //    can NEVER be continuation pages.
+    // 3. Only multi-page orders with > 4 items where Page 2 has actual continuation line items
+    //    can attach Page 2 to the matched invoice.
+    const matchesOpenOrder = Boolean(
+      (orderKey && orderNumToPdfIndices.has(orderKey)) ||
+      (invKey && invoiceToPdfIndices.has(invKey))
+    );
+
+    const canBeContinuation =
+      !isTransporterDup &&
+      hasLineItems &&
+      docPageNum !== 1 &&
+      (docPageNum > 1 || !hasStandaloneHeader || matchesOpenOrder);
 
     if (canBeContinuation) {
       // 1. Candidate orders with matching orderNumber or invoiceNumber
@@ -1402,8 +1459,12 @@ function buildComparisonResponse(
           continue;
         }
 
-        // Only accept continuation if docPageNum > 1 or existing explicitly expects more pages
-        if (docPageNum > 1 || (existing.totalPages && existing.pages.length < existing.totalPages)) {
+        // Only accept continuation if docPageNum > 1 or existing explicitly expects more pages or is missing footer
+        if (
+          docPageNum > 1 ||
+          (existing.totalPages && existing.pages.length < existing.totalPages) ||
+          (!existing.hasCompletedFooter && (orderKey || invKey))
+        ) {
           existingIdx = cIdx;
           break;
         }
@@ -1423,7 +1484,8 @@ function buildComparisonResponse(
           if (orderMatches && invoiceMatches) {
             const canContinueLast =
               (docPageNum > 1 && docPageNum === lastOrder.pages.length + 1) ||
-              (lastOrder.totalPages && lastOrder.totalPages > 1 && lastOrder.pages.length < lastOrder.totalPages);
+              (lastOrder.totalPages && lastOrder.totalPages > 1 && lastOrder.pages.length < lastOrder.totalPages) ||
+              (!lastOrder.hasCompletedFooter && (orderKey || invKey));
 
             if (canContinueLast) {
               existingIdx = lastOrderIdx;
@@ -1546,7 +1608,9 @@ function buildComparisonResponse(
     let matchedIdx = -1;
 
     if (candidateIndices.length === 1) {
-      matchedIdx = candidateIndices[0];
+      if (!isTransporterDuplicatePage(consolidatedPdfOrders[candidateIndices[0]].fullText)) {
+        matchedIdx = candidateIndices[0];
+      }
     } else if (candidateIndices.length > 1) {
       // Pick best matching candidate by customer, shipping address, or order number
       let bestIdx = candidateIndices[0];
@@ -1566,6 +1630,12 @@ function buildComparisonResponse(
         if (zplAddr && pdfAddr) {
           score += computeAddressSimilarity(pdfAddr, zplAddr) * 10;
         }
+        if (hasInvoiceLineItems(pdfOrder.fullText)) {
+          score += 30;
+        }
+        if (isTransporterDuplicatePage(pdfOrder.fullText)) {
+          score -= 100;
+        }
         if (score > bestScore) {
           bestScore = score;
           bestIdx = cIdx;
@@ -1580,6 +1650,7 @@ function buildComparisonResponse(
     let isSharedFallback = false;
     if (matchedIdx === -1) {
       const duplicateIdx = consolidatedPdfOrders.findIndex((pdfOrder) => {
+        if (isTransporterDuplicatePage(pdfOrder.fullText)) return false;
         if (pdfOrder.sellerInvoice && normalizeInvoice(pdfOrder.sellerInvoice) === zplKey) {
           return true;
         }
@@ -1640,7 +1711,7 @@ function buildComparisonResponse(
   const unmatchedZpls = zplLabels.filter((l) => !matchedZplIndices.has(l.index));
   const unmatchedPdfIndices = consolidatedPdfOrders
     .map((_, idx) => idx)
-    .filter((idx) => !matchedPdfIndices.has(idx));
+    .filter((idx) => !matchedPdfIndices.has(idx) && !isTransporterDuplicatePage(consolidatedPdfOrders[idx].fullText));
 
   if (unmatchedZpls.length > 0 && unmatchedPdfIndices.length > 0) {
     interface CandidateAddressPair {
