@@ -248,6 +248,8 @@ const ManageProducts = () => {
               ? importAsinExcelMutation.isPending
               : importProductExcelMutation.isPending
           }
+          productsData={products}
+          asinData={asinItems}
         />
 
         {importType === "product" ? (
