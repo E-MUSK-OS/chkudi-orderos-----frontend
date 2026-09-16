@@ -423,16 +423,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           i === index
             ? {
               ...row,
+              shortSku: response.data.shortSku, // Update shortSku from DB
               fullSku: response.data.fullSku || "",
-
               barcodeSku: response.data.barcodeSku,
-
               ordercookSku: response.data.ordercookSku,
-
               loading: false,
-
               error: false,
-
               errorMessage: "",
             }
             : row,
@@ -948,82 +944,82 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                             updated[index].shortSku = value;
 
                             setRows(updated);
-
-                            // setActiveRow(index);
-
-                            // getSuggestions(value, index);
                           }}
-                          // onKeyDown={async (e) => {
-                          //   if (e.key !== "Enter") return;
+                          onPaste={(e) => {
+                            const clipboardData = e.clipboardData;
+                            const pastedText = clipboardData.getData("text");
+                            if (!pastedText) return;
 
-                          //   e.preventDefault();
+                            const pastedRows = pastedText.split(/\r?\n/).filter((r) => r.trim());
 
-                          //   if (!row.shortSku.trim()) return;
+                            if (pastedRows.length > 1 || pastedRows[0].includes("\t")) {
+                              e.preventDefault();
 
-                          //   // Last row hoy to pehla new row add karo
-                          //   if (index === rows.length - 1) {
-                          //     addNewRow();
-                          //   }
+                              const newRowsToAppend = pastedRows
+                                .map((rowText, i) => {
+                                  const cols = rowText.split("\t");
+                                  const shortSku = cols[0]?.trim() || "";
+                                  const qtyStr = cols.length > 1 ? cols[1].replace(/[^0-9]/g, "") : "1";
+                                  const qty = parseInt(qtyStr, 10) || 1;
 
-                          //   // Background search (wait nahi kare)
-                          //   searchSku(row.shortSku.trim(), index);
-                          // }}
+                                  return {
+                                    id: Date.now() + i + Math.random(),
+                                    shortSku: shortSku.toUpperCase(),
+                                    fullSku: "",
+                                    quantity: qty,
+                                    barcodeSku: "",
+                                    ordercookSku: "",
+                                    loading: false,
+                                    error: false,
+                                    errorMessage: "",
+                                  };
+                                })
+                                .filter((r) => r.shortSku);
 
+                              if (newRowsToAppend.length > 0) {
+                                const isCurrentRowEmpty = !rows[index].shortSku.trim();
+                                const startIndex = isCurrentRowEmpty ? index : index + 1;
+
+                                setRows((prev) => {
+                                  const updated = [...prev];
+                                  if (isCurrentRowEmpty) {
+                                    updated.splice(index, 1, ...newRowsToAppend);
+                                  } else {
+                                    updated.splice(index + 1, 0, ...newRowsToAppend);
+                                  }
+
+                                  // Add a blank row at the end
+                                  updated.push({
+                                    id: Date.now() + 1000,
+                                    shortSku: "",
+                                    fullSku: "",
+                                    quantity: 1,
+                                    barcodeSku: "",
+                                    ordercookSku: "",
+                                    loading: false,
+                                    error: false,
+                                    errorMessage: "",
+                                  });
+
+                                  return updated;
+                                });
+
+                                setTimeout(() => {
+                                  for (let i = 0; i < newRowsToAppend.length; i++) {
+                                    searchSku(newRowsToAppend[i].shortSku, startIndex + i);
+                                  }
+
+                                  const newBlankRowIndex = startIndex + newRowsToAppend.length;
+                                  if (inputRefs.current[newBlankRowIndex]) {
+                                    inputRefs.current[newBlankRowIndex]?.focus();
+                                  }
+                                }, 50);
+
+                                toast.success(`${newRowsToAppend.length} rows pasted.`);
+                              }
+                            }
+                          }}
                           onKeyDown={async (e) => {
-                            // Ctrl + C
-                            if (e.ctrlKey && e.key.toLowerCase() === "c") {
-                              e.preventDefault();
-
-                              setCopiedRow(rows[index]);
-
-                              toast.success("Row copied.");
-
-                              return;
-                            }
-
-                            // Ctrl + V
-                            if (e.ctrlKey && e.key.toLowerCase() === "v") {
-                              e.preventDefault();
-
-                              if (!copiedRow) {
-                                toast.error("No copied row.");
-                                return;
-                              }
-
-                              const updated = [...rows];
-
-                              updated[index] = {
-                                ...updated[index],
-                                shortSku: copiedRow.shortSku,
-                                fullSku: copiedRow.fullSku || "",
-                                barcodeSku: copiedRow.barcodeSku,
-                                ordercookSku: copiedRow.ordercookSku,
-                                error: false,
-                                errorMessage: "",
-                              };
-
-                              setRows(updated);
-
-                              // setSuggestions([]);
-                              // setActiveRow(null);
-
-                              // Search again (latest data mate)
-                              searchSku(copiedRow.shortSku, index);
-
-                              // Last row hoy to new row add karo
-                              if (index === rows.length - 1) {
-                                addNewRow();
-                              }
-
-                              // Next row focus
-                              setTimeout(() => {
-                                inputRefs.current[index + 1]?.focus();
-                              }, 100);
-
-                              toast.success("Row pasted.");
-
-                              return;
-                            }
                             // Ctrl + D
                             if (e.ctrlKey && e.key.toLowerCase() === "d") {
                               e.preventDefault();
