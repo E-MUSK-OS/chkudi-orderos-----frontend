@@ -39,6 +39,9 @@ interface Props {
 
   onImportExcel?: (file: File, type: ImportType) => void;
   isImporting?: boolean;
+
+  productsData?: any[];
+  asinData?: any[];
 }
 
 const statusOptions = [
@@ -90,6 +93,8 @@ export default function ProductToolbar({
 
   onImportExcel,
   isImporting = false,
+  productsData = [],
+  asinData = [],
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedTypeRef = useRef<ImportType>(importType);
@@ -276,6 +281,94 @@ export default function ProductToolbar({
     }
   };
 
+  const handleDownloadData = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      if (selectedTypeRef.current === "asin") {
+        const worksheet = workbook.addWorksheet("ASIN Import");
+        worksheet.columns = [
+          { header: "ASIN", key: "asin", width: 22 },
+          { header: "SKU", key: "sku", width: 25 },
+          { header: "Generate Barcode", key: "generateBarcode", width: 20 },
+          { header: "Rack Address", key: "rackAddress", width: 20 },
+        ];
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+        headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A0E1A" } };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+        headerRow.height = 28;
+
+        asinData.forEach((item) => {
+          const r = worksheet.addRow({
+            asin: item.asin,
+            sku: item.sku,
+            generateBarcode: item.generateBarcode,
+            rackAddress: item.rackAddress,
+          });
+          r.height = 22;
+          r.alignment = { vertical: "middle" };
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(
+          new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+          "asin-data.xlsx"
+        );
+        toast.success("ASIN data downloaded successfully!");
+      } else {
+        const worksheet = workbook.addWorksheet("Products");
+        worksheet.columns = [
+          { header: "Product Name", key: "productName", width: 30 },
+          { header: "Master SKU", key: "masterSku", width: 22 },
+          { header: "Brand", key: "brand", width: 18 },
+          { header: "Category", key: "category", width: 18 },
+          { header: "Sub Category", key: "subCategory", width: 18 },
+          { header: "Description", key: "description", width: 35 },
+          { header: "ASIN", key: "asin", width: 20 },
+          { header: "Rack Address", key: "rackAddress", width: 18 },
+          { header: "Generate Barcode", key: "generateBarcode", width: 20 },
+          { header: "MRP", key: "mrp", width: 15 },
+          { header: "HSN Code", key: "hsnCode", width: 16 },
+          { header: "GST %", key: "gstRate", width: 14 },
+        ];
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+        headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A0E1A" } };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+        headerRow.height = 28;
+
+        productsData.forEach((item) => {
+          const r = worksheet.addRow({
+            productName: item.productName,
+            masterSku: item.masterSku,
+            brand: item.brand,
+            category: item.category,
+            subCategory: item.subCategory,
+            description: item.description,
+            asin: item.asin,
+            rackAddress: item.rackAddress,
+            generateBarcode: item.generateBarcode,
+            mrp: item.mrp,
+            hsnCode: item.hsnCode,
+            gstRate: item.gstRate,
+          });
+          r.height = 22;
+          r.alignment = { vertical: "middle" };
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(
+          new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+          "products-data.xlsx"
+        );
+        toast.success("Products data downloaded successfully!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download data");
+    }
+  };
+
   return (
     <div className="mb-6 flex flex-col gap-4 rounded-lg border border-slate-700 bg-[#0F172A] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between shadow-sm">
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4 xl:flex xl:flex-1 xl:items-center xl:gap-4">
@@ -397,15 +490,27 @@ export default function ProductToolbar({
           />
         </div>
 
-        <Button
-          variant="secondary"
-          fullWidth={false}
-          className="h-12 flex-1 sm:flex-none"
-          leftIcon={<Download size={18} />}
-          onClick={handleDownloadDemoSheet}
-        >
-          Demo Sheet
-        </Button>
+        {((importType === "asin" && asinData.length > 0) || (importType === "product" && productsData.length > 0)) ? (
+          <Button
+            variant="secondary"
+            fullWidth={false}
+            className="h-12 flex-1 sm:flex-none"
+            leftIcon={<Download size={18} />}
+            onClick={handleDownloadData}
+          >
+            Download Data
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            fullWidth={false}
+            className="h-12 flex-1 sm:flex-none"
+            leftIcon={<Download size={18} />}
+            onClick={handleDownloadDemoSheet}
+          >
+            Demo Sheet
+          </Button>
+        )}
 
         <Button
           variant="secondary"
