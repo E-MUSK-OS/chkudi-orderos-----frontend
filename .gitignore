@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+#instructions
+instruction.md
+
 # next.js
 /.next/
 /out/

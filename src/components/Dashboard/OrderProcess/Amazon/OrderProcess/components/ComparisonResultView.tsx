@@ -51,9 +51,11 @@ import {
 } from "../store/useAmazonOrderStore";
 
 const getBatchKey = (summary: any, resultsLen: number, batchId?: string | null): string => {
-  if (batchId) return `batch_${batchId}`;
+  const effectiveBatchId = batchId || summary?.id || summary?.batchId;
+  if (effectiveBatchId) return `batch_${effectiveBatchId}`;
   if (!summary) return `batch_${resultsLen}`;
-  return `${summary.pdfFileName || ""}_${summary.zplFileName || ""}_${summary.totalPdfOrders || summary.totalZplLabels || resultsLen}`;
+  const uniqueToken = summary.batchSessionId || summary.createdAt || "";
+  return `${uniqueToken}_${summary.pdfFileName || ""}_${summary.zplFileName || ""}_${summary.totalPdfOrders || summary.totalZplLabels || resultsLen}`;
 };
 
 const getStoredPrintedRows = (
@@ -63,18 +65,24 @@ const getStoredPrintedRows = (
 ): Set<number> => {
   if (typeof window === "undefined") return new Set();
   try {
-    // 1. Check if summary itself has printedIndices (from backend)
-    if (summary && Array.isArray(summary.printedIndices) && summary.printedIndices.length > 0) {
-      return new Set(summary.printedIndices);
+    const set = new Set<number>();
+    const effectiveBatchId = batchId || summary?.id || summary?.batchId;
+
+    // 1. Check multi-batch persistent map (contains most recent printed indices for this batch)
+    const map = getPrintedBatchesMap();
+    if (effectiveBatchId && Array.isArray(map[effectiveBatchId]?.indices)) {
+      map[effectiveBatchId].indices.forEach((idx) => set.add(idx));
+    }
+    const mapKey = effectiveBatchId ? `batch_${effectiveBatchId}` : batchKey;
+    if (mapKey && Array.isArray(map[mapKey]?.indices)) {
+      map[mapKey].indices.forEach((idx) => set.add(idx));
     }
 
-    // 2. Check multi-batch persistent map
-    const map = getPrintedBatchesMap();
-    if (batchId && map[batchId]?.indices) {
-      return new Set(map[batchId].indices);
-    }
-    if (batchKey && map[batchKey]?.indices) {
-      return new Set(map[batchKey].indices);
+    // 2. Include summary printedIndices if present (e.g. from backend history)
+    if (summary && Array.isArray(summary.printedIndices)) {
+      summary.printedIndices.forEach((idx: number) => {
+        if (typeof idx === "number") set.add(idx);
+      });
     }
 
     // 3. Fallback to legacy single key if matching
@@ -82,14 +90,16 @@ const getStoredPrintedRows = (
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.indices)) {
-        if (parsed.batchKey === batchKey || (batchId && parsed.batchKey === batchId)) {
-          return new Set(parsed.indices);
-        }
-        if (batchKey === "batch_0" && parsed.batchKey) {
-          return new Set(parsed.indices);
+        if (
+          parsed.batchKey === batchKey ||
+          (effectiveBatchId && (parsed.batchKey === effectiveBatchId || parsed.batchKey === `batch_${effectiveBatchId}`))
+        ) {
+          parsed.indices.forEach((idx: number) => set.add(idx));
         }
       }
     }
+
+    return set;
   } catch (e) {
     console.warn("Failed to load printed rows from storage:", e);
   }
@@ -587,32 +597,67 @@ export default function ComparisonResultView({
   const printedRowsRef = useRef<Set<number>>(new Set());
   const printQueuePromiseRef = useRef<Promise<void>>(Promise.resolve());
   const orderPrintPdfCacheRef = useRef<Map<number, string>>(new Map());
+  const persistedIndicesRef = useRef<Set<number>>(new Set());
+  const prevBatchIdentifierRef = useRef<string>("");
 
   // Restore printed rows when batchKey, activeHistoryBatchId, or summary changes
   useEffect(() => {
+    const currentId = activeHistoryBatchId || batchKey;
+    const isNewBatch = prevBatchIdentifierRef.current !== currentId;
+    if (isNewBatch) {
+      prevBatchIdentifierRef.current = currentId;
+      setPage(1);
+      setSelectedRows(new Set());
+    }
     const stored = getStoredPrintedRows(batchKey, activeHistoryBatchId, summary);
     printedRowsRef.current = stored;
+    persistedIndicesRef.current = new Set(stored);
     setPrintedRows(stored);
-    setSelectedRows(new Set());
-    setPage(1);
   }, [batchKey, activeHistoryBatchId, summary]);
 
   const markRowsAsPrinted = useCallback(
     (indices: number[]) => {
-      indices.forEach((idx) => printedRowsRef.current.add(idx));
+      indices.forEach((idx) => {
+        printedRowsRef.current.add(idx);
+        persistedIndicesRef.current.add(idx);
+      });
       const newSet = new Set(printedRowsRef.current);
       setPrintedRows(newSet);
       savePrintedRowsToStorage(batchKey, newSet, activeHistoryBatchId, results);
+
+      // Keep Zustand store summary synchronized with newly printed indices
+      useAmazonOrderStore.setState((state) => ({
+        summary: state.summary
+          ? {
+              ...state.summary,
+              printedIndices: Array.from(newSet),
+              printedCount: newSet.size,
+            }
+          : state.summary,
+      }));
     },
     [batchKey, activeHistoryBatchId, results]
   );
 
   const unmarkRowsAsPrinted = useCallback(
     (indices: number[]) => {
-      indices.forEach((idx) => printedRowsRef.current.delete(idx));
+      indices.forEach((idx) => {
+        printedRowsRef.current.delete(idx);
+        persistedIndicesRef.current.delete(idx);
+      });
       const newSet = new Set(printedRowsRef.current);
       setPrintedRows(newSet);
       savePrintedRowsToStorage(batchKey, newSet, activeHistoryBatchId, results);
+
+      useAmazonOrderStore.setState((state) => ({
+        summary: state.summary
+          ? {
+              ...state.summary,
+              printedIndices: Array.from(newSet),
+              printedCount: newSet.size,
+            }
+          : state.summary,
+      }));
     },
     [batchKey, activeHistoryBatchId, results]
   );
@@ -887,6 +932,7 @@ export default function ComparisonResultView({
     async (items: typeof mappedResults) => {
       if (!items || items.length === 0) return;
       try {
+        const nowIso = new Date().toISOString();
         const ordersToSave = items.map((item) => ({
           invoice:
             item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF"
@@ -900,6 +946,8 @@ export default function ComparisonResultView({
           sellerSku: item.sellerSku || "N/A",
           customer: cleanCustomerName(item.customer) || "N/A",
           packingScanStatus: "PENDING" as const,
+          createdAt: nowIso,
+          updatedAt: nowIso,
         }));
 
         await amazonOrderService.savePrintedOrders(
@@ -914,12 +962,15 @@ export default function ComparisonResultView({
     [activeHistoryBatchId]
   );
 
-  // Synchronize any existing printed orders into AWB Scan database in background so none are left behind
+  // Synchronize newly printed orders into AWB Scan database in background so none are left behind
   useEffect(() => {
     if (mappedResults.length > 0 && printedRows.size > 0) {
-      const alreadyPrintedItems = mappedResults.filter((r) => printedRows.has(r.index));
-      if (alreadyPrintedItems.length > 0) {
-        persistPrintedOrdersToAwbScan(alreadyPrintedItems);
+      const newlyPrintedItems = mappedResults.filter(
+        (r) => printedRows.has(r.index) && !persistedIndicesRef.current.has(r.index)
+      );
+      if (newlyPrintedItems.length > 0) {
+        newlyPrintedItems.forEach((r) => persistedIndicesRef.current.add(r.index));
+        persistPrintedOrdersToAwbScan(newlyPrintedItems);
       }
     }
   }, [mappedResults, printedRows, persistPrintedOrdersToAwbScan]);
@@ -928,6 +979,8 @@ export default function ComparisonResultView({
   useEffect(() => {
     let isCancelled = false;
     const syncPrintedFromDb = async () => {
+      const targetBatchId = activeHistoryBatchId || summary?.id || summary?.batchId;
+      if (!targetBatchId) return;
       if (!mappedResults || mappedResults.length === 0) return;
       try {
         const res = await amazonOrderService.getOrders("?limit=1000");
@@ -955,9 +1008,12 @@ export default function ComparisonResultView({
             (cleanOrder && dbPrintedOrderIds.has(cleanOrder)) ||
             (cleanAwb && dbPrintedAwbs.has(cleanAwb));
 
-          if (isPrintedInDb && !printedRowsRef.current.has(item.index)) {
-            printedRowsRef.current.add(item.index);
-            hasNewPrinted = true;
+          if (isPrintedInDb) {
+            persistedIndicesRef.current.add(item.index);
+            if (!printedRowsRef.current.has(item.index)) {
+              printedRowsRef.current.add(item.index);
+              hasNewPrinted = true;
+            }
           }
         });
 
@@ -1164,6 +1220,7 @@ export default function ComparisonResultView({
     if (typeof window !== "undefined") {
       try {
         sessionStorage.removeItem("amazon_show_printed_active");
+        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
       } catch (e) {}
     }
     setShowPrinted(false);
@@ -1855,10 +1912,22 @@ export default function ComparisonResultView({
       return;
     }
 
-    // Ensure selected orders are immediately saved to AWB Scan database
+    const targetIndices = targetResults.map((r) => r.index);
+
+    // 1. Synchronously mark rows as printed in state, storage, and store
+    markRowsAsPrinted(targetIndices);
+
+    // 2. Clear selected checkboxes immediately
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      targetIndices.forEach((idx) => next.delete(idx));
+      return next;
+    });
+
+    // 3. Persist and refresh creation/updated timestamps in AWB Scan database
     await persistPrintedOrdersToAwbScan(targetResults);
 
-    // Send to printer
+    // 4. Send to physical printer
     await executePrintForItems(targetResults);
   };
 
@@ -1906,6 +1975,7 @@ export default function ComparisonResultView({
       toast.error("Failed to generate Excel picklist.");
     }
   };
+
 
   // Helper to cleanly format multiple ASINs or SKUs without raw newlines
   const formatCleanList = (val?: string): string => {
@@ -2332,9 +2402,10 @@ export default function ComparisonResultView({
         return;
       }
 
-      toast.warning(
-        `All ${candidateOrders.length} ${getOrderTypeLabel(orderTypeFilter)} order(s) for "${query}" have already been printed and removed!`,
-        { id: "auto-print", duration: 4000 }
+      const totalOrdersCount = allMatchingOrders.length;
+      toast.error(
+        `All ${totalOrdersCount} order(s) for "${query}" have already been scanned and printed! Re-scanning is not allowed. To reprint or print again, select the order from the table.`,
+        { id: "all-scanned-error", duration: 6000 }
       );
       return;
     }
@@ -3022,11 +3093,12 @@ export default function ComparisonResultView({
                 type="button"
                 onClick={handleGeneratePicklist}
                 className="inline-flex h-11 sm:h-14 w-full sm:w-auto sm:px-5 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-                title="Download Excel picklist"
+                title="Download Excel picklist (2-column 40 left / 40 right A4 layout)"
               >
                 <FileText className="h-4 w-4" />
                 <span>Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${allPicklistOrders.length})`}</span>
               </button>
+
 
               {printedRows.size > 0 && (
                 <button

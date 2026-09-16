@@ -106,7 +106,7 @@ export default function AwbTable({
             ) : (
               orders.map((item) => {
                 const isScanned = item.packingScanStatus === "SCANNED";
-                const formattedTime = formatToIST(isScanned ? (item.updatedAt || item.createdAt) : item.createdAt);
+                const formattedTime = formatToIST(item.updatedAt || item.createdAt);
 
                 return (
                   <tr

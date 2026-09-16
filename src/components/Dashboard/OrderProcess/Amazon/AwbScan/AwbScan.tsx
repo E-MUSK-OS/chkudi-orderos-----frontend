@@ -61,6 +61,23 @@ export default function AwbScan() {
     fetchOrders(false);
   }, [fetchOrders]);
 
+  // Auto-refresh orders whenever the user switches back to the AWB Scan tab
+  useEffect(() => {
+    const handleFocusOrVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchOrders(true);
+      }
+    };
+
+    window.addEventListener("focus", handleFocusOrVisible);
+    document.addEventListener("visibilitychange", handleFocusOrVisible);
+
+    return () => {
+      window.removeEventListener("focus", handleFocusOrVisible);
+      document.removeEventListener("visibilitychange", handleFocusOrVisible);
+    };
+  }, [fetchOrders]);
+
   // Hook for barcode scanning & audio playback
   const {
     scanValue,

@@ -254,6 +254,14 @@ export default function OrderProcess() {
     }
 
     setProcessing(true);
+    useAmazonOrderStore.setState({ activeHistoryBatchId: null, initialShowPrinted: false });
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem("amazon_show_printed_active");
+        localStorage.removeItem("amazon_order_process_printed_rows_v1");
+        localStorage.removeItem("amazon_active_history_batch_id_v1");
+      } catch (e) {}
+    }
 
     let currentPct = 1;
     let targetCeiling = 20;

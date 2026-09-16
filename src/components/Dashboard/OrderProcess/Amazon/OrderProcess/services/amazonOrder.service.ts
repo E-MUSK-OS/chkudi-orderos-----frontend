@@ -11,6 +11,8 @@ export interface AmazonPrintedOrderPayload {
   sellerSku: string;
   customer: string;
   packingScanStatus?: "PENDING" | "SCANNED";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SavePrintedOrdersResponse {

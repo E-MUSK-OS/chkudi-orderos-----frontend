@@ -57,6 +57,7 @@ const SESSION_STORAGE_KEY = "amazon_order_process_data_v1";
 const METADATA_STORAGE_KEY = "amazon_order_process_metadata_v1";
 export const AMAZON_PRINTED_STORAGE_KEY = "amazon_order_process_printed_rows_v1";
 export const AMAZON_PRINTED_BATCHES_MAP_KEY = "amazon_printed_batches_map_v2";
+export const ACTIVE_HISTORY_BATCH_STORAGE_KEY = "amazon_active_history_batch_id_v1";
 
 export interface StoredBatchPrintedRecord {
   indices: number[];
@@ -229,16 +230,38 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       await saveFilesToIDB(data.files);
     }
 
+    const activeBatchId =
+      (data.summary as any)?.id ||
+      (data.summary as any)?.batchId ||
+      get().activeHistoryBatchId ||
+      null;
+
+    const updatedSummary = data.summary
+      ? {
+          ...data.summary,
+          id: activeBatchId || undefined,
+          batchId: activeBatchId || undefined,
+          batchSessionId:
+            activeBatchId ||
+            (data.summary as any).batchSessionId ||
+            `session_${Date.now()}`,
+        }
+      : null;
+
     // 2. Save metadata (summary + results) to localStorage (shared across all browser tabs) & sessionStorage
     try {
       if (typeof window !== "undefined") {
         const metadataPayload = JSON.stringify({
           success: data.success,
-          summary: data.summary,
+          summary: updatedSummary,
           results: data.results,
+          activeHistoryBatchId: activeBatchId,
         });
         localStorage.setItem(METADATA_STORAGE_KEY, metadataPayload);
         sessionStorage.setItem(SESSION_STORAGE_KEY, metadataPayload);
+        if (activeBatchId) {
+          localStorage.setItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY, activeBatchId);
+        }
       }
     } catch (e) {
       console.warn("Failed to store process metadata in storage:", e);
@@ -268,7 +291,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     }
 
     set({
-      summary: data.summary,
+      summary: updatedSummary,
       results: data.results,
       files: data.files,
       convertedZplPdfUrl: zplUrl,
@@ -344,10 +367,22 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         unmatchZplUrl = base64ToBlobUrl(currentFiles.unmatchedZplBase64);
       }
 
+      let restoredBatchId = get().activeHistoryBatchId;
+      if (!restoredBatchId && typeof window !== "undefined") {
+        restoredBatchId = localStorage.getItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY);
+      }
+      if (!restoredBatchId && (currentSummary as any)?.id) {
+        restoredBatchId = (currentSummary as any).id;
+      }
+      if (!restoredBatchId && (currentSummary as any)?.batchId) {
+        restoredBatchId = (currentSummary as any).batchId;
+      }
+
       set({
         summary: currentSummary,
         results: currentResults,
         files: currentFiles,
+        activeHistoryBatchId: restoredBatchId || null,
         convertedZplPdfUrl: zplUrl,
         combinedPdfUrl: combUrl,
         originalPdfUrl: origUrl,
@@ -382,6 +417,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         localStorage.removeItem(METADATA_STORAGE_KEY);
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
         localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
+        localStorage.removeItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY);
         sessionStorage.removeItem("amazon_show_printed_active");
       }
     } catch (e) {}
@@ -493,10 +529,23 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
 
       await get().setProcessData({
         success: true,
-        summary: batch.summary,
+        summary: batch.summary
+          ? {
+              ...batch.summary,
+              id: batch.id,
+              batchId: batch.id,
+              printedIndices: batch.summary.printedIndices || [],
+            }
+          : batch.summary,
         results: batch.results,
         files,
       });
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY, batch.id);
+        } catch (e) {}
+      }
 
       set({
         activeHistoryBatchId: batch.id,

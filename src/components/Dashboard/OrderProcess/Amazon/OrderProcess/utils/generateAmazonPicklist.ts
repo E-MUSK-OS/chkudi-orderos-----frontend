@@ -59,6 +59,72 @@ export const generateAmazonPicklist = (
     return trimmed;
   };
 
+  /**
+   * Splits a rack address into normalized comparison tokens:
+   * Letters/words as uppercase strings, digits as numbers.
+   * Non-alphanumeric separators (hyphens, spaces, slashes, etc.) are discarded
+   * so that "A-4" and "A4" and "A 4" compare equivalently against "A5".
+   */
+  const parseRackTokens = (rack?: string | null): (string | number)[] => {
+    if (!rack) return [];
+    const trimmed = rack.trim().toUpperCase();
+    if (!trimmed || trimmed === "--" || trimmed === "-" || trimmed === "N/A" || trimmed === "NA") {
+      return [];
+    }
+
+    const matches = trimmed.match(/[A-Z]+|\d+/g);
+    if (!matches) return [trimmed];
+
+    return matches.map((token) => {
+      if (/^\d+$/.test(token)) {
+        return parseInt(token, 10);
+      }
+      return token;
+    });
+  };
+
+  const compareRackAddresses = (rackA?: string | null, rackB?: string | null): number => {
+    const tokensA = parseRackTokens(rackA);
+    const tokensB = parseRackTokens(rackB);
+
+    const hasA = tokensA.length > 0;
+    const hasB = tokensB.length > 0;
+
+    // Items with valid rack address always come before unassigned ("--")
+    if (hasA && !hasB) return -1;
+    if (!hasA && hasB) return 1;
+    if (!hasA && !hasB) return 0;
+
+    const minLen = Math.min(tokensA.length, tokensB.length);
+    for (let i = 0; i < minLen; i++) {
+      const tA = tokensA[i];
+      const tB = tokensB[i];
+
+      if (typeof tA === "number" && typeof tB === "number") {
+        if (tA !== tB) {
+          return tA - tB;
+        }
+      } else if (typeof tA === "number" && typeof tB === "string") {
+        return -1;
+      } else if (typeof tA === "string" && typeof tB === "number") {
+        return 1;
+      } else {
+        const strA = tA as string;
+        const strB = tB as string;
+        const cmp = strA.localeCompare(strB, undefined, { sensitivity: "base" });
+        if (cmp !== 0) {
+          return cmp;
+        }
+      }
+    }
+
+    if (tokensA.length !== tokensB.length) {
+      return tokensA.length - tokensB.length;
+    }
+
+    return 0;
+  };
+
   const ORDER_GROUPS: {
     type: "single_quantity" | "multiple_asin" | "multiple_pieces";
     label: string;
@@ -191,35 +257,13 @@ export const generateAmazonPicklist = (
     });
 
     // Sorting within category:
-    // 1. Generate Barcode === "Yes" FIRST
-    // 2. Rack Address natural sort
-    // 3. Seller SKU natural sort
+    // 1. Natural rack address sort ("A-4" < "A5" < "A-12" < "A14" < "A16" < "A-24" < "A35" < "B-5"...)
+    // 2. Seller SKU natural sort
     groupItems.sort((a, b) => {
-      const aYes = a.generateBarcode === "Yes";
-      const bYes = b.generateBarcode === "Yes";
-      if (aYes && !bYes) return -1;
-      if (!aYes && bYes) return 1;
-
-      const rackA = normalizeRackAddress(a.rackAddress);
-      const rackB = normalizeRackAddress(b.rackAddress);
-
-      if (rackA && rackB) {
-        const rackComparison = rackA.localeCompare(rackB, undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
-        if (rackComparison !== 0) {
-          return rackComparison;
-        }
-        return a.sku.localeCompare(b.sku, undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
+      const rackComparison = compareRackAddresses(a.rackAddress, b.rackAddress);
+      if (rackComparison !== 0) {
+        return rackComparison;
       }
-
-      if (rackA && !rackB) return -1;
-      if (!rackA && rackB) return 1;
-
       return a.sku.localeCompare(b.sku, undefined, {
         numeric: true,
         sensitivity: "base",
@@ -261,11 +305,12 @@ export const buildAmazonPicklistPDFDoc = (
   const HEADER_HEIGHT = 26;
   const FOOTER_HEIGHT = 10;
   const COLUMN_GAP = 6;
-  const TABLE_WIDTH = 94;
-  const LEFT_X = MARGIN;
-  const RIGHT_X = LEFT_X + TABLE_WIDTH + COLUMN_GAP;
   const MAX_ROWS_PER_COLUMN = 40;
-  const ITEMS_PER_PAGE = 80; // 40 left + 40 right = 80 records per page
+  const hasRightColumn = picklist.items.length > MAX_ROWS_PER_COLUMN;
+  const ITEMS_PER_PAGE = hasRightColumn ? 80 : MAX_ROWS_PER_COLUMN; // 40 left + 40 right = 80 records per page, or 40 for single column
+  const TABLE_WIDTH = hasRightColumn ? 94 : PAGE_WIDTH - 2 * MARGIN;
+  const LEFT_X = MARGIN;
+  const RIGHT_X = LEFT_X + 94 + COLUMN_GAP;
 
   const totalPages = Math.max(1, Math.ceil(picklist.items.length / ITEMS_PER_PAGE));
 
@@ -322,8 +367,8 @@ export const buildAmazonPicklistPDFDoc = (
 
     // Fill left column first up to 40 items
     const leftItems = pageItems.slice(0, MAX_ROWS_PER_COLUMN);
-    // Fill right column with remaining items (up to 40 items)
-    const rightItems = pageItems.slice(MAX_ROWS_PER_COLUMN, ITEMS_PER_PAGE);
+    // Fill right column with remaining items (up to 40 items) if 2-column mode
+    const rightItems = hasRightColumn ? pageItems.slice(MAX_ROWS_PER_COLUMN, ITEMS_PER_PAGE) : [];
 
     // Left Column Table (Max 40 rows)
     autoTable(doc, {
@@ -339,8 +384,8 @@ export const buildAmazonPicklistPDFDoc = (
         item.generateBarcode || "No",
       ]),
       styles: {
-        fontSize: 7.5,
-        cellPadding: 1.2,
+        fontSize: hasRightColumn ? 7.5 : 8.5,
+        cellPadding: hasRightColumn ? 1.2 : 1.5,
         lineWidth: 0.1,
         minCellHeight: 6,
         overflow: "ellipsize",
@@ -352,12 +397,19 @@ export const buildAmazonPicklistPDFDoc = (
         halign: "center",
         minCellHeight: 6,
       },
-      columnStyles: {
-        0: { cellWidth: 19, halign: "center" },
-        1: { cellWidth: 48, halign: "left" },
-        2: { cellWidth: 10, halign: "center", fontStyle: "bold" },
-        3: { cellWidth: 17, halign: "center" },
-      },
+      columnStyles: hasRightColumn
+        ? {
+            0: { cellWidth: 19, halign: "center" },
+            1: { cellWidth: 48, halign: "left" },
+            2: { cellWidth: 10, halign: "center", fontStyle: "bold" },
+            3: { cellWidth: 17, halign: "center" },
+          }
+        : {
+            0: { cellWidth: 32, halign: "center" },
+            1: { cellWidth: 104, halign: "left" },
+            2: { cellWidth: 22, halign: "center", fontStyle: "bold" },
+            3: { cellWidth: 36, halign: "center" },
+          },
       theme: "grid",
       didParseCell: (data) => {
         if (data.section === "body") {
@@ -389,12 +441,12 @@ export const buildAmazonPicklistPDFDoc = (
       },
     });
 
-    // Right Column Table (Max 40 rows)
-    if (rightItems.length > 0) {
+    // Right Column Table (Max 40 rows) - only if hasRightColumn and rightItems exist
+    if (hasRightColumn && rightItems.length > 0) {
       autoTable(doc, {
         startY: HEADER_HEIGHT + 3,
         margin: { left: RIGHT_X },
-        tableWidth: TABLE_WIDTH,
+        tableWidth: 94,
         pageBreak: "avoid",
         head: [["Rack Address", "SKU", "Qty", "Gen Barcode"]],
         body: rightItems.map((item) => [
@@ -485,17 +537,111 @@ export const openAmazonPicklistTab = (picklist: PicklistResult) => {
     timeStyle: "short",
   });
 
-  const rowsHtml = picklist.items
-    .map(
-      (item) => `
+  const MAX_ROWS_PER_COLUMN = 40;
+  const hasRightColumn = picklist.items.length > MAX_ROWS_PER_COLUMN;
+  const ITEMS_PER_PAGE = hasRightColumn ? 80 : MAX_ROWS_PER_COLUMN;
+  const totalPages = Math.max(1, Math.ceil(picklist.items.length / ITEMS_PER_PAGE));
+
+  const renderTableRows = (items: PicklistItem[]) =>
+    items
+      .map(
+        (item) => `
       <tr>
-        <td style="text-align: center;">${item.rackAddress || "--"}</td>
-        <td style="text-align: left; font-weight: bold;">${item.sku}</td>
+        <td style="text-align: center; font-weight: 600;">${item.rackAddress || "--"}</td>
+        <td style="text-align: left; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: ${hasRightColumn ? "140px" : "320px"};">${item.sku}</td>
         <td style="text-align: center; font-weight: bold;">${item.quantity}</td>
         <td style="text-align: center; ${item.generateBarcode === "Yes" ? "font-weight: bold; color: #16a34a;" : "color: #64748b;"}">${item.generateBarcode || "No"}</td>
       </tr>`
-    )
-    .join("");
+      )
+      .join("");
+
+  let pagesHtml = "";
+  for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+    const startIdx = pageIdx * ITEMS_PER_PAGE;
+    const pageItems = picklist.items.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+    const leftItems = pageItems.slice(0, MAX_ROWS_PER_COLUMN);
+    const rightItems = hasRightColumn ? pageItems.slice(MAX_ROWS_PER_COLUMN, ITEMS_PER_PAGE) : [];
+
+    pagesHtml += `
+    <div class="a4-page">
+      <div class="sheet-header">
+        <div>
+          <div class="sheet-title">Amazon Picklist (${picklistNo})</div>
+          <div class="sheet-meta">Generated: ${formattedDate} &bull; Total Orders: ${picklist.items.length} SKUs (${picklist.totalQuantity} Units) &bull; Page ${pageIdx + 1} of ${totalPages}</div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn btn-print" onclick="window.print()">Print A4 Picklist</button>
+        </div>
+      </div>
+
+      ${
+        hasRightColumn
+          ? `<div class="two-column-layout">
+              <!-- Left Column Table (Max 40 rows) -->
+              <div class="table-col">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width: 22%;">Rack</th>
+                      <th style="width: 48%; text-align: left;">SKU</th>
+                      <th style="width: 12%;">Qty</th>
+                      <th style="width: 18%;">Barcode</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${renderTableRows(leftItems)}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Right Column Table (Max 40 rows) -->
+              <div class="table-col">
+                ${
+                  rightItems.length > 0
+                    ? `<table>
+                  <thead>
+                    <tr>
+                      <th style="width: 22%;">Rack</th>
+                      <th style="width: 48%; text-align: left;">SKU</th>
+                      <th style="width: 12%;">Qty</th>
+                      <th style="width: 18%;">Barcode</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${renderTableRows(rightItems)}
+                  </tbody>
+                </table>`
+                    : `<div class="empty-col-placeholder"></div>`
+                }
+              </div>
+            </div>`
+          : `<div class="single-column-layout">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Rack</th>
+                    <th style="width: 52%; text-align: left;">SKU</th>
+                    <th style="width: 12%;">Qty</th>
+                    <th style="width: 16%;">Barcode</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${renderTableRows(leftItems)}
+                </tbody>
+              </table>
+            </div>`
+      }
+
+      ${
+        pageIdx === totalPages - 1
+          ? `<div class="summary-bar">
+              <div><strong>TOTAL QUANTITY:</strong> ${picklist.totalQuantity} Units</div>
+              <div><strong>TOTAL SKUs:</strong> ${picklist.items.length} Unique SKUs</div>
+            </div>`
+          : ""
+      }
+    </div>`;
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -503,39 +649,53 @@ export const openAmazonPicklistTab = (picklist: PicklistResult) => {
   <meta charset="UTF-8">
   <title>Amazon Picklist - ${picklistNo}</title>
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page {
+      size: A4 portrait;
+      margin: 8mm 6mm;
+    }
     body {
       font-family: Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      margin: 20px;
       color: #000;
-      background: #f8fafc;
+      background: #f1f5f9;
+      padding: 16px 0;
     }
-    .sheet-wrapper {
-      max-width: 980px;
-      margin: 0 auto;
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      max-width: 210mm;
+      margin: 0 auto 16px auto;
       background: #fff;
-      padding: 24px;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      padding: 8mm 6mm;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
       border: 1px solid #e2e8f0;
+      page-break-after: always;
+      break-after: page;
+      position: relative;
+    }
+    .a4-page:last-child {
+      page-break-after: avoid;
+      break-after: avoid;
+      margin-bottom: 0;
     }
     .sheet-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #000;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #0f172a;
     }
     .sheet-title {
-      font-size: 20px;
-      font-weight: bold;
+      font-size: 16px;
+      font-weight: 800;
       color: #0f172a;
+      letter-spacing: -0.2px;
     }
     .sheet-meta {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 4px;
+      font-size: 10px;
+      color: #475569;
+      margin-top: 2px;
     }
     .sheet-actions {
       display: flex;
@@ -544,87 +704,84 @@ export const openAmazonPicklistTab = (picklist: PicklistResult) => {
     .btn {
       display: inline-flex;
       align-items: center;
-      padding: 6px 14px;
-      font-size: 13px;
+      padding: 5px 12px;
+      font-size: 11px;
       font-weight: 600;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-      border: 1px solid #cbd5e1;
-      background: #f8fafc;
-      color: #334155;
       text-decoration: none;
     }
-    .btn:hover { background: #f1f5f9; }
     .btn-print {
       background: #0f172a;
       color: #fff;
       border: 1px solid #0f172a;
     }
     .btn-print:hover { background: #1e293b; }
+    .single-column-layout {
+      width: 100%;
+    }
+    .two-column-layout {
+      display: flex;
+      gap: 6mm;
+      width: 100%;
+      align-items: flex-start;
+    }
+    .table-col {
+      width: calc(50% - 3mm);
+      flex: 1;
+    }
+    .empty-col-placeholder {
+      width: 100%;
+      height: 100px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 9.5px;
     }
     th {
-      border: 1px solid #d4d4d8;
-      border-bottom: 2px solid #000;
-      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-bottom: 1.5px solid #0f172a;
+      padding: 3.5px 5px;
       font-weight: bold;
       background: #f8fafc;
-      color: #000;
+      color: #0f172a;
+      font-size: 9.5px;
     }
     td {
       border: 1px solid #e2e8f0;
-      padding: 7px 12px;
+      padding: 3px 5px;
       vertical-align: middle;
-      color: #000;
+      color: #0f172a;
+      font-size: 9px;
+      line-height: 1.15;
     }
-    .total-row td {
-      border-top: 1px solid #000;
-      border-bottom: 3px double #000;
-      font-weight: bold;
-      font-size: 13.5px;
+    .summary-bar {
+      margin-top: 8px;
+      padding: 6px 10px;
       background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #0f172a;
     }
     @media print {
-      body { margin: 0; background: #fff; }
-      .sheet-wrapper { box-shadow: none; border: none; padding: 0; max-width: 100%; }
-      .sheet-actions { display: none; }
+      body { padding: 0; background: #fff; }
+      .a4-page {
+        box-shadow: none;
+        border: none;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: auto;
+      }
+      .sheet-actions { display: none !important; }
     }
   </style>
 </head>
 <body>
-  <div class="sheet-wrapper">
-    <div class="sheet-header">
-      <div>
-        <div class="sheet-title">Amazon Picklist (${picklistNo})</div>
-        <div class="sheet-meta">Generated on ${formattedDate} &bull; Total Orders: ${picklist.items.length} SKUs (${picklist.totalQuantity} Units)</div>
-      </div>
-      <div class="sheet-actions">
-        <button class="btn btn-print" onclick="window.print()">Print Picklist</button>
-      </div>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 18%;">Rack Address</th>
-          <th style="width: 48%; text-align: left;">Seller SKU</th>
-          <th style="width: 16%;">Quantity</th>
-          <th style="width: 18%;">Generate Barcode</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rowsHtml}
-        <tr class="total-row">
-          <td></td>
-          <td style="text-align: right;">TOTAL QUANTITY</td>
-          <td style="text-align: center;">${picklist.totalQuantity}</td>
-          <td style="text-align: center;">${picklist.items.length} Unique SKUs</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  ${pagesHtml}
 </body>
 </html>`;
 
@@ -634,143 +791,334 @@ export const openAmazonPicklistTab = (picklist: PicklistResult) => {
   setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 };
 
-export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Amazon Picklist");
+const populatePicklistWorksheet = (
+  worksheet: ExcelJS.Worksheet,
+  items: PicklistItem[],
+  totalQuantity: number,
+  emptyMessage = "No items found in this picklist"
+) => {
+  // Page setup to fit perfectly onto A4 portrait sheet when printing
+  worksheet.pageSetup = {
+    paperSize: 9, // A4
+    orientation: "portrait",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    margins: {
+      left: 0.25,
+      right: 0.25,
+      top: 0.35,
+      bottom: 0.35,
+      header: 0.2,
+      footer: 0.2,
+    },
+  };
 
-  const now = new Date();
-  const picklistNo = `PL${Date.now()}`;
+  if (items.length === 0) {
+    const emptyRow = worksheet.addRow([emptyMessage]);
+    worksheet.mergeCells(emptyRow.number, 1, emptyRow.number, 4);
+    emptyRow.height = 24;
+    const cell = emptyRow.getCell(1);
+    cell.font = { italic: true, size: 10.5, color: { argb: "FF64748B" } };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+    worksheet.getColumn(1).width = 15;
+    worksheet.getColumn(2).width = 30;
+    worksheet.getColumn(3).width = 10;
+    worksheet.getColumn(4).width = 14;
+    return;
+  }
 
-  // Columns specification: Rack Address, Seller SKU, Quantity, Generate Barcode
-  worksheet.columns = [
-    { header: "Rack Address", key: "rackAddress", width: 20 },
-    { header: "Seller SKU", key: "sku", width: 44 },
-    { header: "Quantity", key: "quantity", width: 14 },
-    { header: "Generate Barcode", key: "generateBarcode", width: 18 },
-  ];
+  // Build sequential list of entries (section headers + items)
+  type SheetEntry =
+    | { type: "divider"; text: string }
+    | { type: "item"; item: PicklistItem };
 
-  // Header row styling: bold black text, clean borders, height 26
-  const headerRow = worksheet.getRow(1);
-  headerRow.height = 26;
-  headerRow.eachCell((cell, colNumber) => {
-    cell.font = { bold: true, color: { argb: "FF000000" }, size: 11, name: "Calibri" };
-    cell.alignment = { vertical: "middle", horizontal: colNumber === 2 ? "left" : "center" };
+  const entries: SheetEntry[] = [];
+  let activeSection = "";
+
+  items.forEach((item) => {
+    const itemSection = item.orderTypeLabel || "Single Quantity";
+    if (itemSection !== activeSection) {
+      activeSection = itemSection;
+      const sectionItems = items.filter(
+        (i) => (i.orderTypeLabel || "Single Quantity") === activeSection
+      );
+      const sectionQty = sectionItems.reduce((acc, i) => acc + i.quantity, 0);
+      entries.push({
+        type: "divider",
+        text: `▶ ${activeSection.toUpperCase()} — ${sectionItems.length} Unique SKUs (${sectionQty} Units)`,
+      });
+    }
+    entries.push({ type: "item", item });
+  });
+
+  const MAX_ROWS_PER_COLUMN = 40;
+  const hasRightColumn = entries.length > MAX_ROWS_PER_COLUMN;
+  const ITEMS_PER_PAGE = hasRightColumn ? 80 : MAX_ROWS_PER_COLUMN;
+  const totalPages = Math.max(1, Math.ceil(entries.length / ITEMS_PER_PAGE));
+
+  const styleHeaderCell = (cell: ExcelJS.Cell, isLeft = false) => {
+    cell.font = { bold: true, color: { argb: "FF000000" }, size: 9.5, name: "Calibri" };
+    cell.alignment = { vertical: "middle", horizontal: isLeft ? "left" : "center" };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF8FAFC" },
+    };
     cell.border = {
       top: { style: "thin", color: { argb: "FFD4D4D8" } },
       left: { style: "thin", color: { argb: "FFD4D4D8" } },
       bottom: { style: "medium", color: { argb: "FF000000" } },
       right: { style: "thin", color: { argb: "FFD4D4D8" } },
     };
-  });
+  };
 
-  let activeSection = "";
+  const styleItemCells = (
+    row: ExcelJS.Row,
+    startCol: number,
+    item: PicklistItem
+  ) => {
+    const rackCell = row.getCell(startCol);
+    const skuCell = row.getCell(startCol + 1);
+    const qtyCell = row.getCell(startCol + 2);
+    const barcodeCell = row.getCell(startCol + 3);
 
-  // Data rows with section divider rows
-  picklist.items.forEach((item) => {
-    const itemSection = item.orderTypeLabel || "Single Quantity";
+    rackCell.value = item.rackAddress || "--";
+    skuCell.value = item.sku;
+    qtyCell.value = item.quantity;
+    barcodeCell.value = item.generateBarcode || "No";
 
-    if (itemSection !== activeSection) {
-      activeSection = itemSection;
-      const sectionItems = picklist.items.filter(
-        (i) => (i.orderTypeLabel || "Single Quantity") === activeSection
-      );
-      const sectionQty = sectionItems.reduce((acc, i) => acc + i.quantity, 0);
-
-      const dividerRow = worksheet.addRow({
-        rackAddress: `▶ ${activeSection.toUpperCase()}`,
-        sku: `${sectionItems.length} Unique SKUs (${sectionQty} Units)`,
-        quantity: sectionQty,
-        generateBarcode: "",
-      });
-
-      dividerRow.height = 22;
-      dividerRow.eachCell((cell) => {
-        cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF0F172A" } };
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FFF1F5F9" },
-        };
-        cell.border = {
-          top: { style: "medium", color: { argb: "FF0A0E1A" } },
-          bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
-          left: { style: "thin", color: { argb: "FFCBD5E1" } },
-          right: { style: "thin", color: { argb: "FFCBD5E1" } },
-        };
-      });
-    }
-
-    const row = worksheet.addRow({
-      rackAddress: item.rackAddress || "--",
-      sku: item.sku,
-      quantity: item.quantity,
-      generateBarcode: item.generateBarcode || "No",
-    });
-
-    row.height = 20;
-
-    row.eachCell((cell, colNumber) => {
-      cell.border = {
+    [rackCell, skuCell, qtyCell, barcodeCell].forEach((c, idx) => {
+      c.border = {
         top: { style: "thin", color: { argb: "FFE2E8F0" } },
         left: { style: "thin", color: { argb: "FFE2E8F0" } },
         bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
         right: { style: "thin", color: { argb: "FFE2E8F0" } },
       };
-      cell.alignment = { vertical: "middle", horizontal: colNumber === 2 ? "left" : "center" };
-      cell.font = { size: 10.5, name: "Calibri", color: { argb: "FF000000" } };
+      c.font = { size: 9, name: "Calibri", color: { argb: "FF000000" } };
+      c.alignment = { vertical: "middle", horizontal: idx === 1 ? "left" : "center" };
+    });
 
-      if (colNumber === 2) {
-        cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF000000" } };
+    skuCell.font = { bold: true, size: 9, name: "Calibri", color: { argb: "FF000000" } };
+
+    if (item.generateBarcode === "Yes") {
+      barcodeCell.font = { bold: true, size: 9, name: "Calibri", color: { argb: "FF16A34A" } };
+    } else {
+      barcodeCell.font = { size: 9, name: "Calibri", color: { argb: "FF64748B" } };
+    }
+  };
+
+  const styleDividerCells = (
+    row: ExcelJS.Row,
+    startCol: number,
+    text: string
+  ) => {
+    for (let c = startCol; c <= startCol + 3; c++) {
+      const cell = row.getCell(c);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF1F5F9" },
+      };
+      cell.border = {
+        top: { style: "medium", color: { argb: "FF0A0E1A" } },
+        bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+        left: c === startCol ? { style: "thin", color: { argb: "FFCBD5E1" } } : undefined,
+        right: c === startCol + 3 ? { style: "thin", color: { argb: "FFCBD5E1" } } : undefined,
+      };
+    }
+    const firstCell = row.getCell(startCol);
+    firstCell.value = text;
+    firstCell.font = { bold: true, size: 9.5, name: "Calibri", color: { argb: "FF0F172A" } };
+    firstCell.alignment = { vertical: "middle", horizontal: "left" };
+    worksheet.mergeCells(row.number, startCol, row.number, startCol + 3);
+  };
+
+  let lastPageHadRightEntries = false;
+
+  for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+    if (pageIdx > 0) {
+      const lastRow = worksheet.lastRow;
+      if (lastRow) {
+        lastRow.addPageBreak();
       }
+    }
 
-      if (colNumber === 4) {
-        if (item.generateBarcode === "Yes") {
-          cell.font = { bold: true, size: 10.5, name: "Calibri", color: { argb: "FF16A34A" } };
+    const startIdx = pageIdx * ITEMS_PER_PAGE;
+    const pageEntries = entries.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+    const leftEntries = pageEntries.slice(0, MAX_ROWS_PER_COLUMN);
+    const rightEntries = hasRightColumn
+      ? pageEntries.slice(MAX_ROWS_PER_COLUMN, ITEMS_PER_PAGE)
+      : [];
+    const numRowsOnPage = Math.max(leftEntries.length, rightEntries.length);
+    lastPageHadRightEntries = rightEntries.length > 0;
+
+    // Page Table Header Row
+    const headerRow = worksheet.addRow([]);
+    headerRow.height = 24;
+
+    // Left Column Headers (Cols 1 to 4)
+    headerRow.getCell(1).value = "Rack";
+    headerRow.getCell(2).value = "SKU";
+    headerRow.getCell(3).value = "Qty";
+    headerRow.getCell(4).value = "Barcode";
+
+    styleHeaderCell(headerRow.getCell(1), false);
+    styleHeaderCell(headerRow.getCell(2), true);
+    styleHeaderCell(headerRow.getCell(3), false);
+    styleHeaderCell(headerRow.getCell(4), false);
+
+    // Right Column Headers (Cols 6 to 9) - ONLY if hasRightColumn AND rightEntries exist
+    if (hasRightColumn && rightEntries.length > 0) {
+      // Spacer Column (Col 5)
+      headerRow.getCell(5).value = "";
+
+      headerRow.getCell(6).value = "Rack";
+      headerRow.getCell(7).value = "SKU";
+      headerRow.getCell(8).value = "Qty";
+      headerRow.getCell(9).value = "Barcode";
+
+      styleHeaderCell(headerRow.getCell(6), false);
+      styleHeaderCell(headerRow.getCell(7), true);
+      styleHeaderCell(headerRow.getCell(8), false);
+      styleHeaderCell(headerRow.getCell(9), false);
+    }
+
+    // Add data rows side-by-side
+    for (let r = 0; r < numRowsOnPage; r++) {
+      const dataRow = worksheet.addRow([]);
+      dataRow.height = 18.5;
+
+      const left = leftEntries[r];
+      const right = rightEntries[r];
+
+      // Left Column (Cols 1-4)
+      if (left) {
+        if (left.type === "divider") {
+          styleDividerCells(dataRow, 1, left.text);
         } else {
-          cell.font = { size: 10.5, name: "Calibri", color: { argb: "FF64748B" } };
+          styleItemCells(dataRow, 1, left.item);
         }
       }
-    });
-  });
 
-  // Total Summary Row: standard Excel background (no fill), bold black text
-  const totalRow = worksheet.addRow({
-    rackAddress: "",
-    sku: "TOTAL QUANTITY",
-    quantity: picklist.totalQuantity,
-    generateBarcode: `${picklist.items.length} Unique SKUs`,
-  });
+      // Right Column (Cols 6-9) - ONLY if hasRightColumn and right exists
+      if (hasRightColumn && right) {
+        // Spacer Column (Col 5)
+        dataRow.getCell(5).value = "";
 
+        if (right.type === "divider") {
+          styleDividerCells(dataRow, 6, right.text);
+        } else {
+          styleItemCells(dataRow, 6, right.item);
+        }
+      }
+    }
+  }
+
+  // Summary Row across bottom of sheet (only once)
+  const totalRow = worksheet.addRow([]);
   totalRow.height = 24;
-  totalRow.eachCell((cell, colNumber) => {
+
+  totalRow.getCell(1).value = "";
+  totalRow.getCell(2).value = "TOTAL QUANTITY";
+  totalRow.getCell(3).value = totalQuantity;
+  totalRow.getCell(4).value = `${items.length} Unique SKUs`;
+
+  for (let c = 1; c <= 4; c++) {
+    const cell = totalRow.getCell(c);
     cell.border = {
       top: { style: "thin", color: { argb: "FF000000" } },
       bottom: { style: "double", color: { argb: "FF000000" } },
       left: { style: "thin", color: { argb: "FFE2E8F0" } },
       right: { style: "thin", color: { argb: "FFE2E8F0" } },
     };
-    cell.font = { bold: true, size: 11, name: "Calibri", color: { argb: "FF000000" } };
-    cell.alignment = { vertical: "middle", horizontal: colNumber === 2 ? "right" : "center" };
-  });
+    cell.font = { bold: true, size: 9.5, name: "Calibri", color: { argb: "FF000000" } };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: c === 2 ? "right" : "center",
+      shrinkToFit: true,
+    };
+  }
 
-  // Auto-fit column widths so columns fit content snugly without unnecessary spaces
-  const maxRackLen = picklist.items.reduce(
+  // Column widths fitted snugly for A4 Portrait paper
+  const maxRackLen = items.reduce(
     (max, i) => Math.max(max, (i.rackAddress && i.rackAddress !== "--" ? i.rackAddress : "").length),
-    "Rack Address".length
+    "Rack".length
   );
-  const maxSkuLen = picklist.items.reduce(
+  const maxSkuLen = items.reduce(
     (max, i) => Math.max(max, (i.sku || "").length),
-    "Seller SKU".length
+    "SKU".length
+  );
+  const totalSkuSummaryText = `${items.length} Unique SKUs`;
+  const barcodeColWidth = Math.max(18, totalSkuSummaryText.length + 3);
+
+  if (!hasRightColumn) {
+    // Single 4-column layout (fit cleanly onto A4 Portrait without empty right columns)
+    const singleRackWidth = Math.min(Math.max(maxRackLen + 3, 14), 26);
+    const singleSkuWidth = Math.min(Math.max(maxSkuLen + 3, 26), 45);
+
+    worksheet.getColumn(1).width = singleRackWidth;
+    worksheet.getColumn(2).width = singleSkuWidth;
+    worksheet.getColumn(3).width = 9;
+    worksheet.getColumn(4).width = barcodeColWidth;
+  } else {
+    // Two-column side-by-side layout (Cols 1-4, Col 5 spacer, Cols 6-9)
+    const rackWidth = Math.min(Math.max(maxRackLen + 2, 12), 18);
+    const skuWidth = Math.min(Math.max(maxSkuLen + 2, 16), 26);
+
+    worksheet.getColumn(1).width = rackWidth;
+    worksheet.getColumn(2).width = skuWidth;
+    worksheet.getColumn(3).width = 8;
+    worksheet.getColumn(4).width = barcodeColWidth;
+    worksheet.getColumn(5).width = 2; // Spacer
+    worksheet.getColumn(6).width = rackWidth;
+    worksheet.getColumn(7).width = skuWidth;
+    worksheet.getColumn(8).width = 8;
+    worksheet.getColumn(9).width = barcodeColWidth;
+  }
+};
+
+export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
+  const workbook = new ExcelJS.Workbook();
+  const now = new Date();
+  const picklistNo = `PL${Date.now()}`;
+
+  // Configure workbook views so Sheet 1 ("Amazon Picklist") is explicitly the active tab when opened in Excel
+  workbook.views = [
+    {
+      x: 0,
+      y: 0,
+      width: 10000,
+      height: 20000,
+      firstSheet: 0,
+      activeTab: 0,
+      visibility: "visible",
+    },
+  ];
+
+  // Sheet 1: All items (both Barcode Yes & No) grouped by section and sorted purely by Rack Address
+  const sheet1 = workbook.addWorksheet("Amazon Picklist");
+  sheet1.views = [{ state: "normal", activeCell: "A1" }];
+  populatePicklistWorksheet(
+    sheet1,
+    picklist.items,
+    picklist.totalQuantity,
+    "No items found in this picklist"
   );
 
-  // Column 1: Rack Address (snug fit for "Rack Address" or longest address)
-  worksheet.getColumn(1).width = Math.max(maxRackLen + 3, 14);
-  // Column 2: Seller SKU (snug fit for longest SKU in this batch instead of huge 44 width)
-  worksheet.getColumn(2).width = Math.max(maxSkuLen + 3, 16);
-  // Column 3: Quantity (fits "Quantity" snugly with no wasted space)
-  worksheet.getColumn(3).width = 11;
-  // Column 4: Generate Barcode (fits "Generate Barcode" snugly with no wasted space)
-  worksheet.getColumn(4).width = 17;
+  // Sheet 2: Only items where Generate Barcode === "Yes" grouped by Single, Multiple Quantity, Multiple Pieces
+  const barcodeYesItems = picklist.items.filter((item) => item.generateBarcode === "Yes");
+  const barcodeYesTotalQty = barcodeYesItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const sheet2 = workbook.addWorksheet("Barcode Yes");
+  sheet2.views = [{ state: "normal", activeCell: "A1" }];
+  populatePicklistWorksheet(
+    sheet2,
+    barcodeYesItems,
+    barcodeYesTotalQty,
+    "No Barcode Yes items found in this batch"
+  );
 
   const buffer = await workbook.xlsx.writeBuffer();
   const fileName = `Amazon_Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.xlsx`;
