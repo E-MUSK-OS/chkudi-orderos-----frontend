@@ -285,11 +285,13 @@ export const chromeExtensionPrintService = {
    * STRICTLY sends to connected, online printers only; will NEVER send or queue to offline/disconnected printers.
    */
   async printPdf(
-    pdfBase64: string,
-    printerName: string | null = null,
-    copies = 1,
-    skipOnlineVerification = false
-  ): Promise<ExtensionPrintResponse> {
+  pdfBase64: string,
+  printerName: string | null = null,
+  copies = 1,
+  skipOnlineVerification = false,
+  widthMm?: number,
+  heightMm?: number
+): Promise<ExtensionPrintResponse> {
     if (typeof window === "undefined") {
       throw new Error("Window is not defined");
     }
@@ -336,8 +338,9 @@ export const chromeExtensionPrintService = {
             pdf: cleanBase64,
             printer: printerName,
             options: {
-              copies: copies || 1,
-            },
+  copies: copies || 1,
+  paperSize: widthMm && heightMm ? `${widthMm}x${heightMm}` : undefined,
+},
             requestId: requestId,
           },
           (response: any) => {

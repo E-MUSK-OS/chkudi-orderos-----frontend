@@ -191,7 +191,9 @@ export function TestPrintModal({
         pdfBase64,
         selectedPrinter,
         copies,
-        false
+        false,
+        effectiveWidthMm,
+        effectiveHeightMm
       );
 
       if (extRes && (extRes.success === false || extRes.error)) {

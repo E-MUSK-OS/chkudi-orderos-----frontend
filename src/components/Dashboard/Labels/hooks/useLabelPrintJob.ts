@@ -230,7 +230,14 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
         const pdfBase64 = await pdfDoc.saveAsBase64();
 
         const copies = item.quantity && item.quantity > 0 ? item.quantity : 1;
-        const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, printerName, copies);
+        const extRes = await chromeExtensionPrintService.printPdf(
+          pdfBase64,
+          printerName,
+          copies,
+          false,
+          effectiveWidthMm,
+          effectiveHeightMm
+        );
         if (extRes && (extRes.success === false || extRes.error)) {
           throw new Error(extRes.error || "Print extension reported print failure");
         }
