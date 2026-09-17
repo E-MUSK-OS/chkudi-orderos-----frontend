@@ -184,6 +184,22 @@ export const amazonOrderService = {
   },
 
   /**
+   * Delete a specific Amazon batch and its printed orders
+   */
+  async deleteAmazonBatch(
+    batchId: string,
+    token?: string
+  ): Promise<{ success: boolean; message: string; data: any }> {
+    const userToken =
+      token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
+
+    return api.delete<{ success: boolean; message: string; data: any }>(
+      `${BASE_URL}/batches/${encodeURIComponent(batchId)}`,
+      userToken
+    );
+  },
+
+  /**
    * Save printed Amazon orders to the database (stored with 7-day retention)
    */
   async savePrintedOrders(

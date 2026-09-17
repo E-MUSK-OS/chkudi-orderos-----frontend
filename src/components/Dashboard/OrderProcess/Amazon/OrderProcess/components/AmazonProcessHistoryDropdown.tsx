@@ -17,6 +17,7 @@ import {
   Printer,
   Eye,
   Table,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAmazonOrderStore, getPrintedBatchesMap } from "../store/useAmazonOrderStore";
@@ -145,6 +146,35 @@ export default function AmazonProcessHistoryDropdown({
       });
     } finally {
       setLoadingBatchId(null);
+    }
+  };
+
+  const handleDeleteBatch = async (batchId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this batch? All printed orders associated with this batch will also be permanently deleted."
+    );
+    if (!confirmed) return;
+
+    try {
+      setLoadingBatchId(batchId);
+      toast.loading("Deleting batch and associated orders...", { id: "delete-batch" });
+      
+      const response = await amazonOrderService.deleteAmazonBatch(batchId);
+      
+      if (response?.success) {
+        toast.success("Batch and associated orders deleted successfully!", { id: "delete-batch" });
+        fetchHistoryBatches(); // Refresh history list
+      } else {
+        toast.error("Failed to delete batch.", { id: "delete-batch" });
+      }
+    } catch (err) {
+      console.error("Error deleting batch:", err);
+      toast.error("Error deleting batch.", { id: "delete-batch" });
+    } finally {
+      if (loadingBatchId === batchId) {
+        setLoadingBatchId(null);
+      }
     }
   };
 
@@ -321,6 +351,20 @@ export default function AmazonProcessHistoryDropdown({
                             {batch.matchPercentage}% Matched
                           </span>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteBatch(batch.id, e)}
+                          disabled={isItemLoading}
+                          className="grid h-6 w-6 place-items-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition ml-1"
+                          title="Delete this batch and its associated orders"
+                        >
+                          {isItemLoading && loadingBatchId === batch.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </button>
                       </div>
                     </div>
 
