@@ -76,13 +76,17 @@ export const labelService = {
 
   // 3. Print Logs
   logPrintSession: async (items: PrintLogItemPayload[]): Promise<PrintLogResult> => {
-    const res = await fetchWithAuth(`${BASE_URL}/print-log`, {
-      method: "POST",
-      body: JSON.stringify({ items }),
-    });
-    if (!res.ok) throw new Error("Failed to log print session");
-    const data = await res.json();
-    return data.data;
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/print-log`, {
+        method: "POST",
+        body: JSON.stringify({ items }),
+      });
+      if (!res.ok) return { success: false };
+      const data = await res.json();
+      return data?.data || { success: true };
+    } catch {
+      return { success: false };
+    }
   },
 
   getPrintStats: async (): Promise<PrintStatEntry[]> => {
