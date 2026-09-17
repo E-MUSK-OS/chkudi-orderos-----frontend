@@ -792,7 +792,8 @@ const populatePicklistWorksheet = (
   worksheet: ExcelJS.Worksheet,
   items: PicklistItem[],
   totalQuantity: number,
-  emptyMessage = "No items found in this picklist"
+  emptyMessage: string = "No items found in this picklist",
+  forceSingleColumn: boolean = false
 ) => {
   // Page setup to fit perfectly onto A4 portrait sheet when printing
   worksheet.pageSetup = {
@@ -838,7 +839,7 @@ const populatePicklistWorksheet = (
 
   const MAX_ROWS_PER_COLUMN = 50;
   // Always use 2 columns if there are sections or multiple items, for symmetric layout
-  const hasRightColumn = items.length > MAX_ROWS_PER_COLUMN || items.some(i => (i.orderTypeLabel || "Single Quantity") !== "Single Quantity") || items.length > 1;
+  const hasRightColumn = !forceSingleColumn && (items.length > MAX_ROWS_PER_COLUMN || items.some(i => (i.orderTypeLabel || "Single Quantity") !== "Single Quantity") || items.length > 1);
 
   const pages: PageData[] = [];
   let currentLeft: SheetEntry[] = [];
@@ -1221,7 +1222,8 @@ export const downloadAmazonPicklistExcel = async (picklist: PicklistResult) => {
     sheet2,
     barcodeYesItems,
     barcodeYesTotalQty,
-    "No Barcode Yes items found in this batch"
+    "No Barcode Yes items found in this batch",
+    true // forceSingleColumn for Barcode Yes sheet
   );
 
   const buffer = await workbook.xlsx.writeBuffer();
