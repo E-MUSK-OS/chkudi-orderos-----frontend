@@ -7,7 +7,7 @@ import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { Loader2, Printer, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { LabelTemplate, ProductLookupResult } from "../types/label.types";
 import { GenerateRow, useLabelPrintJob } from "../hooks/useLabelPrintJob";
-import { renderLabelToCanvas, PrintRotation } from "@/lib/labelRenderer";
+import { renderLabelToCanvas } from "@/lib/labelRenderer";
 
 interface PrintExecutionModalProps {
   open: boolean;
@@ -42,8 +42,6 @@ export default function PrintExecutionModal({
     startPrinting,
     printViaBrowser,
     retryFailed,
-    printRotation,
-    setPrintRotation,
   } = useLabelPrintJob(template, rows);
 
   useEffect(() => {
@@ -222,33 +220,6 @@ export default function PrintExecutionModal({
                 ? "No printers found"
                 : "Select a printer..."
             }
-            borderRadius={6}
-            height={44}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-[#0A0E1A]">Print Orientation</label>
-            <span className="text-xs text-slate-500 font-medium">For 50×100mm roll</span>
-          </div>
-          <ReactSelect
-            menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
-            options={[
-              { label: "Rotate 90° Clockwise (50×100 Roll)", value: "90" },
-              { label: "Rotate 270° Counter-Clockwise", value: "270" },
-              { label: "Normal (0°)", value: "0" },
-            ]}
-            value={{
-              label:
-                printRotation === 90
-                  ? "Rotate 90° Clockwise (50×100 Roll)"
-                  : printRotation === 270
-                  ? "Rotate 270° Counter-Clockwise"
-                  : "Normal (0°)",
-              value: String(printRotation),
-            }}
-            onChange={(opt) => setPrintRotation(Number(opt?.value || 0) as PrintRotation)}
             borderRadius={6}
             height={44}
           />

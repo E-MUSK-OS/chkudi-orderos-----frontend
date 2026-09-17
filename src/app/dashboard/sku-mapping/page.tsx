@@ -1,12 +1,5 @@
-import SkuMapping from '@/components/Dashboard/SkuMapping/SkuMapping'
-import React from 'react'
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div>
-      <SkuMapping />
-    </div>
-  )
+export default function SkuMappingRedirectPage() {
+  redirect("/dashboard/labels/godown-inventory-sheet");
 }
-
-export default page

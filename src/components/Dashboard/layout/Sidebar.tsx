@@ -160,7 +160,7 @@ const navItems: NavItem[] = [
       },
       {
         label: "Godown Inventory Sheet",
-        href: "/dashboard/sku-mapping",
+        href: "/dashboard/labels/godown-inventory-sheet",
       },
     ],
   },

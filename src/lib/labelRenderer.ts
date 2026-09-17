@@ -270,30 +270,34 @@ export const renderLabelToCanvas = async (
     } else if (el.type === "barcode") {
       const content = resolveVariable(el.content, el.variableSource, productRecord);
       if (content) {
-        const tmpCanvas = document.createElement("canvas");
         try {
-          JsBarcode(tmpCanvas, content, {
+          const fontSize = el.fontSize || 12;
+          const showText = el.showText !== false;
+          const barHeight = Math.max(4, h - (showText ? fontSize : 0));
+
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          JsBarcode(svg, content, {
             format: el.barcodeFormat || "CODE128",
-            width: 2,
-            height: h,
-            displayValue: el.showText !== false,
+            displayValue: showText,
+            fontSize: fontSize,
             margin: 0,
-            background: "transparent",
-            lineColor: "#000000",
-            fontSize: el.fontSize || 12,
+            width: 2,
+            height: barHeight,
           });
-          
-          // Letterbox and center to avoid distorting barcode
-          const bw = tmpCanvas.width;
-          const bh = tmpCanvas.height;
+
+          const svgString = new XMLSerializer().serializeToString(svg);
+          const barcodeImg = await svgStringToImage(svgString);
+
+          const bw = barcodeImg.width || 1;
+          const bh = barcodeImg.height || 1;
           const scale = Math.min(w / bw, h / bh);
           const scaledW = bw * scale;
           const scaledH = bh * scale;
           const dx = (w - scaledW) / 2;
           const dy = (h - scaledH) / 2;
-          
-          ctx.drawImage(tmpCanvas, dx, dy, scaledW, scaledH);
-        } catch(e) {
+
+          ctx.drawImage(barcodeImg, dx, dy, scaledW, scaledH);
+        } catch (e) {
           console.error("Barcode render error", e);
         }
       }

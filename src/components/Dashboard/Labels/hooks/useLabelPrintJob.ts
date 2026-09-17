@@ -36,23 +36,11 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
   const [successfulJobs, setSuccessfulJobs] = useState<PrintQueueItem[]>([]);
   const [failedJobs, setFailedJobs] = useState<PrintQueueItem[]>([]);
 
-  // Print rotation state (0 = normal, 90 = clockwise, 270 = counter-clockwise)
-  // Defaults to 90 if template is landscape (width > height), which is standard for 50x100mm thermal rolls
-  const [printRotation, setPrintRotationState] = useState<PrintRotation>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("label_print_rotation");
-      if (saved === "90" || saved === "180" || saved === "270" || saved === "0") {
-        return Number(saved) as PrintRotation;
-      }
-    }
-    return (template && (template.settings.widthMm || 100) > (template.settings.heightMm || 50)) ? 90 : 0;
-  });
+  // Normal 0° rotation (no rotation)
+  const [printRotation, setPrintRotationState] = useState<PrintRotation>(0);
 
   const setPrintRotation = useCallback((rot: PrintRotation) => {
     setPrintRotationState(rot);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("label_print_rotation", String(rot));
-    }
   }, []);
 
   const refreshPrinters = useCallback(async () => {
