@@ -3,22 +3,53 @@ import React from 'react';
 interface TransformHandleProps {
   onPointerDown: (e: React.PointerEvent, handle: string) => void;
   zoom: number;
+  rotation?: number;
 }
 
-export function TransformHandle({ onPointerDown, zoom }: TransformHandleProps) {
+export function getRotatedCursor(handleId: string, rotation: number = 0): string {
+  const baseAxes: Record<string, number> = {
+    n: 0,
+    s: 0,
+    ne: 45,
+    sw: 45,
+    e: 90,
+    w: 90,
+    se: 135,
+    nw: 135,
+  };
+
+  const baseAxis = baseAxes[handleId];
+  if (baseAxis === undefined) return 'default';
+
+  // Normalize effective axis angle to [0, 180)
+  const totalAngle = baseAxis + rotation;
+  const norm = ((totalAngle % 180) + 180) % 180;
+
+  if (norm >= 22.5 && norm < 67.5) {
+    return 'nesw-resize';
+  } else if (norm >= 67.5 && norm < 112.5) {
+    return 'ew-resize';
+  } else if (norm >= 112.5 && norm < 157.5) {
+    return 'nwse-resize';
+  } else {
+    return 'ns-resize';
+  }
+}
+
+export function TransformHandle({ onPointerDown, zoom, rotation = 0 }: TransformHandleProps) {
   const size = 8;
   const offset = -size / 2;
 
-  // The 8 resize handles
+  // The 8 resize handles with rotation-aware cursors
   const handles = [
-    { id: 'nw', top: offset, left: offset, cursor: 'nwse-resize' },
-    { id: 'n', top: offset, left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
-    { id: 'ne', top: offset, right: offset, cursor: 'nesw-resize' },
-    { id: 'w', top: '50%', left: offset, transform: 'translateY(-50%)', cursor: 'ew-resize' },
-    { id: 'e', top: '50%', right: offset, transform: 'translateY(-50%)', cursor: 'ew-resize' },
-    { id: 'sw', bottom: offset, left: offset, cursor: 'nesw-resize' },
-    { id: 's', bottom: offset, left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
-    { id: 'se', bottom: offset, right: offset, cursor: 'nwse-resize' },
+    { id: 'nw', top: offset, left: offset, cursor: getRotatedCursor('nw', rotation) },
+    { id: 'n', top: offset, left: '50%', transform: 'translateX(-50%)', cursor: getRotatedCursor('n', rotation) },
+    { id: 'ne', top: offset, right: offset, cursor: getRotatedCursor('ne', rotation) },
+    { id: 'w', top: '50%', left: offset, transform: 'translateY(-50%)', cursor: getRotatedCursor('w', rotation) },
+    { id: 'e', top: '50%', right: offset, transform: 'translateY(-50%)', cursor: getRotatedCursor('e', rotation) },
+    { id: 'sw', bottom: offset, left: offset, cursor: getRotatedCursor('sw', rotation) },
+    { id: 's', bottom: offset, left: '50%', transform: 'translateX(-50%)', cursor: getRotatedCursor('s', rotation) },
+    { id: 'se', bottom: offset, right: offset, cursor: getRotatedCursor('se', rotation) },
   ];
 
   // Rotation handle: sits above the top-center handle with a line connecting them

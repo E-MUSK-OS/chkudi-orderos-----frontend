@@ -21,6 +21,8 @@ interface ResizeState {
   initialWidth: number;
   initialHeight: number;
   initialRotation: number;
+  initialAspect: number;
+  lockAspect: boolean;
   elementId: string;
   hasMoved: boolean;
 }
@@ -157,6 +159,23 @@ export function useCanvasInteraction(
 
     const elElement = e.currentTarget as HTMLElement;
     elElement.setPointerCapture(e.pointerId);
+
+    const isImage = element.type === 'image';
+    const keepAspect = (element as any)?.keepAspectRatio !== false;
+    const isQrCode = element.type === 'qrcode';
+    const lockAspect = (isImage && keepAspect) || isQrCode || e.shiftKey;
+
+    let initialAspect = element.width / (element.height || 1);
+    if (isImage) {
+      const elDom = e.currentTarget.closest('[data-element-id]') as HTMLElement | null;
+      const imgEl = elDom?.querySelector('img') as HTMLImageElement | null;
+      if (imgEl && imgEl.naturalWidth && imgEl.naturalHeight) {
+        initialAspect = imgEl.naturalWidth / imgEl.naturalHeight;
+      }
+    } else if (isQrCode) {
+      initialAspect = 1.0;
+    }
+
     setResizeState({
       isResizing: true,
       handle,
@@ -167,6 +186,8 @@ export function useCanvasInteraction(
       initialWidth: element.width,
       initialHeight: element.height,
       initialRotation: element.rotation || 0,
+      initialAspect,
+      lockAspect,
       elementId: id,
       hasMoved: false,
     });
@@ -256,39 +277,141 @@ export function useCanvasInteraction(
       if (dxPx === 0 && dyPx === 0) return;
       setResizeState(prev => (prev && !prev.hasMoved) ? { ...prev, hasMoved: true } : prev);
 
-      let dxMm = pxToMm(dxPx, zoom);
-      let dyMm = pxToMm(dyPx, zoom);
+      const dxMm = pxToMm(dxPx, zoom);
+      const dyMm = pxToMm(dyPx, zoom);
 
       const rot = resizeState.initialRotation || 0;
-      if (rot === 90) { const tmp = dxMm; dxMm = dyMm; dyMm = -tmp; }
-      else if (rot === 180) { dxMm = -dxMm; dyMm = -dyMm; }
-      else if (rot === 270) { const tmp = dxMm; dxMm = -dyMm; dyMm = tmp; }
+      const rad = (rot * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
 
-      let { initialX, initialY, initialWidth, initialHeight } = resizeState;
-      let newX = initialX, newY = initialY, newWidth = initialWidth, newHeight = initialHeight;
+      // Project canvas delta (dxMm, dyMm) into element's local coordinate system:
+      // duMm is along local width (East/West), dvMm is along local height (North/South)
+      const duMm = dxMm * cos + dyMm * sin;
+      const dvMm = -dxMm * sin + dyMm * cos;
+
+      const { initialX, initialY, initialWidth, initialHeight, initialAspect, lockAspect: initialLockAspect } = resizeState;
       const handle = resizeState.handle;
       if (!handle) return;
 
-      if (handle.includes('e')) newWidth = initialWidth + dxMm;
-      if (handle.includes('w')) { newWidth = initialWidth - dxMm; newX = initialX + dxMm; }
-      if (handle.includes('s')) newHeight = initialHeight + dyMm;
-      if (handle.includes('n')) { newHeight = initialHeight - dyMm; newY = initialY + dyMm; }
+      const minSize = 2; // Minimum dimension in mm
+      let newWidth = initialWidth;
+      let newHeight = initialHeight;
 
-      if (newWidth < 2) { newWidth = 2; if (handle.includes('w')) newX = initialX + initialWidth - 2; }
-      if (newHeight < 2) { newHeight = 2; if (handle.includes('n')) newY = initialY + initialHeight - 2; }
+      let deltaAnchorLocalX = 0;
+      let deltaAnchorLocalY = 0;
 
-      if (settings.snapToGrid && !suspendSnapRef.current) {
-        if (handle.includes('e') || handle.includes('w')) {
-          const snappedW = snapPoint(newWidth, 0, settings.gridSizeMm, true);
-          newWidth = snappedW.x;
-          if (handle.includes('w')) newX = initialX + (initialWidth - newWidth);
+      const isCorner = handle.length === 2; // 'se', 'sw', 'ne', 'nw'
+      const isHorizontalSide = handle === 'e' || handle === 'w';
+      const isVerticalSide = handle === 's' || handle === 'n';
+
+      if (isHorizontalSide) {
+        // Horizontal side handle: scale horizontally ONLY
+        if (handle === 'e') newWidth = initialWidth + duMm;
+        if (handle === 'w') newWidth = initialWidth - duMm;
+
+        newWidth = Math.max(minSize, newWidth);
+
+        if (settings.snapToGrid && !suspendSnapRef.current) {
+          newWidth = Math.max(minSize, Math.round(newWidth / settings.gridSizeMm) * settings.gridSizeMm);
         }
-        if (handle.includes('s') || handle.includes('n')) {
-          const snappedH = snapPoint(0, newHeight, settings.gridSizeMm, true);
-          newHeight = snappedH.y;
-          if (handle.includes('n')) newY = initialY + (initialHeight - newHeight);
+
+        // Height does NOT change
+        newHeight = initialHeight;
+
+        if (handle === 'e') deltaAnchorLocalX = (newWidth - initialWidth) / 2;
+        if (handle === 'w') deltaAnchorLocalX = -(newWidth - initialWidth) / 2;
+        deltaAnchorLocalY = 0;
+      } else if (isVerticalSide) {
+        // Vertical side handle: scale vertically ONLY
+        if (handle === 's') newHeight = initialHeight + dvMm;
+        if (handle === 'n') newHeight = initialHeight - dvMm;
+
+        newHeight = Math.max(minSize, newHeight);
+
+        if (settings.snapToGrid && !suspendSnapRef.current) {
+          newHeight = Math.max(minSize, Math.round(newHeight / settings.gridSizeMm) * settings.gridSizeMm);
         }
+
+        // Width does NOT change
+        newWidth = initialWidth;
+
+        deltaAnchorLocalX = 0;
+        if (handle === 's') deltaAnchorLocalY = (newHeight - initialHeight) / 2;
+        if (handle === 'n') deltaAnchorLocalY = -(newHeight - initialHeight) / 2;
+      } else if (isCorner) {
+        // Corner handle: scales in BOTH directions (diagonal)
+        const targetElement = elements.find(el => el.id === resizeState.elementId);
+        const isImage = targetElement?.type === 'image';
+        const keepAspect = (targetElement as any)?.keepAspectRatio !== false;
+        const isQrCode = targetElement?.type === 'qrcode';
+        const shouldLockAspect = (isImage && keepAspect) || isQrCode || e.shiftKey;
+
+        if (shouldLockAspect && initialWidth > 0 && initialHeight > 0) {
+          let wCandidate = initialWidth;
+          let hCandidate = initialHeight;
+          if (handle.includes('e')) wCandidate = initialWidth + duMm;
+          if (handle.includes('w')) wCandidate = initialWidth - duMm;
+          if (handle.includes('s')) hCandidate = initialHeight + dvMm;
+          if (handle.includes('n')) hCandidate = initialHeight - dvMm;
+
+          const changeW = Math.abs(wCandidate - initialWidth);
+          const changeH = Math.abs(hCandidate - initialHeight);
+
+          let scale: number;
+          if (changeW / initialWidth >= changeH / initialHeight) {
+            scale = wCandidate / initialWidth;
+          } else {
+            scale = hCandidate / initialHeight;
+          }
+          const minScale = Math.max(minSize / initialWidth, minSize / initialHeight);
+          scale = Math.max(minScale, scale);
+
+          newWidth = initialWidth * scale;
+          newHeight = initialHeight * scale;
+
+          if (settings.snapToGrid && !suspendSnapRef.current) {
+            newWidth = Math.max(minSize, Math.round(newWidth / settings.gridSizeMm) * settings.gridSizeMm);
+            newHeight = Math.max(minSize, newWidth / initialAspect);
+          }
+        } else {
+          // Freeform diagonal scaling
+          if (handle.includes('e')) newWidth = initialWidth + duMm;
+          if (handle.includes('w')) newWidth = initialWidth - duMm;
+          if (handle.includes('s')) newHeight = initialHeight + dvMm;
+          if (handle.includes('n')) newHeight = initialHeight - dvMm;
+
+          newWidth = Math.max(minSize, newWidth);
+          newHeight = Math.max(minSize, newHeight);
+
+          if (settings.snapToGrid && !suspendSnapRef.current) {
+            if (handle.includes('e') || handle.includes('w')) {
+              newWidth = Math.max(minSize, Math.round(newWidth / settings.gridSizeMm) * settings.gridSizeMm);
+            }
+            if (handle.includes('s') || handle.includes('n')) {
+              newHeight = Math.max(minSize, Math.round(newHeight / settings.gridSizeMm) * settings.gridSizeMm);
+            }
+          }
+        }
+
+        if (handle.includes('e')) deltaAnchorLocalX = (newWidth - initialWidth) / 2;
+        if (handle.includes('w')) deltaAnchorLocalX = -(newWidth - initialWidth) / 2;
+        if (handle.includes('s')) deltaAnchorLocalY = (newHeight - initialHeight) / 2;
+        if (handle.includes('n')) deltaAnchorLocalY = -(newHeight - initialHeight) / 2;
       }
+
+      // Rotate local center displacement into canvas coordinates
+      const deltaCenterX = deltaAnchorLocalX * cos - deltaAnchorLocalY * sin;
+      const deltaCenterY = deltaAnchorLocalX * sin + deltaAnchorLocalY * cos;
+
+      const initialCenterX = initialX + initialWidth / 2;
+      const initialCenterY = initialY + initialHeight / 2;
+
+      const newCenterX = initialCenterX + deltaCenterX;
+      const newCenterY = initialCenterY + deltaCenterY;
+
+      const newX = newCenterX - newWidth / 2;
+      const newY = newCenterY - newHeight / 2;
 
       onUpdateElement(resizeState.elementId, { x: newX, y: newY, width: newWidth, height: newHeight }, true);
     }

@@ -129,7 +129,7 @@ export function PropertiesPanel({
     }
   };
 
-  const handleImageUpload = async (file: File, onComplete: (url: string) => void) => {
+  const handleImageUpload = async (file: File, onComplete: (url: string, naturalAspect?: number) => void) => {
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file.');
       return;
@@ -137,8 +137,26 @@ export function PropertiesPanel({
     
     setIsUploading(true);
     try {
+      let naturalAspect: number | undefined;
+      const objectUrl = URL.createObjectURL(file);
+      const tempImg = new Image();
+      await new Promise<void>((resolve) => {
+        tempImg.onload = () => {
+          if (tempImg.naturalWidth && tempImg.naturalHeight) {
+            naturalAspect = tempImg.naturalWidth / tempImg.naturalHeight;
+          }
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+        tempImg.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+        tempImg.src = objectUrl;
+      });
+
       const url = await uploadImageToCloudinary(file);
-      onComplete(url);
+      onComplete(url, naturalAspect);
     } catch (error) {
       console.error('Failed to upload image:', error);
       toast.error('Failed to upload image. Please try again.');
@@ -856,7 +874,16 @@ export function PropertiesPanel({
                   e.stopPropagation();
                   setIsDragging(false);
                   if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    handleImageUpload(e.dataTransfer.files[0], (url) => handleUpdateDiscrete('imageUrl', url));
+                    handleImageUpload(e.dataTransfer.files[0], (url, naturalAspect) => {
+                      if (selectedElement) {
+                        const updates: Partial<ImageElement> = { imageUrl: url };
+                        if (naturalAspect && naturalAspect > 0) {
+                          const currentW = selectedElement.width || 30;
+                          updates.height = Math.max(5, Math.round((currentW / naturalAspect) * 10) / 10);
+                        }
+                        updateElement(selectedElement.id, updates, false);
+                      }
+                    });
                   }
                 }}
                 onClick={() => fileInputRef.current?.click()}
@@ -868,7 +895,16 @@ export function PropertiesPanel({
                   ref={fileInputRef}
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      handleImageUpload(e.target.files[0], (url) => handleUpdateDiscrete('imageUrl', url));
+                      handleImageUpload(e.target.files[0], (url, naturalAspect) => {
+                        if (selectedElement) {
+                          const updates: Partial<ImageElement> = { imageUrl: url };
+                          if (naturalAspect && naturalAspect > 0) {
+                            const currentW = selectedElement.width || 30;
+                            updates.height = Math.max(5, Math.round((currentW / naturalAspect) * 10) / 10);
+                          }
+                          updateElement(selectedElement.id, updates, false);
+                        }
+                      });
                     }
                     if (fileInputRef.current) fileInputRef.current.value = '';
                   }}

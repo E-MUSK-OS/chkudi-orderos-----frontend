@@ -216,7 +216,7 @@ export function ElementRenderer({
           </div>
         );
       }
-      case 'image':
+      case 'image': {
         if (!element.imageUrl) {
           return (
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: previewSampleData ? 'transparent' : '#f3f4f6', border: previewSampleData ? 'none' : '1px dashed #d1d5db', color: previewSampleData ? 'transparent' : '#9ca3af', fontSize: '10px' }}>
@@ -224,14 +224,33 @@ export function ElementRenderer({
             </div>
           );
         }
+
+        let displayUrl = element.imageUrl;
+        if (displayUrl.startsWith('data:image/svg+xml')) {
+          try {
+            if (displayUrl.includes(';base64,')) {
+              const b64 = displayUrl.split(';base64,')[1];
+              const decoded = atob(b64);
+              if (!decoded.includes('preserveAspectRatio')) {
+                const updated = decoded.replace('<svg ', '<svg preserveAspectRatio="none" ');
+                displayUrl = `data:image/svg+xml;base64,${btoa(updated)}`;
+              }
+            } else if (!displayUrl.includes('preserveAspectRatio')) {
+              displayUrl = displayUrl.replace('<svg ', '<svg preserveAspectRatio="none" ');
+            }
+          } catch {
+            // fallback
+          }
+        }
+
         return (
           <img
-            src={element.imageUrl}
+            src={displayUrl}
             alt="User uploaded"
             style={{
               width: '100%',
               height: '100%',
-              objectFit: element.keepAspectRatio ? 'contain' : 'fill',
+              objectFit: 'fill',
               pointerEvents: 'none',
             }}
             onError={(e) => {
@@ -244,6 +263,7 @@ export function ElementRenderer({
             }}
           />
         );
+      }
       case 'line': {
         const strokePx = mmToPx(element.borderWidth, zoom);
         return (
@@ -284,7 +304,11 @@ export function ElementRenderer({
       {renderContent()}
       
       {!previewSampleData && isPrimarySelection && !isMultiSelected && !element.locked && (
-        <TransformHandle onPointerDown={(e, handle) => onPointerDownResize(e, handle, element.id)} zoom={zoom} />
+        <TransformHandle
+          onPointerDown={(e, handle) => onPointerDownResize(e, handle, element.id)}
+          zoom={zoom}
+          rotation={element.rotation || 0}
+        />
       )}
     </div>
   );
