@@ -2714,7 +2714,7 @@ export default function ComparisonResultView({
             <button
               type="button"
               onClick={handleReset}
-              className="flex h-10 sm:h-11 w-full sm:w-auto items-center justify-center gap-2 bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#161D2E]"
+              className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#161D2E]"
             >
               <RotateCcw size={16} />
               New Batch
@@ -3042,7 +3042,7 @@ export default function ComparisonResultView({
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className="h-10 sm:h-11 w-full border border-border bg-background pl-10 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[#E8C16D]"
+                  className="h-11 sm:h-12 w-full border border-border bg-background pl-10 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[#E8C16D]"
                 />
               </div>
 
@@ -3072,7 +3072,7 @@ export default function ComparisonResultView({
                       ? "No Printers Found"
                       : "Select Printer"
                   }
-                  height={44}
+                  height={48}
                   borderColor="#0A0E1A"
                   backgroundColor="#0A0E1A"
                   textColor="#E8C16D"
@@ -3100,7 +3100,7 @@ export default function ComparisonResultView({
                       setPage(1);
                     }
                   }}
-                  height={44}
+                  height={48}
                   borderColor="#0A0E1A"
                   backgroundColor="#0A0E1A"
                   textColor="#E8C16D"
@@ -3120,7 +3120,7 @@ export default function ComparisonResultView({
                 <button
                   type="button"
                   onClick={() => setIsMissingSkuModalOpen(true)}
-                  className="inline-flex h-10 sm:h-11 flex-1 sm:flex-initial items-center justify-center border border-red-500/50 bg-red-500/10 px-3 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
+                  className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center border border-red-500/50 bg-red-500/10 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
                   title="Click to view ASINs missing Seller SKU in database"
                 >
                   <span className="whitespace-nowrap">Missing Sku ({missingSkuItems.length})</span>
@@ -3130,7 +3130,7 @@ export default function ComparisonResultView({
               <button
                 type="button"
                 onClick={handleGeneratePicklist}
-                className="inline-flex h-10 sm:h-11 flex-1 sm:flex-initial sm:px-4 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-3 sm:px-4 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
                 title="Download Excel picklist (2-column 40 left / 40 right A4 layout)"
               >
                 <FileText className="h-4 w-4 shrink-0" />
@@ -3145,7 +3145,7 @@ export default function ComparisonResultView({
                     setPage(1);
                     setSelectedRows(new Set());
                   }}
-                  className={`inline-flex h-10 sm:h-11 flex-1 sm:flex-initial items-center justify-center gap-1.5 border px-3 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 border px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     showPrinted
                       ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
                       : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
@@ -3170,7 +3170,7 @@ export default function ComparisonResultView({
                 type="button"
                 disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
-                className={`inline-flex h-10 sm:h-11 flex-1 sm:flex-initial sm:px-5 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-4 sm:px-5 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   selectedRows.size > 0
                     ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
                     : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"
@@ -3630,7 +3630,7 @@ export default function ComparisonResultView({
                       setSelectedPdfType(opt.value as AmazonPdfViewType);
                     }
                   }}
-                  height={44}
+                  height={48}
                   borderColor="#E8C16D"
                   backgroundColor="#0A0E1A"
                   textColor="#E8C16D"
@@ -3646,7 +3646,7 @@ export default function ComparisonResultView({
                 type="button"
                 onClick={currentPdfConfig.onDownload}
                 leftIcon={<Download className="h-4 w-4" />}
-                className="w-full sm:w-auto border-[#E8C16D] bg-[#E8C16D] text-xs sm:text-sm font-semibold text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D]"
+                className="h-11 sm:h-12 w-full sm:w-auto border-[#E8C16D] bg-[#E8C16D] text-xs sm:text-sm font-semibold text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D]"
               >
                 {currentPdfConfig.downloadText}
               </Button>
