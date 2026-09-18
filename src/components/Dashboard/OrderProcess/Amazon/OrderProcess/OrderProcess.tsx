@@ -252,6 +252,7 @@ export default function OrderProcess() {
       return;
     }
 
+    clearCachedAmazonDocs();
     setProcessing(true);
     useAmazonOrderStore.setState({ activeHistoryBatchId: null, initialShowPrinted: false });
     if (typeof window !== "undefined") {

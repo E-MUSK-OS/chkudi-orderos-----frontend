@@ -20,7 +20,10 @@ export interface PrinterDetail {
   isDefault?: boolean;
   isOnline?: boolean;
   isOffline?: boolean;
+  isConnected?: boolean;
   status?: string;
+  paperSize?: string;
+  paperSizes?: string[];
 }
 
 export function isVirtualPrinter(name: string): boolean {
@@ -250,7 +253,7 @@ export const chromeExtensionPrintService = {
                 : response.printers || response.data || [];
               const parsed: PrinterDetail[] = rawList.map((p: any) => {
                 if (typeof p === "string") {
-                  return { name: p, isOnline: true, isOffline: false };
+                  return { name: p, isOnline: true, isOffline: false, isConnected: true, paperSizes: [] };
                 }
                 const name = p.name || p.id || String(p);
                 const statusStr = String(p.status || p.printerStatus || "").toLowerCase();
@@ -264,11 +267,15 @@ export const chromeExtensionPrintService = {
                 return {
                   name,
                   isDefault: !!p.isDefault,
+                  isConnected: p.isConnected !== undefined ? p.isConnected : (isOnline && !isOffline),
                   status: typeof p.status === "string" ? p.status : (isOffline ? "Offline" : "Ready"),
                   isOnline: isOnline && !isOffline,
                   isOffline,
+                  paperSize: p.paperSize,
+                  paperSizes: Array.isArray(p.paperSizes) ? p.paperSizes : [],
                 };
               });
+              console.log("🖨️ [PrintBridge] Detected Printers & Paper Sizes:", parsed);
               cachedPrintersDetailed = { data: parsed, timestamp: Date.now() };
               resolve(parsed);
             }
@@ -329,6 +336,15 @@ export const chromeExtensionPrintService = {
         ? crypto.randomUUID()
         : `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
+    const formattedPaperSize = widthMm && heightMm ? `${widthMm}x${heightMm}mm` : undefined;
+
+    console.log("🖨️ [PrintBridge] Dispatching Print Request:", {
+      printer: printerName,
+      paperSize: formattedPaperSize || "4x6 (Default Thermal)",
+      copies: copies || 1,
+      requestId,
+    });
+
     return new Promise((resolve, reject) => {
       try {
         chrome.runtime.sendMessage(
@@ -338,9 +354,9 @@ export const chromeExtensionPrintService = {
             pdf: cleanBase64,
             printer: printerName,
             options: {
-  copies: copies || 1,
-  paperSize: widthMm && heightMm ? `${widthMm}x${heightMm}mm` : undefined,
-},
+              copies: copies || 1,
+              paperSize: formattedPaperSize,
+            },
             requestId: requestId,
           },
           (response: any) => {

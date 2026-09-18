@@ -11,6 +11,7 @@ import {
 } from "../types";
 import { cleanCustomerName } from "../utils";
 import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
+import { clearCachedAmazonDocs } from "../utils/pdfCache";
 
 interface AmazonOrderState {
   isProcessing: boolean;
@@ -225,6 +226,9 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     }),
 
   setProcessData: async (data) => {
+    // 0. Ensure previous batch PDF memory and single order memoizers are completely wiped
+    clearCachedAmazonDocs();
+
     // 1. Save files base64 payload to IndexedDB for reliable persistence across tabs and quota limits
     if (data.files) {
       await saveFilesToIDB(data.files);
@@ -405,6 +409,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
   },
 
   clearProcessData: () => {
+    clearCachedAmazonDocs();
     const { convertedZplPdfUrl, combinedPdfUrl, originalPdfUrl, unmatchedPdfUrl, unmatchedZplPdfUrl } = get();
     if (convertedZplPdfUrl) URL.revokeObjectURL(convertedZplPdfUrl);
     if (combinedPdfUrl) URL.revokeObjectURL(combinedPdfUrl);
@@ -458,6 +463,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
   },
 
   loadBatchFromHistory: async (batchId: string, options?: { showPrinted?: boolean }) => {
+    clearCachedAmazonDocs();
     set({ isProcessing: true, progress: 15, currentStage: "Loading batch from history..." });
     try {
       const res = await amazonOrderService.getBatchById(batchId);

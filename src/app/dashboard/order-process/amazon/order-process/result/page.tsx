@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import ComparisonResultView from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/components/ComparisonResultView";
 import { useAmazonOrderStore } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/store/useAmazonOrderStore";
+import { clearCachedAmazonDocs } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/utils/pdfCache";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -28,6 +29,7 @@ export default function AmazonOrderResultPage() {
     }
     return () => {
       isMounted = false;
+      clearCachedAmazonDocs();
     };
   }, [summary, restoreProcessData, router]);
 

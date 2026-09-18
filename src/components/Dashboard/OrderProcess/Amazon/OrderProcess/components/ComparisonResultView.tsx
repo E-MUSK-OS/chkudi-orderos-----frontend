@@ -165,6 +165,8 @@ import {
   clearCachedAmazonDocs,
   getDocCacheKey,
   getCachedOrderPdf,
+  setCachedOrderPdf,
+  clearOrderPdfCache,
   getOrGenerateSingleOrderPdf,
   startBackgroundOrderPdfPrewarming,
 } from "../utils/pdfCache";
@@ -349,6 +351,11 @@ export default function ComparisonResultView({
     setInitialShowPrinted,
   } = useAmazonOrderStore();
 
+  const batchKey = useMemo(
+    () => getBatchKey(summary, results.length, activeHistoryBatchId),
+    [summary, results.length, activeHistoryBatchId]
+  );
+
   const [activeTab, setActiveTab] = useState<"table" | "pdf">("table");
   const [selectedPdfType, setSelectedPdfType] = useState<AmazonPdfViewType>("combined");
 
@@ -362,7 +369,7 @@ export default function ComparisonResultView({
 
   const getOrLoadParsedDocs = async (activeFiles: any) => {
     const cached = getCachedAmazonDocs();
-    if (cached?.zplDoc && cached?.origDoc) {
+    if (cached?.zplDoc && cached?.origDoc && cached.batchKey === batchKey) {
       return { zplDoc: cached.zplDoc, origDoc: cached.origDoc, cacheKey: cached.cacheKey };
     }
 
@@ -386,18 +393,18 @@ export default function ComparisonResultView({
   // Pre-load combined PDF document & parsed documents in background for instant sub-second printing
   useEffect(() => {
     const existingCache = getCachedAmazonDocs();
-    if (existingCache?.combinedDoc && results && results.length > 0) {
-      startBackgroundOrderPdfPrewarming(results, existingCache.combinedDoc);
+    if (existingCache?.combinedDoc && existingCache.batchKey === batchKey && results && results.length > 0) {
+      startBackgroundOrderPdfPrewarming(results, existingCache.combinedDoc, batchKey);
     } else if (files?.combinedPdfBase64) {
-      getOrLoadCombinedDoc(files)
+      getOrLoadCombinedDoc(files, batchKey)
         .then((doc) => {
           if (doc && results && results.length > 0) {
-            startBackgroundOrderPdfPrewarming(results, doc);
+            startBackgroundOrderPdfPrewarming(results, doc, batchKey);
           }
         })
         .catch((e) => console.warn("Background combinedDoc preload error:", e));
     }
-  }, [files, results]);
+  }, [files, results, batchKey]);
 
   useEffect(() => {
     if (!files?.convertedZplPdfBase64 || !files?.originalPdfBase64 || isPreloadingDocsRef.current) return;
@@ -593,10 +600,6 @@ export default function ComparisonResultView({
   const autoPrintInputRef = useRef<HTMLInputElement>(null);
   const orderScanProgressRef = useRef<Map<number, OrderItemRequirement[]>>(new Map());
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
-  const batchKey = useMemo(
-    () => getBatchKey(summary, results.length, activeHistoryBatchId),
-    [summary, results.length, activeHistoryBatchId]
-  );
   const [printedRows, setPrintedRows] = useState<Set<number>>(() =>
     getStoredPrintedRows(batchKey, activeHistoryBatchId, summary)
   );
@@ -605,6 +608,16 @@ export default function ComparisonResultView({
   const orderPrintPdfCacheRef = useRef<Map<number, string>>(new Map());
   const persistedIndicesRef = useRef<Set<number>>(new Set());
   const prevBatchIdentifierRef = useRef<string>("");
+
+  // Strict unmount cleanup: destroy all in-memory PDF caches, combined docs, and memoizers when leaving the page
+  useEffect(() => {
+    return () => {
+      clearCachedAmazonDocs();
+      orderPrintPdfCacheRef.current.clear();
+      orderScanProgressRef.current.clear();
+      loadedPdfDocsRef.current = null;
+    };
+  }, []);
 
   // Restore printed rows when batchKey, activeHistoryBatchId, or summary changes
   useEffect(() => {
@@ -1259,8 +1272,10 @@ export default function ComparisonResultView({
   useEffect(() => {
     if (prevBatchKeyRef.current !== batchKey) {
       prevBatchKeyRef.current = batchKey;
+      clearCachedAmazonDocs();
       orderPrintPdfCacheRef.current.clear();
       orderScanProgressRef.current.clear();
+      loadedPdfDocsRef.current = null;
       setPage(1);
     }
   }, [batchKey]);
@@ -1270,13 +1285,13 @@ export default function ComparisonResultView({
     let isCancelled = false;
     async function preheatOrderCache() {
       if (!files?.combinedPdfBase64) return;
-      const combinedDoc = await getOrLoadCombinedDoc(files);
+      const combinedDoc = await getOrLoadCombinedDoc(files, batchKey);
       if (!combinedDoc || isCancelled) return;
 
       const matchedList = mappedResults.filter((r) => r.isMatch);
       for (const item of matchedList) {
         if (isCancelled) break;
-        if (orderPrintPdfCacheRef.current.has(item.index)) continue;
+        if (orderPrintPdfCacheRef.current.has(item.index) || getCachedOrderPdf(item.index, batchKey)) continue;
 
         let pages: number[] = [];
         if (item.combinedPages && item.combinedPages.length > 0) {
@@ -1311,6 +1326,7 @@ export default function ComparisonResultView({
             const b64 = await singleDoc.saveAsBase64();
             if (!isCancelled) {
               orderPrintPdfCacheRef.current.set(item.index, b64);
+              setCachedOrderPdf(item.index, b64, batchKey);
             }
           } catch {
             // Ignore background preheat errors
@@ -1325,7 +1341,7 @@ export default function ComparisonResultView({
     return () => {
       isCancelled = true;
     };
-  }, [mappedResults, files]);
+  }, [mappedResults, files, batchKey]);
 
   // Filter and search results (Only matched orders are displayed in table)
   const filteredResults = useMemo(() => {
@@ -1569,12 +1585,12 @@ export default function ComparisonResultView({
     // 2. ULTRA-FAST SUB-SECOND PATH FOR SINGLE ORDER (Barcode ASIN scan print):
     if (targetResults.length === 1) {
       const singleItem = targetResults[0];
-      let singlePrintBase64 = getCachedOrderPdf(singleItem.index);
+      let singlePrintBase64: string | null = getCachedOrderPdf(singleItem.index, batchKey) || orderPrintPdfCacheRef.current.get(singleItem.index) || null;
 
       if (!singlePrintBase64) {
-        const combinedDoc = await getOrLoadCombinedDoc(activeFiles);
+        const combinedDoc = await getOrLoadCombinedDoc(activeFiles, batchKey);
         if (combinedDoc) {
-          singlePrintBase64 = await getOrGenerateSingleOrderPdf(singleItem, combinedDoc);
+          singlePrintBase64 = await getOrGenerateSingleOrderPdf(singleItem, combinedDoc, batchKey);
         }
       }
 
@@ -1617,10 +1633,10 @@ export default function ComparisonResultView({
       // 0. ULTRA-FAST SUB-SECOND PATH for single order (Barcode scan / single row direct print)
       if (targetResults.length === 1) {
         const singleItem = targetResults[0];
-        let singlePdfBase64 = orderPrintPdfCacheRef.current.get(singleItem.index);
+        let singlePdfBase64: string | null = getCachedOrderPdf(singleItem.index, batchKey) || orderPrintPdfCacheRef.current.get(singleItem.index) || null;
 
         if (!singlePdfBase64) {
-          const combinedDoc = await getOrLoadCombinedDoc(activeFiles);
+          const combinedDoc = await getOrLoadCombinedDoc(activeFiles, batchKey);
           if (combinedDoc && combinedDoc.getPageCount() > 0) {
             let pages: number[] = [];
             if (singleItem.combinedPages && singleItem.combinedPages.length > 0) {
@@ -1654,6 +1670,7 @@ export default function ComparisonResultView({
               copiedPages.forEach((p) => singleDoc.addPage(p));
               singlePdfBase64 = await singleDoc.saveAsBase64();
               orderPrintPdfCacheRef.current.set(singleItem.index, singlePdfBase64);
+              setCachedOrderPdf(singleItem.index, singlePdfBase64, batchKey);
             }
           }
         }
