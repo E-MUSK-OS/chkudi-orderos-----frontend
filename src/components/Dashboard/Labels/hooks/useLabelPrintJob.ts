@@ -2,8 +2,7 @@ import { useState, useCallback } from "react";
 import { LabelTemplate, PrintQueueItem } from "../types/label.types";
 import { chromeExtensionPrintService } from "../services/printAgent.service";
 import { labelService } from "../services/label.service";
-import { renderLabelToCanvas, rotateCanvas, PrintRotation, printLabelsViaBrowser } from "@/lib/labelRenderer";
-import { PDFDocument, degrees } from "pdf-lib";
+import { renderLabelToCanvas, renderLabelToVectorPdf, printLabelsViaBrowser } from "@/lib/labelRenderer";
 
 type Step = "matching" | "review" | "printer" | "printing" | "summary";
 
@@ -35,13 +34,6 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
   const [selectedPrinter, setSelectedPrinter] = useState<string>("");
   const [successfulJobs, setSuccessfulJobs] = useState<PrintQueueItem[]>([]);
   const [failedJobs, setFailedJobs] = useState<PrintQueueItem[]>([]);
-
-  // Normal 0° rotation (no rotation)
-  const [printRotation, setPrintRotationState] = useState<PrintRotation>(0);
-
-  const setPrintRotation = useCallback((rot: PrintRotation) => {
-    setPrintRotationState(rot);
-  }, []);
 
   const refreshPrinters = useCallback(async () => {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -203,31 +195,10 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           masterSku: item.lookupSku,
           title: item.lookupSku,
         };
-        const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
-        const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
-        const dataUrl = canvas.toDataURL("image/png");
-        const cleanBase64 = dataUrl.split(",")[1];
-        const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
+        const pdfBase64 = await renderLabelToVectorPdf(template, productData);
 
-        const isPerpendicular = printRotation === 90 || printRotation === 270;
-        const effectiveWidthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
-        const effectiveHeightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
-
-        const MM_TO_PT = 72 / 25.4;
-        const widthPoints = effectiveWidthMm * MM_TO_PT;
-        const heightPoints = effectiveHeightMm * MM_TO_PT;
-
-        const pdfDoc = await PDFDocument.create();
-        const embeddedImage = await pdfDoc.embedPng(imageBytes);
-        const page = pdfDoc.addPage([widthPoints, heightPoints]);
-        page.drawImage(embeddedImage, {
-          x: 0,
-          y: 0,
-          width: widthPoints,
-          height: heightPoints,
-        });
-
-        const pdfBase64 = await pdfDoc.saveAsBase64();
+        const effectiveWidthMm = template.settings.widthMm || 100;
+        const effectiveHeightMm = template.settings.heightMm || 50;
 
         const copies = item.quantity && item.quantity > 0 ? item.quantity : 1;
         const extRes = await chromeExtensionPrintService.printPdf(
@@ -295,9 +266,8 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     const failed: PrintQueueItem[] = [];
     const dataUrls: string[] = [];
 
-    const isPerpendicular = printRotation === 90 || printRotation === 270;
-    const widthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
-    const heightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
+    const widthMm = template.settings.widthMm || 100;
+    const heightMm = template.settings.heightMm || 50;
 
     for (const item of itemsToPrint) {
       try {
@@ -307,8 +277,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           title: item.lookupSku,
         };
         const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
-        const canvas = printRotation ? rotateCanvas(baseCanvas, printRotation) : baseCanvas;
-        const dataUrl = canvas.toDataURL("image/png");
+        const dataUrl = baseCanvas.toDataURL("image/png");
         
         const count = item.quantity && item.quantity > 0 ? item.quantity : 1;
         for (let c = 0; c < count; c++) {
@@ -349,7 +318,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     }
 
     setStep("printer");
-  }, [template, queue, selectedForPrint, printRotation]);
+  }, [template, queue, selectedForPrint]);
 
   const retryFailed = useCallback(() => {
     const failedIds = new Set(failedJobs.map(f => f.rowId));
@@ -376,7 +345,5 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     startPrinting,
     printViaBrowser,
     retryFailed,
-    printRotation,
-    setPrintRotation,
   };
 }

@@ -22,7 +22,7 @@ import PrintExecutionModal from "@/components/Dashboard/Labels/components/PrintE
 import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
 import { chromeExtensionPrintService, resolveCurrentlyConnectedPrinter } from "@/components/Dashboard/Labels/services/printAgent.service";
 import { labelService } from "@/components/Dashboard/Labels/services/label.service";
-import { renderLabelToCanvas, rotateCanvas, PrintRotation } from "@/lib/labelRenderer";
+import { renderLabelToVectorPdf } from "@/lib/labelRenderer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BadgeCheck } from "lucide-react";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
@@ -209,34 +209,20 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           const matches = await labelService.lookupProduct(query);
           const product = matches.length > 0 ? matches[0] : {};
 
-          const rotationSaved = typeof window !== "undefined" ? localStorage.getItem("label_print_rotation") : null;
-          const shouldRotate90 = rotationSaved === "90" || (!rotationSaved && (template.settings.widthMm || 100) > (template.settings.heightMm || 50));
-          const printRot: PrintRotation = shouldRotate90 ? 90 : 0;
+          const pdfBase64 = await renderLabelToVectorPdf(template, product);
 
-          const baseCanvas = await renderLabelToCanvas(template, product, undefined, false);
-          const canvas = printRot ? rotateCanvas(baseCanvas, printRot) : baseCanvas;
-          const dataUrl = canvas.toDataURL("image/png");
-          const cleanBase64 = dataUrl.split(",")[1];
-          const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
-
-          const pdfDoc = await PDFDocument.create();
-          const embeddedImage = await pdfDoc.embedPng(imageBytes);
-
-          const isPerpendicular = printRot === 90;
-          const effectiveWidthMm = isPerpendicular ? (template.settings.heightMm || 50) : (template.settings.widthMm || 100);
-          const effectiveHeightMm = isPerpendicular ? (template.settings.widthMm || 100) : (template.settings.heightMm || 50);
-
-          const MM_TO_PT = 72 / 25.4;
-          const widthPoints = effectiveWidthMm * MM_TO_PT;
-          const heightPoints = effectiveHeightMm * MM_TO_PT;
-
-          const page = pdfDoc.addPage([widthPoints, heightPoints]);
-          page.drawImage(embeddedImage, { x: 0, y: 0, width: widthPoints, height: heightPoints });
-
-          const pdfBase64 = await pdfDoc.saveAsBase64();
+          const effectiveWidthMm = template.settings.widthMm || 100;
+          const effectiveHeightMm = template.settings.heightMm || 50;
 
           const copies = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
-          const extRes = await chromeExtensionPrintService.printPdf(pdfBase64, targetPrinter, copies);
+          const extRes = await chromeExtensionPrintService.printPdf(
+            pdfBase64,
+            targetPrinter,
+            copies,
+            false,
+            effectiveWidthMm,
+            effectiveHeightMm
+          );
           if (extRes && (extRes.success === false || extRes.error)) {
             throw new Error(extRes.error || "Print extension reported print failure");
           }

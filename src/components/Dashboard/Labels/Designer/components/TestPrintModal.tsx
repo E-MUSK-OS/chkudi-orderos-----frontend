@@ -19,8 +19,7 @@ import {
   isThermalOrLabelPrinter,
   PrinterDetail,
 } from "../../services/printAgent.service";
-import { renderLabelToCanvas, ProductLookupResult, printLabelsViaBrowser } from "@/lib/labelRenderer";
-import { PDFDocument } from "pdf-lib";
+import { renderLabelToCanvas, renderLabelToVectorPdf, ProductLookupResult, printLabelsViaBrowser } from "@/lib/labelRenderer";
 import { labelService } from "../../services/label.service";
 import { toast } from "sonner";
 
@@ -161,31 +160,11 @@ export function TestPrintModal({
         localStorage.setItem("lastUsedPrinter", selectedPrinter);
       }
 
-      // Render 1:1 canvas for thermal printing
-      const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
-      const dataUrl = baseCanvas.toDataURL("image/png");
-      const cleanBase64 = dataUrl.split(",")[1];
-      const imageBytes = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
-
-      const pdfDoc = await PDFDocument.create();
-      const embeddedImage = await pdfDoc.embedPng(imageBytes);
+      // Render native vector PDF for razor-sharp thermal printing
+      const pdfBase64 = await renderLabelToVectorPdf(template, productData);
 
       const effectiveWidthMm = template.settings.widthMm || 100;
       const effectiveHeightMm = template.settings.heightMm || 50;
-
-      const MM_TO_PT = 72 / 25.4;
-      const widthPoints = effectiveWidthMm * MM_TO_PT;
-      const heightPoints = effectiveHeightMm * MM_TO_PT;
-
-      const page = pdfDoc.addPage([widthPoints, heightPoints]);
-      page.drawImage(embeddedImage, {
-        x: 0,
-        y: 0,
-        width: widthPoints,
-        height: heightPoints,
-      });
-
-      const pdfBase64 = await pdfDoc.saveAsBase64();
 
       const extRes = await chromeExtensionPrintService.printPdf(
         pdfBase64,

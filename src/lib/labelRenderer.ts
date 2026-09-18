@@ -2,6 +2,7 @@ import JsBarcode from "jsbarcode";
 import { renderToString } from "react-dom/server";
 import { QRCodeSVG } from "qrcode.react";
 import React from "react";
+import { PDFDocument, rgb, StandardFonts, PDFFont } from "pdf-lib";
 import { resolveVariable } from "@/components/Dashboard/Labels/Designer/utils/sampleData";
 import { mmToPx, MM_TO_PX } from "@/components/Dashboard/Labels/Designer/utils/coordinateMath";
 import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
@@ -758,3 +759,623 @@ export const printLabelsViaBrowser = async (
     }, 80);
   });
 };
+
+// ==========================================
+// Native Vector PDF Generation for Labels
+// ==========================================
+
+export const MM_TO_PT = 72 / 25.4;
+
+export const sanitizePdfText = (str?: string | null): string => {
+  if (!str) return "";
+  return String(str)
+    .replace(/₹/g, "Rs. ")
+    .replace(/[^\x00-\x7F\xA0-\xFF]/g, "?");
+};
+
+export const parsePdfColor = (hexOrRgb?: string) => {
+  if (!hexOrRgb || hexOrRgb === "transparent") return null;
+  let str = hexOrRgb.trim();
+  if (str.startsWith("#")) {
+    str = str.substring(1);
+    if (str.length === 3) {
+      str = str.split("").map((c) => c + c).join("");
+    }
+    if (str.length === 6) {
+      const r = parseInt(str.substring(0, 2), 16) / 255;
+      const g = parseInt(str.substring(2, 4), 16) / 255;
+      const b = parseInt(str.substring(4, 6), 16) / 255;
+      return rgb(r, g, b);
+    }
+  } else if (str.startsWith("rgb")) {
+    const match = str.match(/\d+/g);
+    if (match && match.length >= 3) {
+      const r = parseInt(match[0], 10) / 255;
+      const g = parseInt(match[1], 10) / 255;
+      const b = parseInt(match[2], 10) / 255;
+      return rgb(r, g, b);
+    }
+  }
+  return rgb(0, 0, 0);
+};
+
+const getPdfFont = async (
+  pdfDoc: PDFDocument,
+  fontFamily?: string,
+  fontWeight?: string,
+  fontStyle?: string
+): Promise<PDFFont> => {
+  const isBold = fontWeight === "bold";
+  const isItalic = fontStyle === "italic";
+  const ff = (fontFamily || "").toLowerCase();
+
+  if (ff.includes("courier") || ff.includes("mono")) {
+    if (isBold && isItalic) return pdfDoc.embedFont(StandardFonts.CourierBoldOblique);
+    if (isBold) return pdfDoc.embedFont(StandardFonts.CourierBold);
+    if (isItalic) return pdfDoc.embedFont(StandardFonts.CourierOblique);
+    return pdfDoc.embedFont(StandardFonts.Courier);
+  }
+
+  if (ff.includes("serif") || ff.includes("times") || ff.includes("georgia")) {
+    if (isBold && isItalic) return pdfDoc.embedFont(StandardFonts.TimesRomanBoldItalic);
+    if (isBold) return pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+    if (isItalic) return pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+    return pdfDoc.embedFont(StandardFonts.TimesRoman);
+  }
+
+  // Default to Helvetica (Inter, Arial, Roboto, sans-serif)
+  if (isBold && isItalic) return pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+  if (isBold) return pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  if (isItalic) return pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+  return pdfDoc.embedFont(StandardFonts.Helvetica);
+};
+
+const wrapPdfText = (
+  font: PDFFont,
+  text: string,
+  maxWidthPt: number,
+  fontSizePt: number
+): { text: string; width: number }[] => {
+  const paragraphs = text.split("\n");
+  const lines: { text: string; width: number }[] = [];
+
+  for (const paragraph of paragraphs) {
+    if (!paragraph) {
+      lines.push({ text: "", width: 0 });
+      continue;
+    }
+    const words = paragraph.split(" ");
+    let currentLine = "";
+
+    for (let n = 0; n < words.length; n++) {
+      const word = words[n];
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = font.widthOfTextAtSize(testLine, fontSizePt);
+
+      if (testWidth > maxWidthPt && currentLine) {
+        lines.push({ text: currentLine, width: font.widthOfTextAtSize(currentLine, fontSizePt) });
+        // Check if single word is wider than maxWidthPt
+        const wordWidth = font.widthOfTextAtSize(word, fontSizePt);
+        if (wordWidth > maxWidthPt) {
+          let charLine = "";
+          for (let c = 0; c < word.length; c++) {
+            const charTest = charLine + word[c];
+            if (font.widthOfTextAtSize(charTest, fontSizePt) > maxWidthPt && charLine) {
+              lines.push({ text: charLine, width: font.widthOfTextAtSize(charLine, fontSizePt) });
+              charLine = word[c];
+            } else {
+              charLine += word[c];
+            }
+          }
+          currentLine = charLine;
+        } else {
+          currentLine = word;
+        }
+      } else if (testWidth > maxWidthPt && !currentLine) {
+        // First word itself is wider than box
+        let charLine = "";
+        for (let c = 0; c < word.length; c++) {
+          const charTest = charLine + word[c];
+          if (font.widthOfTextAtSize(charTest, fontSizePt) > maxWidthPt && charLine) {
+            lines.push({ text: charLine, width: font.widthOfTextAtSize(charLine, fontSizePt) });
+            charLine = word[c];
+          } else {
+            charLine += word[c];
+          }
+        }
+        currentLine = charLine;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) {
+      lines.push({ text: currentLine, width: font.widthOfTextAtSize(currentLine, fontSizePt) });
+    }
+  }
+  return lines;
+};
+
+const drawBarcodeToPdfPage = (
+  page: any,
+  font: PDFFont,
+  xPt: number,
+  yPt: number,
+  widthPt: number,
+  heightPt: number,
+  content: string,
+  barcodeFormat: "CODE128" | "EAN13" | "UPC" | "CODE39" = "CODE128",
+  showText: boolean = true,
+  fontSizePt: number = 10,
+  opacity: number = 1
+) => {
+  if (!content || !content.trim()) return;
+
+  const textPadding = 1;
+  const textHeight = showText ? fontSizePt + textPadding + 2 : 0;
+  const barAreaHeight = Math.max(4, heightPt - textHeight);
+
+  let barRects: { x: number; w: number }[] = [];
+  let totalBarcodeWidth = 0;
+
+  // 1. Try DOM SVG generation in browser
+  if (typeof document !== "undefined" && document.createElementNS) {
+    try {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      JsBarcode(svg, content, {
+        format: barcodeFormat,
+        displayValue: false,
+        margin: 0,
+        width: 2,
+        height: 100,
+      });
+
+      const rects = svg.querySelectorAll("rect");
+      let minX = Infinity;
+      let maxX = -Infinity;
+
+      rects.forEach((r) => {
+        const rx = parseFloat(r.getAttribute("x") || "0");
+        const rw = parseFloat(r.getAttribute("width") || "0");
+        const fill = r.getAttribute("fill");
+        if (rw > 0 && fill !== "#ffffff" && fill !== "white") {
+          minX = Math.min(minX, rx);
+          maxX = Math.max(maxX, rx + rw);
+          barRects.push({ x: rx, w: rw });
+        }
+      });
+
+      if (barRects.length > 0 && isFinite(minX) && isFinite(maxX)) {
+        totalBarcodeWidth = maxX - minX;
+        barRects = barRects.map((b) => ({ x: b.x - minX, w: b.w }));
+      }
+    } catch (e) {
+      console.warn("SVG JsBarcode generation failed, trying module encoder:", e);
+      barRects = [];
+    }
+  }
+
+  // 2. Fallback to direct binary module encoding
+  if (barRects.length === 0) {
+    try {
+      const BarcodeClass = (JsBarcode as any).getModule(barcodeFormat || "CODE128");
+      if (BarcodeClass) {
+        const encoder = new BarcodeClass(content, { format: barcodeFormat });
+        if (encoder.valid()) {
+          const encoded = encoder.encode();
+          let bitString = "";
+          if (Array.isArray(encoded)) {
+            bitString = encoded.map((item: any) => item.data || "").join("");
+          } else if (encoded && typeof encoded === "object") {
+            bitString = encoded.data || "";
+          }
+
+          if (bitString) {
+            totalBarcodeWidth = bitString.length;
+            let currentBarStart: number | null = null;
+            for (let i = 0; i < bitString.length; i++) {
+              if (bitString[i] === "1") {
+                if (currentBarStart === null) currentBarStart = i;
+              } else {
+                if (currentBarStart !== null) {
+                  barRects.push({ x: currentBarStart, w: i - currentBarStart });
+                  currentBarStart = null;
+                }
+              }
+            }
+            if (currentBarStart !== null) {
+              barRects.push({ x: currentBarStart, w: bitString.length - currentBarStart });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Module JsBarcode generation failed:", err);
+    }
+  }
+
+  if (barRects.length === 0 || totalBarcodeWidth <= 0) {
+    console.warn("Could not generate vector barcode for:", content);
+    return;
+  }
+
+  const barScale = widthPt / totalBarcodeWidth;
+  const scaledBarsWidth = totalBarcodeWidth * barScale;
+  const offsetX = xPt + (widthPt - scaledBarsWidth) / 2;
+  const offsetY = yPt + textHeight;
+
+  // Draw 100% sharp vector bars
+  for (const bar of barRects) {
+    page.drawRectangle({
+      x: offsetX + bar.x * barScale,
+      y: offsetY,
+      width: bar.w * barScale,
+      height: barAreaHeight,
+      color: rgb(0, 0, 0),
+      opacity,
+    });
+  }
+
+  // Draw human readable text centered underneath
+  if (showText) {
+    const cleanText = sanitizePdfText(content);
+    const textWidth = font.widthOfTextAtSize(cleanText, fontSizePt);
+    const textX = xPt + (widthPt - textWidth) / 2;
+    const textY = yPt + textPadding;
+    page.drawText(cleanText, {
+      x: textX,
+      y: textY,
+      size: fontSizePt,
+      font,
+      color: rgb(0, 0, 0),
+      opacity,
+    });
+  }
+};
+
+const drawQrCodeToPdfPage = (
+  page: any,
+  xPt: number,
+  yPt: number,
+  widthPt: number,
+  heightPt: number,
+  content: string,
+  errorCorrectionLevel: "L" | "M" | "Q" | "H" = "M",
+  opacity: number = 1
+) => {
+  if (!content || !content.trim()) return;
+
+  try {
+    const qrSvg = renderToString(
+      React.createElement(QRCodeSVG, {
+        value: content,
+        size: 256,
+        level: errorCorrectionLevel,
+      })
+    );
+
+    const vbMatch = qrSvg.match(/viewBox="0 0 (\d+) (\d+)"/);
+    const matrixSize = vbMatch ? parseInt(vbMatch[1], 10) : 21;
+    const qrSize = Math.min(widthPt, heightPt);
+    const modScale = qrSize / matrixSize;
+    const offsetX = xPt + (widthPt - qrSize) / 2;
+    const offsetY = yPt + (heightPt - qrSize) / 2;
+
+    const pathMatch = qrSvg.match(/<path[^>]*fill="#000000"[^>]*d="([^"]+)"/);
+    if (pathMatch) {
+      const d = pathMatch[1];
+      const regex = /M(\d+)[,\s]+(\d+)\s*h(\d+)v(\d+)/gi;
+      let match;
+      while ((match = regex.exec(d)) !== null) {
+        const rx = parseFloat(match[1]);
+        const ry = parseFloat(match[2]);
+        const rw = parseFloat(match[3]);
+        const rh = parseFloat(match[4]);
+        page.drawRectangle({
+          x: offsetX + rx * modScale,
+          y: offsetY + (matrixSize - ry - rh) * modScale,
+          width: rw * modScale,
+          height: rh * modScale,
+          color: rgb(0, 0, 0),
+          opacity,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Failed to draw vector QR code in PDF:", err);
+  }
+};
+
+/**
+ * Generates a 100% native vector PDF string (Base64) for thermal and desktop printing.
+ * Uses native vector text, vector barcode rectangles, and vector QR codes for razor-sharp
+ * 203/300 DPI thermal printing without any raster blur or dither artifacts.
+ */
+export const renderLabelToVectorPdf = async (
+  template: LabelTemplate,
+  productData: ProductLookupResult
+): Promise<string> => {
+  const pdfDoc = await PDFDocument.create();
+
+  const widthMm = template.settings.widthMm || 100;
+  const heightMm = template.settings.heightMm || 50;
+
+  const pageWidthPt = widthMm * MM_TO_PT;
+  const pageHeightPt = heightMm * MM_TO_PT;
+
+  const page = pdfDoc.addPage([pageWidthPt, pageHeightPt]);
+
+  // 1. Draw solid white background
+  page.drawRectangle({
+    x: 0,
+    y: 0,
+    width: pageWidthPt,
+    height: pageHeightPt,
+    color: rgb(1, 1, 1),
+  });
+
+  // 2. Product record resolution
+  const rawData = (productData || {}) as unknown as Record<string, string>;
+  const productRecord: Record<string, string> = {
+    ...rawData,
+    title: productData.title || rawData.title || "",
+    sku: productData.sku || rawData.sku || "",
+    masterSku: productData.masterSku || rawData.masterSku || "",
+    fullSku: productData.masterSku || rawData.fullSku || rawData.masterSku || "",
+    barcode: rawData.barcode || productData.sku || productData.asin || "",
+    brand: productData.brand || rawData.brand || "",
+    size: productData.size || rawData.size || "",
+    color: productData.color || rawData.color || "",
+    mrp: productData.mrp !== null && productData.mrp !== undefined ? String(productData.mrp) : (rawData.mrp || ""),
+    asin: productData.asin || productData.sku || rawData.asin || "",
+    articleNo: rawData.articleNo || productData.asin || productData.sku || "",
+    styleNo: rawData.styleNo || productData.asin || productData.sku || "",
+    manufacturingMonth: productData.manufacturingMonth || rawData.manufacturingMonth || "",
+    printDate: rawData.printDate || new Date().toLocaleDateString(),
+  };
+
+  // 3. Draw Background Image if specified
+  if (template.backgroundImageUrl) {
+    try {
+      let bgBytes: Uint8Array | null = null;
+      let isPng = false;
+      let isJpg = false;
+      if (template.backgroundImageUrl.startsWith("data:")) {
+        const parts = template.backgroundImageUrl.split(",");
+        const mime = parts[0].split(";")[0].replace("data:", "");
+        const cleanBase64 = parts[1];
+        const binaryString = atob(cleanBase64);
+        bgBytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
+        isPng = mime.includes("png");
+        isJpg = mime.includes("jpeg") || mime.includes("jpg");
+      } else {
+        const response = await fetch(template.backgroundImageUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        bgBytes = new Uint8Array(arrayBuffer);
+        const ct = response.headers.get("content-type") || "";
+        isPng = ct.includes("png") || template.backgroundImageUrl.endsWith(".png");
+        isJpg = ct.includes("jpeg") || ct.includes("jpg") || template.backgroundImageUrl.endsWith(".jpg") || template.backgroundImageUrl.endsWith(".jpeg");
+      }
+
+      if (bgBytes) {
+        let embeddedBg;
+        if (isPng) {
+          embeddedBg = await pdfDoc.embedPng(bgBytes);
+        } else if (isJpg) {
+          embeddedBg = await pdfDoc.embedJpg(bgBytes);
+        } else {
+          const bgImg = await loadImage(template.backgroundImageUrl);
+          const oc = document.createElement("canvas");
+          oc.width = bgImg.width || 400;
+          oc.height = bgImg.height || 200;
+          const octx = oc.getContext("2d");
+          if (octx) {
+            octx.drawImage(bgImg, 0, 0);
+            const pngDataUrl = oc.toDataURL("image/png");
+            const b64 = pngDataUrl.split(",")[1];
+            const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+            embeddedBg = await pdfDoc.embedPng(pngBytes);
+          }
+        }
+        if (embeddedBg) {
+          page.drawImage(embeddedBg, {
+            x: 0,
+            y: 0,
+            width: pageWidthPt,
+            height: pageHeightPt,
+            opacity: template.settings.backgroundOpacity ?? 1,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to embed background image in vector PDF:", err);
+    }
+  }
+
+  // 4. Render Elements in zIndex order
+  const elements = [...(template.layoutJson || [])].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+  for (const el of elements) {
+    const elXPt = el.x * MM_TO_PT;
+    const elWPt = el.width * MM_TO_PT;
+    const elHPt = el.height * MM_TO_PT;
+    const elYPt = pageHeightPt - (el.y + el.height) * MM_TO_PT; // bottom-left corner in PDF coordinate space
+    const opacity = el.opacity ?? 1;
+
+    if (el.type === "text") {
+      const rawContent = resolveVariable(el.content, el.variableSource, productRecord);
+      if (!rawContent || !rawContent.trim()) continue;
+
+      const cleanContent = sanitizePdfText(rawContent);
+      const font = await getPdfFont(pdfDoc, el.fontFamily, el.fontWeight, el.fontStyle);
+      const fontSizePt = el.fontSize || 12;
+      const lineHeightMultiplier = el.lineHeight || 1.2;
+      const lineSpacingPt = fontSizePt * lineHeightMultiplier;
+
+      const wrappedLines = wrapPdfText(font, cleanContent, elWPt, fontSizePt);
+      if (wrappedLines.length === 0) continue;
+
+      const totalTextHeight = wrappedLines.length * lineSpacingPt;
+      const topOffset = Math.max(0, (elHPt - totalTextHeight) / 2);
+      // First baseline in PDF space:
+      const firstBaselineY = elYPt + elHPt - topOffset - fontSizePt * 0.8 - (lineSpacingPt - fontSizePt) / 2;
+      const textColor = parsePdfColor(el.color) || rgb(0, 0, 0);
+
+      for (let i = 0; i < wrappedLines.length; i++) {
+        const line = wrappedLines[i];
+        const lineY = firstBaselineY - i * lineSpacingPt;
+
+        if (lineY < elYPt - 2) {
+          break; // Avoid drawing outside bottom boundary
+        }
+
+        if (line.text) {
+          let lineX = elXPt;
+          if (el.textAlign === "center") {
+            lineX = elXPt + (elWPt - line.width) / 2;
+          } else if (el.textAlign === "right") {
+            lineX = elXPt + elWPt - line.width;
+          }
+
+          page.drawText(line.text, {
+            x: lineX,
+            y: lineY,
+            size: fontSizePt,
+            font,
+            color: textColor,
+            opacity,
+          });
+
+          if (el.textDecoration === "underline") {
+            page.drawLine({
+              start: { x: lineX, y: lineY - 1.5 },
+              end: { x: lineX + line.width, y: lineY - 1.5 },
+              thickness: 0.75,
+              color: textColor,
+              opacity,
+            });
+          }
+        }
+      }
+    } else if (el.type === "barcode") {
+      const barcodeContent = resolveVariable(el.content, el.variableSource, productRecord);
+      if (barcodeContent) {
+        const barcodeFont = await getPdfFont(pdfDoc, "Helvetica", "normal", "normal");
+        drawBarcodeToPdfPage(
+          page,
+          barcodeFont,
+          elXPt,
+          elYPt,
+          elWPt,
+          elHPt,
+          barcodeContent,
+          el.barcodeFormat || "CODE128",
+          el.showText !== false,
+          el.fontSize || 10,
+          opacity
+        );
+      }
+    } else if (el.type === "qrcode") {
+      const qrContent = resolveVariable(el.content, el.variableSource, productRecord);
+      if (qrContent) {
+        drawQrCodeToPdfPage(
+          page,
+          elXPt,
+          elYPt,
+          elWPt,
+          elHPt,
+          qrContent,
+          el.errorCorrectionLevel || "M",
+          opacity
+        );
+      }
+    } else if (el.type === "rectangle") {
+      const borderWidthPt = (el.borderWidth || 1) * MM_TO_PT;
+      const borderColor = parsePdfColor(el.borderColor || "#000000");
+      const fillColor = parsePdfColor(el.fillColor);
+
+      page.drawRectangle({
+        x: elXPt,
+        y: elYPt,
+        width: elWPt,
+        height: elHPt,
+        borderWidth: borderWidthPt,
+        borderColor: borderColor || undefined,
+        color: fillColor || undefined,
+        opacity,
+      });
+    } else if (el.type === "line") {
+      const borderWidthPt = (el.borderWidth || 1) * MM_TO_PT;
+      const borderColor = parsePdfColor(el.borderColor || "#000000") || rgb(0, 0, 0);
+      const lineMidY = elYPt + elHPt / 2;
+
+      page.drawLine({
+        start: { x: elXPt, y: lineMidY },
+        end: { x: elXPt + elWPt, y: lineMidY },
+        thickness: borderWidthPt,
+        color: borderColor,
+        opacity,
+      });
+    } else if (el.type === "image" && el.imageUrl) {
+      try {
+        let imageBytes: Uint8Array | null = null;
+        let isPng = false;
+        let isJpg = false;
+
+        if (el.imageUrl.startsWith("data:")) {
+          const parts = el.imageUrl.split(",");
+          const mime = parts[0].split(";")[0].replace("data:", "");
+          const cleanBase64 = parts[1];
+          const binaryString = atob(cleanBase64);
+          imageBytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
+          isPng = mime.includes("png");
+          isJpg = mime.includes("jpeg") || mime.includes("jpg");
+        } else {
+          const response = await fetch(el.imageUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          imageBytes = new Uint8Array(arrayBuffer);
+          const ct = response.headers.get("content-type") || "";
+          isPng = ct.includes("png") || el.imageUrl.endsWith(".png");
+          isJpg = ct.includes("jpeg") || ct.includes("jpg") || el.imageUrl.endsWith(".jpg") || el.imageUrl.endsWith(".jpeg");
+        }
+
+        if (imageBytes) {
+          let embeddedImg;
+          if (isPng) {
+            embeddedImg = await pdfDoc.embedPng(imageBytes);
+          } else if (isJpg) {
+            embeddedImg = await pdfDoc.embedJpg(imageBytes);
+          } else {
+            const htmlImg = await loadImage(el.imageUrl);
+            const oc = document.createElement("canvas");
+            oc.width = htmlImg.width || 200;
+            oc.height = htmlImg.height || 200;
+            const octx = oc.getContext("2d");
+            if (octx) {
+              octx.drawImage(htmlImg, 0, 0);
+              const pngDataUrl = oc.toDataURL("image/png");
+              const b64 = pngDataUrl.split(",")[1];
+              const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+              embeddedImg = await pdfDoc.embedPng(pngBytes);
+            }
+          }
+
+          if (embeddedImg) {
+            page.drawImage(embeddedImg, {
+              x: elXPt,
+              y: elYPt,
+              width: elWPt,
+              height: elHPt,
+              opacity,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to embed image in vector PDF:", err);
+      }
+    }
+  }
+
+  const pdfBase64 = await pdfDoc.saveAsBase64();
+  return pdfBase64;
+};
+
