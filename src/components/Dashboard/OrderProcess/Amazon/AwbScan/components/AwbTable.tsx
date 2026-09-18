@@ -33,10 +33,12 @@ export default function AwbTable({
       return <span className="text-slate-400 italic text-sm">N/A</span>;
     }
 
-    const items = value
+    const rawItems = value
       .split(/[\r\n]+|\s+\/\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
+
+    const items = Array.from(new Set(rawItems));
 
     if (items.length <= 1) {
       return (

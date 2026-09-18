@@ -224,14 +224,20 @@ function renderItemListCell(val?: string) {
 
   return (
     <div className="flex flex-col items-center justify-center gap-0.5 py-0.5">
-      {items.map((item, idx) => (
-        <div key={idx} className="whitespace-nowrap flex items-center justify-center gap-1">
-          <span>{item}</span>
-          {idx < items.length - 1 && (
-            <span className="font-bold text-slate-400 text-[11px]">/</span>
-          )}
-        </div>
-      ))}
+      {items.map((item, idx) => {
+        const isNotLast = idx < items.length - 1;
+        return (
+          <div
+            key={idx}
+            className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
+          >
+            <span>{item}</span>
+            {isNotLast ? (
+              <span className="font-bold text-slate-400 text-[11px]">/</span>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1056,28 +1062,37 @@ export default function ComparisonResultView({
     }
   }, [isMappingsLoading, modalMissingAsins.length]);
 
-  // Helper to get item's order type (with client fallback)
+  // Helper to get item's order type (with strict multiple_pieces rule)
   const getOrderTypeForItem = (item: (typeof results)[0]): AmazonOrderType => {
-    if (item.orderType) return item.orderType;
+    const rawAsins = (item.asin && item.asin !== "N/A" ? item.asin : "")
+      .split(/[\r\n]+|\s+\/\s+/)
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
 
-    let totalQty = item.totalQuantity || 0;
-    let asinsCount = item.asinsCount || 0;
-    let skusCount = 1;
+    const rawSkus = (item.sellerSku && item.sellerSku !== "N/A" && item.sellerSku !== "-" ? item.sellerSku : "")
+      .split(/[\r\n]+|\s+\/\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    if (item.asin && item.asin !== "N/A") {
-      const rawAsins = item.asin.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
-      asinsCount = new Set(rawAsins).size;
-      if (!totalQty) totalQty = rawAsins.length;
+    const uniqueAsins = new Set(rawAsins);
+    const uniqueSkus = new Set(rawSkus);
+
+    const totalQty = item.totalQuantity || 1;
+
+    const hasMultipleDifferentAsins = uniqueAsins.size > 1 || (item.asinsCount || 0) > 1;
+    const hasMultipleDifferentSkus = uniqueSkus.size > 1;
+
+    // 1. If order contains multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
+    if (hasMultipleDifferentAsins || hasMultipleDifferentSkus) {
+      return "multiple_asin";
     }
 
-    if (item.sellerSku && item.sellerSku !== "N/A") {
-      const rawSkus = item.sellerSku.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
-      skusCount = new Set(rawSkus).size;
-      if (rawSkus.length > totalQty) totalQty = rawSkus.length;
+    // 2. Exactly one ASIN and the EXACT SAME Seller SKU:
+    // Only Multiple Pieces if the order genuinely has 2 or more pieces (totalQty >= 2)
+    if (totalQty >= 2) {
+      return "multiple_pieces";
     }
 
-    if (asinsCount > 1) return "multiple_asin";
-    if (skusCount > 1 || totalQty > 1) return "multiple_pieces";
     return "single_quantity";
   };
 
@@ -1776,7 +1791,7 @@ export default function ComparisonResultView({
             const itemCount = Math.max(
               item.asinsCount || 0,
               item.totalQuantity || 0,
-              item.asin ? item.asin.split(/[\r\n]+|\s+\/\s+/).filter(Boolean).length : 0,
+              item.asin ? new Set(item.asin.split(/[\r\n]+|\s+\/\s+/).filter(Boolean)).size : 0,
               1
             );
 
@@ -2206,11 +2221,12 @@ export default function ComparisonResultView({
     if (orderType === "multiple_pieces" && new Set(rawAsins).size <= 1) {
       const singleAsin = rawAsins[0] || (item.asin && item.asin !== "N/A" ? item.asin.trim().toUpperCase() : "") || "N/A";
       const singleSku = rawSkus[0] || (item.sellerSku && item.sellerSku !== "N/A" ? item.sellerSku.trim() : "") || "N/A";
+      const pieceCount = Math.max(totalQty, rawSkus.length, rawAsins.length, 2);
       return [
         {
           asin: singleAsin,
           sku: singleSku,
-          requiredQty: totalQty,
+          requiredQty: pieceCount,
           scannedQty: 0,
         },
       ];
@@ -2694,7 +2710,7 @@ export default function ComparisonResultView({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleReset}
@@ -2736,14 +2752,14 @@ export default function ComparisonResultView({
         {/* =================================================== */}
         {/* STATS CARDS */}
         {/* =================================================== */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-6">
+        <div className="mt-5 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-5 sm:pt-6">
           {/* Card 1: Total ZPL */}
           <article
             onClick={() => {
               setSelectedPdfType("zpl");
               setActiveTab("pdf");
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
+            className="cursor-pointer border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
           >
             <div>
               <p className="text-xs sm:text-sm font-medium text-slate-500">
@@ -2768,7 +2784,7 @@ export default function ComparisonResultView({
               setSelectedPdfType("original");
               setActiveTab("pdf");
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
+            className="cursor-pointer border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
           >
             <div>
               <p className="text-xs sm:text-sm font-medium text-slate-500">
@@ -2793,7 +2809,7 @@ export default function ComparisonResultView({
               setActiveTab("table");
               setPage(1);
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
+            className="cursor-pointer border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between sm:col-span-2 lg:col-span-1"
           >
             <div>
               <div className="flex items-center justify-between">
@@ -2882,15 +2898,15 @@ export default function ComparisonResultView({
       {/* ===================================================== */}
       {/* TABS & INSTANT AUTO-PRINT SEARCH BAR */}
       {/* ===================================================== */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full xl:w-auto">
           <button
             type="button"
             onClick={() => {
               setActiveTab("table");
               setPage(1);
             }}
-            className={`inline-flex h-12 sm:h-14 w-full sm:w-56 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+            className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 ${
               activeTab === "table"
                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                 : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
@@ -2901,7 +2917,7 @@ export default function ComparisonResultView({
 
           {/* Unified PDF Viewer Dropdown Selector (Matched, All ZPL, Original, Unmatched PDF, Unmatched ZPL) */}
           <div
-            className={`w-full sm:w-80 lg:w-96 transition-all ${
+            className={`w-full sm:w-72 md:w-80 lg:w-88 xl:w-80 transition-all ${
               activeTab === "pdf" ? "ring-2 ring-[#E8C16D]" : ""
             }`}
             onClick={() => {
@@ -2922,7 +2938,7 @@ export default function ComparisonResultView({
                   setActiveTab("pdf");
                 }
               }}
-              height={56}
+              height={48}
               borderColor={activeTab === "pdf" ? "#E8C16D" : "#0A0E1A"}
               backgroundColor="#0A0E1A"
               textColor="#E8C16D"
@@ -2936,7 +2952,7 @@ export default function ComparisonResultView({
         </div>
 
         {/* Rightside Corner: Instant Auto-Print Search Bar */}
-        <div className="relative w-full md:w-[480px] lg:w-[560px]">
+        <div className="relative w-full xl:w-[420px] 2xl:w-[500px] xl:shrink-0">
           <Zap className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B88728] animate-pulse" />
           <input
             ref={autoPrintInputRef}
@@ -2982,7 +2998,7 @@ export default function ComparisonResultView({
                 }
               }
             }}
-            className="h-12 sm:h-14 w-full border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#0A0E1A] pl-10 pr-10 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 placeholder:font-normal outline-none transition focus:ring-2 focus:ring-[#E8C16D]"
+            className="h-11 sm:h-12 w-full border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#0A0E1A] pl-10 pr-10 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 placeholder:font-normal outline-none transition focus:ring-2 focus:ring-[#E8C16D]"
           />
           {autoPrintQuery ? (
             <button
@@ -3012,26 +3028,26 @@ export default function ComparisonResultView({
       {activeTab === "table" && (
         <div className="space-y-4">
           {/* Table Filters & Search */}
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            {/* Search Box */}
-            <div className="relative w-full lg:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search Order ID, Invoice #, ASIN, AWB, Customer..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                className="h-11 sm:h-14 w-full border border-border bg-background pl-10 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[#E8C16D]"
-              />
-            </div>
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5 sm:gap-3">
+            {/* Search Box & Filters */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 flex-1 min-w-0">
+              {/* Search Box */}
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search Order ID, Invoice #, ASIN, AWB, Customer..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
+                  className="h-10 sm:h-11 w-full border border-border bg-background pl-10 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[#E8C16D]"
+                />
+              </div>
 
-            {/* Action Buttons & Filters */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* Connected Printer Selection Dropdown */}
-              <div className="w-full sm:w-56">
+              <div className="w-full sm:w-48 md:w-52 shrink-0">
                 <ReactSelect
                   options={printerOptions}
                   value={
@@ -3056,7 +3072,7 @@ export default function ComparisonResultView({
                       ? "No Printers Found"
                       : "Select Printer"
                   }
-                  height={56}
+                  height={44}
                   borderColor="#0A0E1A"
                   backgroundColor="#0A0E1A"
                   textColor="#E8C16D"
@@ -3071,7 +3087,7 @@ export default function ComparisonResultView({
               </div>
 
               {/* Order Composition Filter Select Dropdown */}
-              <div className="w-full sm:w-60">
+              <div className="w-full sm:w-52 md:w-56 shrink-0">
                 <ReactSelect
                   options={orderTypeOptions}
                   value={
@@ -3084,7 +3100,7 @@ export default function ComparisonResultView({
                       setPage(1);
                     }
                   }}
-                  height={56}
+                  height={44}
                   borderColor="#0A0E1A"
                   backgroundColor="#0A0E1A"
                   textColor="#E8C16D"
@@ -3096,28 +3112,30 @@ export default function ComparisonResultView({
                   menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
                 />
               </div>
+            </div>
 
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
               {missingSkuItems.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setIsMissingSkuModalOpen(true)}
-                  className="inline-flex h-11 sm:h-14 w-full sm:w-auto items-center justify-center border border-red-500/50 bg-red-500/10 px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
+                  className="inline-flex h-10 sm:h-11 flex-1 sm:flex-initial items-center justify-center border border-red-500/50 bg-red-500/10 px-3 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
                   title="Click to view ASINs missing Seller SKU in database"
                 >
-                  <span>Missing Sku ({missingSkuItems.length})</span>
+                  <span className="whitespace-nowrap">Missing Sku ({missingSkuItems.length})</span>
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={handleGeneratePicklist}
-                className="inline-flex h-11 sm:h-14 w-full sm:w-auto sm:px-5 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                className="inline-flex h-10 sm:h-11 flex-1 sm:flex-initial sm:px-4 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
                 title="Download Excel picklist (2-column 40 left / 40 right A4 layout)"
               >
-                <FileText className="h-4 w-4" />
-                <span>Generate Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${allPicklistOrders.length})`}</span>
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="whitespace-nowrap">Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${allPicklistOrders.length})`}</span>
               </button>
-
 
               {printedRows.size > 0 && (
                 <button
@@ -3127,7 +3145,7 @@ export default function ComparisonResultView({
                     setPage(1);
                     setSelectedRows(new Set());
                   }}
-                  className={`inline-flex h-11 sm:h-14 w-full sm:w-auto items-center justify-center gap-1.5 border px-3.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  className={`inline-flex h-10 sm:h-11 flex-1 sm:flex-initial items-center justify-center gap-1.5 border px-3 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     showPrinted
                       ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
                       : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
@@ -3136,13 +3154,13 @@ export default function ComparisonResultView({
                 >
                   {showPrinted ? (
                     <>
-                      <EyeOff className="h-4 w-4" />
-                      <span>Back to Unprinted ({unprintedInCurrentTypeCount})</span>
+                      <EyeOff className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">Back to Unprinted ({unprintedInCurrentTypeCount})</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      <span>Show Printed Only ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})</span>
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span className="whitespace-nowrap">Show Printed ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})</span>
                     </>
                   )}
                 </button>
@@ -3152,14 +3170,14 @@ export default function ComparisonResultView({
                 type="button"
                 disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
-                className={`inline-flex h-11 sm:h-14 w-full sm:w-auto sm:px-6 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                className={`inline-flex h-10 sm:h-11 flex-1 sm:flex-initial sm:px-5 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   selectedRows.size > 0
                     ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
                     : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"
                 }`}
               >
-                <Printer className="h-4 w-4" />
-                Print {selectedRows.size > 0 ? `(${selectedRows.size})` : ""}
+                <Printer className="h-4 w-4 shrink-0" />
+                <span className="whitespace-nowrap">Print {selectedRows.size > 0 ? `(${selectedRows.size})` : ""}</span>
               </button>
             </div>
           </div>
@@ -3195,7 +3213,7 @@ export default function ComparisonResultView({
           {/* =================================================== */}
           <div className="space-y-3 md:hidden">
             {/* Mobile Select All Bar */}
-            <div className="flex items-center justify-between rounded-xl border border-border bg-[#0A0E1A] p-3 text-xs font-semibold text-white">
+            <div className="flex items-center justify-between rounded-xl border border-border bg-[#0A0E1A] p-3 text-xs font-semibold text-white shadow-2xs">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
                   checked={allPageSelected}
@@ -3203,13 +3221,13 @@ export default function ComparisonResultView({
                 />
                 <span>Select All Page ({paginatedResults.length})</span>
               </label>
-              <span className="text-[#E8C16D]">
+              <span className="text-[#E8C16D] font-bold">
                 {selectedRows.size} Selected
               </span>
             </div>
 
             {paginatedResults.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground space-y-2">
+              <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center text-xs text-muted-foreground space-y-2">
                 <p>
                   {showPrinted
                     ? "No printed orders match your current search or filter."
@@ -3247,28 +3265,34 @@ export default function ComparisonResultView({
               paginatedResults.map((item) => (
                 <div
                   key={item.index}
-                  className={`rounded-2xl border p-4 shadow-2xs transition-all space-y-3 ${
+                  className={`rounded-2xl border p-3.5 sm:p-4 shadow-2xs transition-all space-y-2.5 ${
                     selectedRows.has(item.index)
                       ? "border-[#E8C16D] bg-[#FFF9EC]/30 dark:bg-[#E8C16D]/5"
                       : "border-border bg-card"
                   }`}
                 >
                   {/* Card Header */}
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
-                    <label className="flex items-center gap-2.5 cursor-pointer">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                    <label className="flex items-center gap-2 cursor-pointer min-w-0 flex-1">
                       <Checkbox
                         checked={selectedRows.has(item.index)}
                         onCheckedChange={(checked) =>
                           handleSelectRow(item.index, Boolean(checked))
                         }
                       />
-                      <span className="font-mono text-xs font-bold text-[#0A0E1A] dark:text-white">
+                      <span className="font-mono text-xs font-bold text-[#0A0E1A] dark:text-white truncate">
                         {item.orderNumber}
                       </span>
                     </label>
+
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 uppercase tracking-wider">
+                        {getOrderTypeLabel(getOrderTypeForItem(item))}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Card Detail Grid */}
+                  {/* Card Detail Grid (Symmetrical 2x2 with full-width top & bottom) */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {/* Invoices */}
                     <div className="col-span-2 rounded-lg bg-muted/40 p-2 space-y-0.5">
@@ -3297,7 +3321,9 @@ export default function ComparisonResultView({
                       <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
                         Seller SKU
                       </span>
-                      {renderItemListCell(item.sellerSku)}
+                      <div className="break-all">
+                        {renderItemListCell(item.sellerSku)}
+                      </div>
                     </div>
 
                     {/* ASIN */}
@@ -3305,7 +3331,9 @@ export default function ComparisonResultView({
                       <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
                         ASIN
                       </span>
-                      {renderItemListCell(item.asin)}
+                      <div className="break-all">
+                        {renderItemListCell(item.asin)}
+                      </div>
                     </div>
 
                     {/* AWB Tracking */}
@@ -3318,11 +3346,21 @@ export default function ComparisonResultView({
                           {item.awb || "N/A"}
                         </span>
                         {printedRows.has(item.index) && (
-                          <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 shrink-0">
-                            <CheckCircle2 className="h-3 w-3" /> Printed
+                          <span className="rounded-md bg-blue-500/10 px-1.5 py-0.2 text-[9px] font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-0.5 shrink-0">
+                            <CheckCircle2 className="h-2.5 w-2.5" /> Printed
                           </span>
                         )}
                       </div>
+                    </div>
+
+                    {/* Total Quantity */}
+                    <div className="rounded-lg bg-muted/40 p-2 space-y-0.5">
+                      <span className="text-[10px] font-medium text-muted-foreground block uppercase tracking-wider">
+                        Total Quantity
+                      </span>
+                      <span className="font-semibold text-foreground truncate block">
+                        {item.totalQuantity || 1} {item.totalQuantity === 1 ? "Piece" : "Pieces"}
+                      </span>
                     </div>
 
                     {/* Customer */}
@@ -3345,10 +3383,10 @@ export default function ComparisonResultView({
           {/* =================================================== */}
           <div className="hidden md:block w-full overflow-hidden border border-border bg-card shadow-2xs">
             <div className="w-full overflow-x-auto">
-              <table className="w-full min-w-[1100px] border-collapse text-left">
+              <table className="w-full min-w-[940px] lg:min-w-[1000px] border-collapse text-left">
                 <thead className="bg-[#0A0E1A] text-xs sm:text-sm text-[#E8C16D]">
                   <tr className="border-b border-border">
-                    <th className="w-12 min-w-[48px] px-3 py-3.5 text-center whitespace-nowrap">
+                    <th className="w-12 min-w-[44px] px-2.5 sm:px-3 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center">
                         <Checkbox
                           checked={allPageSelected}
@@ -3356,12 +3394,12 @@ export default function ComparisonResultView({
                         />
                       </div>
                     </th>
-                    <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Invoices</th>
-                    <th className="w-48 min-w-[170px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Amazon Order ID</th>
-                    <th className="w-52 min-w-[190px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">AWB Tracking</th>
-                    <th className="w-36 min-w-[140px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">ASIN</th>
-                    <th className="w-44 min-w-[170px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Seller SKU</th>
-                    <th className="w-44 min-w-[160px] px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
+                    <th className="w-36 min-w-[130px] px-2.5 sm:px-3 py-3 text-center font-semibold whitespace-nowrap">Invoices</th>
+                    <th className="w-44 min-w-[150px] px-2.5 sm:px-3 py-3 text-center font-semibold whitespace-nowrap">Amazon Order ID</th>
+                    <th className="w-44 min-w-[150px] px-2.5 sm:px-3 py-3 text-center font-semibold whitespace-nowrap">AWB Tracking</th>
+                    <th className="w-32 min-w-[120px] px-2.5 sm:px-3 py-3 text-center font-semibold whitespace-nowrap">ASIN</th>
+                    <th className="w-40 min-w-[140px] px-2.5 sm:px-3 py-3 text-center font-semibold whitespace-nowrap">Seller SKU</th>
+                    <th className="w-40 min-w-[130px] px-2.5 sm:px-3 py-3 text-center font-semibold whitespace-nowrap">Customer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-xs sm:text-sm">
@@ -3411,7 +3449,7 @@ export default function ComparisonResultView({
                         key={item.index}
                         className="transition hover:bg-muted/30"
                       >
-                        <td className="w-12 min-w-[48px] px-3 py-3 text-center whitespace-nowrap">
+                        <td className="w-12 min-w-[44px] px-2.5 sm:px-3 py-2.5 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center">
                             <Checkbox
                               checked={selectedRows.has(item.index)}
@@ -3421,7 +3459,7 @@ export default function ComparisonResultView({
                             />
                           </div>
                         </td>
-                        <td className="w-44 min-w-[160px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                        <td className="w-36 min-w-[130px] px-2.5 sm:px-3 py-2.5 text-center font-medium whitespace-nowrap">
                           {item.isMatch ? (
                             item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
                               item.pdfInvoice
@@ -3448,10 +3486,10 @@ export default function ComparisonResultView({
                             </div>
                           )}
                         </td>
-                        <td className="w-48 min-w-[170px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                        <td className="w-44 min-w-[150px] px-2.5 sm:px-3 py-2.5 text-center font-medium whitespace-nowrap">
                           <span>{item.orderNumber}</span>
                         </td>
-                        <td className="w-52 min-w-[190px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                        <td className="w-44 min-w-[150px] px-2.5 sm:px-3 py-2.5 text-center font-medium whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             <span>{item.awb}</span>
                             {printedRows.has(item.index) && (
@@ -3461,13 +3499,20 @@ export default function ComparisonResultView({
                             )}
                           </div>
                         </td>
-                        <td className="w-36 min-w-[140px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                        <td className="w-32 min-w-[120px] px-2.5 sm:px-3 py-2.5 text-center font-medium">
                           {renderItemListCell(item.asin)}
                         </td>
-                        <td className="w-44 min-w-[170px] px-4 py-3 text-center font-medium whitespace-nowrap">
-                          {renderItemListCell(item.sellerSku)}
+                        <td className="w-40 min-w-[140px] px-2.5 sm:px-3 py-2.5 text-center font-medium">
+                          <div className="flex flex-col items-center justify-center gap-0.5">
+                            {renderItemListCell(item.sellerSku)}
+                            {getOrderTypeForItem(item) === "multiple_pieces" && (item.totalQuantity || 0) >= 2 && (
+                              <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/80 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-800 dark:text-amber-300">
+                                {item.totalQuantity} Pieces
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="w-44 min-w-[160px] px-4 py-3 text-center font-medium whitespace-nowrap">
+                        <td className="w-40 min-w-[130px] px-2.5 sm:px-3 py-2.5 text-center font-medium whitespace-nowrap">
                           {cleanCustomerName(item.customer)}
                         </td>
                       </tr>
@@ -3481,7 +3526,7 @@ export default function ComparisonResultView({
           {/* =================================================== */}
           {/* PAGINATION */}
           {/* =================================================== */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border border-border bg-[#0A0E1A] px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 border border-border bg-[#0A0E1A] px-3 sm:px-6 py-3 sm:py-4">
             {/* Left */}
             <div className="text-xs sm:text-sm text-white text-center sm:text-left">
               Showing{" "}
@@ -3499,7 +3544,7 @@ export default function ComparisonResultView({
             <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3">
               {/* Rows */}
               <div className="flex items-center gap-1.5">
-                <span className="whitespace-nowrap text-xs sm:text-sm text-white">Rows</span>
+                <span className="whitespace-nowrap text-xs text-white">Rows</span>
 
                 <select
                   value={limit}
@@ -3507,7 +3552,7 @@ export default function ComparisonResultView({
                     setLimit(Number(e.target.value));
                     setPage(1);
                   }}
-                  className="h-8 sm:h-9 border border-border bg-background px-2 font-medium text-xs sm:text-sm text-foreground outline-none transition-colors focus:border-primary"
+                  className="h-8 sm:h-9 border border-border bg-background px-2 font-medium text-xs text-foreground outline-none transition-colors focus:border-primary"
                 >
                   {[10, 20, 25, 30, 50, 100].map((size) => (
                     <option key={size} value={size}>
@@ -3524,14 +3569,14 @@ export default function ComparisonResultView({
                 fullWidth={false}
                 disabled={currentPage <= 1}
                 onClick={() => setPage(currentPage - 1)}
-                className="h-8 sm:h-9 px-3 border-[#E8C16D] bg-[#E8C16D] text-xs font-semibold text-[#0A0E1A] hover:bg-[#E8C16D]"
+                className="h-8 sm:h-9 px-2.5 sm:px-3 border-[#E8C16D] bg-[#E8C16D] text-xs font-semibold text-[#0A0E1A] hover:bg-[#E8C16D]"
               >
                 <ChevronLeft className="mr-0.5 h-3.5 w-3.5" />
                 Prev
               </Button>
 
               {/* Page Indicator */}
-              <div className="flex h-8 sm:h-9 min-w-[65px] items-center justify-center border border-border bg-muted px-2.5 text-xs font-semibold text-foreground">
+              <div className="flex h-8 sm:h-9 min-w-[55px] sm:min-w-[65px] items-center justify-center border border-border bg-muted px-2 text-xs font-semibold text-foreground">
                 {currentPage} / {totalPages}
               </div>
 
@@ -3542,7 +3587,7 @@ export default function ComparisonResultView({
                 fullWidth={false}
                 disabled={currentPage >= totalPages}
                 onClick={() => setPage(currentPage + 1)}
-                className="h-8 sm:h-9 px-3 border-[#E8C16D] bg-[#E8C16D] text-xs font-semibold text-[#0A0E1A] hover:bg-[#E8C16D]"
+                className="h-8 sm:h-9 px-2.5 sm:px-3 border-[#E8C16D] bg-[#E8C16D] text-xs font-semibold text-[#0A0E1A] hover:bg-[#E8C16D]"
               >
                 Next
                 <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
@@ -3572,8 +3617,8 @@ export default function ComparisonResultView({
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="w-56 sm:w-72">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div className="w-full sm:w-72">
                 <ReactSelect
                   options={pdfViewOptions}
                   value={

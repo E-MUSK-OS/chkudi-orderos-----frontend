@@ -27,26 +27,35 @@ export const generateAmazonPicklist = (
   const selectedOrders = results.filter((r) => selectedRows.has(r.index));
 
   const resolveOrderType = (item: AmazonComparisonResult): "single_quantity" | "multiple_asin" | "multiple_pieces" => {
-    if (item.orderType) return item.orderType;
+    const rawAsins = (item.asin && item.asin !== "N/A" ? item.asin : "")
+      .split(/[\r\n]+|\s+\/\s+/)
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
 
-    let totalQty = item.totalQuantity || 0;
-    let asinsCount = item.asinsCount || 0;
-    let skusCount = 1;
+    const rawSkus = (item.sellerSku && item.sellerSku !== "N/A" && item.sellerSku !== "-" ? item.sellerSku : "")
+      .split(/[\r\n]+|\s+\/\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    if (item.asin && item.asin !== "N/A") {
-      const rawAsins = item.asin.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
-      asinsCount = new Set(rawAsins).size;
-      if (!totalQty) totalQty = rawAsins.length;
+    const uniqueAsins = new Set(rawAsins);
+    const uniqueSkus = new Set(rawSkus);
+
+    const totalQty = item.totalQuantity || 1;
+
+    const hasMultipleDifferentAsins = uniqueAsins.size > 1 || (item.asinsCount || 0) > 1;
+    const hasMultipleDifferentSkus = uniqueSkus.size > 1;
+
+    // 1. If order contains multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
+    if (hasMultipleDifferentAsins || hasMultipleDifferentSkus) {
+      return "multiple_asin";
     }
 
-    if (item.sellerSku && item.sellerSku !== "N/A") {
-      const rawSkus = item.sellerSku.split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
-      skusCount = new Set(rawSkus).size;
-      if (rawSkus.length > totalQty) totalQty = rawSkus.length;
+    // 2. Exactly one ASIN and the EXACT SAME Seller SKU:
+    // Only Multiple Pieces if the order genuinely has 2 or more pieces (totalQty >= 2)
+    if (totalQty >= 2) {
+      return "multiple_pieces";
     }
 
-    if (asinsCount > 1) return "multiple_asin";
-    if (skusCount > 1 || totalQty > 1) return "multiple_pieces";
     return "single_quantity";
   };
 

@@ -553,7 +553,7 @@ export default function OrderProcess() {
             const itemCount = Math.max(
               item.asinsCount || 0,
               item.totalQuantity || 0,
-              item.asin ? item.asin.split(/[\r\n]+|\s+\/\s+/).filter(Boolean).length : 0,
+              item.asin ? new Set(item.asin.split(/[\r\n]+|\s+\/\s+/).filter(Boolean)).size : 0,
               1
             );
 

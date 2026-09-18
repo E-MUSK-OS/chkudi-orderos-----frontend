@@ -339,7 +339,7 @@ export const chromeExtensionPrintService = {
             printer: printerName,
             options: {
   copies: copies || 1,
-  paperSize: widthMm && heightMm ? `${widthMm}x${heightMm}` : undefined,
+  paperSize: widthMm && heightMm ? `${widthMm}x${heightMm}mm` : undefined,
 },
             requestId: requestId,
           },

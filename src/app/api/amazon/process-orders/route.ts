@@ -1169,9 +1169,9 @@ function computeAddressSimilarity(pdfAddr: string, zplAddr: string): number {
 
 /**
  * Categorize order composition into:
- * - "single_quantity": Exactly 1 ASIN and 1 piece/quantity total in invoice
- * - "multiple_asin": Multiple different ASINs in invoice
- * - "multiple_pieces": Multiple pieces (qty > 1) for the same ASIN
+ * - "single_quantity": Exactly 1 ASIN and 1 piece/quantity of 1 Seller SKU
+ * - "multiple_asin": Multiple different ASINs OR multiple different Seller SKUs
+ * - "multiple_pieces": Exactly 1 ASIN with 2 or more pieces of the EXACT SAME Seller SKU (can be 2, 3, 4, 5... not fixed to 2)
  */
 function classifyOrderType(
   text: string,
@@ -1182,52 +1182,53 @@ function classifyOrderType(
   totalQuantity: number;
   asinsCount: number;
 } {
-  if (!text && (!extractedAsins || extractedAsins.length === 0)) {
-    return { orderType: "single_quantity", totalQuantity: 1, asinsCount: 1 };
-  }
+  const validAsins = (extractedAsins || []).filter((a) => a && a !== "N/A");
+  const validSkus = (extractedSkus || []).filter((s) => s && s !== "N/A" && s !== "-");
 
-  let asinsCount = 1;
-  let skusCount = 1;
+  const uniqueAsins = new Set(validAsins);
+  const uniqueSkus = new Set(validSkus);
+
+  const asinsCount = uniqueAsins.size || 1;
+  const skusCount = uniqueSkus.size || 1;
+
   let totalQty = 1;
 
-  if (extractedAsins && extractedAsins.length > 0) {
-    const uniqueAsins = new Set(extractedAsins);
-    asinsCount = uniqueAsins.size;
-    totalQty = extractedAsins.length;
-  } else {
-    const asinMatches = Array.from(text.matchAll(/\b(B0[A-Z0-9]{8})\b/gi)).map((m) => m[1].toUpperCase());
-    const uniqueAsins = new Set(asinMatches);
-    asinsCount = uniqueAsins.size || 1;
-    if (asinMatches.length > totalQty) totalQty = asinMatches.length;
-  }
-
-  if (extractedSkus && extractedSkus.length > 0) {
-    const uniqueSkus = new Set(extractedSkus);
-    skusCount = uniqueSkus.size;
-    if (extractedSkus.length > totalQty) totalQty = extractedSkus.length;
-  }
-
-  const qtyMatch = text.match(/(?:TOTAL\s*QTY|Quantity|Qty|QTY)\s*[:\-#]?\s*(\d+)/i);
-  if (qtyMatch?.[1]) {
-    const parsed = parseInt(qtyMatch[1], 10);
+  // 1. Try to extract explicit TOTAL QTY / TOTAL QUANTITY from invoice summary or table
+  const totalQtyMatch = text.match(/TOTAL\s*(?:QTY|QUANTITY|ITEMS)\s*[:\-#]?\s*(\d+)/i);
+  if (totalQtyMatch?.[1]) {
+    const parsed = parseInt(totalQtyMatch[1], 10);
     if (!isNaN(parsed) && parsed > 0 && parsed < 500) {
-      totalQty = Math.max(totalQty, parsed);
+      totalQty = parsed;
+    }
+  } else {
+    // 2. Fallback: look for line-item Qty: N or Quantity: N
+    const qtyMatch = text.match(/(?:Quantity|Qty)\s*[:\-#]?\s*(\d+)/i);
+    if (qtyMatch?.[1]) {
+      const parsed = parseInt(qtyMatch[1], 10);
+      if (!isNaN(parsed) && parsed > 0 && parsed < 500) {
+        totalQty = parsed;
+      }
     }
   }
 
   let orderType: "single_quantity" | "multiple_asin" | "multiple_pieces" = "single_quantity";
 
-  if (asinsCount > 1) {
+  // If order has multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
+  if (asinsCount > 1 || skusCount > 1) {
     orderType = "multiple_asin";
-  } else if (skusCount > 1 || totalQty > 1 || (extractedSkus && extractedSkus.length > 1)) {
+    totalQty = Math.max(totalQty, asinsCount, skusCount);
+  } else if (totalQty >= 2) {
+    // Exactly 1 ASIN and the EXACT SAME Seller SKU with 2 or more pieces (can be 2, 3, 4, 5... not fixed to 2)
     orderType = "multiple_pieces";
   } else {
+    // Exactly 1 ASIN, 1 piece of 1 Seller SKU
     orderType = "single_quantity";
+    totalQty = 1;
   }
 
   return {
     orderType,
-    totalQuantity: Math.max(totalQty, 1),
+    totalQuantity: totalQty,
     asinsCount,
   };
 }

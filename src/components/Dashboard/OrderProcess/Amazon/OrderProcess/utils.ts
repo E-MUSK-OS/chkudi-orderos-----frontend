@@ -566,14 +566,22 @@ export function mapAsinToSellerSku(
   fallbackSku?: string
 ): string {
   const fallbackList = (fallbackSku && fallbackSku !== "N/A" && fallbackSku !== "-")
-    ? fallbackSku
-        .split(/[\r\n]+|\s+\/\s+|\s*,\s+/)
-        .map((s) => s.trim())
-        .filter((s) => s && s !== "N/A" && s !== "-" && !/^B0[A-Z0-9]{8}$/i.test(s))
+    ? Array.from(
+        new Set(
+          fallbackSku
+            .split(/[\r\n]+|\s+\/\s+|\s*,\s+/)
+            .map((s) => s.trim())
+            .filter((s) => s && s !== "N/A" && s !== "-" && !/^B0[A-Z0-9]{8}$/i.test(s))
+        )
+      )
     : [];
 
   const rawAsins = (asinValue && asinValue !== "N/A")
-    ? asinValue.split(/[\r\n]+|\s+\/\s+|\s*,\s+/).map((s) => s.trim().toUpperCase()).filter(Boolean)
+    ? Array.from(
+        new Set(
+          asinValue.split(/[\r\n]+|\s+\/\s+|\s*,\s+/).map((s) => s.trim().toUpperCase()).filter(Boolean)
+        )
+      )
     : [];
 
   const resultSkus: string[] = [];
@@ -605,12 +613,14 @@ export function mapAsinToSellerSku(
     }
   }
 
-  if (resultSkus.length === 0 && fallbackList.length > 0) {
+  const uniqueResultSkus = Array.from(new Set(resultSkus));
+
+  if (uniqueResultSkus.length === 0 && fallbackList.length > 0) {
     const validFallback = fallbackList.filter((s) => !/^B0[A-Z0-9]{8}$/i.test(s));
     if (validFallback.length > 0) return validFallback.join("\n");
   }
 
-  return resultSkus.length > 0 ? resultSkus.join("\n") : "N/A";
+  return uniqueResultSkus.length > 0 ? uniqueResultSkus.join("\n") : "N/A";
 }
 
 /**
