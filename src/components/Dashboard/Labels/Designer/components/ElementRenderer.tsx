@@ -81,23 +81,28 @@ export function ElementRenderer({
     if (element.type === 'barcode' && barcodeRef.current) {
       const content = previewData 
         ? resolveVariable(element.content, element.variableSource, previewData)
-        : element.content;
+        : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
 
       try {
         setBarcodeError(null);
-        JsBarcode(barcodeRef.current, content, {
-          format: element.barcodeFormat,
-          displayValue: element.showText,
-          fontSize: element.fontSize,
+        JsBarcode(barcodeRef.current, content || '12345678', {
+          format: element.barcodeFormat || 'CODE128',
+          displayValue: false,
           margin: 0,
-          width: 2, // internal bars width ratio
-          height: Math.max(4, mmToPx(element.height, 1) - (element.showText ? element.fontSize : 0)),
+          width: 2,
+          height: 100,
         });
+        barcodeRef.current.setAttribute('preserveAspectRatio', 'none');
+        barcodeRef.current.removeAttribute('width');
+        barcodeRef.current.removeAttribute('height');
+        barcodeRef.current.style.width = '100%';
+        barcodeRef.current.style.height = '100%';
+        barcodeRef.current.style.display = 'block';
       } catch (e: any) {
         setBarcodeError(e?.message || 'Invalid barcode format or content');
       }
     }
-  }, [element, previewSampleData, previewData]);
+  }, [element, previewSampleData, previewData, zoom]);
 
   const xPx = mmToPx(element.x, zoom);
   const yPx = mmToPx(element.y, zoom);
@@ -187,13 +192,49 @@ export function ElementRenderer({
           </div>
         );
       }
-      case 'barcode':
+      case 'barcode': {
+        const barcodeContent = previewData 
+          ? resolveVariable(element.content, element.variableSource, previewData)
+          : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
+
+        const showText = element.showText !== false;
+        const fontSizePt = (element.fontSize || 10) * zoom;
+
         return (
-          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-            <svg 
-              ref={barcodeRef} 
-              style={{ width: '100%', height: '100%', display: barcodeError ? 'none' : 'block' }}
-            />
+          <div style={{ 
+            width: '100%', 
+            height: '100%', 
+            position: 'relative', 
+            display: 'flex', 
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}>
+            <div style={{ flex: 1, width: '100%', minHeight: 0, position: 'relative' }}>
+              <svg 
+                ref={barcodeRef} 
+                preserveAspectRatio="none"
+                style={{ width: '100%', height: '100%', display: barcodeError ? 'none' : 'block' }}
+              />
+            </div>
+            {showText && !barcodeError && (
+              <div
+                style={{
+                  fontSize: `${fontSizePt}pt`,
+                  fontFamily: 'Helvetica, Arial, sans-serif',
+                  textAlign: 'center',
+                  lineHeight: 1.1,
+                  color: '#000000',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  flexShrink: 0,
+                  paddingTop: '1px',
+                }}
+              >
+                {barcodeContent || (previewSampleData ? '' : '[Empty Barcode]')}
+              </div>
+            )}
             {barcodeError && (
               <div className="absolute inset-0 flex items-center justify-center text-[10px] text-red-500 text-center bg-red-50 p-1">
                 {barcodeError}
@@ -201,6 +242,7 @@ export function ElementRenderer({
             )}
           </div>
         );
+      }
       case 'qrcode': {
         const qrContent = previewData
           ? resolveVariable(element.content, element.variableSource, previewData)

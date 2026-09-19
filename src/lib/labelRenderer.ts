@@ -272,32 +272,33 @@ export const renderLabelToCanvas = async (
       const content = resolveVariable(el.content, el.variableSource, productRecord);
       if (content) {
         try {
-          const fontSize = el.fontSize || 12;
+          const fontSize = el.fontSize || 10;
           const showText = el.showText !== false;
-          const barHeight = Math.max(4, h - (showText ? fontSize : 0));
+          const textHeight = showText ? fontSize * (96 / 72) : 0;
+          const barHeight = Math.max(4, h - textHeight);
 
           const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
           JsBarcode(svg, content, {
             format: el.barcodeFormat || "CODE128",
-            displayValue: showText,
-            fontSize: fontSize,
+            displayValue: false,
             margin: 0,
             width: 2,
-            height: barHeight,
+            height: 100,
           });
 
           const svgString = new XMLSerializer().serializeToString(svg);
           const barcodeImg = await svgStringToImage(svgString);
 
-          const bw = barcodeImg.width || 1;
-          const bh = barcodeImg.height || 1;
-          const scale = Math.min(w / bw, h / bh);
-          const scaledW = bw * scale;
-          const scaledH = bh * scale;
-          const dx = (w - scaledW) / 2;
-          const dy = (h - scaledH) / 2;
+          // Draw barcode bars stretched to fill w and barHeight
+          ctx.drawImage(barcodeImg, 0, 0, w, barHeight);
 
-          ctx.drawImage(barcodeImg, dx, dy, scaledW, scaledH);
+          if (showText) {
+            ctx.fillStyle = "#000000";
+            ctx.font = `${fontSize * (96 / 72)}px Helvetica, Arial, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(content, w / 2, h);
+          }
         } catch (e) {
           console.error("Barcode render error", e);
         }
@@ -454,23 +455,55 @@ export const createLabelDom = (
     } else if (el.type === "barcode") {
       const content = resolveVariable(el.content, el.variableSource, productRecord);
       if (content) {
+        const barcodeWrapper = document.createElement("div");
+        barcodeWrapper.style.cssText = "width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;";
+
+        const svgWrapper = document.createElement("div");
+        svgWrapper.style.cssText = "flex: 1; width: 100%; min-height: 0; position: relative;";
+
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.style.width = "100%";
         svg.style.height = "100%";
         svg.style.display = "block";
+        svg.setAttribute("preserveAspectRatio", "none");
+
         try {
           JsBarcode(svg, content, {
             format: el.barcodeFormat || "CODE128",
-            displayValue: el.showText !== false,
-            fontSize: el.fontSize || 12,
+            displayValue: false,
             margin: 0,
             width: 2,
-            height: Math.max(4, heightPx - (el.showText ? (el.fontSize || 12) : 0)),
+            height: 100,
           });
+          svg.setAttribute("preserveAspectRatio", "none");
+          svg.removeAttribute("width");
+          svg.removeAttribute("height");
         } catch (e) {
           console.warn("Barcode error:", e);
         }
-        elContainer.appendChild(svg);
+
+        svgWrapper.appendChild(svg);
+        barcodeWrapper.appendChild(svgWrapper);
+
+        if (el.showText !== false) {
+          const textDiv = document.createElement("div");
+          textDiv.style.cssText = `
+            font-size: ${el.fontSize || 10}pt;
+            font-family: Helvetica, Arial, sans-serif;
+            text-align: center;
+            line-height: 1.1;
+            color: #000000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-top: 1px;
+            flex-shrink: 0;
+          `;
+          textDiv.textContent = content;
+          barcodeWrapper.appendChild(textDiv);
+        }
+
+        elContainer.appendChild(barcodeWrapper);
       }
     } else if (el.type === "qrcode") {
       const content = resolveVariable(el.content, el.variableSource, productRecord);
@@ -1360,11 +1393,32 @@ export const renderLabelToVectorPdf = async (
           }
 
           if (embeddedImg) {
+            let drawX = elXPt;
+            let drawY = elYPt;
+            let drawW = elWPt;
+            let drawH = elHPt;
+
+            if (el.keepAspectRatio && embeddedImg.width && embeddedImg.height) {
+              const imgAspect = embeddedImg.width / embeddedImg.height;
+              const boxAspect = elWPt / (elHPt || 1);
+              if (imgAspect > boxAspect) {
+                // Width constrained
+                drawW = elWPt;
+                drawH = elWPt / imgAspect;
+                drawY = elYPt + (elHPt - drawH) / 2;
+              } else {
+                // Height constrained
+                drawH = elHPt;
+                drawW = elHPt * imgAspect;
+                drawX = elXPt + (elWPt - drawW) / 2;
+              }
+            }
+
             page.drawImage(embeddedImg, {
-              x: elXPt,
-              y: elYPt,
-              width: elWPt,
-              height: elHPt,
+              x: drawX,
+              y: drawY,
+              width: drawW,
+              height: drawH,
               opacity,
             });
           }

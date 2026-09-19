@@ -13,6 +13,8 @@ const DEFAULT_SETTINGS: CanvasSettings = {
   gridSizeMm: 1,
   snapToGrid: true,
   colorMode: 'color', // default: full color
+  showSafeMargin: true, // show 2mm safe printable area guide
+  safeMarginMm: 2,
 };
 
 const INITIAL_STATE: DesignerState = {

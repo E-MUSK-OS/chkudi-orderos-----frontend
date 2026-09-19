@@ -260,6 +260,22 @@ export function PropertiesPanel({
             </label>
           </div>
 
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="showSafeMargin"
+              checked={settings.showSafeMargin !== false}
+              onChange={(e) => handleSettingsChange('showSafeMargin', e.target.checked)}
+              className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
+            />
+            <label htmlFor="showSafeMargin" className="text-sm text-gray-300 cursor-pointer flex items-center justify-between flex-1">
+              <span>Show Safe Margin (2mm)</span>
+            </label>
+          </div>
+          <p className="text-[10px] text-gray-500">
+            Blue dashed line shows the thermal printable zone. Keep graphics inside to avoid edge cut-off.
+          </p>
+
           <div className="space-y-2 pt-2">
             <label className="text-xs font-medium text-gray-300">Print Color Mode</label>
             <div className="flex gap-2">
@@ -938,6 +954,28 @@ export function PropertiesPanel({
               <label htmlFor="keepAspectRatio" className="text-sm text-gray-300 cursor-pointer">
                 Keep Aspect Ratio
               </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const margin = settings.safeMarginMm ?? 2;
+                const safeW = Math.max(5, settings.widthMm - margin * 2);
+                const safeH = Math.max(5, settings.heightMm - margin * 2);
+                updateElement(selectedElement.id, { x: margin, y: margin, width: safeW, height: safeH }, false);
+              }}
+              className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2"
+            >
+              🛡️ Fit Inside 2mm Safe Margin
+            </button>
+
+            <div className="p-2.5 bg-[#1F2937] border border-stone-800 rounded-sm text-[11px] text-gray-300 space-y-1 mt-2">
+              <div className="font-semibold text-amber-400">💡 Thermal Print Checklist</div>
+              <ul className="list-disc pl-4 space-y-0.5 text-gray-400 text-[10px]">
+                <li>Keep at least 2mm away from edges to prevent printer clipping.</li>
+                <li>Use high-contrast monochrome (pure black on transparent/white).</li>
+                <li>Faint colors and light gradients will not print on thermal heads.</li>
+              </ul>
             </div>
           </div>
         )}

@@ -74,6 +74,8 @@ export interface CanvasSettings {
   snapToGrid: boolean;
   colorMode: "color" | "monochrome"; // "color" = full color print, "monochrome" = thermal B&W
   backgroundOpacity?: number;
+  showSafeMargin?: boolean;
+  safeMarginMm?: number;
 }
 
 export interface DesignerState {

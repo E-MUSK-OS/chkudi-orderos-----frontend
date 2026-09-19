@@ -89,6 +89,23 @@ export function DesignCanvas({
             />
           )}
 
+          {/* Safe printable margin guide (2mm safety boundary) */}
+          {!previewSampleData && settings.showSafeMargin !== false && (
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: mmToPx(settings.safeMarginMm ?? 2, zoom),
+                top: mmToPx(settings.safeMarginMm ?? 2, zoom),
+                width: mmToPx(Math.max(1, settings.widthMm - (settings.safeMarginMm ?? 2) * 2), zoom),
+                height: mmToPx(Math.max(1, settings.heightMm - (settings.safeMarginMm ?? 2) * 2), zoom),
+                border: '1px dashed rgba(59, 130, 246, 0.45)',
+                boxSizing: 'border-box',
+                zIndex: 1,
+              }}
+              title="Safe Printable Area (2mm margin — keep critical content inside to avoid thermal edge clipping)"
+            />
+          )}
+
           {elements.map((element) => (
             <ElementRenderer
               key={element.id}
