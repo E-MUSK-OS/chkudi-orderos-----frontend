@@ -60,7 +60,66 @@ const svgStringToImage = (svgString: string): Promise<HTMLImageElement> => {
   });
 };
 
-// Removed applyMonochromeThreshold
+/**
+ * Converts any color or grayscale image into a pure 1-bit high-contrast black & white image.
+ * Colored drawings (e.g. pastel purple, light blue, gray handwriting) with luminance <= threshold (220)
+ * are converted to 100% solid black (#000000), while white/light background remains white/transparent.
+ */
+export const binarizeImageToCanvas = async (
+  imgSrc: string,
+  threshold: number = 220
+): Promise<HTMLCanvasElement> => {
+  const canvas = document.createElement("canvas");
+  try {
+    const img = await loadImage(imgSrc);
+    canvas.width = img.naturalWidth || img.width || 400;
+    canvas.height = img.naturalHeight || img.height || 400;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return canvas;
+
+    ctx.drawImage(img, 0, 0);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+
+      // Keep fully transparent pixels transparent
+      if (a < 20) {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+        data[i + 3] = 0;
+        continue;
+      }
+
+      // Standard ITU-R BT.601 luminance
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      if (lum <= threshold) {
+        // Colored or dark stroke -> Pure solid black
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+        data[i + 3] = 255;
+      } else {
+        // Light paper / background -> Pure white (or transparent if it had low opacity)
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+        data[i + 3] = a < 200 ? 0 : 255;
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+  } catch (e) {
+    console.error("binarizeImageToCanvas error:", e);
+  }
+  return canvas;
+};
 
 // Render logic
 export const renderLabelToCanvas = async (
@@ -118,12 +177,13 @@ export const renderLabelToCanvas = async (
   // Draw Background Image
   if (template.backgroundImageUrl) {
     try {
-      const bgImg = await loadImage(template.backgroundImageUrl);
       if (template.settings.colorMode === 'monochrome') {
-        ctx.filter = 'grayscale(100%)';
+        const monoCanvas = await binarizeImageToCanvas(template.backgroundImageUrl, 220);
+        ctx.drawImage(monoCanvas, 0, 0, logicalWidth, logicalHeight);
+      } else {
+        const bgImg = await loadImage(template.backgroundImageUrl);
+        ctx.drawImage(bgImg, 0, 0, logicalWidth, logicalHeight);
       }
-      ctx.drawImage(bgImg, 0, 0, logicalWidth, logicalHeight);
-      ctx.filter = 'none';
     } catch (err) {
       console.error("Failed to load background image", err);
       // Draw visible error state
@@ -150,9 +210,6 @@ export const renderLabelToCanvas = async (
     const h = el.height * MM_TO_PX;
 
     ctx.save();
-    if (template.settings.colorMode === 'monochrome') {
-      ctx.filter = 'grayscale(100%)';
-    }
     ctx.translate(x + w / 2, y + h / 2);
     if (el.rotation) {
       ctx.rotate((el.rotation * Math.PI) / 180);
@@ -175,7 +232,7 @@ export const renderLabelToCanvas = async (
       const lineHeightMultiplier = el.lineHeight || 1.2;
       let fontSizePx = (el.fontSize || 12) * ptToPx;
       
-      ctx.fillStyle = el.color || "#000000";
+      ctx.fillStyle = template.settings.colorMode === 'monochrome' ? "#000000" : (el.color || "#000000");
       ctx.textAlign = el.textAlign || "left";
       ctx.textBaseline = "middle";
 
@@ -300,11 +357,28 @@ export const renderLabelToCanvas = async (
           ctx.drawImage(barcodeImg, 0, 0, w, barHeight);
 
           if (showText) {
-            ctx.fillStyle = "#000000";
-            ctx.font = `${fontSize * (96 / 72)}px Helvetica, Arial, sans-serif`;
-            ctx.textAlign = "center";
+            const textColor = template.settings.colorMode === 'monochrome' ? "#000000" : (el.color || "#000000");
+            const fontStr = `${el.fontWeight === 'bold' ? 'bold ' : ''}${el.fontStyle === 'italic' ? 'italic ' : ''}${fontSize * (96 / 72)}px ${getFontFamily(el.fontFamily)}`;
+            ctx.fillStyle = textColor;
+            ctx.font = fontStr;
+            ctx.textAlign = el.textAlign || "center";
             ctx.textBaseline = "bottom";
-            ctx.fillText(content, w / 2, h);
+            const textX = el.textAlign === "left" ? 0 : el.textAlign === "right" ? w : w / 2;
+            ctx.fillText(content, textX, h);
+
+            if (el.textDecoration === "underline") {
+              const textMetrics = ctx.measureText(content);
+              const textW = textMetrics.width;
+              let startX = textX;
+              if (el.textAlign === "center") startX -= textW / 2;
+              else if (el.textAlign === "right") startX -= textW;
+              ctx.strokeStyle = textColor;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(startX, h);
+              ctx.lineTo(startX + textW, h);
+              ctx.stroke();
+            }
           }
         } catch (e) {
           console.error("Barcode render error", e);
@@ -329,15 +403,17 @@ export const renderLabelToCanvas = async (
         }
       }
     } else if (el.type === "rectangle") {
-      ctx.strokeStyle = el.borderColor || "#000000";
+      ctx.strokeStyle = template.settings.colorMode === 'monochrome' ? "#000000" : (el.borderColor || "#000000");
       ctx.lineWidth = (el.borderWidth || 1) * MM_TO_PX;
       if (el.fillColor) {
-        ctx.fillStyle = el.fillColor;
+        ctx.fillStyle = template.settings.colorMode === 'monochrome'
+          ? (el.fillColor !== 'transparent' && el.fillColor !== '#ffffff' ? '#000000' : el.fillColor)
+          : el.fillColor;
         ctx.fillRect(0, 0, w, h);
       }
       ctx.strokeRect(0, 0, w, h);
     } else if (el.type === "line") {
-      ctx.strokeStyle = el.borderColor || "#000000";
+      ctx.strokeStyle = template.settings.colorMode === 'monochrome' ? "#000000" : (el.borderColor || "#000000");
       ctx.lineWidth = (el.borderWidth || 1) * MM_TO_PX;
       ctx.beginPath();
       ctx.moveTo(0, h/2);
@@ -345,8 +421,13 @@ export const renderLabelToCanvas = async (
       ctx.stroke();
     } else if (el.type === "image" && el.imageUrl) {
       try {
-        const img = await loadImage(el.imageUrl);
-        ctx.drawImage(img, 0, 0, w, h);
+        if (template.settings.colorMode === 'monochrome') {
+          const monoCanvas = await binarizeImageToCanvas(el.imageUrl, 220);
+          ctx.drawImage(monoCanvas, 0, 0, w, h);
+        } else {
+          const img = await loadImage(el.imageUrl);
+          ctx.drawImage(img, 0, 0, w, h);
+        }
       } catch (err) {
         console.error("Failed to load embedded image", err);
       }
@@ -397,7 +478,7 @@ export const createLabelDom = (
     print-color-adjust: exact;
   `;
 
-  // Background Image
+    // Background Image
   if (template.backgroundImageUrl) {
     const bgImg = document.createElement("img");
     bgImg.src = template.backgroundImageUrl;
@@ -408,7 +489,7 @@ export const createLabelDom = (
       height: 100%;
       object-fit: fill;
       opacity: ${template.settings.backgroundOpacity ?? 1};
-      filter: ${template.settings.colorMode === 'monochrome' ? 'grayscale(100%)' : 'none'};
+      filter: ${template.settings.colorMode === 'monochrome' ? 'grayscale(100%) contrast(400%)' : 'none'};
       pointer-events: none;
     `;
     page.appendChild(bgImg);
@@ -433,7 +514,7 @@ export const createLabelDom = (
       transform: ${el.rotation ? `rotate(${el.rotation}deg)` : 'none'};
       z-index: ${el.zIndex || 0};
       opacity: ${contentOpacity};
-      filter: ${template.settings.colorMode === 'monochrome' ? 'grayscale(100%)' : 'none'};
+      filter: ${template.settings.colorMode === 'monochrome' ? (el.type === 'image' ? 'grayscale(100%) contrast(400%)' : 'grayscale(100%)') : 'none'};
       box-sizing: border-box;
       overflow: hidden;
     `;
@@ -452,7 +533,7 @@ export const createLabelDom = (
         text-decoration: ${el.textDecoration === 'underline' ? 'underline' : 'none'};
         text-align: ${el.textAlign || 'left'};
         line-height: ${el.lineHeight ? el.lineHeight : 'normal'};
-        color: ${el.color || '#000000'};
+        color: ${template.settings.colorMode === 'monochrome' ? '#000000' : (el.color || '#000000')};
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -498,10 +579,13 @@ export const createLabelDom = (
           const textDiv = document.createElement("div");
           textDiv.style.cssText = `
             font-size: ${el.fontSize || 10}pt;
-            font-family: Helvetica, Arial, sans-serif;
-            text-align: center;
+            font-family: ${getFontFamily(el.fontFamily)};
+            font-weight: ${el.fontWeight === 'bold' ? 'bold' : 'normal'};
+            font-style: ${el.fontStyle === 'italic' ? 'italic' : 'normal'};
+            text-decoration: ${el.textDecoration === 'underline' ? 'underline' : 'none'};
+            text-align: ${el.textAlign || 'center'};
             line-height: 1.1;
-            color: #000000;
+            color: ${template.settings.colorMode === 'monochrome' ? '#000000' : (el.color || '#000000')};
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -546,7 +630,7 @@ export const createLabelDom = (
       lineDiv.style.cssText = `
         width: 100%;
         height: ${strokePx}px;
-        background-color: ${el.borderColor || '#000000'};
+        background-color: ${template.settings.colorMode === 'monochrome' ? '#000000' : (el.borderColor || '#000000')};
         margin-top: ${(heightPx - strokePx) / 2}px;
       `;
       elContainer.appendChild(lineDiv);
@@ -556,8 +640,8 @@ export const createLabelDom = (
       rectDiv.style.cssText = `
         width: 100%;
         height: 100%;
-        border: ${borderPx}px solid ${el.borderColor || '#000000'};
-        background-color: ${el.fillColor || 'transparent'};
+        border: ${borderPx}px solid ${template.settings.colorMode === 'monochrome' ? '#000000' : (el.borderColor || '#000000')};
+        background-color: ${template.settings.colorMode === 'monochrome' ? (el.fillColor && el.fillColor !== 'transparent' && el.fillColor !== '#ffffff' ? '#000000' : (el.fillColor || 'transparent')) : (el.fillColor || 'transparent')};
         box-sizing: border-box;
       `;
       elContainer.appendChild(rectDiv);
@@ -948,7 +1032,10 @@ const drawBarcodeToPdfPage = (
   barcodeFormat: "CODE128" | "EAN13" | "UPC" | "CODE39" = "CODE128",
   showText: boolean = true,
   fontSizePt: number = 10,
-  opacity: number = 1
+  opacity: number = 1,
+  textAlign: "left" | "center" | "right" = "center",
+  textColorStr?: string,
+  underline: boolean = false
 ) => {
   if (!content || !content.trim()) return;
 
@@ -1057,20 +1144,37 @@ const drawBarcodeToPdfPage = (
     });
   }
 
-  // Draw human readable text centered underneath
+  // Draw human readable text with configured typography
   if (showText) {
     const cleanText = sanitizePdfText(content);
     const textWidth = font.widthOfTextAtSize(cleanText, fontSizePt);
-    const textX = xPt + (widthPt - textWidth) / 2;
+    let textX = xPt;
+    if (textAlign === "center") {
+      textX = xPt + (widthPt - textWidth) / 2;
+    } else if (textAlign === "right") {
+      textX = xPt + widthPt - textWidth;
+    }
     const textY = yPt + textPadding;
+    const color = parsePdfColor(textColorStr) || rgb(0, 0, 0);
+
     page.drawText(cleanText, {
       x: textX,
       y: textY,
       size: fontSizePt,
       font,
-      color: rgb(0, 0, 0),
+      color,
       opacity,
     });
+
+    if (underline) {
+      page.drawLine({
+        start: { x: textX, y: textY - 1.5 },
+        end: { x: textX + textWidth, y: textY - 1.5 },
+        thickness: 0.75,
+        color,
+        opacity,
+      });
+    }
   }
 };
 
@@ -1176,57 +1280,67 @@ export const renderLabelToVectorPdf = async (
   };
 
   // 3. Draw Background Image if specified
+  const isMonochrome = template.settings.colorMode === "monochrome";
   if (template.backgroundImageUrl) {
     try {
-      let bgBytes: Uint8Array | null = null;
-      let isPng = false;
-      let isJpg = false;
-      if (template.backgroundImageUrl.startsWith("data:")) {
-        const parts = template.backgroundImageUrl.split(",");
-        const mime = parts[0].split(";")[0].replace("data:", "");
-        const cleanBase64 = parts[1];
-        const binaryString = atob(cleanBase64);
-        bgBytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
-        isPng = mime.includes("png");
-        isJpg = mime.includes("jpeg") || mime.includes("jpg");
+      let embeddedBg;
+      if (isMonochrome) {
+        const monoCanvas = await binarizeImageToCanvas(template.backgroundImageUrl, 220);
+        const pngDataUrl = monoCanvas.toDataURL("image/png");
+        const b64 = pngDataUrl.split(",")[1];
+        const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        embeddedBg = await pdfDoc.embedPng(pngBytes);
       } else {
-        const response = await fetch(template.backgroundImageUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        bgBytes = new Uint8Array(arrayBuffer);
-        const ct = response.headers.get("content-type") || "";
-        isPng = ct.includes("png") || template.backgroundImageUrl.endsWith(".png");
-        isJpg = ct.includes("jpeg") || ct.includes("jpg") || template.backgroundImageUrl.endsWith(".jpg") || template.backgroundImageUrl.endsWith(".jpeg");
-      }
-
-      if (bgBytes) {
-        let embeddedBg;
-        if (isPng) {
-          embeddedBg = await pdfDoc.embedPng(bgBytes);
-        } else if (isJpg) {
-          embeddedBg = await pdfDoc.embedJpg(bgBytes);
+        let bgBytes: Uint8Array | null = null;
+        let isPng = false;
+        let isJpg = false;
+        if (template.backgroundImageUrl.startsWith("data:")) {
+          const parts = template.backgroundImageUrl.split(",");
+          const mime = parts[0].split(";")[0].replace("data:", "");
+          const cleanBase64 = parts[1];
+          const binaryString = atob(cleanBase64);
+          bgBytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
+          isPng = mime.includes("png");
+          isJpg = mime.includes("jpeg") || mime.includes("jpg");
         } else {
-          const bgImg = await loadImage(template.backgroundImageUrl);
-          const oc = document.createElement("canvas");
-          oc.width = bgImg.width || 400;
-          oc.height = bgImg.height || 200;
-          const octx = oc.getContext("2d");
-          if (octx) {
-            octx.drawImage(bgImg, 0, 0);
-            const pngDataUrl = oc.toDataURL("image/png");
-            const b64 = pngDataUrl.split(",")[1];
-            const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-            embeddedBg = await pdfDoc.embedPng(pngBytes);
+          const response = await fetch(template.backgroundImageUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          bgBytes = new Uint8Array(arrayBuffer);
+          const ct = response.headers.get("content-type") || "";
+          isPng = ct.includes("png") || template.backgroundImageUrl.endsWith(".png");
+          isJpg = ct.includes("jpeg") || ct.includes("jpg") || template.backgroundImageUrl.endsWith(".jpg") || template.backgroundImageUrl.endsWith(".jpeg");
+        }
+
+        if (bgBytes) {
+          if (isPng) {
+            embeddedBg = await pdfDoc.embedPng(bgBytes);
+          } else if (isJpg) {
+            embeddedBg = await pdfDoc.embedJpg(bgBytes);
+          } else {
+            const bgImg = await loadImage(template.backgroundImageUrl);
+            const oc = document.createElement("canvas");
+            oc.width = bgImg.width || 400;
+            oc.height = bgImg.height || 200;
+            const octx = oc.getContext("2d");
+            if (octx) {
+              octx.drawImage(bgImg, 0, 0);
+              const pngDataUrl = oc.toDataURL("image/png");
+              const b64 = pngDataUrl.split(",")[1];
+              const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+              embeddedBg = await pdfDoc.embedPng(pngBytes);
+            }
           }
         }
-        if (embeddedBg) {
-          page.drawImage(embeddedBg, {
-            x: 0,
-            y: 0,
-            width: pageWidthPt,
-            height: pageHeightPt,
-            opacity: template.settings.backgroundOpacity ?? 1,
-          });
-        }
+      }
+
+      if (embeddedBg) {
+        page.drawImage(embeddedBg, {
+          x: 0,
+          y: 0,
+          width: pageWidthPt,
+          height: pageHeightPt,
+          opacity: template.settings.backgroundOpacity ?? 1,
+        });
       }
     } catch (err) {
       console.error("Failed to embed background image in vector PDF:", err);
@@ -1260,7 +1374,7 @@ export const renderLabelToVectorPdf = async (
       const topOffset = Math.max(0, (elHPt - totalTextHeight) / 2);
       // First baseline in PDF space:
       const firstBaselineY = elYPt + elHPt - topOffset - fontSizePt * 0.8 - (lineSpacingPt - fontSizePt) / 2;
-      const textColor = parsePdfColor(el.color) || rgb(0, 0, 0);
+      const textColor = parsePdfColor(isMonochrome ? "#000000" : el.color) || rgb(0, 0, 0);
 
       for (let i = 0; i < wrappedLines.length; i++) {
         const line = wrappedLines[i];
@@ -1301,7 +1415,7 @@ export const renderLabelToVectorPdf = async (
     } else if (el.type === "barcode") {
       const barcodeContent = resolveVariable(el.content, el.variableSource, productRecord);
       if (barcodeContent) {
-        const barcodeFont = await getPdfFont(pdfDoc, "Helvetica", "normal", "normal");
+        const barcodeFont = await getPdfFont(pdfDoc, el.fontFamily, el.fontWeight, el.fontStyle);
         drawBarcodeToPdfPage(
           page,
           barcodeFont,
@@ -1313,7 +1427,10 @@ export const renderLabelToVectorPdf = async (
           el.barcodeFormat || "CODE128",
           el.showText !== false,
           el.fontSize || 10,
-          opacity
+          opacity,
+          el.textAlign || "center",
+          isMonochrome ? "#000000" : (el.color || "#000000"),
+          el.textDecoration === "underline"
         );
       }
     } else if (el.type === "qrcode") {
@@ -1332,8 +1449,10 @@ export const renderLabelToVectorPdf = async (
       }
     } else if (el.type === "rectangle") {
       const borderWidthPt = (el.borderWidth || 1) * MM_TO_PT;
-      const borderColor = parsePdfColor(el.borderColor || "#000000");
-      const fillColor = parsePdfColor(el.fillColor);
+      const borderColor = parsePdfColor(isMonochrome ? "#000000" : (el.borderColor || "#000000"));
+      const fillColor = isMonochrome
+        ? (el.fillColor && el.fillColor !== "transparent" && el.fillColor !== "#ffffff" ? rgb(0, 0, 0) : undefined)
+        : parsePdfColor(el.fillColor);
 
       page.drawRectangle({
         x: elXPt,
@@ -1347,7 +1466,7 @@ export const renderLabelToVectorPdf = async (
       });
     } else if (el.type === "line") {
       const borderWidthPt = (el.borderWidth || 1) * MM_TO_PT;
-      const borderColor = parsePdfColor(el.borderColor || "#000000") || rgb(0, 0, 0);
+      const borderColor = parsePdfColor(isMonochrome ? "#000000" : (el.borderColor || "#000000")) || rgb(0, 0, 0);
       const lineMidY = elYPt + elHPt / 2;
 
       page.drawLine({
@@ -1359,78 +1478,86 @@ export const renderLabelToVectorPdf = async (
       });
     } else if (el.type === "image" && el.imageUrl) {
       try {
-        let imageBytes: Uint8Array | null = null;
-        let isPng = false;
-        let isJpg = false;
-
-        if (el.imageUrl.startsWith("data:")) {
-          const parts = el.imageUrl.split(",");
-          const mime = parts[0].split(";")[0].replace("data:", "");
-          const cleanBase64 = parts[1];
-          const binaryString = atob(cleanBase64);
-          imageBytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
-          isPng = mime.includes("png");
-          isJpg = mime.includes("jpeg") || mime.includes("jpg");
+        let embeddedImg;
+        if (isMonochrome) {
+          const monoCanvas = await binarizeImageToCanvas(el.imageUrl, 220);
+          const pngDataUrl = monoCanvas.toDataURL("image/png");
+          const b64 = pngDataUrl.split(",")[1];
+          const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+          embeddedImg = await pdfDoc.embedPng(pngBytes);
         } else {
-          const response = await fetch(el.imageUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          imageBytes = new Uint8Array(arrayBuffer);
-          const ct = response.headers.get("content-type") || "";
-          isPng = ct.includes("png") || el.imageUrl.endsWith(".png");
-          isJpg = ct.includes("jpeg") || ct.includes("jpg") || el.imageUrl.endsWith(".jpg") || el.imageUrl.endsWith(".jpeg");
-        }
+          let imageBytes: Uint8Array | null = null;
+          let isPng = false;
+          let isJpg = false;
 
-        if (imageBytes) {
-          let embeddedImg;
-          if (isPng) {
-            embeddedImg = await pdfDoc.embedPng(imageBytes);
-          } else if (isJpg) {
-            embeddedImg = await pdfDoc.embedJpg(imageBytes);
+          if (el.imageUrl.startsWith("data:")) {
+            const parts = el.imageUrl.split(",");
+            const mime = parts[0].split(";")[0].replace("data:", "");
+            const cleanBase64 = parts[1];
+            const binaryString = atob(cleanBase64);
+            imageBytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
+            isPng = mime.includes("png");
+            isJpg = mime.includes("jpeg") || mime.includes("jpg");
           } else {
-            const htmlImg = await loadImage(el.imageUrl);
-            const oc = document.createElement("canvas");
-            oc.width = htmlImg.width || 200;
-            oc.height = htmlImg.height || 200;
-            const octx = oc.getContext("2d");
-            if (octx) {
-              octx.drawImage(htmlImg, 0, 0);
-              const pngDataUrl = oc.toDataURL("image/png");
-              const b64 = pngDataUrl.split(",")[1];
-              const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-              embeddedImg = await pdfDoc.embedPng(pngBytes);
-            }
+            const response = await fetch(el.imageUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            imageBytes = new Uint8Array(arrayBuffer);
+            const ct = response.headers.get("content-type") || "";
+            isPng = ct.includes("png") || el.imageUrl.endsWith(".png");
+            isJpg = ct.includes("jpeg") || ct.includes("jpg") || el.imageUrl.endsWith(".jpg") || el.imageUrl.endsWith(".jpeg");
           }
 
-          if (embeddedImg) {
-            let drawX = elXPt;
-            let drawY = elYPt;
-            let drawW = elWPt;
-            let drawH = elHPt;
-
-            if (el.keepAspectRatio && embeddedImg.width && embeddedImg.height) {
-              const imgAspect = embeddedImg.width / embeddedImg.height;
-              const boxAspect = elWPt / (elHPt || 1);
-              if (imgAspect > boxAspect) {
-                // Width constrained
-                drawW = elWPt;
-                drawH = elWPt / imgAspect;
-                drawY = elYPt + (elHPt - drawH) / 2;
-              } else {
-                // Height constrained
-                drawH = elHPt;
-                drawW = elHPt * imgAspect;
-                drawX = elXPt + (elWPt - drawW) / 2;
+          if (imageBytes) {
+            if (isPng) {
+              embeddedImg = await pdfDoc.embedPng(imageBytes);
+            } else if (isJpg) {
+              embeddedImg = await pdfDoc.embedJpg(imageBytes);
+            } else {
+              const htmlImg = await loadImage(el.imageUrl);
+              const oc = document.createElement("canvas");
+              oc.width = htmlImg.width || 200;
+              oc.height = htmlImg.height || 200;
+              const octx = oc.getContext("2d");
+              if (octx) {
+                octx.drawImage(htmlImg, 0, 0);
+                const pngDataUrl = oc.toDataURL("image/png");
+                const b64 = pngDataUrl.split(",")[1];
+                const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+                embeddedImg = await pdfDoc.embedPng(pngBytes);
               }
             }
-
-            page.drawImage(embeddedImg, {
-              x: drawX,
-              y: drawY,
-              width: drawW,
-              height: drawH,
-              opacity,
-            });
           }
+        }
+
+        if (embeddedImg) {
+          let drawX = elXPt;
+          let drawY = elYPt;
+          let drawW = elWPt;
+          let drawH = elHPt;
+
+          if (el.keepAspectRatio && embeddedImg.width && embeddedImg.height) {
+            const imgAspect = embeddedImg.width / embeddedImg.height;
+            const boxAspect = elWPt / (elHPt || 1);
+            if (imgAspect > boxAspect) {
+              // Width constrained
+              drawW = elWPt;
+              drawH = elWPt / imgAspect;
+              drawY = elYPt + (elHPt - drawH) / 2;
+            } else {
+              // Height constrained
+              drawH = elHPt;
+              drawW = elHPt * imgAspect;
+              drawX = elXPt + (elWPt - drawW) / 2;
+            }
+          }
+
+          page.drawImage(embeddedImg, {
+            x: drawX,
+            y: drawY,
+            width: drawW,
+            height: drawH,
+            opacity,
+          });
         }
       } catch (err) {
         console.error("Failed to embed image in vector PDF:", err);
@@ -1441,4 +1568,5 @@ export const renderLabelToVectorPdf = async (
   const pdfBase64 = await pdfDoc.saveAsBase64();
   return pdfBase64;
 };
+
 

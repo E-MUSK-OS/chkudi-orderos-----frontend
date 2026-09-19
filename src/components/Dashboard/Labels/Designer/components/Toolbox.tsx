@@ -52,7 +52,13 @@ export function Toolbox({ elements, selectedIds, onAddElement, onDistributeVerti
           barcodeFormat: 'CODE128',
           content: '123456789',
           showText: true,
-          fontSize: 12,
+          fontSize: 10,
+          fontFamily: 'Inter',
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          textDecoration: 'none',
+          textAlign: 'center',
+          color: '#000000',
         } as BarcodeElement;
         break;
       case 'qrcode':

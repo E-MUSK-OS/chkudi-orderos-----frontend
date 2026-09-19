@@ -36,6 +36,12 @@ export interface BarcodeElement extends BaseElement {
   variableSource?: string;
   showText: boolean;
   fontSize: number;
+  fontFamily?: string;
+  fontWeight?: "normal" | "bold";
+  fontStyle?: "normal" | "italic";
+  textDecoration?: "none" | "underline";
+  textAlign?: "left" | "center" | "right";
+  color?: string;
 }
 
 export interface QrCodeElement extends BaseElement {

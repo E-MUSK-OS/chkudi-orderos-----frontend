@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CanvasSettings, LabelElement } from '../../types/label.types';
 import { mmToPx } from '../utils/coordinateMath';
 import { CanvasRulers } from './CanvasRulers';
 import { ElementRenderer } from './ElementRenderer';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
+import { binarizeImageToCanvas } from '@/lib/labelRenderer';
 
 interface DesignCanvasProps {
   settings: CanvasSettings;
@@ -27,6 +28,26 @@ export function DesignCanvas({
   previewData, backgroundImageUrl, onSelect, onToggleSelect, onSetSelection,
   onUpdateElement, onBatchUpdateElements, commitHistory,
 }: DesignCanvasProps) {
+  const [monoBgUrl, setMonoBgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    if (settings.colorMode === 'monochrome' && backgroundImageUrl) {
+      binarizeImageToCanvas(backgroundImageUrl, 220)
+        .then((canvas) => {
+          if (!isCancelled) setMonoBgUrl(canvas.toDataURL('image/png'));
+        })
+        .catch(() => {
+          if (!isCancelled) setMonoBgUrl(null);
+        });
+    } else {
+      setMonoBgUrl(null);
+    }
+    return () => {
+      isCancelled = true;
+    };
+  }, [settings.colorMode, backgroundImageUrl]);
+
   const {
     containerRef, handlePointerDownCanvas, handlePointerDownElement, handlePointerDownResize,
     handlePointerMove, handlePointerUp, isInteracting, marqueeRect, activeGuides,
@@ -79,13 +100,13 @@ export function DesignCanvas({
         >
           {backgroundImageUrl && (
             <img
-              src={backgroundImageUrl}
+              src={(settings.colorMode === 'monochrome' && monoBgUrl) ? monoBgUrl : backgroundImageUrl}
               alt=""
               style={{
                 position: 'absolute', inset: 0, width: '100%', height: '100%',
                 objectFit: 'fill', pointerEvents: 'none',
                 opacity: settings.backgroundOpacity ?? 1,
-                filter: settings.colorMode === 'monochrome' ? 'grayscale(100%)' : 'none',
+                filter: settings.colorMode === 'monochrome' ? 'grayscale(100%) contrast(400%)' : 'none',
               }}
             />
           )}

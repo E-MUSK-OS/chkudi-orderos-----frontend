@@ -5,7 +5,7 @@ import { LabelElement } from '../../types/label.types';
 import { mmToPx } from '../utils/coordinateMath';
 import { resolveVariable } from '../utils/sampleData';
 import { TransformHandle } from './TransformHandle';
-import { getFontFamily } from '@/lib/labelRenderer';
+import { getFontFamily, binarizeImageToCanvas } from '@/lib/labelRenderer';
 
 interface ElementRendererProps {
   element: LabelElement;
@@ -42,6 +42,27 @@ export function ElementRenderer({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [monoImageUrl, setMonoImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    if (colorMode === 'monochrome' && element.type === 'image' && element.imageUrl) {
+      binarizeImageToCanvas(element.imageUrl, 220)
+        .then((canvas) => {
+          if (!isCancelled) {
+            setMonoImageUrl(canvas.toDataURL('image/png'));
+          }
+        })
+        .catch(() => {
+          if (!isCancelled) setMonoImageUrl(null);
+        });
+    } else {
+      setMonoImageUrl(null);
+    }
+    return () => {
+      isCancelled = true;
+    };
+  }, [colorMode, element.type === 'image' ? (element as any).imageUrl : null, element.type]);
 
   useEffect(() => {
     if (!isSelected && isEditing) {
@@ -129,7 +150,7 @@ export function ElementRenderer({
     boxSizing: 'border-box',
     cursor: previewSampleData ? 'default' : (element.locked ? 'default' : 'move'),
     opacity: contentOpacity,
-    filter: colorMode === 'monochrome' ? 'grayscale(100%)' : (element.locked && !previewSampleData ? 'grayscale(0.35)' : undefined),
+    filter: colorMode === 'monochrome' ? (element.type === 'image' ? 'grayscale(100%) contrast(400%)' : 'grayscale(100%)') : (element.locked && !previewSampleData ? 'grayscale(0.35)' : undefined),
     pointerEvents: isEditing ? 'none' : (previewSampleData ? 'none' : 'auto'),
     userSelect: isEditing ? 'auto' : 'none',
     WebkitUserSelect: isEditing ? 'auto' : 'none',
@@ -155,7 +176,7 @@ export function ElementRenderer({
               textDecoration: element.textDecoration === 'underline' ? 'underline' : 'none',
               textAlign: element.textAlign,
               lineHeight: element.lineHeight,
-              color: element.color || '#000000',
+              color: colorMode === 'monochrome' ? '#000000' : (element.color || '#000000'),
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -222,10 +243,13 @@ export function ElementRenderer({
               <div
                 style={{
                   fontSize: `${fontSizePt}pt`,
-                  fontFamily: 'Helvetica, Arial, sans-serif',
-                  textAlign: 'center',
+                  fontFamily: getFontFamily(element.fontFamily),
+                  fontWeight: element.fontWeight === 'bold' ? 'bold' : 'normal',
+                  fontStyle: element.fontStyle === 'italic' ? 'italic' : 'normal',
+                  textDecoration: element.textDecoration === 'underline' ? 'underline' : 'none',
+                  textAlign: element.textAlign || 'center',
                   lineHeight: 1.1,
-                  color: '#000000',
+                  color: colorMode === 'monochrome' ? '#000000' : (element.color || '#000000'),
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -269,7 +293,7 @@ export function ElementRenderer({
           );
         }
 
-        let displayUrl = element.imageUrl;
+        let displayUrl = (colorMode === 'monochrome' && monoImageUrl) ? monoImageUrl : element.imageUrl;
         if (displayUrl.startsWith('data:image/svg+xml')) {
           try {
             if (displayUrl.includes(';base64,')) {
@@ -315,7 +339,7 @@ export function ElementRenderer({
             style={{
               width: '100%',
               height: `${strokePx}px`,
-              backgroundColor: element.borderColor,
+              backgroundColor: colorMode === 'monochrome' ? '#000000' : element.borderColor,
               marginTop: `${(heightPx - strokePx) / 2}px`,
             }}
           />
@@ -327,8 +351,10 @@ export function ElementRenderer({
             style={{
               width: '100%',
               height: '100%',
-              border: `${mmToPx(element.borderWidth, zoom)}px solid ${element.borderColor}`,
-              backgroundColor: element.fillColor || 'transparent',
+              border: `${mmToPx(element.borderWidth, zoom)}px solid ${colorMode === 'monochrome' ? '#000000' : element.borderColor}`,
+              backgroundColor: colorMode === 'monochrome'
+                ? (element.fillColor && element.fillColor !== 'transparent' && element.fillColor !== '#ffffff' ? '#000000' : (element.fillColor || 'transparent'))
+                : (element.fillColor || 'transparent'),
             }}
           />
         );

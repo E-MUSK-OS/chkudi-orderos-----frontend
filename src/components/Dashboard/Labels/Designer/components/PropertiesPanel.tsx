@@ -12,6 +12,7 @@ import {
 import ReactSelect, { SelectOption } from '@/components/ui/ReactSelect';
 import { uploadImageToCloudinary } from '../utils/uploadImage';
 import { toast } from 'sonner';
+import { binarizeImageToCanvas } from '@/lib/labelRenderer';
 
 interface PropertiesPanelProps {
   settings: CanvasSettings;
@@ -105,6 +106,34 @@ export function PropertiesPanel({
   
   const handleSettingsChange = (key: keyof CanvasSettings, value: any, skipHistory = false) => {
     updateSettings({ [key]: value }, skipHistory);
+  };
+
+  const convertAllToMonochrome = () => {
+    handleSettingsChange('colorMode', 'monochrome');
+    const updates: { id: string; changes: Partial<LabelElement> }[] = [];
+    for (const el of allElements) {
+      if (el.type === 'text') {
+        if (el.color && el.color !== '#000000') {
+          updates.push({ id: el.id, changes: { color: '#000000' } as any });
+        }
+      } else if (el.type === 'barcode') {
+        if (el.color && el.color !== '#000000') {
+          updates.push({ id: el.id, changes: { color: '#000000' } as any });
+        }
+      } else if (el.type === 'line' || el.type === 'rectangle') {
+        const shapeChanges: Partial<ShapeElement> = {};
+        if (el.borderColor && el.borderColor !== '#000000') shapeChanges.borderColor = '#000000';
+        if (el.type === 'rectangle' && el.fillColor && el.fillColor !== 'transparent' && el.fillColor !== '#ffffff') {
+          shapeChanges.fillColor = '#000000';
+        }
+        if (Object.keys(shapeChanges).length > 0) {
+          updates.push({ id: el.id, changes: shapeChanges as any });
+        }
+      }
+    }
+    if (updates.length > 0 && onBatchUpdateElements) {
+      onBatchUpdateElements(updates, false);
+    }
   };
 
   const handlePresetChange = (val: string) => {
@@ -290,7 +319,7 @@ export function PropertiesPanel({
                 🎨 Color
               </button>
               <button
-                onClick={() => handleSettingsChange('colorMode', 'monochrome')}
+                onClick={convertAllToMonochrome}
                 className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${
                   (settings.colorMode ?? 'color') === 'monochrome'
                     ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]'
@@ -344,6 +373,23 @@ export function PropertiesPanel({
                     onPointerUp={handleCommit}
                     className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
                   />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const canvas = await binarizeImageToCanvas(backgroundImageUrl, 220);
+                        const pureBlackDataUrl = canvas.toDataURL('image/png');
+                        setBackgroundImageUrl(pureBlackDataUrl);
+                        toast.success('Background converted to 100% pure solid black!');
+                      } catch (e) {
+                        toast.error('Failed to convert background');
+                      }
+                    }}
+                    className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2 flex items-center justify-center gap-1.5"
+                  >
+                    <span>⬛</span>
+                    <span>Convert Background to Pure Black</span>
+                  </button>
                 </div>
               )}
               
@@ -844,6 +890,105 @@ export function PropertiesPanel({
                 Show Text Below
               </label>
             </div>
+
+            {(selectedElement as BarcodeElement).showText !== false && (
+              <div className="space-y-3 pt-3 border-t border-stone-800">
+                <h5 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Value Typography</h5>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Family</label>
+                    <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                      height={36}
+                      options={FONTS}
+                      value={FONTS.find(o => o.value === (selectedElement as BarcodeElement).fontFamily) || FONTS[0]}
+                      onChange={(opt) => opt && handleUpdateDiscrete('fontFamily', opt.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Size (pt)</label>
+                    <input
+                      type="number"
+                      min={6}
+                      max={36}
+                      className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                      value={(selectedElement as BarcodeElement).fontSize || 10}
+                      onChange={(e) => handleUpdate('fontSize', Number(e.target.value))}
+                      onBlur={handleCommit}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 mt-2">
+                  <label className="text-xs text-gray-400">Formatting</label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <button 
+                      onClick={() => handleUpdateDiscrete('fontWeight', (selectedElement as BarcodeElement).fontWeight === 'bold' ? 'normal' : 'bold')} 
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).fontWeight === 'bold' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Bold"
+                    >
+                      <Bold size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleUpdateDiscrete('fontStyle', (selectedElement as BarcodeElement).fontStyle === 'italic' ? 'normal' : 'italic')} 
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).fontStyle === 'italic' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Italic"
+                    >
+                      <Italic size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleUpdateDiscrete('textDecoration', (selectedElement as BarcodeElement).textDecoration === 'underline' ? 'none' : 'underline')} 
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textDecoration === 'underline' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Underline"
+                    >
+                      <Underline size={16} />
+                    </button>
+                    <div className="w-px h-5 bg-stone-700 mx-1" />
+                    <button 
+                      onClick={() => handleUpdateDiscrete('textAlign', 'left')} 
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textAlign === 'left' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Align Left"
+                    >
+                      <AlignLeft size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleUpdateDiscrete('textAlign', 'center')} 
+                      className={`p-1.5 rounded-sm ${(!(selectedElement as BarcodeElement).textAlign || (selectedElement as BarcodeElement).textAlign === 'center') ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Align Center"
+                    >
+                      <AlignCenter size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleUpdateDiscrete('textAlign', 'right')} 
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textAlign === 'right' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Align Right"
+                    >
+                      <AlignRight size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1 mt-2">
+                  <label className="text-xs text-gray-400">Text Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
+                      value={(selectedElement as BarcodeElement).color || '#000000'}
+                      onChange={(e) => handleUpdate('color', e.target.value)}
+                      onBlur={handleCommit}
+                    />
+                    <input
+                      type="text"
+                      className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                      value={(selectedElement as BarcodeElement).color || '#000000'}
+                      onChange={(e) => handleUpdate('color', e.target.value)}
+                      onBlur={handleCommit}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -956,27 +1101,25 @@ export function PropertiesPanel({
               </label>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                const margin = settings.safeMarginMm ?? 2;
-                const safeW = Math.max(5, settings.widthMm - margin * 2);
-                const safeH = Math.max(5, settings.heightMm - margin * 2);
-                updateElement(selectedElement.id, { x: margin, y: margin, width: safeW, height: safeH }, false);
-              }}
-              className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2"
-            >
-              🛡️ Fit Inside 2mm Safe Margin
-            </button>
-
-            <div className="p-2.5 bg-[#1F2937] border border-stone-800 rounded-sm text-[11px] text-gray-300 space-y-1 mt-2">
-              <div className="font-semibold text-amber-400">💡 Thermal Print Checklist</div>
-              <ul className="list-disc pl-4 space-y-0.5 text-gray-400 text-[10px]">
-                <li>Keep at least 2mm away from edges to prevent printer clipping.</li>
-                <li>Use high-contrast monochrome (pure black on transparent/white).</li>
-                <li>Faint colors and light gradients will not print on thermal heads.</li>
-              </ul>
-            </div>
+            {(selectedElement as ImageElement).imageUrl && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const canvas = await binarizeImageToCanvas((selectedElement as ImageElement).imageUrl, 220);
+                    const pureBlackDataUrl = canvas.toDataURL('image/png');
+                    handleUpdateDiscrete('imageUrl', pureBlackDataUrl);
+                    toast.success('Image converted to 100% pure solid black!');
+                  } catch (e) {
+                    toast.error('Failed to convert image');
+                  }
+                }}
+                className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2 flex items-center justify-center gap-1.5"
+              >
+                <span>⬛</span>
+                <span>Convert to Pure Black (Thermal Ready)</span>
+              </button>
+            )}
           </div>
         )}
 
