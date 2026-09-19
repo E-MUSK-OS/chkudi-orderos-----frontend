@@ -13,6 +13,7 @@ interface ElementRendererProps {
   isPrimarySelection: boolean;
   isMultiSelected: boolean;
   zoom: number;
+  colorMode?: 'color' | 'monochrome';
   previewSampleData: boolean;
   previewData?: Record<string, string> | null;
   onPointerDownElement: (e: React.PointerEvent, id: string) => void;
@@ -27,6 +28,7 @@ export function ElementRenderer({
   isPrimarySelection,
   isMultiSelected,
   zoom,
+  colorMode,
   previewSampleData,
   previewData,
   onPointerDownElement,
@@ -127,7 +129,7 @@ export function ElementRenderer({
     boxSizing: 'border-box',
     cursor: previewSampleData ? 'default' : (element.locked ? 'default' : 'move'),
     opacity: contentOpacity,
-    filter: element.locked && !previewSampleData ? 'grayscale(0.35)' : undefined,
+    filter: colorMode === 'monochrome' ? 'grayscale(100%)' : (element.locked && !previewSampleData ? 'grayscale(0.35)' : undefined),
     pointerEvents: isEditing ? 'none' : (previewSampleData ? 'none' : 'auto'),
     userSelect: isEditing ? 'auto' : 'none',
     WebkitUserSelect: isEditing ? 'auto' : 'none',

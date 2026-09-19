@@ -85,6 +85,7 @@ export function DesignCanvas({
                 position: 'absolute', inset: 0, width: '100%', height: '100%',
                 objectFit: 'fill', pointerEvents: 'none',
                 opacity: settings.backgroundOpacity ?? 1,
+                filter: settings.colorMode === 'monochrome' ? 'grayscale(100%)' : 'none',
               }}
             />
           )}
@@ -114,6 +115,7 @@ export function DesignCanvas({
               isPrimarySelection={!previewSampleData && element.id === selectedElementId}
               isMultiSelected={!previewSampleData && isMulti && selectedIds.includes(element.id)}
               zoom={zoom}
+              colorMode={settings.colorMode}
               previewSampleData={previewSampleData}
               previewData={previewData}
               onPointerDownElement={previewSampleData ? () => {} : handlePointerDownElement}

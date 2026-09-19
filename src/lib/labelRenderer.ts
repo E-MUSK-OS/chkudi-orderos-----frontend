@@ -119,7 +119,11 @@ export const renderLabelToCanvas = async (
   if (template.backgroundImageUrl) {
     try {
       const bgImg = await loadImage(template.backgroundImageUrl);
+      if (template.settings.colorMode === 'monochrome') {
+        ctx.filter = 'grayscale(100%)';
+      }
       ctx.drawImage(bgImg, 0, 0, logicalWidth, logicalHeight);
+      ctx.filter = 'none';
     } catch (err) {
       console.error("Failed to load background image", err);
       // Draw visible error state
@@ -146,6 +150,9 @@ export const renderLabelToCanvas = async (
     const h = el.height * MM_TO_PX;
 
     ctx.save();
+    if (template.settings.colorMode === 'monochrome') {
+      ctx.filter = 'grayscale(100%)';
+    }
     ctx.translate(x + w / 2, y + h / 2);
     if (el.rotation) {
       ctx.rotate((el.rotation * Math.PI) / 180);
@@ -401,6 +408,7 @@ export const createLabelDom = (
       height: 100%;
       object-fit: fill;
       opacity: ${template.settings.backgroundOpacity ?? 1};
+      filter: ${template.settings.colorMode === 'monochrome' ? 'grayscale(100%)' : 'none'};
       pointer-events: none;
     `;
     page.appendChild(bgImg);
@@ -425,6 +433,7 @@ export const createLabelDom = (
       transform: ${el.rotation ? `rotate(${el.rotation}deg)` : 'none'};
       z-index: ${el.zIndex || 0};
       opacity: ${contentOpacity};
+      filter: ${template.settings.colorMode === 'monochrome' ? 'grayscale(100%)' : 'none'};
       box-sizing: border-box;
       overflow: hidden;
     `;
