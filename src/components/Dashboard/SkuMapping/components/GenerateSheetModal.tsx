@@ -15,7 +15,7 @@ import {
 import { skuMappingService } from "../services/skuMapping.service";
 import { getToken } from "@/utils/auth";
 import { toast } from "sonner";
-import { Trash2, Printer, Tag } from "lucide-react";
+import { Trash2, Printer, Tag, Download } from "lucide-react";
 import { useDeleteSheetDraft, useSaveSheetDraft, useSheetDraft } from "../hooks/useSheetDraft";
 import LabelSelectionModal from "@/components/Dashboard/Labels/components/LabelSelectionModal";
 import PrintExecutionModal from "@/components/Dashboard/Labels/components/PrintExecutionModal";
@@ -481,6 +481,76 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     inputRefs.current[lastIndex]?.focus();
   }, [rows.length]);
 
+  const handleDownloadDemoFormat = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Godown Inventory Sheet");
+
+      worksheet.columns = [
+        { header: "Short SKU", key: "shortSku", width: 22 },
+        { header: "Barcode SKU", key: "barcodeSku", width: 25 },
+        { header: "Full SKU", key: "fullSku", width: 28 },
+        { header: "OrderCook SKU", key: "ordercookSku", width: 20 },
+        { header: "Brand Name", key: "brandName", width: 18 },
+        { header: "Color", key: "color", width: 15 },
+        { header: "Size", key: "size", width: 12 },
+        { header: "Title", key: "title", width: 40 },
+        { header: "QTY", key: "qty", width: 12 },
+        { header: "MRP", key: "mrp", width: 15 },
+        { header: "Asin (Barcode)", key: "asinBarcode", width: 20 },
+      ];
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = {
+        name: "Calibri",
+        size: 11,
+        bold: true,
+        color: { argb: "FFFFFFFF" },
+      };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF0A0E1A" },
+      };
+      headerRow.alignment = { vertical: "middle", horizontal: "center" };
+      headerRow.height = 28;
+
+      rows
+        .filter((row) => row.shortSku.trim())
+        .forEach((row) => {
+          const qty = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
+          const r = worksheet.addRow({
+            shortSku: row.shortSku,
+            fullSku: row.fullSku || "",
+            barcodeSku: row.barcodeSku,
+            ordercookSku: row.ordercookSku,
+            brandName: "",
+            color: "",
+            size: "",
+            title: "",
+            qty: "",
+            mrp: "",
+            asinBarcode: "",
+          });
+          r.height = 22;
+          r.alignment = { vertical: "middle" };
+        });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const today = new Date();
+      saveAs(
+        new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        `Godown-Inventory-${today.toISOString().split("T")[0]}.xlsx`,
+      );
+      toast.success("Excel sheet downloaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate Excel sheet");
+    }
+  };
+
   const exportExcel = async () => {
     const workbook = new ExcelJS.Workbook();
 
@@ -828,11 +898,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
               variant="outline"
               fullWidth={false}
               className="flex-1 sm:flex-initial sm:w-auto min-w-[130px] truncate"
-              leftIcon={<Tag className="h-4 w-4" />}
-              onClick={() => setIsLabelPickerOpen(true)}
-              title={activePrintTemplate?.name ? `Current Template: ${activePrintTemplate.name}. Click to change.` : "Select label template"}
+              leftIcon={<Download className="h-4 w-4" />}
+              onClick={handleDownloadDemoFormat}
             >
-              {activePrintTemplate?.name ? activePrintTemplate.name : "Select Template"}
+              Download
             </Button>
             <Button
               variant="primary"
