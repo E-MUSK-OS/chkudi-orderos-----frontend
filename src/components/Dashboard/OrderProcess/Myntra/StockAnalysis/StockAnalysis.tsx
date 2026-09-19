@@ -17,6 +17,8 @@ interface StockResult {
   netOrders: number;
   avgOrdersPerDay?: number;
   avgReturnsPerDay?: number;
+  req15Days?: number;
+  req30Days?: number;
 }
 
 export default function StockAnalysis() {
@@ -330,11 +332,16 @@ export default function StockAnalysis() {
   }, [results]);
 
   const filteredAndSortedResults = useMemo(() => {
-    let processableResults = results.map(item => ({
-      ...item,
-      avgOrdersPerDay: Math.round(item.orders / reportDays),
-      avgReturnsPerDay: Math.round(item.returns / reportDays)
-    }));
+    let processableResults = results.map(item => {
+      const avgNetPerDay = item.netOrders / reportDays;
+      return {
+        ...item,
+        avgOrdersPerDay: Math.round(item.orders / reportDays),
+        avgReturnsPerDay: Math.round(item.returns / reportDays),
+        req15Days: Math.round(avgNetPerDay * 15),
+        req30Days: Math.round(avgNetPerDay * 30)
+      };
+    });
 
     // Filter by Brand
     if (selectedBrand !== 'All') {
@@ -382,8 +389,10 @@ export default function StockAnalysis() {
       acc.netOrders += r.netOrders;
       acc.avgOrdersPerDay += (r.avgOrdersPerDay || 0);
       acc.avgReturnsPerDay += (r.avgReturnsPerDay || 0);
+      acc.req15Days += (r.req15Days || 0);
+      acc.req30Days += (r.req30Days || 0);
       return acc;
-    }, { orders: 0, returns: 0, netOrders: 0, avgOrdersPerDay: 0, avgReturnsPerDay: 0 });
+    }, { orders: 0, returns: 0, netOrders: 0, avgOrdersPerDay: 0, avgReturnsPerDay: 0, req15Days: 0, req30Days: 0 });
   }, [filteredAndSortedResults]);
 
   const isReadyToSubmit = orders.length > 0 && returns.length > 0;
@@ -402,7 +411,9 @@ export default function StockAnalysis() {
       'Returns': r.returns,
       'Net Orders': r.netOrders,
       'Avg Orders/Day': r.avgOrdersPerDay,
-      'Avg Returns/Day': r.avgReturnsPerDay
+      'Avg Returns/Day': r.avgReturnsPerDay,
+      '15 Days Avg (Net)': r.req15Days,
+      '30 Days Avg (Net)': r.req30Days
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -766,12 +777,18 @@ export default function StockAnalysis() {
                       <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('avgReturnsPerDay')}>
                         <div className="flex items-center justify-center gap-1.5">Avg Returns/Day <ArrowUpDown size={14} className="opacity-50" /></div>
                       </th>
+                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('req15Days')}>
+                        <div className="flex items-center justify-center gap-1.5">15 Days Avg <ArrowUpDown size={14} className="opacity-50" /></div>
+                      </th>
+                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('req30Days')}>
+                        <div className="flex items-center justify-center gap-1.5">30 Days Avg <ArrowUpDown size={14} className="opacity-50" /></div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {paginatedResults.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="p-8 text-center text-slate-500">
+                        <td colSpan={10} className="p-8 text-center text-slate-500">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Search className="h-6 w-6 text-slate-300" />
                             <p className="text-sm">No results found</p>
@@ -787,8 +804,10 @@ export default function StockAnalysis() {
                           <td className="p-4 text-sm text-slate-700">{result.orders}</td>
                           <td className="p-4 text-sm text-slate-700">{result.returns}</td>
                           <td className="p-4 text-sm font-bold text-[#0A0E1A]">{result.netOrders}</td>
-                          <td className="p-4 text-sm font-medium text-blue-600">{result.avgOrdersPerDay}</td>
-                          <td className="p-4 text-sm font-medium text-rose-600">{result.avgReturnsPerDay}</td>
+                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.avgOrdersPerDay}</td>
+                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.avgReturnsPerDay}</td>
+                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.req15Days}</td>
+                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.req30Days}</td>
                         </tr>
                       ))
                     )}
@@ -800,8 +819,10 @@ export default function StockAnalysis() {
                         <td className="p-4 text-sm text-slate-900">{totalSummary.orders}</td>
                         <td className="p-4 text-sm text-slate-900">{totalSummary.returns}</td>
                         <td className="p-4 text-sm text-[#0A0E1A] font-bold">{totalSummary.netOrders}</td>
-                        <td className="p-4 text-sm text-blue-600 font-bold">{Math.round(totalSummary.avgOrdersPerDay)}</td>
-                        <td className="p-4 text-sm text-rose-600 font-bold">{Math.round(totalSummary.avgReturnsPerDay)}</td>
+                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{Math.round(totalSummary.avgOrdersPerDay)}</td>
+                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{Math.round(totalSummary.avgReturnsPerDay)}</td>
+                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{totalSummary.req15Days}</td>
+                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{totalSummary.req30Days}</td>
                       </tr>
                     </tfoot>
                   )}
