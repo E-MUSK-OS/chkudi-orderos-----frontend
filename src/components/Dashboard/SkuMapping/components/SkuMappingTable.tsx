@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Download, Pencil, Trash2 } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
 import Button from "@/components/ui/Button";
 
 import { useSkuMappings } from "../hooks/useSkuMappings";
 import { SkuMapping } from "../types/skuMapping.types";
+import { downloadDemoSheet } from "../utils/skuExcelUtils";
 
 interface Props {
   search: string;
@@ -33,8 +34,25 @@ export default function SkuMappingTable({ search, onEdit, onDelete }: Props) {
 
   if (!data || data.data.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center text-slate-500">
-        No Godown Inventory Records Found
+      <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center shadow-sm">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF8E7] text-[#C89B3C] mb-4">
+          <Download size={26} />
+        </div>
+        <h3 className="text-base font-semibold text-slate-800">
+          No Godown Inventory Records Found
+        </h3>
+        <p className="mt-1 max-w-sm text-sm text-slate-500 mb-5">
+          Get started by downloading the demo Excel template and importing your SKU mappings.
+        </p>
+        <Button
+          variant="outline"
+          fullWidth={false}
+          onClick={() => downloadDemoSheet()}
+          className="h-10 px-4 text-sm rounded-lg flex items-center gap-2 border-[#C89B3C]/50 text-[#C89B3C] hover:bg-[#FFF8E7] hover:border-[#C89B3C]"
+        >
+          <Download size={16} />
+          Download Demo Sheet
+        </Button>
       </div>
     );
   }

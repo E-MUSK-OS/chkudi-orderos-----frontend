@@ -289,21 +289,35 @@ export function PropertiesPanel({
             </label>
           </div>
 
-          <div className="flex items-center gap-2 pt-1">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-300">Safe Margin (mm)</label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  id="showSafeMargin"
+                  checked={settings.showSafeMargin !== false}
+                  onChange={(e) => handleSettingsChange('showSafeMargin', e.target.checked)}
+                  className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
+                />
+                <label htmlFor="showSafeMargin" className="text-xs text-gray-400 cursor-pointer">
+                  Show Guide
+                </label>
+              </div>
+            </div>
             <input
-              type="checkbox"
-              id="showSafeMargin"
-              checked={settings.showSafeMargin !== false}
-              onChange={(e) => handleSettingsChange('showSafeMargin', e.target.checked)}
-              className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
+              type="number"
+              min={0}
+              max={Math.max(0, Math.floor(Math.min(settings.widthMm, settings.heightMm) / 2) - 1)}
+              step={0.5}
+              className="w-full h-11 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] transition-colors"
+              value={settings.safeMarginMm ?? 2}
+              onChange={(e) => handleSettingsChange('safeMarginMm', Math.max(0, Number(e.target.value)))}
             />
-            <label htmlFor="showSafeMargin" className="text-sm text-gray-300 cursor-pointer flex items-center justify-between flex-1">
-              <span>Show Safe Margin (2mm)</span>
-            </label>
+            <p className="text-[10px] text-gray-500">
+              Blue dashed line adjusts dynamically to show the thermal safe printable zone ({settings.safeMarginMm ?? 2}mm inner boundary).
+            </p>
           </div>
-          <p className="text-[10px] text-gray-500">
-            Blue dashed line shows the thermal printable zone. Keep graphics inside to avoid edge cut-off.
-          </p>
 
           <div className="space-y-2 pt-2">
             <label className="text-xs font-medium text-gray-300">Print Color Mode</label>

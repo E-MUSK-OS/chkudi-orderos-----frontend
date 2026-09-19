@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { useImportSkuMappings } from "../hooks/useSkuMappings";
+import { downloadDemoSheet } from "../utils/skuExcelUtils";
 
 interface Props {
   open: boolean;
@@ -91,14 +92,14 @@ export default function ImportSkuMappingModal({
           <DialogTitle>
             Import Godown Inventory Sheet
           </DialogTitle>
-          <a
-            href="/demo-sku-mapping.xlsx"
-            download="demo-sku-mapping.xlsx"
+          <button
+            type="button"
+            onClick={() => downloadDemoSheet()}
             className="inline-flex items-center gap-1.5 rounded-lg border border-[#C89B3C]/30 bg-[#FFF8E7] px-3 py-1.5 text-xs font-semibold text-[#C89B3C] transition-all hover:bg-[#C89B3C] hover:text-white"
           >
             <Download size={14} />
             Download Demo Excel
-          </a>
+          </button>
         </DialogHeader>
 
         <div className="space-y-5 pt-5">
