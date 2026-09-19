@@ -133,6 +133,10 @@ const navItems: NavItem[] = [
             label: "Myntra Order",
             href: "/dashboard/order-process/myntra/myntra-order",
           },
+          {
+            label: "Stock Analysis",
+            href: "/dashboard/order-process/myntra/stock-analysis",
+          },
         ],
       },
       {
