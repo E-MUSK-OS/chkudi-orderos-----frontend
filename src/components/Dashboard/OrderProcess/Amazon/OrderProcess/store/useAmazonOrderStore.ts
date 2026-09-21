@@ -11,7 +11,12 @@ import {
 } from "../types";
 import { cleanCustomerName, sanitizeSpreadsheetCell } from "../utils";
 import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
-import { clearCachedAmazonDocs } from "../utils/pdfCache";
+import {
+  clearCachedAmazonDocs,
+  setCachedAmazonDocs,
+  startBackgroundOrderPdfPrewarming,
+} from "../utils/pdfCache";
+import { toast } from "sonner";
 
 interface AmazonOrderState {
   isProcessing: boolean;
@@ -78,6 +83,12 @@ export interface StoredBatchPrintedRecord {
   awbs?: string[];
   lastUpdated?: string;
 }
+
+export const getBatchKey = (summary: any, resultsLen: number, batchId?: string | null): string => {
+  const effectiveBatchId = batchId || summary?.id || summary?.batchId;
+  if (effectiveBatchId) return `batch_${effectiveBatchId}`;
+  return `session_${resultsLen}_${summary?.totalPdfOrders ?? 0}`;
+};
 
 export const getPrintedBatchesMap = (): Record<string, StoredBatchPrintedRecord> => {
   if (typeof window === "undefined") return {};
@@ -533,7 +544,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
 
   loadBatchFromHistory: async (batchId: string, options?: { showPrinted?: boolean }) => {
     clearCachedAmazonDocs();
-    set({ isProcessing: true, progress: 15, currentStage: "Loading batch from history..." });
+    set({ isProcessing: true, progress: 20, currentStage: "Loading batch details..." });
     try {
       const res = await amazonOrderService.getBatchById(batchId);
       const batch = res?.data;
@@ -541,94 +552,72 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         throw new Error("Invalid batch data received from server");
       }
 
-      set({ progress: 45, currentStage: "Fetching batch documents (PDFs & ZPL)..." });
-
-      const fetchBlobAsBase64 = async (
-        fileUrl?: string | null,
-        fileType?: "combined" | "zpl" | "original" | "unmatched-pdf" | "unmatched-zpl" | string
-      ): Promise<string> => {
-        try {
-          let blob: Blob | null = null;
-          if (fileType) {
-            try {
-              blob = await amazonOrderService.fetchBatchFileBlob(batchId, fileType);
-            } catch (e) {}
+      const updatedSummary = batch.summary
+        ? {
+            ...batch.summary,
+            id: batch.id,
+            batchId: batch.id,
+            printedIndices: batch.summary.printedIndices || [],
           }
-          if (!blob && fileUrl) {
-            const hostUrl = fileUrl.startsWith("http")
-              ? fileUrl
-              : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "") || "http://localhost:5000"}${fileUrl.startsWith("/") ? "" : "/"}${fileUrl}`;
-            const r = await fetch(hostUrl);
-            if (r.ok) blob = await r.blob();
-          }
-          if (!blob) return "";
+        : batch.summary;
 
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const str = reader.result as string;
-              resolve(str || "");
-            };
-            reader.onerror = () => resolve("");
-            reader.readAsDataURL(blob);
-          });
-        } catch (e) {
-          console.warn("Error fetching batch file blob:", e);
-          return "";
-        }
-      };
-
-      const [
-        combinedPdfBase64,
-        convertedZplPdfBase64,
-        originalPdfBase64,
-        unmatchedPdfBase64,
-        unmatchedZplBase64,
-      ] = await Promise.all([
-        fetchBlobAsBase64(batch.combinedPdfUrl, "combined"),
-        fetchBlobAsBase64(batch.zplPdfUrl, "zpl"),
-        fetchBlobAsBase64(batch.originalPdfUrl, "original"),
-        fetchBlobAsBase64(batch.unmatchedPdfUrl, "unmatched-pdf"),
-        fetchBlobAsBase64(batch.unmatchedZplPdfUrl, "unmatched-zpl"),
-      ]);
-
-      set({ progress: 85, currentStage: "Restoring order verification..." });
-
-      const files: AmazonProcessFiles = {
-        combinedPdfBase64,
-        convertedZplPdfBase64,
-        originalPdfBase64,
-        unmatchedPdfBase64,
-        unmatchedZplBase64,
-      };
-
-      await get().setProcessData({
-        success: true,
-        summary: batch.summary
-          ? {
-              ...batch.summary,
-              id: batch.id,
-              batchId: batch.id,
-              printedIndices: batch.summary.printedIndices || [],
-            }
-          : batch.summary,
-        results: batch.results,
-        files,
-      });
-
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY, batch.id);
-        } catch (e) {}
-      }
-
+      // 1. INSTANT RESULT RENDERING (<1s): Set summary & results immediately into state
       set({
+        summary: updatedSummary,
+        results: batch.results,
+        files: null,
         activeHistoryBatchId: batch.id,
         initialShowPrinted: !!options?.showPrinted,
         isProcessing: false,
         progress: 100,
         currentStage: "Loaded!",
       });
+
+      // Synchronize metadata to sessionStorage for fast refresh retention
+      try {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(
+            SESSION_STORAGE_KEY,
+            JSON.stringify({
+              success: true,
+              summary: updatedSummary,
+              results: batch.results,
+              activeHistoryBatchId: batch.id,
+            })
+          );
+          localStorage.setItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY, batch.id);
+        }
+      } catch (sessErr) {
+        console.warn("Storage notice during history load:", sessErr);
+      }
+
+      // 2. BACKGROUND COMBINED PDF STREAMING: Fetch only the combined print/preview PDF
+      // This runs completely in the background without blocking the UI
+      (async () => {
+        try {
+          const blob = await amazonOrderService.fetchBatchFileBlob(batch.id, "combined");
+          if (blob && blob.size > 0) {
+            const combUrl = URL.createObjectURL(blob);
+            set({ combinedPdfUrl: combUrl });
+
+            // Initialize PDF document in cache for instant sub-second barcode printing
+            const buf = await blob.arrayBuffer();
+            const { PDFDocument } = await import("pdf-lib");
+            const combinedDoc = await PDFDocument.load(buf, { ignoreEncryption: true });
+            const bKey = getBatchKey(updatedSummary, batch.results.length, batch.id);
+
+            setCachedAmazonDocs({
+              combinedDoc,
+              combinedBytes: new Uint8Array(buf),
+              cacheKey: `batch_${batch.id}`,
+              batchKey: bKey,
+            });
+            startBackgroundOrderPdfPrewarming(batch.results, combinedDoc, bKey);
+          }
+        } catch (combErr) {
+          console.warn("Background combined PDF streaming notice:", combErr);
+        }
+      })();
 
       return true;
     } catch (err) {
@@ -638,39 +627,119 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
     }
   },
 
-  downloadConvertedZplPdf: () => {
-    const { files, summary } = get();
-    if (!files?.convertedZplPdfBase64) return;
-    const filename = `Amazon_ZPL_Converted_Labels_${Date.now()}.pdf`;
-    downloadBase64File(files.convertedZplPdfBase64, filename);
+  downloadConvertedZplPdf: async () => {
+    const { files, convertedZplPdfUrl, activeHistoryBatchId } = get();
+    if (files?.convertedZplPdfBase64) {
+      const filename = `Amazon_ZPL_Converted_Labels_${Date.now()}.pdf`;
+      downloadBase64File(files.convertedZplPdfBase64, filename);
+      return;
+    }
+    if (convertedZplPdfUrl) {
+      saveAs(convertedZplPdfUrl, `Amazon_ZPL_Converted_Labels_${Date.now()}.pdf`);
+      return;
+    }
+    if (activeHistoryBatchId) {
+      try {
+        toast.loading("Downloading Converted ZPL PDF...", { id: "dl-file" });
+        const blob = await amazonOrderService.fetchBatchFileBlob(activeHistoryBatchId, "zpl");
+        saveAs(blob, `Amazon_ZPL_Converted_Labels_${Date.now()}.pdf`);
+        toast.success("Downloaded ZPL PDF", { id: "dl-file" });
+      } catch (e) {
+        toast.error("Failed to download file", { id: "dl-file" });
+      }
+    }
   },
 
-  downloadCombinedPdf: () => {
-    const { files } = get();
-    if (!files?.combinedPdfBase64) return;
-    const filename = `Amazon_Matched_Paired_Orders_${Date.now()}.pdf`;
-    downloadBase64File(files.combinedPdfBase64, filename);
+  downloadCombinedPdf: async () => {
+    const { files, combinedPdfUrl, activeHistoryBatchId } = get();
+    if (files?.combinedPdfBase64) {
+      const filename = `Amazon_Matched_Paired_Orders_${Date.now()}.pdf`;
+      downloadBase64File(files.combinedPdfBase64, filename);
+      return;
+    }
+    if (combinedPdfUrl) {
+      saveAs(combinedPdfUrl, `Amazon_Matched_Paired_Orders_${Date.now()}.pdf`);
+      return;
+    }
+    if (activeHistoryBatchId) {
+      try {
+        toast.loading("Downloading Matched Orders PDF...", { id: "dl-file" });
+        const blob = await amazonOrderService.fetchBatchFileBlob(activeHistoryBatchId, "combined");
+        saveAs(blob, `Amazon_Matched_Paired_Orders_${Date.now()}.pdf`);
+        toast.success("Downloaded Matched Orders PDF", { id: "dl-file" });
+      } catch (e) {
+        toast.error("Failed to download file", { id: "dl-file" });
+      }
+    }
   },
 
-  downloadOriginalPdf: () => {
-    const { files, summary } = get();
-    if (!files?.originalPdfBase64) return;
+  downloadOriginalPdf: async () => {
+    const { files, summary, originalPdfUrl, activeHistoryBatchId } = get();
     const filename = summary?.pdfFileName || `Amazon_Original_Invoices_${Date.now()}.pdf`;
-    downloadBase64File(files.originalPdfBase64, filename);
+    if (files?.originalPdfBase64) {
+      downloadBase64File(files.originalPdfBase64, filename);
+      return;
+    }
+    if (originalPdfUrl) {
+      saveAs(originalPdfUrl, filename);
+      return;
+    }
+    if (activeHistoryBatchId) {
+      try {
+        toast.loading("Downloading Original Invoices PDF...", { id: "dl-file" });
+        const blob = await amazonOrderService.fetchBatchFileBlob(activeHistoryBatchId, "original");
+        saveAs(blob, filename);
+        toast.success("Downloaded Original Invoices PDF", { id: "dl-file" });
+      } catch (e) {
+        toast.error("Failed to download file", { id: "dl-file" });
+      }
+    }
   },
 
-  downloadUnmatchedPdf: () => {
-    const { files } = get();
-    if (!files?.unmatchedPdfBase64) return;
+  downloadUnmatchedPdf: async () => {
+    const { files, unmatchedPdfUrl, activeHistoryBatchId } = get();
     const filename = `Amazon_Unmatched_Invoices_${Date.now()}.pdf`;
-    downloadBase64File(files.unmatchedPdfBase64, filename);
+    if (files?.unmatchedPdfBase64) {
+      downloadBase64File(files.unmatchedPdfBase64, filename);
+      return;
+    }
+    if (unmatchedPdfUrl) {
+      saveAs(unmatchedPdfUrl, filename);
+      return;
+    }
+    if (activeHistoryBatchId) {
+      try {
+        toast.loading("Downloading Unmatched Invoices PDF...", { id: "dl-file" });
+        const blob = await amazonOrderService.fetchBatchFileBlob(activeHistoryBatchId, "unmatched-pdf");
+        saveAs(blob, filename);
+        toast.success("Downloaded Unmatched Invoices PDF", { id: "dl-file" });
+      } catch (e) {
+        toast.error("Failed to download file", { id: "dl-file" });
+      }
+    }
   },
 
-  downloadUnmatchedZplPdf: () => {
-    const { files } = get();
-    if (!files?.unmatchedZplBase64) return;
+  downloadUnmatchedZplPdf: async () => {
+    const { files, unmatchedZplPdfUrl, activeHistoryBatchId } = get();
     const filename = `Amazon_Unmatched_ZPL_Labels_${Date.now()}.pdf`;
-    downloadBase64File(files.unmatchedZplBase64, filename);
+    if (files?.unmatchedZplBase64) {
+      downloadBase64File(files.unmatchedZplBase64, filename);
+      return;
+    }
+    if (unmatchedZplPdfUrl) {
+      saveAs(unmatchedZplPdfUrl, filename);
+      return;
+    }
+    if (activeHistoryBatchId) {
+      try {
+        toast.loading("Downloading Unmatched ZPL PDF...", { id: "dl-file" });
+        const blob = await amazonOrderService.fetchBatchFileBlob(activeHistoryBatchId, "unmatched-zpl");
+        saveAs(blob, filename);
+        toast.success("Downloaded Unmatched ZPL PDF", { id: "dl-file" });
+      } catch (e) {
+        toast.error("Failed to download file", { id: "dl-file" });
+      }
+    }
   },
 
   exportToExcel: () => {

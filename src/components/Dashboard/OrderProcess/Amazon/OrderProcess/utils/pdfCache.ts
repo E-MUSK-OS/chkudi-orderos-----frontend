@@ -212,11 +212,37 @@ export function fastBase64ToUint8Array(base64: string): Uint8Array {
 
 export async function getOrLoadCombinedDoc(activeFiles: any, batchKey?: string): Promise<PDFDocument | null> {
   const currentKey = getDocCacheKey(activeFiles, batchKey);
-  if (docsCache?.combinedDoc && docsCache.cacheKey === currentKey) {
+  if (
+    docsCache?.combinedDoc &&
+    (docsCache.cacheKey === currentKey || (batchKey && docsCache.batchKey === batchKey))
+  ) {
     return docsCache.combinedDoc;
   }
 
   if (!activeFiles?.combinedPdfBase64) {
+    // Fallback: If not in activeFiles base64, check if an active historical batch exists and stream combined PDF blob
+    try {
+      const { useAmazonOrderStore } = await import("../store/useAmazonOrderStore");
+      const activeBatchId = useAmazonOrderStore.getState().activeHistoryBatchId;
+      if (activeBatchId) {
+        const { amazonOrderService } = await import("../services/amazonOrder.service");
+        const blob = await amazonOrderService.fetchBatchFileBlob(activeBatchId, "combined");
+        if (blob && blob.size > 0) {
+          const buf = await blob.arrayBuffer();
+          const { PDFDocument } = await import("pdf-lib");
+          const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+          setCachedAmazonDocs({
+            combinedDoc: doc,
+            combinedBytes: new Uint8Array(buf),
+            cacheKey: `batch_${activeBatchId}`,
+            batchKey: batchKey || `batch_${activeBatchId}`,
+          });
+          return doc;
+        }
+      }
+    } catch (streamErr) {
+      console.warn("Notice: Combined PDF on-demand streaming notice:", streamErr);
+    }
     return null;
   }
 

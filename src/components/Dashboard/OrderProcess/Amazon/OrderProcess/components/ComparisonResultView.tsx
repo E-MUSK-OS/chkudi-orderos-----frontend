@@ -489,6 +489,67 @@ export default function ComparisonResultView({
     }
   }, [files, convertedZplPdfUrl, combinedPdfUrl, originalPdfUrl, unmatchedPdfUrl, unmatchedZplPdfUrl, results]);
 
+  // On-demand streaming for the PDF viewer tab when loading from 7-day history
+  useEffect(() => {
+    if (activeTab !== "pdf" || !activeHistoryBatchId) return;
+
+    if (selectedPdfType === "combined" && !combinedPdfUrl) {
+      amazonOrderService
+        .fetchBatchFileBlob(activeHistoryBatchId, "combined")
+        .then((blob) => {
+          if (blob && blob.size > 0) {
+            useAmazonOrderStore.setState({ combinedPdfUrl: URL.createObjectURL(blob) });
+          }
+        })
+        .catch((e) => console.warn("Notice: On-demand combined PDF streaming notice:", e));
+    } else if (selectedPdfType === "original" && !originalPdfUrl) {
+      amazonOrderService
+        .fetchBatchFileBlob(activeHistoryBatchId, "original")
+        .then((blob) => {
+          if (blob && blob.size > 0) {
+            useAmazonOrderStore.setState({ originalPdfUrl: URL.createObjectURL(blob) });
+          }
+        })
+        .catch((e) => console.warn("Notice: On-demand original PDF streaming notice:", e));
+    } else if (selectedPdfType === "zpl" && !convertedZplPdfUrl) {
+      amazonOrderService
+        .fetchBatchFileBlob(activeHistoryBatchId, "zpl")
+        .then((blob) => {
+          if (blob && blob.size > 0) {
+            useAmazonOrderStore.setState({ convertedZplPdfUrl: URL.createObjectURL(blob) });
+          }
+        })
+        .catch((e) => console.warn("Notice: On-demand ZPL PDF streaming notice:", e));
+    } else if (selectedPdfType === "unmatched_pdf" && !unmatchedPdfUrl) {
+      amazonOrderService
+        .fetchBatchFileBlob(activeHistoryBatchId, "unmatched-pdf")
+        .then((blob) => {
+          if (blob && blob.size > 0) {
+            useAmazonOrderStore.setState({ unmatchedPdfUrl: URL.createObjectURL(blob) });
+          }
+        })
+        .catch((e) => console.warn("Notice: On-demand unmatched PDF streaming notice:", e));
+    } else if (selectedPdfType === "unmatched_zpl" && !unmatchedZplPdfUrl) {
+      amazonOrderService
+        .fetchBatchFileBlob(activeHistoryBatchId, "unmatched-zpl")
+        .then((blob) => {
+          if (blob && blob.size > 0) {
+            useAmazonOrderStore.setState({ unmatchedZplPdfUrl: URL.createObjectURL(blob) });
+          }
+        })
+        .catch((e) => console.warn("Notice: On-demand unmatched ZPL streaming notice:", e));
+    }
+  }, [
+    activeTab,
+    selectedPdfType,
+    activeHistoryBatchId,
+    combinedPdfUrl,
+    originalPdfUrl,
+    convertedZplPdfUrl,
+    unmatchedPdfUrl,
+    unmatchedZplPdfUrl,
+  ]);
+
   const unmatchedPdfCount = useMemo(
     () => results.filter((r) => !r.isMatch && r.pdfPages && r.pdfPages.length > 0).length,
     [results]
