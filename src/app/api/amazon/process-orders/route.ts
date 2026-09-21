@@ -1891,10 +1891,24 @@ export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get("content-type") || "";
 
-    // 1. JSON Request (Action: "compare")
+    // 1. JSON Request (Action: "compare" or "convert-zpl-chunk")
     if (contentType.includes("application/json")) {
       const body = await req.json();
-      const { action, zplLabels, convertedZplPdfBase64, pdfTextArray, zplFileName } = body;
+      const { action, zplLabels, convertedZplPdfBase64, pdfTextArray, zplFileName, zplChunk } = body;
+
+      if (action === "convert-zpl-chunk") {
+        if (!zplChunk || typeof zplChunk !== "string") {
+          return NextResponse.json({ error: "zplChunk is required." }, { status: 400 });
+        }
+        const chunkPdfBuffer = await convertZplChunkToPdf(zplChunk);
+        return new NextResponse(chunkPdfBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Length": chunkPdfBuffer.length.toString(),
+          },
+        });
+      }
 
       if (action === "compare") {
         return buildComparisonResponse(
@@ -1910,6 +1924,22 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const action = (formData.get("action") as string) || null;
     const zplFile = formData.get("zplFile") as File | null;
+
+    // Micro-chunk conversion via FormData
+    if (action === "convert-zpl-chunk") {
+      const chunkText = (formData.get("zplChunk") as string) || (zplFile ? await zplFile.text() : "");
+      if (!chunkText) {
+        return NextResponse.json({ error: "zplChunk is required." }, { status: 400 });
+      }
+      const chunkPdfBuffer = await convertZplChunkToPdf(chunkText);
+      return new NextResponse(chunkPdfBuffer, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Length": chunkPdfBuffer.length.toString(),
+        },
+      });
+    }
 
     // CONCURRENT PIPELINE: Convert ZPL immediately in the background
     if (action === "convert-zpl") {

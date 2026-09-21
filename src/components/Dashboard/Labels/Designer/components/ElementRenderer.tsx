@@ -47,7 +47,7 @@ export function ElementRenderer({
   useEffect(() => {
     let isCancelled = false;
     if (colorMode === 'monochrome' && element.type === 'image' && element.imageUrl) {
-      binarizeImageToCanvas(element.imageUrl, 220)
+      binarizeImageToCanvas(element.imageUrl, 225)
         .then((canvas) => {
           if (!isCancelled) {
             setMonoImageUrl(canvas.toDataURL('image/png'));
@@ -62,7 +62,11 @@ export function ElementRenderer({
     return () => {
       isCancelled = true;
     };
-  }, [colorMode, element.type === 'image' ? (element as any).imageUrl : null, element.type]);
+  }, [
+    colorMode,
+    element.type === 'image' ? (element as any).imageUrl : null,
+    element.type
+  ]);
 
   useEffect(() => {
     if (!isSelected && isEditing) {

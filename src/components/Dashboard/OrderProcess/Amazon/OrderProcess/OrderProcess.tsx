@@ -35,6 +35,7 @@ import {
 import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs, startBackgroundOrderPdfPrewarming } from "./utils/pdfCache";
 import AmazonProcessHistoryDropdown from "./components/AmazonProcessHistoryDropdown";
 import { amazonOrderService } from "./services/amazonOrder.service";
+import { parseZplLabels, compareOrdersLocally } from "./utils/clientMatcher";
 
 export default function OrderProcess() {
   const router = useRouter();
@@ -61,6 +62,18 @@ export default function OrderProcess() {
     setProcessData,
     clearProcessData,
   } = useAmazonOrderStore();
+
+  // Guard against accidental tab closure during active processing
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isProcessing) {
+        e.preventDefault();
+        e.returnValue = "Order processing is currently in progress. Are you sure you want to leave?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isProcessing]);
 
   // If an active batch already exists (or is restored from storage), redirect to results!
   useEffect(() => {
@@ -292,8 +305,7 @@ export default function OrderProcess() {
       };
 
       // ----------------------------------------------------------------------
-      // 1. STREAMLINED NETWORK PIPELINE: Start ZPL conversion concurrently NOW!
-      // While the backend converts ZPL to PDF, the client extracts PDF text in parallel!
+      // 1. CLIENT PIPELINE: Parse ZPL text into labels
       // ----------------------------------------------------------------------
       const zplTexts = await Promise.all(zplFiles.map((f) => f.text()));
       const combinedZplText = zplTexts.join("\n");
@@ -301,147 +313,181 @@ export default function OrderProcess() {
         type: "text/plain",
       });
 
-      const zplFormData = new FormData();
-      zplFormData.append("action", "convert-zpl");
-      zplFormData.append("zplFile", combinedZplFile);
+      const zplLabels = parseZplLabels(combinedZplText);
+      if (zplLabels.length === 0) {
+        throw new Error("No valid ZPL label definitions found in the uploaded ZPL file(s).");
+      }
 
-      const zplConversionPromise = fetch("/api/amazon/process-orders", {
-        method: "POST",
-        body: zplFormData,
-      }).then(async (res) => {
-        const text = await res.text();
-        let data: any;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error(
-            res.status === 413
-              ? "Uploaded ZPL files exceed the maximum allowed size (413 Request Entity Too Large)."
-              : `Server error (${res.status}): ${text.slice(0, 150)}`
-          );
-        }
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || "Failed to convert ZPL barcode labels.");
-        }
-        return data as {
-          zplLabels: any[];
-          convertedZplPdfBase64: string;
-        };
-      });
-
-      // ----------------------------------------------------------------------
-      // 2. CONCURRENT CLIENT PIPELINE: Merge PDFs & extract text simultaneously!
-      // ----------------------------------------------------------------------
       const { PDFDocument } = await import("pdf-lib");
 
-      let mergedPdfBytes: Uint8Array;
-      if (pdfFiles.length === 1) {
-        mergedPdfBytes = new Uint8Array(await pdfFiles[0].arrayBuffer());
-        currentPct = Math.max(currentPct, 15);
-        setProgress(currentPct, "1. Validated & Prepared PDF File");
-      } else {
-        const buffers = await Promise.all(pdfFiles.map((f) => f.arrayBuffer()));
-        const mergedDoc = await PDFDocument.create();
-        for (let i = 0; i < buffers.length; i++) {
-          const doc = await PDFDocument.load(buffers[i], { ignoreEncryption: true });
-          const pages = await mergedDoc.copyPages(doc, doc.getPageIndices());
-          pages.forEach((p) => mergedDoc.addPage(p));
+      // ----------------------------------------------------------------------
+      // 2. TRUE PARALLEL PIPELINE: Run ZPL Conversion AND PDF Text Extraction Simultaneously!
+      // Chunk size 30 labels + Concurrency 3 = Blazing fast speeds while 95% under 4.5MB limit
+      // ----------------------------------------------------------------------
+      const CHUNK_SIZE = 30;
+      const zplChunks: { index: number; rawZplText: string }[] = [];
+      for (let i = 0; i < zplLabels.length; i += CHUNK_SIZE) {
+        const slice = zplLabels.slice(i, i + CHUNK_SIZE);
+        zplChunks.push({
+          index: i,
+          rawZplText: slice.map((l) => l.rawZpl).join("\n"),
+        });
+      }
+
+      const convertChunkWithRetry = async (chunkText: string, maxRetries = 4): Promise<Uint8Array> => {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const res = await fetch("/api/amazon/process-orders", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "convert-zpl-chunk",
+                zplChunk: chunkText,
+              }),
+            });
+
+            if (res.ok) {
+              const arrayBuf = await res.arrayBuffer();
+              return new Uint8Array(arrayBuf);
+            }
+
+            if (res.status === 429 && attempt < maxRetries) {
+              const waitMs = attempt * 1500;
+              console.warn(`[ZPL Chunk Rate Limit 429] Retrying chunk in ${waitMs}ms...`);
+              await new Promise((r) => setTimeout(r, waitMs));
+              continue;
+            }
+
+            const errText = await res.text();
+            throw new Error(
+              res.status === 413
+                ? "ZPL chunk exceeded server limit."
+                : `ZPL conversion error (${res.status}): ${errText.slice(0, 150)}`
+            );
+          } catch (err: any) {
+            if (attempt === maxRetries) throw err;
+            await new Promise((r) => setTimeout(r, attempt * 1000));
+          }
         }
-        mergedPdfBytes = await mergedDoc.save();
-        currentPct = Math.max(currentPct, 18);
-        setProgress(currentPct, "1. Merged All PDF Files");
-      }
+        throw new Error("Failed to convert ZPL chunk after retries.");
+      };
 
-      // Extract text and table layout items in parallel chunks (up to 10 pages concurrently)
-      targetCeiling = 50;
-      currentPct = Math.max(currentPct, 20);
-      setProgress(currentPct, "2. Extracting Amazon Invoices in parallel...");
-      const pdfjs = await import("pdfjs-dist");
-      if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version || "6.3.289"}/build/pdf.worker.min.mjs`;
-      }
+      // Background Pipeline 1: Parallel ZPL Micro-Chunk Conversion
+      const zplConversionPromise = (async () => {
+        const CONCURRENCY = 3;
+        let completedChunks = 0;
+        const chunkPdfResults: Uint8Array[] = new Array(zplChunks.length);
 
-      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(mergedPdfBytes) });
-      const pdf = await loadingTask.promise;
+        for (let i = 0; i < zplChunks.length; i += CONCURRENCY) {
+          const batch = zplChunks.slice(i, i + CONCURRENCY);
+          await Promise.all(
+            batch.map(async (c, batchOffset) => {
+              const chunkIndex = i + batchOffset;
+              const pdfBytes = await convertChunkWithRetry(c.rawZplText);
+              chunkPdfResults[chunkIndex] = pdfBytes;
+              completedChunks++;
+              const pctVal = Math.round(20 + (completedChunks / zplChunks.length) * 50);
+              currentPct = Math.max(currentPct, pctVal);
+              setProgress(
+                currentPct,
+                `Converting Barcode Labels (${Math.min(completedChunks * CHUNK_SIZE, zplLabels.length)}/${zplLabels.length})...`
+              );
+            })
+          );
+        }
 
-      const pageIndices = Array.from({ length: pdf.numPages }, (_, i) => i + 1);
-      const pageTextData: Array<{ text: string; items: any[] }> = new Array(pdf.numPages);
-
-      // Process in concurrent batches of 10 pages for maximum speed
-      const BATCH_SIZE = 10;
-      for (let b = 0; b < pageIndices.length; b += BATCH_SIZE) {
-        const batch = pageIndices.slice(b, b + BATCH_SIZE);
-        await Promise.all(
-          batch.map(async (pageNum) => {
-            const page = await pdf.getPage(pageNum);
-            const textContent = await page.getTextContent();
-            const strings = textContent.items.map((item: any) => item.str);
-            pageTextData[pageNum - 1] = {
-              text: strings.join(" "),
-              items: textContent.items,
-            };
-          })
-        );
-        const stepPct = Math.round(20 + ((b + batch.length) / pdf.numPages) * 28);
-        currentPct = Math.max(currentPct, stepPct);
-        setProgress(
-          currentPct,
-          `2. Extracted Invoices (${Math.min(b + batch.length, pdf.numPages)}/${pdf.numPages})...`
-        );
-      }
-
-      const pdfTextArray = pageTextData.map((d) => d.text);
-
-      // ----------------------------------------------------------------------
-      // 3. JOIN POINT: Await the concurrent ZPL conversion
-      // (Already executed in parallel on backend while client extracted PDF text!)
-      // ----------------------------------------------------------------------
-      targetCeiling = 75;
-      currentPct = Math.max(currentPct, 52);
-      setProgress(currentPct, "3. Synchronizing Labels & Cross-Verifying Orders...");
-
-      const zplResult = await zplConversionPromise;
-
-      // ----------------------------------------------------------------------
-      // 4. Ultra-Fast In-Memory Cross-Verification (Takes ~10ms)
-      // ----------------------------------------------------------------------
-      const compareRes = await fetch("/api/amazon/process-orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "compare",
-          zplLabels: zplResult.zplLabels,
-          pdfTextArray,
-          zplFileName: combinedZplFile.name,
-        }),
-      });
-
-      const responseText = await compareRes.text();
-      let compareData: any;
-      try {
-        compareData = JSON.parse(responseText);
-      } catch {
-        throw new Error(
-          compareRes.status === 413
-            ? "Request Entity Too Large: The payload exceeded server limits."
-            : `Failed to parse server response (${compareRes.status}): ${responseText.slice(0, 150)}`
-        );
-      }
-      if (!compareRes.ok || !compareData.success) {
-        throw new Error(compareData.error || "Failed to cross-verify orders.");
-      }
-
-      const processResponse = compareData as AmazonProcessResponse;
-      // Re-attach converted ZPL PDF base64 already available in client memory
-      if (!processResponse.files) {
-        processResponse.files = {
-          convertedZplPdfBase64: zplResult.convertedZplPdfBase64,
-          combinedPdfBase64: "",
-          originalPdfBase64: "",
+        const mergedZplDoc = await PDFDocument.create();
+        for (const pdfBytes of chunkPdfResults) {
+          if (pdfBytes) {
+            const chunkDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+            const pages = await mergedZplDoc.copyPages(chunkDoc, chunkDoc.getPageIndices());
+            pages.forEach((p) => mergedZplDoc.addPage(p));
+          }
+        }
+        const mergedZplBytes = await mergedZplDoc.save();
+        return {
+          mergedZplDoc,
+          convertedZplPdfBase64: Buffer.from(mergedZplBytes).toString("base64"),
         };
-      } else {
-        processResponse.files.convertedZplPdfBase64 = zplResult.convertedZplPdfBase64;
-      }
+      })();
+
+      // Background Pipeline 2: Concurrent PDF Merging & Text Extraction
+      const pdfExtractionPromise = (async () => {
+        let mergedPdfBytes: Uint8Array;
+        if (pdfFiles.length === 1) {
+          mergedPdfBytes = new Uint8Array(await pdfFiles[0].arrayBuffer());
+          currentPct = Math.max(currentPct, 15);
+          setProgress(currentPct, "1. Validated & Prepared PDF File");
+        } else {
+          const buffers = await Promise.all(pdfFiles.map((f) => f.arrayBuffer()));
+          const mergedDoc = await PDFDocument.create();
+          for (let i = 0; i < buffers.length; i++) {
+            const doc = await PDFDocument.load(buffers[i], { ignoreEncryption: true });
+            const pages = await mergedDoc.copyPages(doc, doc.getPageIndices());
+            pages.forEach((p) => mergedDoc.addPage(p));
+          }
+          mergedPdfBytes = await mergedDoc.save();
+          currentPct = Math.max(currentPct, 18);
+          setProgress(currentPct, "1. Merged All PDF Files");
+        }
+
+        const pdfjs = await import("pdfjs-dist");
+        if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+          pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version || "6.3.289"}/build/pdf.worker.min.mjs`;
+        }
+
+        const loadingTask = pdfjs.getDocument({ data: new Uint8Array(mergedPdfBytes) });
+        const pdf = await loadingTask.promise;
+
+        const pageIndices = Array.from({ length: pdf.numPages }, (_, i) => i + 1);
+        const pageTextData: Array<{ text: string; items: any[] }> = new Array(pdf.numPages);
+
+        const BATCH_SIZE = 15;
+        for (let b = 0; b < pageIndices.length; b += BATCH_SIZE) {
+          const batch = pageIndices.slice(b, b + BATCH_SIZE);
+          await Promise.all(
+            batch.map(async (pageNum) => {
+              const page = await pdf.getPage(pageNum);
+              const textContent = await page.getTextContent();
+              const strings = textContent.items.map((item: any) => item.str);
+              pageTextData[pageNum - 1] = {
+                text: strings.join(" "),
+                items: textContent.items,
+              };
+            })
+          );
+          const stepPct = Math.round(18 + ((b + batch.length) / pdf.numPages) * 35);
+          currentPct = Math.max(currentPct, stepPct);
+          setProgress(
+            currentPct,
+            `2. Extracted Invoices (${Math.min(b + batch.length, pdf.numPages)}/${pdf.numPages})...`
+          );
+        }
+
+        return {
+          mergedPdfBytes,
+          pageTextData,
+          pdfTextArray: pageTextData.map((d) => d.text),
+        };
+      })();
+
+      // Join point: Wait for BOTH parallel pipelines to complete
+      const [{ mergedZplDoc, convertedZplPdfBase64 }, { mergedPdfBytes, pageTextData, pdfTextArray }] =
+        await Promise.all([zplConversionPromise, pdfExtractionPromise]);
+
+      // ----------------------------------------------------------------------
+      // 3. Ultra-Fast In-Memory Cross-Verification (Runs in ~15ms!)
+      // ----------------------------------------------------------------------
+      targetCeiling = 85;
+      currentPct = Math.max(currentPct, 78);
+      setProgress(currentPct, "3. Cross-Verifying Orders & Matching Invoices...");
+
+      const processResponse = compareOrdersLocally(zplLabels, pdfTextArray, combinedZplFile.name);
+      processResponse.files = {
+        convertedZplPdfBase64,
+        combinedPdfBase64: "",
+        originalPdfBase64: "",
+      };
 
       // Resolve Seller SKU mapping from AsinImport, Products, and Variants table
       let asinToSkuMap = new Map<string, string>();
@@ -485,12 +531,9 @@ export default function OrderProcess() {
       let combinedDocInstance: any = null;
       let zplDocInstance: any = null;
 
-      if (processResponse.files?.convertedZplPdfBase64) {
+      if (mergedZplDoc) {
         try {
-          const zplBytes = Uint8Array.from(atob(processResponse.files.convertedZplPdfBase64), (c) =>
-            c.charCodeAt(0)
-          );
-          const zplDoc = await PDFDocument.load(zplBytes, { ignoreEncryption: true });
+          const zplDoc = mergedZplDoc;
           const combinedDoc = await PDFDocument.create();
           zplDocInstance = zplDoc;
           combinedDocInstance = combinedDoc;

@@ -61,25 +61,38 @@ const svgStringToImage = (svgString: string): Promise<HTMLImageElement> => {
 };
 
 /**
- * Converts any color or grayscale image into a pure 1-bit high-contrast black & white image.
- * Colored drawings (e.g. pastel purple, light blue, gray handwriting) with luminance <= threshold (220)
- * are converted to 100% solid black (#000000), while white/light background remains white/transparent.
+ * Converts any image (transparent PNG, signature, drawing, handwriting, or white-backed artwork)
+ * into 100% pure solid black (#000000) with smooth, linear, anti-aliased edges.
  */
 export const binarizeImageToCanvas = async (
   imgSrc: string,
-  threshold: number = 220
+  threshold: number = 225
 ): Promise<HTMLCanvasElement> => {
   const canvas = document.createElement("canvas");
   try {
     const img = await loadImage(imgSrc);
-    canvas.width = img.naturalWidth || img.width || 400;
-    canvas.height = img.naturalHeight || img.height || 400;
+    const width = img.naturalWidth || img.width || 400;
+    const height = img.naturalHeight || img.height || 400;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return canvas;
 
-    ctx.drawImage(img, 0, 0);
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const imgData = ctx.getImageData(0, 0, width, height);
     const data = imgData.data;
+
+    // Detect if the image has transparency (e.g. PNG drawing, signature, canvas export)
+    let hasTransparency = false;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] < 240) {
+        hasTransparency = true;
+        break;
+      }
+    }
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -87,30 +100,45 @@ export const binarizeImageToCanvas = async (
       const b = data[i + 2];
       const a = data[i + 3];
 
-      // Keep fully transparent pixels transparent
-      if (a < 20) {
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
-        data[i + 3] = 0;
-        continue;
-      }
-
-      // Standard ITU-R BT.601 luminance
-      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-      if (lum <= threshold) {
-        // Colored or dark stroke -> Pure solid black
-        data[i] = 0;
-        data[i + 1] = 0;
-        data[i + 2] = 0;
-        data[i + 3] = 255;
+      if (hasTransparency) {
+        // Transparent artwork (PNG drawings, signatures, stamps)
+        // Keep smooth anti-aliased edge curves while converting all colors (including light pastel) to pure black #000000
+        if (a < 10) {
+          data[i] = 255;
+          data[i + 1] = 255;
+          data[i + 2] = 255;
+          data[i + 3] = 0;
+        } else {
+          data[i] = 0;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+          // Boost alpha for faint/pastel colors so thermal head heats firmly, while keeping edge anti-aliasing
+          data[i + 3] = Math.min(255, Math.round(a * 1.6));
+        }
       } else {
-        // Light paper / background -> Pure white (or transparent if it had low opacity)
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
-        data[i + 3] = a < 200 ? 0 : 255;
+        // Opaque / white-backed image
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        if (lum > threshold) {
+          // White background paper
+          data[i] = 255;
+          data[i + 1] = 255;
+          data[i + 2] = 255;
+          data[i + 3] = 0; // Make background transparent for crisp overlay
+        } else if (lum < threshold - 35) {
+          // Solid dark stroke -> 100% solid black
+          data[i] = 0;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+          data[i + 3] = 255;
+        } else {
+          // Linear anti-aliased edge transition for smooth curved borders
+          const edgeAlpha = Math.round((1 - (lum - (threshold - 35)) / 35) * 255);
+          data[i] = 0;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+          data[i + 3] = edgeAlpha;
+        }
       }
     }
 
@@ -119,6 +147,20 @@ export const binarizeImageToCanvas = async (
     console.error("binarizeImageToCanvas error:", e);
   }
   return canvas;
+};
+
+export const processMonochromeImage = async (
+  imgSrc: string,
+  _mode?: string,
+  threshold: number = 225
+): Promise<HTMLCanvasElement> => {
+  return binarizeImageToCanvas(imgSrc, threshold);
+};
+
+export const ditherImageToCanvas = async (
+  imgSrc: string
+): Promise<HTMLCanvasElement> => {
+  return binarizeImageToCanvas(imgSrc);
 };
 
 // Render logic
@@ -178,7 +220,8 @@ export const renderLabelToCanvas = async (
   if (template.backgroundImageUrl) {
     try {
       if (template.settings.colorMode === 'monochrome') {
-        const monoCanvas = await binarizeImageToCanvas(template.backgroundImageUrl, 220);
+        const bgMonoMode = template.settings.backgroundMonoMode ?? 'dither';
+        const monoCanvas = await processMonochromeImage(template.backgroundImageUrl, bgMonoMode, 220);
         ctx.drawImage(monoCanvas, 0, 0, logicalWidth, logicalHeight);
       } else {
         const bgImg = await loadImage(template.backgroundImageUrl);
@@ -422,7 +465,8 @@ export const renderLabelToCanvas = async (
     } else if (el.type === "image" && el.imageUrl) {
       try {
         if (template.settings.colorMode === 'monochrome') {
-          const monoCanvas = await binarizeImageToCanvas(el.imageUrl, 220);
+          const monoMode = (el as any).monoMode ?? 'dither';
+          const monoCanvas = await processMonochromeImage(el.imageUrl, monoMode, 220);
           ctx.drawImage(monoCanvas, 0, 0, w, h);
         } else {
           const img = await loadImage(el.imageUrl);
@@ -1285,7 +1329,8 @@ export const renderLabelToVectorPdf = async (
     try {
       let embeddedBg;
       if (isMonochrome) {
-        const monoCanvas = await binarizeImageToCanvas(template.backgroundImageUrl, 220);
+        const bgMonoMode = template.settings.backgroundMonoMode ?? "dither";
+        const monoCanvas = await processMonochromeImage(template.backgroundImageUrl, bgMonoMode, 220);
         const pngDataUrl = monoCanvas.toDataURL("image/png");
         const b64 = pngDataUrl.split(",")[1];
         const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -1480,7 +1525,8 @@ export const renderLabelToVectorPdf = async (
       try {
         let embeddedImg;
         if (isMonochrome) {
-          const monoCanvas = await binarizeImageToCanvas(el.imageUrl, 220);
+          const imgMonoMode = (el as any).monoMode ?? "dither";
+          const monoCanvas = await processMonochromeImage(el.imageUrl, imgMonoMode, 220);
           const pngDataUrl = monoCanvas.toDataURL("image/png");
           const b64 = pngDataUrl.split(",")[1];
           const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));

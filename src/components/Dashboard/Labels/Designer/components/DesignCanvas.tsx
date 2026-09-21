@@ -33,7 +33,7 @@ export function DesignCanvas({
   useEffect(() => {
     let isCancelled = false;
     if (settings.colorMode === 'monochrome' && backgroundImageUrl) {
-      binarizeImageToCanvas(backgroundImageUrl, 220)
+      binarizeImageToCanvas(backgroundImageUrl, 225)
         .then((canvas) => {
           if (!isCancelled) setMonoBgUrl(canvas.toDataURL('image/png'));
         })

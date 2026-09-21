@@ -391,7 +391,7 @@ export function PropertiesPanel({
                     type="button"
                     onClick={async () => {
                       try {
-                        const canvas = await binarizeImageToCanvas(backgroundImageUrl, 220);
+                        const canvas = await binarizeImageToCanvas(backgroundImageUrl, 225);
                         const pureBlackDataUrl = canvas.toDataURL('image/png');
                         setBackgroundImageUrl(pureBlackDataUrl);
                         toast.success('Background converted to 100% pure solid black!');
@@ -1116,23 +1116,25 @@ export function PropertiesPanel({
             </div>
 
             {(selectedElement as ImageElement).imageUrl && (
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const canvas = await binarizeImageToCanvas((selectedElement as ImageElement).imageUrl, 220);
-                    const pureBlackDataUrl = canvas.toDataURL('image/png');
-                    handleUpdateDiscrete('imageUrl', pureBlackDataUrl);
-                    toast.success('Image converted to 100% pure solid black!');
-                  } catch (e) {
-                    toast.error('Failed to convert image');
-                  }
-                }}
-                className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2 flex items-center justify-center gap-1.5"
-              >
-                <span>⬛</span>
-                <span>Convert to Pure Black (Thermal Ready)</span>
-              </button>
+              <div className="space-y-2 pt-2 border-t border-stone-800">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const canvas = await binarizeImageToCanvas((selectedElement as ImageElement).imageUrl, 225);
+                      const pureBlackDataUrl = canvas.toDataURL('image/png');
+                      handleUpdateDiscrete('imageUrl', pureBlackDataUrl);
+                      toast.success('Image converted to 100% pure solid black!');
+                    } catch (e) {
+                      toast.error('Failed to convert image');
+                    }
+                  }}
+                  className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2 flex items-center justify-center gap-1.5"
+                >
+                  <span>⬛</span>
+                  <span>Convert to Pure Black (Thermal Ready)</span>
+                </button>
+              </div>
             )}
           </div>
         )}
