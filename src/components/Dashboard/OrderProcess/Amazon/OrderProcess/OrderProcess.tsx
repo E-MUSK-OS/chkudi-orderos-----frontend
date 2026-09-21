@@ -423,7 +423,7 @@ export default function OrderProcess() {
             pages.forEach((p) => mergedZplDoc.addPage(p));
           }
         }
-        const mergedZplBytes = await mergedZplDoc.save();
+        const mergedZplBytes = await mergedZplDoc.save({ useObjectStreams: true });
         return {
           mergedZplDoc,
           convertedZplPdfBase64: Buffer.from(mergedZplBytes).toString("base64"),
@@ -446,7 +446,7 @@ export default function OrderProcess() {
             const pages = await mergedDoc.copyPages(doc, doc.getPageIndices());
             pages.forEach((p) => mergedDoc.addPage(p));
           }
-          mergedPdfBytes = await mergedDoc.save();
+          mergedPdfBytes = await mergedDoc.save({ useObjectStreams: true });
           currentPct = Math.max(currentPct, 18);
           setProgress(currentPct, "1. Merged All PDF Files");
         }
@@ -706,21 +706,21 @@ export default function OrderProcess() {
             }
           }
 
-          combinedPromise = combinedDoc.save();
+          combinedPromise = combinedDoc.save({ useObjectStreams: true });
           if (hasUnmatchedPdf) {
-            unmatchedPdfPromise = unmatchedPdfDoc.save();
+            unmatchedPdfPromise = unmatchedPdfDoc.save({ useObjectStreams: true });
           }
           if (hasUnmatchedZpl) {
-            unmatchedZplPromise = unmatchedZplDoc.save();
+            unmatchedZplPromise = unmatchedZplDoc.save({ useObjectStreams: true });
           }
         } catch (genErr) {
           console.warn("Could not generate combined preview PDF client-side:", genErr);
         }
       }
 
-      // Save documents concurrently in parallel
+      // Save documents concurrently in parallel with object stream compression
       const [enhancedBytes, combinedBytes, unmatchedPdfBytes, unmatchedZplBytes] = await Promise.all([
-        origDoc.save(),
+        origDoc.save({ useObjectStreams: true }),
         combinedPromise ? combinedPromise : Promise.resolve(null),
         unmatchedPdfPromise ? unmatchedPdfPromise : Promise.resolve(null),
         unmatchedZplPromise ? unmatchedZplPromise : Promise.resolve(null),
@@ -778,83 +778,89 @@ export default function OrderProcess() {
         formData.append("summary", JSON.stringify(processResponse.summary));
         formData.append("results", JSON.stringify(processResponse.results));
 
+        const b64ToFile = (base64: string, filename: string): File => {
+          const cleanB64 = base64.includes(",") ? base64.split(",")[1] : base64;
+          const binary = atob(cleanB64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          return new File([bytes], filename, { type: "application/pdf" });
+        };
+
         if (combinedBytes) {
-          const combinedFile = new File([new Blob([combinedBytes as unknown as BlobPart])], "combined_match.pdf", {
+          const combinedFile = new File([combinedBytes as unknown as BlobPart], "combined_match.pdf", {
             type: "application/pdf",
           });
           formData.append("combinedPdf", combinedFile);
         }
 
         if (mergedZplBytes) {
-          const zplFile = new File([new Blob([mergedZplBytes as unknown as BlobPart])], "converted_zpl.pdf", {
+          const zplFile = new File([mergedZplBytes as unknown as BlobPart], "converted_zpl.pdf", {
             type: "application/pdf",
           });
           formData.append("zplPdf", zplFile);
         } else if (processResponse.files?.convertedZplPdfBase64) {
-          const cleanB64 = processResponse.files.convertedZplPdfBase64.includes(",")
-            ? processResponse.files.convertedZplPdfBase64.split(",")[1]
-            : processResponse.files.convertedZplPdfBase64;
-          const res = await fetch(`data:application/pdf;base64,${cleanB64}`);
-          const blob = await res.blob();
-          formData.append("zplPdf", new File([blob], "converted_zpl.pdf", { type: "application/pdf" }));
+          formData.append("zplPdf", b64ToFile(processResponse.files.convertedZplPdfBase64, "converted_zpl.pdf"));
         }
 
         if (enhancedBytes) {
-          const origFile = new File([new Blob([enhancedBytes as unknown as BlobPart])], "original_invoices.pdf", {
+          const origFile = new File([enhancedBytes as unknown as BlobPart], "original_invoices.pdf", {
             type: "application/pdf",
           });
           formData.append("originalPdf", origFile);
         }
 
         if (unmatchedPdfBytes) {
-          const unmatchedPdfFile = new File([new Blob([unmatchedPdfBytes as unknown as BlobPart])], "unmatched_invoices.pdf", {
+          const unmatchedPdfFile = new File([unmatchedPdfBytes as unknown as BlobPart], "unmatched_invoices.pdf", {
             type: "application/pdf",
           });
           formData.append("unmatchedPdf", unmatchedPdfFile);
         } else if (processResponse.files?.unmatchedPdfBase64) {
-          const cleanB64 = processResponse.files.unmatchedPdfBase64.includes(",")
-            ? processResponse.files.unmatchedPdfBase64.split(",")[1]
-            : processResponse.files.unmatchedPdfBase64;
-          const res = await fetch(`data:application/pdf;base64,${cleanB64}`);
-          const blob = await res.blob();
-          formData.append("unmatchedPdf", new File([blob], "unmatched_invoices.pdf", { type: "application/pdf" }));
+          formData.append("unmatchedPdf", b64ToFile(processResponse.files.unmatchedPdfBase64, "unmatched_invoices.pdf"));
         }
 
         if (unmatchedZplBytes) {
-          const unmatchedZplFile = new File([new Blob([unmatchedZplBytes as unknown as BlobPart])], "unmatched_zpl.pdf", {
+          const unmatchedZplFile = new File([unmatchedZplBytes as unknown as BlobPart], "unmatched_zpl.pdf", {
             type: "application/pdf",
           });
           formData.append("unmatchedZplPdf", unmatchedZplFile);
         } else if (processResponse.files?.unmatchedZplBase64) {
-          const cleanB64 = processResponse.files.unmatchedZplBase64.includes(",")
-            ? processResponse.files.unmatchedZplBase64.split(",")[1]
-            : processResponse.files.unmatchedZplBase64;
-          const res = await fetch(`data:application/pdf;base64,${cleanB64}`);
-          const blob = await res.blob();
-          formData.append("unmatchedZplPdf", new File([blob], "unmatched_zpl.pdf", { type: "application/pdf" }));
+          formData.append("unmatchedZplPdf", b64ToFile(processResponse.files.unmatchedZplBase64, "unmatched_zpl.pdf"));
         }
 
-        // NON-BLOCKING BACKGROUND SYNC: Save batch to database quietly in background
+        // NON-BLOCKING BACKGROUND SYNC: Save batch to database quietly in background with retry
         useAmazonOrderStore.setState({ historySyncStatus: "syncing" });
         (async () => {
-          try {
-            const saveRes = await amazonOrderService.saveBatch(formData);
-            if (saveRes?.success) {
-              if (saveRes.data?.id) {
-                useAmazonOrderStore.setState({
-                  activeHistoryBatchId: saveRes.data.id,
-                  historySyncStatus: "synced",
-                });
-              } else {
-                useAmazonOrderStore.setState({ historySyncStatus: "synced" });
+          let saveRes: any = null;
+          let lastError: any = null;
+          const maxRetries = 2;
+
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              saveRes = await amazonOrderService.saveBatch(formData);
+              if (saveRes?.success) break;
+            } catch (err) {
+              lastError = err;
+              if (attempt < maxRetries) {
+                // Wait 1.5 seconds before retrying in case of transient Cloudflare HTTP/2 reset
+                await new Promise((resolve) => setTimeout(resolve, 1500));
               }
-              useAmazonOrderStore.getState().fetchHistoryBatches();
-            } else {
-              useAmazonOrderStore.setState({ historySyncStatus: "error" });
-              console.warn("Background batch save returned non-success:", saveRes);
             }
-          } catch (saveErr) {
-            console.warn("Background batch save notice:", saveErr);
+          }
+
+          if (saveRes?.success) {
+            if (saveRes.data?.id) {
+              useAmazonOrderStore.setState({
+                activeHistoryBatchId: saveRes.data.id,
+                historySyncStatus: "synced",
+              });
+            } else {
+              useAmazonOrderStore.setState({ historySyncStatus: "synced" });
+            }
+            useAmazonOrderStore.getState().fetchHistoryBatches();
+          } else {
+            console.warn("Background batch save notice:", lastError || saveRes);
             useAmazonOrderStore.setState({ historySyncStatus: "error" });
             toast.warning("Verification complete, but failed to save to 7-day cloud history.");
           }

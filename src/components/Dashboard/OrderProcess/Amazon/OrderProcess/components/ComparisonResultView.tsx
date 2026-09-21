@@ -277,7 +277,7 @@ async function generateUnmatchedPdfFromFiles(
     }
 
     if (!hasPages) return "";
-    const pdfBytes = await unmatchedDoc.save();
+    const pdfBytes = await unmatchedDoc.save({ useObjectStreams: true });
     const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
     return URL.createObjectURL(blob);
   } catch (err) {
@@ -319,7 +319,7 @@ async function generateUnmatchedZplFromFiles(
     }
 
     if (!hasPages) return "";
-    const pdfBytes = await unmatchedDoc.save();
+    const pdfBytes = await unmatchedDoc.save({ useObjectStreams: true });
     const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
     return URL.createObjectURL(blob);
   } catch (err) {

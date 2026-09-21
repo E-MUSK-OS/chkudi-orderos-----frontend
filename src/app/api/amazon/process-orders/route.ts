@@ -2066,7 +2066,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const convertedZplPdfBytes = await mergedZplPdf.save();
+      const convertedZplPdfBytes = await mergedZplPdf.save({ useObjectStreams: true });
       const convertedZplPdfBase64 = Buffer.from(convertedZplPdfBytes).toString("base64");
 
       return NextResponse.json({
@@ -2112,7 +2112,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const convertedZplPdfBytes = await mergedZplPdf.save();
+    const convertedZplPdfBytes = await mergedZplPdf.save({ useObjectStreams: true });
     const convertedZplPdfBase64 = Buffer.from(convertedZplPdfBytes).toString("base64");
 
     return buildComparisonResponse(
