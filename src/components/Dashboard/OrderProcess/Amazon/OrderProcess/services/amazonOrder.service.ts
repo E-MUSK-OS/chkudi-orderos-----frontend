@@ -135,6 +135,24 @@ export const amazonOrderService = {
   },
 
   /**
+   * Attach additional files (originalPdf, zplPdf, unmatched) to an existing batch
+   */
+  async attachBatchFiles(
+    batchId: string,
+    formData: FormData,
+    token?: string
+  ): Promise<{ success: boolean; data: any; message: string }> {
+    const userToken =
+      token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
+
+    return api.post<{ success: boolean; data: any; message: string }>(
+      `${BASE_URL}/batches/${encodeURIComponent(batchId)}/files`,
+      formData,
+      userToken
+    );
+  },
+
+  /**
    * Get 7-day history list of active processed batches
    */
   async getBatchHistory(

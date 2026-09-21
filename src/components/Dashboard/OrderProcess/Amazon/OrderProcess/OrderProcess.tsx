@@ -773,11 +773,10 @@ export default function OrderProcess() {
       }
 
       // Prepare FormData for saving batch to backend database with 7-day retention
+      // MULTI-STEP CLOUDFLARE-SAFE UPLOAD:
+      // Step 1: Create batch with summary, results, and combinedPdf (~3-5MB, strictly under Cloudflare Tunnel limit)
+      // Step 2 & 3: Attach originalPdf, zplPdf, and unmatched files in lightweight follow-up background requests
       try {
-        const formData = new FormData();
-        formData.append("summary", JSON.stringify(processResponse.summary));
-        formData.append("results", JSON.stringify(processResponse.results));
-
         const b64ToFile = (base64: string, filename: string): File => {
           const cleanB64 = base64.includes(",") ? base64.split(",")[1] : base64;
           const binary = atob(cleanB64);
@@ -788,48 +787,18 @@ export default function OrderProcess() {
           return new File([bytes], filename, { type: "application/pdf" });
         };
 
+        const initialFormData = new FormData();
+        initialFormData.append("summary", JSON.stringify(processResponse.summary));
+        initialFormData.append("results", JSON.stringify(processResponse.results));
+
         if (combinedBytes) {
           const combinedFile = new File([combinedBytes as unknown as BlobPart], "combined_match.pdf", {
             type: "application/pdf",
           });
-          formData.append("combinedPdf", combinedFile);
+          initialFormData.append("combinedPdf", combinedFile);
         }
 
-        if (mergedZplBytes) {
-          const zplFile = new File([mergedZplBytes as unknown as BlobPart], "converted_zpl.pdf", {
-            type: "application/pdf",
-          });
-          formData.append("zplPdf", zplFile);
-        } else if (processResponse.files?.convertedZplPdfBase64) {
-          formData.append("zplPdf", b64ToFile(processResponse.files.convertedZplPdfBase64, "converted_zpl.pdf"));
-        }
-
-        if (enhancedBytes) {
-          const origFile = new File([enhancedBytes as unknown as BlobPart], "original_invoices.pdf", {
-            type: "application/pdf",
-          });
-          formData.append("originalPdf", origFile);
-        }
-
-        if (unmatchedPdfBytes) {
-          const unmatchedPdfFile = new File([unmatchedPdfBytes as unknown as BlobPart], "unmatched_invoices.pdf", {
-            type: "application/pdf",
-          });
-          formData.append("unmatchedPdf", unmatchedPdfFile);
-        } else if (processResponse.files?.unmatchedPdfBase64) {
-          formData.append("unmatchedPdf", b64ToFile(processResponse.files.unmatchedPdfBase64, "unmatched_invoices.pdf"));
-        }
-
-        if (unmatchedZplBytes) {
-          const unmatchedZplFile = new File([unmatchedZplBytes as unknown as BlobPart], "unmatched_zpl.pdf", {
-            type: "application/pdf",
-          });
-          formData.append("unmatchedZplPdf", unmatchedZplFile);
-        } else if (processResponse.files?.unmatchedZplBase64) {
-          formData.append("unmatchedZplPdf", b64ToFile(processResponse.files.unmatchedZplBase64, "unmatched_zpl.pdf"));
-        }
-
-        // NON-BLOCKING BACKGROUND SYNC: Save batch to database quietly in background with retry
+        // NON-BLOCKING BACKGROUND SYNC: Save batch to database quietly in background
         useAmazonOrderStore.setState({ historySyncStatus: "syncing" });
         (async () => {
           let saveRes: any = null;
@@ -838,7 +807,7 @@ export default function OrderProcess() {
 
           for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-              saveRes = await amazonOrderService.saveBatch(formData);
+              saveRes = await amazonOrderService.saveBatch(initialFormData);
               if (saveRes?.success) break;
             } catch (err) {
               lastError = err;
@@ -849,15 +818,77 @@ export default function OrderProcess() {
             }
           }
 
-          if (saveRes?.success) {
-            if (saveRes.data?.id) {
-              useAmazonOrderStore.setState({
-                activeHistoryBatchId: saveRes.data.id,
-                historySyncStatus: "synced",
-              });
-            } else {
-              useAmazonOrderStore.setState({ historySyncStatus: "synced" });
+          if (saveRes?.success && saveRes.data?.id) {
+            const batchId = saveRes.data.id;
+            useAmazonOrderStore.setState({
+              activeHistoryBatchId: batchId,
+              historySyncStatus: "synced",
+            });
+            useAmazonOrderStore.getState().fetchHistoryBatches();
+
+            // Background Step 2: Attach original invoices PDF (~3-5MB)
+            try {
+              let origFile: File | null = null;
+              if (enhancedBytes) {
+                origFile = new File([enhancedBytes as unknown as BlobPart], "original_invoices.pdf", {
+                  type: "application/pdf",
+                });
+              }
+              if (origFile) {
+                const origForm = new FormData();
+                origForm.append("originalPdf", origFile);
+                await amazonOrderService.attachBatchFiles(batchId, origForm);
+              }
+            } catch (origErr) {
+              console.warn("Notice: Original PDF background upload skipped/delayed:", origErr);
             }
+
+            // Background Step 3: Attach ZPL & unmatched PDFs (~1-2MB)
+            try {
+              const extraForm = new FormData();
+              let hasExtra = false;
+
+              if (mergedZplBytes) {
+                extraForm.append(
+                  "zplPdf",
+                  new File([mergedZplBytes as unknown as BlobPart], "converted_zpl.pdf", { type: "application/pdf" })
+                );
+                hasExtra = true;
+              } else if (processResponse.files?.convertedZplPdfBase64) {
+                extraForm.append("zplPdf", b64ToFile(processResponse.files.convertedZplPdfBase64, "converted_zpl.pdf"));
+                hasExtra = true;
+              }
+
+              if (unmatchedPdfBytes) {
+                extraForm.append(
+                  "unmatchedPdf",
+                  new File([unmatchedPdfBytes as unknown as BlobPart], "unmatched_invoices.pdf", { type: "application/pdf" })
+                );
+                hasExtra = true;
+              } else if (processResponse.files?.unmatchedPdfBase64) {
+                extraForm.append("unmatchedPdf", b64ToFile(processResponse.files.unmatchedPdfBase64, "unmatched_invoices.pdf"));
+                hasExtra = true;
+              }
+
+              if (unmatchedZplBytes) {
+                extraForm.append(
+                  "unmatchedZplPdf",
+                  new File([unmatchedZplBytes as unknown as BlobPart], "unmatched_zpl.pdf", { type: "application/pdf" })
+                );
+                hasExtra = true;
+              } else if (processResponse.files?.unmatchedZplBase64) {
+                extraForm.append("unmatchedZplPdf", b64ToFile(processResponse.files.unmatchedZplBase64, "unmatched_zpl.pdf"));
+                hasExtra = true;
+              }
+
+              if (hasExtra) {
+                await amazonOrderService.attachBatchFiles(batchId, extraForm);
+              }
+            } catch (extraErr) {
+              console.warn("Notice: Extra PDFs background upload skipped/delayed:", extraErr);
+            }
+          } else if (saveRes?.success) {
+            useAmazonOrderStore.setState({ historySyncStatus: "synced" });
             useAmazonOrderStore.getState().fetchHistoryBatches();
           } else {
             console.warn("Background batch save notice:", lastError || saveRes);
