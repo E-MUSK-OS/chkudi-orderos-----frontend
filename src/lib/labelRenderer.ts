@@ -220,8 +220,7 @@ export const renderLabelToCanvas = async (
   if (template.backgroundImageUrl) {
     try {
       if (template.settings.colorMode === 'monochrome') {
-        const bgMonoMode = template.settings.backgroundMonoMode ?? 'dither';
-        const monoCanvas = await processMonochromeImage(template.backgroundImageUrl, bgMonoMode, 220);
+        const monoCanvas = await binarizeImageToCanvas(template.backgroundImageUrl, 225);
         ctx.drawImage(monoCanvas, 0, 0, logicalWidth, logicalHeight);
       } else {
         const bgImg = await loadImage(template.backgroundImageUrl);
@@ -465,8 +464,7 @@ export const renderLabelToCanvas = async (
     } else if (el.type === "image" && el.imageUrl) {
       try {
         if (template.settings.colorMode === 'monochrome') {
-          const monoMode = (el as any).monoMode ?? 'dither';
-          const monoCanvas = await processMonochromeImage(el.imageUrl, monoMode, 220);
+          const monoCanvas = await binarizeImageToCanvas(el.imageUrl, 225);
           ctx.drawImage(monoCanvas, 0, 0, w, h);
         } else {
           const img = await loadImage(el.imageUrl);
@@ -1329,8 +1327,7 @@ export const renderLabelToVectorPdf = async (
     try {
       let embeddedBg;
       if (isMonochrome) {
-        const bgMonoMode = template.settings.backgroundMonoMode ?? "dither";
-        const monoCanvas = await processMonochromeImage(template.backgroundImageUrl, bgMonoMode, 220);
+        const monoCanvas = await binarizeImageToCanvas(template.backgroundImageUrl, 225);
         const pngDataUrl = monoCanvas.toDataURL("image/png");
         const b64 = pngDataUrl.split(",")[1];
         const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -1525,8 +1522,7 @@ export const renderLabelToVectorPdf = async (
       try {
         let embeddedImg;
         if (isMonochrome) {
-          const imgMonoMode = (el as any).monoMode ?? "dither";
-          const monoCanvas = await processMonochromeImage(el.imageUrl, imgMonoMode, 220);
+          const monoCanvas = await binarizeImageToCanvas(el.imageUrl, 225);
           const pngDataUrl = monoCanvas.toDataURL("image/png");
           const b64 = pngDataUrl.split(",")[1];
           const pngBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
