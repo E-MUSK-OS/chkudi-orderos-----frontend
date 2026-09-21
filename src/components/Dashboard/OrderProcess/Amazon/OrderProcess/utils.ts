@@ -460,9 +460,15 @@ export function getCleanSkuList(sellerSku?: string): string[] {
 export async function loadAsinToSkuMap(token: string): Promise<Map<string, string>> {
   const map = new Map<string, string>();
 
+  const [asinSettled, prodSettled, varSettled] = await Promise.allSettled([
+    asinImportService.getAll("", token),
+    productService.getAll(token),
+    productVariantService.getAll(token),
+  ]);
+
   // 1. Primary: Fetch from AsinImport table
-  try {
-    const asinRes = await asinImportService.getAll("", token);
+  if (asinSettled.status === "fulfilled") {
+    const asinRes = asinSettled.value;
     if (asinRes?.data && Array.isArray(asinRes.data)) {
       asinRes.data.forEach((item: any) => {
         const cleanAsin = item.asin ? String(item.asin).trim().toUpperCase() : "";
@@ -480,13 +486,13 @@ export async function loadAsinToSkuMap(token: string): Promise<Map<string, strin
         }
       });
     }
-  } catch (aErr) {
-    console.warn("Could not fetch AsinImports for mapping:", aErr);
+  } else {
+    console.warn("Could not fetch AsinImports for mapping:", asinSettled.reason);
   }
 
   // 2. Fallback: Check products table (masterSku & nested variants)
-  try {
-    const prodRes = await productService.getAll(token);
+  if (prodSettled.status === "fulfilled") {
+    const prodRes = prodSettled.value;
     if (prodRes?.data && Array.isArray(prodRes.data)) {
       prodRes.data.forEach((prod: any) => {
         const cleanAsin = prod.asin ? String(prod.asin).trim().toUpperCase() : "";
@@ -524,13 +530,13 @@ export async function loadAsinToSkuMap(token: string): Promise<Map<string, strin
         }
       });
     }
-  } catch (pErr) {
-    console.warn("Could not fetch products for ASIN mapping:", pErr);
+  } else {
+    console.warn("Could not fetch products for ASIN mapping:", prodSettled.reason);
   }
 
   // 3. Fallback: Check product variants table (variantSku & sku)
-  try {
-    const varRes = await productVariantService.getAll(token);
+  if (varSettled.status === "fulfilled") {
+    const varRes = varSettled.value;
     if (varRes?.data && Array.isArray(varRes.data)) {
       varRes.data.forEach((variant: any) => {
         const cleanAsin = variant.asin ? String(variant.asin).trim().toUpperCase() : "";
@@ -549,8 +555,8 @@ export async function loadAsinToSkuMap(token: string): Promise<Map<string, strin
         }
       });
     }
-  } catch (vErr) {
-    console.warn("Could not fetch product variants for ASIN mapping:", vErr);
+  } else {
+    console.warn("Could not fetch product variants for ASIN mapping:", varSettled.reason);
   }
 
   return map;
@@ -849,12 +855,10 @@ export async function addInvoicePagesToDoc(
   // Render each page individually as a standard 4" x 6" page!
   if (!shouldCombine) {
     let lastAddedPage = null;
-    // For 3+ or 4+ orders, up to 2 genuine pages are rendered; for 1-2 item single-page orders, 1 page is rendered
+    // For 3+ or 4+ orders, all genuine pages are rendered; for 1-2 item single-page orders, only page 1 is rendered
     let pagesToRender = validPageNumbers;
     if (resolvedItemCount !== undefined && resolvedItemCount < 3 && !options.allowTransporter && validPageNumbers.length > 1) {
       pagesToRender = validPageNumbers.slice(0, 1);
-    } else if (validPageNumbers.length > 2) {
-      pagesToRender = validPageNumbers.slice(0, 2);
     }
     for (const pageNum of pagesToRender) {
       const pageIdx = pageNum - 1;
@@ -869,222 +873,6 @@ export async function addInvoicePagesToDoc(
       const x = (TARGET_WIDTH - finalW) / 2;
       const y = (TARGET_HEIGHT - finalH) / 2;
 
-      const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-      newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
-      lastAddedPage = newPage;
-    }
-    return lastAddedPage;
-  }
-
-  // --------------------------------------------------------------------------
-  // CASE 2: Multi-page invoice (5+ items spanning 2 or more pages)
-  // Dynamically compress and stack all pages into EXACTLY ONE 4" x 6" page
-  // showing all line items from Page 1 through Page 2 down to the TOTAL price!
-  // --------------------------------------------------------------------------
-  try {
-    const sections: Array<{
-      embedded: any;
-      cropW: number;
-      cropH: number;
-    }> = [];
-
-    for (let i = 0; i < validPageNumbers.length; i++) {
-      const pageNum = validPageNumbers[i];
-      const pageIdx = pageNum - 1;
-      const srcPage = origDoc.getPage(pageIdx);
-      const srcW = srcPage.getWidth();
-      const srcH = srcPage.getHeight();
-
-      const isFirst = i === 0;
-      const isLast = i === validPageNumbers.length - 1;
-
-      const items = pageTextData && pageTextData[pageIdx]?.items ? pageTextData[pageIdx].items : [];
-
-      let top = srcH;
-      let bottom = 0;
-
-      if (items.length > 0) {
-        if (isFirst) {
-          // Page 1: Keep from top header through table items.
-          // Cut off EXACTLY at the bottom line of the last line item table row on Page 1!
-          top = srcH;
-
-          const tableHeaderIt = items.find((it: any) =>
-            /^(?:Description|Unit\s*Price|Sl\.?\s*No)$/i.test(it.str?.trim() || "")
-          );
-          const headerY = tableHeaderIt?.transform ? tableHeaderIt.transform[5] : 620;
-
-          // Collect valid line item elements
-          const lineItemElements = items.filter((it: any) => {
-            const y = it.transform ? it.transform[5] : 0;
-            const x = it.transform ? it.transform[4] : 0;
-            const s = it.str ? it.str.trim() : "";
-            if (!s) return false;
-            if (y >= headerY - 4) return false;
-            if (y < 130) return false; // Line items are always above y = 130; disclaimer is below y = 130
-            if (/ASSPL|Amazon Retail|Seller Services|fulfillment center|availing input GST|Business account|Page\s*\d+|Continued/i.test(s)) {
-              return false;
-            }
-            if (x < 25 || x > 575) return false;
-            return true;
-          });
-
-          if (lineItemElements.length > 0) {
-            const minLineItemY = Math.min(...lineItemElements.map((it: any) => it.transform[5]));
-            bottom = Math.max(120, minLineItemY - 3.5);
-          } else {
-            const validItems = items.filter((it: any) => {
-              const y = it.transform ? it.transform[5] : 0;
-              const s = it.str ? it.str.trim() : "";
-              if (y < 130 || y >= headerY - 4) return false;
-              if (/ASSPL|Seller Services|GST credit|Business account/i.test(s)) return false;
-              return true;
-            });
-            if (validItems.length > 0) {
-              bottom = Math.max(120, Math.min(...validItems.map((it: any) => it.transform[5])) - 3.5);
-            } else {
-              bottom = srcH * 0.40;
-            }
-          }
-        } else {
-          // Continuation page (Page 2+):
-          // Check if Page 2 has continuation line items (e.g. Item 6) or starts directly at TOTAL
-          const tableHeaderIt2 = items.find((it: any) =>
-            /^(?:Description|Unit\s*Price|Sl\.?\s*No)$/i.test(it.str?.trim() || "")
-          );
-          const headerBottomY2 = tableHeaderIt2?.transform ? tableHeaderIt2.transform[5] - 3.5 : 0;
-
-          // Check if there are line items below this table header on Page 2
-          const page2LineItems = items.filter((it: any) => {
-            const y = it.transform ? it.transform[5] : 0;
-            const s = it.str ? it.str.trim() : "";
-            if (!s) return false;
-            if (headerBottomY2 > 0 && y >= headerBottomY2) return false;
-            if (y < 130) return false;
-            if (/^TOTAL/i.test(s) || /Amount\s+in\s+Words/i.test(s) || /Signatory/i.test(s)) return false;
-            if (/ASSPL|Seller Services|GST credit/i.test(s)) return false;
-            return true;
-          });
-
-          if (page2LineItems.length > 0 && headerBottomY2 > 0) {
-            // Continuation items exist (e.g. Item 6).
-            // Start right at the bottom gridline of the duplicate table header,
-            // so Item 6 connects directly to Item 5 without repeating the table header row!
-            top = headerBottomY2;
-          } else {
-            // Starts directly at the TOTAL row (e.g. 4-item orders where TOTAL was pushed to Page 2).
-            const totalRowIt = items.find((it: any) =>
-              /^(?:TOTAL|Total|Invoice\s*Total|Grand\s*Total)/i.test(it.str?.trim() || "")
-            );
-            if (totalRowIt?.transform) {
-              top = totalRowIt.transform[5] + (totalRowIt.height || 12) + 6;
-            } else {
-              top = headerBottomY2 > 0 ? headerBottomY2 : srcH * 0.85;
-            }
-          }
-
-          // Cut off exactly below the bottom-most invoice footer table (Payment Transaction box / Reverse charge / Signatory)
-          // Exclude only the faint disclaimer at the bottom of Page 2!
-          const bottomFooterElements = items.filter((it: any) => {
-            const y = it.transform ? it.transform[5] : 0;
-            const s = it.str ? it.str.trim() : "";
-            if (!s) return false;
-            // Exclude disclaimer text at very bottom
-            if (/ASSPL|Amazon Retail|Seller Services|fulfillment center|availing input GST|Business account|Page\s*\d+|Continued/i.test(s)) {
-              return false;
-            }
-            // Must be footer tokens or in the lower section
-            if (
-              /Payment\s+Transaction/i.test(s) ||
-              /Mode\s+of\s+Payment/i.test(s) ||
-              /Invoice\s+Value/i.test(s) ||
-              /reverse\s+charge/i.test(s) ||
-              /tax\s+is\s+payable/i.test(s) ||
-              /Authorized\s+Signatory/i.test(s) ||
-              /Signatory/i.test(s) ||
-              /Amount\s+in\s+Words/i.test(s) ||
-              /TOTAL/i.test(s) ||
-              (y > 30 && y < 350)
-            ) {
-              return true;
-            }
-            return false;
-          });
-
-          if (bottomFooterElements.length > 0) {
-            const minFooterY = Math.min(...bottomFooterElements.map((it: any) => it.transform[5]));
-            bottom = Math.max(30, minFooterY - 8);
-          } else {
-            bottom = 40;
-          }
-        }
-      } else {
-        if (isFirst) {
-          top = srcH;
-          bottom = srcH * 0.40;
-        } else {
-          top = srcH * 0.85;
-          bottom = 40;
-        }
-      }
-
-      if (top <= bottom + 40) {
-        top = Math.min(srcH, bottom + 120);
-      }
-
-      const cropBox = { left: 0, bottom, right: srcW, top };
-      const embedded = await targetDoc.embedPage(srcPage, cropBox);
-      sections.push({
-        embedded,
-        cropW: srcW,
-        cropH: top - bottom,
-      });
-    }
-
-    const GAP = 0; // ZERO GAP between sections!
-    const totalCropH = sections.reduce((sum, s) => sum + s.cropH, 0);
-    const maxCropW = Math.max(...sections.map((s) => s.cropW));
-    // Scale to our exact regular full-width size
-    const scale = Math.min(availW / maxCropW, availH / totalCropH);
-    const finalW = maxCropW * scale;
-    const totalDrawnH = totalCropH * scale;
-
-    const x = (TARGET_WIDTH - finalW) / 2;
-    // Align neatly from top margin so size and layout match regular 1-page invoice exactly
-    let currentY = TARGET_HEIGHT - MARGIN;
-
-    const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
-
-    for (let i = 0; i < sections.length; i++) {
-      const sec = sections[i];
-      const drawnH = sec.cropH * scale;
-      const drawY = currentY - drawnH;
-
-      newPage.drawPage(sec.embedded, {
-        x,
-        y: drawY,
-        width: finalW,
-        height: drawnH,
-      });
-
-      currentY = drawY; // Next section connects seamlessly with 0 gap!
-    }
-
-    return newPage;
-  } catch (compressErr) {
-    console.warn("Error compressing multi-page invoice, falling back to 2 pages:", compressErr);
-    let lastAddedPage = null;
-    const pagesToRender = validPageNumbers.length > 2 ? validPageNumbers.slice(0, 2) : validPageNumbers;
-    for (const pageNum of pagesToRender) {
-      const pageIdx = pageNum - 1;
-      const srcPage = origDoc.getPage(pageIdx);
-      const embedded = await targetDoc.embedPage(srcPage);
-      const { width: srcW, height: srcH } = embedded;
-      const scale = Math.min(availW / srcW, availH / srcH);
-      const finalW = srcW * scale;
-      const finalH = srcH * scale;
-      const x = (TARGET_WIDTH - finalW) / 2;
-      const y = (TARGET_HEIGHT - finalH) / 2;
       const newPage = targetDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
       newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
       lastAddedPage = newPage;
@@ -1092,3 +880,20 @@ export async function addInvoicePagesToDoc(
     return lastAddedPage;
   }
 }
+
+/**
+ * Sanitizes cell values to prevent Formula / CSV Injection (CWE-1236).
+ * If a string begins with formula trigger characters (=, +, -, @, \t, \r),
+ * it prepends a single quote (') so spreadsheet engines (Excel, LibreOffice, Google Sheets)
+ * treat it strictly as literal text instead of executable formulas or DDE commands.
+ */
+export function sanitizeSpreadsheetCell(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const str = String(value);
+  const trimmed = str.trim();
+  if (/^[=+@\-\t\r]/.test(trimmed)) {
+    return `'${trimmed}`;
+  }
+  return str;
+}
+

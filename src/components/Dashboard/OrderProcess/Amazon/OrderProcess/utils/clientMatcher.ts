@@ -561,9 +561,9 @@ export function parseZplLabels(zplText: string): ZplLabelData[] {
     const sellerSku = extractSellerSku(decoded);
 
     const orderMatch =
-      decoded.match(/ORDER[#\s:]*([0-9-]{17,19})/i) ||
-      decoded.match(/\b(\d{3}-\d{7}-\d{7})\b/);
-    const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
+      decoded.match(/ORDER[#\s:]*([0-9-]{17,19}(?:-[A-Z0-9]+)?)/i) ||
+      decoded.match(/\b(\d{3}-\d{7}-\d{7}(?:-[A-Z0-9]+)?)\b/i);
+    const orderNumber = orderMatch ? (orderMatch[1] || orderMatch[0]).trim() : "";
 
     labels.push({
       index: labels.length + 1,
@@ -966,9 +966,9 @@ export function consolidatePdfPages(pagesArray: string[]): ConsolidatedOrder[] {
     }
 
     const orderMatch =
-      text.match(/Order Number:\s*([0-9-]{17,19})/i) ||
-      text.match(/\b(\d{3}-\d{7}-\d{7})\b/);
-    const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
+      text.match(/Order Number:\s*([0-9-]{17,19}(?:-[A-Z0-9]+)?)/i) ||
+      text.match(/\b(\d{3}-\d{7}-\d{7}(?:-[A-Z0-9]+)?)\b/i);
+    const orderNumber = orderMatch ? (orderMatch[1] || orderMatch[0]).trim() : "";
 
     const invoiceNumber = extractPdfInvoiceNumber(text);
     const shippingAddress = extractPdfShippingAddress(text);
@@ -1332,12 +1332,26 @@ export function compareOrdersLocally(
         if (!pdfAddr) continue;
 
         const score = computeAddressSimilarity(pdfAddr, zplAddr);
-        if (score >= 0.45) {
-          candidatePairs.push({
-            zplLabel: zpl,
-            pdfIdx,
-            score,
-          });
+        if (score >= 0.60) {
+          // Reject match if names clearly contradict (different people in the same building/PIN code)
+          const pdfName = cleanCustomerName(pdfOrder.customer || "").toLowerCase();
+          const zplName = cleanCustomerName(zpl.customer || "").toLowerCase();
+          const hasNameConflict =
+            pdfName &&
+            zplName &&
+            pdfName !== "n/a" &&
+            zplName !== "n/a" &&
+            score < 0.80 &&
+            !pdfName.split(" ").some((p) => p.length >= 3 && zplName.includes(p)) &&
+            !zplName.split(" ").some((p) => p.length >= 3 && pdfName.includes(p));
+
+          if (!hasNameConflict) {
+            candidatePairs.push({
+              zplLabel: zpl,
+              pdfIdx,
+              score,
+            });
+          }
         }
       }
     }

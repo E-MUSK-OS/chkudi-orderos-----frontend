@@ -9,7 +9,7 @@ import {
   AmazonProcessFiles,
   AmazonProcessResponse,
 } from "../types";
-import { cleanCustomerName } from "../utils";
+import { cleanCustomerName, sanitizeSpreadsheetCell } from "../utils";
 import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
 import { clearCachedAmazonDocs } from "../utils/pdfCache";
 
@@ -31,7 +31,16 @@ interface AmazonOrderState {
   // Actions
   setProcessing: (isProcessing: boolean) => void;
   setProgress: (progress: number, stage?: string) => void;
-  setProcessData: (data: AmazonProcessResponse) => void;
+  setProcessData: (
+    data: AmazonProcessResponse,
+    directUrls?: {
+      convertedZplPdfUrl?: string | null;
+      combinedPdfUrl?: string | null;
+      originalPdfUrl?: string | null;
+      unmatchedPdfUrl?: string | null;
+      unmatchedZplPdfUrl?: string | null;
+    }
+  ) => void;
   clearProcessData: () => void;
   loadFromSessionStorage: () => boolean;
 
@@ -48,6 +57,8 @@ interface AmazonOrderState {
   historyBatches: AmazonBatchHistoryItem[];
   isLoadingHistory: boolean;
   activeHistoryBatchId: string | null;
+  historySyncStatus: "idle" | "syncing" | "synced" | "error";
+  setHistorySyncStatus: (status: "idle" | "syncing" | "synced" | "error") => void;
   initialShowPrinted: boolean;
   setInitialShowPrinted: (val: boolean) => void;
   fetchHistoryBatches: () => Promise<AmazonBatchHistoryItem[]>;
@@ -105,8 +116,19 @@ function openIDB(): Promise<IDBDatabase> {
   });
 }
 
+export async function pruneLegacyIDB(): Promise<void> {
+  try {
+    if (typeof window === "undefined" || !window.indexedDB) return;
+    indexedDB.deleteDatabase("chkudi_orderos_idb");
+    indexedDB.deleteDatabase("chkudi_orderos_idb_v1");
+  } catch {
+    // Ignore legacy cleanup errors
+  }
+}
+
 export async function saveFilesToIDB(files: AmazonProcessFiles | null): Promise<void> {
   try {
+    pruneLegacyIDB();
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, "readwrite");
     const store = tx.objectStore(IDB_STORE);
@@ -140,25 +162,18 @@ export async function loadFilesFromIDB(): Promise<AmazonProcessFiles | null> {
   }
 }
 
-// Helper to convert base64 string to Blob safely without hitting array length limits
+// Helper to convert base64 string to Blob safely and fast using flat Uint8Array
 const base64ToBlob = (base64Data: string, mimeType = "application/pdf"): Blob | null => {
   try {
     if (!base64Data) return null;
     const clean = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
     const binary = atob(clean);
-    const sliceSize = 1024 * 1024; // 1MB chunks
-    const byteArrays: Uint8Array[] = [];
-
-    for (let offset = 0; offset < binary.length; offset += sliceSize) {
-      const slice = binary.slice(offset, offset + sliceSize);
-      const byteNumbers = new Uint8Array(slice.length);
-      for (let i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i);
-      }
-      byteArrays.push(byteNumbers);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary.charCodeAt(i);
     }
-
-    return new Blob(byteArrays as any[], { type: mimeType });
+    return new Blob([bytes], { type: mimeType });
   } catch (e) {
     console.error("Failed to convert base64 to Blob:", e);
     return null;
@@ -205,6 +220,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
   historyBatches: [],
   isLoadingHistory: false,
   activeHistoryBatchId: null,
+  historySyncStatus: "idle",
+  setHistorySyncStatus: (status) => set({ historySyncStatus: status }),
   initialShowPrinted: false,
   setInitialShowPrinted: (val: boolean) => set({ initialShowPrinted: val }),
 
@@ -225,13 +242,15 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       };
     }),
 
-  setProcessData: async (data) => {
+  setProcessData: (data, directUrls) => {
     // 0. Ensure previous batch PDF memory and single order memoizers are completely wiped
     clearCachedAmazonDocs();
 
-    // 1. Save files base64 payload to IndexedDB for reliable persistence across tabs and quota limits
+    // 1. Save files base64 payload to IndexedDB in background without blocking UI
     if (data.files) {
-      await saveFilesToIDB(data.files);
+      saveFilesToIDB(data.files).catch((err) => {
+        console.warn("Could not persist files to IDB in background:", err);
+      });
     }
 
     const activeBatchId =
@@ -252,7 +271,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         }
       : null;
 
-    // 2. Save metadata (summary + results) to localStorage (shared across all browser tabs) & sessionStorage
+    // 2. Save metadata (summary + results) with safe quota overflow handling
     try {
       if (typeof window !== "undefined") {
         const metadataPayload = JSON.stringify({
@@ -261,8 +280,58 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
           results: data.results,
           activeHistoryBatchId: activeBatchId,
         });
-        localStorage.setItem(METADATA_STORAGE_KEY, metadataPayload);
-        sessionStorage.setItem(SESSION_STORAGE_KEY, metadataPayload);
+
+        try {
+          sessionStorage.setItem(SESSION_STORAGE_KEY, metadataPayload);
+        } catch (sessErr) {
+          console.warn("SessionStorage quota limit reached:", sessErr);
+        }
+
+        try {
+          // PII Minimization (CWE-359): Do not persist raw customer PII to long-term localStorage
+          const privacySafeResults = (data.results || []).map((r) => ({
+            index: r.index,
+            isMatch: r.isMatch,
+            orderNumber: r.orderNumber,
+            pdfInvoice: r.pdfInvoice,
+            zplInvoice: r.zplInvoice,
+            asin: r.asin,
+            sellerSku: r.sellerSku,
+            awb: r.awb,
+            customer: "Customer", // Redacted in long-term storage; full name retained in sessionStorage
+            amount: r.amount,
+            date: r.date,
+            pdfPages: r.pdfPages,
+            zplPage: r.zplPage,
+            orderType: r.orderType,
+            totalQuantity: r.totalQuantity,
+            asinsCount: r.asinsCount,
+          }));
+
+          localStorage.setItem(
+            METADATA_STORAGE_KEY,
+            JSON.stringify({
+              success: data.success,
+              summary: updatedSummary,
+              results: privacySafeResults,
+              activeHistoryBatchId: activeBatchId,
+            })
+          );
+        } catch (quotaErr) {
+          console.warn("LocalStorage quota exceeded, storing empty results fallback:", quotaErr);
+          try {
+            localStorage.setItem(
+              METADATA_STORAGE_KEY,
+              JSON.stringify({
+                success: data.success,
+                summary: updatedSummary,
+                results: [],
+                activeHistoryBatchId: activeBatchId,
+              })
+            );
+          } catch {}
+        }
+
         if (activeBatchId) {
           localStorage.setItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY, activeBatchId);
         }
@@ -271,26 +340,26 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       console.warn("Failed to store process metadata in storage:", e);
     }
 
-    // 3. Generate blob URLs for preview in current tab
-    let zplUrl = null;
-    let combUrl = null;
-    let origUrl = null;
-    let unmatchUrl = null;
-    let unmatchZplUrl = null;
+    // 3. Generate blob URLs for preview in current tab (use fast directUrls if provided)
+    let zplUrl = directUrls?.convertedZplPdfUrl ?? null;
+    let combUrl = directUrls?.combinedPdfUrl ?? null;
+    let origUrl = directUrls?.originalPdfUrl ?? null;
+    let unmatchUrl = directUrls?.unmatchedPdfUrl ?? null;
+    let unmatchZplUrl = directUrls?.unmatchedZplPdfUrl ?? null;
 
-    if (data.files?.convertedZplPdfBase64) {
+    if (!zplUrl && data.files?.convertedZplPdfBase64) {
       zplUrl = base64ToBlobUrl(data.files.convertedZplPdfBase64);
     }
-    if (data.files?.combinedPdfBase64) {
+    if (!combUrl && data.files?.combinedPdfBase64) {
       combUrl = base64ToBlobUrl(data.files.combinedPdfBase64);
     }
-    if (data.files?.originalPdfBase64) {
+    if (!origUrl && data.files?.originalPdfBase64) {
       origUrl = base64ToBlobUrl(data.files.originalPdfBase64);
     }
-    if (data.files?.unmatchedPdfBase64) {
+    if (!unmatchUrl && data.files?.unmatchedPdfBase64) {
       unmatchUrl = base64ToBlobUrl(data.files.unmatchedPdfBase64);
     }
-    if (data.files?.unmatchedZplBase64) {
+    if (!unmatchZplUrl && data.files?.unmatchedZplBase64) {
       unmatchZplUrl = base64ToBlobUrl(data.files.unmatchedZplBase64);
     }
 
@@ -316,9 +385,9 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       let currentFiles = get().files;
 
       if (!currentSummary || currentResults.length === 0) {
-        let stored = localStorage.getItem(METADATA_STORAGE_KEY);
+        let stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
         if (!stored) {
-          stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+          stored = localStorage.getItem(METADATA_STORAGE_KEY);
         }
         if (stored) {
           try {
@@ -619,15 +688,15 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       return {
         "Sr No": r.index,
         "Match Status": r.isMatch ? "MATCHED" : "MISMATCH",
-        "Invoice #": invoiceVal,
-        "Amazon Order Number": r.orderNumber,
-        "AWB / Tracking Number": r.awb,
-        "ASIN": r.asin || "N/A",
-        "Seller SKU": r.sellerSku || "N/A",
-        "Customer Name": cleanCustomerName(r.customer),
-        "Invoice Amount": r.amount,
-        "Invoice Date": r.date,
-        "PDF Page(s)": r.pdfPages.join(", ") || "N/A",
+        "Invoice #": sanitizeSpreadsheetCell(invoiceVal),
+        "Amazon Order Number": sanitizeSpreadsheetCell(r.orderNumber),
+        "AWB / Tracking Number": sanitizeSpreadsheetCell(r.awb),
+        "ASIN": sanitizeSpreadsheetCell(r.asin || "N/A"),
+        "Seller SKU": sanitizeSpreadsheetCell(r.sellerSku || "N/A"),
+        "Customer Name": sanitizeSpreadsheetCell(cleanCustomerName(r.customer)),
+        "Invoice Amount": sanitizeSpreadsheetCell(r.amount),
+        "Invoice Date": sanitizeSpreadsheetCell(r.date),
+        "PDF Page(s)": sanitizeSpreadsheetCell(r.pdfPages.join(", ") || "N/A"),
         "ZPL Label Page": r.zplPage,
       };
     });

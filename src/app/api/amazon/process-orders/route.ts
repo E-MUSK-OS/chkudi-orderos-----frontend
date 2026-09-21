@@ -1733,12 +1733,26 @@ function buildComparisonResponse(
         if (!pdfAddr) continue;
 
         const score = computeAddressSimilarity(pdfAddr, zplAddr);
-        if (score >= 0.45) {
-          candidatePairs.push({
-            zplLabel: zpl,
-            pdfIdx,
-            score,
-          });
+        if (score >= 0.60) {
+          // Reject match if names clearly contradict (different people in the same building/PIN code)
+          const pdfName = cleanCustomerName(pdfOrder.customer || "").toLowerCase();
+          const zplName = cleanCustomerName(zpl.customer || "").toLowerCase();
+          const hasNameConflict =
+            pdfName &&
+            zplName &&
+            pdfName !== "n/a" &&
+            zplName !== "n/a" &&
+            score < 0.80 &&
+            !pdfName.split(" ").some((p) => p.length >= 3 && zplName.includes(p)) &&
+            !zplName.split(" ").some((p) => p.length >= 3 && pdfName.includes(p));
+
+          if (!hasNameConflict) {
+            candidatePairs.push({
+              zplLabel: zpl,
+              pdfIdx,
+              score,
+            });
+          }
         }
       }
     }
@@ -1884,11 +1898,90 @@ function buildComparisonResponse(
   });
 }
 
+interface RateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+const ipRateLimits = new Map<string, RateLimitRecord>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 120; // Up to 120 requests/min per IP/token for chunked processing
+
+function checkRateLimit(clientId: string): { allowed: boolean; retryAfter: number } {
+  const now = Date.now();
+  const record = ipRateLimits.get(clientId);
+
+  if (ipRateLimits.size > 2000) {
+    for (const [k, v] of ipRateLimits.entries()) {
+      if (v.resetTime < now) ipRateLimits.delete(k);
+    }
+  }
+
+  if (!record || record.resetTime < now) {
+    ipRateLimits.set(clientId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return { allowed: true, retryAfter: 0 };
+  }
+
+  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+    return {
+      allowed: false,
+      retryAfter: Math.max(1, Math.ceil((record.resetTime - now) / 1000)),
+    };
+  }
+
+  record.count++;
+  return { allowed: true, retryAfter: 0 };
+}
+
+function isAuthorized(req: NextRequest): boolean {
+  const authHeader = req.headers.get("authorization");
+  if (authHeader && authHeader.startsWith("Bearer ") && authHeader.length > 10) {
+    return true;
+  }
+  const cookieToken =
+    req.cookies.get("accessToken")?.value ||
+    req.cookies.get("token")?.value;
+  if (cookieToken && cookieToken.length > 10) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Main POST handler with Streamlined Network Pipeline support.
  */
 export async function POST(req: NextRequest) {
   try {
+    // 0. Security Verification: Authentication, Rate Limiting & Payload Bounds
+    if (!isAuthorized(req)) {
+      return NextResponse.json(
+        { error: "Unauthorized. A valid authentication token is required." },
+        { status: 401 }
+      );
+    }
+
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "client";
+    const { allowed, retryAfter } = checkRateLimit(clientIp);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait before processing more labels." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(retryAfter) },
+        }
+      );
+    }
+
+    const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
+    if (contentLength > 35 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Payload exceeds 35MB size limit." },
+        { status: 413 }
+      );
+    }
+
     const contentType = req.headers.get("content-type") || "";
 
     // 1. JSON Request (Action: "compare" or "convert-zpl-chunk")

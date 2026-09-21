@@ -55,8 +55,16 @@ export function getCachedOrderPdf(orderIndex: number, batchKey?: string): string
   return orderPrintPdfCache.get(key) || null;
 }
 
+const MAX_ORDER_CACHE_SIZE = 50;
+
 export function setCachedOrderPdf(orderIndex: number, base64: string, batchKey?: string): void {
   const key = getScopedKey(orderIndex, batchKey);
+  if (orderPrintPdfCache.size >= MAX_ORDER_CACHE_SIZE && !orderPrintPdfCache.has(key)) {
+    const oldestKey = orderPrintPdfCache.keys().next().value;
+    if (oldestKey) {
+      orderPrintPdfCache.delete(oldestKey);
+    }
+  }
   orderPrintPdfCache.set(key, base64);
 }
 

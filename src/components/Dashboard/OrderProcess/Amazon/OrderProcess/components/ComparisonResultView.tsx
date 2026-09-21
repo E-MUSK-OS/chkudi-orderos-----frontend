@@ -158,6 +158,7 @@ import {
   drawSkuOnLabelPage,
   isAmazonTransporterOrFeePage,
   addInvoicePagesToDoc,
+  sanitizeSpreadsheetCell,
 } from "../utils";
 import {
   getOrLoadCombinedDoc,
@@ -438,19 +439,12 @@ export default function ComparisonResultView({
         if (!base64Data) return "";
         const clean = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
         const binary = atob(clean);
-        const sliceSize = 1024 * 1024;
-        const byteArrays: Uint8Array[] = [];
-
-        for (let offset = 0; offset < binary.length; offset += sliceSize) {
-          const slice = binary.slice(offset, offset + sliceSize);
-          const byteNumbers = new Uint8Array(slice.length);
-          for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i);
-          }
-          byteArrays.push(byteNumbers);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binary.charCodeAt(i);
         }
-
-        const blob = new Blob(byteArrays as any[], { type: mimeType });
+        const blob = new Blob([bytes], { type: mimeType });
         return URL.createObjectURL(blob);
       } catch (e) {
         return "";
@@ -905,6 +899,7 @@ export default function ComparisonResultView({
   // Global scanner redirect: if operator pulls scanner trigger without clicking input, automatically focus the scan box
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (isMissingSkuModalOpen) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -926,7 +921,7 @@ export default function ComparisonResultView({
 
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [activeTab]);
+  }, [activeTab, isMissingSkuModalOpen]);
 
   // Map each order item's ASIN to the corresponding variantSku from DB
   const mappedResults = useMemo(() => {
@@ -955,27 +950,58 @@ export default function ComparisonResultView({
       items.forEach((item) => persistedIndicesRef.current.add(item.index));
       try {
         const nowIso = new Date().toISOString();
-        const ordersToSave = items.map((item) => ({
-          invoice:
+        const ordersToSave: Array<{
+          invoice: string;
+          orderId: string;
+          awb: string;
+          asin: string;
+          sellerSku: string;
+          customer: string;
+          packingScanStatus: "PENDING";
+          createdAt: string;
+          updatedAt: string;
+        }> = [];
+
+        items.forEach((item) => {
+          const inv =
             item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF"
               ? item.pdfInvoice
               : item.zplInvoice && item.zplInvoice !== "Not Found in ZPL" && item.zplInvoice !== "N/A"
               ? item.zplInvoice
-              : "N/A",
-          orderId: item.orderNumber || "N/A",
-          awb: item.awb || "N/A",
-          asin: item.asin || "N/A",
-          sellerSku: item.sellerSku || "N/A",
-          customer: cleanCustomerName(item.customer) || "N/A",
-          packingScanStatus: "PENDING" as const,
-          createdAt: nowIso,
-          updatedAt: nowIso,
-        }));
+              : "N/A";
+          const cust = cleanCustomerName(item.customer) || "N/A";
+
+          ordersToSave.push({
+            invoice: inv,
+            orderId: item.orderNumber || "N/A",
+            awb: item.awb || "N/A",
+            asin: item.asin || "N/A",
+            sellerSku: item.sellerSku || "N/A",
+            customer: cust,
+            packingScanStatus: "PENDING" as const,
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          });
+        });
+
+        // If history batch sync is in flight, poll briefly for the resolved batch ID
+        let targetBatchId =
+          activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId;
+        if (!targetBatchId && useAmazonOrderStore.getState().historySyncStatus === "syncing") {
+          for (let attempt = 0; attempt < 5; attempt++) {
+            await new Promise((r) => setTimeout(r, 500));
+            targetBatchId =
+              useAmazonOrderStore.getState().activeHistoryBatchId ||
+              (summary as any)?.id ||
+              (summary as any)?.batchId;
+            if (targetBatchId) break;
+          }
+        }
 
         await amazonOrderService.savePrintedOrders(
           ordersToSave,
           undefined,
-          activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId || undefined
+          targetBatchId || undefined
         );
       } catch (saveErr) {
         console.warn("Background Amazon order save error for AWB scan:", saveErr);
@@ -1006,7 +1032,10 @@ export default function ComparisonResultView({
       if (!targetBatchId) return;
       if (!mappedResults || mappedResults.length === 0) return;
       try {
-        const res = await amazonOrderService.getOrders("?limit=1000");
+        const queryStr = targetBatchId
+          ? `?batchId=${encodeURIComponent(targetBatchId)}&limit=2000`
+          : `?limit=1000`;
+        const res = await amazonOrderService.getOrders(queryStr);
         if (isCancelled || !res?.data || !Array.isArray(res.data)) return;
 
         const dbPrintedOrderIds = new Set<string>();
@@ -1300,14 +1329,11 @@ export default function ComparisonResultView({
           let startP = 0;
           for (const m of matchedList) {
             const mCount = Math.max(m.asinsCount || 0, m.totalQuantity || 0);
+            const isMultiPage = (m.pdfPages && m.pdfPages.length > 1) || mCount >= 3;
             const expectedPages =
               m.combinedPages && m.combinedPages.length > 0
                 ? m.combinedPages.length
-                : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
-                ? 2 + (m.zplPage > 0 ? 1 : 0)
-                : m.zplPage > 0
-                ? 2
-                : 1;
+                : (isMultiPage ? (m.pdfPages?.length || 2) : 1) + (m.zplPage > 0 ? 1 : 0);
             if (m.index === item.index) {
               for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
                 pages.push(p);
@@ -1325,6 +1351,12 @@ export default function ComparisonResultView({
             copied.forEach((p) => singleDoc.addPage(p));
             const b64 = await singleDoc.saveAsBase64();
             if (!isCancelled) {
+              if (orderPrintPdfCacheRef.current.size >= 50 && !orderPrintPdfCacheRef.current.has(item.index)) {
+                const oldestKey = orderPrintPdfCacheRef.current.keys().next().value;
+                if (oldestKey !== undefined) {
+                  orderPrintPdfCacheRef.current.delete(oldestKey);
+                }
+              }
               orderPrintPdfCacheRef.current.set(item.index, b64);
               setCachedOrderPdf(item.index, b64, batchKey);
             }
@@ -2096,13 +2128,13 @@ export default function ComparisonResultView({
         const cleanCust = cleanCustomerName(item.customer) || "N/A";
 
         const row = worksheet.addRow({
-          invoice: invoiceVal,
-          orderId: item.orderNumber || "N/A",
-          awb: item.awb || "N/A",
-          asin: cleanAsin,
-          sellerSku: cleanSku,
-          customer: cleanCust,
-          orderType: orderTypeLabel,
+          invoice: sanitizeSpreadsheetCell(invoiceVal),
+          orderId: sanitizeSpreadsheetCell(item.orderNumber || "N/A"),
+          awb: sanitizeSpreadsheetCell(item.awb || "N/A"),
+          asin: sanitizeSpreadsheetCell(cleanAsin),
+          sellerSku: sanitizeSpreadsheetCell(cleanSku),
+          customer: sanitizeSpreadsheetCell(cleanCust),
+          orderType: sanitizeSpreadsheetCell(orderTypeLabel),
         });
 
         row.height = 20;

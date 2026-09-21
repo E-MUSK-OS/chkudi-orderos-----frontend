@@ -10,6 +10,7 @@ export const aeonik = localFont({
   ],
   variable: "--font-aeonik",
   display: "swap",
+  preload: false,
 });
 
 export const dmSans = localFont({

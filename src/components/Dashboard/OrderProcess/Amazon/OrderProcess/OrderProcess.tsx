@@ -75,6 +75,14 @@ export default function OrderProcess() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isProcessing]);
 
+  // Prefetch result page bundle ahead of time for instantaneous route transition
+  useEffect(() => {
+    router.prefetch("/dashboard/order-process/amazon/order-process/result");
+    return () => {
+      setProcessing(false);
+    };
+  }, [router, setProcessing]);
+
   // If an active batch already exists (or is restored from storage), redirect to results!
   useEffect(() => {
     if (isProcessing) return;
@@ -334,12 +342,19 @@ export default function OrderProcess() {
         });
       }
 
-      const convertChunkWithRetry = async (chunkText: string, maxRetries = 4): Promise<Uint8Array> => {
+      const convertChunkWithRetry = async (chunkText: string, maxRetries = 5): Promise<Uint8Array> => {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
+            const userToken =
+              typeof window !== "undefined"
+                ? localStorage.getItem("accessToken") || ""
+                : "";
             const res = await fetch("/api/amazon/process-orders", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                ...(userToken ? { Authorization: `Bearer ${userToken}` } : {}),
+              },
               body: JSON.stringify({
                 action: "convert-zpl-chunk",
                 zplChunk: chunkText,
@@ -352,8 +367,11 @@ export default function OrderProcess() {
             }
 
             if (res.status === 429 && attempt < maxRetries) {
-              const waitMs = attempt * 1500;
-              console.warn(`[ZPL Chunk Rate Limit 429] Retrying chunk in ${waitMs}ms...`);
+              const retryAfterHeader = res.headers.get("Retry-After");
+              const parsedHeader = retryAfterHeader ? parseInt(retryAfterHeader, 10) * 1000 : 0;
+              const expWait = Math.min(12000, Math.pow(2, attempt) * 1000 + Math.floor(Math.random() * 600));
+              const waitMs = parsedHeader > 0 ? parsedHeader : expWait;
+              console.warn(`[ZPL Chunk Rate Limit 429] Backing off chunk conversion for ${waitMs}ms (Attempt ${attempt}/${maxRetries})...`);
               await new Promise((r) => setTimeout(r, waitMs));
               continue;
             }
@@ -366,7 +384,8 @@ export default function OrderProcess() {
             );
           } catch (err: any) {
             if (attempt === maxRetries) throw err;
-            await new Promise((r) => setTimeout(r, attempt * 1000));
+            const fallbackWait = Math.min(8000, attempt * 1200 + Math.floor(Math.random() * 400));
+            await new Promise((r) => setTimeout(r, fallbackWait));
           }
         }
         throw new Error("Failed to convert ZPL chunk after retries.");
@@ -408,6 +427,7 @@ export default function OrderProcess() {
         return {
           mergedZplDoc,
           convertedZplPdfBase64: Buffer.from(mergedZplBytes).toString("base64"),
+          mergedZplBytes,
         };
       })();
 
@@ -419,10 +439,10 @@ export default function OrderProcess() {
           currentPct = Math.max(currentPct, 15);
           setProgress(currentPct, "1. Validated & Prepared PDF File");
         } else {
-          const buffers = await Promise.all(pdfFiles.map((f) => f.arrayBuffer()));
           const mergedDoc = await PDFDocument.create();
-          for (let i = 0; i < buffers.length; i++) {
-            const doc = await PDFDocument.load(buffers[i], { ignoreEncryption: true });
+          for (let i = 0; i < pdfFiles.length; i++) {
+            const fileBuf = await pdfFiles[i].arrayBuffer();
+            const doc = await PDFDocument.load(fileBuf, { ignoreEncryption: true });
             const pages = await mergedDoc.copyPages(doc, doc.getPageIndices());
             pages.forEach((p) => mergedDoc.addPage(p));
           }
@@ -433,7 +453,8 @@ export default function OrderProcess() {
 
         const pdfjs = await import("pdfjs-dist");
         if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-          pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version || "6.3.289"}/build/pdf.worker.min.mjs`;
+          const version = pdfjs.version || "6.3.289";
+          pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
         }
 
         const loadingTask = pdfjs.getDocument({ data: new Uint8Array(mergedPdfBytes) });
@@ -456,11 +477,12 @@ export default function OrderProcess() {
               };
             })
           );
-          const stepPct = Math.round(18 + ((b + batch.length) / pdf.numPages) * 35);
+          const totalPages = Math.max(pdf.numPages || 1, 1);
+          const stepPct = Math.round(18 + ((b + batch.length) / totalPages) * 35);
           currentPct = Math.max(currentPct, stepPct);
           setProgress(
             currentPct,
-            `2. Extracted Invoices (${Math.min(b + batch.length, pdf.numPages)}/${pdf.numPages})...`
+            `2. Extracted Invoices (${Math.min(b + batch.length, totalPages)}/${totalPages})...`
           );
         }
 
@@ -472,7 +494,7 @@ export default function OrderProcess() {
       })();
 
       // Join point: Wait for BOTH parallel pipelines to complete
-      const [{ mergedZplDoc, convertedZplPdfBase64 }, { mergedPdfBytes, pageTextData, pdfTextArray }] =
+      const [{ mergedZplDoc, convertedZplPdfBase64, mergedZplBytes }, { mergedPdfBytes, pageTextData, pdfTextArray }] =
         await Promise.all([zplConversionPromise, pdfExtractionPromise]);
 
       // ----------------------------------------------------------------------
@@ -619,21 +641,15 @@ export default function OrderProcess() {
                   return isAmazonTransporterOrFeePage(txt) || isTransporterDuplicatePage(txt);
                 });
 
-                let matchedPages: number[] = [];
+                // For matched orders, all genuine invoice pages stay in the matched combined PDF.
+                // Transporter duplicate copies and fee pages go to unmatched PDF.
+                let matchedPages: number[] = genuinePages;
                 let unneededPages: number[] = [...transporterPages];
 
-                // For 3+ or 4+ orders that don't fit on one page (or whenever genuine invoice spans 2 pages), include 2 pages
-                if (itemCount >= 3 || genuinePages.length >= 2) {
-                  matchedPages = genuinePages.slice(0, 2);
-                  if (genuinePages.length > 2) {
-                    unneededPages.push(...genuinePages.slice(2));
-                  }
-                } else {
-                  // For 1-2 item simple orders, only 1 page is needed
+                if (itemCount < 3 && genuinePages.length > 1) {
+                  // For 1-2 item simple orders, only Page 1 is needed; extra non-transporter page goes to unmatched
                   matchedPages = genuinePages.slice(0, 1);
-                  if (genuinePages.length > 1) {
-                    unneededPages.push(...genuinePages.slice(1));
-                  }
+                  unneededPages.push(...genuinePages.slice(1));
                 }
 
                 if (matchedPages.length > 0) {
@@ -756,8 +772,7 @@ export default function OrderProcess() {
         startBackgroundOrderPdfPrewarming(processResponse.results, combinedDocInstance);
       }
 
-      // Save processed batch to backend database with 7-day retention (expires at 6 PM on Day 7)
-      setProgress(95, "Saving batch to 7-day database...");
+      // Prepare FormData for saving batch to backend database with 7-day retention
       try {
         const formData = new FormData();
         formData.append("summary", JSON.stringify(processResponse.summary));
@@ -770,9 +785,8 @@ export default function OrderProcess() {
           formData.append("combinedPdf", combinedFile);
         }
 
-        if (zplDocInstance) {
-          const zplBytes = await zplDocInstance.save();
-          const zplFile = new File([new Blob([zplBytes as unknown as BlobPart])], "converted_zpl.pdf", {
+        if (mergedZplBytes) {
+          const zplFile = new File([new Blob([mergedZplBytes as unknown as BlobPart])], "converted_zpl.pdf", {
             type: "application/pdf",
           });
           formData.append("zplPdf", zplFile);
@@ -820,37 +834,69 @@ export default function OrderProcess() {
           formData.append("unmatchedZplPdf", new File([blob], "unmatched_zpl.pdf", { type: "application/pdf" }));
         }
 
-        const saveRes = await amazonOrderService.saveBatch(formData);
-        if (saveRes?.success) {
-          if (saveRes.data?.id) {
-            useAmazonOrderStore.setState({ activeHistoryBatchId: saveRes.data.id });
+        // NON-BLOCKING BACKGROUND SYNC: Save batch to database quietly in background
+        useAmazonOrderStore.setState({ historySyncStatus: "syncing" });
+        (async () => {
+          try {
+            const saveRes = await amazonOrderService.saveBatch(formData);
+            if (saveRes?.success) {
+              if (saveRes.data?.id) {
+                useAmazonOrderStore.setState({
+                  activeHistoryBatchId: saveRes.data.id,
+                  historySyncStatus: "synced",
+                });
+              } else {
+                useAmazonOrderStore.setState({ historySyncStatus: "synced" });
+              }
+              useAmazonOrderStore.getState().fetchHistoryBatches();
+            } else {
+              useAmazonOrderStore.setState({ historySyncStatus: "error" });
+              console.warn("Background batch save returned non-success:", saveRes);
+            }
+          } catch (saveErr) {
+            console.warn("Background batch save notice:", saveErr);
+            useAmazonOrderStore.setState({ historySyncStatus: "error" });
+            toast.warning("Verification complete, but failed to save to 7-day cloud history.");
           }
-          useAmazonOrderStore.getState().fetchHistoryBatches();
-        }
-      } catch (saveErr) {
-        console.error("Failed to save batch to 7-day database:", saveErr);
-        toast.warning("Verification complete, but failed to save to 7-day cloud history.");
+        })();
+      } catch (prepErr) {
+        console.warn("Could not prepare batch form data for background save:", prepErr);
       }
 
+      // Create fast direct Blob URLs without base64 decoding overhead
+      const directUrls = {
+        combinedPdfUrl: combinedBytes
+          ? URL.createObjectURL(new Blob([combinedBytes as unknown as BlobPart], { type: "application/pdf" }))
+          : null,
+        originalPdfUrl: enhancedBytes
+          ? URL.createObjectURL(new Blob([enhancedBytes as unknown as BlobPart], { type: "application/pdf" }))
+          : null,
+        convertedZplPdfUrl: mergedZplBytes
+          ? URL.createObjectURL(new Blob([mergedZplBytes as unknown as BlobPart], { type: "application/pdf" }))
+          : null,
+        unmatchedPdfUrl: unmatchedPdfBytes
+          ? URL.createObjectURL(new Blob([unmatchedPdfBytes as unknown as BlobPart], { type: "application/pdf" }))
+          : null,
+        unmatchedZplPdfUrl: unmatchedZplBytes
+          ? URL.createObjectURL(new Blob([unmatchedZplBytes as unknown as BlobPart], { type: "application/pdf" }))
+          : null,
+      };
+
       clearInterval(progressInterval);
-      setProgress(100, "5. Processing Complete!");
-      await setProcessData(processResponse);
+      setProgress(100, "5. Processing Complete! Opening Results...");
+      setProcessData(processResponse, directUrls);
 
       toast.success(
         `Successfully processed ${processResponse.summary.totalZplLabels} labels & ${processResponse.summary.totalPdfOrders} invoices (${processResponse.summary.matchPercentage}% matched)!`
       );
 
-      // Smooth pause to let user see the 100% completion state before navigating
-      await new Promise((r) => setTimeout(r, 400));
-
+      // Navigate immediately to the prefetched result page
       router.push("/dashboard/order-process/amazon/order-process/result");
     } catch (err: unknown) {
       clearInterval(progressInterval);
+      setProcessing(false);
       const message = err instanceof Error ? err.message : "Processing failed.";
       toast.error(message);
-    } finally {
-      clearInterval(progressInterval);
-      setProcessing(false);
     }
   };
 

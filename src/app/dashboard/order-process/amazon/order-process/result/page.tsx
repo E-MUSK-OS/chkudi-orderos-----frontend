@@ -10,8 +10,13 @@ import { Loader2 } from "lucide-react";
 
 export default function AmazonOrderResultPage() {
   const router = useRouter();
-  const { summary, restoreProcessData, clearProcessData } = useAmazonOrderStore();
+  const { summary, restoreProcessData, clearProcessData, setProcessing } = useAmazonOrderStore();
   const [isRestoring, setIsRestoring] = useState(!summary);
+
+  useEffect(() => {
+    // Reset processing state on result page mount
+    setProcessing(false);
+  }, [setProcessing]);
 
   useEffect(() => {
     let isMounted = true;

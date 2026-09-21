@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { AmazonComparisonResult } from "../types";
+import { sanitizeSpreadsheetCell } from "../utils";
 
 export interface PicklistItem {
   sku: string;
@@ -958,8 +959,11 @@ const populatePicklistWorksheet = (
 
     rackCell.value = item.rackAddress || "--";
     skuCell.value = item.sku;
+    rackCell.value = sanitizeSpreadsheetCell(item.rackAddress || "--");
+    skuCell.value = sanitizeSpreadsheetCell(item.sku);
     qtyCell.value = item.quantity;
     barcodeCell.value = item.generateBarcode || "No";
+    barcodeCell.value = sanitizeSpreadsheetCell(item.generateBarcode || "No");
 
     [rackCell, skuCell, qtyCell, barcodeCell].forEach((c, idx) => {
       c.border = {
@@ -1004,6 +1008,7 @@ const populatePicklistWorksheet = (
     }
     const firstCell = row.getCell(startCol);
     firstCell.value = text;
+    firstCell.value = sanitizeSpreadsheetCell(text);
     firstCell.font = { bold: true, size: 10, name: "Calibri", color: { argb: "FF0F172A" } };
     firstCell.alignment = { vertical: "middle", horizontal: "left" };
     worksheet.mergeCells(row.number, startCol, row.number, endCol);
