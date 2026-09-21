@@ -1434,7 +1434,7 @@ function buildComparisonResponse(
 
     const canBeContinuation =
       !isTransporterDup &&
-      hasLineItems &&
+      (hasLineItems || hasCompletedFooter || docPageNum > 1 || matchesOpenOrder) &&
       docPageNum !== 1 &&
       (docPageNum > 1 || !hasStandaloneHeader || matchesOpenOrder);
 

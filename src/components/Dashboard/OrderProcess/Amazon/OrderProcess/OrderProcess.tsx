@@ -622,14 +622,14 @@ export default function OrderProcess() {
                 let matchedPages: number[] = [];
                 let unneededPages: number[] = [...transporterPages];
 
-                if (itemCount > 4) {
-                  // For > 4 items, include up to 2 genuine invoice pages
+                // For 3+ or 4+ orders that don't fit on one page (or whenever genuine invoice spans 2 pages), include 2 pages
+                if (itemCount >= 3 || genuinePages.length >= 2) {
                   matchedPages = genuinePages.slice(0, 2);
                   if (genuinePages.length > 2) {
                     unneededPages.push(...genuinePages.slice(2));
                   }
                 } else {
-                  // For <= 4 items, ONLY Page 1 is needed; any extra page goes to unmatched PDF
+                  // For 1-2 item simple orders, only 1 page is needed
                   matchedPages = genuinePages.slice(0, 1);
                   if (genuinePages.length > 1) {
                     unneededPages.push(...genuinePages.slice(1));

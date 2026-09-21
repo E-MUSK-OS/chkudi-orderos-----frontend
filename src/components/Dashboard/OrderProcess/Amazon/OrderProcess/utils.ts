@@ -849,9 +849,9 @@ export async function addInvoicePagesToDoc(
   // Render each page individually as a standard 4" x 6" page!
   if (!shouldCombine) {
     let lastAddedPage = null;
-    // For <= 4 items, only 1 page is rendered; for > 4 items, up to 2 pages are rendered
+    // For 3+ or 4+ orders, up to 2 genuine pages are rendered; for 1-2 item single-page orders, 1 page is rendered
     let pagesToRender = validPageNumbers;
-    if (resolvedItemCount !== undefined && resolvedItemCount <= 4 && !options.allowTransporter) {
+    if (resolvedItemCount !== undefined && resolvedItemCount < 3 && !options.allowTransporter && validPageNumbers.length > 1) {
       pagesToRender = validPageNumbers.slice(0, 1);
     } else if (validPageNumbers.length > 2) {
       pagesToRender = validPageNumbers.slice(0, 2);
