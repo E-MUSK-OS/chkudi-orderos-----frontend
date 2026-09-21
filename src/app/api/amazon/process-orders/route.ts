@@ -1901,7 +1901,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "zplChunk is required." }, { status: 400 });
         }
         const chunkPdfBuffer = await convertZplChunkToPdf(zplChunk);
-        return new NextResponse(chunkPdfBuffer, {
+        return new NextResponse(new Uint8Array(chunkPdfBuffer), {
           status: 200,
           headers: {
             "Content-Type": "application/pdf",
@@ -1932,7 +1932,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "zplChunk is required." }, { status: 400 });
       }
       const chunkPdfBuffer = await convertZplChunkToPdf(chunkText);
-      return new NextResponse(chunkPdfBuffer, {
+      return new NextResponse(new Uint8Array(chunkPdfBuffer), {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
