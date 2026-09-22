@@ -15,9 +15,10 @@ let isWarmingCache = false;
 let loadingCombinedPromise: Promise<PDFDocument | null> | null = null;
 
 export function getDocCacheKey(files: any, batchKey?: string): string {
-  if (!files) return "";
+  if (batchKey) return batchKey;
+  if (!files) return "active_process";
   const baseKey = `${files.combinedPdfBase64?.length || 0}_${files.convertedZplPdfBase64?.length || 0}_${files.originalPdfBase64?.length || 0}`;
-  return batchKey ? `${batchKey}_${baseKey}` : baseKey;
+  return baseKey === "0_0_0" ? "active_process" : baseKey;
 }
 
 // In-memory cache for individual pre-generated order print PDFs (scoped by `${effectiveBatchKey}_${orderIndex}`)

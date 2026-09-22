@@ -11,7 +11,8 @@ export const sampleData: Record<string, string> = {
   barcode: "B0863TXGM3",
   manufacturingMonth: "10/2023",
   printDate: new Date().toLocaleDateString(),
-  fullSku: "B0863TXGM3-FULL"
+  fullSku: "B0863TXGM3-FULL",
+  quantity: "1"
 };
 
 /**
@@ -67,6 +68,9 @@ export const resolveVariable = (content: string, variableSource?: string, overri
     }
     if (lower.includes("color")) {
       return data["color"] || sampleData["color"];
+    }
+    if (lower.includes("qty") || lower.includes("quantity")) {
+      return data["quantity"] || sampleData["quantity"];
     }
     return undefined;
   };

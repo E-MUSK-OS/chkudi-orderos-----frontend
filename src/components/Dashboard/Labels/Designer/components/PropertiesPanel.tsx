@@ -54,6 +54,7 @@ const VARIABLE_SOURCES: SelectOption[] = [
   { label: 'Product Color ({{color}})', value: '{{color}}' },
   { label: 'Manufacturing Month ({{manufacturingMonth}})', value: '{{manufacturingMonth}}' },
   { label: 'Current Date ({{printDate}})', value: '{{printDate}}' },
+  { label: 'Product Quantity ({{quantity}})', value: '{{quantity}}' },
 ];
 
 const BARCODE_FORMATS: SelectOption[] = [

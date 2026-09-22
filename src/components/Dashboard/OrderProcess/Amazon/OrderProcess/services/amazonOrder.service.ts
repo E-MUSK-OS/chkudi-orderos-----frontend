@@ -135,6 +135,106 @@ export const amazonOrderService = {
   },
 
   /**
+   * Chunked upload process:
+   * 1. init batch -> 2. upload chunks -> 3. process -> 4. poll status
+   */
+  async uploadBatchChunks(
+    formData: FormData,
+    onProgress?: (progress: number, status: string) => void,
+    token?: string
+  ): Promise<{ success: boolean; data: AmazonBatchDetail; message: string }> {
+    const userToken = token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
+
+    const fileFields = ["combinedPdf", "zplPdf", "originalPdf", "unmatchedPdf", "unmatchedZplPdf", "combined_match", "converted_zpl", "original_invoices", "unmatched_invoices", "unmatched_zpl"];
+    const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
+
+    try {
+      onProgress?.(0, "Initializing batch...");
+      const initRes = await api.post<{ success: boolean; batchId: string }>(`${BASE_URL}/batch-chunks/init`, {}, userToken);
+      const batchId = initRes.batchId;
+
+      // Extract and upload files
+      let filesToUpload = [];
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File && fileFields.includes(key)) {
+          filesToUpload.push({ fieldName: key, file: value });
+        }
+      }
+
+      let totalSize = filesToUpload.reduce((acc, f) => acc + f.file.size, 0);
+      let uploadedBytes = 0;
+
+      for (const { fieldName, file } of filesToUpload) {
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+          const start = chunkIndex * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, file.size);
+          const chunk = file.slice(start, end);
+
+          const chunkFormData = new FormData();
+          chunkFormData.append("fileName", fieldName); // sending fieldName as fileName, backend maps it
+          chunkFormData.append("chunkIndex", chunkIndex.toString());
+          chunkFormData.append("totalChunks", totalChunks.toString());
+          chunkFormData.append("chunk", chunk, file.name);
+
+          let chunkSuccess = false;
+          let chunkAttempts = 0;
+          while (!chunkSuccess && chunkAttempts < 3) {
+            try {
+              chunkAttempts++;
+              await api.post(`${BASE_URL}/batch-chunks/${batchId}/chunk`, chunkFormData, userToken);
+              chunkSuccess = true;
+            } catch (chunkErr: any) {
+              if (chunkAttempts >= 3) {
+                throw new Error(`Failed to upload chunk ${chunkIndex + 1} of ${file.name} after 3 attempts. Please check your connection.`);
+              }
+              // Wait 1s, 2s before retrying
+              await new Promise(r => setTimeout(r, chunkAttempts * 1000));
+            }
+          }
+          
+          uploadedBytes += chunk.size;
+          if (totalSize > 0) {
+            onProgress?.(Math.round((uploadedBytes / totalSize) * 100), `Uploading files...`);
+          }
+        }
+      }
+
+      onProgress?.(100, "Starting background processing...");
+      // Extract non-file fields to send to process
+      const processPayload = {
+        summary: formData.get("summary") as string,
+        results: formData.get("results") as string,
+        batchNumber: formData.get("batchNumber") as string,
+        batchDate: formData.get("batchDate") as string,
+      };
+
+      await api.post(`${BASE_URL}/batch-chunks/${batchId}/process`, processPayload, userToken);
+
+      // Polling loop
+      while (true) {
+        onProgress?.(100, "Processing database records (this may take a few minutes)...");
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 seconds
+
+        const statusRes = await api.get<{ success: boolean; status: string; data?: AmazonBatchDetail; error?: string }>(
+          `${BASE_URL}/batch-chunks/${batchId}/status`,
+          userToken
+        );
+
+        if (statusRes.status === "completed") {
+          return { success: true, data: statusRes.data!, message: "Batch processed successfully" };
+        } else if (statusRes.status === "failed") {
+          throw new Error(statusRes.error || "Background processing failed");
+        } else if (statusRes.status === "unknown") {
+          throw new Error("Job status lost on server. Processing may have failed or server restarted.");
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Attach additional files (originalPdf, zplPdf, unmatched) to an existing batch
    */
   async attachBatchFiles(

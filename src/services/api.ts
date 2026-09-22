@@ -6,6 +6,7 @@ const BASE_URL = API_BASE_URL;
 
 interface ApiOptions extends RequestInit {
   token?: string;
+  signal?: AbortSignal;
 }
 
 async function request<T>(

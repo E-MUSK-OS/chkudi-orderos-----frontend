@@ -61,19 +61,20 @@ export default function OrderProcess() {
     setProgress,
     setProcessData,
     clearProcessData,
+    historySyncStatus,
   } = useAmazonOrderStore();
 
   // Guard against accidental tab closure during active processing
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isProcessing) {
+      if (isProcessing || historySyncStatus === "syncing") {
         e.preventDefault();
         e.returnValue = "Order processing is currently in progress. Are you sure you want to leave?";
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isProcessing]);
+  }, [isProcessing, historySyncStatus]);
 
   // Prefetch result page bundle ahead of time for instantaneous route transition
   useEffect(() => {
@@ -141,17 +142,14 @@ export default function OrderProcess() {
     }
   };
 
-  // Validate and handle multiple ZPL / JPL files
+  // Validate and handle multiple ZPL files
   const handleZplSelection = (selectedFiles: FileList | File[]) => {
     const validZpls: File[] = [];
     const invalidNames: string[] = [];
 
     Array.from(selectedFiles).forEach((file) => {
       const lower = file.name.toLowerCase();
-      const isZpl =
-        lower.endsWith(".zpl") ||
-        lower.endsWith(".txt") ||
-        lower.endsWith(".jpl");
+      const isZpl = lower.endsWith(".zpl");
 
       if (isZpl) {
         validZpls.push(file);
@@ -161,7 +159,7 @@ export default function OrderProcess() {
     });
 
     if (invalidNames.length > 0) {
-      toast.error(`Ignored ${invalidNames.length} non-ZPL/JPL file(s).`);
+      toast.error(`Ignored ${invalidNames.length} non-ZPL file(s).`);
     }
 
     if (validZpls.length > 0) {
@@ -677,7 +675,7 @@ export default function OrderProcess() {
                 }
               }
 
-              // 2. ZPL / JPL barcode label second (EXACTLY ONE 4" x 6" page)
+              // 2. ZPL barcode label second (EXACTLY ONE 4" x 6" page)
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
                 await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
               }
@@ -794,97 +792,53 @@ export default function OrderProcess() {
           initialFormData.append("combinedPdf", combinedFile);
         }
 
-        // NON-BLOCKING BACKGROUND SYNC: Save batch to database quietly in background
+        // NON-BLOCKING BACKGROUND SYNC: Save batch to database quietly in background with Chunked Uploads
         useAmazonOrderStore.setState({ historySyncStatus: "syncing" });
         (async () => {
-          let saveRes: any = null;
-          let lastError: any = null;
-          const maxRetries = 2;
+          try {
+            const fullFormData = new FormData();
+            fullFormData.append("summary", JSON.stringify(processResponse.summary));
+            fullFormData.append("results", JSON.stringify(processResponse.results));
 
-          for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-              saveRes = await amazonOrderService.saveBatch(initialFormData);
-              if (saveRes?.success) break;
-            } catch (err) {
-              lastError = err;
-              if (attempt < maxRetries) {
-                // Wait 1.5 seconds before retrying in case of transient Cloudflare HTTP/2 reset
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-              }
+            if (combinedBytes) {
+              fullFormData.append("combinedPdf", new File([combinedBytes as unknown as BlobPart], "combined_match.pdf", { type: "application/pdf" }));
             }
-          }
-
-          if (saveRes?.success && saveRes.data?.id) {
-            const batchId = saveRes.data.id;
-            useAmazonOrderStore.setState({
-              activeHistoryBatchId: batchId,
-              historySyncStatus: "synced",
-            });
-            useAmazonOrderStore.getState().fetchHistoryBatches();
-
-            // Background Step 2 & 3: Attach original invoices & extra PDFs concurrently in parallel
-            const secondaryUploads: Promise<any>[] = [];
-
             if (enhancedBytes) {
-              const origForm = new FormData();
-              origForm.append(
-                "originalPdf",
-                new File([enhancedBytes as unknown as BlobPart], "original_invoices.pdf", {
-                  type: "application/pdf",
-                })
-              );
-              secondaryUploads.push(
-                amazonOrderService.attachBatchFiles(batchId, origForm).catch((err) => {
-                  console.warn("Notice: Original PDF background upload skipped/delayed:", err);
-                })
-              );
+              fullFormData.append("originalPdf", new File([enhancedBytes as unknown as BlobPart], "original_invoices.pdf", { type: "application/pdf" }));
             }
-
-            const extraForm = new FormData();
-            let hasExtra = false;
-
             if (mergedZplBytes) {
-              extraForm.append(
-                "zplPdf",
-                new File([mergedZplBytes as unknown as BlobPart], "converted_zpl.pdf", { type: "application/pdf" })
-              );
-              hasExtra = true;
+              fullFormData.append("zplPdf", new File([mergedZplBytes as unknown as BlobPart], "converted_zpl.pdf", { type: "application/pdf" }));
             }
-
             if (unmatchedPdfBytes) {
-              extraForm.append(
-                "unmatchedPdf",
-                new File([unmatchedPdfBytes as unknown as BlobPart], "unmatched_invoices.pdf", { type: "application/pdf" })
-              );
-              hasExtra = true;
+              fullFormData.append("unmatchedPdf", new File([unmatchedPdfBytes as unknown as BlobPart], "unmatched_invoices.pdf", { type: "application/pdf" }));
             }
-
             if (unmatchedZplBytes) {
-              extraForm.append(
-                "unmatchedZplPdf",
-                new File([unmatchedZplBytes as unknown as BlobPart], "unmatched_zpl.pdf", { type: "application/pdf" })
-              );
-              hasExtra = true;
+              fullFormData.append("unmatchedZplPdf", new File([unmatchedZplBytes as unknown as BlobPart], "unmatched_zpl.pdf", { type: "application/pdf" }));
             }
 
-            if (hasExtra) {
-              secondaryUploads.push(
-                amazonOrderService.attachBatchFiles(batchId, extraForm).catch((err) => {
-                  console.warn("Notice: Extra PDFs background upload skipped/delayed:", err);
-                })
-              );
-            }
+            const saveRes = await amazonOrderService.uploadBatchChunks(
+              fullFormData,
+              (prog, status) => {
+                // Optional: We can log background progress here if needed
+                // console.log(`Background Sync: ${prog}% - ${status}`);
+              }
+            );
 
-            if (secondaryUploads.length > 0) {
-              await Promise.allSettled(secondaryUploads);
+            if (saveRes?.success && saveRes.data?.id) {
+              useAmazonOrderStore.setState({
+                activeHistoryBatchId: saveRes.data.id,
+                historySyncStatus: "synced",
+              });
+              useAmazonOrderStore.getState().fetchHistoryBatches();
+              toast.success("Batch data and files successfully saved to 7-day history.");
+            } else {
+              useAmazonOrderStore.setState({ historySyncStatus: "error" });
+              toast.error("Failed to save to 7-day cloud history. Your data is not stored.");
             }
-          } else if (saveRes?.success) {
-            useAmazonOrderStore.setState({ historySyncStatus: "synced" });
-            useAmazonOrderStore.getState().fetchHistoryBatches();
-          } else {
-            console.warn("Background batch save notice:", lastError || saveRes);
+          } catch (err: any) {
+            console.error("Background batch chunked save error:", err);
             useAmazonOrderStore.setState({ historySyncStatus: "error" });
-            toast.warning("Verification complete, but failed to save to 7-day cloud history.");
+            toast.error(`Failed to save batch to cloud history: ${err.message || "Network or timeout error"}`);
           }
         })();
       } catch (prepErr) {
@@ -1125,7 +1079,7 @@ export default function OrderProcess() {
               </div>
 
               {/* ======================================================== */}
-              {/* SECTION 2: ZPL / JPL FILE UPLOAD */}
+              {/* SECTION 2: ZPL FILE UPLOAD */}
               {/* ======================================================== */}
               <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -1135,9 +1089,9 @@ export default function OrderProcess() {
                     </div>
                     <div>
                       <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
-                        2. ZPL / JPL Barcodes {zplFiles.length > 0 ? `(${zplFiles.length})` : ""}
+                        2. ZPL Barcodes {zplFiles.length > 0 ? `(${zplFiles.length})` : ""}
                       </h3>
-                      <p className="text-xs text-slate-500">Upload one or multiple .zpl / .txt / .jpl files</p>
+                      <p className="text-xs text-slate-500">Upload one or multiple .zpl files</p>
                     </div>
                   </div>
 
@@ -1172,10 +1126,10 @@ export default function OrderProcess() {
                       </div>
 
                       <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">
-                        Click to upload or drag & drop ZPL/JPL(s)
+                        Click to upload or drag & drop ZPL(s)
                       </p>
                       <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
-                        Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600">.zpl, .txt, .jpl</code>) files
+                        Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600">.zpl</code>) files
                       </p>
 
                       <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
@@ -1247,7 +1201,7 @@ export default function OrderProcess() {
                     type="file"
                     multiple
                     hidden
-                    accept=".zpl,.txt,.jpl"
+                    accept=".zpl"
                     onChange={(e) => {
                       if (e.target.files && e.target.files.length > 0) {
                         handleZplSelection(e.target.files);
