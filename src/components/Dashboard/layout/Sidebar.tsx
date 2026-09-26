@@ -155,6 +155,16 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    label: "Products Analytics",
+    icon: Package,
+    children: [
+      {
+        label: "Amazon",
+        href: "/dashboard/products-analytics/amazon",
+      },
+    ],
+  },
+  {
     label: "Barcode/Labels",
     icon: ScanBarcode,
     children: [
