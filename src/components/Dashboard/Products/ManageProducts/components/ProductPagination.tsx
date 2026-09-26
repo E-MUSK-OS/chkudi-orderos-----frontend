@@ -43,7 +43,7 @@ export default function ProductPagination({
         <div className="flex items-center gap-2">
           <span className="text-xs sm:text-sm text-gray-400">Rows</span>
 
-          <select
+          <select aria-label="Select option"
             value={pageSize}
             onChange={(e) =>
               onPageSizeChange(Number(e.target.value))

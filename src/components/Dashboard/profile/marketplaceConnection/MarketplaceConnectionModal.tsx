@@ -47,7 +47,7 @@ export default function MarketplaceConnectionModal({
 
         <div className="flex items-center gap-4 border border-[#E7E0D2] bg-[#FCFBF8] p-5">
           <div className="flex h-20 w-20 items-center justify-center">
-            <img
+            <img alt="Marketplace Logo"
               src={
                 MARKETPLACE_LOGOS[
                   account.marketplace.marketplaceCode.toUpperCase()

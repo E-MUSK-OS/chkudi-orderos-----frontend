@@ -48,7 +48,7 @@ export default function Pagination({
             Rows
           </span>
 
-          <select
+          <select aria-label="Select option"
             value={pageSize}
             onChange={(e) =>
               onPageSizeChange(Number(e.target.value))

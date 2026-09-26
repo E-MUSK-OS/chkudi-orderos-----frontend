@@ -3656,7 +3656,7 @@ export default function ComparisonResultView({
               <div className="flex items-center gap-1.5">
                 <span className="whitespace-nowrap text-xs text-white">Rows</span>
 
-                <select
+                <select aria-label="Select option"
                   value={limit}
                   onChange={(e) => {
                     setLimit(Number(e.target.value));

@@ -187,7 +187,7 @@ export default function AwbTable({
           {/* Rows per page */}
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <span>Rows:</span>
-            <select
+            <select aria-label="Select option"
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
               className="border border-[#E7E0D2] bg-white px-2 py-1 text-xs font-bold text-[#0A0E1A] outline-none cursor-pointer"

@@ -141,7 +141,7 @@ export default function ReactSelect({
   };
 
   return (
-    <Select
+    <Select aria-label="Select option"
       styles={styles}
       isSearchable={false}
       getOptionLabel={(option) => (option ? option.label ?? (option as any).name ?? "" : "")}
