@@ -68,7 +68,7 @@ export default function MarketplaceAccountTable({
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-18 w-18 items-center justify-center ">
-                      <img alt="Marketplace Logo"
+                      <img
                         src={
                           MARKETPLACE_LOGOS[
                             account.marketplace.marketplaceCode
