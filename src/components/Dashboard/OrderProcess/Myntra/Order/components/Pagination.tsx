@@ -47,7 +47,7 @@ export default function Pagination({
             Rows
           </span>
 
-          <select
+          <select aria-label="Select option"
             value={limit}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="h-9 rounded border border-border bg-slate-800 px-2.5 sm:px-3 text-xs sm:text-sm font-medium text-white outline-none transition-colors focus:border-[#E8C16D]"

@@ -141,7 +141,7 @@ export default function TrackingTable({
           {/* Rows per page */}
           <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-600">
             <span>Rows:</span>
-            <select
+            <select aria-label="Select option"
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
               className="border border-[#E7E0D2] bg-white px-2.5 py-1 text-xs sm:text-sm font-bold text-[#0A0E1A] outline-none cursor-pointer"

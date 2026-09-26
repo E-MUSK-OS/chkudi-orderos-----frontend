@@ -51,7 +51,7 @@ export default function Pagination({
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-500">Rows</span>
 
-          <select
+          <select aria-label="Select option"
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="

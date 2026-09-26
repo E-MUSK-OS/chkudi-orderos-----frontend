@@ -839,7 +839,7 @@ export default function StockAnalysis() {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-sm text-white">
                       <span>Rows</span>
-                      <select
+                      <select aria-label="Select option"
                         value={itemsPerPage}
                         onChange={(e) => {
                           setItemsPerPage(Number(e.target.value));

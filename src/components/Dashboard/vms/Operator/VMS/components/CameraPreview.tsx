@@ -49,7 +49,7 @@ const CameraPreview = ({ camera }: CameraPreviewProps) => {
   return (
     <div className="overflow-hidden">
       {devices.length > 1 && (
-        <select
+        <select aria-label="Select option"
           value={selectedCamera}
           onChange={(e) => setSelectedCamera(e.target.value)}
           className="rounded-lg border px-3 py-2 text-sm"
