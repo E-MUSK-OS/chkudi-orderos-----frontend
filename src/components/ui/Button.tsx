@@ -98,7 +98,7 @@ export default function Button({
 
         sizes[size],
 
-        // rounded,
+        rounded,
 
         fullWidth && "w-full",
 

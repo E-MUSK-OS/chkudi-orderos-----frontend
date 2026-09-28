@@ -32,7 +32,7 @@ export default function ProductTable({
   onVariantToggle,
 }: Props) {
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-[#E7EAF0] bg-white shadow-sm">
+    <div className="w-full overflow-hidden rounded-2xl border border-[#E7EAF0] bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[950px]">
           <thead className="bg-[#0A0E1A] text-white">

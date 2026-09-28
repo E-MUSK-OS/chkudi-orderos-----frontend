@@ -2807,7 +2807,7 @@ export default function ComparisonResultView({
       {/* ===================================================== */}
       {/* AMAZON ORDER VERIFICATION RESULTS SECTION */}
       {/* ===================================================== */}
-      <div className="border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm">
+      <div className="rounded-2xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1.5">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A]">
@@ -2824,7 +2824,7 @@ export default function ComparisonResultView({
             <button
               type="button"
               onClick={handleReset}
-              className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#161D2E]"
+              className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#161D2E]"
             >
               <RotateCcw size={16} />
               New Batch
@@ -2869,7 +2869,7 @@ export default function ComparisonResultView({
               setSelectedPdfType("zpl");
               setActiveTab("pdf");
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
+            className="cursor-pointer rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
           >
             <div>
               <p className="text-xs sm:text-sm font-medium text-slate-500">
@@ -2894,7 +2894,7 @@ export default function ComparisonResultView({
               setSelectedPdfType("original");
               setActiveTab("pdf");
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
+            className="cursor-pointer rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between"
           >
             <div>
               <p className="text-xs sm:text-sm font-medium text-slate-500">
@@ -2919,7 +2919,7 @@ export default function ComparisonResultView({
               setActiveTab("table");
               setPage(1);
             }}
-            className="cursor-pointer border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between sm:col-span-2 lg:col-span-1"
+            className="cursor-pointer rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between sm:col-span-2 lg:col-span-1"
           >
             <div>
               <div className="flex items-center justify-between">
@@ -3016,7 +3016,7 @@ export default function ComparisonResultView({
               setActiveTab("table");
               setPage(1);
             }}
-            className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 items-center justify-center gap-2 border text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 ${
+            className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 items-center justify-center gap-2 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 ${
               activeTab === "table"
                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                 : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
@@ -3108,7 +3108,7 @@ export default function ComparisonResultView({
                 }
               }
             }}
-            className="h-11 sm:h-12 w-full border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#0A0E1A] pl-10 pr-10 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 placeholder:font-normal outline-none transition focus:ring-2 focus:ring-[#E8C16D]"
+            className="h-11 sm:h-12 w-full rounded-xl border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#0A0E1A] pl-10 pr-10 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 placeholder:font-normal outline-none transition focus:ring-2 focus:ring-[#E8C16D]"
           />
           {autoPrintQuery ? (
             <button
@@ -3152,7 +3152,7 @@ export default function ComparisonResultView({
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className="h-11 sm:h-12 w-full border border-border bg-background pl-10 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[#E8C16D]"
+                  className="h-11 sm:h-12 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[#E8C16D]"
                 />
               </div>
 
@@ -3230,7 +3230,7 @@ export default function ComparisonResultView({
                 <button
                   type="button"
                   onClick={() => setIsMissingSkuModalOpen(true)}
-                  className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center border border-red-500/50 bg-red-500/10 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
+                  className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center rounded-xl border border-red-500/50 bg-red-500/10 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
                   title="Click to view ASINs missing Seller SKU in database"
                 >
                   <span className="whitespace-nowrap">Missing Sku ({missingSkuItems.length})</span>
@@ -3240,7 +3240,7 @@ export default function ComparisonResultView({
               <button
                 type="button"
                 onClick={handleGeneratePicklist}
-                className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-3 sm:px-4 cursor-pointer items-center justify-center gap-1.5 border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-3 sm:px-4 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-semibold text-[#E8C16D] transition-all duration-200 hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
                 title="Download Excel picklist (2-column 40 left / 40 right A4 layout)"
               >
                 <FileText className="h-4 w-4 shrink-0" />
@@ -3255,7 +3255,7 @@ export default function ComparisonResultView({
                     setPage(1);
                     setSelectedRows(new Set());
                   }}
-                  className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 border px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     showPrinted
                       ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
                       : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
@@ -3280,7 +3280,7 @@ export default function ComparisonResultView({
                 type="button"
                 disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
-                className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-4 sm:px-5 items-center justify-center gap-1.5 border text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-4 sm:px-5 items-center justify-center gap-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   selectedRows.size > 0
                     ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
                     : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"
@@ -3491,7 +3491,7 @@ export default function ComparisonResultView({
           {/* =================================================== */}
           {/* DESKTOP VIEW: FULL COMPARISON TABLE (>= 768px) */}
           {/* =================================================== */}
-          <div className="hidden md:block w-full overflow-hidden border border-border bg-card shadow-2xs">
+          <div className="hidden md:block w-full overflow-hidden rounded-2xl border border-border bg-card shadow-2xs">
             <div className="w-full overflow-x-auto">
               <table className="w-full min-w-[940px] lg:min-w-[1000px] border-collapse text-left">
                 <thead className="bg-[#0A0E1A] text-xs sm:text-sm text-[#E8C16D]">

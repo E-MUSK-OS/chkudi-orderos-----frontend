@@ -76,6 +76,63 @@ export default function AmazonProcessHistoryDropdown({
     };
   }, [isOpen]);
 
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
+
+  // Dynamic responsive panel placement across all viewports
+  useEffect(() => {
+    if (!isOpen || !dropdownRef.current) return;
+
+    const updatePosition = () => {
+      if (!dropdownRef.current) return;
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+
+      if (viewportWidth < 640) {
+        setPanelStyle({
+          position: "fixed",
+          top: `${rect.bottom + 8}px`,
+          left: "12px",
+          right: "12px",
+          width: "auto",
+          maxWidth: "calc(100vw - 24px)",
+        });
+      } else {
+        const panelWidth = Math.min(440, viewportWidth - 32);
+        const fitsRight = rect.left + panelWidth <= viewportWidth - 16;
+
+        if (fitsRight) {
+          setPanelStyle({
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: "auto",
+            marginTop: "8px",
+            width: `${panelWidth}px`,
+            maxWidth: "calc(100vw - 32px)",
+          });
+        } else {
+          setPanelStyle({
+            position: "absolute",
+            top: "100%",
+            left: "auto",
+            right: 0,
+            marginTop: "8px",
+            width: `${panelWidth}px`,
+            maxWidth: "calc(100vw - 32px)",
+          });
+        }
+      }
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen]);
+
   // Helper to determine printed count and printed orders list for a batch
   const getBatchPrintedInfo = (batch: AmazonBatchHistoryItem) => {
     const map = getPrintedBatchesMap();
@@ -227,7 +284,7 @@ export default function AmazonProcessHistoryDropdown({
   };
 
   return (
-    <div ref={dropdownRef} className={`relative inline-block text-left ${className}`}>
+    <div ref={dropdownRef} className={`relative inline-block text-left shrink-0 ${className}`}>
       {/* Dropdown Trigger Button */}
       <button
         type="button"
@@ -238,26 +295,30 @@ export default function AmazonProcessHistoryDropdown({
           }
         }}
         disabled={loadingBatchId !== null}
-        className={`inline-flex items-center gap-2 rounded-2xl border px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer ${
+        className={`w-full sm:w-auto inline-flex items-center justify-between gap-1.5 sm:gap-2 rounded-2xl border px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer shrink-0 ${
           isOpen
             ? "border-[#E8C16D] bg-[#FFF9EC] text-[#0A0E1A] ring-2 ring-[#E8C16D]/30"
             : "border-slate-200 bg-white text-[#0A0E1A] hover:border-[#E8C16D] hover:bg-slate-50"
         }`}
       >
-        <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728]">
-          <History className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0">
+            <History className="h-3.5 w-3.5" />
+          </div>
+
+          <span className="whitespace-nowrap">
+            History <span className="hidden xl:inline">(Last 7 Days)</span><span className="hidden sm:inline xl:hidden">(7 Days)</span><span className="sm:hidden">(7D)</span>
+          </span>
+
+          {historyBatches.length > 0 && (
+            <span className="inline-flex items-center justify-center rounded-full bg-[#0A0E1A] px-1.5 sm:px-2 py-0.5 text-[10px] font-extrabold text-[#E8C16D] shrink-0">
+              {historyBatches.length}
+            </span>
+          )}
         </div>
 
-        <span>History (Last 7 Days)</span>
-
-        {historyBatches.length > 0 && (
-          <span className="inline-flex items-center justify-center rounded-full bg-[#0A0E1A] px-2 py-0.5 text-[10px] font-extrabold text-[#E8C16D]">
-            {historyBatches.length}
-          </span>
-        )}
-
         <ChevronDown
-          className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+          className={`h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ${
             isOpen ? "rotate-180 text-[#B88728]" : ""
           }`}
         />
@@ -265,18 +326,21 @@ export default function AmazonProcessHistoryDropdown({
 
       {/* Dropdown Menu Panel */}
       {isOpen && (
-        <div className="absolute right-0 sm:right-auto sm:left-0 z-50 mt-2 w-[340px] sm:w-[420px] max-w-[95vw] origin-top-left rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+        <div
+          style={panelStyle}
+          className="z-50 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-2.5 sm:p-3.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 px-3 pb-3 pt-1">
-            <div className="flex items-center gap-2">
-              <div className="grid h-7 w-7 place-items-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+          <div className="flex items-center justify-between border-b border-slate-100 px-2 sm:px-3 pb-2.5 pt-1 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
                 <Clock className="h-4 w-4" />
               </div>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+              <div className="min-w-0">
+                <h4 className="text-xs sm:text-sm font-bold text-[#0A0E1A] truncate">
                   Last 7 Days Batch History
                 </h4>
-                <p className="text-[10px] sm:text-[11px] text-slate-500">
+                <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">
                   Data & files expire at 6:00 PM on the 7th day
                 </p>
               </div>
@@ -288,7 +352,7 @@ export default function AmazonProcessHistoryDropdown({
                 e.stopPropagation();
                 fetchHistoryBatches();
               }}
-              className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
               title="Refresh 7-day history"
             >
               <RotateCw className={`h-3.5 w-3.5 ${isLoadingHistory ? "animate-spin text-[#B88728]" : ""}`} />
@@ -296,7 +360,7 @@ export default function AmazonProcessHistoryDropdown({
           </div>
 
           {/* Batches List */}
-          <div className="max-h-[380px] overflow-y-auto space-y-2 py-2 pr-1">
+          <div className="max-h-[55vh] sm:max-h-[400px] overflow-y-auto space-y-2 py-2 pr-1">
             {isLoadingHistory ? (
               <div className="flex flex-col items-center justify-center py-8 text-center text-xs text-slate-500 gap-2">
                 <Loader2 className="h-6 w-6 animate-spin text-[#E8C16D]" />
@@ -324,14 +388,14 @@ export default function AmazonProcessHistoryDropdown({
                   <div
                     key={batch.id}
                     onClick={() => !isItemLoading && handleSelectBatch(batch, false)}
-                    className={`group relative flex flex-col gap-2 rounded-2xl border p-3 text-left transition-all cursor-pointer ${
+                    className={`group relative flex flex-col gap-2 rounded-2xl border p-2.5 sm:p-3 text-left transition-all cursor-pointer ${
                       isActive
                         ? "border-[#E8C16D] bg-[#FFF9EC]/60 shadow-2xs"
                         : "border-slate-100 bg-slate-50/50 hover:border-[#E8C16D]/60 hover:bg-[#FFF9EC]/30"
                     }`}
                   >
-                    {/* Top Row: Date/Time + Match Badge */}
-                    <div className="flex items-center justify-between gap-2">
+                    {/* Top Row: Date/Time + Match Badge + Delete */}
+                    <div className="flex items-center justify-between gap-1.5 sm:gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                         <span className="text-xs font-bold text-[#0A0E1A] truncate">
@@ -339,14 +403,14 @@ export default function AmazonProcessHistoryDropdown({
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                         {batch.matchPercentage >= 100 ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200/70">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-700 border border-emerald-200/70 whitespace-nowrap">
                             <CheckCircle2 className="h-3 w-3" />
                             100% Matched
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200/70">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-amber-700 border border-amber-200/70 whitespace-nowrap">
                             <AlertTriangle className="h-3 w-3" />
                             {batch.matchPercentage}% Matched
                           </span>
@@ -356,7 +420,7 @@ export default function AmazonProcessHistoryDropdown({
                           type="button"
                           onClick={(e) => handleDeleteBatch(batch.id, e)}
                           disabled={isItemLoading}
-                          className="grid h-6 w-6 place-items-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition ml-1"
+                          className="grid h-7 w-7 sm:h-6 sm:w-6 place-items-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition ml-0.5"
                           title="Delete this batch and its associated orders"
                         >
                           {isItemLoading && loadingBatchId === batch.id ? (
@@ -369,31 +433,31 @@ export default function AmazonProcessHistoryDropdown({
                     </div>
 
                     {/* Middle Row: Metrics & Printed Count Badge */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-600 pt-0.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-[#0A0E1A]">
+                    <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-600 pt-0.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-[10px] sm:text-[11px]">
+                        <span className="font-semibold text-[#0A0E1A] whitespace-nowrap">
                           {batch.totalOrders} Order{batch.totalOrders !== 1 ? "s" : ""}
                         </span>
                         <span className="text-slate-300">•</span>
-                        <span className="text-emerald-700 font-medium">
+                        <span className="text-emerald-700 font-medium whitespace-nowrap">
                           {batch.matchedCount} Matched
                         </span>
                         {batch.mismatchCount > 0 && (
                           <>
                             <span className="text-slate-300">•</span>
-                            <span className="text-red-600 font-medium">
+                            <span className="text-red-600 font-medium whitespace-nowrap">
                               {batch.mismatchCount} Mismatch
                             </span>
                           </>
                         )}
                         <span className="text-slate-300">•</span>
                         {printedCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
+                          <span className="inline-flex items-center gap-1 font-bold text-blue-600 bg-blue-50 px-1.5 sm:px-2 py-0.5 rounded-md border border-blue-200/60 whitespace-nowrap text-[10px]">
                             <CheckCircle2 className="h-3 w-3 text-blue-500" />
                             {printedCount >= batch.matchedCount ? "All Printed" : `${printedCount} Printed`}
                           </span>
                         ) : (
-                          <span className="text-slate-400 font-medium text-[10px]">0 Printed</span>
+                          <span className="text-slate-400 font-medium text-[10px] whitespace-nowrap">0 Printed</span>
                         )}
                       </div>
 
@@ -403,12 +467,12 @@ export default function AmazonProcessHistoryDropdown({
                     </div>
 
                     {/* Bottom Row: File Name & Action Buttons */}
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 text-[10px] text-slate-500 gap-2">
-                      <span className="truncate max-w-[130px] sm:max-w-[160px]" title={batch.pdfFileName || ""}>
+                    <div className="flex flex-wrap items-center justify-between pt-1.5 border-t border-slate-100/80 text-[10px] text-slate-500 gap-1.5">
+                      <span className="truncate max-w-[140px] sm:max-w-[180px] font-medium text-slate-600" title={batch.pdfFileName || ""}>
                         {batch.pdfFileName || "Amazon Invoices"}
                       </span>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex flex-wrap items-center gap-1.5 justify-end ml-auto">
                         {printedCount > 0 && (
                           <>
                             <button
@@ -425,7 +489,7 @@ export default function AmazonProcessHistoryDropdown({
                               title="Toggle inline printed orders table preview"
                             >
                               <Table className="h-3 w-3" />
-                              <span>{isExpanded ? "Hide Table" : "Table Preview"}</span>
+                              <span>{isExpanded ? "Hide" : "Preview"}</span>
                             </button>
 
                             <button
@@ -434,21 +498,22 @@ export default function AmazonProcessHistoryDropdown({
                                 e.stopPropagation();
                                 if (!isItemLoading) handleSelectBatch(batch, true);
                               }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800 transition cursor-pointer shadow-2xs"
+                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-800 transition cursor-pointer shadow-2xs whitespace-nowrap"
                               title="Open full result page showing only printed orders in table"
                             >
                               <Printer className="h-3 w-3 text-emerald-600" />
-                              <span>Show Printed ({printedCount})</span>
+                              <span>Printed ({printedCount})</span>
                             </button>
                           </>
                         )}
 
-                        <div
+                        <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!isItemLoading) handleSelectBatch(batch, false);
                           }}
-                          className="inline-flex items-center gap-1 font-bold text-[#B88728] hover:text-[#0A0E1A] transition text-xs cursor-pointer ml-1"
+                          className="inline-flex items-center gap-1 font-bold text-[#B88728] hover:text-[#0A0E1A] transition text-[11px] sm:text-xs cursor-pointer ml-auto sm:ml-1 py-0.5"
                           title="View full matched orders table"
                         >
                           {isItemLoading ? (
@@ -461,7 +526,7 @@ export default function AmazonProcessHistoryDropdown({
                               <ArrowRight className="h-3 w-3" />
                             </>
                           )}
-                        </div>
+                        </button>
                       </div>
                     </div>
 
@@ -471,12 +536,12 @@ export default function AmazonProcessHistoryDropdown({
                         onClick={(e) => e.stopPropagation()}
                         className="mt-1 rounded-xl border border-slate-200 bg-white p-2.5 text-xs shadow-inner"
                       >
-                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-600">
-                          <span className="uppercase tracking-wider">Printed Orders Table Preview ({printedCount})</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-1.5 border-b border-slate-100 gap-1 text-[10px] font-bold text-slate-600">
+                          <span className="uppercase tracking-wider">Printed Orders ({printedCount})</span>
                           <button
                             type="button"
                             onClick={() => handleSelectBatch(batch, true)}
-                            className="text-blue-600 hover:underline inline-flex items-center gap-1 font-bold text-[10px] cursor-pointer"
+                            className="text-blue-600 hover:underline inline-flex items-center gap-1 font-bold text-[10px] cursor-pointer self-start sm:self-auto"
                           >
                             <Eye className="h-3 w-3" />
                             Open In Full Result Page
@@ -488,14 +553,14 @@ export default function AmazonProcessHistoryDropdown({
                             ? printedInfo.printedOrderNumbers
                             : ["Printed Order"]
                           ).map((ordNum, idx) => (
-                            <div key={idx} className="flex items-center justify-between py-1 px-1">
-                              <span className="font-mono text-slate-800 font-semibold truncate max-w-[140px]">
+                            <div key={idx} className="flex items-center justify-between py-1 px-1 gap-2">
+                              <span className="font-mono text-slate-800 font-semibold truncate flex-1 min-w-0">
                                 {ordNum}
                               </span>
-                              <span className="text-slate-400 font-mono text-[10px] truncate max-w-[120px]">
+                              <span className="text-slate-400 font-mono text-[10px] truncate max-w-[90px] sm:max-w-[130px]">
                                 {printedInfo.printedAwbs[idx] || "—"}
                               </span>
-                              <span className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700">
+                              <span className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 shrink-0">
                                 <CheckCircle2 className="h-2.5 w-2.5" /> Printed
                               </span>
                             </div>
@@ -510,9 +575,9 @@ export default function AmazonProcessHistoryDropdown({
           </div>
 
           {/* Footer Note */}
-          <div className="mt-1 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 px-2">
-            <span>Selecting any date opens its Matched Order Table</span>
-            <span className="font-medium text-slate-500">Auto-pruned at 6 PM (Day 7)</span>
+          <div className="mt-1 pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[9px] sm:text-[10px] text-slate-400 px-1 sm:px-2">
+            <span>Selecting opens Matched Order Table</span>
+            <span className="font-medium text-slate-500">Expires 6 PM (Day 7)</span>
           </div>
         </div>
       )}

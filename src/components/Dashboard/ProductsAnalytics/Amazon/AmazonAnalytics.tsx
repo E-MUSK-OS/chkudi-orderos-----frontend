@@ -193,14 +193,6 @@ export default function AmazonAnalytics() {
         <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-md bg-[#FFF9EC] px-2.5 py-1 text-xs font-semibold text-[#B88728] border border-[#E8C16D]/30">
-                  Amazon Products Analytics
-                </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  Date-Wise Performance Tracking
-                </span>
-              </div>
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A]">
                 Amazon Products Analytics
               </h2>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -10,8 +10,10 @@ import ProductToolbar, { type ImportType } from "./components/ProductToolbar";
 import ProductTable from "./components/ProductTable";
 import AsinTable from "./components/AsinTable";
 import AsinModal from "./components/AsinModal";
+import MyntraModal from "./components/MyntraModal";
 import type { Product } from "./types/product.types";
 import type { AsinImportItem } from "./types/asinImport.types";
+import type { MyntraImportItem } from "./types/myntraImport.types";
 import DeleteProductModal from "./components/DeleteProductModal";
 import ProductPagination from "./components/ProductPagination";
 import ProductModal from "./components/ProductModal";
@@ -27,11 +29,27 @@ import {
   useImportAsinExcel,
   useDeleteAsinImport,
 } from "./hooks/useAsinImports";
+import {
+  useMyntraImports,
+  useImportMyntraExcel,
+  useDeleteMyntraImport,
+} from "./hooks/useMyntraImports";
+import MyntraTable from "./components/MyntraTable";
 import { useQueryClient } from "@tanstack/react-query";
 
 const ManageProducts = () => {
   const queryClient = useQueryClient();
   const [importType, setImportType] = useState<ImportType>("product");
+
+  // Read URL type parameter after mount on client to avoid SSR hydration mismatch
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("type");
+      if (param === "myntra" || param === "asin" || param === "product") {
+        setImportType(param as ImportType);
+      }
+    }
+  }, []);
 
   // Toolbar State
   const [search, setSearch] = useState("");
@@ -49,19 +67,31 @@ const ManageProducts = () => {
   const [asinModalOpen, setAsinModalOpen] = useState(false);
   const [selectedAsin, setSelectedAsin] = useState<AsinImportItem | null>(null);
 
+  const [myntraModalOpen, setMyntraModalOpen] = useState(false);
+  const [selectedMyntra, setSelectedMyntra] = useState<MyntraImportItem | null>(null);
+
   const updateProductStatusMutation = useUpdateProductStatus();
   const importProductExcelMutation = useImportProductsExcel();
   const importAsinExcelMutation = useImportAsinExcel();
   const deleteAsinMutation = useDeleteAsinImport();
+  const importMyntraExcelMutation = useImportMyntraExcel();
+  const deleteMyntraMutation = useDeleteMyntraImport();
 
   // ASIN Queries
   const { data: asinResponse, isLoading: asinLoading, refetch: refetchAsin } = useAsinImports(search);
   const asinItems = asinResponse?.data ?? [];
 
+  // Myntra Queries
+  const { data: myntraResponse, isLoading: myntraLoading, refetch: refetchMyntra } = useMyntraImports(search);
+  const myntraItems = myntraResponse?.data ?? [];
+
   const handleImportExcel = async (file: File, type: ImportType) => {
     try {
       const activeType = type || importType;
-      if (activeType === "asin") {
+      if (activeType === "myntra") {
+        await importMyntraExcelMutation.mutateAsync(file);
+        await refetchMyntra();
+      } else if (activeType === "asin") {
         await importAsinExcelMutation.mutateAsync(file);
         await refetchAsin();
       } else {
@@ -115,7 +145,12 @@ const ManageProducts = () => {
     return matchesSearch && matchesStatus && matchesCategory && matchesBrand;
   });
 
-  const totalRecords = importType === "product" ? filteredProducts.length : asinItems.length;
+  const totalRecords =
+    importType === "product"
+      ? filteredProducts.length
+      : importType === "asin"
+      ? asinItems.length
+      : myntraItems.length;
   const totalPages = Math.ceil(totalRecords / pageSize);
 
   const paginatedProducts = filteredProducts.slice(
@@ -124,6 +159,11 @@ const ManageProducts = () => {
   );
 
   const paginatedAsinItems = asinItems.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
+
+  const paginatedMyntraItems = myntraItems.slice(
     (page - 1) * pageSize,
     page * pageSize,
   );
@@ -149,6 +189,11 @@ const ManageProducts = () => {
     setAsinModalOpen(true);
   };
 
+  const handleEditMyntra = (item: MyntraImportItem) => {
+    setSelectedMyntra(item);
+    setMyntraModalOpen(true);
+  };
+
   const handleStatus = async (product: Product) => {
     try {
       await updateProductStatusMutation.mutateAsync({
@@ -171,7 +216,9 @@ const ManageProducts = () => {
     setCategory("");
     setBrand("");
 
-    if (importType === "asin") {
+    if (importType === "myntra") {
+      refetchMyntra();
+    } else if (importType === "asin") {
       refetchAsin();
     } else {
       refetchProducts();
@@ -210,12 +257,21 @@ const ManageProducts = () => {
     <DashboardLayout title="Products">
       <div className="space-y-6">
         <ProductHeader
-          buttonLabel={importType === "asin" ? "Add ASIN" : "Add Product"}
+          buttonLabel={
+            importType === "asin"
+              ? "Add ASIN"
+              : importType === "myntra"
+              ? "Add Myntra"
+              : "Add Product"
+          }
           onAddProduct={() => {
             if (importType === "asin") {
               setSelectedAsin(null);
               setAsinModalOpen(true);
-            } else {
+            } else if (importType === "myntra") {
+              setSelectedMyntra(null);
+              setMyntraModalOpen(true);
+            } else if (importType === "product") {
               setModalMode("create");
               setSelectedProduct(null);
               setProductModalOpen(true);
@@ -244,12 +300,15 @@ const ManageProducts = () => {
           onRefresh={handleRefresh}
           onImportExcel={handleImportExcel}
           isImporting={
-            importType === "asin"
+            importType === "myntra"
+              ? importMyntraExcelMutation.isPending
+              : importType === "asin"
               ? importAsinExcelMutation.isPending
               : importProductExcelMutation.isPending
           }
           productsData={products}
           asinData={asinItems}
+          myntraData={myntraItems}
         />
 
         {importType === "product" ? (
@@ -261,12 +320,25 @@ const ManageProducts = () => {
             expandedProductId={expandedProductId}
             onVariantToggle={handleVariantToggle}
           />
-        ) : (
+        ) : importType === "asin" ? (
           <AsinTable
             items={paginatedAsinItems}
             isLoading={asinLoading}
             onEdit={handleEditAsin}
             onDelete={handleDeleteAsin}
+          />
+        ) : (
+          <MyntraTable
+            items={paginatedMyntraItems}
+            isLoading={myntraLoading}
+            onEdit={handleEditMyntra}
+            onDelete={async (id) => {
+              try {
+                await deleteMyntraMutation.mutateAsync(id);
+              } catch (e) {
+                console.error(e);
+              }
+            }}
           />
         )}
 
@@ -306,6 +378,15 @@ const ManageProducts = () => {
         onClose={() => {
           setAsinModalOpen(false);
           setSelectedAsin(null);
+        }}
+      />
+
+      <MyntraModal
+        open={myntraModalOpen}
+        item={selectedMyntra}
+        onClose={() => {
+          setMyntraModalOpen(false);
+          setSelectedMyntra(null);
         }}
       />
 

@@ -53,7 +53,7 @@ export default function ProductStats({ stats }: Props) {
         return (
           <div
             key={item.title}
-            className="rounded-lg border border-[#E7EAF0] bg-[#0A0E1A] p-4 sm:p-5 shadow-sm transition-all hover:shadow-md"
+            className="rounded-2xl border border-[#E7EAF0] bg-[#0A0E1A] p-4 sm:p-5 shadow-sm transition-all hover:shadow-md"
           >
             <div className="flex items-center justify-between">
               <div>

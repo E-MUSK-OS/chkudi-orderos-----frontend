@@ -14,7 +14,7 @@ interface Option {
   value: string;
 }
 
-export type ImportType = "product" | "asin";
+export type ImportType = "product" | "asin" | "myntra";
 
 interface Props {
   search: string;
@@ -42,6 +42,7 @@ interface Props {
 
   productsData?: any[];
   asinData?: any[];
+  myntraData?: any[];
 }
 
 const statusOptions = [
@@ -67,6 +68,10 @@ const importTypeOptions: { label: string; value: ImportType }[] = [
   {
     label: "ASIN Import",
     value: "asin",
+  },
+  {
+    label: "Myntra Import",
+    value: "myntra",
   },
 ];
 
@@ -95,6 +100,7 @@ export default function ProductToolbar({
   isImporting = false,
   productsData = [],
   asinData = [],
+  myntraData = [],
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedTypeRef = useRef<ImportType>(importType);
@@ -124,7 +130,78 @@ export default function ProductToolbar({
     try {
       const workbook = new ExcelJS.Workbook();
 
-      if (selectedTypeRef.current === "asin") {
+      if (selectedTypeRef.current === "myntra") {
+        const worksheet = workbook.addWorksheet("Myntra Import");
+
+        worksheet.columns = [
+          { header: "Rack Address", key: "rackAddress", width: 20 },
+          { header: "Myntra SKU", key: "myntraSku", width: 25 },
+          { header: "Seller SKU", key: "sellerSku", width: 25 },
+          { header: "ASIN", key: "asin", width: 20 },
+          { header: "Generated Barcode", key: "generatedBarcode", width: 22 },
+        ];
+
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = {
+          name: "Calibri",
+          size: 11,
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+        };
+        headerRow.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0A0E1A" },
+        };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+        headerRow.height = 28;
+
+        const sampleRows = [
+          {
+            rackAddress: "A-01-01",
+            myntraSku: "MYN-TSHIRT-BLK-M",
+            sellerSku: "TS-BLK-M",
+            asin: "B0DK9HFD2S",
+            generatedBarcode: "TS-BLK-M",
+          },
+          {
+            rackAddress: "A-01-02",
+            myntraSku: "MYN-TSHIRT-BLK-L",
+            sellerSku: "TS-BLK-L",
+            asin: "B0GGYM3WFR",
+            generatedBarcode: "TS-BLK-L",
+          },
+          {
+            rackAddress: "B-03-04",
+            myntraSku: "MYN-JEANS-BLU-32",
+            sellerSku: "JN-BLU-32",
+            asin: "B0GGYDT9KN",
+            generatedBarcode: "JN-BLU-32",
+          },
+          {
+            rackAddress: "C-02-08",
+            myntraSku: "MYN-KURTI-RED-S",
+            sellerSku: "KT-RED-S",
+            asin: "B0H395B1TY",
+            generatedBarcode: "KT-RED-S",
+          },
+        ];
+
+        sampleRows.forEach((item) => {
+          const r = worksheet.addRow(item);
+          r.height = 22;
+          r.alignment = { vertical: "middle" };
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(
+          new Blob([buffer], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          }),
+          "myntra-import-demo-sheet.xlsx",
+        );
+        toast.success("Myntra Import demo sheet downloaded successfully!");
+      } else if (selectedTypeRef.current === "asin") {
         const worksheet = workbook.addWorksheet("ASIN Import");
 
         worksheet.columns = [
@@ -284,7 +361,40 @@ export default function ProductToolbar({
   const handleDownloadData = async () => {
     try {
       const workbook = new ExcelJS.Workbook();
-      if (selectedTypeRef.current === "asin") {
+      if (selectedTypeRef.current === "myntra") {
+        const worksheet = workbook.addWorksheet("Myntra Import");
+        worksheet.columns = [
+          { header: "Rack Address", key: "rackAddress", width: 20 },
+          { header: "Myntra SKU", key: "myntraSku", width: 25 },
+          { header: "Seller SKU", key: "sellerSku", width: 25 },
+          { header: "ASIN", key: "asin", width: 20 },
+          { header: "Generated Barcode", key: "generatedBarcode", width: 22 },
+        ];
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+        headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A0E1A" } };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+        headerRow.height = 28;
+
+        myntraData.forEach((item: any) => {
+          const r = worksheet.addRow({
+            rackAddress: item.rackAddress || "",
+            myntraSku: item.myntraSku || "",
+            sellerSku: item.sellerSku || "",
+            asin: item.asin || "",
+            generatedBarcode: item.generatedBarcode || item.sellerSku || item.myntraSku || "",
+          });
+          r.height = 22;
+          r.alignment = { vertical: "middle" };
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(
+          new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+          "myntra-data.xlsx"
+        );
+        toast.success("Myntra data downloaded successfully!");
+      } else if (selectedTypeRef.current === "asin") {
         const worksheet = workbook.addWorksheet("ASIN Import");
         worksheet.columns = [
           { header: "ASIN", key: "asin", width: 22 },
@@ -370,7 +480,7 @@ export default function ProductToolbar({
   };
 
   return (
-    <div className="mb-6 flex flex-col gap-4 rounded-lg border border-slate-700 bg-[#0F172A] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between shadow-sm">
+    <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-700 bg-[#0F172A] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between shadow-sm">
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4 xl:flex xl:flex-1 xl:items-center xl:gap-4">
         {/* Search */}
         <div className="relative w-full xl:max-w-xs">
@@ -382,7 +492,13 @@ export default function ProductToolbar({
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={importType === "asin" ? "Search ASIN, SKU, Rack..." : "Search Product..."}
+            placeholder={
+              importType === "asin"
+                ? "Search ASIN, SKU, Rack..."
+                : importType === "myntra"
+                ? "Search Myntra SKU, Seller SKU, Rack..."
+                : "Search Product..."
+            }
             className="
               h-12
               w-full
@@ -490,7 +606,9 @@ export default function ProductToolbar({
           />
         </div>
 
-        {((importType === "asin" && asinData.length > 0) || (importType === "product" && productsData.length > 0)) ? (
+        {((importType === "asin" && asinData.length > 0) ||
+          (importType === "product" && productsData.length > 0) ||
+          (importType === "myntra" && myntraData.length > 0)) ? (
           <Button
             variant="secondary"
             fullWidth={false}

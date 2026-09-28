@@ -26,19 +26,19 @@ export default function ProcessingProgressModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="relative w-full max-w-xl sm:max-w-2xl overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-10 shadow-2xl dark:border-[#E8C16D]/30 dark:bg-[#0A0E1A]"
+          className="relative w-full max-w-xl sm:max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-10 shadow-2xl dark:border-[#E8C16D]/30 dark:bg-[#0A0E1A]"
         >
           {/* Subtle Ambient Background Glows */}
           <div className="pointer-events-none absolute -top-20 -left-20 h-52 w-52 rounded-full bg-[#FFF9EC] blur-3xl dark:bg-[#E8C16D]/10" />
           <div className="pointer-events-none absolute -bottom-20 -right-20 h-52 w-52 rounded-full bg-amber-500/10 blur-3xl" />
 
           {/* Top Title Section */}
-          <div className="flex flex-col items-center text-center space-y-2">
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF9EC] px-4 py-1 text-xs font-bold text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#E8C16D]/15 dark:text-[#E8C16D]">
-              <Sparkles className="h-3.5 w-3.5 animate-pulse text-[#B88728] dark:text-[#E8C16D]" />
+          <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-2">
+            <span className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#FFF9EC] px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#E8C16D]/15 dark:text-[#E8C16D]">
+              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-pulse text-[#B88728] dark:text-[#E8C16D]" />
               Amazon Dual-File Match Engine
             </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0A0E1A] dark:text-white">
+            <h3 className="text-xl sm:text-3xl font-extrabold tracking-tight text-[#0A0E1A] dark:text-white">
               Processing Orders & Barcodes
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md">
@@ -49,10 +49,10 @@ export default function ProcessingProgressModal({
           {/* ======================================================== */}
           {/* AESTHETIC VISUAL ANIMATION PIPELINE */}
           {/* ======================================================== */}
-          <div className="relative my-8 sm:my-10 flex items-center justify-between px-2 sm:px-6">
+          <div className="relative my-6 sm:my-10 flex items-center justify-between px-1 sm:px-6">
             {/* SVG Connecting Track with Floating Data Particles */}
             <svg
-              className="absolute left-10 right-10 top-1/2 -z-0 h-2 w-[calc(100%-5rem)] -translate-y-1/2 overflow-visible"
+              className="absolute left-6 right-6 sm:left-10 sm:right-10 top-1/2 -z-0 h-2 w-[calc(100%-3rem)] sm:w-[calc(100%-5rem)] -translate-y-1/2 overflow-visible"
               xmlns="http://www.w3.org/2000/svg"
             >
               {/* Base Track */}
@@ -89,39 +89,39 @@ export default function ProcessingProgressModal({
             </svg>
 
             {/* NODE 1: PDF INVOICE CARD */}
-            <div className="relative z-10 flex flex-col items-center gap-2">
+            <div className="relative z-10 flex flex-col items-center gap-1.5 sm:gap-2">
               <motion.div
                 animate={{
                   y: [0, -4, 0],
                 }}
                 transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                className="relative h-20 w-16 sm:h-24 sm:w-20 overflow-hidden rounded-2xl border border-red-200 bg-white p-2.5 shadow-md flex flex-col justify-between dark:border-red-500/30 dark:bg-[#161D2E]"
+                className="relative h-16 w-14 sm:h-24 sm:w-20 overflow-hidden rounded-xl sm:rounded-2xl border border-red-200 bg-white p-1.5 sm:p-2.5 shadow-md flex flex-col justify-between dark:border-red-500/30 dark:bg-[#161D2E]"
               >
                 {/* Mini Red Scanning Beam */}
                 <motion.div
-                  animate={{ y: [0, 60, 0] }}
+                  animate={{ y: [0, 50, 0] }}
                   transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
                   className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_8px_#EF4444]"
                 />
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-1 dark:border-slate-700">
-                  <FileText className="h-4 w-4 text-red-600" />
-                  <span className="text-[9px] font-extrabold text-red-600">PDF</span>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-0.5 sm:pb-1 dark:border-slate-700">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                  <span className="text-[8px] sm:text-[9px] font-extrabold text-red-600">PDF</span>
                 </div>
                 {/* Simulated Invoice Content */}
-                <div className="space-y-1 my-auto">
-                  <div className="h-1.5 w-full rounded bg-red-100 dark:bg-slate-700" />
-                  <div className="h-1.5 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
-                  <div className="h-1.5 w-5/6 rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="space-y-0.5 sm:space-y-1 my-auto">
+                  <div className="h-1 sm:h-1.5 w-full rounded bg-red-100 dark:bg-slate-700" />
+                  <div className="h-1 sm:h-1.5 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                  <div className="h-1 sm:h-1.5 w-5/6 rounded bg-slate-200 dark:bg-slate-700" />
                 </div>
-                <span className="text-[9px] font-semibold text-slate-500 text-center truncate">Invoices</span>
+                <span className="text-[8px] sm:text-[9px] font-semibold text-slate-500 text-center truncate">Invoices</span>
               </motion.div>
-              <span className="text-xs font-bold text-[#0A0E1A] dark:text-white">1. PDF Invoices</span>
+              <span className="text-[10px] sm:text-xs font-bold text-[#0A0E1A] dark:text-white text-center">1. PDF</span>
             </div>
 
             {/* NODE 2: CENTRAL MATCHING ENGINE (GOLD HUD RING) */}
-            <div className="relative z-10 flex flex-col items-center gap-2">
-              <div className="relative grid h-24 w-24 sm:h-28 sm:w-28 place-items-center">
+            <div className="relative z-10 flex flex-col items-center gap-1.5 sm:gap-2">
+              <div className="relative grid h-20 w-20 sm:h-28 sm:w-28 place-items-center">
                 {/* Clockwise Outer Dash Gold Ring */}
                 <motion.div
                   animate={{ rotate: 360 }}
@@ -133,59 +133,59 @@ export default function ProcessingProgressModal({
                 <motion.div
                   animate={{ rotate: -360 }}
                   transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                  className="absolute inset-2 rounded-full border border-[#B88728]/30"
+                  className="absolute inset-1.5 sm:inset-2 rounded-full border border-[#B88728]/30"
                 />
 
                 {/* Central HUD Reader Core */}
                 <motion.div
                   animate={{ scale: [0.96, 1.04, 0.96] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                  className="grid h-16 w-16 sm:h-20 sm:w-20 place-items-center rounded-full bg-[#0A0E1A] border-2 border-[#E8C16D] shadow-xl text-white"
+                  className="grid h-14 w-14 sm:h-20 sm:w-20 place-items-center rounded-full bg-[#0A0E1A] border-2 border-[#E8C16D] shadow-xl text-white"
                 >
                   <div className="text-center">
-                    <span className="font-mono text-xl sm:text-2xl font-black tracking-tighter text-[#E8C16D] block">
+                    <span className="font-mono text-base sm:text-2xl font-black tracking-tighter text-[#E8C16D] block">
                       {pct}%
                     </span>
-                    <span className="text-[9px] font-bold text-slate-400 block uppercase tracking-wider -mt-1">
+                    <span className="text-[7px] sm:text-[9px] font-bold text-slate-400 block uppercase tracking-wider -mt-0.5 sm:-mt-1">
                       MATCHING
                     </span>
                   </div>
                 </motion.div>
               </div>
-              <span className="text-xs font-bold text-[#B88728] dark:text-[#E8C16D]">2. Auto Verification</span>
+              <span className="text-[10px] sm:text-xs font-bold text-[#B88728] dark:text-[#E8C16D] text-center">2. Verify</span>
             </div>
 
             {/* NODE 3: ZPL BARCODE LABEL CARD */}
-            <div className="relative z-10 flex flex-col items-center gap-2">
+            <div className="relative z-10 flex flex-col items-center gap-1.5 sm:gap-2">
               <motion.div
                 animate={{
                   y: [0, -4, 0],
                 }}
                 transition={{ repeat: Infinity, duration: 3, ease: "easeInOut", delay: 0.5 }}
-                className="relative h-20 w-16 sm:h-24 sm:w-20 overflow-hidden rounded-2xl border border-amber-200 bg-white p-2.5 shadow-md flex flex-col justify-between dark:border-amber-500/30 dark:bg-[#161D2E]"
+                className="relative h-16 w-14 sm:h-24 sm:w-20 overflow-hidden rounded-xl sm:rounded-2xl border border-amber-200 bg-white p-1.5 sm:p-2.5 shadow-md flex flex-col justify-between dark:border-amber-500/30 dark:bg-[#161D2E]"
               >
                 {/* Mini Amber Scanning Beam */}
                 <motion.div
-                  animate={{ y: [0, 60, 0] }}
+                  animate={{ y: [0, 50, 0] }}
                   transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
                   className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent shadow-[0_0_8px_#F59E0B]"
                 />
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-1 dark:border-slate-700">
-                  <Barcode className="h-4 w-4 text-amber-600" />
-                  <span className="text-[9px] font-extrabold text-amber-600">ZPL</span>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-0.5 sm:pb-1 dark:border-slate-700">
+                  <Barcode className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
+                  <span className="text-[8px] sm:text-[9px] font-extrabold text-amber-600">ZPL</span>
                 </div>
                 {/* Mini Barcode Stripes */}
-                <div className="flex items-center justify-center gap-0.5 my-auto px-1">
-                  <div className="h-6 w-1 bg-slate-800 dark:bg-slate-300" />
-                  <div className="h-6 w-0.5 bg-slate-500" />
-                  <div className="h-6 w-1.5 bg-slate-800 dark:bg-slate-200" />
-                  <div className="h-6 w-0.5 bg-slate-500" />
-                  <div className="h-6 w-1 bg-slate-800 dark:bg-slate-300" />
+                <div className="flex items-center justify-center gap-0.5 my-auto px-0.5">
+                  <div className="h-4 sm:h-6 w-0.5 sm:w-1 bg-slate-800 dark:bg-slate-300" />
+                  <div className="h-4 sm:h-6 w-0.5 bg-slate-500" />
+                  <div className="h-4 sm:h-6 w-1 sm:w-1.5 bg-slate-800 dark:bg-slate-200" />
+                  <div className="h-4 sm:h-6 w-0.5 bg-slate-500" />
+                  <div className="h-4 sm:h-6 w-0.5 sm:w-1 bg-slate-800 dark:bg-slate-300" />
                 </div>
-                <span className="text-[9px] font-semibold text-slate-500 text-center truncate">Labels</span>
+                <span className="text-[8px] sm:text-[9px] font-semibold text-slate-500 text-center truncate">Labels</span>
               </motion.div>
-              <span className="text-xs font-bold text-[#0A0E1A] dark:text-white">3. ZPL Labels</span>
+              <span className="text-[10px] sm:text-xs font-bold text-[#0A0E1A] dark:text-white text-center">3. ZPL</span>
             </div>
           </div>
 

@@ -884,7 +884,7 @@ export default function OrderProcess() {
 
   return (
     <DashboardLayout title="Amazon Order Process">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Real-time Progress Modal */}
         <ProcessingProgressModal
           isOpen={isProcessing}
@@ -895,110 +895,114 @@ export default function OrderProcess() {
         {/* Upload Form */}
         <>
           {/* Header Information Banner */}
-            <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center rounded-md bg-[#FFF9EC] px-2.5 py-1 text-xs font-semibold text-[#B88728] border border-[#E8C16D]/30">
-                      Amazon Order Processing
-                    </span>
-                    <span className="text-xs text-slate-500 font-medium">
-                      Dual File Ingestion & Auto-Verification
-                    </span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A]">
-                    Upload Required Amazon Order Files
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
-                    Upload PDF tax invoices and ZPL barcode labels to automatically convert, cross-verify, and match orders.
-                  </p>
-                </div>
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 lg:p-6 xl:p-7 shadow-sm">
+            <div className="flex flex-col gap-3.5 sm:gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="space-y-1 sm:space-y-1.5 min-w-0 max-w-2xl">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-[#0A0E1A]">
+                  Upload Required Amazon Order Files
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Upload PDF tax invoices and ZPL barcode labels to automatically convert, cross-verify, and match orders.
+                </p>
+              </div>
 
-                {/* Progress Badge & 7-Day History Dropdown */}
-                <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
-                  <AmazonProcessHistoryDropdown />
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 sm:px-5 py-2.5 sm:py-3.5 text-left md:text-right shadow-2xs w-full sm:w-auto">
-                    <div className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Files Ready
-                    </div>
-                    <div className="text-base sm:text-lg font-black text-[#0A0E1A] mt-0.5">
-                      <span className={pdfFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
-                        {pdfFiles.length} PDF{pdfFiles.length !== 1 ? "s" : ""}
-                      </span>
-                      <span className="text-slate-300 mx-1.5">•</span>
-                      <span className={zplFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
-                        {zplFiles.length} ZPL{zplFiles.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
+              {/* Progress Badge & 7-Day History Dropdown */}
+              <div className="flex items-center justify-between sm:justify-start xl:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
+                <AmazonProcessHistoryDropdown className="flex-1 sm:flex-initial" />
+                <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50 px-2.5 sm:px-3.5 xl:px-4 py-2 sm:py-2.5 text-center sm:text-right shadow-2xs shrink-0 whitespace-nowrap">
+                  <div className="text-xs sm:text-sm xl:text-base font-black text-[#0A0E1A] whitespace-nowrap">
+                    <span className={pdfFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
+                      {pdfFiles.length} PDF{pdfFiles.length !== 1 ? "s" : ""}
+                    </span>
+                    <span className="text-slate-300 mx-1 sm:mx-1.5">•</span>
+                    <span className={zplFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
+                      {zplFiles.length} ZPL{zplFiles.length !== 1 ? "s" : ""}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Side-by-Side Upload Sections */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/* ======================================================== */}
-              {/* SECTION 1: PDF FILE UPLOAD */}
-              {/* ======================================================== */}
-              <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-red-50 text-red-600 border border-red-100 shrink-0">
-                      <FileText className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
-                        1. PDF Invoices {pdfFiles.length > 0 ? `(${pdfFiles.length})` : ""}
-                      </h3>
-                      <p className="text-xs text-slate-500">Upload one or multiple .pdf files</p>
-                    </div>
+          {/* Side-by-Side Upload Sections */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:gap-6 lg:grid-cols-2">
+            {/* ======================================================== */}
+            {/* SECTION 1: PDF FILE UPLOAD */}
+            {/* ======================================================== */}
+            <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 xl:p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="grid h-9 w-9 sm:h-10 sm:w-10 xl:h-11 xl:w-11 place-items-center rounded-xl sm:rounded-2xl bg-red-50 text-red-600 border border-red-100 shrink-0">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-
-                  {pdfFiles.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {pdfFiles.length} Ready
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-                      Required
-                    </span>
-                  )}
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-[#0A0E1A] text-xs sm:text-sm xl:text-base truncate">
+                      1. PDF Invoices {pdfFiles.length > 0 ? `(${pdfFiles.length})` : ""}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-slate-500 truncate">Upload one or multiple .pdf files</p>
+                  </div>
                 </div>
 
-                {/* Upload Box / Selected Files View */}
-                <div className="mt-4 sm:mt-5 flex-1 flex flex-col justify-between">
-                  {pdfFiles.length === 0 ? (
-                    <div
-                      onClick={() => pdfInputRef.current?.click()}
-                      onDragOver={handlePdfDragOver}
-                      onDragLeave={handlePdfDragLeave}
-                      onDrop={handlePdfDrop}
-                      className={`group relative flex min-h-[170px] sm:min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
-                        isDraggingPdf
-                          ? "border-[#E8C16D] bg-[#FFF9EC]"
-                          : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
-                      }`}
-                    >
-                      <div className="mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-red-500">
-                        <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
-                      </div>
+                {pdfFiles.length > 0 ? (
+                  <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-emerald-700 border border-emerald-200 shrink-0">
+                    <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    {pdfFiles.length} Ready
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-amber-50 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-amber-700 border border-amber-200 shrink-0">
+                    Required
+                  </span>
+                )}
+              </div>
 
-                      <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">
-                        Click to upload or drag & drop PDF(s)
-                      </p>
-                      <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
-                        Select one or multiple Adobe PDF (<code className="font-mono text-red-600">.pdf</code>) files
-                      </p>
-
-                      <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
-                        <FileText className="h-3.5 w-3.5 text-red-500" />
-                        Browse PDF Files
-                      </div>
+              {/* Upload Box / Selected Files View */}
+              <div className="mt-3.5 sm:mt-5 flex-1 flex flex-col justify-between">
+                {pdfFiles.length === 0 ? (
+                  <div
+                    onClick={() => pdfInputRef.current?.click()}
+                    onDragOver={handlePdfDragOver}
+                    onDragLeave={handlePdfDragLeave}
+                    onDrop={handlePdfDrop}
+                    className={`group relative flex min-h-[185px] sm:min-h-[200px] xl:min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-3 sm:p-5 text-center transition-all ${
+                      isDraggingPdf
+                        ? "border-[#E8C16D] bg-[#FFF9EC]"
+                        : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+                    }`}
+                  >
+                    <div className="mb-2 sm:mb-2.5 grid h-10 w-10 sm:h-11 sm:w-11 xl:h-12 xl:w-12 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-red-500">
+                      <UploadCloud className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                  ) : (
-                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-3 sm:p-4">
-                      <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+
+                    <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                      Click to upload or drag & drop PDF(s)
+                    </p>
+                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
+                      Select one or multiple Adobe PDF (<code className="font-mono text-red-600 font-semibold">.pdf</code>) files
+                    </p>
+
+                    <div className="mt-2.5 sm:mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
+                      <FileText className="h-3.5 w-3.5 text-red-500" />
+                      Browse PDF Files
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => pdfInputRef.current?.click()}
+                    onDragOver={handlePdfDragOver}
+                    onDragLeave={handlePdfDragLeave}
+                    onDrop={handlePdfDrop}
+                    className={`flex min-h-[185px] sm:min-h-[200px] xl:min-h-[220px] flex-col justify-between rounded-2xl border-2 p-2.5 sm:p-3 xl:p-3.5 transition-all cursor-pointer ${
+                      isDraggingPdf
+                        ? "border-[#E8C16D] bg-[#FFF9EC]"
+                        : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                    }`}
+                  >
+                    <div className="flex-1 flex flex-col min-h-0">
+                      {/* Scrollable file cards */}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-h-36 sm:max-h-44 overflow-y-auto space-y-1.5 pr-1 cursor-default"
+                      >
                         {pdfFiles.map((file, idx) => (
                           <div
                             key={`${file.name}_${idx}`}
@@ -1009,10 +1013,10 @@ export default function OrderProcess() {
                                 <FileCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={file.name}>
+                                <p className="truncate text-xs font-bold text-[#0A0E1A]" title={file.name}>
                                   {file.name}
                                 </p>
-                                <p className="text-[10px] sm:text-[11px] text-slate-500">
+                                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
                                   {formatFileSize(file.size)}
                                 </p>
                               </div>
@@ -1020,126 +1024,158 @@ export default function OrderProcess() {
 
                             <button
                               type="button"
-                              onClick={() => handleRemoveSinglePdf(idx)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveSinglePdf(idx);
+                              }}
                               title="Remove this PDF"
-                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         ))}
                       </div>
+                    </div>
 
-                      <div className="mt-3 sm:mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
-                        <span className="text-xs font-medium text-emerald-800">
-                          Total: {pdfFiles.length} file{pdfFiles.length > 1 ? "s" : ""} ({formatFileSize(totalPdfSize)})
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => pdfInputRef.current?.click()}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-[#E8C16D] shadow-2xs"
-                          >
-                            <Plus className="h-3 w-3" /> Add More
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleRemoveAllPdfs}
-                            className="text-xs font-medium text-red-600 hover:underline px-1"
-                          >
-                            Clear
-                          </button>
-                        </div>
+                    {/* Footer summary bar */}
+                    <div className="mt-2 sm:mt-2.5 xl:mt-3 pt-2 sm:pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-1.5 sm:gap-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold text-emerald-900 min-w-0 truncate">
+                        <span className="whitespace-nowrap">{pdfFiles.length} file{pdfFiles.length > 1 ? "s" : ""}</span>
+                        <span className="text-slate-400">•</span>
+                        <span className="text-emerald-700 font-medium truncate">{formatFileSize(totalPdfSize)}</span>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Hidden File Input with multiple enabled */}
-                  <input
-                    ref={pdfInputRef}
-                    type="file"
-                    multiple
-                    hidden
-                    accept=".pdf,application/pdf"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handlePdfSelection(e.target.files);
-                      }
-                    }}
-                  />
+                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            pdfInputRef.current?.click();
+                          }}
+                          className="inline-flex items-center gap-1 text-xs xl:text-sm font-bold text-[#0A0E1A] bg-white hover:bg-[#FFF9EC] px-2.5 sm:px-3 xl:px-4 py-1.5 sm:py-1.5 xl:py-2 rounded-xl border-2 border-[#E8C16D] shadow-xs transition hover:scale-[1.02] cursor-pointer"
+                        >
+                          <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                          <span>Add More</span>
+                        </button>
 
-                  {/* PDF Error Display */}
-                  {pdfError && (
-                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-700 border border-red-200">
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
-                      <span>{pdfError}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ======================================================== */}
-              {/* SECTION 2: ZPL FILE UPLOAD */}
-              {/* ======================================================== */}
-              <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 shrink-0">
-                      <Barcode className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
-                        2. ZPL Barcodes {zplFiles.length > 0 ? `(${zplFiles.length})` : ""}
-                      </h3>
-                      <p className="text-xs text-slate-500">Upload one or multiple .zpl files</p>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAllPdfs();
+                          }}
+                          className="inline-flex items-center gap-1 text-xs xl:text-sm font-bold text-red-600 bg-white hover:bg-red-50 px-2.5 sm:px-3 xl:px-4 py-1.5 sm:py-1.5 xl:py-2 rounded-xl border-2 border-red-200 hover:border-red-300 shadow-xs transition hover:scale-[1.02] cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          <span>Clear All</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
+                )}
 
-                  {zplFiles.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {zplFiles.length} Ready
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-                      Required
-                    </span>
-                  )}
+                {/* Hidden File Input with multiple enabled */}
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  multiple
+                  hidden
+                  accept=".pdf,application/pdf"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handlePdfSelection(e.target.files);
+                    }
+                  }}
+                />
+
+                {/* PDF Error Display */}
+                {pdfError && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 sm:p-3 text-xs text-red-700 border border-red-200">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                    <span>{pdfError}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ======================================================== */}
+            {/* SECTION 2: ZPL FILE UPLOAD */}
+            {/* ======================================================== */}
+            <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 xl:p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="grid h-9 w-9 sm:h-10 sm:w-10 xl:h-11 xl:w-11 place-items-center rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 shrink-0">
+                    <Barcode className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-[#0A0E1A] text-xs sm:text-sm xl:text-base truncate">
+                      2. ZPL Barcodes {zplFiles.length > 0 ? `(${zplFiles.length})` : ""}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-slate-500 truncate">Upload one or multiple .zpl files</p>
+                  </div>
                 </div>
 
-                {/* Upload Box / Selected Files View */}
-                <div className="mt-4 sm:mt-5 flex-1 flex flex-col justify-between">
-                  {zplFiles.length === 0 ? (
-                    <div
-                      onClick={() => zplInputRef.current?.click()}
-                      onDragOver={handleZplDragOver}
-                      onDragLeave={handleZplDragLeave}
-                      onDrop={handleZplDrop}
-                      className={`group relative flex min-h-[170px] sm:min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
-                        isDraggingZpl
-                          ? "border-[#E8C16D] bg-[#FFF9EC]"
-                          : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
-                      }`}
-                    >
-                      <div className="mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-amber-500">
-                        <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
-                      </div>
+                {zplFiles.length > 0 ? (
+                  <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-emerald-700 border border-emerald-200 shrink-0">
+                    <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    {zplFiles.length} Ready
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-amber-50 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-amber-700 border border-amber-200 shrink-0">
+                    Required
+                  </span>
+                )}
+              </div>
 
-                      <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">
-                        Click to upload or drag & drop ZPL(s)
-                      </p>
-                      <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
-                        Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600">.zpl</code>) files
-                      </p>
-
-                      <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
-                        <Barcode className="h-3.5 w-3.5 text-amber-500" />
-                        Browse ZPL Files
-                      </div>
+              {/* Upload Box / Selected Files View */}
+              <div className="mt-3.5 sm:mt-5 flex-1 flex flex-col justify-between">
+                {zplFiles.length === 0 ? (
+                  <div
+                    onClick={() => zplInputRef.current?.click()}
+                    onDragOver={handleZplDragOver}
+                    onDragLeave={handleZplDragLeave}
+                    onDrop={handleZplDrop}
+                    className={`group relative flex min-h-[185px] sm:min-h-[200px] xl:min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-3 sm:p-5 text-center transition-all ${
+                      isDraggingZpl
+                        ? "border-[#E8C16D] bg-[#FFF9EC]"
+                        : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+                    }`}
+                  >
+                    <div className="mb-2 sm:mb-2.5 grid h-10 w-10 sm:h-11 sm:w-11 xl:h-12 xl:w-12 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-amber-500">
+                      <UploadCloud className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                  ) : (
-                    <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/20 p-3 sm:p-4">
-                      <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+
+                    <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                      Click to upload or drag & drop ZPL(s)
+                    </p>
+                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
+                      Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600 font-semibold">.zpl</code>) files
+                    </p>
+
+                    <div className="mt-2.5 sm:mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
+                      <Barcode className="h-3.5 w-3.5 text-amber-500" />
+                      Browse ZPL Files
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => zplInputRef.current?.click()}
+                    onDragOver={handleZplDragOver}
+                    onDragLeave={handleZplDragLeave}
+                    onDrop={handleZplDrop}
+                    className={`flex min-h-[185px] sm:min-h-[200px] xl:min-h-[220px] flex-col justify-between rounded-2xl border-2 p-2.5 sm:p-3 xl:p-3.5 transition-all cursor-pointer ${
+                      isDraggingZpl
+                        ? "border-[#E8C16D] bg-[#FFF9EC]"
+                        : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                    }`}
+                  >
+                    <div className="flex-1 flex flex-col min-h-0">
+                      {/* Scrollable file cards */}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-h-36 sm:max-h-44 overflow-y-auto space-y-1.5 pr-1 cursor-default"
+                      >
                         {zplFiles.map((file, idx) => (
                           <div
                             key={`${file.name}_${idx}`}
@@ -1150,10 +1186,10 @@ export default function OrderProcess() {
                                 <Barcode className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={file.name}>
+                                <p className="truncate text-xs font-bold text-[#0A0E1A]" title={file.name}>
                                   {file.name}
                                 </p>
-                                <p className="text-[10px] sm:text-[11px] text-slate-500">
+                                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
                                   {formatFileSize(file.size)}
                                 </p>
                               </div>
@@ -1161,102 +1197,131 @@ export default function OrderProcess() {
 
                             <button
                               type="button"
-                              onClick={() => handleRemoveSingleZpl(idx)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveSingleZpl(idx);
+                              }}
                               title="Remove this ZPL"
-                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         ))}
                       </div>
+                    </div>
 
-                      <div className="mt-3 sm:mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
-                        <span className="text-xs font-medium text-emerald-800">
-                          Total: {zplFiles.length} file{zplFiles.length > 1 ? "s" : ""} ({formatFileSize(totalZplSize)})
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => zplInputRef.current?.click()}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-[#E8C16D] shadow-2xs"
-                          >
-                            <Plus className="h-3 w-3" /> Add More
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleRemoveAllZpls}
-                            className="text-xs font-medium text-red-600 hover:underline px-1"
-                          >
-                            Clear
-                          </button>
-                        </div>
+                    {/* Footer summary bar */}
+                    <div className="mt-2 sm:mt-2.5 xl:mt-3 pt-2 sm:pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-1.5 sm:gap-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold text-emerald-900 min-w-0 truncate">
+                        <span className="whitespace-nowrap">{zplFiles.length} file{zplFiles.length > 1 ? "s" : ""}</span>
+                        <span className="text-slate-400">•</span>
+                        <span className="text-emerald-700 font-medium truncate">{formatFileSize(totalZplSize)}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            zplInputRef.current?.click();
+                          }}
+                          className="inline-flex items-center gap-1 text-xs xl:text-sm font-bold text-[#0A0E1A] bg-white hover:bg-[#FFF9EC] px-2.5 sm:px-3 xl:px-4 py-1.5 sm:py-1.5 xl:py-2 rounded-xl border-2 border-[#E8C16D] shadow-xs transition hover:scale-[1.02] cursor-pointer"
+                        >
+                          <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                          <span>Add More</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAllZpls();
+                          }}
+                          className="inline-flex items-center gap-1 text-xs xl:text-sm font-bold text-red-600 bg-white hover:bg-red-50 px-2.5 sm:px-3 xl:px-4 py-1.5 sm:py-1.5 xl:py-2 rounded-xl border-2 border-red-200 hover:border-red-300 shadow-xs transition hover:scale-[1.02] cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          <span>Clear All</span>
+                        </button>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Hidden File Input with multiple enabled */}
-                  <input
-                    ref={zplInputRef}
-                    type="file"
-                    multiple
-                    hidden
-                    accept=".zpl"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handleZplSelection(e.target.files);
-                      }
-                    }}
-                  />
+                {/* Hidden File Input with multiple enabled */}
+                <input
+                  ref={zplInputRef}
+                  type="file"
+                  multiple
+                  hidden
+                  accept=".zpl"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleZplSelection(e.target.files);
+                    }
+                  }}
+                />
 
-                  {/* ZPL Error Display */}
-                  {zplError && (
-                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-700 border border-red-200">
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
-                      <span>{zplError}</span>
-                    </div>
-                  )}
-                </div>
+                {/* ZPL Error Display */}
+                {zplError && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 sm:p-3 text-xs text-red-700 border border-red-200">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                    <span>{zplError}</span>
+                  </div>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Action Controls */}
-            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm">
+          {/* Action Controls */}
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3 sm:p-4 xl:p-5 shadow-sm">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              fullWidth={false}
+              disabled={pdfFiles.length === 0 && zplFiles.length === 0}
+              onClick={handleResetAll}
+              leftIcon={<RotateCcw className="h-4 w-4" />}
+              className="w-full sm:w-auto text-xs sm:text-sm py-2.5 font-bold rounded-2xl border-2 border-slate-300 hover:border-red-300 hover:bg-red-50 hover:text-red-600 transition shadow-2xs"
+            >
+              Clear All
+            </Button>
+
+            <div className="flex w-full items-center gap-3 sm:w-auto">
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 size="md"
                 fullWidth={false}
-                disabled={pdfFiles.length === 0 && zplFiles.length === 0}
-                onClick={handleResetAll}
-                leftIcon={<RotateCcw className="h-4 w-4" />}
-                className="w-full sm:w-auto"
+                loading={isProcessing}
+                disabled={!isReadyToSubmit || isProcessing}
+                onClick={handleSubmit}
+                rightIcon={<ArrowRight className="h-4 w-4" />}
+                className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-xs sm:text-sm py-2.5 font-bold rounded-2xl border-2 border-[#D4A343] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] shadow-sm hover:shadow transition"
               >
-                Clear Files
+                {isProcessing ? (
+                  "Processing Files..."
+                ) : isReadyToSubmit ? (
+                  <>
+                    <span className="sm:hidden">
+                      Process Orders ({pdfFiles.length + zplFiles.length} Files)
+                    </span>
+                    <span className="hidden sm:inline xl:hidden">
+                      Verify & Process ({pdfFiles.length + zplFiles.length} Files)
+                    </span>
+                    <span className="hidden xl:inline">
+                      Convert, Verify & Process ({pdfFiles.length} PDF{pdfFiles.length > 1 ? "s" : ""}, {zplFiles.length} ZPL{zplFiles.length > 1 ? "s" : ""})
+                    </span>
+                  </>
+                ) : (
+                  "Upload Files"
+                )}
               </Button>
-
-              <div className="flex w-full items-center gap-3 sm:w-auto">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="md"
-                  fullWidth={false}
-                  loading={isProcessing}
-                  disabled={!isReadyToSubmit || isProcessing}
-                  onClick={handleSubmit}
-                  rightIcon={<ArrowRight className="h-4 w-4" />}
-                  className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-xs sm:text-sm"
-                >
-                  {isProcessing
-                    ? "Processing Files..."
-                    : isReadyToSubmit
-                    ? `Convert, Verify & Process (${pdfFiles.length} PDF${pdfFiles.length > 1 ? "s" : ""}, ${zplFiles.length} ZPL${zplFiles.length > 1 ? "s" : ""})`
-                    : "Upload Files"}
-                </Button>
-              </div>
             </div>
-          </>
-        </div>
-      </DashboardLayout>
-    );
+          </div>
+        </>
+      </div>
+    </DashboardLayout>
+  );
 }

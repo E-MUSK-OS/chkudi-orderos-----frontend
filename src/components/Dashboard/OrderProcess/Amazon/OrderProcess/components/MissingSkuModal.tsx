@@ -123,7 +123,7 @@ export default function MissingSkuModal({
     <AnimatePresence>
       {/* Strictly blocking backdrop: NO dismiss on click outside */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-md select-none"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 sm:p-4 backdrop-blur-md select-none"
         onClick={(e) => e.stopPropagation()}
       >
         <motion.div
@@ -132,7 +132,7 @@ export default function MissingSkuModal({
           exit={{ opacity: 0, scale: 0.94, y: 12 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md sm:max-w-lg overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-7 shadow-2xl text-slate-900"
+          className="relative w-full max-w-md sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-2xl text-slate-900"
         >
           {/* Subtle Ambient Background Glows */}
           <div className="pointer-events-none absolute -top-16 -left-16 h-44 w-44 rounded-full bg-[#FFF9EC] blur-3xl" />
