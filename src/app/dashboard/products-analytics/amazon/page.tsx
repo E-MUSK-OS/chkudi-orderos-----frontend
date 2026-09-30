@@ -1,5 +1,7 @@
+"use client";
+
 import React from "react";
-import AmazonAnalytics from "../../../../components/Dashboard/ProductsAnalytics/Amazon/AmazonAnalytics";
+import AmazonAnalytics from "@/components/Dashboard/ProductsAnalytics/Amazon/AmazonAnalytics";
 
 const Page = () => {
   return (
@@ -10,3 +12,4 @@ const Page = () => {
 };
 
 export default Page;
+

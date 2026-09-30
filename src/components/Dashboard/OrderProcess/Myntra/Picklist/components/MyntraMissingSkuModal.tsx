@@ -67,13 +67,12 @@ export default function MyntraMissingSkuModal({
       const worksheet = workbook.addWorksheet("Myntra Import");
 
       // Columns matching Myntra Product Import format:
-      // Rack Address | Myntra SKU | Seller SKU | ASIN | Generated Barcode
+      // Rack Address | Myntra SKU | Seller SKU | Generate Barcode
       worksheet.columns = [
         { header: "Rack Address", key: "rackAddress", width: 20 },
         { header: "Myntra SKU", key: "myntraSku", width: 25 },
         { header: "Seller SKU", key: "sellerSku", width: 25 },
-        { header: "ASIN", key: "asin", width: 20 },
-        { header: "Generated Barcode", key: "generatedBarcode", width: 22 },
+        { header: "Generate Barcode", key: "generateBarcode", width: 22 },
       ];
 
       // Style header row (Dark navy header style matching app theme)
@@ -93,8 +92,7 @@ export default function MyntraMissingSkuModal({
           rackAddress: "",
           myntraSku: sku,
           sellerSku: "",
-          asin: "",
-          generatedBarcode: "",
+          generateBarcode: "",
         });
         row.height = 20;
         row.alignment = { vertical: "middle" };

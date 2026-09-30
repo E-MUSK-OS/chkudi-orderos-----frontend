@@ -3,8 +3,8 @@ export interface MyntraImportItem {
   rackAddress: string | null;
   myntraSku: string;
   sellerSku: string | null;
-  asin: string | null;
-  generatedBarcode: string | null;
+  generateBarcode: string | null;
+  generatedBarcode?: string | null;
   userId?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -14,8 +14,8 @@ export interface MyntraMappingRecord {
   id?: string;
   myntraSku: string;
   sellerSku: string;
-  asin: string;
-  generatedBarcode: string;
+  generateBarcode: string;
+  generatedBarcode?: string;
   rackAddress: string;
 }
 

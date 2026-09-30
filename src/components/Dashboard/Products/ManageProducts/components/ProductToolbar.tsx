@@ -137,8 +137,7 @@ export default function ProductToolbar({
           { header: "Rack Address", key: "rackAddress", width: 20 },
           { header: "Myntra SKU", key: "myntraSku", width: 25 },
           { header: "Seller SKU", key: "sellerSku", width: 25 },
-          { header: "ASIN", key: "asin", width: 20 },
-          { header: "Generated Barcode", key: "generatedBarcode", width: 22 },
+          { header: "Generate Barcode", key: "generateBarcode", width: 22 },
         ];
 
         const headerRow = worksheet.getRow(1);
@@ -161,29 +160,25 @@ export default function ProductToolbar({
             rackAddress: "A-01-01",
             myntraSku: "MYN-TSHIRT-BLK-M",
             sellerSku: "TS-BLK-M",
-            asin: "B0DK9HFD2S",
-            generatedBarcode: "TS-BLK-M",
+            generateBarcode: "TS-BLK-M",
           },
           {
             rackAddress: "A-01-02",
             myntraSku: "MYN-TSHIRT-BLK-L",
             sellerSku: "TS-BLK-L",
-            asin: "B0GGYM3WFR",
-            generatedBarcode: "TS-BLK-L",
+            generateBarcode: "TS-BLK-L",
           },
           {
             rackAddress: "B-03-04",
             myntraSku: "MYN-JEANS-BLU-32",
             sellerSku: "JN-BLU-32",
-            asin: "B0GGYDT9KN",
-            generatedBarcode: "JN-BLU-32",
+            generateBarcode: "JN-BLU-32",
           },
           {
             rackAddress: "C-02-08",
             myntraSku: "MYN-KURTI-RED-S",
             sellerSku: "KT-RED-S",
-            asin: "B0H395B1TY",
-            generatedBarcode: "KT-RED-S",
+            generateBarcode: "KT-RED-S",
           },
         ];
 
@@ -367,8 +362,7 @@ export default function ProductToolbar({
           { header: "Rack Address", key: "rackAddress", width: 20 },
           { header: "Myntra SKU", key: "myntraSku", width: 25 },
           { header: "Seller SKU", key: "sellerSku", width: 25 },
-          { header: "ASIN", key: "asin", width: 20 },
-          { header: "Generated Barcode", key: "generatedBarcode", width: 22 },
+          { header: "Generate Barcode", key: "generateBarcode", width: 22 },
         ];
         const headerRow = worksheet.getRow(1);
         headerRow.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
@@ -381,8 +375,7 @@ export default function ProductToolbar({
             rackAddress: item.rackAddress || "",
             myntraSku: item.myntraSku || "",
             sellerSku: item.sellerSku || "",
-            asin: item.asin || "",
-            generatedBarcode: item.generatedBarcode || item.sellerSku || item.myntraSku || "",
+            generateBarcode: item.generateBarcode || item.generatedBarcode || item.sellerSku || item.myntraSku || "",
           });
           r.height = 22;
           r.alignment = { vertical: "middle" };

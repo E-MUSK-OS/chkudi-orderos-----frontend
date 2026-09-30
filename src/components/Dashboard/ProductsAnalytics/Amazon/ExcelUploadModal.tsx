@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { X, UploadCloud, FileSpreadsheet } from "lucide-react";
+import { X, UploadCloud, FileSpreadsheet, FileDown } from "lucide-react";
 import ExcelJS from "exceljs";
 import { getToken } from "@/utils/auth";
 import { toast } from "sonner";
+import { downloadAmazonAnalyticsDemoSheet } from "./utils/downloadDemoSheet";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -56,22 +57,52 @@ export default function ExcelUploadModal({
       const worksheet = workbook.worksheets[0];
       const parsedData: { sku: string; url: string }[] = [];
 
+      // Check header row (row 1) to identify column positions
+      let skuColIndex = 1;
+      let urlColIndex = 2;
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.eachCell((cell, colNumber) => {
+        const val = (cell.text || cell.value?.toString() || "").toLowerCase().trim();
+        if (val.includes("sku")) {
+          skuColIndex = colNumber;
+        } else if (val.includes("url") || val.includes("link") || val.includes("amazon")) {
+          urlColIndex = colNumber;
+        }
+      });
+
       worksheet.eachRow((row, rowNumber) => {
-        // Skip header if it is row 1 and has 'sku'
+        // Skip header if it is row 1 and has 'sku' or 'url'
         if (rowNumber === 1) {
-          const firstCell = row.getCell(1).text?.toLowerCase();
-          if (firstCell && firstCell.includes("sku")) return;
+          const c1 = (row.getCell(skuColIndex).text || "").toLowerCase();
+          const c2 = (row.getCell(urlColIndex).text || "").toLowerCase();
+          if (c1.includes("sku") || c2.includes("url") || c2.includes("link")) {
+            return;
+          }
         }
 
-        const cell = row.getCell(1);
-        let skuText = cell.text || cell.value?.toString() || "";
+        const skuCell = row.getCell(skuColIndex);
+        const urlCell = row.getCell(urlColIndex);
+
+        let skuText = (skuCell.text || skuCell.value?.toString() || "").trim();
         let urlText = "";
 
-        if (cell.hyperlink) {
-          urlText = cell.hyperlink;
+        // Check if url is in urlCell (hyperlink or text)
+        if (urlCell.hyperlink) {
+          urlText = urlCell.hyperlink;
+        } else if (urlCell.value && typeof urlCell.value === "object" && "hyperlink" in urlCell.value) {
+          urlText = (urlCell.value as any).hyperlink;
+        } else if (urlCell.text || urlCell.value) {
+          urlText = (urlCell.text || urlCell.value?.toString() || "").trim();
         }
-        
-        skuText = skuText.trim();
+
+        // If no url in urlCell, check if skuCell itself has an embedded hyperlink
+        if (!urlText && skuCell.hyperlink) {
+          urlText = skuCell.hyperlink;
+        } else if (!urlText && skuCell.value && typeof skuCell.value === "object" && "hyperlink" in skuCell.value) {
+          urlText = (skuCell.value as any).hyperlink;
+        }
+
         if (skuText) {
           parsedData.push({ sku: skuText, url: urlText });
         }
@@ -158,6 +189,27 @@ export default function ExcelUploadModal({
               <X size={20} />
             </button>
           </div>
+        </div>
+
+        {/* Demo Sheet Banner */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-[#E8C16D]/60 bg-gradient-to-r from-[#FFFDF5] via-[#FFF9EC] to-[#FFFDF5] p-3 sm:p-3.5 mb-4 text-xs shadow-2xs">
+          <div className="flex items-center gap-2.5 text-slate-800 font-medium">
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#0A0E1A] text-[#E8C16D] shrink-0">
+              <FileSpreadsheet className="h-4 w-4" />
+            </div>
+            <span>
+              Need the exact template format? Download our demo sheet with sample rows.
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={downloadAmazonAnalyticsDemoSheet}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3.5 py-1.5 font-bold text-[#0A0E1A] shadow-2xs transition-all active:scale-[0.98] cursor-pointer shrink-0"
+          >
+            <FileDown className="h-3.5 w-3.5 text-[#B88728]" />
+            <span>Download Demo Sheet</span>
+          </button>
         </div>
 
         {/* Upload Area */}

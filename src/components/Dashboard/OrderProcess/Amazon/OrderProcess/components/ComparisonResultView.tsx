@@ -163,6 +163,7 @@ import {
 import {
   getOrLoadCombinedDoc,
   getCachedAmazonDocs,
+  setCachedAmazonDocs,
   clearCachedAmazonDocs,
   getDocCacheKey,
   getCachedOrderPdf,
@@ -170,6 +171,7 @@ import {
   clearOrderPdfCache,
   getOrGenerateSingleOrderPdf,
   startBackgroundOrderPdfPrewarming,
+  blobToBase64,
 } from "../utils/pdfCache";
 import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
@@ -394,9 +396,14 @@ export default function ComparisonResultView({
   // Pre-load combined PDF document & parsed documents in background for instant sub-second printing
   useEffect(() => {
     const existingCache = getCachedAmazonDocs();
-    if (existingCache?.combinedDoc && existingCache.batchKey === batchKey && results && results.length > 0) {
+    if (
+      existingCache?.combinedDoc &&
+      (existingCache.batchKey === batchKey || existingCache.cacheKey === batchKey) &&
+      results &&
+      results.length > 0
+    ) {
       startBackgroundOrderPdfPrewarming(results, existingCache.combinedDoc, batchKey);
-    } else if (files?.combinedPdfBase64) {
+    } else if (files?.combinedPdfBase64 || activeHistoryBatchId) {
       getOrLoadCombinedDoc(files, batchKey)
         .then((doc) => {
           if (doc && results && results.length > 0) {
@@ -405,7 +412,7 @@ export default function ComparisonResultView({
         })
         .catch((e) => console.warn("Background combinedDoc preload error:", e));
     }
-  }, [files, results, batchKey]);
+  }, [files, results, batchKey, activeHistoryBatchId]);
 
   useEffect(() => {
     if (!files?.convertedZplPdfBase64 || !files?.originalPdfBase64 || isPreloadingDocsRef.current) return;
@@ -559,6 +566,41 @@ export default function ComparisonResultView({
     [results]
   );
 
+  const [unmatchedPdfPageCount, setUnmatchedPdfPageCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (summary?.unmatchedPdfPagesCount !== undefined) {
+      setUnmatchedPdfPageCount(summary.unmatchedPdfPagesCount);
+      return;
+    }
+    if (unmatchedPdfUrl) {
+      let isMounted = true;
+      (async () => {
+        try {
+          const res = await fetch(unmatchedPdfUrl);
+          const buf = await res.arrayBuffer();
+          const { PDFDocument } = await import("pdf-lib");
+          const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+          if (isMounted) {
+            setUnmatchedPdfPageCount(doc.getPageCount());
+          }
+        } catch {
+          // ignore
+        }
+      })();
+      return () => {
+        isMounted = false;
+      };
+    } else {
+      setUnmatchedPdfPageCount(0);
+    }
+  }, [unmatchedPdfUrl, summary?.unmatchedPdfPagesCount]);
+
+  const displayUnmatchedPdfCount =
+    unmatchedPdfPageCount !== null
+      ? unmatchedPdfPageCount
+      : summary?.unmatchedPdfPagesCount ?? unmatchedPdfCount;
+
   const pdfViewOptions: SelectOption[] = useMemo(
     () => [
       {
@@ -574,7 +616,7 @@ export default function ComparisonResultView({
         value: "original",
       },
       {
-        label: `Unmatched PDF Invoices (${unmatchedPdfCount})`,
+        label: `Unmatched PDF Invoices (${displayUnmatchedPdfCount})`,
         value: "unmatched_pdf",
       },
       {
@@ -582,7 +624,7 @@ export default function ComparisonResultView({
         value: "unmatched_zpl",
       },
     ],
-    [summary, unmatchedPdfCount, unmatchedZplCount]
+    [summary, displayUnmatchedPdfCount, unmatchedZplCount]
   );
 
   const currentPdfConfig = useMemo(() => {
@@ -608,7 +650,7 @@ export default function ComparisonResultView({
       case "unmatched_pdf":
         return {
           title: "Unmatched PDF Invoices",
-          description: `Customer tax invoices in uploaded PDF with no matching ZPL shipping label (${unmatchedPdfCount} orders)`,
+          description: `Customer tax invoices & excluded copies with no matching ZPL shipping label (${displayUnmatchedPdfCount} pages)`,
           downloadText: "Download Unmatched Invoices PDF",
           onDownload: downloadUnmatchedPdf,
           url: unmatchedPdfUrl,
@@ -703,10 +745,10 @@ export default function ComparisonResultView({
       useAmazonOrderStore.setState((state) => ({
         summary: state.summary
           ? {
-              ...state.summary,
-              printedIndices: Array.from(newSet),
-              printedCount: newSet.size,
-            }
+            ...state.summary,
+            printedIndices: Array.from(newSet),
+            printedCount: newSet.size,
+          }
           : state.summary,
       }));
     },
@@ -726,10 +768,10 @@ export default function ComparisonResultView({
       useAmazonOrderStore.setState((state) => ({
         summary: state.summary
           ? {
-              ...state.summary,
-              printedIndices: Array.from(newSet),
-              printedCount: newSet.size,
-            }
+            ...state.summary,
+            printedIndices: Array.from(newSet),
+            printedCount: newSet.size,
+          }
           : state.summary,
       }));
     },
@@ -1028,8 +1070,8 @@ export default function ComparisonResultView({
             item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF"
               ? item.pdfInvoice
               : item.zplInvoice && item.zplInvoice !== "Not Found in ZPL" && item.zplInvoice !== "N/A"
-              ? item.zplInvoice
-              : "N/A";
+                ? item.zplInvoice
+                : "N/A";
           const cust = cleanCustomerName(item.customer) || "N/A";
 
           ordersToSave.push({
@@ -1165,8 +1207,12 @@ export default function ComparisonResultView({
     }
   }, [isMappingsLoading, modalMissingAsins.length]);
 
-  // Helper to get item's order type (with strict multiple_pieces rule)
+  // Helper to get item's order type (strictly honors row-based classification from clientMatcher)
   const getOrderTypeForItem = (item: (typeof results)[0]): AmazonOrderType => {
+    if (item.orderType) {
+      return item.orderType;
+    }
+
     const rawAsins = (item.asin && item.asin !== "N/A" ? item.asin : "")
       .split(/[\r\n]+|\s+\/\s+/)
       .map((s) => s.trim().toUpperCase())
@@ -1180,19 +1226,13 @@ export default function ComparisonResultView({
     const uniqueAsins = new Set(rawAsins);
     const uniqueSkus = new Set(rawSkus);
 
-    const totalQty = item.totalQuantity || 1;
-
-    const hasMultipleDifferentAsins = uniqueAsins.size > 1 || (item.asinsCount || 0) > 1;
-    const hasMultipleDifferentSkus = uniqueSkus.size > 1;
-
-    // 1. If order contains multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
-    if (hasMultipleDifferentAsins || hasMultipleDifferentSkus) {
+    // 1. Multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
+    if (uniqueAsins.size > 1 || uniqueSkus.size > 1) {
       return "multiple_asin";
     }
 
-    // 2. Exactly one ASIN and the EXACT SAME Seller SKU:
-    // Only Multiple Pieces if the order genuinely has 2 or more pieces (totalQty >= 2)
-    if (totalQty >= 2) {
+    // 2. Exactly one ASIN and SKU: genuinely multiple pieces if totalQuantity >= 2
+    if (item.totalQuantity && item.totalQuantity >= 2) {
       return "multiple_pieces";
     }
 
@@ -1251,9 +1291,9 @@ export default function ComparisonResultView({
     typeof window !== "undefined" &&
       (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
       ? {
-          printerName: (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))!,
-          timestamp: Date.now(),
-        }
+        printerName: (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))!,
+        timestamp: Date.now(),
+      }
       : null
   );
   const autoScanTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1345,7 +1385,7 @@ export default function ComparisonResultView({
       try {
         sessionStorage.removeItem("amazon_show_printed_active");
         localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
-      } catch (e) {}
+      } catch (e) { }
     }
     setShowPrinted(false);
     setOrderTypeFilter("single_quantity");
@@ -1374,7 +1414,7 @@ export default function ComparisonResultView({
   useEffect(() => {
     let isCancelled = false;
     async function preheatOrderCache() {
-      if (!files?.combinedPdfBase64) return;
+      if (!files?.combinedPdfBase64 && !activeHistoryBatchId) return;
       const combinedDoc = await getOrLoadCombinedDoc(files, batchKey);
       if (!combinedDoc || isCancelled) return;
 
@@ -1412,7 +1452,7 @@ export default function ComparisonResultView({
             copied.forEach((p) => singleDoc.addPage(p));
             const b64 = await singleDoc.saveAsBase64();
             if (!isCancelled) {
-              if (orderPrintPdfCacheRef.current.size >= 50 && !orderPrintPdfCacheRef.current.has(item.index)) {
+              if (orderPrintPdfCacheRef.current.size >= 2000 && !orderPrintPdfCacheRef.current.has(item.index)) {
                 const oldestKey = orderPrintPdfCacheRef.current.keys().next().value;
                 if (oldestKey !== undefined) {
                   orderPrintPdfCacheRef.current.delete(oldestKey);
@@ -1434,7 +1474,7 @@ export default function ComparisonResultView({
     return () => {
       isCancelled = true;
     };
-  }, [mappedResults, files, batchKey]);
+  }, [mappedResults, files, batchKey, activeHistoryBatchId]);
 
   // Filter and search results (Only matched orders are displayed in table)
   const filteredResults = useMemo(() => {
@@ -1577,7 +1617,56 @@ export default function ComparisonResultView({
       }
     }
 
-    if (!activeFiles?.combinedPdfBase64 && (!activeFiles?.convertedZplPdfBase64 || !activeFiles?.originalPdfBase64)) {
+    // Check if combinedDoc is already in memory or can be fetched on demand for historical batches
+    const currentCached = getCachedAmazonDocs();
+    const currentBatchId = activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId;
+    const hasCachedCombinedDoc =
+      !!currentCached?.combinedDoc &&
+      (currentCached.batchKey === batchKey ||
+        currentCached.cacheKey === `batch_${currentBatchId}` ||
+        currentCached.cacheKey === batchKey);
+
+    if (!activeFiles?.combinedPdfBase64 && !hasCachedCombinedDoc && currentBatchId) {
+      toast.loading('Fetching batch labels for printing...', { id: 'print-prep' });
+      try {
+        const blob = await amazonOrderService.fetchBatchFileBlob(currentBatchId, 'combined');
+        if (blob && blob.size > 0) {
+          const base64 = await blobToBase64(blob);
+          const combUrl = URL.createObjectURL(blob);
+          const newFiles = {
+            ...activeFiles,
+            combinedPdfBase64: base64,
+          } as any;
+          useAmazonOrderStore.setState({
+            files: newFiles,
+            combinedPdfUrl: combUrl,
+          });
+          activeFiles = newFiles;
+
+          const buf = await blob.arrayBuffer();
+          const { PDFDocument } = await import('pdf-lib');
+          const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+          const bKey = batchKey || `batch_${currentBatchId}`;
+          setCachedAmazonDocs({
+            combinedDoc: doc,
+            combinedBytes: new Uint8Array(buf),
+            cacheKey: `batch_${currentBatchId}`,
+            batchKey: bKey,
+          });
+          startBackgroundOrderPdfPrewarming(results, doc, bKey);
+        }
+      } catch (fetchErr) {
+        console.warn('Failed to fetch batch files on demand for printing:', fetchErr);
+      }
+    }
+
+    const finalCached = getCachedAmazonDocs();
+    const isReadyToPrint =
+      !!finalCached?.combinedDoc ||
+      !!activeFiles?.combinedPdfBase64 ||
+      (!!activeFiles?.convertedZplPdfBase64 && !!activeFiles?.originalPdfBase64);
+
+    if (!isReadyToPrint) {
       toast.error('Processed order files are not ready for printing.');
       return;
     }
@@ -1743,10 +1832,10 @@ export default function ComparisonResultView({
                   m.combinedPages && m.combinedPages.length > 0
                     ? m.combinedPages.length
                     : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
-                    ? 2 + (m.zplPage > 0 ? 1 : 0)
-                    : m.zplPage > 0
-                    ? 2
-                    : 1;
+                      ? 2 + (m.zplPage > 0 ? 1 : 0)
+                      : m.zplPage > 0
+                        ? 2
+                        : 1;
                 if (m.index === singleItem.index) {
                   for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
                     pages.push(p);
@@ -1800,7 +1889,7 @@ export default function ComparisonResultView({
       let builtSuccessfully = false;
 
       // 1. FAST PATH: Instant page extraction from pre-generated combinedDoc (< 50ms!)
-      const combinedDoc = await getOrLoadCombinedDoc(activeFiles);
+      const combinedDoc = await getOrLoadCombinedDoc(activeFiles, batchKey);
       if (combinedDoc && combinedDoc.getPageCount() > 0) {
         const targetPageIndices: number[] = [];
         const matchedList = mappedResults.filter((r) => r.isMatch);
@@ -1824,10 +1913,10 @@ export default function ComparisonResultView({
               m.combinedPages && m.combinedPages.length > 0
                 ? m.combinedPages.length
                 : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
-                ? 2 + (m.zplPage > 0 ? 1 : 0)
-                : m.zplPage > 0
-                ? 2
-                : 1;
+                  ? 2 + (m.zplPage > 0 ? 1 : 0)
+                  : m.zplPage > 0
+                    ? 2
+                    : 1;
             if (m.index === item.index) {
               for (let p = startP; p < startP + expectedPages && p < combinedDoc.getPageCount(); p++) {
                 targetPageIndices.push(p);
@@ -1852,13 +1941,14 @@ export default function ComparisonResultView({
         const TARGET_WIDTH = 4 * 72;
         const TARGET_HEIGHT = 6 * 72;
 
-        const addScaledPage = async (srcPage: any, isZpl = false, sellerSku?: string) => {
+        const addScaledPage = async (srcPage: any, isZpl = false, sellerSku?: string, totalQuantity?: number) => {
           const embedded = await printDoc.embedPage(srcPage);
           const { width: srcW, height: srcH } = embedded;
 
           if (isZpl) {
-            const TOP_SPACING = 25;
-            const BOTTOM_SPACING = 10;
+            // Equalize top and bottom whitespace so barcode at top and SKU at bottom have equal margins
+            const TOP_SPACING = 8;
+            const BOTTOM_SPACING = 20;
             const SIDE_SPACING = 8;
 
             const availW = TARGET_WIDTH - 2 * SIDE_SPACING;
@@ -1876,7 +1966,7 @@ export default function ComparisonResultView({
             newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
 
             if (sellerSku) {
-              await drawSkuOnLabelPage(printDoc, newPage, sellerSku, x, y, finalW, finalH);
+              await drawSkuOnLabelPage(printDoc, newPage, sellerSku, x, y, finalW, finalH, totalQuantity);
             }
           } else {
             const MARGIN = 6;
@@ -1915,7 +2005,7 @@ export default function ComparisonResultView({
           }
           if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
             const mappedItem = mappedResults.find((m) => m.index === item.index) || item;
-            await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, mappedItem.sellerSku);
+            await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, mappedItem.sellerSku, mappedItem.totalQuantity);
           }
         }
       }
@@ -2180,8 +2270,8 @@ export default function ComparisonResultView({
           item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" && item.pdfInvoice !== "N/A"
             ? item.pdfInvoice.trim()
             : item.zplInvoice && item.zplInvoice !== "Not Found in ZPL" && item.zplInvoice !== "N/A"
-            ? item.zplInvoice.trim()
-            : "N/A";
+              ? item.zplInvoice.trim()
+              : "N/A";
 
         const orderTypeLabel = getOrderTypeLabel(getOrderTypeForItem(item));
         const cleanAsin = formatCleanList(item.asin);
@@ -2315,7 +2405,7 @@ export default function ComparisonResultView({
       .filter(Boolean);
 
     const orderType = getOrderTypeForItem(item);
-    const totalQty = Math.max(item.totalQuantity || 0, rawAsins.length, rawSkus.length, 1);
+    const totalQty = Math.max(item.totalQuantity || 1, 1);
 
     if (orderType === "single_quantity") {
       return [
@@ -2331,7 +2421,7 @@ export default function ComparisonResultView({
     if (orderType === "multiple_pieces" && new Set(rawAsins).size <= 1) {
       const singleAsin = rawAsins[0] || (item.asin && item.asin !== "N/A" ? item.asin.trim().toUpperCase() : "") || "N/A";
       const singleSku = rawSkus[0] || (item.sellerSku && item.sellerSku !== "N/A" ? item.sellerSku.trim() : "") || "N/A";
-      const pieceCount = Math.max(totalQty, rawSkus.length, rawAsins.length, 2);
+      const pieceCount = Math.max(item.totalQuantity || 2, 2);
       return [
         {
           asin: singleAsin,
@@ -2468,7 +2558,7 @@ export default function ComparisonResultView({
 
       // 3. Chain print execution to serialize printer calls
       const printTask = printQueuePromiseRef.current
-        .catch(() => {})
+        .catch(() => { })
         .then(async () => {
           try {
             await executePrintForItems([item]);
@@ -2932,11 +3022,10 @@ export default function ComparisonResultView({
                     setSelectedPdfType(unmatchedPdfCount > 0 ? "unmatched_pdf" : "unmatched_zpl");
                     setActiveTab("pdf");
                   }}
-                  className={`rounded px-2 py-0.5 text-xs font-bold cursor-pointer ${
-                    summary.mismatchCount > 0
+                  className={`rounded px-2 py-0.5 text-xs font-bold cursor-pointer ${summary.mismatchCount > 0
                       ? "bg-red-100 text-red-700 hover:bg-red-200"
                       : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                  }`}
+                    }`}
                   title="Click to view unmatched documents in PDF viewer"
                 >
                   {summary.mismatchCount} Unmatched
@@ -3016,20 +3105,18 @@ export default function ComparisonResultView({
               setActiveTab("table");
               setPage(1);
             }}
-            className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 items-center justify-center gap-2 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 ${
-              activeTab === "table"
+            className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 items-center justify-center gap-2 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 ${activeTab === "table"
                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                 : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
-            }`}
+              }`}
           >
             Matched Orders ({showPrinted ? summary.matchedCount : remainingMatchedCount})
           </button>
 
           {/* Unified PDF Viewer Dropdown Selector (Matched, All ZPL, Original, Unmatched PDF, Unmatched ZPL) */}
           <div
-            className={`w-full sm:w-72 md:w-80 lg:w-88 xl:w-80 transition-all ${
-              activeTab === "pdf" ? "ring-2 ring-[#E8C16D]" : ""
-            }`}
+            className={`w-full sm:w-72 md:w-80 lg:w-88 xl:w-80 transition-all ${activeTab === "pdf" ? "ring-2 ring-[#E8C16D]" : ""
+              }`}
             onClick={() => {
               if (activeTab !== "pdf") {
                 setActiveTab("pdf");
@@ -3072,8 +3159,8 @@ export default function ComparisonResultView({
               orderTypeFilter === "single_quantity"
                 ? "Scan Single Quantity ASIN, Order ID, or AWB to print..."
                 : orderTypeFilter === "multiple_asin"
-                ? "Scan Multiple ASIN items to print..."
-                : "Scan Multiple Pieces items to print..."
+                  ? "Scan Multiple ASIN items to print..."
+                  : "Scan Multiple Pieces items to print..."
             }
             value={autoPrintQuery}
             onChange={(e) => {
@@ -3255,11 +3342,10 @@ export default function ComparisonResultView({
                     setPage(1);
                     setSelectedRows(new Set());
                   }}
-                  className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                    showPrinted
+                  className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${showPrinted
                       ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
                       : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
-                  }`}
+                    }`}
                   title={showPrinted ? "Return to unprinted orders" : "View only already printed orders"}
                 >
                   {showPrinted ? (
@@ -3280,11 +3366,10 @@ export default function ComparisonResultView({
                 type="button"
                 disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
-                className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-4 sm:px-5 items-center justify-center gap-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                  selectedRows.size > 0
+                className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-4 sm:px-5 items-center justify-center gap-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 ${selectedRows.size > 0
                     ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
                     : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"
-                }`}
+                  }`}
               >
                 <Printer className="h-4 w-4 shrink-0" />
                 <span className="whitespace-nowrap">Print {selectedRows.size > 0 ? `(${selectedRows.size})` : ""}</span>
@@ -3342,8 +3427,8 @@ export default function ComparisonResultView({
                   {showPrinted
                     ? "No printed orders match your current search or filter."
                     : printedRows.size > 0
-                    ? `All matched orders in this view have been printed! (${printedInCurrentTypeCount} printed)`
-                    : "No orders match your current search or filter."}
+                      ? `All matched orders in this view have been printed! (${printedInCurrentTypeCount} printed)`
+                      : "No orders match your current search or filter."}
                 </p>
                 {printedRows.size > 0 && !showPrinted ? (
                   <button
@@ -3375,11 +3460,10 @@ export default function ComparisonResultView({
               paginatedResults.map((item) => (
                 <div
                   key={item.index}
-                  className={`rounded-2xl border p-3.5 sm:p-4 shadow-2xs transition-all space-y-2.5 ${
-                    selectedRows.has(item.index)
+                  className={`rounded-2xl border p-3.5 sm:p-4 shadow-2xs transition-all space-y-2.5 ${selectedRows.has(item.index)
                       ? "border-[#E8C16D] bg-[#FFF9EC]/30 dark:bg-[#E8C16D]/5"
                       : "border-border bg-card"
-                  }`}
+                    }`}
                 >
                   {/* Card Header */}
                   <div className="flex items-center justify-between border-b border-border/60 pb-2">
@@ -3522,8 +3606,8 @@ export default function ComparisonResultView({
                             {showPrinted
                               ? "No printed orders match your current search or filter."
                               : printedRows.size > 0
-                              ? `All matched orders in this view have been printed! (${printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size} printed)`
-                              : "No orders match your current search or filter."}
+                                ? `All matched orders in this view have been printed! (${printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size} printed)`
+                                : "No orders match your current search or filter."}
                           </p>
                           {printedRows.size > 0 && !showPrinted ? (
                             <button
@@ -3615,9 +3699,9 @@ export default function ComparisonResultView({
                         <td className="w-40 min-w-[140px] px-2.5 sm:px-3 py-2.5 text-center font-medium">
                           <div className="flex flex-col items-center justify-center gap-0.5">
                             {renderItemListCell(item.sellerSku)}
-                            {getOrderTypeForItem(item) === "multiple_pieces" && (item.totalQuantity || 0) >= 2 && (
+                            {(getOrderTypeForItem(item) === "multiple_pieces" || (getOrderTypeForItem(item) === "multiple_asin" && (item.totalQuantity || 0) > (item.asinsCount || 1))) && (
                               <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/80 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-800 dark:text-amber-300">
-                                {item.totalQuantity} Pieces
+                                {Math.max(item.totalQuantity || 0, 2)} Pieces
                               </span>
                             )}
                           </div>

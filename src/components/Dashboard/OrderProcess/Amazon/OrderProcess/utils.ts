@@ -3,139 +3,13 @@ import { asinImportService } from "@/components/Dashboard/Products/ManageProduct
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 
-/**
- * Check whether a word is a valid name token.
- * Valid name tokens contain ONLY alphabetic letters (no digits like A602, O9ff) and are not address keywords.
- */
-function isValidNameWord(word: string): boolean {
-  if (!word || word.length < 2) return false;
-
-  // Must consist ONLY of alphabetic letters (no numbers)
-  if (!/^[A-Za-z]+$/.test(word)) return false;
-
-  const upper = word.toUpperCase();
-  const addressKeywords = [
-    "FLAT",
-    "HNO",
-    "HOUSE",
-    "PLOT",
-    "ROOM",
-    "SHOP",
-    "BLDG",
-    "BUILDING",
-    "APARTMENT",
-    "APT",
-    "TOWER",
-    "FLOOR",
-    "BLOCK",
-    "SECTOR",
-    "OPP",
-    "OPPOSITE",
-    "NEAR",
-    "BEHIND",
-    "BESIDE",
-    "ROAD",
-    "STREET",
-    "LANE",
-    "NAGAR",
-    "COLONY",
-    "ENCLAVE",
-    "VIHAR",
-    "LAYOUT",
-    "SOCIETY",
-    "VILLAGE",
-    "VILL",
-    "POST",
-    "TALUKA",
-    "DIST",
-    "DISTRICT",
-    "PIN",
-    "PINCODE",
-    "NO",
-    "NUM",
-    "NUMBER",
-    "PH",
-    "PHONE",
-    "MOB",
-    "MOBILE",
-    "TEL",
-    "SHIPPING",
-    "BILLING",
-    "ADDRESS",
-    "SHIP",
-    "NAME",
-    "RECIPIENT",
-    "CUSTOMER",
-  ];
-
-  if (addressKeywords.includes(upper)) return false;
-
-  return true;
-}
 
 /**
- * Clean customer name by removing addresses, pin codes, and delivery details.
+ * Clean customer name (original GitHub version without regex trimming).
  */
 export function cleanCustomerName(raw: string): string {
   if (!raw || raw === "N/A") return "N/A";
-
-  // 1. Remove Shipping Address / Billing Address / Ship To headers & prefixes
-  let cleaned = raw
-    .replace(/^[\s\S]*?(?:Shipping|Billing)\s+Address\s*[:\-]?\s*/i, "")
-    .replace(/^[\s\S]*?Ship\s+To\s*[:\-]?\s*/i, "")
-    .replace(/^(Customer\s*Name|Recipient|Name)\s*[:\-]?\s*/i, "")
-    .trim();
-
-  // 2. Extract ONLY the very first non-empty line of the address block
-  const lines = cleaned.split(/[\r\n]+/);
-  const firstLine = lines.find((l) => l.trim().length > 0) || cleaned;
-
-  // 3. Split first line by comma, pipe, semicolon, ZPL newline (\\&), or dash
-  cleaned = firstLine.split(/\\&|[,|;]|\s+-\s+/)[0].trim();
-
-  // 4. Remove C/O prefix if present
-  cleaned = cleaned.replace(/^C\/O\s*[:\-]?\s*/i, "").trim();
-
-  // 5. Remove known address trigger words if stuck to the name without commas
-  const addressTrigger =
-    /\s+(?:Flat|H\.?No|House|Plot|Room|Shop|Bldg|Building|Apartment|Apt|Tower|Floor|Block|Sector|Opp|Opposite|Near|Behind|Beside|Road|Street|Lane|Nagar|Colony|Enclave|Vihar|Layout|Society|Village|Vill|Post|Taluka|Dist|District|PIN|Pincode|\d{1,5}[A-Za-z]?\b).*$/i;
-  cleaned = cleaned.replace(addressTrigger, "").trim();
-
-  // 6. Remove trailing digits, postal codes, or punctuation
-  cleaned = cleaned.replace(/\s*\b\d{5,6}\b.*$/, "").trim();
-  cleaned = cleaned.replace(/[,\-:;.]+$/, "").trim();
-
-  // 7. Tokenize into words and filter for valid human name words ONLY
-  const rawWords = cleaned
-    .split(/\s+/)
-    .map((w) => w.replace(/[^A-Za-z0-9]/g, ""))
-    .filter(Boolean);
-
-  const uniqueWords: string[] = [];
-  const seenLower = new Set<string>();
-
-  for (const word of rawWords) {
-    if (!isValidNameWord(word)) continue;
-    const lower = word.toLowerCase();
-    if (!seenLower.has(lower)) {
-      seenLower.add(lower);
-      uniqueWords.push(word);
-    }
-  }
-
-  // 8. Keep at most 2 valid name words (Firstname + Middlename / Firstname + Lastname)
-  const finalWords = uniqueWords.slice(0, 2);
-
-  // Capitalize properly if ALL CAPS
-  const formatted = finalWords
-    .map((w) =>
-      w === w.toUpperCase() && w.length > 1
-        ? w.charAt(0) + w.slice(1).toLowerCase()
-        : w
-    )
-    .join(" ");
-
-  return formatted || "N/A";
+  return raw.trim() || "N/A";
 }
 
 /**
@@ -654,12 +528,18 @@ export async function drawSkuOnLabelPage(
   labelX: number,
   labelY: number,
   labelW: number,
-  labelH: number
+  labelH: number,
+  totalQuantity?: number
 ): Promise<void> {
   const skus = getCleanSkuList(sellerSku);
   if (skus.length === 0) return; // Do NOT print [NA] or [N/A]!
 
   const formattedSkus = skus.map((s) => `[ ${s} ]`);
+  
+  if (totalQuantity !== undefined) {
+    formattedSkus.push(`[ Qty: ${totalQuantity} ]`);
+  }
+
   const count = formattedSkus.length;
 
   try {
@@ -774,14 +654,20 @@ export function isTransporterDuplicatePage(text?: string): boolean {
       /(?:HSN|SAC|\b\d+\s*\|\s*₹|\bQty\b|\bQuantity\b)/i.test(text));
   if (hasItems) return false;
 
+  // A page containing the final total / amount in words is an invoice footer page, NOT an empty duplicate!
+  const hasInvoiceTotal =
+    /\bTOTAL\s*(?::|₹|$)/i.test(text) ||
+    /\bGrand Total\b/i.test(text) ||
+    /Amount in Words/i.test(text);
+  if (hasInvoiceTotal) return false;
+
   const upper = text.toUpperCase();
   return (
     upper.includes("DUPLICATE FOR TRANSPORTER") ||
     upper.includes("TRANSPORTER COPY") ||
     upper.includes("DELIVERY COPY") ||
     upper.includes("CARRIER COPY") ||
-    upper.includes("FOR CARRIER USE") ||
-    (upper.includes("AUTHORIZED SIGNATORY") && (upper.includes("REVERSE CHARGE") || upper.includes("DEMAND FOR PAYMENT")))
+    upper.includes("FOR CARRIER USE")
   );
 }
 
@@ -846,20 +732,9 @@ export async function addInvoicePagesToDoc(
     }
   }
 
-  // CRITICAL USER REQUIREMENT:
-  // "this type of page not goes inside matched combined pdf but it goes into unmatched pdf
-  //  and only for more than 4+ order and needed then page 2 came other than that no need of page 2"
-  const shouldCombine = false;
-
-  // If only 1 page OR order has <= 4 items OR > 4 items:
-  // Render each page individually as a standard 4" x 6" page!
-  if (!shouldCombine) {
-    let lastAddedPage = null;
-    // For 3+ or 4+ orders, all genuine pages are rendered; for 1-2 item single-page orders, only page 1 is rendered
-    let pagesToRender = validPageNumbers;
-    if (resolvedItemCount !== undefined && resolvedItemCount < 3 && !options.allowTransporter && validPageNumbers.length > 1) {
-      pagesToRender = validPageNumbers.slice(0, 1);
-    }
+  // Render each page individually as a standard 4" x 6" page
+  let lastAddedPage = null;
+  const pagesToRender = validPageNumbers;
     for (const pageNum of pagesToRender) {
       const pageIdx = pageNum - 1;
       const srcPage = origDoc.getPage(pageIdx);
@@ -878,7 +753,6 @@ export async function addInvoicePagesToDoc(
       lastAddedPage = newPage;
     }
     return lastAddedPage;
-  }
 }
 
 /**

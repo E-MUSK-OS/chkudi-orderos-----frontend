@@ -279,7 +279,22 @@ const ManageProducts = () => {
           }}
         />
 
-        <ProductStats stats={productStats} />
+        <ProductStats
+          importType={importType}
+          stats={productStats}
+          totalProducts={products.length}
+          asinItems={asinItems}
+          asinTotal={asinResponse?.total}
+          myntraItems={myntraItems}
+          myntraTotal={myntraResponse?.total}
+          isLoading={
+            importType === "asin"
+              ? asinLoading
+              : importType === "myntra"
+              ? myntraLoading
+              : productsLoading
+          }
+        />
 
         <ProductToolbar
           search={search}

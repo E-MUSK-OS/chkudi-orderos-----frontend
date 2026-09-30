@@ -45,8 +45,7 @@ interface PicklistItem {
   sellerSku: string;
   rack: string;
   qty: number;
-  generatedBarcode: string;
-  asin: string;
+  generateBarcode: string;
   status: "MATCHED" | "UNMATCHED";
 }
 
@@ -247,8 +246,7 @@ export default function MyntraPicklist() {
             ...item,
             sellerSku: mapping.sellerSku?.trim() || "N/A",
             rack: mapping.rackAddress?.trim() || "Unassigned",
-            generatedBarcode: mapping.generatedBarcode?.trim() || mapping.sellerSku?.trim() || "-",
-            asin: mapping.asin?.trim() || "-",
+            generateBarcode: mapping.generateBarcode?.trim() || (mapping as any).generatedBarcode?.trim() || mapping.sellerSku?.trim() || "-",
             status: "MATCHED",
           };
         } else {
@@ -257,8 +255,7 @@ export default function MyntraPicklist() {
             ...item,
             sellerSku: "Not Mapped",
             rack: "-",
-            generatedBarcode: "-",
-            asin: "-",
+            generateBarcode: "-",
             status: "UNMATCHED",
           };
         }
@@ -460,8 +457,7 @@ export default function MyntraPicklist() {
             sellerSku: mapping.sellerSku?.trim() || "N/A",
             rack: mapping.rackAddress?.trim() || "Unassigned",
             qty: item.qty,
-            generatedBarcode: mapping.generatedBarcode?.trim() || mapping.sellerSku?.trim() || "-",
-            asin: mapping.asin?.trim() || "-",
+            generateBarcode: mapping.generateBarcode?.trim() || (mapping as any).generatedBarcode?.trim() || mapping.sellerSku?.trim() || "-",
             status: "MATCHED",
           });
         } else {
@@ -472,8 +468,7 @@ export default function MyntraPicklist() {
             sellerSku: "Not Mapped",
             rack: "-",
             qty: item.qty,
-            generatedBarcode: "-",
-            asin: "-",
+            generateBarcode: "-",
             status: "UNMATCHED",
           });
         }
@@ -543,7 +538,7 @@ export default function MyntraPicklist() {
         const matchRack = item.rack.toLowerCase().includes(q);
         const matchSeller = item.sellerSku.toLowerCase().includes(q);
         const matchMyntra = item.myntraSku.toLowerCase().includes(q);
-        const matchBarcode = item.generatedBarcode.toLowerCase().includes(q);
+        const matchBarcode = item.generateBarcode.toLowerCase().includes(q);
         return matchRack || matchSeller || matchMyntra || matchBarcode;
       }
 
@@ -650,7 +645,7 @@ export default function MyntraPicklist() {
       rackCell.value = sanitizeSpreadsheetCell(item.rack || "--");
       skuCell.value = sanitizeSpreadsheetCell(item.sellerSku || "--");
       qtyCell.value = item.qty;
-      barcodeCell.value = sanitizeSpreadsheetCell(item.generatedBarcode || "No");
+      barcodeCell.value = sanitizeSpreadsheetCell(item.generateBarcode || "No");
 
       [rackCell, skuCell, qtyCell, barcodeCell].forEach((c, idx) => {
         c.border = {
@@ -665,7 +660,7 @@ export default function MyntraPicklist() {
 
       skuCell.font = { bold: true, size: 10, name: "Calibri", color: { argb: "FF000000" } };
 
-      if (item.generatedBarcode === "Yes") {
+      if (item.generateBarcode === "Yes") {
         barcodeCell.font = { bold: true, size: 10, name: "Calibri", color: { argb: "FF16A34A" } };
       } else {
         barcodeCell.font = { size: 10, name: "Calibri", color: { argb: "FF64748B" } };
@@ -892,7 +887,7 @@ export default function MyntraPicklist() {
 
       // Sheet 2: If there are items with Generate Barcode === "Yes"
       const barcodeYesItems = picklistItems.filter(
-        (item) => item.generatedBarcode?.toLowerCase() === "yes"
+        (item) => item.generateBarcode?.toLowerCase() === "yes"
       );
       if (barcodeYesItems.length > 0) {
         const barcodeYesTotalQty = barcodeYesItems.reduce((acc, item) => acc + item.qty, 0);
@@ -1361,7 +1356,7 @@ export default function MyntraPicklist() {
                       <th className="px-4 py-3.5 w-36">Rack</th>
                       <th className="px-4 py-3.5">Seller SKU</th>
                       <th className="px-4 py-3.5 text-center w-24">Qty</th>
-                      <th className="px-4 py-3.5">Generated Barcode</th>
+                      <th className="px-4 py-3.5">Generate Barcode</th>
                       <th className="px-4 py-3.5">Myntra SKU</th>
                       <th className="px-4 py-3.5 text-center w-28">Status</th>
                     </tr>
@@ -1426,9 +1421,9 @@ export default function MyntraPicklist() {
                             </span>
                           </td>
 
-                          {/* Generated Barcode */}
+                          {/* Generate Barcode */}
                           <td className="px-4 py-3 text-slate-600 font-mono text-[11px]">
-                            {item.generatedBarcode}
+                            {item.generateBarcode}
                           </td>
 
                           {/* Myntra SKU */}

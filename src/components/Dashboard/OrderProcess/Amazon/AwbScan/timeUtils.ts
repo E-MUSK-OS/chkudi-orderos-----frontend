@@ -68,19 +68,35 @@ export const getNowIsoIST = (): string => {
 };
 
 /**
- * Returns today's date in YYYY-MM-DD strictly calculated in IST (Asia/Kolkata).
+ * Returns a date formatted in YYYY-MM-DD strictly calculated in IST (Asia/Kolkata).
  */
-export const getTodayDateStringIST = (): string => {
+export const getTodayDateStringIST = (date: Date = new Date()): string => {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(date);
 
   const year = parts.find((p) => p.type === "year")?.value;
   const month = parts.find((p) => p.type === "month")?.value;
   const day = parts.find((p) => p.type === "day")?.value;
 
   return `${year}-${month}-${day}`;
+};
+
+/**
+ * Returns current hour and minute strictly calculated in IST (Asia/Kolkata).
+ */
+export const getIstHourAndMinute = (date: Date = new Date()): { hour: number; minute: number } => {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0", 10);
+  const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0", 10);
+  return { hour, minute };
 };

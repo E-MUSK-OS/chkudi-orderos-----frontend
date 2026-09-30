@@ -15,6 +15,7 @@ interface ZplLabelData {
   customer: string;
   rawZpl: string;
   shipToAddress?: string;
+  totalQuantity?: number;
 }
 
 interface PdfOrderData {
@@ -151,139 +152,13 @@ async function convertZplChunkToPdf(
   throw new Error("Labelary conversion failed: Maximum retries exceeded due to rate limit.");
 }
 
-/**
- * Check whether a word is a valid name token.
- * Valid name tokens contain ONLY alphabetic letters (no digits like A602, O9ff) and are not address keywords.
- */
-function isValidNameWord(word: string): boolean {
-  if (!word || word.length < 2) return false;
-
-  // Must consist ONLY of alphabetic letters (no numbers)
-  if (!/^[A-Za-z]+$/.test(word)) return false;
-
-  const upper = word.toUpperCase();
-  const addressKeywords = [
-    "FLAT",
-    "HNO",
-    "HOUSE",
-    "PLOT",
-    "ROOM",
-    "SHOP",
-    "BLDG",
-    "BUILDING",
-    "APARTMENT",
-    "APT",
-    "TOWER",
-    "FLOOR",
-    "BLOCK",
-    "SECTOR",
-    "OPP",
-    "OPPOSITE",
-    "NEAR",
-    "BEHIND",
-    "BESIDE",
-    "ROAD",
-    "STREET",
-    "LANE",
-    "NAGAR",
-    "COLONY",
-    "ENCLAVE",
-    "VIHAR",
-    "LAYOUT",
-    "SOCIETY",
-    "VILLAGE",
-    "VILL",
-    "POST",
-    "TALUKA",
-    "DIST",
-    "DISTRICT",
-    "PIN",
-    "PINCODE",
-    "NO",
-    "NUM",
-    "NUMBER",
-    "PH",
-    "PHONE",
-    "MOB",
-    "MOBILE",
-    "TEL",
-    "SHIPPING",
-    "BILLING",
-    "ADDRESS",
-    "SHIP",
-    "NAME",
-    "RECIPIENT",
-    "CUSTOMER",
-  ];
-
-  if (addressKeywords.includes(upper)) return false;
-
-  return true;
-}
 
 /**
- * Clean customer name by removing addresses, pin codes, and delivery details.
+ * Clean customer name (original GitHub version without regex trimming).
  */
 function cleanCustomerName(raw: string): string {
   if (!raw || raw === "N/A") return "N/A";
-
-  // 1. Remove Shipping Address / Billing Address / Ship To headers & prefixes
-  let cleaned = raw
-    .replace(/^[\s\S]*?(?:Shipping|Billing)\s+Address\s*[:\-]?\s*/i, "")
-    .replace(/^[\s\S]*?Ship\s+To\s*[:\-]?\s*/i, "")
-    .replace(/^(Customer\s*Name|Recipient|Name)\s*[:\-]?\s*/i, "")
-    .trim();
-
-  // 2. Extract ONLY the very first non-empty line of the address block
-  const lines = cleaned.split(/[\r\n]+/);
-  const firstLine = lines.find((l) => l.trim().length > 0) || cleaned;
-
-  // 3. Split first line by comma, pipe, semicolon, ZPL newline (\\&), or dash
-  cleaned = firstLine.split(/\\&|[,|;]|\s+-\s+/)[0].trim();
-
-  // 4. Remove C/O prefix if present
-  cleaned = cleaned.replace(/^C\/O\s*[:\-]?\s*/i, "").trim();
-
-  // 5. Remove known address trigger words if stuck to the name without commas
-  const addressTrigger =
-    /\s+(?:Flat|H\.?No|House|Plot|Room|Shop|Bldg|Building|Apartment|Apt|Tower|Floor|Block|Sector|Opp|Opposite|Near|Behind|Beside|Road|Street|Lane|Nagar|Colony|Enclave|Vihar|Layout|Society|Village|Vill|Post|Taluka|Dist|District|PIN|Pincode|\d{1,5}[A-Za-z]?\b).*$/i;
-  cleaned = cleaned.replace(addressTrigger, "").trim();
-
-  // 6. Remove trailing digits, postal codes, or punctuation
-  cleaned = cleaned.replace(/\s*\b\d{5,6}\b.*$/, "").trim();
-  cleaned = cleaned.replace(/[,\-:;.]+$/, "").trim();
-
-  // 7. Tokenize into words and filter for valid human name words ONLY
-  const rawWords = cleaned
-    .split(/\s+/)
-    .map((w) => w.replace(/[^A-Za-z0-9]/g, ""))
-    .filter(Boolean);
-
-  const uniqueWords: string[] = [];
-  const seenLower = new Set<string>();
-
-  for (const word of rawWords) {
-    if (!isValidNameWord(word)) continue;
-    const lower = word.toLowerCase();
-    if (!seenLower.has(lower)) {
-      seenLower.add(lower);
-      uniqueWords.push(word);
-    }
-  }
-
-  // 8. Keep at most 2 valid name words (Firstname + Middlename / Firstname + Lastname)
-  const finalWords = uniqueWords.slice(0, 2);
-
-  // Capitalize properly if ALL CAPS
-  const formatted = finalWords
-    .map((w) =>
-      w === w.toUpperCase() && w.length > 1
-        ? w.charAt(0) + w.slice(1).toLowerCase()
-        : w
-    )
-    .join(" ");
-
-  return formatted || "N/A";
+  return raw.trim() || "N/A";
 }
 
 /**
@@ -538,29 +413,19 @@ function extractAllItemsFromPdfText(text: string): {
     rawSellerSkus.push(extractedSku || "");
   }
 
-  // Deduplicate consecutive identical ASIN & SKU pairs resulting from duplicate matches on the same line item
-  const asins: string[] = [];
-  const sellerSkus: string[] = [];
+  // Deduplicate distinct ASINs and SKUs
+  const uniqueAsins = Array.from(new Set(rawAsins.filter((a) => isValidAsin(a))));
+  const uniqueSkus = Array.from(new Set(rawSellerSkus.filter((s) => Boolean(s))));
 
-  for (let i = 0; i < rawAsins.length; i++) {
-    const curAsin = rawAsins[i];
-    const curSku = rawSellerSkus[i];
-    const prevAsin = asins[asins.length - 1];
-    const prevSku = sellerSkus[sellerSkus.length - 1];
-
-    if (curAsin === prevAsin && curSku === prevSku) {
-      continue;
-    }
-    asins.push(curAsin);
-    if (curSku) {
-      sellerSkus.push(curSku);
-    }
-  }
+  const asins: string[] = [...uniqueAsins];
+  const sellerSkus: string[] = [...uniqueSkus];
 
   if (asins.length === 0) {
     const singleAsin = extractAsin(text);
-    const singleSku = extractSellerSku(text);
     if (singleAsin) asins.push(singleAsin);
+  }
+  if (sellerSkus.length === 0) {
+    const singleSku = extractSellerSku(text);
     if (singleSku && !/^B0[A-Z0-9]{8}$/i.test(singleSku)) sellerSkus.push(singleSku);
   }
 
@@ -772,10 +637,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       decoded.match(/Ship To:[\s\S]*?\^FD([\s\S]*?)\^FS/i);
 
     if (customerMatch?.[1]) {
-      customer = cleanCustomerName(customerMatch[1].replace(/\\&/g, " "));
-    }
-    if (!customer && shipToAddress) {
-      customer = cleanCustomerName(shipToAddress);
+      customer = customerMatch[1].split("\\&")[0].trim();
     }
 
     // ---------------------------------------------------------
@@ -789,6 +651,16 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       decoded.match(/ORDER[#\s:]*([0-9-]{17,19})/i) ||
       decoded.match(/\b(\d{3}-\d{7}-\d{7})\b/);
     const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
+
+    // Extract Quantity / Items if present on the shipping label (e.g. QTY: 2, QTY: 02)
+    let totalQuantity: number | undefined;
+    const qtyZplMatch = decoded.match(/\b(?:TOTAL\s*QTY|QTY)\s*[:\-#|=]\s*0*([1-9]\d{0,1})\b/i);
+    if (qtyZplMatch?.[1]) {
+      const q = parseInt(qtyZplMatch[1], 10);
+      if (!isNaN(q) && q >= 1 && q <= 50) {
+        totalQuantity = q;
+      }
+    }
 
     // ---------------------------------------------------------
     // Logging.
@@ -819,6 +691,7 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
       customer,
       rawZpl: fullLabel,
       shipToAddress,
+      totalQuantity,
     });
   }
 
@@ -1172,64 +1045,319 @@ function computeAddressSimilarity(pdfAddr: string, zplAddr: string): number {
  * - "single_quantity": Exactly 1 ASIN and 1 piece/quantity of 1 Seller SKU
  * - "multiple_asin": Multiple different ASINs OR multiple different Seller SKUs
  * - "multiple_pieces": Exactly 1 ASIN with 2 or more pieces of the EXACT SAME Seller SKU (can be 2, 3, 4, 5... not fixed to 2)
+/**
+ * Normalizes text extracted from Amazon PDF invoices.
+ * Fixes broken kerning (e.g. "1, 331.42" -> "1,331.42", "1331 . 42" -> "1331.42", "₹ 665" -> "₹665").
+ */
+function normalizeInvoiceText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/[\u00A0\u2000-\u200B\u202F\u205F]/g, " ")
+    .replace(/(?:Rs\.?|INR)/gi, "₹")
+    .replace(/₹\s+/g, "₹")
+    .replace(/(\d+),\s+(\d{2,3})/g, "$1,$2")
+    .replace(/(\d+)\s*\.\s*(\d{1,2})/g, "$1.$2")
+    .replace(/[\u2013\u2014]/g, "-");
+}
+
+/**
+ * Extracts and verifies ALL actual product rows available in the invoice table.
+ * Strictly isolates table body before the TOTAL summary row and ignores fee lines.
+ * Uses exact row-level mathematics (Unit Price * Qty ≈ Net Amount with GST multipliers) to verify each row.
+ */
+function extractInvoiceRows(rawText: string): Array<{
+  qty: number;
+  unitPrice: number;
+  discount: number;
+  netAmount: number;
+  taxRate?: string;
+  asin?: string;
+  sellerSku?: string;
+  description?: string;
+}> {
+  if (!rawText) return [];
+  const text = normalizeInvoiceText(rawText);
+
+  // 1. Isolate the items table body:
+  // Starts after table header (Description, Unit Price, etc.)
+  // Ends strictly at the TOTAL / Invoice Value / Grand Total summary line!
+  const headerMatch = text.match(
+    /(?:Description\s+of\s+Goods|Description|Particulars|Item\s+Details|Product\s+Details|Sl\.?\s*No\.?)/i
+  );
+  const startIdx = headerMatch?.index !== undefined ? headerMatch.index : 0;
+  const afterHeader = text.substring(startIdx);
+
+  const totalMatch = afterHeader.match(
+    /\n\s*(?:TOTAL\s*[:\s]|Invoice\s+Value\s*[:\s]|Grand\s+Total\s*[:\s]|Amount\s+in\s+Words)/i
+  );
+  // tableBody is STRICTLY before the TOTAL summary line!
+  const tableBody = totalMatch?.index !== undefined
+    ? afterHeader.substring(0, totalMatch.index)
+    : afterHeader;
+
+  const rows: Array<{
+    qty: number;
+    unitPrice: number;
+    discount: number;
+    netAmount: number;
+    taxRate?: string;
+    asin?: string;
+    sellerSku?: string;
+    description?: string;
+  }> = [];
+
+  const acceptedSpans: Array<{ start: number; end: number }> = [];
+  const overlapsAccepted = (start: number, end: number) => {
+    return acceptedSpans.some(
+      (span) => Math.max(start, span.start) < Math.min(end, span.end)
+    );
+  };
+
+  const isFeeContext = (context: string) => {
+    const lower = context.toLowerCase();
+    return (
+      lower.includes("shipping charge") ||
+      lower.includes("shipping fee") ||
+      lower.includes("delivery charge") ||
+      lower.includes("delivery fee") ||
+      lower.includes("gift wrap") ||
+      lower.includes("postage charge") ||
+      lower.includes("freight charge") ||
+      lower.includes("handling charge") ||
+      lower.includes("convenience fee")
+    );
+  };
+
+  const gstMultipliers = [1.0, 1.05, 1.12, 1.18, 1.28];
+
+  const extractRowDetails = (rowContext: string) => {
+    const asinMatch = rowContext.match(/\b(B0[A-Z0-9]{8})\b/i);
+    const asin = asinMatch && isValidAsin(asinMatch[1]) ? asinMatch[1].toUpperCase() : undefined;
+
+    let sellerSku: string | undefined;
+    const parenMatches = Array.from(rowContext.matchAll(/\(([^()]{2,100})\)/g));
+    if (parenMatches.length > 0) {
+      const rawContent = parenMatches[parenMatches.length - 1][1].trim();
+      const cleaned = cleanExtractedSku(rawContent);
+      if (
+        cleaned &&
+        !cleaned.toUpperCase().startsWith("B0") &&
+        !/^\d{3}-\d{7}-\d{7}$/.test(cleaned) &&
+        !/^(TAX|INVOICE|ORIGINAL|DUPLICATE|COPY|SHIPPING|BILLING)$/i.test(cleaned)
+      ) {
+        sellerSku = cleaned;
+      }
+    }
+
+    const lines = rowContext.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
+    const description = lines.length > 0 ? lines[lines.length - 1] : undefined;
+
+    return { asin, sellerSku, description };
+  };
+
+  // =========================================================================
+  // NEW STRATEGY: "Integer Between Prices" Scan
+  // In Amazon Tax Invoices, Qty is always a standalone integer preceded by UnitPrice/Discount 
+  // and followed by NetAmount/TaxableValue. All prices have 2 decimal places (e.g., .00, .50).
+  // So Qty is the only integer trapped between two .XX decimals!
+  // =========================================================================
+  const pushRow = (q: number) => {
+    rows.push({
+      unitPrice: 0, discount: 0, qty: q, netAmount: 0,
+      taxRate: undefined, asin: undefined, sellerSku: undefined, description: undefined,
+    });
+  };
+
+  const sandwichRegex = /\.\d{2}\s+([1-9]\d{0,1})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
+  for (const match of tableBody.matchAll(sandwichRegex)) {
+    const q = parseInt(match[1], 10);
+    if (q >= 2 && q <= 50) pushRow(q);
+  }
+
+  // If tableBody isolation failed (e.g. Page 2 transporter duplicate with no product table),
+  // fall back to scanning the ENTIRE input text
+  if (rows.length === 0 && tableBody !== text) {
+    const sandwichRegex2 = /\.\d{2}\s+([1-9]\d{0,1})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
+    for (const match of text.matchAll(sandwichRegex2)) {
+      const q = parseInt(match[1], 10);
+      if (q >= 2 && q <= 50) pushRow(q);
+    }
+  }
+
+  // Fallback 1: Reversed Pattern (Qty followed by two prices)
+  if (rows.length === 0) {
+    const revRegex = /(?:^|\s)([2-9]|[1-4]\d|50)\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
+    for (const match of tableBody.matchAll(revRegex)) {
+      pushRow(parseInt(match[1], 10));
+    }
+    if (rows.length === 0 && tableBody !== text) {
+      const revRegex2 = /(?:^|\s)([2-9]|[1-4]\d|50)\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
+      for (const match of text.matchAll(revRegex2)) {
+        pushRow(parseInt(match[1], 10));
+      }
+    }
+  }
+
+  // Fallback 2: Explicit "Qty: N"
+  if (rows.length === 0) {
+    const explicitRegex = /\b(?:Quantity|Qty)\s*[:\-#|=]?\s*([2-9]|[1-4]\d|50)\b/gi;
+    for (const match of tableBody.matchAll(explicitRegex)) {
+      pushRow(parseInt(match[1], 10));
+    }
+    if (rows.length === 0 && tableBody !== text) {
+      const explicitRegex2 = /\b(?:Quantity|Qty)\s*[:\-#|=]?\s*([2-9]|[1-4]\d|50)\b/gi;
+      for (const match of text.matchAll(explicitRegex2)) {
+        pushRow(parseInt(match[1], 10));
+      }
+    }
+  }
+
+  // If no quantities found, push a default single quantity row
+  if (rows.length === 0) {
+    pushRow(1);
+  }
+
+  return rows;
+
+}
+
+/**
+ * Extracts line-item quantities by delegating to extractInvoiceRows.
+ */
+function extractTableQuantities(rawText: string): Array<{
+  qty: number;
+  unitPrice: number;
+  discount: number;
+  netAmount: number;
+  taxRate?: string;
+}> {
+  return extractInvoiceRows(rawText);
+}
+
+/**
+ * Categorize order composition into single_quantity, multiple_asin, or multiple_pieces.
+ * Checks every item's quantity and SKU/ASIN across all rows in the invoice table.
  */
 function classifyOrderType(
   text: string,
   extractedAsins?: string[],
-  extractedSkus?: string[]
+  extractedSkus?: string[],
+  zplQtyHint?: number
 ): {
   orderType: "single_quantity" | "multiple_asin" | "multiple_pieces";
   totalQuantity: number;
   asinsCount: number;
 } {
-  const validAsins = (extractedAsins || []).filter((a) => a && a !== "N/A");
-  const validSkus = (extractedSkus || []).filter((s) => s && s !== "N/A" && s !== "-");
+  // 1. Extract verified product rows from the invoice table
+  const rows = extractInvoiceRows(text);
 
-  const uniqueAsins = new Set(validAsins);
-  const uniqueSkus = new Set(validSkus);
+  // 2. Collect all distinct ASINs and SKUs from both table rows and page extractions
+  const allAsins = new Set<string>();
+  for (const r of rows) {
+    if (r.asin && isValidAsin(r.asin)) allAsins.add(r.asin.toUpperCase());
+  }
+  for (const a of extractedAsins || []) {
+    if (a && a !== "N/A" && isValidAsin(a)) allAsins.add(a.toUpperCase());
+  }
 
-  const asinsCount = uniqueAsins.size || 1;
-  const skusCount = uniqueSkus.size || 1;
-
-  let totalQty = 1;
-
-  // 1. Try to extract explicit TOTAL QTY / TOTAL QUANTITY from invoice summary or table
-  const totalQtyMatch = text.match(/TOTAL\s*(?:QTY|QUANTITY|ITEMS)\s*[:\-#]?\s*(\d+)/i);
-  if (totalQtyMatch?.[1]) {
-    const parsed = parseInt(totalQtyMatch[1], 10);
-    if (!isNaN(parsed) && parsed > 0 && parsed < 500) {
-      totalQty = parsed;
-    }
-  } else {
-    // 2. Fallback: look for line-item Qty: N or Quantity: N
-    const qtyMatch = text.match(/(?:Quantity|Qty)\s*[:\-#]?\s*(\d+)/i);
-    if (qtyMatch?.[1]) {
-      const parsed = parseInt(qtyMatch[1], 10);
-      if (!isNaN(parsed) && parsed > 0 && parsed < 500) {
-        totalQty = parsed;
-      }
-    }
+  const allSkus = new Set<string>();
+  for (const r of rows) {
+    if (r.sellerSku && r.sellerSku !== "N/A" && r.sellerSku !== "-") allSkus.add(r.sellerSku);
+  }
+  for (const s of extractedSkus || []) {
+    if (s && s !== "N/A" && s !== "-") allSkus.add(s);
   }
 
   let orderType: "single_quantity" | "multiple_asin" | "multiple_pieces" = "single_quantity";
+  let totalQty = 1;
+  const asinsCount = Math.max(allAsins.size, allSkus.size, 1);
 
-  // If order has multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
-  if (asinsCount > 1 || skusCount > 1) {
-    orderType = "multiple_asin";
-    totalQty = Math.max(totalQty, asinsCount, skusCount);
-  } else if (totalQty >= 2) {
-    // Exactly 1 ASIN and the EXACT SAME Seller SKU with 2 or more pieces (can be 2, 3, 4, 5... not fixed to 2)
-    orderType = "multiple_pieces";
+  if (rows.length > 0) {
+    // Check every item's quantity in the invoice
+    const totalRowPieces = rows.reduce((sum, r) => sum + r.qty, 0);
+
+    if (rows.length === 1) {
+      // Exactly 1 product line item in invoice
+      const itemQty = rows[0].qty;
+      const finalQty =
+        typeof zplQtyHint === "number" && zplQtyHint >= 2
+          ? Math.max(itemQty, zplQtyHint)
+          : itemQty;
+
+      if (allAsins.size > 1 || allSkus.size > 1) {
+        orderType = "multiple_asin";
+        const uniqueItemsCount = Math.max(allAsins.size, allSkus.size);
+        totalQty = Math.max(
+          finalQty >= 2 ? finalQty + uniqueItemsCount - 1 : uniqueItemsCount, 
+          typeof zplQtyHint === "number" ? zplQtyHint : 0
+        );
+      } else if (finalQty >= 2) {
+        // Single product, genuinely multiple pieces
+        orderType = "multiple_pieces";
+        totalQty = finalQty;
+      } else {
+        // Single product, 1 piece
+        orderType = "single_quantity";
+        totalQty = 1;
+      }
+    } else {
+      // Multiple line items in invoice (rows.length > 1)
+      // Check if rows represent different products or the same product repeated
+      const distinctRowAsins = new Set(
+        rows.map((r) => r.asin).filter((a): a is string => Boolean(a && isValidAsin(a)))
+      );
+      const distinctRowSkus = new Set(rows.map((r) => r.sellerSku).filter(Boolean));
+      const distinctRowDescriptions = new Set(
+        rows.map((r) => r.description?.trim()).filter(Boolean)
+      );
+
+      const isMultiProduct =
+        allAsins.size > 1 ||
+        allSkus.size > 1 ||
+        distinctRowAsins.size > 1 ||
+        distinctRowSkus.size > 1 ||
+        distinctRowDescriptions.size > 1;
+
+      if (isMultiProduct) {
+        orderType = "multiple_asin";
+        totalQty = Math.max(totalRowPieces, allAsins.size, allSkus.size, rows.length);
+      } else {
+        // Multiple rows but exact same product repeated
+        if (totalRowPieces >= 2) {
+          orderType = "multiple_pieces";
+          totalQty = totalRowPieces;
+        } else {
+          orderType = "single_quantity";
+          totalQty = 1;
+        }
+      }
+    }
   } else {
-    // Exactly 1 ASIN, 1 piece of 1 Seller SKU
-    orderType = "single_quantity";
-    totalQty = 1;
+    // Fallback when table rows couldn't be parsed
+    if (allAsins.size > 1 || allSkus.size > 1) {
+      orderType = "multiple_asin";
+      totalQty = Math.max(allAsins.size, allSkus.size, zplQtyHint || 1);
+    } else if (typeof zplQtyHint === "number" && zplQtyHint >= 2) {
+      orderType = "multiple_pieces";
+      totalQty = zplQtyHint;
+    } else {
+      // Check for explicit "Qty: N" in text
+      const qtyMatch = text.match(/\b(?:Quantity|Qty)\s*[:\-#|=]?\s*([1-9]\d{0,1})\b/i);
+      const q = qtyMatch ? parseInt(qtyMatch[1], 10) : 1;
+      if (!isNaN(q) && q >= 2) {
+        orderType = "multiple_pieces";
+        totalQty = q;
+      } else {
+        orderType = "single_quantity";
+        totalQty = 1;
+      }
+    }
   }
 
   return {
     orderType,
     totalQuantity: totalQty,
-    asinsCount,
+    asinsCount: Math.max(asinsCount, orderType === "multiple_asin" ? 2 : 1),
   };
 }
 
@@ -1333,43 +1461,39 @@ function buildComparisonResponse(
     const pageNumber = index + 1;
     const text = pagesArray[index] || "";
 
-    // STRICT FILTER: Completely ignore Amazon Marketplace Fees / Transporter duplicate pages (green tick pages)
-    if (isAmazonTransporterOrFeePage(text)) {
-      continue;
-    }
-
-    // Order number
+    // -------------------------------------------------------
+    // Order number.
+    // -------------------------------------------------------
     const orderMatch =
       text.match(/Order Number:\s*([0-9-]{17,19})/i) ||
       text.match(/\b(\d{3}-\d{7}-\d{7})\b/);
     const orderNumber = orderMatch ? orderMatch[1] || orderMatch[0] : "";
 
-    // Invoice number
+    // -------------------------------------------------------
+    // Invoice number.
+    // -------------------------------------------------------
     const invoiceNumber = extractPdfInvoiceNumber(text);
 
-    // Shipping Address
-    const shippingAddress = extractPdfShippingAddress(text);
-
-    // ASIN / ASI number
-    const asin = extractAsin(text);
-
-    // Seller SKU
-    const sellerSku = extractSellerSku(text);
-
-    // Amount
+    // -------------------------------------------------------
+    // Amount.
+    // -------------------------------------------------------
     const amountMatch =
       text.match(/TOTAL:\s*₹?\s*([0-9.,]+)/i) ||
       text.match(/Invoice Value:\s*([0-9.,]+)/i) ||
       text.match(/Grand Total\s*:?\s*₹?\s*([0-9.,]+)/i);
     const amount = amountMatch?.[1]?.trim() || "";
 
-    // Date
+    // -------------------------------------------------------
+    // Date.
+    // -------------------------------------------------------
     const dateMatch =
       text.match(/Invoice Date\s*:\s*([0-9./-]+)/i) ||
       text.match(/Order Date:\s*([0-9./-]+)/i);
     const date = dateMatch?.[1]?.trim() || "";
 
-    // Customer
+    // -------------------------------------------------------
+    // Customer.
+    // -------------------------------------------------------
     const billingMatch =
       text.match(/Shipping Address\s*:\s*([^|]+)/i) ||
       text.match(/Billing Address\s*:\s*([^|]+)/i);
@@ -1377,14 +1501,13 @@ function buildComparisonResponse(
     if (billingMatch?.[1]) {
       customer = cleanCustomerName(billingMatch[1]);
     }
-    if (!customer && shippingAddress) {
-      customer = cleanCustomerName(shippingAddress);
-    }
+
+    const asin = extractAsin(text);
+    const sellerSku = extractSellerSku(text);
 
     const invKey = invoiceNumber ? normalizeInvoice(invoiceNumber) : "";
     const orderKey = orderNumber ? orderNumber.trim() : "";
 
-    // Extract page numbering (e.g., "Page 1 of 2", "Page 2 of 2", "Page 1 of 1")
     const pageInfoMatch =
       text.match(/(?:Page|pg\.?)\s*[:\-]?\s*(\d+)\s*(?:of|\/)\s*(\d+)/i) ||
       text.match(/\b(\d+)\s*(?:of|\/)\s*(\d+)\s*(?:pages)?\b/i);
@@ -1401,10 +1524,6 @@ function buildComparisonResponse(
       }
     }
 
-    const hasStandaloneHeader =
-      /Tax\s+Invoice/i.test(text) &&
-      (/Sold\s+By/i.test(text) || /Billing\s+Address/i.test(text) || /PAN\s+No/i.test(text) || /GST/i.test(text));
-
     const hasCompletedFooter =
       /TOTAL\s*:/i.test(text) ||
       /Invoice\s+Value\s*:/i.test(text) ||
@@ -1412,86 +1531,31 @@ function buildComparisonResponse(
       /Amount\s+in\s+Words/i.test(text) ||
       /Authorized\s+Signatory/i.test(text);
 
-    // Determine if this page can be a continuation page of an earlier order
     let existingIdx = -1;
 
-    const isTransporterDup = isTransporterDuplicatePage(text);
-    const hasLineItems = hasInvoiceLineItems(text);
+    // 1. Match by Invoice Number
+    if (invKey && invoiceToPdfIndices.has(invKey)) {
+      existingIdx = invoiceToPdfIndices.get(invKey)![0];
+    }
+    // 2. Match by Order Number
+    else if (orderKey && orderNumToPdfIndices.has(orderKey)) {
+      existingIdx = orderNumToPdfIndices.get(orderKey)![0];
+    }
+    // 3. Fallback: Sequential continuation of immediately preceding order
+    else if (consolidatedPdfOrders.length > 0) {
+      const lastOrderIdx = consolidatedPdfOrders.length - 1;
+      const lastOrder = consolidatedPdfOrders[lastOrderIdx];
+      const isConsecutive = lastValidPageNumber > 0 && pageNumber === lastValidPageNumber + 1;
 
-    // CRITICAL USER REQUIREMENT:
-    // "this type of page not goes inside matched combined pdf but it goes into unmatched pdf
-    //  and only for more than 4+ order and needed then page 2 came other than that no need of page 2"
-    // 1. Transporter duplicate pages ("(Duplicate for Transporter)", "Transporter Copy", etc.)
-    //    can NEVER be continuation pages. They must remain independent and go into unmatched PDF!
-    // 2. Continuation pages without line items (e.g. empty Authorized Signatory overflow)
-    //    can NEVER be continuation pages.
-    // 3. Only multi-page orders with > 4 items where Page 2 has actual continuation line items
-    //    can attach Page 2 to the matched invoice.
-    const matchesOpenOrder = Boolean(
-      (orderKey && orderNumToPdfIndices.has(orderKey)) ||
-      (invKey && invoiceToPdfIndices.has(invKey))
-    );
+      if (isConsecutive) {
+        const canContinueLast =
+          (docPageNum > 1 && docPageNum === lastOrder.pages.length + 1) ||
+          (lastOrder.totalPages && lastOrder.totalPages > 1 && lastOrder.pages.length < lastOrder.totalPages) ||
+          (!lastOrder.hasCompletedFooter && !orderNumber && !invoiceNumber) ||
+          (docPageNum > 1 && !orderNumber && !invoiceNumber);
 
-    const canBeContinuation =
-      !isTransporterDup &&
-      (hasLineItems || hasCompletedFooter || docPageNum > 1 || matchesOpenOrder) &&
-      docPageNum !== 1 &&
-      (docPageNum > 1 || !hasStandaloneHeader || matchesOpenOrder);
-
-    if (canBeContinuation) {
-      // 1. Candidate orders with matching orderNumber or invoiceNumber
-      const candidateIndices = [
-        ...(orderKey && orderNumToPdfIndices.has(orderKey) ? orderNumToPdfIndices.get(orderKey)! : []),
-        ...(invKey && invoiceToPdfIndices.has(invKey) ? invoiceToPdfIndices.get(invKey)! : []),
-      ];
-      const uniqueCandidates = Array.from(new Set(candidateIndices));
-
-      for (const cIdx of uniqueCandidates) {
-        const existing = consolidatedPdfOrders[cIdx];
-        if (!existing) continue;
-
-        // If existing order already reached its declared total pages, it is completed
-        if (existing.totalPages && existing.pages.length >= existing.totalPages) {
-          continue;
-        }
-
-        // If docPageNum is specified (>1), existing order must have exactly docPageNum - 1 pages
-        if (docPageNum > 1 && existing.pages.length !== docPageNum - 1) {
-          continue;
-        }
-
-        // Only accept continuation if docPageNum > 1 or existing explicitly expects more pages or is missing footer
-        if (
-          docPageNum > 1 ||
-          (existing.totalPages && existing.pages.length < existing.totalPages) ||
-          (!existing.hasCompletedFooter && (orderKey || invKey))
-        ) {
-          existingIdx = cIdx;
-          break;
-        }
-      }
-
-      // 2. Fallback continuation: check consecutive page of immediately preceding uncompleted order
-      // ONLY allow if it clearly belongs to lastOrder (matching orderKey/invKey if present, AND explicit docPageNum or declared totalPages)
-      if (existingIdx === -1 && consolidatedPdfOrders.length > 0) {
-        const lastOrderIdx = consolidatedPdfOrders.length - 1;
-        const lastOrder = consolidatedPdfOrders[lastOrderIdx];
-        const isConsecutive = lastOrder && lastOrder.pages[lastOrder.pages.length - 1] === lastValidPageNumber;
-
-        if (isConsecutive) {
-          const orderMatches = !orderKey || !lastOrder.orderNumber || orderKey === lastOrder.orderNumber;
-          const invoiceMatches = !invKey || !lastOrder.sellerInvoice || invKey === normalizeInvoice(lastOrder.sellerInvoice);
-
-          if (orderMatches && invoiceMatches) {
-            const canContinueLast =
-              (docPageNum > 1 && docPageNum === lastOrder.pages.length + 1) ||
-              (lastOrder.totalPages && lastOrder.totalPages > 1 && lastOrder.pages.length < lastOrder.totalPages) ||
-              (!lastOrder.hasCompletedFooter && (orderKey || invKey));
-
-            if (canContinueLast) {
-              existingIdx = lastOrderIdx;
-            }
-          }
+        if (canContinueLast) {
+          existingIdx = lastOrderIdx;
         }
       }
     }
@@ -1504,9 +1568,12 @@ function buildComparisonResponse(
       if (hasCompletedFooter) existing.hasCompletedFooter = true;
       if (!existing.sellerInvoice && invoiceNumber) existing.sellerInvoice = invoiceNumber;
       if (!existing.orderNumber && orderNumber) existing.orderNumber = orderNumber;
-      if (!existing.shippingAddress && shippingAddress) existing.shippingAddress = shippingAddress;
+      if (!existing.amount && amount) existing.amount = amount;
+      if (!existing.date && date) existing.date = date;
       if (!existing.customer && customer) existing.customer = customer;
-      // Combine ASINs and Seller SKUs across pages without losing earlier items
+      if (invoiceNumber && !existing.allInvoices.includes(invoiceNumber)) {
+        existing.allInvoices.push(invoiceNumber);
+      }
       if (asin) {
         const existingAsins = (existing.asin || "").split(/[\r\n]+|\s+\/\s+/).map((s) => s.trim()).filter(Boolean);
         if (!existingAsins.includes(asin.trim())) {
@@ -1518,14 +1585,6 @@ function buildComparisonResponse(
         if (!existingSkus.includes(sellerSku.trim())) {
           existing.sellerSku = existing.sellerSku ? `${existing.sellerSku}\n${sellerSku}` : sellerSku;
         }
-      }
-      // Amount: Take the final total amount from the footer
-      if (amount) {
-        existing.amount = amount;
-      }
-      if (!existing.date && date) existing.date = date;
-      if (invoiceNumber && !existing.allInvoices.includes(invoiceNumber)) {
-        existing.allInvoices.push(invoiceNumber);
       }
       if (invKey) {
         const list = invoiceToPdfIndices.get(invKey) || [];
@@ -1543,7 +1602,7 @@ function buildComparisonResponse(
       }
     } else {
       const newIdx = consolidatedPdfOrders.length;
-      const newOrder: ConsolidatedOrder = {
+      const orderRecord: ConsolidatedOrder = {
         orderNumber: orderNumber || "N/A",
         sellerInvoice: invoiceNumber || `Page ${pageNumber}`,
         asin,
@@ -1554,21 +1613,16 @@ function buildComparisonResponse(
         amount,
         date,
         fullText: text,
-        shippingAddress,
         totalPages: docTotalPages > 0 ? docTotalPages : undefined,
         hasCompletedFooter,
       };
-      consolidatedPdfOrders.push(newOrder);
+      consolidatedPdfOrders.push(orderRecord);
 
       if (invKey) {
-        const list = invoiceToPdfIndices.get(invKey) || [];
-        list.push(newIdx);
-        invoiceToPdfIndices.set(invKey, list);
+        invoiceToPdfIndices.set(invKey, [newIdx]);
       }
-      if (orderKey) {
-        const list = orderNumToPdfIndices.get(orderKey) || [];
-        list.push(newIdx);
-        orderNumToPdfIndices.set(orderKey, list);
+      if (orderNumber) {
+        orderNumToPdfIndices.set(orderNumber.trim(), [newIdx]);
       }
     }
 
@@ -1580,6 +1634,10 @@ function buildComparisonResponse(
   // If duplicate ZPL labels or duplicate PDF invoices exist, treat
   // each as a DIFFERENT ENTITY and match each 1-to-1 to its invoice.
   // ---------------------------------------------------------
+  const resolveCustomerName = (labelCustomer?: string, pdfCustomer?: string): string => {
+    return (labelCustomer && labelCustomer !== "N/A" ? labelCustomer : "") || (pdfCustomer && pdfCustomer !== "N/A" ? pdfCustomer : "") || "N/A";
+  };
+
   const matchedZplIndices = new Set<number>();
   const matchedPdfIndices = new Set<number>();
   const matchedResults: ComparisonResult[] = [];
@@ -1678,7 +1736,8 @@ function buildComparisonResponse(
       const classification = classifyOrderType(
         matchedOrder.fullText || "",
         extractedItems.asins,
-        extractedItems.sellerSkus
+        extractedItems.sellerSkus,
+        label.totalQuantity
       );
 
       const asinVal = extractedItems.asinString || matchedOrder.asin || label.asin || "N/A";
@@ -1693,7 +1752,7 @@ function buildComparisonResponse(
         sellerSku: skuVal,
         orderNumber: matchedOrder.orderNumber || label.orderNumber || "N/A",
         awb: label.awb || "N/A",
-        customer: matchedOrder.customer || label.customer || "N/A",
+        customer: resolveCustomerName(label.customer, matchedOrder.customer),
         amount: matchedOrder.amount ? `₹${matchedOrder.amount}` : "N/A",
         date: matchedOrder.date || "N/A",
         pdfPages: matchedOrder.pages || [],
@@ -1778,7 +1837,8 @@ function buildComparisonResponse(
       const classification = classifyOrderType(
         matchedOrder.fullText || "",
         extractedItems.asins,
-        extractedItems.sellerSkus
+        extractedItems.sellerSkus,
+        label.totalQuantity
       );
 
       const asinVal = extractedItems.asinString || matchedOrder.asin || label.asin || "N/A";
@@ -1795,7 +1855,7 @@ function buildComparisonResponse(
         sellerSku: skuVal,
         orderNumber: matchedOrder.orderNumber || "N/A",
         awb: label.awb || "N/A",
-        customer: matchedOrder.customer || label.customer || "N/A",
+        customer: resolveCustomerName(label.customer, matchedOrder.customer),
         amount: matchedOrder.amount ? `₹${matchedOrder.amount}` : "N/A",
         date: matchedOrder.date || "N/A",
         pdfPages: matchedOrder.pages || [],
@@ -1826,7 +1886,7 @@ function buildComparisonResponse(
         sellerSku: label.sellerSku || "N/A",
         orderNumber: "N/A",
         awb: label.awb || "N/A",
-        customer: label.customer || "N/A",
+        customer: resolveCustomerName(label.customer, undefined),
         amount: "N/A",
         date: "N/A",
         pdfPages: [],
@@ -1854,7 +1914,7 @@ function buildComparisonResponse(
         sellerSku: skuVal,
         orderNumber: pdfOrder.orderNumber || "N/A",
         awb: "N/A",
-        customer: pdfOrder.customer || "N/A",
+        customer: resolveCustomerName(undefined, pdfOrder.customer),
         amount: pdfOrder.amount ? `₹${pdfOrder.amount}` : "N/A",
         date: pdfOrder.date || "N/A",
         pdfPages: pdfOrder.pages || [],

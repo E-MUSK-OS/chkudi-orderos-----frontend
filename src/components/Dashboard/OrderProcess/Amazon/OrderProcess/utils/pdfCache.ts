@@ -21,6 +21,19 @@ export function getDocCacheKey(files: any, batchKey?: string): string {
   return baseKey === "0_0_0" ? "active_process" : baseKey;
 }
 
+export function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 // In-memory cache for individual pre-generated order print PDFs (scoped by `${effectiveBatchKey}_${orderIndex}`)
 const orderPrintPdfCache = new Map<string, string>();
 
@@ -56,7 +69,7 @@ export function getCachedOrderPdf(orderIndex: number, batchKey?: string): string
   return orderPrintPdfCache.get(key) || null;
 }
 
-const MAX_ORDER_CACHE_SIZE = 50;
+const MAX_ORDER_CACHE_SIZE = 2000;
 
 export function setCachedOrderPdf(orderIndex: number, base64: string, batchKey?: string): void {
   const key = getScopedKey(orderIndex, batchKey);
@@ -87,7 +100,8 @@ export function clearCachedAmazonDocs(): void {
 export async function getOrGenerateSingleOrderPdf(
   item: any,
   combinedDoc: PDFDocument,
-  batchKey?: string
+  batchKey?: string,
+  allResults?: any[]
 ): Promise<string | null> {
   if (!item || !combinedDoc) return null;
 
@@ -105,6 +119,27 @@ export async function getOrGenerateSingleOrderPdf(
 
     if (item.combinedPages && item.combinedPages.length > 0) {
       targetPages = item.combinedPages.filter((p: number) => p >= 0 && p < pageCount);
+    } else if (allResults && allResults.length > 0) {
+      const matchedList = allResults.filter((r) => r.isMatch);
+      let startP = 0;
+      for (const m of matchedList) {
+        const mCount = Math.max(m.asinsCount || 0, m.totalQuantity || 0);
+        const expectedPages =
+          m.combinedPages && m.combinedPages.length > 0
+            ? m.combinedPages.length
+            : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
+              ? 2 + (m.zplPage > 0 ? 1 : 0)
+              : m.zplPage > 0
+                ? 2
+                : 1;
+        if (m.index === item.index) {
+          for (let p = startP; p < startP + expectedPages && p < pageCount; p++) {
+            targetPages.push(p);
+          }
+          break;
+        }
+        startP += expectedPages;
+      }
     }
 
     if (targetPages.length === 0) {
@@ -136,7 +171,7 @@ export function startBackgroundOrderPdfPrewarming(
   isWarmingCache = true;
 
   const currentBatchKey = batchKey || docsCache?.batchKey || docsCache?.cacheKey;
-  const matched = results.filter((r) => r.isMatch && r.combinedPages && r.combinedPages.length > 0);
+  const matched = results.filter((r) => r.isMatch);
   let idx = 0;
 
   const processNextBatch = () => {
@@ -158,7 +193,7 @@ export function startBackgroundOrderPdfPrewarming(
       const item = matched[i];
       const scopedKey = getScopedKey(item.index, batchKey);
       if (!orderPrintPdfCache.has(scopedKey)) {
-        promises.push(getOrGenerateSingleOrderPdf(item, combinedDoc, batchKey));
+        promises.push(getOrGenerateSingleOrderPdf(item, combinedDoc, batchKey, results));
       }
     }
 
@@ -215,7 +250,8 @@ export async function getOrLoadCombinedDoc(activeFiles: any, batchKey?: string):
   const currentKey = getDocCacheKey(activeFiles, batchKey);
   if (
     docsCache?.combinedDoc &&
-    (docsCache.cacheKey === currentKey || (batchKey && docsCache.batchKey === batchKey))
+    (docsCache.cacheKey === currentKey ||
+      (batchKey && (docsCache.batchKey === batchKey || docsCache.cacheKey === batchKey)))
   ) {
     return docsCache.combinedDoc;
   }
@@ -229,15 +265,28 @@ export async function getOrLoadCombinedDoc(activeFiles: any, batchKey?: string):
         const { amazonOrderService } = await import("../services/amazonOrder.service");
         const blob = await amazonOrderService.fetchBatchFileBlob(activeBatchId, "combined");
         if (blob && blob.size > 0) {
+          const base64 = await blobToBase64(blob);
           const buf = await blob.arrayBuffer();
           const { PDFDocument } = await import("pdf-lib");
           const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+          const bKey = batchKey || `batch_${activeBatchId}`;
           setCachedAmazonDocs({
             combinedDoc: doc,
             combinedBytes: new Uint8Array(buf),
             cacheKey: `batch_${activeBatchId}`,
-            batchKey: batchKey || `batch_${activeBatchId}`,
+            batchKey: bKey,
           });
+          useAmazonOrderStore.setState((prev) => ({
+            files: {
+              ...prev.files,
+              combinedPdfBase64: base64,
+            } as any,
+            combinedPdfUrl: prev.combinedPdfUrl || URL.createObjectURL(blob),
+          }));
+          const currentResults = useAmazonOrderStore.getState().results;
+          if (currentResults && currentResults.length > 0) {
+            startBackgroundOrderPdfPrewarming(currentResults, doc, bKey);
+          }
           return doc;
         }
       }
@@ -248,7 +297,7 @@ export async function getOrLoadCombinedDoc(activeFiles: any, batchKey?: string):
   }
 
   // If previous cache existed with a different key, clear old single order cache
-  if (docsCache && docsCache.cacheKey !== currentKey) {
+  if (docsCache && docsCache.cacheKey !== currentKey && (!batchKey || docsCache.batchKey !== batchKey)) {
     clearCachedAmazonDocs();
   }
 

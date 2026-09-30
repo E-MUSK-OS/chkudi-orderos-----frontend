@@ -20,14 +20,13 @@ export default function MyntraTable({
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-[#E7EAF0] bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[950px]">
+        <table className="w-full min-w-[850px]">
           <thead className="bg-[#0A0E1A] text-white">
             <tr>
               <th className="px-4 py-3 text-left">Rack Address</th>
               <th className="px-4 py-3 text-left">Myntra SKU</th>
               <th className="px-4 py-3 text-left">Seller SKU</th>
-              <th className="px-4 py-3 text-left">ASIN</th>
-              <th className="px-4 py-3 text-left">Generated Barcode</th>
+              <th className="px-4 py-3 text-left">Generate Barcode</th>
               <th className="px-4 py-3 text-left">Created</th>
               <th className="px-4 py-3 text-center">Actions</th>
             </tr>
@@ -50,9 +49,6 @@ export default function MyntraTable({
                     <div className="h-4 w-24 rounded bg-slate-200" />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="h-4 w-24 rounded bg-slate-200" />
-                  </td>
-                  <td className="px-4 py-3">
                     <div className="h-4 w-20 rounded bg-slate-200" />
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -63,7 +59,7 @@ export default function MyntraTable({
             ) : items.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-12 text-center text-slate-500"
                 >
                   No Myntra SKU mapping records found.
@@ -90,11 +86,7 @@ export default function MyntraTable({
                   </td>
 
                   <td className="px-4 py-3 text-slate-700">
-                    {item.asin || "—"}
-                  </td>
-
-                  <td className="px-4 py-3 text-slate-700">
-                    {item.generatedBarcode || item.sellerSku || item.myntraSku || "—"}
+                    {item.generateBarcode || item.generatedBarcode || item.sellerSku || item.myntraSku || "—"}
                   </td>
 
                   <td className="px-4 py-3 text-slate-700 text-xs">

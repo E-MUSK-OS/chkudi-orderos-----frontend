@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { Upload, Plus, Package, RefreshCw, ChevronLeft, ChevronRight, Clock, BarChart3, Calendar as CalendarIcon } from "lucide-react";
+import { Upload, Plus, Package, RefreshCw, ChevronLeft, ChevronRight, Clock, BarChart3, Calendar as CalendarIcon, FileDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
@@ -10,6 +10,8 @@ import { getToken } from "@/utils/auth";
 import ExcelUploadModal from "./ExcelUploadModal";
 import DashboardLayout from "../../layout/DashboardLayout";
 import GraphModal from "./GraphModal";
+import { downloadAmazonAnalyticsDemoSheet } from "./utils/downloadDemoSheet";
+import { getTodayDateStringIST, getIstHourAndMinute } from "../../OrderProcess/Amazon/AwbScan/timeUtils";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -50,13 +52,11 @@ export default function AmazonAnalytics() {
 
   const updateSelectedDateForTime = (timeStr: string) => {
     const now = new Date();
-    const maxDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    const maxDateStr = getTodayDateStringIST(now);
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayStr = getTodayDateStringIST(yesterday);
 
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+    const { hour: currentHour, minute: currentMinute } = getIstHourAndMinute(now);
     
     const [h, m] = timeStr.split(":");
     const targetHour = parseInt(h, 10) || 11;
@@ -148,22 +148,17 @@ export default function AmazonAnalytics() {
 
 
   useEffect(() => {
-    // Generate dates for the last 30 days
+    // Generate dates for the last 30 days strictly in IST
     const now = new Date();
     
-    // Max Date (Today)
-    const maxDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    // Max Date (Today in IST)
+    const maxDateStr = getTodayDateStringIST(now);
     setMaxDate(maxDateStr);
 
-    // Min Date (30 Days Ago)
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(now.getDate() - 29); // 30 days including today
-    const minDateStr = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyDaysAgo.getDate()).padStart(2, '0')}`;
+    // Min Date (30 Days Ago in IST)
+    const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+    const minDateStr = getTodayDateStringIST(thirtyDaysAgo);
     setMinDate(minDateStr);
-
-    // Yesterday
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
     
     // Set initial default date based on current default time ("11:00")
     updateSelectedDateForTime("11:00");
@@ -306,6 +301,16 @@ export default function AmazonAnalytics() {
                 </Popover>
 
                 <button
+                  type="button"
+                  onClick={downloadAmazonAnalyticsDemoSheet}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
+                  title="Download sample Excel template"
+                >
+                  <FileDown className="h-4 w-4 text-[#B88728]" />
+                  <span>Demo Sheet</span>
+                </button>
+
+                <button
                   onClick={() => {
                     setSelectedGraphItem(null);
                     setIsGraphModalOpen(true);
@@ -342,13 +347,23 @@ export default function AmazonAnalytics() {
           <p className="mb-8 max-w-md text-sm text-slate-400">
             It looks like you haven&apos;t uploaded any Amazon SKUs yet. Upload an Excel file containing your SKUs to get started.
           </p>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-[#E8C16D] px-6 py-3 font-bold text-[#0A0E1A] transition-all hover:bg-[#d4af5a] shadow-lg shadow-[#E8C16D]/20"
-          >
-            <Upload size={20} />
-            <span>Upload Excel File</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={downloadAmazonAnalyticsDemoSheet}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-6 py-3 font-bold text-[#0A0E1A] transition-all shadow-md active:scale-[0.98] cursor-pointer"
+            >
+              <FileDown size={20} className="text-[#B88728]" />
+              <span>Download Demo Sheet</span>
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-[#E8C16D] px-6 py-3 font-bold text-[#0A0E1A] transition-all hover:bg-[#d4af5a] shadow-lg shadow-[#E8C16D]/20"
+            >
+              <Upload size={20} />
+              <span>Upload Excel File</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden rounded-xl">

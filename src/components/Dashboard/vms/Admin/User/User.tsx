@@ -70,7 +70,7 @@ const User = () => {
           <p className="text-lg text-[#E8C16D]">Total Operators</p>
 
           <h3 className="mt-1 text-2xl font-bold text-white">
-            {operators.length} / 5
+            {operators.length} / 10
           </h3>
         </div>
 

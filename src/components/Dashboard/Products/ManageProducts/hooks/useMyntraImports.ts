@@ -110,7 +110,7 @@ export function useCreateMyntraImport() {
     mutationFn: (data: {
       myntraSku: string;
       sellerSku?: string;
-      asin?: string;
+      generateBarcode?: string;
       generatedBarcode?: string;
       rackAddress?: string;
     }) => createMyntraImport(data, getToken()),
@@ -145,7 +145,7 @@ export function useUpdateMyntraImport() {
       data: {
         myntraSku?: string;
         sellerSku?: string;
-        asin?: string;
+        generateBarcode?: string;
         generatedBarcode?: string;
         rackAddress?: string;
       };

@@ -12,6 +12,7 @@ import {
 import { cleanCustomerName, sanitizeSpreadsheetCell } from "../utils";
 import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
 import {
+  blobToBase64,
   clearCachedAmazonDocs,
   setCachedAmazonDocs,
   startBackgroundOrderPdfPrewarming,
@@ -474,6 +475,37 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         unmatchedZplPdfUrl: unmatchZplUrl,
       });
 
+      // Background re-hydration for historical batches on refresh
+      if (restoredBatchId && !currentFiles?.combinedPdfBase64) {
+        amazonOrderService
+          .fetchBatchFileBlob(restoredBatchId, "combined")
+          .then(async (blob) => {
+            if (blob && blob.size > 0) {
+              const base64 = await blobToBase64(blob);
+              const url = URL.createObjectURL(blob);
+              set((prev) => ({
+                combinedPdfUrl: url,
+                files: {
+                  ...prev.files,
+                  combinedPdfBase64: base64,
+                } as any,
+              }));
+              const buf = await blob.arrayBuffer();
+              const { PDFDocument } = await import("pdf-lib");
+              const combinedDoc = await PDFDocument.load(buf, { ignoreEncryption: true });
+              const bKey = getBatchKey(currentSummary, currentResults.length, restoredBatchId);
+              setCachedAmazonDocs({
+                combinedDoc,
+                combinedBytes: new Uint8Array(buf),
+                cacheKey: `batch_${restoredBatchId}`,
+                batchKey: bKey,
+              });
+              startBackgroundOrderPdfPrewarming(currentResults, combinedDoc, bKey);
+            }
+          })
+          .catch((err) => console.warn("Notice: Failed to restore batch PDF:", err));
+      }
+
       return true;
     } catch (e) {
       console.error("Failed to restore process data:", e);
@@ -598,7 +630,14 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
           const blob = await amazonOrderService.fetchBatchFileBlob(batch.id, "combined");
           if (blob && blob.size > 0) {
             const combUrl = URL.createObjectURL(blob);
-            set({ combinedPdfUrl: combUrl });
+            const base64 = await blobToBase64(blob);
+
+            set({
+              combinedPdfUrl: combUrl,
+              files: {
+                combinedPdfBase64: base64,
+              } as any,
+            });
 
             // Initialize PDF document in cache for instant sub-second barcode printing
             const buf = await blob.arrayBuffer();

@@ -39,6 +39,8 @@ export interface AmazonOrderSummary {
   processedAt: string;
   zplFileName: string;
   pdfFileName: string;
+  unmatchedPdfPagesCount?: number;
+  unmatchedZplPagesCount?: number;
 }
 
 export interface AmazonProcessFiles {

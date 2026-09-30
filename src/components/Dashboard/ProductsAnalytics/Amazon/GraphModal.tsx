@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { X, BarChart3, TrendingUp, Users, Award } from "lucide-react";
 import { Chart } from "react-google-charts";

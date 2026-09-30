@@ -24,8 +24,7 @@ export default function MyntraModal({ open, item, onClose }: Props) {
 
   const [myntraSku, setMyntraSku] = useState("");
   const [sellerSku, setSellerSku] = useState("");
-  const [asin, setAsin] = useState("");
-  const [generatedBarcode, setGeneratedBarcode] = useState("");
+  const [generateBarcode, setGenerateBarcode] = useState("");
   const [rackAddress, setRackAddress] = useState("");
 
   useEffect(() => {
@@ -33,14 +32,12 @@ export default function MyntraModal({ open, item, onClose }: Props) {
       if (item) {
         setMyntraSku(item.myntraSku || "");
         setSellerSku(item.sellerSku || "");
-        setAsin(item.asin || "");
-        setGeneratedBarcode(item.generatedBarcode || "");
+        setGenerateBarcode(item.generateBarcode || item.generatedBarcode || "");
         setRackAddress(item.rackAddress || "");
       } else {
         setMyntraSku("");
         setSellerSku("");
-        setAsin("");
-        setGeneratedBarcode("");
+        setGenerateBarcode("");
         setRackAddress("");
       }
     }
@@ -60,8 +57,7 @@ export default function MyntraModal({ open, item, onClose }: Props) {
           data: {
             myntraSku: myntraSku.trim(),
             sellerSku: sellerSku.trim() || undefined,
-            asin: asin.trim() || undefined,
-            generatedBarcode: generatedBarcode.trim() || undefined,
+            generateBarcode: generateBarcode.trim() || undefined,
             rackAddress: rackAddress.trim() || undefined,
           },
         });
@@ -69,8 +65,7 @@ export default function MyntraModal({ open, item, onClose }: Props) {
         await createMutation.mutateAsync({
           myntraSku: myntraSku.trim(),
           sellerSku: sellerSku.trim() || undefined,
-          asin: asin.trim() || undefined,
-          generatedBarcode: generatedBarcode.trim() || undefined,
+          generateBarcode: generateBarcode.trim() || undefined,
           rackAddress: rackAddress.trim() || undefined,
         });
       }
@@ -164,20 +159,13 @@ export default function MyntraModal({ open, item, onClose }: Props) {
           placeholder="Enter Rack Address (e.g. A-01-02)"
         />
 
-        <Input
-          label="ASIN"
-          value={asin}
-          onChange={(e) => setAsin(e.target.value)}
-          leftIcon={<Tag size={18} />}
-          placeholder="Enter ASIN (optional)"
-        />
 
         <Input
-          label="Generated Barcode"
-          value={generatedBarcode}
-          onChange={(e) => setGeneratedBarcode(e.target.value)}
+          label="Generate Barcode"
+          value={generateBarcode}
+          onChange={(e) => setGenerateBarcode(e.target.value)}
           leftIcon={<Barcode size={18} />}
-          placeholder="Enter Generated Barcode (optional)"
+          placeholder="Enter Generate Barcode (optional)"
         />
       </form>
     </Modal>

@@ -468,9 +468,12 @@ export default function OrderProcess() {
             batch.map(async (pageNum) => {
               const page = await pdf.getPage(pageNum);
               const textContent = await page.getTextContent();
-              const strings = textContent.items.map((item: any) => item.str);
+              let pageText = "";
+              for (const item of textContent.items as any[]) {
+                pageText += (item.str || "") + (item.hasEOL ? "\n" : " ");
+              }
               pageTextData[pageNum - 1] = {
-                text: strings.join(" "),
+                text: pageText,
                 items: textContent.items,
               };
             })
@@ -550,6 +553,8 @@ export default function OrderProcess() {
       let unmatchedZplPromise: Promise<Uint8Array> | null = null;
       let combinedDocInstance: any = null;
       let zplDocInstance: any = null;
+      let unmatchedPdfPageCount = 0;
+      let unmatchedZplPageCount = 0;
 
       if (mergedZplDoc) {
         try {
@@ -572,14 +577,16 @@ export default function OrderProcess() {
             targetDoc: any,
             srcPage: any,
             isZpl = false,
-            sellerSku?: string
+            sellerSku?: string,
+            totalQuantity?: number
           ) => {
             const embedded = await targetDoc.embedPage(srcPage);
             const { width: srcW, height: srcH } = embedded;
 
             if (isZpl) {
-              const TOP_SPACING = 25;
-              const BOTTOM_SPACING = 10;
+              // Equalize top and bottom whitespace so barcode at top and SKU at bottom have equal margins
+              const TOP_SPACING = 8;
+              const BOTTOM_SPACING = 20;
               const SIDE_SPACING = 8;
               const availW = TARGET_WIDTH - 2 * SIDE_SPACING;
               const availH = TARGET_HEIGHT - TOP_SPACING - BOTTOM_SPACING;
@@ -595,7 +602,7 @@ export default function OrderProcess() {
               newPage.drawPage(embedded, { x, y, width: finalW, height: finalH });
 
               if (sellerSku) {
-                await drawSkuOnLabelPage(targetDoc, newPage, sellerSku, x, y, finalW, finalH);
+                await drawSkuOnLabelPage(targetDoc, newPage, sellerSku, x, y, finalW, finalH, totalQuantity);
               }
             } else {
               const availW = TARGET_WIDTH - 2 * MARGIN;
@@ -628,26 +635,38 @@ export default function OrderProcess() {
               // "this type of page not goes inside matched combined pdf but it goes into unmatched pdf
               //  and only for more than 4+ order and needed then page 2 came other than that no need of page 2"
               if (item.pdfPages && item.pdfPages.length > 0) {
-                // Separate genuine invoice pages from transporter duplicate / non-item pages
-                const genuinePages = item.pdfPages.filter((p) => {
+                // Separate fee pages just in case they snuck into the item's pages
+                const validPages = item.pdfPages.filter((p) => {
                   const txt = pageTextData[p - 1]?.text || "";
-                  return !isAmazonTransporterOrFeePage(txt) && !isTransporterDuplicatePage(txt);
+                  return !isAmazonTransporterOrFeePage(txt);
                 });
 
-                const transporterPages = item.pdfPages.filter((p) => {
+                const feePages = item.pdfPages.filter((p) => {
                   const txt = pageTextData[p - 1]?.text || "";
-                  return isAmazonTransporterOrFeePage(txt) || isTransporterDuplicatePage(txt);
+                  return isAmazonTransporterOrFeePage(txt);
                 });
 
-                // For matched orders, all genuine invoice pages stay in the matched combined PDF.
-                // Transporter duplicate copies and fee pages go to unmatched PDF.
-                let matchedPages: number[] = genuinePages;
-                let unneededPages: number[] = [...transporterPages];
+                let lastNeededIndex = 0;
+                for (let i = 0; i < validPages.length; i++) {
+                  const txt = pageTextData[validPages[i] - 1]?.text || "";
+                  // The end of an Amazon invoice always contains the grand total and signature
+                  if (
+                    txt.includes("Authorized Signatory") ||
+                    txt.toLowerCase().includes("amount in words") ||
+                    /\bTOTAL\s*(?::|₹|$)/i.test(txt) ||
+                    /\bGrand Total\b/i.test(txt)
+                  ) {
+                    lastNeededIndex = i;
+                    break; // Stop at the FIRST footer we find, ignoring duplicate copies that follow
+                  }
+                }
 
-                if (itemCount < 3 && genuinePages.length > 1) {
-                  // For 1-2 item simple orders, only Page 1 is needed; extra non-transporter page goes to unmatched
-                  matchedPages = genuinePages.slice(0, 1);
-                  unneededPages.push(...genuinePages.slice(1));
+                const pagesToKeep = Math.max(lastNeededIndex + 1, 1);
+                let matchedPages = validPages.slice(0, pagesToKeep);
+                let unneededPages = [...feePages];
+                
+                if (validPages.length > pagesToKeep) {
+                  unneededPages.push(...validPages.slice(pagesToKeep));
                 }
 
                 if (matchedPages.length > 0) {
@@ -677,7 +696,7 @@ export default function OrderProcess() {
 
               // 2. ZPL barcode label second (EXACTLY ONE 4" x 6" page)
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-                await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku);
+                await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku, item.totalQuantity);
               }
               const endPage = combinedDoc.getPageCount();
               item.combinedPages = Array.from({ length: endPage - startPage }, (_, i) => startPage + i);
@@ -706,9 +725,11 @@ export default function OrderProcess() {
 
           combinedPromise = combinedDoc.save({ useObjectStreams: true });
           if (hasUnmatchedPdf) {
+            unmatchedPdfPageCount = unmatchedPdfDoc.getPageCount();
             unmatchedPdfPromise = unmatchedPdfDoc.save({ useObjectStreams: true });
           }
           if (hasUnmatchedZpl) {
+            unmatchedZplPageCount = unmatchedZplDoc.getPageCount();
             unmatchedZplPromise = unmatchedZplDoc.save({ useObjectStreams: true });
           }
         } catch (genErr) {
@@ -763,6 +784,8 @@ export default function OrderProcess() {
           pdfFiles.length === 1 ? pdfFiles[0].name : `${pdfFiles.length}_PDF_Invoices_Merged.pdf`;
         processResponse.summary.zplFileName =
           zplFiles.length === 1 ? zplFiles[0].name : `${zplFiles.length}_ZPL_Labels_Combined.zpl`;
+        processResponse.summary.unmatchedPdfPagesCount = unmatchedPdfPageCount;
+        processResponse.summary.unmatchedZplPagesCount = unmatchedZplPageCount;
       }
 
       if (processResponse.files?.combinedPdfBase64 && combinedDocInstance) {

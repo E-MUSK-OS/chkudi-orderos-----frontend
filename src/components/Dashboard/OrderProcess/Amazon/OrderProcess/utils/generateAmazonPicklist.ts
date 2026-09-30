@@ -28,6 +28,10 @@ export const generateAmazonPicklist = (
   const selectedOrders = results.filter((r) => selectedRows.has(r.index));
 
   const resolveOrderType = (item: AmazonComparisonResult): "single_quantity" | "multiple_asin" | "multiple_pieces" => {
+    if (item.orderType) {
+      return item.orderType;
+    }
+
     const rawAsins = (item.asin && item.asin !== "N/A" ? item.asin : "")
       .split(/[\r\n]+|\s+\/\s+/)
       .map((s) => s.trim().toUpperCase())
@@ -41,19 +45,13 @@ export const generateAmazonPicklist = (
     const uniqueAsins = new Set(rawAsins);
     const uniqueSkus = new Set(rawSkus);
 
-    const totalQty = item.totalQuantity || 1;
-
-    const hasMultipleDifferentAsins = uniqueAsins.size > 1 || (item.asinsCount || 0) > 1;
-    const hasMultipleDifferentSkus = uniqueSkus.size > 1;
-
-    // 1. If order contains multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
-    if (hasMultipleDifferentAsins || hasMultipleDifferentSkus) {
+    // 1. Multiple different ASINs OR multiple different Seller SKUs -> Multiple ASIN
+    if (uniqueAsins.size > 1 || uniqueSkus.size > 1) {
       return "multiple_asin";
     }
 
-    // 2. Exactly one ASIN and the EXACT SAME Seller SKU:
-    // Only Multiple Pieces if the order genuinely has 2 or more pieces (totalQty >= 2)
-    if (totalQty >= 2) {
+    // 2. Exactly one ASIN and SKU: genuinely multiple pieces if totalQuantity >= 2
+    if (item.totalQuantity && item.totalQuantity >= 2) {
       return "multiple_pieces";
     }
 
@@ -186,7 +184,12 @@ export const generateAmazonPicklist = (
         skuMap.set("UNKNOWN-SKU", currentQty + 1);
         totalQuantity += 1;
       } else if (skus.length === 1) {
-        const qtyToAdd = item.totalQuantity && item.totalQuantity > 1 ? item.totalQuantity : 1;
+        const qtyToAdd =
+          item.totalQuantity && item.totalQuantity > 1
+            ? item.totalQuantity
+            : item.orderType === "multiple_pieces"
+              ? 2
+              : 1;
         const currentQty = skuMap.get(skus[0]) ?? 0;
         skuMap.set(skus[0], currentQty + qtyToAdd);
         totalQuantity += qtyToAdd;

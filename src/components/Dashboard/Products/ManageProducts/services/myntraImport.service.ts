@@ -70,7 +70,7 @@ export async function createMyntraImport(
   data: {
     myntraSku: string;
     sellerSku?: string;
-    asin?: string;
+    generateBarcode?: string;
     generatedBarcode?: string;
     rackAddress?: string;
   },
@@ -91,7 +91,7 @@ export async function updateMyntraImport(
   data: {
     myntraSku?: string;
     sellerSku?: string;
-    asin?: string;
+    generateBarcode?: string;
     generatedBarcode?: string;
     rackAddress?: string;
   },
