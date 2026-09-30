@@ -111,7 +111,16 @@ export const api = {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to download file");
+      let errorDetail = `Failed to download file (${response.status} ${response.statusText})`;
+      try {
+        const errorJson = await response.json();
+        if (errorJson?.message) {
+          errorDetail += `: ${errorJson.message}`;
+        }
+      } catch {
+        // ignore non-json error responses
+      }
+      throw new Error(errorDetail);
     }
 
     return response.blob();

@@ -655,6 +655,40 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
           }
         } catch (combErr) {
           console.warn("Background combined PDF streaming notice:", combErr);
+          // Automatic Local Fallback: Check if this browser has the files saved in IndexedDB
+          try {
+            const idbFiles = await loadFilesFromIDB();
+            if (idbFiles?.combinedPdfBase64) {
+              const combUrl = base64ToBlobUrl(idbFiles.combinedPdfBase64);
+              set({
+                combinedPdfUrl: combUrl,
+                files: idbFiles,
+              });
+
+              const clean = idbFiles.combinedPdfBase64.includes(",")
+                ? idbFiles.combinedPdfBase64.split(",")[1]
+                : idbFiles.combinedPdfBase64;
+              const binary = atob(clean);
+              const bytes = new Uint8Array(binary.length);
+              for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+              }
+
+              const { PDFDocument } = await import("pdf-lib");
+              const combinedDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+              const bKey = getBatchKey(updatedSummary, batch.results.length, batch.id);
+
+              setCachedAmazonDocs({
+                combinedDoc,
+                combinedBytes: bytes,
+                cacheKey: `batch_${batch.id}`,
+                batchKey: bKey,
+              });
+              startBackgroundOrderPdfPrewarming(batch.results, combinedDoc, bKey);
+            }
+          } catch (idbErr) {
+            console.warn("Local IndexedDB fallback also unavailable:", idbErr);
+          }
         }
       })();
 
