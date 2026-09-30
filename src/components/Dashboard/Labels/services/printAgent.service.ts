@@ -347,6 +347,7 @@ export const chromeExtensionPrintService = {
 
     return new Promise((resolve, reject) => {
       try {
+        console.log("Data sent to extension (Base64/PDF Payload): ", cleanBase64);
         chrome.runtime.sendMessage(
           EXTENSION_ID,
           {
