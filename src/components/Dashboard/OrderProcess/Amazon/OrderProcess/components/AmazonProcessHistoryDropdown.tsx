@@ -20,7 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAmazonOrderStore, getPrintedBatchesMap } from "../store/useAmazonOrderStore";
+import { useAmazonOrderStore } from "../store/useAmazonOrderStore";
 import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
 
 interface AmazonProcessHistoryDropdownProps {
@@ -34,7 +34,6 @@ export default function AmazonProcessHistoryDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
-  const [dbPrintedOrders, setDbPrintedOrders] = useState<{ orderId: string; awb: string }[]>([]);
 
   const {
     historyBatches,
@@ -46,20 +45,11 @@ export default function AmazonProcessHistoryDropdown({
 
   const [loadingBatchId, setLoadingBatchId] = useState<string | null>(null);
 
-  // Fetch batches and printed orders when dropdown opens or initially
+  // Fetch batches when dropdown opens
   useEffect(() => {
     fetchHistoryBatches();
-    if (isOpen) {
-      amazonOrderService
-        .getOrders("?limit=1000")
-        .then((res) => {
-          if (res?.data && Array.isArray(res.data)) {
-            setDbPrintedOrders(res.data.map((o) => ({ orderId: o.orderId, awb: o.awb })));
-          }
-        })
-        .catch(() => {});
-    }
   }, [fetchHistoryBatches, isOpen]);
+
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -134,28 +124,20 @@ export default function AmazonProcessHistoryDropdown({
   }, [isOpen]);
 
   // Helper to determine printed count and printed orders list for a batch
+  // STRICT BATCH-ID ISOLATION: Only shows printed count if the data is keyed to THIS batch's unique ID.
+  // Never uses batch.summary.printedCount because the backend cross-contaminates it via global AWB matching.
   const getBatchPrintedInfo = (batch: AmazonBatchHistoryItem) => {
-    const map = getPrintedBatchesMap();
-    const stored =
-      (batch.id ? map[batch.id] : null) ||
-      map[`batch_${batch.id}`] ||
-      map[`${batch.pdfFileName || ""}_${batch.zplFileName || ""}_${batch.totalOrders}`] ||
-      map[`batch_${batch.totalOrders}`];
+    // 100% reliant on backend now.
+    const backendIndices = batch.summary?.printedIndices;
+    const hasBackendIndices = Array.isArray(backendIndices) && backendIndices.length > 0;
 
-    let count = batch.summary?.printedCount ?? stored?.count ?? stored?.indices?.length ?? 0;
-    const printedOrderNumbers = stored?.orderNumbers || batch.summary?.printedOrderIds || [];
-    const printedAwbs = stored?.awbs || batch.summary?.printedAwbs || [];
-
-    // Fallback: cross-reference with dbPrintedOrders if count is 0 and batch has results
-    if (count === 0 && dbPrintedOrders.length > 0 && Array.isArray((batch as any).results)) {
-      const dbAwbSet = new Set(dbPrintedOrders.map((o) => o.awb).filter(Boolean));
-      const matched = (batch as any).results.filter(
-        (r: any) => r.awb && r.awb !== "N/A" && r.awb !== "-" && dbAwbSet.has(r.awb)
-      );
-      if (matched.length > 0) {
-        count = matched.length;
-      }
+    let count = 0;
+    if (hasBackendIndices) {
+      count = backendIndices!.length;
     }
+
+    const printedOrderNumbers = hasBackendIndices ? (batch.summary?.printedOrderIds || []) : [];
+    const printedAwbs = hasBackendIndices ? (batch.summary?.printedAwbs || []) : [];
 
     return {
       count,
@@ -163,6 +145,8 @@ export default function AmazonProcessHistoryDropdown({
       printedAwbs,
     };
   };
+
+
 
   // Handle selecting a historical batch (with option to directly show printed orders in table)
   const handleSelectBatch = async (batch: AmazonBatchHistoryItem, showPrintedOnly = false) => {
@@ -499,7 +483,7 @@ export default function AmazonProcessHistoryDropdown({
                                 if (!isItemLoading) handleSelectBatch(batch, true);
                               }}
                               className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-800 transition cursor-pointer shadow-2xs whitespace-nowrap"
-                              title="Open full result page showing only printed orders in table"
+                              title="View printed orders only"
                             >
                               <Printer className="h-3 w-3 text-emerald-600" />
                               <span>Printed ({printedCount})</span>

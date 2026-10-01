@@ -73,10 +73,7 @@ interface AmazonOrderState {
 
 const SESSION_STORAGE_KEY = "amazon_order_process_data_v1";
 const METADATA_STORAGE_KEY = "amazon_order_process_metadata_v1";
-export const AMAZON_PRINTED_STORAGE_KEY = "amazon_order_process_printed_rows_v1";
-export const AMAZON_PRINTED_BATCHES_MAP_KEY = "amazon_printed_batches_map_v2";
 export const ACTIVE_HISTORY_BATCH_STORAGE_KEY = "amazon_active_history_batch_id_v1";
-
 export interface StoredBatchPrintedRecord {
   indices: number[];
   count: number;
@@ -85,27 +82,23 @@ export interface StoredBatchPrintedRecord {
   lastUpdated?: string;
 }
 
+let lastSessionMetrics = "";
+let currentBatchSessionKey = `session_${Date.now()}`;
+
 export const getBatchKey = (summary: any, resultsLen: number, batchId?: string | null): string => {
   const effectiveBatchId = batchId || summary?.id || summary?.batchId;
   if (effectiveBatchId) return `batch_${effectiveBatchId}`;
-  return `session_${resultsLen}_${summary?.totalPdfOrders ?? 0}`;
+  
+  const metrics = `${resultsLen}_${summary?.totalPdfOrders ?? 0}`;
+  if (metrics !== lastSessionMetrics && metrics !== "0_0") {
+    lastSessionMetrics = metrics;
+    currentBatchSessionKey = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+  
+  return currentBatchSessionKey;
 };
 
-export const getPrintedBatchesMap = (): Record<string, StoredBatchPrintedRecord> => {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(AMAZON_PRINTED_BATCHES_MAP_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.warn("Failed to parse printed batches map:", e);
-  }
-  return {};
-};
+// Local storage map logic removed to force reliance on backend source of truth
 
 const IDB_NAME = "chkudi_orderos_idb_v2";
 const IDB_STORE = "amazon_files";
@@ -533,7 +526,6 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       if (typeof window !== "undefined") {
         localStorage.removeItem(METADATA_STORAGE_KEY);
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
-        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
         localStorage.removeItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY);
         sessionStorage.removeItem("amazon_show_printed_active");
       }

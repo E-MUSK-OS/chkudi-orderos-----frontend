@@ -277,7 +277,6 @@ export default function OrderProcess() {
     if (typeof window !== "undefined") {
       try {
         sessionStorage.removeItem("amazon_show_printed_active");
-        localStorage.removeItem("amazon_order_process_printed_rows_v1");
         localStorage.removeItem("amazon_active_history_batch_id_v1");
       } catch (e) {}
     }

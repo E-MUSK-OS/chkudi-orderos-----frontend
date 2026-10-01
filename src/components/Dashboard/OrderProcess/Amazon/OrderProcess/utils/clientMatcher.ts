@@ -1484,7 +1484,7 @@ export function compareOrdersLocally(
   const consolidatedPdfOrders = consolidatePdfPages(pagesArray);
 
   const resolveCustomerName = (labelCustomer?: string, pdfCustomer?: string): string => {
-    return (labelCustomer && labelCustomer !== "N/A" ? labelCustomer : "") || (pdfCustomer && pdfCustomer !== "N/A" ? pdfCustomer : "") || "N/A";
+    return (pdfCustomer && pdfCustomer !== "N/A" ? pdfCustomer : "") || (labelCustomer && labelCustomer !== "N/A" ? labelCustomer : "") || "N/A";
   };
 
   // PASS 1: PRIORITY 1 - INVOICE NUMBER MATCHING

@@ -14,11 +14,23 @@ let docsCache: AmazonDocsCache | null = null;
 let isWarmingCache = false;
 let loadingCombinedPromise: Promise<PDFDocument | null> | null = null;
 
+let lastLengths = "";
+let currentDocSessionKey = "active_process_" + Date.now();
+
 export function getDocCacheKey(files: any, batchKey?: string): string {
   if (batchKey) return batchKey;
-  if (!files) return "active_process";
-  const baseKey = `${files.combinedPdfBase64?.length || 0}_${files.convertedZplPdfBase64?.length || 0}_${files.originalPdfBase64?.length || 0}`;
-  return baseKey === "0_0_0" ? "active_process" : baseKey;
+  if (!files) return currentDocSessionKey;
+  const cLen = files.combinedPdfBase64?.length || files.combinedPdfUrl?.length || 0;
+  const zLen = files.convertedZplPdfBase64?.length || files.convertedZplPdfUrl?.length || 0;
+  const oLen = files.originalPdfBase64?.length || files.originalPdfUrl?.length || 0;
+  const lengths = `${cLen}_${zLen}_${oLen}`;
+  
+  if (lengths !== lastLengths && lengths !== "0_0_0") {
+    lastLengths = lengths;
+    currentDocSessionKey = `active_process_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+  
+  return currentDocSessionKey;
 }
 
 export function blobToBase64(blob: Blob): Promise<string> {

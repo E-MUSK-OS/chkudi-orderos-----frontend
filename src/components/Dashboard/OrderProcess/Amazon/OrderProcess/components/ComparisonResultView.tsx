@@ -44,67 +44,24 @@ import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import {
   useAmazonOrderStore,
   loadFilesFromIDB,
-  AMAZON_PRINTED_STORAGE_KEY,
-  AMAZON_PRINTED_BATCHES_MAP_KEY,
-  getPrintedBatchesMap,
   StoredBatchPrintedRecord,
+  getBatchKey,
 } from "../store/useAmazonOrderStore";
-
-const getBatchKey = (summary: any, resultsLen: number, batchId?: string | null): string => {
-  const effectiveBatchId = batchId || summary?.id || summary?.batchId;
-  if (effectiveBatchId) return `batch_${effectiveBatchId}`;
-  if (!summary) return `batch_${resultsLen}`;
-  const uniqueToken = summary.batchSessionId || summary.createdAt || "";
-  return `${uniqueToken}_${summary.pdfFileName || ""}_${summary.zplFileName || ""}_${summary.totalPdfOrders || summary.totalZplLabels || resultsLen}`;
-};
 
 const getStoredPrintedRows = (
   batchKey: string,
   batchId?: string | null,
   summary?: any
 ): Set<number> => {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const set = new Set<number>();
-    const effectiveBatchId = batchId || summary?.id || summary?.batchId;
-
-    // 1. Check multi-batch persistent map (contains most recent printed indices for this batch)
-    const map = getPrintedBatchesMap();
-    if (effectiveBatchId && Array.isArray(map[effectiveBatchId]?.indices)) {
-      map[effectiveBatchId].indices.forEach((idx) => set.add(idx));
-    }
-    const mapKey = effectiveBatchId ? `batch_${effectiveBatchId}` : batchKey;
-    if (mapKey && Array.isArray(map[mapKey]?.indices)) {
-      map[mapKey].indices.forEach((idx) => set.add(idx));
-    }
-
-    // 2. Include summary printedIndices if present (e.g. from backend history)
-    if (summary && Array.isArray(summary.printedIndices)) {
-      summary.printedIndices.forEach((idx: number) => {
-        if (typeof idx === "number") set.add(idx);
-      });
-    }
-
-    // 3. Fallback to legacy single key if matching
-    const raw = localStorage.getItem(AMAZON_PRINTED_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.indices)) {
-        if (
-          parsed.batchKey === batchKey ||
-          (effectiveBatchId && (parsed.batchKey === effectiveBatchId || parsed.batchKey === `batch_${effectiveBatchId}`))
-        ) {
-          parsed.indices.forEach((idx: number) => set.add(idx));
-        }
-      }
-    }
-
-    return set;
-  } catch (e) {
-    console.warn("Failed to load printed rows from storage:", e);
+  const set = new Set<number>();
+  if (summary && Array.isArray(summary.printedIndices)) {
+    summary.printedIndices.forEach((idx: number) => {
+      if (typeof idx === "number") set.add(idx);
+    });
   }
-  return new Set();
+  return set;
 };
+
 
 const savePrintedRowsToStorage = (
   batchKey: string,
@@ -112,45 +69,9 @@ const savePrintedRowsToStorage = (
   batchId?: string | null,
   items?: { index: number; orderNumber?: string; awb?: string }[]
 ) => {
-  if (typeof window === "undefined") return;
-  try {
-    const indices = Array.from(set);
-    const printedOrderNumbers: string[] = [];
-    const printedAwbs: string[] = [];
-
-    if (items) {
-      items.forEach((item) => {
-        if (set.has(item.index)) {
-          if (item.orderNumber && item.orderNumber !== "N/A") printedOrderNumbers.push(item.orderNumber);
-          if (item.awb && item.awb !== "N/A") printedAwbs.push(item.awb);
-        }
-      });
-    }
-
-    const record: StoredBatchPrintedRecord = {
-      indices,
-      count: indices.length,
-      orderNumbers: printedOrderNumbers,
-      awbs: printedAwbs,
-      lastUpdated: new Date().toISOString(),
-    };
-
-    const map = getPrintedBatchesMap();
-    if (batchKey) map[batchKey] = record;
-    if (batchId) map[batchId] = record;
-    localStorage.setItem(AMAZON_PRINTED_BATCHES_MAP_KEY, JSON.stringify(map));
-
-    // Also update legacy single key for backward compatibility
-    localStorage.setItem(
-      AMAZON_PRINTED_STORAGE_KEY,
-      JSON.stringify({
-        batchKey: batchId || batchKey,
-        indices,
-      })
-    );
-  } catch (e) {
-    console.warn("Failed to save printed rows to storage:", e);
-  }
+  // Completely removed local storage logic.
+  // We now rely strictly on the backend Database (AmazonOrder table) 
+  // and React memory state for real-time tracking during the active session.
 };
 import {
   cleanCustomerName,
@@ -1127,17 +1048,20 @@ export default function ComparisonResultView({
   }, [mappedResults, printedRows, persistPrintedOrdersToAwbScan]);
 
   // Auto-sync printed status from database for historical batches so all printed orders appear in the table
+  // CRITICAL: Only runs when explicitly loading a HISTORICAL batch (activeHistoryBatchId is set by loadBatchFromHistory).
+  // Must NOT run on fresh uploads, because the DB stores printed orders by AWB globally —
+  // if the same data is uploaded twice, both batches share identical AWBs, and syncing would
+  // incorrectly mark orders in the new batch as "printed" based on the old batch's print history.
   useEffect(() => {
+    // STRICT GUARD: Only sync from DB when we are viewing a historical batch.
+    // Fresh uploads will never have activeHistoryBatchId set.
+    if (!activeHistoryBatchId) return;
+
     let isCancelled = false;
     const syncPrintedFromDb = async () => {
-      const targetBatchId =
-        activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId;
-      if (!targetBatchId) return;
       if (!mappedResults || mappedResults.length === 0) return;
       try {
-        const queryStr = targetBatchId
-          ? `?batchId=${encodeURIComponent(targetBatchId)}&limit=2000`
-          : `?limit=1000`;
+        const queryStr = `?batchId=${encodeURIComponent(activeHistoryBatchId)}&limit=2000`;
         const res = await amazonOrderService.getOrders(queryStr);
         if (isCancelled || !res?.data || !Array.isArray(res.data)) return;
 
@@ -1189,6 +1113,7 @@ export default function ComparisonResultView({
       isCancelled = true;
     };
   }, [mappedResults, batchKey, activeHistoryBatchId]);
+
 
   // Missing SKU items detection: strictly checks if sellerSku is missing or any part is N/A
   const missingSkuItems = useMemo(() => {
@@ -1384,7 +1309,6 @@ export default function ComparisonResultView({
     if (typeof window !== "undefined") {
       try {
         sessionStorage.removeItem("amazon_show_printed_active");
-        localStorage.removeItem(AMAZON_PRINTED_STORAGE_KEY);
       } catch (e) { }
     }
     setShowPrinted(false);

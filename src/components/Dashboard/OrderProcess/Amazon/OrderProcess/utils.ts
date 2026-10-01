@@ -9,7 +9,34 @@ import { productVariantService } from "@/components/Dashboard/Products/ManagePro
  */
 export function cleanCustomerName(raw: string): string {
   if (!raw || raw === "N/A") return "N/A";
-  return raw.trim() || "N/A";
+  
+  // Clean up any ZPL escape sequences
+  let cleaned = raw.replace(/\\&/g, " ").trim();
+  
+  // Split into lines to extract just the first name line (ignore the rest of the address)
+  const lines = cleaned.split(/[\r\n,]+/).map(l => l.trim()).filter(Boolean);
+  
+  for (const line of lines) {
+    const upper = line.toUpperCase();
+    // Filter out common false-positives
+    if (
+      upper.startsWith("SHIP DATE") ||
+      upper.startsWith("ORDER DATE") ||
+      upper.startsWith("INVOICE") ||
+      upper.startsWith("AWB") ||
+      upper.startsWith("SHIPPING") ||
+      upper.startsWith("DELIVERY") ||
+      /^\d{3}-\d{7}-\d{7}/.test(upper) ||
+      upper.includes("@")
+    ) {
+      continue;
+    }
+    
+    // First valid line is considered the customer name
+    return line || "N/A";
+  }
+
+  return "N/A";
 }
 
 /**
@@ -540,11 +567,17 @@ export async function drawSkuOnLabelPage(
   const skus = getCleanSkuList(sellerSku);
   if (skus.length === 0) return; // Do NOT print [NA] or [N/A]!
 
-  const formattedSkus = skus.map((s) => `[ ${s} ]`);
-  
-  if (totalQuantity !== undefined) {
-    formattedSkus.push(`[ Qty: ${totalQuantity} ]`);
+  let qtyPerSku = 1;
+  let remainder = 0;
+  if (totalQuantity !== undefined && totalQuantity > 0) {
+    qtyPerSku = Math.floor(totalQuantity / skus.length);
+    remainder = totalQuantity % skus.length;
   }
+
+  const formattedSkus = skus.map((s, idx) => {
+    const q = qtyPerSku + (idx < remainder ? 1 : 0);
+    return `[${s}][${q}]`;
+  });
 
   const count = formattedSkus.length;
 
