@@ -86,7 +86,7 @@ export default function ImportSkuMappingModal({
         }
       }}
     >
-      <DialogContent className="max-w-xl px-10 py-5">
+      <DialogContent className="sm:max-w-2xl px-12 py-8 min-h-[400px] flex flex-col justify-center !rounded-2xl">
 
         <DialogHeader className="flex flex-row items-center justify-between space-y-0">
           <DialogTitle>

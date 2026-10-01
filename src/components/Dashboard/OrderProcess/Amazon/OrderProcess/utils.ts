@@ -465,40 +465,46 @@ export function mapAsinToSellerSku(
     : [];
 
   const resultSkus: string[] = [];
-  const maxLen = Math.max(rawAsins.length, fallbackList.length, 1);
 
-  for (let i = 0; i < maxLen; i++) {
-    const asin = rawAsins[i];
-    let sku = "";
+  if (rawAsins.length > 0) {
+    for (let i = 0; i < rawAsins.length; i++) {
+      const asin = rawAsins[i];
+      let sku = "";
 
-    if (asin && asinToSkuMap && asinToSkuMap.size > 0) {
-      const normAsin = asin.toUpperCase().trim();
-      if (asinToSkuMap.has(normAsin)) {
-        const val = asinToSkuMap.get(normAsin)?.trim();
-        if (val && val !== "N/A" && val !== "-" && !/^B0[A-Z0-9]{8}$/i.test(val)) {
-          sku = val;
+      if (asin && asinToSkuMap && asinToSkuMap.size > 0) {
+        const normAsin = asin.toUpperCase().trim();
+        if (asinToSkuMap.has(normAsin)) {
+          const val = asinToSkuMap.get(normAsin)?.trim();
+          if (val && val !== "N/A" && val !== "-" && !/^B0[A-Z0-9]{8}$/i.test(val)) {
+            sku = val;
+          }
         }
       }
-    }
 
-    // Fallback to invoice-extracted SKU only if valid and not an ASIN
-    if (!sku && fallbackList[i] && !/^B0[A-Z0-9]{8}$/i.test(fallbackList[i])) {
-      sku = fallbackList[i];
-    } else if (!sku && fallbackList.length === 1 && !/^B0[A-Z0-9]{8}$/i.test(fallbackList[0])) {
-      sku = fallbackList[0];
-    }
+      // Fallback to invoice-extracted SKU only if mapping failed
+      if (!sku) {
+        if (fallbackList[i] && !/^B0[A-Z0-9]{8}$/i.test(fallbackList[i])) {
+          sku = fallbackList[i];
+        } else if (fallbackList.length === 1 && !/^B0[A-Z0-9]{8}$/i.test(fallbackList[0])) {
+          sku = fallbackList[0];
+        }
+      }
 
-    if (sku && sku !== "N/A" && sku !== "-" && !/^B0[A-Z0-9]{8}$/i.test(sku)) {
-      resultSkus.push(sku);
+      if (sku && sku !== "N/A" && sku !== "-" && !/^B0[A-Z0-9]{8}$/i.test(sku)) {
+        resultSkus.push(sku);
+      }
     }
+    
+    // If we only had 1 ASIN but mapping failed and we have multiple fallback SKUs,
+    // we might want to include them just in case, but usually we just want a 1:1 mapping.
+    // For now, we stick to the 1:1 mapping to avoid extra garbage SKUs.
+  } else if (fallbackList.length > 0) {
+    // If no ASINs were found, just use the fallback list
+    const validFallback = fallbackList.filter((s) => !/^B0[A-Z0-9]{8}$/i.test(s));
+    resultSkus.push(...validFallback);
   }
 
   const uniqueResultSkus = Array.from(new Set(resultSkus));
-
-  if (uniqueResultSkus.length === 0 && fallbackList.length > 0) {
-    const validFallback = fallbackList.filter((s) => !/^B0[A-Z0-9]{8}$/i.test(s));
-    if (validFallback.length > 0) return validFallback.join("\n");
-  }
 
   return uniqueResultSkus.length > 0 ? uniqueResultSkus.join("\n") : "N/A";
 }

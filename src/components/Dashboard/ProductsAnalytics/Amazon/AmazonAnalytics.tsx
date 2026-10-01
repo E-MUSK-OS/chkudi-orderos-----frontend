@@ -334,31 +334,31 @@ export default function AmazonAnalytics() {
         </div>
 
       {isLoading ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-          <RefreshCw className="h-8 w-8 animate-spin text-[#E8C16D]" />
-          <p className="mt-4 text-sm text-slate-400">Loading data...</p>
+        <div className="flex h-64 flex-col items-center justify-center rounded-3xl border border-[#E7E0D2] bg-white shadow-sm">
+          <RefreshCw className="h-8 w-8 animate-spin text-[#B88728]" />
+          <p className="mt-4 text-sm text-slate-500">Loading data...</p>
         </div>
       ) : data.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/5 p-12 text-center">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
-            <Upload size={32} className="text-[#E8C16D]" />
+        <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-[#E7E0D2] bg-white p-16 text-center shadow-sm">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#FFF9EC] border border-[#E8C16D]/20">
+            <Upload size={32} className="text-[#B88728]" />
           </div>
-          <h2 className="mb-2 text-xl font-bold text-white">No Analytics Data Found</h2>
-          <p className="mb-8 max-w-md text-sm text-slate-400">
+          <h2 className="mb-2 text-xl font-bold text-[#0A0E1A]">No Analytics Data Found</h2>
+          <p className="mb-8 max-w-md text-sm text-slate-500">
             It looks like you haven&apos;t uploaded any Amazon SKUs yet. Upload an Excel file containing your SKUs to get started.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
               onClick={downloadAmazonAnalyticsDemoSheet}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-6 py-3 font-bold text-[#0A0E1A] transition-all shadow-md active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-6 py-3 font-bold text-[#0A0E1A] transition-all shadow-sm active:scale-[0.98] cursor-pointer ring-2 ring-[#E8C16D]/30"
             >
               <FileDown size={20} className="text-[#B88728]" />
               <span>Download Demo Sheet</span>
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-[#E8C16D] px-6 py-3 font-bold text-[#0A0E1A] transition-all hover:bg-[#d4af5a] shadow-lg shadow-[#E8C16D]/20"
+              className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-6 py-3 font-bold text-[#0A0E1A] transition-all hover:bg-[#d4af5a] shadow-sm"
             >
               <Upload size={20} />
               <span>Upload Excel File</span>
