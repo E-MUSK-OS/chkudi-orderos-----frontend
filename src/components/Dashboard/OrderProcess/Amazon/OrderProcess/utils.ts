@@ -958,6 +958,10 @@ export function sanitizeSpreadsheetCell(value: unknown): string {
   if (value === null || value === undefined) return "";
   const str = String(value);
   const trimmed = str.trim();
+  // Standalone dashes like "-" or "--" are safe placeholder values, do not prepend apostrophe
+  if (/^[-]{1,3}$/.test(trimmed)) {
+    return trimmed;
+  }
   if (/^[=+@\-\t\r]/.test(trimmed)) {
     return `'${trimmed}`;
   }

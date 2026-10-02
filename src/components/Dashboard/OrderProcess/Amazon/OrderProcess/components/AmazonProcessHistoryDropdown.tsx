@@ -15,8 +15,6 @@ import {
   ArrowRight,
   ShieldAlert,
   Printer,
-  Eye,
-  Table,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,7 +31,6 @@ export default function AmazonProcessHistoryDropdown({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
 
   const {
     historyBatches,
@@ -366,7 +363,6 @@ export default function AmazonProcessHistoryDropdown({
                 const isItemLoading = loadingBatchId === batch.id;
                 const printedInfo = getBatchPrintedInfo(batch);
                 const printedCount = printedInfo.count;
-                const isExpanded = expandedBatchId === batch.id;
 
                 return (
                   <div
@@ -458,37 +454,18 @@ export default function AmazonProcessHistoryDropdown({
 
                       <div className="flex flex-wrap items-center gap-1.5 justify-end ml-auto">
                         {printedCount > 0 && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedBatchId((prev) => (prev === batch.id ? null : batch.id));
-                              }}
-                              className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold transition cursor-pointer border ${
-                                isExpanded
-                                  ? "bg-[#0A0E1A] text-[#E8C16D] border-[#0A0E1A]"
-                                  : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
-                              }`}
-                              title="Toggle inline printed orders table preview"
-                            >
-                              <Table className="h-3 w-3" />
-                              <span>{isExpanded ? "Hide" : "Preview"}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isItemLoading) handleSelectBatch(batch, true);
-                              }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-800 transition cursor-pointer shadow-2xs whitespace-nowrap"
-                              title="View printed orders only"
-                            >
-                              <Printer className="h-3 w-3 text-emerald-600" />
-                              <span>Printed ({printedCount})</span>
-                            </button>
-                          </>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isItemLoading) handleSelectBatch(batch, true);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-800 transition cursor-pointer shadow-2xs whitespace-nowrap"
+                            title="View printed orders only"
+                          >
+                            <Printer className="h-3 w-3 text-emerald-600" />
+                            <span>Printed ({printedCount})</span>
+                          </button>
                         )}
 
                         <button
@@ -513,45 +490,6 @@ export default function AmazonProcessHistoryDropdown({
                         </button>
                       </div>
                     </div>
-
-                    {/* Inline Expandable Printed Orders Table Preview */}
-                    {isExpanded && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="mt-1 rounded-xl border border-slate-200 bg-white p-2.5 text-xs shadow-inner"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-1.5 border-b border-slate-100 gap-1 text-[10px] font-bold text-slate-600">
-                          <span className="uppercase tracking-wider">Printed Orders ({printedCount})</span>
-                          <button
-                            type="button"
-                            onClick={() => handleSelectBatch(batch, true)}
-                            className="text-blue-600 hover:underline inline-flex items-center gap-1 font-bold text-[10px] cursor-pointer self-start sm:self-auto"
-                          >
-                            <Eye className="h-3 w-3" />
-                            Open In Full Result Page
-                          </button>
-                        </div>
-
-                        <div className="max-h-36 overflow-y-auto divide-y divide-slate-100 pt-1 text-[11px]">
-                          {(printedInfo.printedOrderNumbers.length > 0
-                            ? printedInfo.printedOrderNumbers
-                            : ["Printed Order"]
-                          ).map((ordNum, idx) => (
-                            <div key={idx} className="flex items-center justify-between py-1 px-1 gap-2">
-                              <span className="font-mono text-slate-800 font-semibold truncate flex-1 min-w-0">
-                                {ordNum}
-                              </span>
-                              <span className="text-slate-400 font-mono text-[10px] truncate max-w-[90px] sm:max-w-[130px]">
-                                {printedInfo.printedAwbs[idx] || "—"}
-                              </span>
-                              <span className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 shrink-0">
-                                <CheckCircle2 className="h-2.5 w-2.5" /> Printed
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })

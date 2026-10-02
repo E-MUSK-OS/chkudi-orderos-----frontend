@@ -94,7 +94,11 @@ export default function MyntraPicklist() {
           setExcelFiles(cached.files);
         }
         if (cached.hasResults && cached.picklistItems && cached.picklistItems.length > 0) {
-          setPicklistItems(cached.picklistItems);
+          const sanitizedItems = (cached.picklistItems || []).map((item: PicklistItem) => ({
+            ...item,
+            rack: item.rack === "Unassigned" || !item.rack ? "-" : item.rack,
+          }));
+          setPicklistItems(sanitizedItems);
           setSummary(cached.summary);
           setHasResults(true);
         }
@@ -245,7 +249,7 @@ export default function MyntraPicklist() {
           return {
             ...item,
             sellerSku: mapping.sellerSku?.trim() || "N/A",
-            rack: mapping.rackAddress?.trim() || "Unassigned",
+            rack: mapping.rackAddress?.trim() || "-",
             generateBarcode: mapping.generateBarcode?.trim() || (mapping as any).generatedBarcode?.trim() || mapping.sellerSku?.trim() || "-",
             status: "MATCHED",
           };
@@ -263,8 +267,8 @@ export default function MyntraPicklist() {
 
       // Re-sort with new rack/sellerSku data
       updatedResults.sort((a, b) => {
-        const aIsUnassigned = a.rack === "-" || a.rack === "Unassigned";
-        const bIsUnassigned = b.rack === "-" || b.rack === "Unassigned";
+        const aIsUnassigned = !a.rack || a.rack === "-" || a.rack === "Unassigned";
+        const bIsUnassigned = !b.rack || b.rack === "-" || b.rack === "Unassigned";
 
         if (aIsUnassigned && !bIsUnassigned) return 1;
         if (!aIsUnassigned && bIsUnassigned) return -1;
@@ -455,7 +459,7 @@ export default function MyntraPicklist() {
             id: `item-${idx}`,
             myntraSku: item.myntraSku,
             sellerSku: mapping.sellerSku?.trim() || "N/A",
-            rack: mapping.rackAddress?.trim() || "Unassigned",
+            rack: mapping.rackAddress?.trim() || "-",
             qty: item.qty,
             generateBarcode: mapping.generateBarcode?.trim() || (mapping as any).generatedBarcode?.trim() || mapping.sellerSku?.trim() || "-",
             status: "MATCHED",
@@ -476,8 +480,8 @@ export default function MyntraPicklist() {
 
       // 4. Sort rows primarily by rack ascending (alphanumeric shelf order)
       results.sort((a, b) => {
-        const aIsUnassigned = a.rack === "-" || a.rack === "Unassigned";
-        const bIsUnassigned = b.rack === "-" || b.rack === "Unassigned";
+        const aIsUnassigned = !a.rack || a.rack === "-" || a.rack === "Unassigned";
+        const bIsUnassigned = !b.rack || b.rack === "-" || b.rack === "Unassigned";
 
         if (aIsUnassigned && !bIsUnassigned) return 1;
         if (!aIsUnassigned && bIsUnassigned) return -1;
@@ -551,6 +555,10 @@ export default function MyntraPicklist() {
     if (value === null || value === undefined) return "";
     const str = String(value);
     const trimmed = str.trim();
+    // Standalone dashes like "-" or "--" are safe placeholder values, do not prepend apostrophe
+    if (/^[-]{1,3}$/.test(trimmed)) {
+      return trimmed;
+    }
     if (/^[=+@\-\t\r]/.test(trimmed)) {
       return `'${trimmed}`;
     }
@@ -642,7 +650,8 @@ export default function MyntraPicklist() {
       const qtyCell = row.getCell(startCol + 2);
       const barcodeCell = row.getCell(startCol + 3);
 
-      rackCell.value = sanitizeSpreadsheetCell(item.rack || "--");
+      const displayRack = item.rack && item.rack !== "Unassigned" ? item.rack : "-";
+      rackCell.value = sanitizeSpreadsheetCell(displayRack);
       skuCell.value = sanitizeSpreadsheetCell(item.sellerSku || "--");
       qtyCell.value = item.qty;
       barcodeCell.value = sanitizeSpreadsheetCell(item.generateBarcode || "No");
@@ -805,7 +814,7 @@ export default function MyntraPicklist() {
 
     // 5. Column widths fitted snugly for A4 Portrait paper
     const maxRackLen = items.reduce(
-      (max, i) => Math.max(max, (i.rack && i.rack !== "--" && i.rack !== "-" ? i.rack : "").length),
+      (max, i) => Math.max(max, (i.rack && i.rack !== "--" && i.rack !== "-" && i.rack !== "Unassigned" ? i.rack : "").length),
       "Rack".length
     );
     const maxSkuLen = items.reduce(
@@ -1379,9 +1388,9 @@ export default function MyntraPicklist() {
                         >
                           {/* Rack Badge */}
                           <td className="px-4 py-3 font-semibold text-[#0A0E1A]">
-                            {item.rack === "-" || item.rack === "Unassigned" ? (
+                            {item.rack === "-" || item.rack === "Unassigned" || !item.rack ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                                {item.rack}
+                                -
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">

@@ -167,6 +167,37 @@ export async function loadFilesFromIDB(): Promise<AmazonProcessFiles | null> {
   }
 }
 
+export async function saveBatchBlobToIDB(batchId: string, blob: Blob): Promise<void> {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    const store = tx.objectStore(IDB_STORE);
+    store.put(blob, `batch_pdf_${batchId}`);
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    console.warn("Failed to save batch blob to IndexedDB:", e);
+  }
+}
+
+export async function loadBatchBlobFromIDB(batchId: string): Promise<Blob | null> {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const store = tx.objectStore(IDB_STORE);
+    const request = store.get(`batch_pdf_${batchId}`);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.warn("Failed to load batch blob from IndexedDB:", e);
+    return null;
+  }
+}
+
 // Helper to convert base64 string to Blob safely and fast using flat Uint8Array
 const base64ToBlob = (base64Data: string, mimeType = "application/pdf"): Blob | null => {
   try {
@@ -616,10 +647,17 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
       }
 
       // 2. BACKGROUND COMBINED PDF STREAMING: Fetch only the combined print/preview PDF
-      // This runs completely in the background without blocking the UI
+      // Checks IndexedDB first for instant (0ms) load, otherwise fetches from server and caches
       (async () => {
         try {
-          const blob = await amazonOrderService.fetchBatchFileBlob(batch.id, "combined");
+          let blob = await loadBatchBlobFromIDB(batch.id);
+          if (!blob) {
+            blob = await amazonOrderService.fetchBatchFileBlob(batch.id, "combined");
+            if (blob && blob.size > 0) {
+              saveBatchBlobToIDB(batch.id, blob);
+            }
+          }
+
           if (blob && blob.size > 0) {
             const combUrl = URL.createObjectURL(blob);
             const base64 = await blobToBase64(blob);
@@ -643,7 +681,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
               cacheKey: `batch_${batch.id}`,
               batchKey: bKey,
             });
-            startBackgroundOrderPdfPrewarming(batch.results, combinedDoc, bKey);
+            startBackgroundOrderPdfPrewarming(batch.results, combinedDoc, bKey, updatedSummary?.printedIndices);
           }
         } catch (combErr) {
           console.warn("Background combined PDF streaming notice:", combErr);

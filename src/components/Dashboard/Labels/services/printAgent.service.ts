@@ -356,7 +356,7 @@ export const chromeExtensionPrintService = {
             options: {
               copies: copies || 1,
               paperSize: formattedPaperSize,
-              ...(widthMm && heightMm ? { scale: "noscale", rasterize: true } : {}),
+              ...(widthMm && heightMm ? { scale: "noscale", rasterize: false } : {}),
             },
             requestId: requestId,
           },

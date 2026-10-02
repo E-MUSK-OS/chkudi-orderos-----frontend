@@ -171,68 +171,118 @@ export async function getOrGenerateSingleOrderPdf(
 }
 
 /**
- * Pre-warms individual order PDFs in idle time batches of 5 so that by the time
- * the operator scans an ASIN, the printable 2-page PDF base64 is already sitting in RAM.
+ * Pre-warms individual order PDFs.
+ * Priority Queue: All printed orders + first 10 unprinted orders are warmed immediately (<300ms).
+ * Once completed, the remaining orders are warmed smoothly in idle time without blocking or showing loading.
  */
 export function startBackgroundOrderPdfPrewarming(
   results: any[],
   combinedDoc: PDFDocument,
-  batchKey?: string
+  batchKey?: string,
+  printedIndices?: Set<number> | number[]
 ): void {
   if (isWarmingCache || !combinedDoc || !results || results.length === 0) return;
   isWarmingCache = true;
 
   const currentBatchKey = batchKey || docsCache?.batchKey || docsCache?.cacheKey;
   const matched = results.filter((r) => r.isMatch);
-  let idx = 0;
 
-  const processNextBatch = () => {
-    // If cache was destroyed or switched to another batch, abort prewarming immediately
-    if (!docsCache?.combinedDoc && !combinedDoc) {
-      isWarmingCache = false;
-      return;
+  const printedSet = new Set<number>(
+    Array.isArray(printedIndices) ? printedIndices : printedIndices ? Array.from(printedIndices) : []
+  );
+
+  // Group into printed and unprinted
+  const printedOrders: any[] = [];
+  const unprintedOrders: any[] = [];
+
+  for (const item of matched) {
+    if (printedSet.has(item.index) || item.isPrinted) {
+      printedOrders.push(item);
+    } else {
+      unprintedOrders.push(item);
     }
-    const activeKey = batchKey || docsCache?.batchKey || docsCache?.cacheKey;
-    if (activeKey !== currentBatchKey) {
-      isWarmingCache = false;
-      return;
-    }
+  }
 
-    const end = Math.min(idx + 5, matched.length);
-    const promises: Promise<any>[] = [];
+  // Priority queue: All printed orders + first 10 unprinted orders
+  const first10Unprinted = unprintedOrders.slice(0, 10);
+  const remainingUnprinted = unprintedOrders.slice(10);
+  const priorityOrders = [...printedOrders, ...first10Unprinted];
 
-    for (let i = idx; i < end; i++) {
-      const item = matched[i];
+  // Warm priority queue first (fast, <300ms without blocking UI)
+  const warmPriorityAndContinue = async () => {
+    for (const item of priorityOrders) {
+      if (!docsCache?.combinedDoc && !combinedDoc) {
+        isWarmingCache = false;
+        return;
+      }
+      const activeKey = batchKey || docsCache?.batchKey || docsCache?.cacheKey;
+      if (activeKey !== currentBatchKey) {
+        isWarmingCache = false;
+        return;
+      }
       const scopedKey = getScopedKey(item.index, batchKey);
       if (!orderPrintPdfCache.has(scopedKey)) {
-        promises.push(getOrGenerateSingleOrderPdf(item, combinedDoc, batchKey, results));
+        await getOrGenerateSingleOrderPdf(item, combinedDoc, batchKey, results);
       }
     }
 
-    idx = end;
-    Promise.all(promises)
-      .then(() => {
-        if (idx < matched.length) {
-          if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-            (window as any).requestIdleCallback(processNextBatch, { timeout: 1000 });
-          } else {
-            setTimeout(processNextBatch, 50);
-          }
-        } else {
-          isWarmingCache = false;
-          console.log(`⚡ All ${matched.length} Amazon order PDFs pre-warmed in cache for instant (<1s) printing!`);
-        }
-      })
-      .catch(() => {
+    // After priority queue completes, smoothly warm the remaining unprinted orders
+    // in background idle time without any UI blocking or loading indicators
+    let remIdx = 0;
+    const processRemaining = () => {
+      if (!docsCache?.combinedDoc && !combinedDoc) {
         isWarmingCache = false;
-      });
+        return;
+      }
+      const activeKey = batchKey || docsCache?.batchKey || docsCache?.cacheKey;
+      if (activeKey !== currentBatchKey) {
+        isWarmingCache = false;
+        return;
+      }
+
+      const end = Math.min(remIdx + 10, remainingUnprinted.length);
+      const promises: Promise<any>[] = [];
+      for (let i = remIdx; i < end; i++) {
+        const item = remainingUnprinted[i];
+        const scopedKey = getScopedKey(item.index, batchKey);
+        if (!orderPrintPdfCache.has(scopedKey)) {
+          promises.push(getOrGenerateSingleOrderPdf(item, combinedDoc, batchKey, results));
+        }
+      }
+
+      remIdx = end;
+      Promise.all(promises)
+        .then(() => {
+          if (remIdx < remainingUnprinted.length) {
+            if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+              (window as any).requestIdleCallback(processRemaining, { timeout: 1000 });
+            } else {
+              setTimeout(processRemaining, 40);
+            }
+          } else {
+            isWarmingCache = false;
+            console.log(`⚡ All ${matched.length} Amazon order PDFs pre-warmed in background!`);
+          }
+        })
+        .catch(() => {
+          isWarmingCache = false;
+        });
+    };
+
+    if (remainingUnprinted.length > 0) {
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        (window as any).requestIdleCallback(processRemaining, { timeout: 500 });
+      } else {
+        setTimeout(processRemaining, 50);
+      }
+    } else {
+      isWarmingCache = false;
+    }
   };
 
-  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-    (window as any).requestIdleCallback(processNextBatch, { timeout: 500 });
-  } else {
-    setTimeout(processNextBatch, 100);
-  }
+  warmPriorityAndContinue().catch(() => {
+    isWarmingCache = false;
+  });
 }
 
 export async function fastBase64ToUint8ArrayAsync(base64: string): Promise<Uint8Array> {
@@ -269,13 +319,19 @@ export async function getOrLoadCombinedDoc(activeFiles: any, batchKey?: string):
   }
 
   if (!activeFiles?.combinedPdfBase64) {
-    // Fallback: If not in activeFiles base64, check if an active historical batch exists and stream combined PDF blob
+    // Fallback: Check local IndexedDB first, then backend
     try {
-      const { useAmazonOrderStore } = await import("../store/useAmazonOrderStore");
+      const { useAmazonOrderStore, loadBatchBlobFromIDB, saveBatchBlobToIDB } = await import("../store/useAmazonOrderStore");
       const activeBatchId = useAmazonOrderStore.getState().activeHistoryBatchId;
       if (activeBatchId) {
-        const { amazonOrderService } = await import("../services/amazonOrder.service");
-        const blob = await amazonOrderService.fetchBatchFileBlob(activeBatchId, "combined");
+        let blob = await loadBatchBlobFromIDB(activeBatchId);
+        if (!blob) {
+          const { amazonOrderService } = await import("../services/amazonOrder.service");
+          blob = await amazonOrderService.fetchBatchFileBlob(activeBatchId, "combined");
+          if (blob && blob.size > 0) {
+            saveBatchBlobToIDB(activeBatchId, blob);
+          }
+        }
         if (blob && blob.size > 0) {
           const base64 = await blobToBase64(blob);
           const buf = await blob.arrayBuffer();
@@ -296,8 +352,9 @@ export async function getOrLoadCombinedDoc(activeFiles: any, batchKey?: string):
             combinedPdfUrl: prev.combinedPdfUrl || URL.createObjectURL(blob),
           }));
           const currentResults = useAmazonOrderStore.getState().results;
+          const currentSummary = useAmazonOrderStore.getState().summary;
           if (currentResults && currentResults.length > 0) {
-            startBackgroundOrderPdfPrewarming(currentResults, doc, bKey);
+            startBackgroundOrderPdfPrewarming(currentResults, doc, bKey, currentSummary?.printedIndices);
           }
           return doc;
         }

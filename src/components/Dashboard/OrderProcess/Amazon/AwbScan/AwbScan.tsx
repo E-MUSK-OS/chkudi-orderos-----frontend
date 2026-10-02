@@ -18,7 +18,7 @@ export default function AwbScan() {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "SCANNED">("ALL");
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateStringIST);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
+  const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [summaryCounts, setSummaryCounts] = useState({
     total: 0,
@@ -118,7 +118,7 @@ export default function AwbScan() {
           </div>
           <a
             href="/dashboard/order-process/amazon/order-process"
-            className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2.5 rounded-lg border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm hover:bg-[#E8C16D] hover:text-[#0A0E1A] transition"
+            className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2.5 rounded-xl border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm hover:bg-[#E8C16D] hover:text-[#0A0E1A] transition"
           >
             ← Back to Order Process
           </a>

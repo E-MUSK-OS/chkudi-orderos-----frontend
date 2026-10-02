@@ -79,11 +79,11 @@ export default function AwbMissingTable({
   };
 
   return (
-    <div className="border border-red-200 bg-white shadow-sm transition-all overflow-hidden">
+    <div className="rounded-2xl border border-red-200 bg-white shadow-sm transition-all overflow-hidden">
       {/* Header bar */}
       <div className="flex flex-col gap-3 border-b border-red-100 bg-red-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded bg-red-100 text-red-700">
+          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-700">
             <AlertCircle className="h-4 w-4" />
           </div>
           <div>
@@ -91,7 +91,7 @@ export default function AwbMissingTable({
               <h2 className="text-base sm:text-lg font-bold text-red-950 tracking-wide">
                 Missing / Unmatched AWB Scans
               </h2>
-              <span className="rounded bg-red-100 border border-red-200 px-2.5 py-0.5 text-xs font-bold text-red-700">
+              <span className="rounded-full bg-red-100 border border-red-200 px-3 py-0.5 text-xs font-bold text-red-700">
                 {missingList.length} Missing
               </span>
             </div>
@@ -112,6 +112,7 @@ export default function AwbMissingTable({
               h-9
               items-center
               gap-1.5
+              rounded-xl
               bg-emerald-600
               hover:bg-emerald-700
               px-3.5
@@ -137,6 +138,7 @@ export default function AwbMissingTable({
               h-9
               items-center
               gap-1.5
+              rounded-xl
               border
               border-[#0A0E1A]
               bg-[#0A0E1A]
@@ -173,6 +175,7 @@ export default function AwbMissingTable({
               h-9
               items-center
               gap-1.5
+              rounded-xl
               border
               border-red-300
               bg-white
@@ -223,13 +226,13 @@ export default function AwbMissingTable({
                   {/* Scanned AWB / Barcode */}
                   <td className="px-4 py-3 text-center whitespace-nowrap">
                     <div className="inline-flex items-center gap-2">
-                      <span className="border border-red-200 bg-red-50 px-3 py-1 font-mono text-xs sm:text-sm font-bold text-red-950 tracking-wider">
+                      <span className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 font-mono text-xs sm:text-sm font-bold text-red-950 tracking-wider">
                         {item.awb}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleCopySingle(item.awb)}
-                        className="p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                        className="rounded-lg p-1 text-slate-400 hover:text-slate-700 hover:bg-red-100 transition cursor-pointer"
                         title="Copy AWB"
                       >
                         {isCopied ? (
@@ -243,7 +246,7 @@ export default function AwbMissingTable({
 
                   {/* Status */}
                   <td className="px-4 py-3 text-center whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 border border-red-200 bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-100 px-3 py-0.5 text-xs font-bold text-red-700">
                       <AlertCircle className="h-3 w-3 text-red-600" />
                       NOT FOUND
                     </span>
@@ -259,7 +262,7 @@ export default function AwbMissingTable({
                     <button
                       type="button"
                       onClick={() => onRemoveItem(item.awb)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer hover:bg-red-100 rounded"
+                      className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer hover:bg-red-100 rounded-lg"
                       title="Remove from missing list"
                     >
                       <Trash2 className="h-4 w-4" />

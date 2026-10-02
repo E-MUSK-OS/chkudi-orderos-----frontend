@@ -3,6 +3,7 @@
 import { CheckCircle2, Clock, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 import type { VMSItem } from "../../VMS/Admin/types";
+import Pagination from "@/components/ui/Pagination";
 
 interface Props {
   data: VMSItem[];
@@ -73,14 +74,13 @@ export default function TrackingTable({
                   const d = new Date(item.createdAt);
                   formattedDate = format(d, "dd MMM yyyy");
                   formattedTime = format(d, "hh:mm:ss aa");
-                } catch (e) {}
+                } catch (e) { }
 
                 return (
                   <tr
                     key={item.id}
-                    className={`transition-colors hover:bg-slate-50/80 ${
-                      isScanned ? "bg-emerald-50/25" : ""
-                    }`}
+                    className={`transition-colors hover:bg-slate-50/80 ${isScanned ? "bg-emerald-50/25" : ""
+                      }`}
                   >
                     {/* Tracking ID */}
                     <td className="px-5 py-4 text-center font-mono text-sm sm:text-base font-bold text-[#0A0E1A] whitespace-nowrap tracking-wide">
@@ -130,54 +130,18 @@ export default function TrackingTable({
       </div>
 
       {/* Pagination Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#E7E0D2] bg-white px-5 py-4">
-        <div className="text-xs sm:text-sm text-slate-600">
-          Showing <strong className="font-bold text-[#0A0E1A]">{startIndex + 1}</strong> -{" "}
-          <strong className="font-bold text-[#0A0E1A]">{endIndex}</strong> of{" "}
-          <strong className="font-bold text-[#0A0E1A]">{total}</strong> records
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Rows per page */}
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-600">
-            <span>Rows:</span>
-            <select aria-label="Select option"
-              value={limit}
-              onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="border border-[#E7E0D2] bg-white px-2.5 py-1 text-xs sm:text-sm font-bold text-[#0A0E1A] outline-none cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-
-          {/* Prev / Next buttons */}
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={page <= 1 || isLoading}
-              onClick={() => onPageChange(page - 1)}
-              className="border border-[#0A0E1A] bg-[#0A0E1A] px-3.5 py-1 text-xs sm:text-sm font-bold text-[#E8C16D] transition hover:bg-[#161D2E] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
-            >
-              Prev
-            </button>
-            <span className="border border-[#E7E0D2] bg-[#FFF9EC] px-3.5 py-1 text-xs sm:text-sm font-bold text-[#0A0E1A]">
-              {page} / {totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= totalPages || isLoading}
-              onClick={() => onPageChange(page + 1)}
-              className="border border-[#0A0E1A] bg-[#0A0E1A] px-3.5 py-1 text-xs sm:text-sm font-bold text-[#E8C16D] transition hover:bg-[#161D2E] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        itemName="records"
+        isLoading={isLoading}
+        variant="light"
+        className="border-t border-[#E7E0D2] bg-white px-5 py-4"
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
+      />
     </div>
   );
 }

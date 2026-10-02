@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import DashboardLayout from '@/components/Dashboard/layout/DashboardLayout';
 import Button from "@/components/ui/Button";
 import ProcessingProgressModal from './components/ProcessingProgressModal';
+import Pagination from "@/components/ui/Pagination";
 
 interface StockResult {
   sellerSkuCode: string;
@@ -22,8 +23,8 @@ interface StockResult {
 }
 
 export default function StockAnalysis() {
-  const [orders, setOrders] = useState<{file: File, data: any[]}[]>([]);
-  const [returns, setReturns] = useState<{file: File, data: any[]}[]>([]);
+  const [orders, setOrders] = useState<{ file: File, data: any[] }[]>([]);
+  const [returns, setReturns] = useState<{ file: File, data: any[] }[]>([]);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -108,7 +109,7 @@ export default function StockAnalysis() {
 
       try {
         const data = await processExcelFile(file);
-        
+
         if (!data || data.length === 0) {
           toast.error(`The uploaded file is empty: ${file.name}`);
           continue;
@@ -119,7 +120,7 @@ export default function StockAnalysis() {
         if (type === 'orders') {
           const hasOrderColumns = headers.includes('storeorderid') || headers.includes('orderstatus') || headers.includes('packetid');
           const hasReturnColumns = headers.includes('returnid') || headers.includes('returnreason') || headers.includes('returnstatus');
-          
+
           if (!hasOrderColumns || hasReturnColumns) {
             toast.error(`Invalid file: ${file.name}. Please upload a valid Myntra Orders report here.`);
             continue;
@@ -170,10 +171,10 @@ export default function StockAnalysis() {
     }
     const dateStr = String(value).trim();
     if (!dateStr) return null;
-    
+
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) return d;
-    
+
     // Try DD-MM-YYYY or DD/MM/YYYY
     const parts = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
     if (parts) {
@@ -223,9 +224,9 @@ export default function StockAnalysis() {
             if (dateKey && row[dateKey]) {
               const d = parseExcelDate(row[dateKey]);
               if (d) {
-                 const t = d.getTime();
-                 if (t < minTime) minTime = t;
-                 if (t > maxTime) maxTime = t;
+                const t = d.getTime();
+                if (t < minTime) minTime = t;
+                if (t > maxTime) maxTime = t;
               }
             }
 
@@ -282,7 +283,7 @@ export default function StockAnalysis() {
 
         let calculatedDays = 30; // fallback
         if (minTime !== Infinity && maxTime !== -Infinity && maxTime > minTime) {
-           calculatedDays = Math.max(1, Math.ceil((maxTime - minTime) / (1000 * 60 * 60 * 24)));
+          calculatedDays = Math.max(1, Math.ceil((maxTime - minTime) / (1000 * 60 * 60 * 24)));
         }
         setReportDays(calculatedDays);
 
@@ -507,8 +508,8 @@ export default function StockAnalysis() {
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingOrders(false); }}
                 onDrop={(e) => { e.preventDefault(); setIsDraggingOrders(false); if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'orders'); }}
                 className={`group relative flex ${orders.length > 0 ? 'min-h-[100px] py-3' : 'min-h-[170px] sm:min-h-[220px] p-4 sm:p-6'} cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed text-center transition-all ${isDraggingOrders
-                    ? "border-[#E8C16D] bg-[#FFF9EC]"
-                    : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+                  ? "border-[#E8C16D] bg-[#FFF9EC]"
+                  : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
                   }`}
               >
                 {!orders.length && (
@@ -590,8 +591,8 @@ export default function StockAnalysis() {
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingReturns(false); }}
                 onDrop={(e) => { e.preventDefault(); setIsDraggingReturns(false); if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'returns'); }}
                 className={`group relative flex ${returns.length > 0 ? 'min-h-[100px] py-3' : 'min-h-[170px] sm:min-h-[220px] p-4 sm:p-6'} cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed text-center transition-all ${isDraggingReturns
-                    ? "border-[#E8C16D] bg-[#FFF9EC]"
-                    : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+                  ? "border-[#E8C16D] bg-[#FFF9EC]"
+                  : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
                   }`}
               >
                 {!returns.length && (
@@ -690,9 +691,9 @@ export default function StockAnalysis() {
               {/* Search Bar */}
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Search SKU or Brand..." 
+                <input
+                  type="text"
+                  placeholder="Search SKU or Brand..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -701,7 +702,7 @@ export default function StockAnalysis() {
                   className="w-full pl-10 pr-4 py-2 border border-slate-200 text-[15px] font-medium focus:outline-none focus:ring-1 focus:ring-[#0A0E1A] h-10"
                 />
               </div>
-              
+
               {/* Filter */}
               <div className="flex items-center gap-3">
                 <div className="relative h-10 w-full sm:w-56" ref={brandDropdownRef}>
@@ -722,11 +723,10 @@ export default function StockAnalysis() {
                             setCurrentPage(1);
                             setIsBrandDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-4 py-3 text-[15px] font-semibold transition-colors ${
-                            selectedBrand === brand
+                          className={`w-full text-left px-4 py-3 text-[15px] font-semibold transition-colors ${selectedBrand === brand
                               ? 'bg-[#E8C16D] text-[#0A0E1A]'
                               : 'text-white hover:bg-[#E8C16D] hover:text-[#0A0E1A]'
-                          }`}
+                            }`}
                         >
                           {brand === 'All' ? 'All Brands' : brand}
                         </button>
@@ -734,7 +734,7 @@ export default function StockAnalysis() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Download Button */}
                 <button
                   onClick={handleDownloadExcel}
@@ -831,53 +831,19 @@ export default function StockAnalysis() {
 
               {/* Footer Pagination Bar */}
               {filteredAndSortedResults.length > 0 && (
-                <div className="bg-[#0A0E1A] px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto">
-                  <div className="text-sm font-medium text-white">
-                    Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredAndSortedResults.length)} of {filteredAndSortedResults.length} records
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm text-white">
-                      <span>Rows</span>
-                      <select aria-label="Select option"
-                        value={itemsPerPage}
-                        onChange={(e) => {
-                          setItemsPerPage(Number(e.target.value));
-                          setCurrentPage(1);
-                        }}
-                        className="bg-white text-black px-2 py-1.5 text-sm focus:outline-none appearance-none pr-7 cursor-pointer"
-                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.25rem center", backgroundRepeat: "no-repeat", backgroundSize: "1em 1em" }}
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-[2px]">
-                      <button
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="flex items-center gap-1 bg-[#E8C16D] text-black px-3 py-1.5 text-sm font-semibold hover:bg-[#D4A343] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <ChevronLeft className="h-4 w-4" /> Prev
-                      </button>
-                      
-                      <div className="bg-white text-black px-4 py-1.5 text-sm font-semibold min-w-[3rem] text-center">
-                        {currentPage}/{totalPages}
-                      </div>
-                      
-                      <button
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="flex items-center gap-1 bg-[#E8C16D] text-black px-3 py-1.5 text-sm font-semibold hover:bg-[#D4A343] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        Next <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <Pagination
+                  page={currentPage}
+                  totalPages={totalPages}
+                  total={filteredAndSortedResults.length}
+                  limit={itemsPerPage}
+                  itemName="records"
+                  className="bg-[#0A0E1A] px-4 py-4 mt-auto"
+                  onPageChange={setCurrentPage}
+                  onLimitChange={(newLimit) => {
+                    setItemsPerPage(newLimit);
+                    setCurrentPage(1);
+                  }}
+                />
               )}
             </div>
           </div>

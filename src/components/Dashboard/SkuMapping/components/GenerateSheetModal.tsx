@@ -219,7 +219,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             pdfBase64,
             targetPrinter,
             copies,
-            false,
+            true,
             effectiveWidthMm,
             effectiveHeightMm
           );

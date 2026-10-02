@@ -21,7 +21,7 @@ import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import ProcessingProgressModal from "./components/ProcessingProgressModal";
 import ComparisonResultView from "./components/ComparisonResultView";
-import { useAmazonOrderStore } from "./store/useAmazonOrderStore";
+import { useAmazonOrderStore, saveBatchBlobToIDB } from "./store/useAmazonOrderStore";
 import { AmazonProcessResponse, AmazonComparisonResult } from "./types";
 import {
   enhanceInvoicePages,
@@ -868,6 +868,10 @@ export default function OrderProcess() {
                 activeHistoryBatchId: saveRes.data.id,
                 historySyncStatus: "synced",
               });
+              if (combinedBytes) {
+                const blob = new Blob([combinedBytes as unknown as BlobPart], { type: "application/pdf" });
+                saveBatchBlobToIDB(saveRes.data.id, blob);
+              }
               useAmazonOrderStore.getState().fetchHistoryBatches();
               toast.success("Batch data and files successfully saved to 7-day history.");
             } else {

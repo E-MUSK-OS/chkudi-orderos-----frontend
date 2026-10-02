@@ -55,28 +55,58 @@ export default function ExcelUploadModal({
       await workbook.xlsx.load(arrayBuffer);
 
       const worksheet = workbook.worksheets[0];
-      const parsedData: { sku: string; url: string }[] = [];
+      const parsedData: { sku: string; url: string; operatorName?: string; day?: string }[] = [];
 
       // Check header row (row 1) to identify column positions
-      let skuColIndex = 1;
-      let urlColIndex = 2;
+      let operatorColIndex = -1;
+      let dayColIndex = -1;
+      let skuColIndex = -1;
+      let urlColIndex = -1;
 
       const headerRow = worksheet.getRow(1);
       headerRow.eachCell((cell, colNumber) => {
         const val = (cell.text || cell.value?.toString() || "").toLowerCase().trim();
-        if (val.includes("sku")) {
+        if (val.includes("operator")) {
+          operatorColIndex = colNumber;
+        } else if (val === "day" || val.includes("day")) {
+          dayColIndex = colNumber;
+        } else if (val.includes("sku")) {
           skuColIndex = colNumber;
         } else if (val.includes("url") || val.includes("link") || val.includes("amazon")) {
           urlColIndex = colNumber;
         }
       });
 
+      // If columns were not matched by header names, detect dynamically
+      if (skuColIndex === -1 || urlColIndex === -1) {
+        const sampleRow = worksheet.getRow(2).cellCount > 0 ? worksheet.getRow(2) : worksheet.getRow(1);
+        sampleRow.eachCell((cell, colNumber) => {
+          const text = (cell.text || cell.value?.toString() || "").toLowerCase();
+          if (text.startsWith("http") || text.includes("amazon") || cell.hyperlink) {
+            urlColIndex = colNumber;
+          }
+        });
+
+        if (urlColIndex !== -1) {
+          skuColIndex = urlColIndex > 1 ? urlColIndex - 1 : 1;
+        } else {
+          if (worksheet.columnCount >= 4) {
+            operatorColIndex = 1;
+            dayColIndex = 2;
+            skuColIndex = 3;
+            urlColIndex = 4;
+          } else {
+            skuColIndex = 1;
+            urlColIndex = 2;
+          }
+        }
+      }
+
       worksheet.eachRow((row, rowNumber) => {
-        // Skip header if it is row 1 and has 'sku' or 'url'
+        // Skip header if it is row 1 and has 'sku' or 'url' or 'operator' or 'day'
         if (rowNumber === 1) {
-          const c1 = (row.getCell(skuColIndex).text || "").toLowerCase();
-          const c2 = (row.getCell(urlColIndex).text || "").toLowerCase();
-          if (c1.includes("sku") || c2.includes("url") || c2.includes("link")) {
+          const rowText = (row.values as any[])?.join(" ").toLowerCase() || "";
+          if (rowText.includes("sku") || rowText.includes("url") || rowText.includes("operator") || rowText.includes("day")) {
             return;
           }
         }
@@ -103,8 +133,16 @@ export default function ExcelUploadModal({
           urlText = (skuCell.value as any).hyperlink;
         }
 
+        const operatorText = operatorColIndex > 0 ? (row.getCell(operatorColIndex).text || row.getCell(operatorColIndex).value?.toString() || "").trim() : "";
+        const dayText = dayColIndex > 0 ? (row.getCell(dayColIndex).text || row.getCell(dayColIndex).value?.toString() || "").trim() : "";
+
         if (skuText) {
-          parsedData.push({ sku: skuText, url: urlText });
+          parsedData.push({
+            sku: skuText,
+            url: urlText,
+            operatorName: operatorText || undefined,
+            day: dayText || undefined,
+          });
         }
       });
 
@@ -173,7 +211,7 @@ export default function ExcelUploadModal({
               <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
                 1. Excel Upload
               </h3>
-              <p className="text-xs text-slate-500">Upload an .xlsx file containing SKUs and URLs</p>
+              <p className="text-xs text-slate-500">Upload an .xlsx file containing Operator, Day, SKUs and URLs</p>
             </div>
           </div>
 

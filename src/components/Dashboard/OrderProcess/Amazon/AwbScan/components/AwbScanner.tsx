@@ -91,7 +91,7 @@ export default function AwbScanner({
   };
 
   return (
-    <div className="border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm">
+    <div className="rounded-2xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm">
       <div className="space-y-4">
         <div>
           <label className="mb-2 flex items-center gap-2 text-base sm:text-lg font-bold text-[#0A0E1A]">
@@ -114,6 +114,7 @@ export default function AwbScanner({
               className="
                 h-12 sm:h-14
                 w-full
+                rounded-xl
                 border-2
                 border-[#E8C16D]
                 bg-[#FFF9EC]
@@ -140,6 +141,7 @@ export default function AwbScanner({
                 absolute
                 right-2
                 h-9 sm:h-10
+                rounded-lg
                 bg-[#E8C16D]
                 px-4 sm:px-5
                 text-xs sm:text-sm
@@ -164,7 +166,7 @@ export default function AwbScanner({
         {/* Live Feedback Banner */}
         {message && (
           <div
-            className={`border p-3.5 text-xs sm:text-sm font-medium transition-all ${
+            className={`rounded-xl border p-3.5 text-xs sm:text-sm font-medium transition-all ${
               message.type === "success"
                 ? "border-emerald-300 bg-emerald-50 text-emerald-800"
                 : message.type === "warning"

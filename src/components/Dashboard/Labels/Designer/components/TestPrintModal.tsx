@@ -170,7 +170,7 @@ export function TestPrintModal({
         pdfBase64,
         selectedPrinter,
         copies,
-        false,
+        true,
         effectiveWidthMm,
         effectiveHeightMm
       );

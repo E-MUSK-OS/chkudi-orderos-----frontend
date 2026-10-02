@@ -1,8 +1,16 @@
 "use client";
 
-import { CheckCircle2, Clock, PackageCheck } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  PackageCheck,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
 import { formatToIST } from "../timeUtils";
 import { AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
+import Pagination from "@/components/ui/Pagination";
 
 interface Props {
   orders: AmazonOrderItem[];
@@ -56,7 +64,7 @@ export default function AwbTable({
         {items.map((it, idx) => (
           <span
             key={idx}
-            className={`rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 ${isAsin ? "font-mono" : ""
+            className={`rounded-lg border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 ${isAsin ? "font-mono" : ""
               }`}
           >
             {it}
@@ -67,7 +75,7 @@ export default function AwbTable({
   };
 
   return (
-    <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden">
+    <div className="rounded-2xl border border-[#E7E0D2] bg-white shadow-sm overflow-hidden">
       <div className="w-full overflow-x-auto">
         <table className="w-full min-w-[1000px] border-collapse text-left">
           <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
@@ -151,12 +159,12 @@ export default function AwbTable({
                     {/* Packing Scan Status */}
                     <td className="px-4 py-4 text-center whitespace-nowrap">
                       {isScanned ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-100 px-3 py-1.5 text-xs sm:text-sm font-bold text-green-700">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-100 px-3 py-1 text-xs sm:text-sm font-bold text-green-700">
                           <CheckCircle2 className="h-4 w-4 text-green-600" />
                           <span>SCANNED</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-100 px-3 py-1.5 text-xs sm:text-sm font-bold text-amber-800">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs sm:text-sm font-bold text-amber-800">
                           <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
                           <span>PENDING</span>
                         </span>
@@ -176,53 +184,20 @@ export default function AwbTable({
       </div>
 
       {/* Pagination Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#E7E0D2] bg-white px-5 py-3.5">
-        <div className="text-xs text-slate-500">
-          Showing <strong className="text-[#0A0E1A]">{startIndex + 1}</strong> -{" "}
-          <strong className="text-[#0A0E1A]">{endIndex}</strong> of{" "}
-          <strong className="text-[#0A0E1A]">{total}</strong> orders
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Rows per page */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <span>Rows:</span>
-            <select aria-label="Select option"
-              value={limit}
-              onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="border border-[#E7E0D2] bg-white px-2 py-1 text-xs font-bold text-[#0A0E1A] outline-none cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-
-          {/* Prev / Next buttons */}
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={page <= 1 || isLoading}
-              onClick={() => onPageChange(page - 1)}
-              className="border border-[#0A0E1A] bg-[#0A0E1A] px-3 py-1 text-xs font-bold text-[#E8C16D] transition hover:bg-[#161D2E] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
-            >
-              Prev
-            </button>
-            <span className="border border-[#E7E0D2] bg-[#FFF9EC] px-3 py-1 text-xs font-bold text-[#0A0E1A]">
-              {page} / {totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= totalPages || isLoading}
-              onClick={() => onPageChange(page + 1)}
-              className="border border-[#0A0E1A] bg-[#0A0E1A] px-3 py-1 text-xs font-bold text-[#E8C16D] transition hover:bg-[#161D2E] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        itemName="orders"
+        isLoading={isLoading}
+        className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
+        onPageChange={onPageChange}
+        onLimitChange={(newLimit) => {
+          onLimitChange(newLimit);
+          onPageChange(1);
+        }}
+      />
     </div>
   );
 }

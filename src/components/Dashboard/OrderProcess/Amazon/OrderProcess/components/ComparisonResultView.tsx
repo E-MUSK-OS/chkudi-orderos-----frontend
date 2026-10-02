@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import MissingSkuModal from "./MissingSkuModal";
+import Pagination from "@/components/ui/Pagination";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -17,6 +18,7 @@ import {
   CheckCheck,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Printer,
   Zap,
   X,
@@ -44,6 +46,8 @@ import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import {
   useAmazonOrderStore,
   loadFilesFromIDB,
+  saveBatchBlobToIDB,
+  loadBatchBlobFromIDB,
   StoredBatchPrintedRecord,
   getBatchKey,
 } from "../store/useAmazonOrderStore";
@@ -323,12 +327,12 @@ export default function ComparisonResultView({
       results &&
       results.length > 0
     ) {
-      startBackgroundOrderPdfPrewarming(results, existingCache.combinedDoc, batchKey);
+      startBackgroundOrderPdfPrewarming(results, existingCache.combinedDoc, batchKey, Array.from(printedRowsRef.current));
     } else if (files?.combinedPdfBase64 || activeHistoryBatchId) {
       getOrLoadCombinedDoc(files, batchKey)
         .then((doc) => {
           if (doc && results && results.length > 0) {
-            startBackgroundOrderPdfPrewarming(results, doc, batchKey);
+            startBackgroundOrderPdfPrewarming(results, doc, batchKey, Array.from(printedRowsRef.current));
           }
         })
         .catch((e) => console.warn("Background combinedDoc preload error:", e));
@@ -1551,9 +1555,15 @@ export default function ComparisonResultView({
         currentCached.cacheKey === batchKey);
 
     if (!activeFiles?.combinedPdfBase64 && !hasCachedCombinedDoc && currentBatchId) {
-      toast.loading('Fetching batch labels for printing...', { id: 'print-prep' });
       try {
-        const blob = await amazonOrderService.fetchBatchFileBlob(currentBatchId, 'combined');
+        let blob = await loadBatchBlobFromIDB(currentBatchId);
+        if (!blob) {
+          toast.loading('Fetching batch labels for printing...', { id: 'print-prep' });
+          blob = await amazonOrderService.fetchBatchFileBlob(currentBatchId, 'combined');
+          if (blob && blob.size > 0) {
+            saveBatchBlobToIDB(currentBatchId, blob);
+          }
+        }
         if (blob && blob.size > 0) {
           const base64 = await blobToBase64(blob);
           const combUrl = URL.createObjectURL(blob);
@@ -1577,7 +1587,7 @@ export default function ComparisonResultView({
             cacheKey: `batch_${currentBatchId}`,
             batchKey: bKey,
           });
-          startBackgroundOrderPdfPrewarming(results, doc, bKey);
+          startBackgroundOrderPdfPrewarming(results, doc, bKey, Array.from(printedRowsRef.current));
         }
       } catch (fetchErr) {
         console.warn('Failed to fetch batch files on demand for printing:', fetchErr);
@@ -3643,74 +3653,19 @@ export default function ComparisonResultView({
           {/* =================================================== */}
           {/* PAGINATION */}
           {/* =================================================== */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 border border-border bg-[#0A0E1A] px-3 sm:px-6 py-3 sm:py-4">
-            {/* Left */}
-            <div className="text-xs sm:text-sm text-white text-center sm:text-left">
-              Showing{" "}
-              <span className="font-semibold text-white">
-                {totalRecords === 0 ? 0 : startIndex + 1}
-              </span>
-              {" - "}
-              <span className="font-semibold text-white">{endIndex}</span>
-              {" of "}
-              <span className="font-semibold text-white">{totalRecords}</span>{" "}
-              records
-            </div>
-
-            {/* Right */}
-            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3">
-              {/* Rows */}
-              <div className="flex items-center gap-1.5">
-                <span className="whitespace-nowrap text-xs text-white">Rows</span>
-
-                <select aria-label="Select option"
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="h-8 sm:h-9 rounded-xl border border-border bg-background px-2 font-medium text-xs text-foreground outline-none transition-colors focus:border-primary"
-                >
-                  {[10, 20, 25, 30, 50, 100].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Previous */}
-              <Button
-                variant="outline"
-                size="sm"
-                fullWidth={false}
-                disabled={currentPage <= 1}
-                onClick={() => setPage(currentPage - 1)}
-                className="h-8 sm:h-9 px-2.5 sm:px-3 border-[#E8C16D] bg-[#E8C16D] text-xs font-semibold text-[#0A0E1A] hover:bg-[#E8C16D]"
-              >
-                <ChevronLeft className="mr-0.5 h-3.5 w-3.5" />
-                Prev
-              </Button>
-
-              {/* Page Indicator */}
-              <div className="flex h-8 sm:h-9 min-w-[55px] sm:min-w-[65px] items-center justify-center border border-border bg-muted px-2 text-xs font-semibold text-foreground">
-                {currentPage} / {totalPages}
-              </div>
-
-              {/* Next */}
-              <Button
-                variant="outline"
-                size="sm"
-                fullWidth={false}
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage(currentPage + 1)}
-                className="h-8 sm:h-9 px-2.5 sm:px-3 border-[#E8C16D] bg-[#E8C16D] text-xs font-semibold text-[#0A0E1A] hover:bg-[#E8C16D]"
-              >
-                Next
-                <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            total={totalRecords}
+            limit={limit}
+            itemName="records"
+            className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
         </div>
       )}
 

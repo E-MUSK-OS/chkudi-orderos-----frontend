@@ -205,7 +205,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           pdfBase64,
           printerName,
           copies,
-          false,
+          true,
           effectiveWidthMm,
           effectiveHeightMm
         );
