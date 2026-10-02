@@ -7,6 +7,7 @@ export interface AmazonComparisonResult {
   pdfInvoice: string;
   asin?: string;
   sellerSku?: string;
+  formattedLabelSku?: string;
   orderNumber: string;
   awb: string;
   customer: string;

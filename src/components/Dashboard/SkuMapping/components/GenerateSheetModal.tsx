@@ -412,7 +412,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
               shortSku: response.data.shortSku, // Update shortSku from DB
               fullSku: response.data.fullSku || "",
               barcodeSku: response.data.barcodeSku,
-              ordercookSku: response.data.ordercookSku,
+              ordercookSku: response.data.ordercookSku || "",
               loading: false,
               error: false,
               errorMessage: "",

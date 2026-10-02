@@ -167,8 +167,14 @@ export async function downloadAllRecordsSheet(search?: string): Promise<void> {
       { header: "Short SKU", key: "shortSku", width: 22 },
       { header: "Barcode SKU", key: "barcodeSku", width: 25 },
       { header: "Full SKU", key: "fullSku", width: 28 },
-      { header: "OrderCook SKU", key: "ordercookSku", width: 22 },
-      { header: "Created Date", key: "createdAt", width: 20 },
+      { header: "OrderCook SKU", key: "ordercookSku", width: 20 },
+      { header: "Brand Name", key: "brandName", width: 18 },
+      { header: "Color", key: "color", width: 15 },
+      { header: "Size", key: "size", width: 12 },
+      { header: "Title", key: "title", width: 40 },
+      { header: "QTY", key: "qty", width: 12 },
+      { header: "MRP", key: "mrp", width: 15 },
+      { header: "Asin (Barcode)", key: "asinBarcode", width: 20 },
     ];
 
     const headerRow = worksheet.getRow(1);
@@ -191,20 +197,18 @@ export async function downloadAllRecordsSheet(search?: string): Promise<void> {
     });
 
     records.forEach((item) => {
-      const formattedDate = item.createdAt
-        ? new Date(item.createdAt).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-        : "-";
-
       const r = worksheet.addRow({
-        shortSku: item.shortSku || "-",
-        barcodeSku: item.barcodeSku || "-",
-        fullSku: item.fullSku || "-",
-        ordercookSku: item.ordercookSku || "-",
-        createdAt: formattedDate,
+        shortSku: item.shortSku || "",
+        barcodeSku: item.barcodeSku || "",
+        fullSku: item.fullSku || "",
+        ordercookSku: item.ordercookSku || "",
+        brandName: item.brandName || "",
+        color: item.color || "",
+        size: item.size || "",
+        title: item.title || "",
+        qty: item.qty !== null && item.qty !== undefined ? item.qty : "",
+        mrp: item.mrp !== null && item.mrp !== undefined ? item.mrp : "",
+        asinBarcode: item.asinBarcode || "",
       });
       r.height = 22;
       r.alignment = { vertical: "middle" };

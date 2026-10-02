@@ -31,6 +31,7 @@ import {
   isAmazonTransporterOrFeePage,
   isTransporterDuplicatePage,
   addInvoicePagesToDoc,
+  extractSkuQtyPairsFromInvoice,
 } from "./utils";
 import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs, startBackgroundOrderPdfPrewarming } from "./utils/pdfCache";
 import AmazonProcessHistoryDropdown from "./components/AmazonProcessHistoryDropdown";
@@ -521,13 +522,29 @@ export default function OrderProcess() {
       }
 
       if (processResponse.results) {
-        processResponse.results = processResponse.results.map((item: AmazonComparisonResult) => ({
-          ...item,
-          pdfPages: (item.pdfPages || []).filter(
-            (p) => !pageTextData[p - 1]?.text || !isAmazonTransporterOrFeePage(pageTextData[p - 1].text)
-          ),
-          sellerSku: mapAsinToSellerSku(item.asin, asinToSkuMap, item.sellerSku),
-        }));
+        processResponse.results = processResponse.results.map((item: AmazonComparisonResult) => {
+          const rawInvoiceText = (item.pdfPages || [])
+            .map((p) => pageTextData[p - 1]?.text || "")
+            .join("\n");
+
+          const resolvedSellerSku = mapAsinToSellerSku(item.asin, asinToSkuMap, item.sellerSku);
+          const formattedLabelSku = extractSkuQtyPairsFromInvoice(
+            rawInvoiceText,
+            asinToSkuMap,
+            resolvedSellerSku,
+            item.asin,
+            item.totalQuantity
+          );
+
+          return {
+            ...item,
+            pdfPages: (item.pdfPages || []).filter(
+              (p) => !pageTextData[p - 1]?.text || !isAmazonTransporterOrFeePage(pageTextData[p - 1].text)
+            ),
+            sellerSku: resolvedSellerSku,
+            formattedLabelSku,
+          };
+        });
       }
 
       // 5. Enhance invoice pages in-memory & generate dispatch documents (Instant in-memory execution)
@@ -695,7 +712,7 @@ export default function OrderProcess() {
 
               // 2. ZPL barcode label second (EXACTLY ONE 4" x 6" page)
               if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
-                await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.sellerSku, item.totalQuantity);
+                await addScaledPageToDoc(combinedDoc, zplDoc.getPage(item.zplPage - 1), true, item.formattedLabelSku || item.sellerSku, item.totalQuantity);
               }
               const endPage = combinedDoc.getPageCount();
               item.combinedPages = Array.from({ length: endPage - startPage }, (_, i) => startPage + i);

@@ -3,7 +3,14 @@ export interface SkuMapping {
   shortSku: string;
   fullSku?: string | null;
   barcodeSku: string;
-  ordercookSku: string;
+  ordercookSku?: string | null;
+  brandName?: string | null;
+  color?: string | null;
+  size?: string | null;
+  title?: string | null;
+  qty?: number | null;
+  mrp?: number | null;
+  asinBarcode?: string | null;
   createdAt: string;
   updatedAt: string;
 }

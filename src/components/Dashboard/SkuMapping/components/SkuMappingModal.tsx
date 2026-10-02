@@ -38,7 +38,7 @@ export default function SkuMappingModal({ open, onClose, skuMapping }: Props) {
         shortSku: skuMapping.shortSku,
         fullSku: skuMapping.fullSku || "",
         barcodeSku: skuMapping.barcodeSku,
-        ordercookSku: skuMapping.ordercookSku,
+        ordercookSku: skuMapping.ordercookSku || "",
       });
     }
   }, [skuMapping, reset]);

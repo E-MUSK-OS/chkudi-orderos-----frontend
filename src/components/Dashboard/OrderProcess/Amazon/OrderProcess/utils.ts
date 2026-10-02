@@ -548,6 +548,148 @@ export function formatSkuForLabel(sellerSku?: string): string {
   return skus.map((s) => `[ ${s} ]`).join(" ");
 }
 
+function formatSkuForLabelWithTotal(skus: string[], totalQuantity?: number): string {
+  if (skus.length === 0) return "";
+  let qtyPerSku = 1;
+  let remainder = 0;
+  if (totalQuantity !== undefined && totalQuantity > 0) {
+    qtyPerSku = Math.floor(totalQuantity / skus.length);
+    remainder = totalQuantity % skus.length;
+  }
+
+  return skus
+    .map((s, idx) => {
+      const q = qtyPerSku + (idx < remainder ? 1 : 0);
+      return `[${s}][${q}]`;
+    })
+    .join(" ");
+}
+
+/**
+ * Extracts exact line-item quantities for each SKU from Amazon invoice page text.
+ * Avoids false remainder distributions by inspecting table quantity tokens near each ASIN.
+ * Returns formatted string: e.g. "[sku a][1] [sku b][2]".
+ */
+export function extractSkuQtyPairsFromInvoice(
+  invoiceText: string,
+  asinToSkuMap: Map<string, string>,
+  sellerSkuStr?: string,
+  asinStr?: string,
+  totalQuantity?: number
+): string {
+  const fallbackSkus = getCleanSkuList(sellerSkuStr);
+
+  // If no text or only single SKU with single qty
+  if (!invoiceText || invoiceText.trim().length === 0) {
+    if (fallbackSkus.length === 1) {
+      return `[${fallbackSkus[0]}][${totalQuantity || 1}]`;
+    }
+    return formatSkuForLabelWithTotal(fallbackSkus, totalQuantity);
+  }
+
+  // 1. Locate all unique ASIN occurrences in the invoice text in order of appearance
+  const asinRegex = /\b(B0[A-Z0-9]{8})\b/gi;
+  const matches = Array.from(invoiceText.matchAll(asinRegex));
+  const seenAsins = new Set<string>();
+  const uniqueAsins: Array<{ asin: string; index: number }> = [];
+
+  for (const m of matches) {
+    const a = m[1].toUpperCase();
+    if (!seenAsins.has(a)) {
+      seenAsins.add(a);
+      uniqueAsins.push({ asin: a, index: m.index ?? 0 });
+    }
+  }
+
+  const rawAsinsList = (asinStr && asinStr !== "N/A" ? asinStr : "")
+    .split(/[\r\n]+|\s+\/\s+/)
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean);
+
+  // Case A: Multiple unique ASINs found in the invoice text
+  if (uniqueAsins.length > 1) {
+    const pairs: Array<{ sku: string; qty: number }> = [];
+
+    for (let i = 0; i < uniqueAsins.length; i++) {
+      const { asin, index } = uniqueAsins[i];
+      const nextIndex = uniqueAsins[i + 1]?.index ?? Math.min(index + 1500, invoiceText.length);
+      const section = invoiceText.substring(index, nextIndex);
+
+      // In Indian GST invoice tables, Qty is trapped between price decimals (e.g. "499.00  1  499.00" or ".24  2  950.48")
+      let qty = 1;
+      const priceQtyMatch = section.match(/(?:\.\d{2}|₹\s*\d+)\s+([1-9]\d{0,1})\s+(?:₹\s*)?(?:\d{1,6}(?:,\d{3})*)?\.\d{2}/);
+      if (priceQtyMatch?.[1]) {
+        const parsed = parseInt(priceQtyMatch[1], 10);
+        if (parsed >= 1 && parsed <= 50) qty = parsed;
+      } else {
+        const explicitQtyMatch = section.match(/\b(?:Qty|Quantity)\s*[:\-#|=]?\s*([1-9]\d{0,1})\b/i);
+        if (explicitQtyMatch?.[1]) {
+          const parsed = parseInt(explicitQtyMatch[1], 10);
+          if (parsed >= 1 && parsed <= 50) qty = parsed;
+        }
+      }
+
+      let sku = asinToSkuMap.get(asin);
+      if (!sku || sku === "N/A" || sku === "-") {
+        sku = fallbackSkus[i] || fallbackSkus[0] || asin;
+      }
+
+      pairs.push({ sku, qty });
+    }
+
+    // Combine same SKU if duplicated
+    const consolidated = new Map<string, number>();
+    for (const p of pairs) {
+      consolidated.set(p.sku, (consolidated.get(p.sku) || 0) + p.qty);
+    }
+
+    return Array.from(consolidated.entries())
+      .map(([s, q]) => `[${s}][${q}]`)
+      .join(" ");
+  }
+
+  // Case B: Only 1 unique ASIN (or single item repeated)
+  if (uniqueAsins.length === 1 || rawAsinsList.length <= 1) {
+    const singleAsin = uniqueAsins[0]?.asin || rawAsinsList[0] || "";
+    let singleSku = singleAsin ? asinToSkuMap.get(singleAsin) : "";
+    if (!singleSku || singleSku === "N/A" || singleSku === "-") {
+      singleSku = fallbackSkus[0] || singleAsin || "N/A";
+    }
+    const finalQty = totalQuantity !== undefined && totalQuantity >= 1 ? totalQuantity : 1;
+    return `[${singleSku}][${finalQty}]`;
+  }
+
+  // Case C: Multiple fallback SKUs without ASIN matches in text (e.g. non-ASIN invoices)
+  if (fallbackSkus.length > 1) {
+    const pairs: Array<{ sku: string; qty: number }> = [];
+    for (let i = 0; i < fallbackSkus.length; i++) {
+      const s = fallbackSkus[i];
+      const pos = invoiceText.indexOf(s);
+      let qty = 1;
+      if (pos !== -1) {
+        const nextPos = i + 1 < fallbackSkus.length ? invoiceText.indexOf(fallbackSkus[i + 1]) : pos + 1000;
+        const section = invoiceText.substring(pos, nextPos > pos ? nextPos : pos + 1000);
+        const m = section.match(/(?:\.\d{2}|₹\s*\d+)\s+([1-9]\d{0,1})\s+(?:₹\s*)?(?:\d{1,6}(?:,\d{3})*)?\.\d{2}/);
+        if (m?.[1]) {
+          qty = parseInt(m[1], 10);
+        }
+      }
+      pairs.push({ sku: s, qty });
+    }
+
+    const consolidated = new Map<string, number>();
+    for (const p of pairs) {
+      consolidated.set(p.sku, (consolidated.get(p.sku) || 0) + p.qty);
+    }
+
+    return Array.from(consolidated.entries())
+      .map(([s, q]) => `[${s}][${q}]`)
+      .join(" ");
+  }
+
+  return formatSkuForLabelWithTotal(fallbackSkus, totalQuantity);
+}
+
 /**
  * Draws formatted Seller SKUs on a 4" x 6" label page below "Sold on : www.amazon.in".
  * - Every SKU is shown inside [ ... ].
@@ -564,20 +706,32 @@ export async function drawSkuOnLabelPage(
   labelH: number,
   totalQuantity?: number
 ): Promise<void> {
-  const skus = getCleanSkuList(sellerSku);
-  if (skus.length === 0) return; // Do NOT print [NA] or [N/A]!
+  if (!sellerSku) return;
 
-  let qtyPerSku = 1;
-  let remainder = 0;
-  if (totalQuantity !== undefined && totalQuantity > 0) {
-    qtyPerSku = Math.floor(totalQuantity / skus.length);
-    remainder = totalQuantity % skus.length;
+  // 1. Check if sellerSku already has explicit [SKU][QTY] pairs: e.g. "[sku a][1] [sku b][2]"
+  const preformattedPairs = Array.from(
+    sellerSku.matchAll(/\[\s*([^\]]+?)\s*\]\s*\[\s*(\d+)\s*\]/g)
+  );
+
+  let formattedSkus: string[] = [];
+  if (preformattedPairs.length > 0) {
+    formattedSkus = preformattedPairs.map((m) => `[${m[1].trim()}][${m[2].trim()}]`);
+  } else {
+    const skus = getCleanSkuList(sellerSku);
+    if (skus.length === 0) return; // Do NOT print [NA] or [N/A]!
+
+    let qtyPerSku = 1;
+    let remainder = 0;
+    if (totalQuantity !== undefined && totalQuantity > 0) {
+      qtyPerSku = Math.floor(totalQuantity / skus.length);
+      remainder = totalQuantity % skus.length;
+    }
+
+    formattedSkus = skus.map((s, idx) => {
+      const q = qtyPerSku + (idx < remainder ? 1 : 0);
+      return `[${s}][${q}]`;
+    });
   }
-
-  const formattedSkus = skus.map((s, idx) => {
-    const q = qtyPerSku + (idx < remainder ? 1 : 0);
-    return `[${s}][${q}]`;
-  });
 
   const count = formattedSkus.length;
 

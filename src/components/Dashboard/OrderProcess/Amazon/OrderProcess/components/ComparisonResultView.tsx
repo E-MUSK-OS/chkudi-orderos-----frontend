@@ -1929,7 +1929,7 @@ export default function ComparisonResultView({
           }
           if (item.zplPage > 0 && item.zplPage <= zplDoc.getPageCount()) {
             const mappedItem = mappedResults.find((m) => m.index === item.index) || item;
-            await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, mappedItem.sellerSku, mappedItem.totalQuantity);
+            await addScaledPage(zplDoc.getPage(item.zplPage - 1), true, mappedItem.formattedLabelSku || mappedItem.sellerSku, mappedItem.totalQuantity);
           }
         }
       }
@@ -2947,8 +2947,8 @@ export default function ComparisonResultView({
                     setActiveTab("pdf");
                   }}
                   className={`rounded px-2 py-0.5 text-xs font-bold cursor-pointer ${summary.mismatchCount > 0
-                      ? "bg-red-100 text-red-700 hover:bg-red-200"
-                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    ? "bg-red-100 text-red-700 hover:bg-red-200"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                     }`}
                   title="Click to view unmatched documents in PDF viewer"
                 >
@@ -3030,8 +3030,8 @@ export default function ComparisonResultView({
               setPage(1);
             }}
             className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 items-center justify-center gap-2 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 ${activeTab === "table"
-                ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-                : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+              ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
+              : "border-border bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
               }`}
           >
             Matched Orders ({showPrinted ? summary.matchedCount : remainingMatchedCount})
@@ -3039,15 +3039,14 @@ export default function ComparisonResultView({
 
           {/* Unified PDF Viewer Dropdown Selector (Matched, All ZPL, Original, Unmatched PDF, Unmatched ZPL) */}
           <div
-            className={`w-full sm:w-72 md:w-80 lg:w-88 xl:w-80 transition-all ${activeTab === "pdf" ? "ring-2 ring-[#E8C16D]" : ""
-              }`}
+            className="w-full sm:w-72 md:w-80 lg:w-88 xl:w-80 transition-all outline-none"
             onClick={() => {
               if (activeTab !== "pdf") {
                 setActiveTab("pdf");
               }
             }}
           >
-            <ReactSelect
+            <ReactSelect borderRadius={12}
               options={pdfViewOptions}
               value={
                 pdfViewOptions.find((opt) => opt.value === selectedPdfType) ??
@@ -3060,7 +3059,7 @@ export default function ComparisonResultView({
                 }
               }}
               height={48}
-              borderColor={activeTab === "pdf" ? "#E8C16D" : "#0A0E1A"}
+              borderColor="#0A0E1A"
               backgroundColor="#0A0E1A"
               textColor="#E8C16D"
               placeholderColor="#E8C16D"
@@ -3169,7 +3168,7 @@ export default function ComparisonResultView({
 
               {/* Connected Printer Selection Dropdown */}
               <div className="w-full sm:w-48 md:w-52 shrink-0">
-                <ReactSelect
+                <ReactSelect borderRadius={12}
                   options={printerOptions}
                   value={
                     printerOptions.find((opt) => opt.value === selectedPrinter) ??
@@ -3209,7 +3208,7 @@ export default function ComparisonResultView({
 
               {/* Order Composition Filter Select Dropdown */}
               <div className="w-full sm:w-52 md:w-56 shrink-0">
-                <ReactSelect
+                <ReactSelect borderRadius={12}
                   options={orderTypeOptions}
                   value={
                     orderTypeOptions.find((opt) => opt.value === orderTypeFilter) ??
@@ -3267,8 +3266,8 @@ export default function ComparisonResultView({
                     setSelectedRows(new Set());
                   }}
                   className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${showPrinted
-                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
-                      : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
+                    ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
+                    : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
                     }`}
                   title={showPrinted ? "Return to unprinted orders" : "View only already printed orders"}
                 >
@@ -3291,8 +3290,8 @@ export default function ComparisonResultView({
                 disabled={selectedRows.size === 0}
                 onClick={handlePrintSelected}
                 className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-4 sm:px-5 items-center justify-center gap-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 ${selectedRows.size > 0
-                    ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
-                    : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"
+                  ? "cursor-pointer border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#0A0E1A] hover:text-[#E8C16D] hover:border-[#E8C16D]"
+                  : "cursor-not-allowed border-[#E8C16D]/50 bg-[#E8C16D]/25 text-[#0A0E1A] font-bold"
                   }`}
               >
                 <Printer className="h-4 w-4 shrink-0" />
@@ -3385,8 +3384,8 @@ export default function ComparisonResultView({
                 <div
                   key={item.index}
                   className={`rounded-2xl border p-3.5 sm:p-4 shadow-2xs transition-all space-y-2.5 ${selectedRows.has(item.index)
-                      ? "border-[#E8C16D] bg-[#FFF9EC]/30 dark:bg-[#E8C16D]/5"
-                      : "border-border bg-card"
+                    ? "border-[#E8C16D] bg-[#FFF9EC]/30 dark:bg-[#E8C16D]/5"
+                    : "border-border bg-card"
                     }`}
                 >
                   {/* Card Header */}
@@ -3670,7 +3669,7 @@ export default function ComparisonResultView({
                     setLimit(Number(e.target.value));
                     setPage(1);
                   }}
-                  className="h-8 sm:h-9 border border-border bg-background px-2 font-medium text-xs text-foreground outline-none transition-colors focus:border-primary"
+                  className="h-8 sm:h-9 rounded-xl border border-border bg-background px-2 font-medium text-xs text-foreground outline-none transition-colors focus:border-primary"
                 >
                   {[10, 20, 25, 30, 50, 100].map((size) => (
                     <option key={size} value={size}>
@@ -3737,7 +3736,7 @@ export default function ComparisonResultView({
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
               <div className="w-full sm:w-72">
-                <ReactSelect
+                <ReactSelect borderRadius={12}
                   options={pdfViewOptions}
                   value={
                     pdfViewOptions.find((opt) => opt.value === selectedPdfType) ??
