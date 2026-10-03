@@ -953,12 +953,12 @@ export const renderLabelToVectorPdf = async (
   const pageHeightPt = heightMm * MM_TO_PT;
 
   const page = pdfDoc.addPage([pageWidthPt, pageHeightPt]);
-  // JPEG is hardware-accelerated by Chrome and embeds 5x faster than PNG
-  const jpgDataUrl = canvas.toDataURL("image/jpeg", 0.98);
-  const jpgBytes = Uint8Array.from(atob(jpgDataUrl.split(",")[1]), (c) => c.charCodeAt(0));
-  const embeddedJpg = await pdfDoc.embedJpg(jpgBytes);
+  // Lossless PNG eliminates compression artifacts, ensuring razor-sharp text and barcodes on thermal printers
+  const pngDataUrl = canvas.toDataURL("image/png");
+  const pngBytes = Uint8Array.from(atob(pngDataUrl.split(",")[1]), (c) => c.charCodeAt(0));
+  const embeddedPng = await pdfDoc.embedPng(pngBytes);
 
-  page.drawImage(embeddedJpg, {
+  page.drawImage(embeddedPng, {
     x: 0,
     y: 0,
     width: pageWidthPt,
