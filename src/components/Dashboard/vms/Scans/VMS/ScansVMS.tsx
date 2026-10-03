@@ -10,7 +10,7 @@ export default function ScansVMS() {
       <div className="space-y-6">
 
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#0A0E1A]">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
             VMS Scans
           </h1>
 

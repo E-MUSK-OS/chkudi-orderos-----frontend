@@ -75,9 +75,9 @@ export default function AwbTable({
   };
 
   return (
-    <div className="rounded-2xl border border-[#E7E0D2] bg-white shadow-sm overflow-hidden">
-      <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[1000px] border-collapse text-left">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm overflow-hidden">
+      <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+        <table className="w-full min-w-[1000px] lg:min-w-[1100px] border-collapse text-left font-sans">
           <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
             <tr>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Invoices</th>
@@ -91,13 +91,13 @@ export default function AwbTable({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-[#E7E0D2] bg-white text-sm sm:text-base">
+          <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm">
             {isLoading && orders.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-16 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
-                    <span className="text-base font-semibold text-slate-600">Loading Amazon orders...</span>
+                    <span className="text-sm font-bold text-[#0A0E1A]">Loading Amazon orders...</span>
                   </div>
                 </td>
               </tr>
@@ -105,9 +105,11 @@ export default function AwbTable({
               <tr>
                 <td colSpan={8} className="py-16 text-center text-slate-500">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <PackageCheck className="h-10 w-10 text-slate-400" />
-                    <p className="text-base font-bold text-slate-700">No Amazon orders found.</p>
-                    <p className="text-sm text-slate-400">
+                    <div className="mb-1 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30">
+                      <PackageCheck className="h-8 w-8 text-[#B88728]" />
+                    </div>
+                    <p className="text-base font-bold text-[#0A0E1A]">No Amazon orders found</p>
+                    <p className="text-xs sm:text-sm text-slate-500 max-w-sm">
                       Orders are automatically added here when printed in Amazon Order Process.
                     </p>
                   </div>
@@ -121,58 +123,59 @@ export default function AwbTable({
                 return (
                   <tr
                     key={item.id}
-                    className={`transition-colors hover:bg-slate-50/80 ${isScanned ? "bg-emerald-50/25" : ""
-                      }`}
+                    className={`transition-colors hover:bg-slate-50/80 ${
+                      isScanned ? "bg-emerald-50/20" : ""
+                    }`}
                   >
                     {/* Invoice */}
-                    <td className="px-4 py-4 text-center font-semibold text-slate-700 whitespace-nowrap text-sm sm:text-base">
+                    <td className="px-4 py-3.5 text-center font-semibold text-slate-700 whitespace-nowrap text-xs sm:text-sm">
                       {item.invoice || "N/A"}
                     </td>
 
                     {/* Amazon Order ID */}
-                    <td className="px-4 py-4 text-center font-mono font-bold text-[#0A0E1A] whitespace-nowrap text-sm sm:text-base">
+                    <td className="px-4 py-3.5 text-center font-mono font-bold text-[#0A0E1A] whitespace-nowrap text-xs sm:text-sm">
                       {item.orderId}
                     </td>
 
                     {/* AWB Tracking */}
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
-                      <span className="font-mono font-bold text-slate-900 tracking-wider text-sm sm:text-base">
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      <span className="font-mono font-bold text-slate-900 tracking-wider text-xs sm:text-sm">
                         {item.awb}
                       </span>
                     </td>
 
                     {/* ASIN */}
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
                       {renderChips(item.asin, true)}
                     </td>
 
                     {/* Seller SKU */}
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
                       {renderChips(item.sellerSku, false)}
                     </td>
 
                     {/* Customer */}
-                    <td className="px-4 py-4 text-center font-semibold text-slate-800 whitespace-nowrap text-sm sm:text-base">
+                    <td className="px-4 py-3.5 text-center font-semibold text-slate-800 whitespace-nowrap text-xs sm:text-sm">
                       {item.customer || "N/A"}
                     </td>
 
                     {/* Packing Scan Status */}
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
                       {isScanned ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-100 px-3 py-1 text-xs sm:text-sm font-bold text-green-700">
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                           <span>SCANNED</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs sm:text-sm font-bold text-amber-800">
-                          <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
+                          <Clock className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
                           <span>PENDING</span>
                         </span>
                       )}
                     </td>
 
                     {/* Time */}
-                    <td className="px-4 py-4 text-center font-mono text-xs sm:text-sm font-semibold text-slate-600 whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-center font-mono text-xs font-semibold text-slate-500 whitespace-nowrap">
                       {formattedTime}
                     </td>
                   </tr>
@@ -190,6 +193,7 @@ export default function AwbTable({
         total={total}
         limit={limit}
         itemName="orders"
+        variant="dark"
         isLoading={isLoading}
         className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
         onPageChange={onPageChange}

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Trash2, Edit2, Tag, Plus, Loader2 } from "lucide-react";
+import { Copy, Trash2, Edit2, Tag, Plus, Loader2, Search, X, LayoutGrid } from "lucide-react";
 import { labelService } from "../services/label.service";
 import { LabelTemplate, ProductLookupResult } from "../types/label.types";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
@@ -59,26 +59,26 @@ function TemplateThumbnail({ template }: { template: LabelTemplate }) {
 
   if (error) {
     return (
-      <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center bg-brand-navy text-gray-400 p-4 text-center">
-        <span className="text-sm font-medium">Preview unavailable</span>
+      <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center bg-[#FAF8F5] text-slate-400 p-4 text-center">
+        <span className="text-xs font-semibold">Preview unavailable</span>
       </div>
     );
   }
 
   if (!url) {
     return (
-      <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-brand-navy text-gray-400">
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-[#FAF8F5] text-[#E8C16D]">
         <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-brand-navy p-2 relative">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-[#FAF8F5] p-3 relative">
       <img
         src={url}
         alt={template.name}
-        className="max-w-full max-h-full object-contain bg-[#111827] shadow-sm border border-stone-800"
+        className="max-w-full max-h-full object-contain bg-white shadow-xs rounded-lg border border-[#E7E0D2]"
       />
     </div>
   );
@@ -90,6 +90,8 @@ export function TemplateGallery() {
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionInFlight, setActionInFlight] = useState(false);
+
+  const [search, setSearch] = useState("");
 
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
@@ -200,45 +202,158 @@ export function TemplateGallery() {
     return marketplaces.find(m => m.id === id)?.marketplaceName || "Unknown";
   };
 
-  return (
-    <div className="p-6 max-w-8xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-900">Label Templates</h1>
+  const filteredTemplates = useMemo(() => {
+    if (!search.trim()) return templates;
+    const q = search.toLowerCase();
+    return templates.filter((tpl) =>
+      tpl.name.toLowerCase().includes(q) ||
+      `${tpl.settings.widthMm}x${tpl.settings.heightMm}`.includes(q)
+    );
+  }, [templates, search]);
 
+  return (
+    <div className="space-y-6">
+      {/* Page Header matching Product Analytics Amazon */}
+      <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1.5">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              Label Templates
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Design, customize, and manage custom thermal barcode and product label templates.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/labels/designer?id=new")}
+            className="inline-flex items-center gap-2 self-start md:self-center rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Template</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Toolbar: Search & Total Templates Badge matching OrderOS Theme */}
+      <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        {/* Left side: Searchbar matching OrderOS theme */}
+        <div className="w-full sm:max-w-md md:w-96 lg:w-[420px] transition-all">
+          <div className="group flex h-10 sm:h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white">
+            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+              <Search className="h-3.5 w-3.5" />
+            </div>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search template name, dimensions..."
+              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                title="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right side: Reset and Total Templates Badge */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end sm:self-center">
+          {/* Reset Filters */}
+          {search.trim() !== "" && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-600 hover:text-red-700 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+              title="Reset search"
+            >
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-red-100 text-red-600 shrink-0">
+                <X className="h-3.5 w-3.5" />
+              </div>
+              <span>Reset</span>
+            </button>
+          )}
+
+          {/* Total Templates Badge matching OrderOS Theme */}
+          <div className="inline-flex h-10 sm:h-11 items-center gap-2 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 px-3.5 sm:px-4 shadow-xs">
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">Total Templates:</span>
+            <span className="rounded-lg bg-[#0A0E1A] px-2.5 py-0.5 text-xs sm:text-sm font-bold text-[#E8C16D]">
+              {filteredTemplates.length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
       {isLoading ? (
-        <div className="flex justify-center items-center h-64 text-gray-400">
-          <Loader2 className="w-8 h-8 animate-spin" />
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-[#E8C16D]" />
+            <p className="text-xs sm:text-sm font-semibold text-slate-500">Loading templates...</p>
+          </div>
+        </div>
+      ) : filteredTemplates.length === 0 && search.trim() !== "" ? (
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 mb-4">
+            <LayoutGrid className="h-8 w-8" />
+          </div>
+          <h3 className="text-lg sm:text-xl font-bold text-[#0A0E1A]">No Matching Templates</h3>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+            No templates match "{search}". Try searching for another name or dimension.
+          </p>
+          <div className="mt-5">
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-slate-50 shadow-xs cursor-pointer transition active:scale-[0.98]"
+            >
+              Clear Search
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {/* Create New Card */}
           <div
             onClick={() => router.push("/dashboard/labels/designer?id=new")}
-            className="group cursor-pointer rounded-lg border-2 border-dashed border-gray-300 hover:border-[#E8C16D] hover:bg-stone-50 flex flex-col items-center justify-center aspect-[4/3] transition-all"
+            className="group cursor-pointer rounded-2xl sm:rounded-3xl border-2 border-dashed border-[#E7E0D2] bg-white hover:bg-[#FFFDF5] hover:border-[#E8C16D] p-6 flex flex-col items-center justify-center aspect-[4/3] transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5"
           >
-            <div className="w-12 h-12 rounded-full bg-gray-200 group-hover:bg-[#E8C16D]/20 flex items-center justify-center mb-4 transition-colors">
-              <Plus className="w-6 h-6 text-gray-500 group-hover:text-[#E8C16D]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 group-hover:bg-[#E8C16D] group-hover:text-[#0A0E1A] flex items-center justify-center mb-3 transition-all duration-200 shadow-xs group-hover:scale-110">
+              <Plus className="w-6 h-6 transition-transform duration-200" />
             </div>
-            <span className="font-semibold text-gray-600 group-hover:text-gray-900">New Template</span>
+            <span className="font-bold text-sm sm:text-base text-[#0A0E1A] group-hover:text-[#B88728] transition-colors">
+              New Template
+            </span>
+            <span className="text-xs text-slate-400 mt-1">
+              Create custom barcode label
+            </span>
           </div>
 
           {/* Template Cards */}
-          {templates.map(template => (
+          {filteredTemplates.map(template => (
             <div
               key={template.id}
-              className="group cursor-pointer rounded-lg border border-stone-800 bg-[#111827] overflow-hidden hover:shadow-md transition-all flex flex-col relative"
+              className="group cursor-pointer rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white overflow-hidden hover:border-[#E8C16D] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col relative"
               onClick={() => router.push(`/dashboard/labels/designer?id=${template.id}`)}
             >
-              <div className="aspect-[4/3] border-b border-stone-800 relative">
+              <div className="aspect-[4/3] border-b border-[#E7E0D2] bg-[#FAF8F5] relative flex items-center justify-center p-3">
                 <TemplateThumbnail template={template} />
               </div>
 
-              <div className="p-4 flex flex-col relative h-24">
-                <div className="pr-6">
+              <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 relative bg-white">
+                <div className="pr-8">
                   {renamingId === template.id ? (
                     <input
                       type="text"
                       autoFocus
-                      className="w-full text-sm font-semibold border-b border-[#E8C16D] focus:outline-none mb-1"
+                      className="w-full text-sm font-bold text-[#0A0E1A] border-b-2 border-[#E8C16D] bg-transparent focus:outline-none mb-1.5"
                       value={renameValue}
                       onChange={e => setRenameValue(e.target.value)}
                       onClick={e => e.stopPropagation()}
@@ -255,13 +370,13 @@ export function TemplateGallery() {
                       }}
                     />
                   ) : (
-                    <h3 className="font-semibold text-white truncate" title={template.name}>
+                    <h3 className="font-bold text-sm sm:text-base text-[#0A0E1A] group-hover:text-[#B88728] transition-colors truncate" title={template.name}>
                       {template.name}
                     </h3>
                   )}
 
                   {editingMarketplaceId === template.id ? (
-                    <div onClick={e => e.stopPropagation()} className="mt-1">
+                    <div onClick={e => e.stopPropagation()} className="mt-2">
                       <ReactSelect
                         menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
                         options={[
@@ -283,22 +398,33 @@ export function TemplateGallery() {
                       />
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       {template.marketplaceId && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40">
                           {getMarketplaceName(template.marketplaceId)}
                         </span>
                       )}
-                      <span className="text-xs text-gray-500">
-                        {template.settings.widthMm}x{template.settings.heightMm}mm
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200/60">
+                        {template.settings.widthMm} × {template.settings.heightMm} mm
                       </span>
                     </div>
                   )}
                 </div>
 
+                {/* Card footer action row */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 group-hover:text-[#0A0E1A] transition-colors flex items-center gap-1">
+                    Edit Template
+                    <span className="transition-transform group-hover:translate-x-1">→</span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    {template.layoutJson ? `${template.layoutJson.length} items` : "Custom"}
+                  </span>
+                </div>
+
                 {/* Action Menu */}
                 <div 
-                  className="absolute top-4 right-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+                  className="absolute top-4 right-3 opacity-80 sm:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ActionMenu
@@ -328,4 +454,3 @@ export function TemplateGallery() {
     </div>
   );
 }
-

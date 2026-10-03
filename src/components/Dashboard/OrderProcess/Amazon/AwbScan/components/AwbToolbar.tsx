@@ -54,56 +54,44 @@ export default function AwbToolbar({
     }
   }, [selectedDate]);
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm lg:flex-row lg:items-center">
-      {/* Search Input */}
-      <div className="relative flex-1 min-w-[260px]">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search Tracking ID, Order ID, Invoice, Customer..."
-          className="
-            h-11 sm:h-12
-            w-full
-            rounded-xl
-            border
-            border-[#E7E0D2]
-            bg-white
-            pl-10
-            pr-10
-            text-xs sm:text-sm
-            text-[#0A0E1A]
-            placeholder:text-slate-400
-            outline-none
-            transition
-            focus:border-[#E8C16D]
-            focus:ring-1
-            focus:ring-[#E8C16D]
-          "
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-[#0A0E1A] cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+    <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
+      {/* Search Input matching Product Analytics Amazon */}
+      <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
+        <div className="group flex h-10 sm:h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white">
+          <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+            <Search className="h-3.5 w-3.5" />
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search Tracking ID, Order ID, Invoice, Customer..."
+            className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+              title="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Tabs & Controls */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Status Tabs matching Image 1 buttons */}
-        <div className="flex items-center rounded-xl border border-[#0A0E1A] bg-[#0A0E1A] h-11 sm:h-12 shadow-sm overflow-hidden">
+      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+        {/* Status Tabs */}
+        <div className="inline-flex h-10 sm:h-11 items-center rounded-2xl border border-[#E7E0D2] bg-slate-50/80 p-1 shadow-xs">
           <button
             type="button"
             onClick={() => onStatusFilterChange("ALL")}
-            className={`h-full px-4 text-xs font-bold transition cursor-pointer ${
+            className={`h-full px-3 sm:px-3.5 rounded-xl text-xs font-bold transition cursor-pointer ${
               statusFilter === "ALL"
-                ? "bg-[#E8C16D] text-[#0A0E1A]"
-                : "text-[#E8C16D] hover:bg-[#161D2E]"
+                ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
             }`}
           >
             All ({counts.total})
@@ -112,10 +100,10 @@ export default function AwbToolbar({
           <button
             type="button"
             onClick={() => onStatusFilterChange("PENDING")}
-            className={`h-full px-4 text-xs font-bold transition cursor-pointer border-l border-slate-700 ${
+            className={`h-full px-3 sm:px-3.5 rounded-xl text-xs font-bold transition cursor-pointer ${
               statusFilter === "PENDING"
-                ? "bg-amber-500 text-[#0A0E1A]"
-                : "text-[#E8C16D] hover:bg-[#161D2E]"
+                ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
             }`}
           >
             Pending ({counts.pending})
@@ -124,10 +112,10 @@ export default function AwbToolbar({
           <button
             type="button"
             onClick={() => onStatusFilterChange("SCANNED")}
-            className={`h-full px-4 text-xs font-bold transition cursor-pointer border-l border-slate-700 ${
+            className={`h-full px-3 sm:px-3.5 rounded-xl text-xs font-bold transition cursor-pointer ${
               statusFilter === "SCANNED"
-                ? "bg-emerald-600 text-white"
-                : "text-[#E8C16D] hover:bg-[#161D2E]"
+                ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
             }`}
           >
             Scanned ({counts.scanned})
@@ -137,8 +125,8 @@ export default function AwbToolbar({
         {/* Date Filter matching Product Analytics UI */}
         <div className="relative flex items-center">
           <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-            <PopoverTrigger className="inline-flex h-11 sm:h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0">
+            <PopoverTrigger className="inline-flex h-10 sm:h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
                 <CalendarIcon className="h-3.5 w-3.5" />
               </div>
               <span className="text-left font-bold whitespace-nowrap min-w-[85px] sm:min-w-[95px]">
@@ -203,32 +191,14 @@ export default function AwbToolbar({
           </Popover>
         </div>
 
-        {/* Refresh Button */}
+        {/* Refresh Button with black background, gold text, and gold hover effect */}
         <button
           type="button"
           onClick={onRefresh}
           disabled={isLoading}
-          className="
-            flex
-            h-11 sm:h-12
-            items-center
-            gap-2
-            rounded-xl
-            border
-            border-[#0A0E1A]
-            bg-[#0A0E1A]
-            px-4 sm:px-5
-            text-xs sm:text-sm
-            font-semibold
-            text-white
-            transition
-            hover:bg-[#161D2E]
-            cursor-pointer
-            shadow-sm
-            disabled:opacity-50
-          "
+          className="group inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-50"
         >
-          <RefreshCw className={`h-4 w-4 text-[#E8C16D] ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 text-[#E8C16D] transition-colors group-hover:text-[#0A0E1A] ${isLoading ? "animate-spin" : ""}`} />
           <span>Refresh</span>
         </button>
       </div>

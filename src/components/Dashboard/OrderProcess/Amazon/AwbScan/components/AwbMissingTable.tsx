@@ -79,19 +79,19 @@ export default function AwbMissingTable({
   };
 
   return (
-    <div className="rounded-2xl border border-red-200 bg-white shadow-sm transition-all overflow-hidden">
+    <div className="rounded-2xl sm:rounded-3xl border border-red-200 bg-white shadow-sm transition-all overflow-hidden">
       {/* Header bar */}
       <div className="flex flex-col gap-3 border-b border-red-100 bg-red-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-700">
-            <AlertCircle className="h-4 w-4" />
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-red-100 border border-red-200 text-red-700">
+            <AlertCircle className="h-4.5 w-4.5" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-base sm:text-lg font-bold text-red-950 tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-red-950 tracking-tight">
                 Missing / Unmatched AWB Scans
               </h2>
-              <span className="rounded-full bg-red-100 border border-red-200 px-3 py-0.5 text-xs font-bold text-red-700">
+              <span className="rounded-lg bg-red-100 border border-red-200 px-2.5 py-0.5 text-xs font-bold text-red-700">
                 {missingList.length} Missing
               </span>
             </div>
@@ -102,30 +102,15 @@ export default function AwbMissingTable({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Export Excel */}
           <button
             type="button"
             onClick={handleExportExcel}
-            className="
-              flex
-              h-9
-              items-center
-              gap-1.5
-              rounded-xl
-              bg-emerald-600
-              hover:bg-emerald-700
-              px-3.5
-              text-xs
-              font-bold
-              text-white
-              transition
-              cursor-pointer
-              shadow-xs
-            "
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 px-3.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-[0.98]"
             title="Download Excel file of missing AWBs"
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-3.5 w-3.5 text-emerald-700" />
             <span>Excel</span>
           </button>
 
@@ -133,34 +118,17 @@ export default function AwbMissingTable({
           <button
             type="button"
             onClick={handleCopyAll}
-            className="
-              flex
-              h-9
-              items-center
-              gap-1.5
-              rounded-xl
-              border
-              border-[#0A0E1A]
-              bg-[#0A0E1A]
-              px-3.5
-              text-xs
-              font-bold
-              text-[#E8C16D]
-              transition
-              hover:bg-[#161D2E]
-              cursor-pointer
-              shadow-xs
-            "
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] text-[#0A0E1A] hover:bg-[#FFF3D6] px-3.5 text-xs font-bold transition shadow-xs cursor-pointer ring-1 ring-[#E8C16D]/30 active:scale-[0.98]"
             title="Copy all missing AWBs to clipboard"
           >
             {copiedAll ? (
               <>
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Copied!</span>
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-emerald-700">Copied!</span>
               </>
             ) : (
               <>
-                <Copy className="h-3.5 w-3.5" />
+                <Copy className="h-3.5 w-3.5 text-[#B88728]" />
                 <span>Copy All</span>
               </>
             )}
@@ -170,24 +138,7 @@ export default function AwbMissingTable({
           <button
             type="button"
             onClick={onClearAll}
-            className="
-              flex
-              h-9
-              items-center
-              gap-1.5
-              rounded-xl
-              border
-              border-red-300
-              bg-white
-              hover:bg-red-50
-              px-3.5
-              text-xs
-              font-bold
-              text-red-700
-              transition
-              cursor-pointer
-              shadow-xs
-            "
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-200 bg-white hover:bg-red-50 px-3.5 text-xs font-bold text-red-700 transition shadow-xs cursor-pointer active:scale-[0.98]"
             title="Clear missing AWBs list"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -198,8 +149,8 @@ export default function AwbMissingTable({
 
       {/* Table Content */}
       <div className="max-h-72 w-full overflow-y-auto overflow-x-auto">
-        <table className="w-full min-w-[700px] border-collapse text-left">
-          <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] uppercase border-b border-slate-800">
+        <table className="w-full min-w-[700px] border-collapse text-left font-sans">
+          <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-slate-800">
             <tr>
               <th className="px-4 py-3 text-center whitespace-nowrap w-14">NO.</th>
               <th className="px-4 py-3 text-center whitespace-nowrap">Scanned AWB / Tracking ID</th>
@@ -253,7 +204,7 @@ export default function AwbMissingTable({
                   </td>
 
                   {/* Scan Time */}
-                  <td className="px-4 py-3 text-center font-mono text-xs text-slate-600 whitespace-nowrap">
+                  <td className="px-4 py-3 text-center font-mono text-xs font-semibold text-slate-600 whitespace-nowrap">
                     {item.scannedAt}
                   </td>
 

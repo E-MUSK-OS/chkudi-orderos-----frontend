@@ -44,6 +44,13 @@ interface GenerateRow {
   quantity?: number | string;
   barcodeSku: string;
   ordercookSku: string;
+  brandName?: string;
+  color?: string;
+  size?: string;
+  title?: string;
+  qty?: number | string;
+  mrp?: number | string;
+  asinBarcode?: string;
 
   loading: boolean;
 
@@ -68,6 +75,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       quantity: 1,
       barcodeSku: "",
       ordercookSku: "",
+      brandName: "",
+      color: "",
+      size: "",
+      title: "",
+      qty: "",
+      mrp: "",
+      asinBarcode: "",
       loading: false,
       error: false,
       errorMessage: "",
@@ -277,6 +291,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         quantity: 1,
         barcodeSku: "",
         ordercookSku: "",
+        brandName: "",
+        color: "",
+        size: "",
+        title: "",
+        qty: "",
+        mrp: "",
+        asinBarcode: "",
 
         loading: false,
 
@@ -413,6 +434,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
               fullSku: response.data.fullSku || "",
               barcodeSku: response.data.barcodeSku,
               ordercookSku: response.data.ordercookSku || "",
+              brandName: response.data.brandName || "",
+              color: response.data.color || "",
+              size: response.data.size || "",
+              title: response.data.title || "",
+              qty: response.data.qty !== null && response.data.qty !== undefined ? response.data.qty : (row.quantity ?? 1),
+              mrp: response.data.mrp !== null && response.data.mrp !== undefined ? response.data.mrp : "",
+              asinBarcode: response.data.asinBarcode || "",
               loading: false,
               error: false,
               errorMessage: "",
@@ -433,6 +461,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
               fullSku: "",
               barcodeSku: "",
               ordercookSku: "",
+              brandName: "",
+              color: "",
+              size: "",
+              title: "",
+              qty: "",
+              mrp: "",
+              asinBarcode: "",
               loading: false,
               error: true,
               errorMessage: "SKU Not Found",
@@ -483,6 +518,54 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
   const handleDownloadDemoFormat = async () => {
     try {
+      const activeRows = rows.filter((row) => row.shortSku.trim());
+      if (activeRows.length === 0) {
+        toast.error("Please enter at least one Short SKU.");
+        return;
+      }
+
+      const toastId = toast.loading("Preparing Excel sheet with full SKU details...");
+      const token = getToken();
+
+      // Enrich any rows that don't have complete details
+      const enrichedRows = await Promise.all(
+        activeRows.map(async (row) => {
+          if (row.barcodeSku && row.brandName !== undefined && row.title !== undefined) {
+            return row;
+          }
+          try {
+            const res = await skuMappingService.search(row.shortSku.trim(), token);
+            if (res?.data) {
+              return {
+                ...row,
+                shortSku: res.data.shortSku || row.shortSku,
+                fullSku: res.data.fullSku || row.fullSku || "",
+                barcodeSku: res.data.barcodeSku || row.barcodeSku || "",
+                ordercookSku: res.data.ordercookSku || row.ordercookSku || "",
+                brandName: res.data.brandName || "",
+                color: res.data.color || "",
+                size: res.data.size || "",
+                title: res.data.title || "",
+                qty: res.data.qty ?? (row.quantity ?? 1),
+                mrp: res.data.mrp ?? "",
+                asinBarcode: res.data.asinBarcode || "",
+              };
+            }
+          } catch (e) {
+            console.warn(`Could not fetch details for ${row.shortSku}:`, e);
+          }
+          return row;
+        })
+      );
+
+      // Update local state with any newly enriched data
+      setRows((prev) =>
+        prev.map((r) => {
+          const match = enrichedRows.find((er) => er.id === r.id);
+          return match ? { ...r, ...match } : r;
+        })
+      );
+
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Godown Inventory Sheet");
 
@@ -515,26 +598,50 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       headerRow.alignment = { vertical: "middle", horizontal: "center" };
       headerRow.height = 28;
 
-      rows
-        .filter((row) => row.shortSku.trim())
-        .forEach((row) => {
-          const qty = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
-          const r = worksheet.addRow({
-            shortSku: row.shortSku,
-            fullSku: row.fullSku || "",
-            barcodeSku: row.barcodeSku,
-            ordercookSku: row.ordercookSku,
-            brandName: "",
-            color: "",
-            size: "",
-            title: "",
-            qty: "",
-            mrp: "",
-            asinBarcode: "",
-          });
-          r.height = 22;
-          r.alignment = { vertical: "middle" };
+      headerRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF000000" } },
+          left: { style: "thin", color: { argb: "FF000000" } },
+          right: { style: "thin", color: { argb: "FF000000" } },
+          bottom: { style: "medium", color: { argb: "FF000000" } },
+        };
+      });
+
+      enrichedRows.forEach((row) => {
+        const qtyVal =
+          printMode === "multiple"
+            ? Math.max(Number(row.quantity) || 1, 1)
+            : row.quantity !== undefined && row.quantity !== ""
+            ? Number(row.quantity)
+            : row.qty !== undefined && row.qty !== "" && row.qty !== null
+            ? row.qty
+            : 1;
+
+        const r = worksheet.addRow({
+          shortSku: row.shortSku || "",
+          barcodeSku: row.barcodeSku || "",
+          fullSku: row.fullSku || "",
+          ordercookSku: row.ordercookSku || "",
+          brandName: row.brandName || "",
+          color: row.color || "",
+          size: row.size || "",
+          title: row.title || "",
+          qty: qtyVal,
+          mrp: row.mrp !== undefined && row.mrp !== null ? row.mrp : "",
+          asinBarcode: row.asinBarcode || "",
         });
+        r.height = 22;
+        r.alignment = { vertical: "middle", horizontal: "center" };
+
+        r.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE2E8F0" } },
+            left: { style: "thin", color: { argb: "FFE2E8F0" } },
+            right: { style: "thin", color: { argb: "FFE2E8F0" } },
+            bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          };
+        });
+      });
 
       const buffer = await workbook.xlsx.writeBuffer();
       const today = new Date();
@@ -544,7 +651,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         }),
         `Godown-Inventory-${today.toISOString().split("T")[0]}.xlsx`,
       );
-      toast.success("Excel sheet downloaded successfully!");
+      toast.success("Excel sheet downloaded successfully with all details!", { id: toastId });
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate Excel sheet");
@@ -552,245 +659,241 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
   };
 
   const exportExcel = async () => {
-    const workbook = new ExcelJS.Workbook();
+    try {
+      const activeRows = rows.filter(
+        (row) => row.shortSku && row.shortSku.trim(),
+      );
 
-    const worksheet = workbook.addWorksheet("SKU Mapping");
+      if (activeRows.length === 0) {
+        toast.error("No valid SKU rows to export.");
+        return;
+      }
 
-    worksheet.columns = [
-      {
-        header: "Short SKU",
-        key: "shortSku",
-        width: 35,
-      },
-      {
-        header: "Full SKU",
-        key: "fullSku",
-        width: 35,
-      },
-      {
-        header: "Barcode SKU",
-        key: "barcodeSku",
-        width: 35,
-      },
-      {
-        header: "Barcode Qty",
-        key: "barcodeQty",
-        width: 15,
-      },
-      {
-        header: "OrderCook SKU",
-        key: "ordercookSku",
-        width: 35,
-      },
-      {
-        header: "OrderCook Qty",
-        key: "ordercookQty",
-        width: 15,
-      },
-    ];
+      const toastId = toast.loading("Generating SKU Mapping Excel...");
+      const token = getToken();
 
-    // Header Style
-    worksheet.getRow(1).font = {
-      bold: true,
-    };
+      // Enrich any rows that don't have complete details
+      const enrichedRows = await Promise.all(
+        activeRows.map(async (row) => {
+          if (row.barcodeSku && row.brandName !== undefined && row.title !== undefined) {
+            return row;
+          }
+          try {
+            const res = await skuMappingService.search(row.shortSku.trim(), token);
+            if (res?.data) {
+              return {
+                ...row,
+                shortSku: res.data.shortSku || row.shortSku,
+                fullSku: res.data.fullSku || row.fullSku || "",
+                barcodeSku: res.data.barcodeSku || row.barcodeSku || "",
+                ordercookSku: res.data.ordercookSku || row.ordercookSku || "",
+                brandName: res.data.brandName || "",
+                color: res.data.color || "",
+                size: res.data.size || "",
+                title: res.data.title || "",
+                qty: res.data.qty ?? (row.quantity ?? 1),
+                mrp: res.data.mrp ?? "",
+                asinBarcode: res.data.asinBarcode || "",
+              };
+            }
+          } catch (e) {
+            console.warn(`Could not fetch details for ${row.shortSku}:`, e);
+          }
+          return row;
+        })
+      );
 
-    worksheet.getRow(1).alignment = {
-      vertical: "middle",
-      horizontal: "center",
-    };
+      // Update local state with any newly enriched data
+      setRows((prev) =>
+        prev.map((r) => {
+          const match = enrichedRows.find((er) => er.id === r.id);
+          return match ? { ...r, ...match } : r;
+        })
+      );
 
-    worksheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: {
-        argb: "E2E8F0",
-      },
-    };
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("SKU Mapping");
 
-    worksheet.getRow(1).eachCell((cell) => {
-      cell.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        right: { style: "thin" },
-        bottom: { style: "thin" },
-      };
-    });
+      worksheet.columns = [
+        { header: "Short SKU", key: "shortSku", width: 22 },
+        { header: "Barcode SKU", key: "barcodeSku", width: 25 },
+        { header: "Full SKU", key: "fullSku", width: 28 },
+        { header: "OrderCook SKU", key: "ordercookSku", width: 20 },
+        { header: "Brand Name", key: "brandName", width: 18 },
+        { header: "Color", key: "color", width: 15 },
+        { header: "Size", key: "size", width: 12 },
+        { header: "Title", key: "title", width: 40 },
+        { header: "QTY", key: "qty", width: 12 },
+        { header: "MRP", key: "mrp", width: 15 },
+        { header: "Asin (Barcode)", key: "asinBarcode", width: 20 },
+      ];
 
-    // const groupedRows = new Map<
-    //   string,
-    //   {
-    //     shortSku: string;
-    //     barcodeSku: string;
-    //     ordercookSku: string;
-    //     barcodeQty: number;
-    //     ordercookQty: number;
-    //   }
-    // >();
-
-    // rows
-    //   .filter(
-    //     (row) =>
-    //       row.shortSku.trim() &&
-    //       row.barcodeSku.trim() &&
-    //       row.ordercookSku.trim(),
-    //   )
-    //   .forEach((row) => {
-    //     // Same SKU + Barcode + OrderCook ne group karo
-    //     const key = `${row.shortSku}|${row.barcodeSku}|${row.ordercookSku}`;
-
-    //     if (groupedRows.has(key)) {
-    //       groupedRows.get(key)!.barcodeQty += 1;
-    //       groupedRows.get(key)!.ordercookQty += 1;
-    //     } else {
-    //       groupedRows.set(key, {
-    //         shortSku: row.shortSku,
-    //         barcodeSku: row.barcodeSku,
-    //         ordercookSku: row.ordercookSku,
-    //         barcodeQty: 1,
-    //         ordercookQty: 1,
-    //       });
-    //     }
-    //   });
-
-    // // Excel ma unique rows add karo
-    // groupedRows.forEach((item) => {
-    //   worksheet.addRow({
-    //     shortSku: item.shortSku,
-    //     barcodeSku: item.barcodeSku,
-    //     barcodeQty: item.barcodeQty,
-    //     ordercookSku: item.ordercookSku,
-    //     ordercookQty: item.ordercookQty,
-    //   });
-    // });
-
-    rows
-      .filter(
-        (row) =>
-          row.shortSku.trim() &&
-          row.barcodeSku.trim() &&
-          row.ordercookSku.trim(),
-      )
-      .forEach((row) => {
-        const qty = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
-        worksheet.addRow({
-          shortSku: row.shortSku,
-          fullSku: row.fullSku || "",
-          barcodeSku: row.barcodeSku,
-          barcodeQty: qty,
-          ordercookSku: row.ordercookSku,
-          ordercookQty: qty,
-        });
-      });
-
-    // ===============================
-    // OrderCook Summary Table
-    // ===============================
-
-    // 2 Blank Rows
-    worksheet.addRow([]);
-    worksheet.addRow([]);
-
-    // Summary Start Row
-    const summaryStartRow = 1;
-
-    // Heading
-    worksheet.getCell(`I${summaryStartRow}`).value = "Barcode SKU";
-    worksheet.getCell(`J${summaryStartRow}`).value = "OrderCook SKU";
-    worksheet.getCell(`K${summaryStartRow}`).value = "Qty";
-
-    // Heading Style
-    ["I", "J", "K"].forEach((col) => {
-      const cell = worksheet.getCell(`${col}${summaryStartRow}`);
-
-      cell.font = {
+      // Header Style
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = {
+        name: "Calibri",
+        size: 11,
         bold: true,
+        color: { argb: "FFFFFFFF" },
       };
-
-      cell.alignment = {
-        horizontal: "center",
+      headerRow.alignment = {
         vertical: "middle",
+        horizontal: "center",
       };
-
-      cell.fill = {
+      headerRow.fill = {
         type: "pattern",
         pattern: "solid",
         fgColor: {
-          argb: "E2E8F0",
+          argb: "FF0A0E1A",
         },
       };
+      headerRow.height = 28;
 
-      cell.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        right: { style: "thin" },
-        bottom: { style: "thin" },
-      };
-    });
-
-    // Count OrderCook SKU
-    const summaryMap = new Map<
-      string,
-      {
-        barcodeSku: string;
-        ordercookSku: string;
-        qty: number;
-      }
-    >();
-
-    rows
-      .filter((row) => row.barcodeSku.trim() && row.ordercookSku.trim())
-      .forEach((row) => {
-        const key = `${row.barcodeSku}|${row.ordercookSku}`;
-        const qty = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
-
-        if (summaryMap.has(key)) {
-          summaryMap.get(key)!.qty += qty;
-        } else {
-          summaryMap.set(key, {
-            barcodeSku: row.barcodeSku,
-            ordercookSku: row.ordercookSku,
-            qty,
-          });
-        }
-      });
-
-    // Add Summary Data
-    let currentRow = summaryStartRow + 1;
-
-    summaryMap.forEach((item) => {
-      worksheet.getCell(`I${currentRow}`).value = item.barcodeSku;
-      worksheet.getCell(`J${currentRow}`).value = item.ordercookSku;
-      worksheet.getCell(`K${currentRow}`).value = item.qty;
-
-      ["I", "J", "K"].forEach((col) => {
-        worksheet.getCell(`${col}${currentRow}`).border = {
-          top: { style: "thin" },
-          left: { style: "thin" },
-          right: { style: "thin" },
-          bottom: { style: "thin" },
+      headerRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF000000" } },
+          left: { style: "thin", color: { argb: "FF000000" } },
+          right: { style: "thin", color: { argb: "FF000000" } },
+          bottom: { style: "medium", color: { argb: "FF000000" } },
         };
       });
 
-      currentRow++;
-    });
+      enrichedRows.forEach((row) => {
+        const qtyVal =
+          printMode === "multiple"
+            ? Math.max(Number(row.quantity) || 1, 1)
+            : row.quantity !== undefined && row.quantity !== ""
+            ? Number(row.quantity)
+            : row.qty !== undefined && row.qty !== "" && row.qty !== null
+            ? row.qty
+            : 1;
 
-    // Width
-    worksheet.getColumn("I").width = 35;
-    worksheet.getColumn("J").width = 35;
-    worksheet.getColumn("K").width = 15;
+        const r = worksheet.addRow({
+          shortSku: row.shortSku || "",
+          barcodeSku: row.barcodeSku || "",
+          fullSku: row.fullSku || "",
+          ordercookSku: row.ordercookSku || "",
+          brandName: row.brandName || "",
+          color: row.color || "",
+          size: row.size || "",
+          title: row.title || "",
+          qty: qtyVal,
+          mrp: row.mrp !== undefined && row.mrp !== null ? row.mrp : "",
+          asinBarcode: row.asinBarcode || "",
+        });
+        r.height = 22;
+        r.alignment = { vertical: "middle", horizontal: "center" };
 
-    const buffer = await workbook.xlsx.writeBuffer();
+        r.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE2E8F0" } },
+            left: { style: "thin", color: { argb: "FFE2E8F0" } },
+            right: { style: "thin", color: { argb: "FFE2E8F0" } },
+            bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          };
+        });
+      });
 
-    const today = new Date();
+      // ===============================
+      // OrderCook Summary Table
+      // ===============================
+      const summaryStartRow = 1;
 
-    const fileName = `SKU-Mapping-${today.toISOString().split("T")[0]}.xlsx`;
+      // Heading at M, N, O
+      worksheet.getCell(`M${summaryStartRow}`).value = "Barcode SKU";
+      worksheet.getCell(`N${summaryStartRow}`).value = "OrderCook SKU";
+      worksheet.getCell(`O${summaryStartRow}`).value = "Qty";
 
-    saveAs(new Blob([buffer]), fileName);
+      // Heading Style
+      ["M", "N", "O"].forEach((col) => {
+        const cell = worksheet.getCell(`${col}${summaryStartRow}`);
+        cell.font = {
+          name: "Calibri",
+          size: 11,
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+        };
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: {
+            argb: "FF0A0E1A",
+          },
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF000000" } },
+          left: { style: "thin", color: { argb: "FF000000" } },
+          right: { style: "thin", color: { argb: "FF000000" } },
+          bottom: { style: "medium", color: { argb: "FF000000" } },
+        };
+      });
 
-    toast.success("Excel downloaded successfully.");
-    // deleteDraftMutation.mutate();
+      // Count OrderCook SKU
+      const summaryMap = new Map<
+        string,
+        {
+          barcodeSku: string;
+          ordercookSku: string;
+          qty: number;
+        }
+      >();
 
-    // setRows(DEFAULT_ROWS);
+      enrichedRows
+        .filter((row) => row.barcodeSku?.trim() && row.ordercookSku?.trim())
+        .forEach((row) => {
+          const key = `${row.barcodeSku}|${row.ordercookSku}`;
+          const qty = printMode === "multiple" ? Math.max(Number(row.quantity) || 1, 1) : 1;
+
+          if (summaryMap.has(key)) {
+            summaryMap.get(key)!.qty += qty;
+          } else {
+            summaryMap.set(key, {
+              barcodeSku: row.barcodeSku,
+              ordercookSku: row.ordercookSku,
+              qty,
+            });
+          }
+        });
+
+      // Add Summary Data
+      let currentRow = summaryStartRow + 1;
+      summaryMap.forEach((item) => {
+        worksheet.getCell(`M${currentRow}`).value = item.barcodeSku;
+        worksheet.getCell(`N${currentRow}`).value = item.ordercookSku;
+        worksheet.getCell(`O${currentRow}`).value = item.qty;
+
+        ["M", "N", "O"].forEach((col) => {
+          const cell = worksheet.getCell(`${col}${currentRow}`);
+          cell.alignment = { horizontal: "center", vertical: "middle" };
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE2E8F0" } },
+            left: { style: "thin", color: { argb: "FFE2E8F0" } },
+            right: { style: "thin", color: { argb: "FFE2E8F0" } },
+            bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          };
+        });
+
+        currentRow++;
+      });
+
+      worksheet.getColumn("M").width = 30;
+      worksheet.getColumn("N").width = 30;
+      worksheet.getColumn("O").width = 15;
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const today = new Date();
+      const fileName = `SKU-Mapping-${today.toISOString().split("T")[0]}.xlsx`;
+
+      saveAs(new Blob([buffer]), fileName);
+      toast.success("Excel downloaded successfully with all details!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export Excel sheet");
+    }
   };
 
   useEffect(() => {
@@ -798,21 +901,20 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
       setRows(
         draftResponse.data.rows.map((row: any, index: number) => ({
           id: Date.now() + index,
-
           shortSku: row.shortSku,
-
           fullSku: row.fullSku || "",
-
           quantity: row.quantity !== undefined ? (Number(row.quantity) || 1) : 1,
-
-          barcodeSku: row.barcodeSku,
-
-          ordercookSku: row.ordercookSku,
-
+          barcodeSku: row.barcodeSku || "",
+          ordercookSku: row.ordercookSku || "",
+          brandName: row.brandName || "",
+          color: row.color || "",
+          size: row.size || "",
+          title: row.title || "",
+          qty: row.qty !== undefined && row.qty !== null ? row.qty : (row.quantity !== undefined ? Number(row.quantity) : ""),
+          mrp: row.mrp !== undefined && row.mrp !== null ? row.mrp : "",
+          asinBarcode: row.asinBarcode || "",
           loading: false,
-
           error: false,
-
           errorMessage: "",
         })),
       );
@@ -831,8 +933,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           shortSku: row.shortSku,
           fullSku: row.fullSku || "",
           quantity: row.quantity !== undefined ? (Number(row.quantity) || 1) : 1,
-          barcodeSku: row.barcodeSku,
-          ordercookSku: row.ordercookSku,
+          barcodeSku: row.barcodeSku || "",
+          ordercookSku: row.ordercookSku || "",
+          brandName: row.brandName || "",
+          color: row.color || "",
+          size: row.size || "",
+          title: row.title || "",
+          qty: row.qty !== undefined && row.qty !== null ? row.qty : (row.quantity || 1),
+          mrp: row.mrp !== undefined && row.mrp !== null ? row.mrp : "",
+          asinBarcode: row.asinBarcode || "",
         }));
 
       saveDraftMutation.mutate(payload);
@@ -843,15 +952,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="flex h-[92dvh] sm:h-[90vh] w-[95vw] lg:w-[calc(100vw-6rem)] xl:w-[calc(100vw-18rem)] max-w-7xl flex-col p-0">
-        <DialogHeader className="border-b bg-[#0A0E1A] px-4 sm:px-6 py-4 sm:py-5">
+      <DialogContent className="flex h-[92dvh] sm:h-[90vh] w-[95vw] lg:w-[calc(100vw-6rem)] xl:w-[calc(100vw-18rem)] max-w-7xl flex-col p-0 !rounded-3xl sm:!rounded-[32px] border border-[#E7E0D2] overflow-hidden bg-white shadow-2xl">
+        <DialogHeader className="border-b border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-4 sm:py-5">
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle className="text-xl sm:text-2xl font-semibold text-[#E8C16D]">
+              <DialogTitle className="text-xl sm:text-2xl font-bold text-[#E8C16D]">
                 Generate Excel Sheet
               </DialogTitle>
 
-              <p className="mt-1 text-xs sm:text-sm text-slate-200">
+              <p className="mt-1 text-xs sm:text-sm text-slate-300">
                 Scan or enter Short SKU. Full SKU, Barcode SKU and OrderCook SKU are
                 filled automatically.
               </p>
@@ -861,7 +970,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 sm:pt-5 px-4 sm:px-6">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-700">Print Mode:</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-700">Print Mode:</span>
             <div className="w-full sm:w-44 min-w-[140px]">
               <ReactSelect
                 options={PRINT_MODE_OPTIONS}
@@ -869,18 +978,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                 onChange={(opt) => {
                   if (opt) setPrintMode(opt.value as "single" | "multiple");
                 }}
-                height={38}
-                borderRadius={6}
+                height={42}
+                borderRadius={16}
               />
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Button
-              variant="secondary"
-              fullWidth={false}
-              className="flex-1 sm:flex-initial sm:w-auto min-w-[120px]"
-              leftIcon={<Printer className="h-4 w-4" />}
+            <button
+              type="button"
               onClick={() => {
                 const selectedRowsList = rows.filter((r) => selectedRowIds.has(r.id));
                 if (selectedRowsList.length === 0) return;
@@ -891,65 +997,67 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                 }
               }}
               disabled={selectedRowIds.size === 0 || isPrintingDirectly}
+              className="inline-flex h-10.5 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] shadow-xs active:scale-[0.98] transition cursor-pointer disabled:opacity-50 min-w-[120px]"
             >
-              {isPrintingDirectly ? "Printing..." : `Print (${selectedTotalQty})`}
-            </Button>
-            <Button
-              variant="outline"
-              fullWidth={false}
-              className="flex-1 sm:flex-initial sm:w-auto min-w-[130px] truncate"
-              leftIcon={<Download className="h-4 w-4" />}
+              <Printer className="h-4 w-4" />
+              <span>{isPrintingDirectly ? "Printing..." : `Print (${selectedTotalQty})`}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleDownloadDemoFormat}
+              className="inline-flex h-10.5 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 shadow-xs active:scale-[0.98] transition cursor-pointer min-w-[130px]"
             >
-              Download
-            </Button>
-            <Button
-              variant="primary"
-              fullWidth={false}
-              className="flex-1 sm:flex-initial sm:w-auto min-w-[120px]"
-              leftIcon={<Trash2 className="h-4 w-4" />}
+              <Download className="h-4 w-4 text-[#B88728]" />
+              <span>Download</span>
+            </button>
+
+            <button
+              type="button"
               onClick={clearSheet}
+              className="inline-flex h-10.5 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-xs active:scale-[0.98] transition cursor-pointer min-w-[120px]"
             >
-              Clear Sheet
-            </Button>
+              <Trash2 className="h-4 w-4" />
+              <span>Clear Sheet</span>
+            </button>
           </div>
         </div>
         <div className="flex-1 overflow-hidden px-4 sm:px-6 py-3 sm:py-4">
-          <div className="h-full overflow-auto border">
+          <div className="h-full overflow-auto rounded-2xl sm:rounded-[24px] border border-[#E7E0D2] bg-white shadow-xs">
             <table className="min-w-[750px] w-full table-fixed border-collapse">
-              <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-white">
+              <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
                 <tr>
-                  <th className="w-12 border px-4 py-3 text-center">
+                  <th className="w-12 border-b border-r border-slate-800 px-4 py-3 text-center">
                     <Checkbox
                       checked={selectedRowIds.size > 0 && selectedRowIds.size === rows.filter(r => r.shortSku.trim() || r.barcodeSku.trim()).length}
                       onCheckedChange={(checked) => toggleAllRows(!!checked)}
-                      className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[#0A0E1A]"
+                      className="border-white data-[state=checked]:bg-[#E8C16D] data-[state=checked]:text-[#0A0E1A]"
                     />
                   </th>
-                  <th className="w-16 border px-4 py-3 text-left">#</th>
+                  <th className="w-16 border-b border-r border-slate-800 px-4 py-3 text-left">#</th>
 
-                  <th className={printMode === "multiple" ? "w-[28%] border px-4 py-3 text-left" : "w-[30%] border px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[28%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[30%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
                     Short SKU
                   </th>
 
                   {printMode === "multiple" && (
-                    <th className="w-24 border px-4 py-3 text-center">
+                    <th className="w-24 border-b border-r border-slate-800 px-4 py-3 text-left">
                       Qty
                     </th>
                   )}
 
-                  <th className={printMode === "multiple" ? "w-[24%] border px-4 py-3 text-left" : "w-[26%] border px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[26%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
                     Full SKU
                   </th>
 
-                  <th className={printMode === "multiple" ? "w-[24%] border px-4 py-3 text-left" : "w-[22%] border px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[22%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
                     Barcode SKU
                   </th>
 
-                  <th className={printMode === "multiple" ? "w-[24%] border px-4 py-3 text-left" : "w-[22%] border px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[22%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
                     OrderCook SKU
                   </th>
-                  <th className="w-24 border px-4 py-3 text-center">Action</th>
+                  <th className="w-24 border-b border-slate-800 px-4 py-3 text-left">Action</th>
                 </tr>
               </thead>
 
@@ -1024,6 +1132,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                                     quantity: qty,
                                     barcodeSku: "",
                                     ordercookSku: "",
+                                    brandName: "",
+                                    color: "",
+                                    size: "",
+                                    title: "",
+                                    qty: qty,
+                                    mrp: "",
+                                    asinBarcode: "",
                                     loading: false,
                                     error: false,
                                     errorMessage: "",
@@ -1051,6 +1166,13 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                                     quantity: 1,
                                     barcodeSku: "",
                                     ordercookSku: "",
+                                    brandName: "",
+                                    color: "",
+                                    size: "",
+                                    title: "",
+                                    qty: "",
+                                    mrp: "",
+                                    asinBarcode: "",
                                     loading: false,
                                     error: false,
                                     errorMessage: "",
@@ -1072,6 +1194,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
                                 toast.success(`${newRowsToAppend.length} rows pasted.`);
                               }
+                            }
+                          }}
+                          onBlur={() => {
+                            if (row.shortSku.trim() && (!row.barcodeSku || row.error)) {
+                              searchSku(row.shortSku.trim(), index);
                             }
                           }}
                           onKeyDown={async (e) => {
@@ -1281,7 +1408,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                           type="number"
                           min="1"
                           value={row.quantity ?? 1}
-                          className="w-full border-none bg-transparent text-center font-medium text-slate-800 outline-none"
+                          className="w-full border-none bg-transparent text-left font-medium text-slate-800 outline-none"
                           onChange={(e) => {
                             const val = e.target.value === "" ? "" : Math.max(1, parseInt(e.target.value, 10) || 1);
                             const updated = [...rows];
@@ -1324,27 +1451,27 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                       </td>
                     )}
 
-                    <td className="border px-4 py-3 text-slate-700">
+                    <td className="border px-4 py-3 text-left text-slate-700">
                       {row.loading ? "Searching..." : row.fullSku || "-"}
                     </td>
 
-                    <td className="border px-4 py-3">
+                    <td className="border px-4 py-3 text-left">
                       {row.loading ? "Searching..." : row.barcodeSku || "-"}
                     </td>
 
-                    <td className="border px-4 py-3">
+                    <td className="border px-4 py-3 text-left">
                       {row.loading ? "Searching..." : row.ordercookSku || "-"}
                     </td>
-                    <td className="border px-4 py-3 text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                    <td className="border px-4 py-3 text-left">
+                      <button
+                        type="button"
                         onClick={() => deleteRow(row.id)}
                         disabled={rows.length === 1}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition disabled:opacity-40 cursor-pointer"
+                        title="Delete row"
                       >
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -1353,23 +1480,28 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </div>
         </div>
 
-        <div className="border-t bg-white px-4 sm:px-6 py-3 sm:py-4">
+        <div className="border-t border-[#E7E0D2] bg-white px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3">
-            <Button variant="outline" className="w-full sm:w-auto" onClick={onClose}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 sm:px-6 text-xs sm:text-sm font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
+            >
               Close
-            </Button>
+            </button>
 
-            <Button
-              className="w-full sm:w-auto"
+            <button
+              type="button"
               onClick={exportExcel}
               disabled={
                 rows.filter(
                   (row) => row.shortSku && row.barcodeSku && row.ordercookSku,
                 ).length === 0
               }
+              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition hover:bg-[#d4af5a] shadow-xs active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               Export Excel
-            </Button>
+            </button>
           </div>
         </div>
       </DialogContent>

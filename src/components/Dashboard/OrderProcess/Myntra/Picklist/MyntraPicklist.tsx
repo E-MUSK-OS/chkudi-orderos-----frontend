@@ -23,6 +23,8 @@ import {
   Package,
   ShieldAlert,
   Lock,
+  Loader2,
+  X,
 } from "lucide-react";
 import * as xlsx from "xlsx";
 import ExcelJS from "exceljs";
@@ -30,9 +32,11 @@ import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
+import Pagination from "@/components/ui/Pagination";
 import { getAllMyntraMappings } from "@/components/Dashboard/Products/ManageProducts/services/myntraImport.service";
 import type { MyntraMappingRecord } from "@/components/Dashboard/Products/ManageProducts/types/myntraImport.types";
 import MyntraMissingSkuModal from "./components/MyntraMissingSkuModal";
+import ProcessingProgressModal from "./components/ProcessingProgressModal";
 import {
   saveMyntraPicklistToIDB,
   loadMyntraPicklistFromIDB,
@@ -62,6 +66,7 @@ export default function MyntraPicklist() {
   const [isDragging, setIsDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [processingStep, setProcessingStep] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,6 +84,8 @@ export default function MyntraPicklist() {
   // Table Preview State
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "MATCHED" | "UNMATCHED">("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [copiedSku, setCopiedSku] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMissingSkuModalOpen, setIsMissingSkuModalOpen] = useState(false);
@@ -219,6 +226,7 @@ export default function MyntraPicklist() {
     setProcessingStep("");
     setSearchQuery("");
     setStatusFilter("ALL");
+    setCurrentPage(1);
     setIsMissingSkuModalOpen(false);
     clearMyntraPicklistIDB();
   };
@@ -312,6 +320,7 @@ export default function MyntraPicklist() {
     }
 
     setIsProcessing(true);
+    setProgress(15);
     setProcessingStep("Reading uploaded order files...");
 
     try {
@@ -341,6 +350,8 @@ export default function MyntraPicklist() {
 
       for (let i = 0; i < excelFiles.length; i++) {
         const file = excelFiles[i];
+        const stepProgress = Math.min(50, Math.round(15 + ((i + 1) / excelFiles.length) * 35));
+        setProgress(stepProgress);
         setProcessingStep(`Parsing file ${i + 1} of ${excelFiles.length}: ${file.name}...`);
 
         const arrayBuffer = await file.arrayBuffer();
@@ -436,12 +447,14 @@ export default function MyntraPicklist() {
       }
 
       // 2. Fetch Myntra mappings dictionary from backend
+      setProgress(65);
       setProcessingStep("Fetching Myntra product mappings...");
       const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") || undefined : undefined;
       const mappingResponse = await getAllMyntraMappings(token);
       const mappings: Record<string, MyntraMappingRecord> = mappingResponse.mappings || {};
 
       // 3. Cross-reference aggregated SKUs
+      setProgress(85);
       setProcessingStep("Cross-referencing SKU mappings & building picklist...");
       const results: PicklistItem[] = [];
       let matchedCount = 0;
@@ -507,6 +520,9 @@ export default function MyntraPicklist() {
         unmatchedSkus: unmatchedCount,
       });
 
+      setProgress(100);
+      setProcessingStep("Picklist generated successfully!");
+      setCurrentPage(1);
       setHasResults(true);
 
       if (unmatchedCount > 0) {
@@ -524,8 +540,11 @@ export default function MyntraPicklist() {
       console.error(err);
       toast.error(err?.message || "Failed to generate picklist.");
     } finally {
-      setIsProcessing(false);
-      setProcessingStep("");
+      setTimeout(() => {
+        setIsProcessing(false);
+        setProgress(0);
+        setProcessingStep("");
+      }, 500);
     }
   };
 
@@ -549,6 +568,13 @@ export default function MyntraPicklist() {
       return true;
     });
   }, [picklistItems, statusFilter, searchQuery]);
+
+  // Computed pagination
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
 
   // Helper to sanitize spreadsheet cells against CSV/formula injection
   const sanitizeSpreadsheetCell = (value: unknown): string => {
@@ -932,16 +958,16 @@ export default function MyntraPicklist() {
 
   return (
     <DashboardLayout title="Myntra Picklist">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* ===================================================== */}
-        {/* HEADER SECTION (Themed with rounded corner borders) */}
+        {/* HEADER SECTION matching Amazon Order Process */}
         {/* ===================================================== */}
-        <div className="rounded-2xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A]">
+            <div className="space-y-1.5 min-w-0 max-w-2xl">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 {hasResults ? "Myntra Picklist Results" : "Myntra Picklist"}
-              </h2>
+              </h1>
 
               <p className="text-xs sm:text-sm text-slate-500 break-words">
                 {hasResults ? (
@@ -957,36 +983,33 @@ export default function MyntraPicklist() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0 self-start lg:self-center">
               {hasResults ? (
                 <>
                   <button
                     type="button"
                     onClick={handleResetAll}
-                    className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#161D2E]"
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs active:scale-[0.98]"
                   >
-                    <RotateCcw size={16} />
-                    New Batch
+                    <RotateCcw className="h-4 w-4" />
+                    <span>New Batch</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleDownloadExcel}
                     disabled={isDownloading}
-                    className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#E8C16D] hover:bg-[#dfb45b] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-[#0A0E1A] transition shadow-sm"
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] hover:bg-[#d4af5a] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Download size={16} />
-                    {isDownloading ? "Downloading..." : "Download Excel"}
+                    <Download className="h-4 w-4 stroke-[2.5]" />
+                    <span>{isDownloading ? "Downloading..." : "Download Picklist"}</span>
                   </button>
                 </>
               ) : (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-right">
-                  <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    Files Ready
-                  </div>
-                  <div className="text-sm font-bold text-[#0A0E1A]">
-                    <span className={excelFiles.length > 0 ? "text-emerald-600" : "text-slate-400"}>
-                      {excelFiles.length} File{excelFiles.length !== 1 ? "s" : ""}
+                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 shadow-xs">
+                  <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] whitespace-nowrap">
+                    <span className={excelFiles.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+                      {excelFiles.length} Excel File{excelFiles.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 </div>
@@ -996,16 +1019,16 @@ export default function MyntraPicklist() {
 
           {/* Persistent Warning Banner identical to Amazon Order Process */}
           {hasResults && missingMyntraSkus.length > 0 && (
-            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/90 dark:bg-rose-950/30 p-3 sm:p-4 text-rose-900 dark:text-rose-200">
+            <div className="mt-5 rounded-2xl sm:rounded-3xl border border-rose-300 bg-rose-50/90 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 border border-rose-200/60">
                   <ShieldAlert className="h-5 w-5 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-rose-900 dark:text-rose-200">
+                  <h4 className="text-xs sm:text-sm font-bold text-rose-900">
                     Strict Guard Active: {missingMyntraSkus.length} Myntra SKU(s) Missing Seller SKU
                   </h4>
-                  <p className="text-xs text-rose-700 dark:text-rose-400">
+                  <p className="text-[11px] sm:text-xs text-rose-700">
                     Picklist export is locked until all Myntra SKUs are mapped in Products.
                   </p>
                 </div>
@@ -1013,7 +1036,7 @@ export default function MyntraPicklist() {
               <button
                 type="button"
                 onClick={() => setIsMissingSkuModalOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A0E1A] hover:bg-[#1b253b] px-4 py-2 text-xs font-bold text-[#E8C16D] shadow-sm transition active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] hover:bg-slate-900 px-4 py-2.5 text-xs font-bold text-[#E8C16D] shadow-xs transition active:scale-95 cursor-pointer"
               >
                 <Lock className="h-3.5 w-3.5" />
                 <span>Resolve Missing SKUs ({missingMyntraSkus.length})</span>
@@ -1021,69 +1044,69 @@ export default function MyntraPicklist() {
             </div>
           )}
 
-          {/* KPI Stats Cards - Integrated when results are available */}
+          {/* KPI Stats Cards */}
           {hasResults && (
             <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-5 sm:pt-6">
               {/* Total Orders */}
-              <article className="rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-medium text-slate-500">Total Orders</p>
-                <div className="mt-2 sm:mt-3 flex items-end justify-between gap-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-[#0A0E1A]">
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Total Orders</p>
+                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
                     {summary.totalOrders.toLocaleString()}
                   </h3>
-                  <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
+                  <span className="rounded-xl border border-blue-200/60 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
                     Orders
                   </span>
                 </div>
               </article>
 
               {/* Total Units */}
-              <article className="rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-medium text-slate-500">Total Units</p>
-                <div className="mt-2 sm:mt-3 flex items-end justify-between gap-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-[#0A0E1A]">
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Total Units</p>
+                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
                     {summary.totalUnits.toLocaleString()}
                   </h3>
-                  <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
+                  <span className="rounded-xl border border-indigo-200/60 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
                     Units
                   </span>
                 </div>
               </article>
 
               {/* Unique SKUs */}
-              <article className="rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-medium text-slate-500">Unique SKUs</p>
-                <div className="mt-2 sm:mt-3 flex items-end justify-between gap-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-[#0A0E1A]">
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Unique SKUs</p>
+                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
                     {summary.uniqueSkus.toLocaleString()}
                   </h3>
-                  <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+                  <span className="rounded-xl border border-amber-200/60 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">
                     SKUs
                   </span>
                 </div>
               </article>
 
               {/* Matched SKUs */}
-              <article className="rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-medium text-slate-500">Matched SKUs</p>
-                <div className="mt-2 sm:mt-3 flex items-end justify-between gap-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-emerald-700">
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Matched SKUs</p>
+                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                  <h3 className="text-2xl sm:text-3xl font-black text-emerald-700">
                     {summary.matchedSkus.toLocaleString()}
                   </h3>
-                  <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                  <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
                     Matched
                   </span>
                 </div>
               </article>
 
               {/* Unmatched SKUs */}
-              <article className="rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1">
-                <p className="text-xs sm:text-sm font-medium text-slate-500">Unmatched SKUs</p>
-                <div className="mt-2 sm:mt-3 flex items-end justify-between gap-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-rose-700">
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between col-span-2 sm:col-span-1">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Unmatched SKUs</p>
+                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                  <h3 className="text-2xl sm:text-3xl font-black text-rose-700">
                     {summary.unmatchedSkus.toLocaleString()}
                   </h3>
-                  <span className="rounded bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700">
+                  <span className="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
                     Unmatched
                   </span>
                 </div>
@@ -1094,14 +1117,14 @@ export default function MyntraPicklist() {
 
         {/* Processing State Indicator */}
         {isProcessing && (
-          <div className="rounded-2xl border border-[#E8C16D]/40 bg-[#FFF9EC]/50 p-6 sm:p-8 shadow-sm text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded bg-amber-100 text-amber-700 animate-pulse mb-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-8 sm:p-12 shadow-sm text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] animate-pulse mb-3">
               <Sparkles className="h-7 w-7 animate-spin" />
             </div>
             <h3 className="text-lg font-bold text-[#0A0E1A]">Processing Your Picklist...</h3>
-            <p className="text-sm font-medium text-amber-800 mt-1">{processingStep}</p>
-            <div className="w-full max-w-md mx-auto bg-amber-200/50 rounded-full h-2 mt-4 overflow-hidden">
-              <div className="bg-[#B88728] h-full w-2/3 animate-[pulse_1s_ease-in-out_infinite]" />
+            <p className="text-sm font-medium text-slate-500 mt-1">{processingStep}</p>
+            <div className="w-full max-w-md mx-auto bg-slate-100 rounded-full h-2.5 mt-4 overflow-hidden border border-slate-200">
+              <div className="bg-[#E8C16D] h-full w-2/3 animate-[pulse_1s_ease-in-out_infinite] rounded-full" />
             </div>
           </div>
         )}
@@ -1110,27 +1133,29 @@ export default function MyntraPicklist() {
         {!hasResults && !isProcessing && (
           <>
             <div className="grid grid-cols-1 gap-6">
-              <div className="flex flex-col rounded-2xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded bg-emerald-50 text-emerald-600 border border-emerald-100 shrink-0">
+              <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 shrink-0">
                       <FileSpreadsheet className="h-5 w-5" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
                         Excel Order Files {excelFiles.length > 0 ? `(${excelFiles.length})` : ""}
                       </h3>
-                      <p className="text-xs text-slate-500">Upload one or multiple .xlsx, .xls, .csv files</p>
+                      <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                        Upload one or multiple .xlsx, .xls, .csv files
+                      </p>
                     </div>
                   </div>
 
                   {excelFiles.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 rounded bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       {excelFiles.length} Ready
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded bg-amber-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                    <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
                       Required
                     </span>
                   )}
@@ -1144,80 +1169,116 @@ export default function MyntraPicklist() {
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
-                      className={`group relative flex min-h-[180px] sm:min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
+                      className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                         isDragging
                           ? "border-[#E8C16D] bg-[#FFF9EC]"
-                          : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+                          : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
                       }`}
                     >
-                      <div className="mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-emerald-500">
+                      <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-emerald-600">
                         <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                       </div>
 
-                      <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">
+                      <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
                         Click to upload or drag & drop Excel(s)
                       </p>
-                      <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
-                        Select one or multiple Myntra Order Excel (<code className="font-mono text-emerald-600">.xlsx, .xls, .csv</code>) files
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
+                        Select one or multiple Myntra Order Excel (<code className="font-mono text-emerald-600 font-semibold">.xlsx, .xls, .csv</code>) files
                       </p>
 
-                      <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-lg border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
+                      <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                         <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" />
                         Browse Excel Files
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col justify-between rounded-xl border border-emerald-200 bg-emerald-50/20 p-3 sm:p-4">
-                      <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
-                        {excelFiles.map((file, idx) => (
-                          <div
-                            key={`${file.name}_${idx}`}
-                            className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200/60 bg-white p-2 sm:p-2.5 shadow-2xs"
-                          >
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded bg-emerald-50 text-emerald-600">
-                                <FileCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={file.name}>
-                                  {file.name}
-                                </p>
-                                <p className="text-[10px] sm:text-[11px] text-slate-500">
-                                  {formatFileSize(file.size)}
-                                </p>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveSingleFile(idx)}
-                              title="Remove this file"
-                              className="grid h-7 w-7 shrink-0 place-items-center rounded text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
+                        isDragging
+                          ? "border-[#E8C16D] bg-[#FFF9EC]"
+                          : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                      }`}
+                    >
+                      <div className="flex-1 flex flex-col min-h-0">
+                        {/* Scrollable file cards */}
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="max-h-36 sm:max-h-44 overflow-y-auto space-y-2 pr-1 cursor-default"
+                        >
+                          {excelFiles.map((file, idx) => (
+                            <div
+                              key={`${file.name}_${idx}`}
+                              className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200/50">
+                                  <FileSpreadsheet className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-xs font-bold text-[#0A0E1A]" title={file.name}>
+                                    {file.name}
+                                  </p>
+                                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                                    {formatFileSize(file.size)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveSingleFile(idx);
+                                }}
+                                title="Remove this file"
+                                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
-                      <div className="mt-3 sm:mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between">
-                        <span className="text-xs font-medium text-emerald-800">
-                          Total: {excelFiles.length} file{excelFiles.length > 1 ? "s" : ""} ({formatFileSize(totalExcelSize)})
-                        </span>
-                        <div className="flex items-center gap-2">
+                      {/* Footer summary bar */}
+                      <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                          <span className="whitespace-nowrap">
+                            {excelFiles.length} file{excelFiles.length > 1 ? "s" : ""}
+                          </span>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-emerald-700 font-medium truncate">
+                            {formatFileSize(totalExcelSize)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-2.5 py-1 rounded-md border border-slate-200 hover:border-[#E8C16D] shadow-2xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fileInputRef.current?.click();
+                            }}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                           >
-                            <Plus className="h-3 w-3" /> Add More
+                            <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                            <span>Add More</span>
                           </button>
+
                           <button
                             type="button"
-                            onClick={handleRemoveAllFiles}
-                            className="text-xs font-medium text-red-600 hover:underline px-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveAllFiles();
+                            }}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
                           >
-                            Clear
+                            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                            <span>Clear All</span>
                           </button>
                         </div>
                       </div>
@@ -1241,7 +1302,7 @@ export default function MyntraPicklist() {
 
                   {/* File Error Display */}
                   {fileError && (
-                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 sm:p-3 text-xs text-red-700 border border-red-200">
                       <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
                       <span>{fileError}</span>
                     </div>
@@ -1251,36 +1312,43 @@ export default function MyntraPicklist() {
             </div>
 
             {/* Action Controls Bar */}
-            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm">
-              <Button
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm">
+              <button
                 type="button"
-                variant="outline"
-                size="md"
-                fullWidth={false}
                 disabled={excelFiles.length === 0}
                 onClick={handleResetAll}
-                leftIcon={<RotateCcw className="h-4 w-4" />}
-                className="w-full sm:w-auto rounded-xl"
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
               >
-                Clear Files
-              </Button>
+                <RotateCcw className="h-4 w-4" />
+                <span>Clear Files</span>
+              </button>
 
               <div className="flex w-full items-center gap-3 sm:w-auto">
-                <Button
+                <button
                   type="button"
-                  variant="secondary"
-                  size="md"
-                  fullWidth={false}
-                  loading={isProcessing}
                   disabled={!isReadyToSubmit || isProcessing}
                   onClick={handleGeneratePicklist}
-                  rightIcon={<ArrowRight className="h-4 w-4" />}
-                  className="w-full sm:w-auto min-w-0 sm:min-w-[220px] text-xs sm:text-sm rounded-xl"
+                  className="w-full sm:w-auto inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-6 sm:px-8 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs hover:bg-[#d4af5a] transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isReadyToSubmit
-                    ? `Upload & Generate (${excelFiles.length} Excel${excelFiles.length > 1 ? "s" : ""})`
-                    : "Upload Files"}
-                </Button>
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Processing Files...</span>
+                    </>
+                  ) : isReadyToSubmit ? (
+                    <>
+                      <span>
+                        Upload & Generate ({excelFiles.length} Excel{excelFiles.length > 1 ? "s" : ""})
+                      </span>
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <span>Upload Required Files</span>
+                      <ArrowRight className="h-4 w-4 opacity-50" />
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </>
@@ -1290,120 +1358,176 @@ export default function MyntraPicklist() {
         {/* RESULTS SECTION: Interactive Table Preview */}
         {/* ===================================================== */}
         {hasResults && !isProcessing && (
-          <div className="rounded-2xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm space-y-4">
-            {/* Table Filter Tabs & Search */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E7E0D2]">
-              {/* Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("ALL")}
-                  className={`inline-flex h-9 sm:h-10 px-3.5 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition ${
-                    statusFilter === "ALL"
-                      ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-[#E8C16D]"
-                  }`}
-                >
-                  All ({picklistItems.length})
-                </button>
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm space-y-4">
+            {/* Table Toolbar: Search (Left) & Filter Tabs (Right) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#E7E0D2]">
+              {/* Search Box (Left) */}
+              <div className="group flex items-center gap-2.5 rounded-2xl border border-[#E7E0D2] bg-white px-3.5 sm:px-4 h-11 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white w-full sm:w-80 md:w-96">
+                <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+                  <Search className="h-3.5 w-3.5" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search Rack, SKU, Barcode..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setCurrentPage(1);
+                    }}
+                    className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                    title="Clear search"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("MATCHED")}
-                  className={`inline-flex h-9 sm:h-10 px-3.5 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition ${
-                    statusFilter === "MATCHED"
-                      ? "border-emerald-600 bg-emerald-600 text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
-                  }`}
-                >
-                  Matched ({summary.matchedSkus})
-                </button>
+              {/* Status Filter Tabs & Missing SKU Button (Right) */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
+                <div className="inline-flex h-11 items-center rounded-2xl border border-[#E7E0D2] bg-slate-50/80 p-1 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("ALL");
+                      setCurrentPage(1);
+                    }}
+                    className={`h-full px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      statusFilter === "ALL"
+                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                        : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
+                    }`}
+                  >
+                    <span>All</span>
+                    <span
+                      className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
+                        statusFilter === "ALL"
+                          ? "bg-[#FFF9EC]/15 text-[#E8C16D]"
+                          : "bg-slate-200/70 text-slate-700"
+                      }`}
+                    >
+                      {picklistItems.length}
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("UNMATCHED")}
-                  className={`inline-flex h-9 sm:h-10 px-3.5 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition ${
-                    statusFilter === "UNMATCHED"
-                      ? "border-rose-600 bg-rose-600 text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-rose-500 hover:text-rose-700"
-                  }`}
-                >
-                  Unmatched ({summary.unmatchedSkus})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("MATCHED");
+                      setCurrentPage(1);
+                    }}
+                    className={`h-full px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      statusFilter === "MATCHED"
+                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                        : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
+                    }`}
+                  >
+                    <span>Matched</span>
+                    <span
+                      className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
+                        statusFilter === "MATCHED"
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                      }`}
+                    >
+                      {summary.matchedSkus}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("UNMATCHED");
+                      setCurrentPage(1);
+                    }}
+                    className={`h-full px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      statusFilter === "UNMATCHED"
+                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                        : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
+                    }`}
+                  >
+                    <span>Unmatched</span>
+                    <span
+                      className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
+                        statusFilter === "UNMATCHED"
+                          ? "bg-rose-500/20 text-rose-300"
+                          : "bg-rose-50 text-rose-700 border border-rose-200/60"
+                      }`}
+                    >
+                      {summary.unmatchedSkus}
+                    </span>
+                  </button>
+                </div>
 
                 {missingMyntraSkus.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setIsMissingSkuModalOpen(true)}
-                    className="inline-flex h-9 sm:h-10 items-center justify-center rounded-lg border border-red-500/50 bg-red-500/10 px-3.5 text-xs font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white cursor-pointer"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                     title="Click to view Myntra SKUs missing Seller SKU in database"
                   >
                     <span className="whitespace-nowrap">Missing Sku ({missingMyntraSkus.length})</span>
                   </button>
                 )}
               </div>
-
-              {/* Search Box */}
-              <div className="relative w-full sm:w-72">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search Rack, SKU..."
-                  className="h-9 sm:h-10 w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-9 pr-3 text-xs font-medium text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:bg-white"
-                />
-              </div>
-            </div>
-
-            {/* Table View */}
-            <div className="overflow-hidden rounded-xl border border-[#E7EAF0]">
-              <div className="overflow-x-auto max-h-[550px]">
-                <table className="w-full min-w-[750px] text-left border-collapse">
-                  <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-white text-xs font-bold uppercase tracking-wider">
+            </div>            {/* Table View */}
+            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm flex flex-col">
+              <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                <table className="w-full min-w-[750px] border-collapse text-left font-sans">
+                  <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
                     <tr>
-                      <th className="px-4 py-3.5 w-36">Rack</th>
-                      <th className="px-4 py-3.5">Seller SKU</th>
-                      <th className="px-4 py-3.5 text-center w-24">Qty</th>
-                      <th className="px-4 py-3.5">Generate Barcode</th>
-                      <th className="px-4 py-3.5">Myntra SKU</th>
-                      <th className="px-4 py-3.5 text-center w-28">Status</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[120px]">Rack</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[160px]">Seller SKU</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-24">Qty</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[150px]">Generate Barcode</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[150px]">Myntra SKU</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-28">Status</th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-[#E7EAF0] text-xs">
+                  <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm font-sans">
                     {filteredItems.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
-                          No matching picklist records found.
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <Search className="h-8 w-8 text-slate-300" />
+                            <p className="font-bold text-[#0A0E1A]">No matching picklist records found</p>
+                            <p className="text-xs text-slate-400">Try adjusting your search query or filter tab.</p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
-                      filteredItems.map((item) => (
+                      paginatedItems.map((item) => (
                         <tr
                           key={item.id}
-                          className={`transition-colors hover:bg-slate-50/80 ${
-                            item.status === "UNMATCHED" ? "bg-rose-50/40" : ""
+                          className={`transition-colors ${
+                            item.status === "UNMATCHED" ? "bg-rose-50/40 hover:bg-rose-50/70" : "hover:bg-slate-50/80"
                           }`}
                         >
                           {/* Rack Badge */}
-                          <td className="px-4 py-3 font-semibold text-[#0A0E1A]">
+                          <td className="px-3 sm:px-4 py-3.5 text-center">
                             {item.rack === "-" || item.rack === "Unassigned" || !item.rack ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                                -
-                              </span>
+                              <span className="text-slate-400 font-normal italic">-</span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                                <Archive className="h-3 w-3 text-[#B88728]" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs sm:text-sm font-semibold bg-[#FFF9EC] text-[#0A0E1A] border border-[#E8C16D]/40">
+                                <Archive className="h-3.5 w-3.5 text-[#B88728]" />
                                 {item.rack}
                               </span>
                             )}
                           </td>
 
                           {/* Seller SKU */}
-                          <td className="px-4 py-3 font-medium text-[#0A0E1A]">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-xs">
+                          <td className="px-3 sm:px-4 py-3.5 text-center">
+                            <div className="inline-flex items-center justify-center gap-2">
+                              <span className="text-xs sm:text-sm font-semibold text-slate-900">
                                 {item.sellerSku}
                               </span>
                               {item.sellerSku !== "Not Mapped" && (
@@ -1411,7 +1535,7 @@ export default function MyntraPicklist() {
                                   type="button"
                                   onClick={() => copyToClipboard(item.sellerSku)}
                                   title="Copy Seller SKU"
-                                  className="text-slate-400 hover:text-slate-600 transition"
+                                  className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
                                 >
                                   {copiedSku === item.sellerSku ? (
                                     <Check className="h-3.5 w-3.5 text-emerald-600" />
@@ -1424,31 +1548,35 @@ export default function MyntraPicklist() {
                           </td>
 
                           {/* Qty */}
-                          <td className="px-4 py-3 text-center">
-                            <span className="inline-flex items-center justify-center min-w-[32px] px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <td className="px-3 sm:px-4 py-3.5 text-center">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-900">
                               {item.qty}
                             </span>
                           </td>
 
                           {/* Generate Barcode */}
-                          <td className="px-4 py-3 text-slate-600 font-mono text-[11px]">
-                            {item.generateBarcode}
+                          <td className="px-3 sm:px-4 py-3.5 text-center">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                              {item.generateBarcode || "-"}
+                            </span>
                           </td>
 
                           {/* Myntra SKU */}
-                          <td className="px-4 py-3 text-slate-500 font-mono text-[11px]">
-                            {item.myntraSku}
+                          <td className="px-3 sm:px-4 py-3.5 text-center">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                              {item.myntraSku}
+                            </span>
                           </td>
 
                           {/* Status Badge */}
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-3 sm:px-4 py-3.5 text-center">
                             {item.status === "MATCHED" ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                                <CheckCircle2 className="h-3 w-3" /> Matched
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Matched
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
-                                <AlertCircle className="h-3 w-3" /> Unmatched
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
+                                <AlertCircle className="h-3.5 w-3.5" /> Unmatched
                               </span>
                             )}
                           </td>
@@ -1459,18 +1587,34 @@ export default function MyntraPicklist() {
                 </table>
               </div>
 
-              <div className="bg-slate-50 px-4 py-3 border-t border-[#E7EAF0] flex items-center justify-between text-xs text-slate-500">
-                <span>
-                  Showing {filteredItems.length} of {picklistItems.length} unique SKU records
-                </span>
-                <span className="font-semibold text-slate-800">
-                  Total Units: {filteredItems.reduce((acc, i) => acc + i.qty, 0).toLocaleString()}
-                </span>
-              </div>
+              {/* Footer Pagination Bar */}
+              {filteredItems.length > 0 && (
+                <Pagination
+                  page={currentPage}
+                  totalPages={totalPages}
+                  total={filteredItems.length}
+                  limit={itemsPerPage}
+                  itemName="records"
+                  variant="dark"
+                  className="bg-[#0A0E1A] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800"
+                  onPageChange={setCurrentPage}
+                  onLimitChange={(newLimit) => {
+                    setItemsPerPage(newLimit);
+                    setCurrentPage(1);
+                  }}
+                />
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Real-time Processing Progress Modal */}
+      <ProcessingProgressModal
+        isOpen={isProcessing}
+        progress={progress}
+        currentStage={processingStep}
+      />
 
       {/* Missing SKU Modal (Identical to Amazon Order Process) */}
       <MyntraMissingSkuModal

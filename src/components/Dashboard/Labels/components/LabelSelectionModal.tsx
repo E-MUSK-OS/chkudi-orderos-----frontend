@@ -139,7 +139,7 @@ function LabelCard({
       onDoubleClick={onConfirm}
       aria-pressed={selected}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-lg border bg-[#111827] text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E8C16D] focus-visible:ring-offset-2",
+        "group relative flex flex-col overflow-hidden rounded-2xl border bg-[#111827] text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E8C16D] focus-visible:ring-offset-2",
         selected
           ? "border-[#E8C16D] shadow-lg ring-2 ring-[#E8C16D]"
           : "border-stone-800 hover:-translate-y-0.5 hover:border-[#E8C16D]/60 hover:shadow-md"
@@ -259,31 +259,37 @@ export default function LabelSelectionModal({
             {selectedId ? "1 template selected" : "Select a template to continue"}
           </span>
           <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto">
-            <Button variant="outline" className="w-full sm:w-auto" size="sm" onClick={onClose}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 sm:px-6 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition active:scale-[0.98] cursor-pointer"
+            >
               Cancel
-            </Button>
-            <Button
-              className="w-full sm:w-auto"
-              size="sm"
+            </button>
+            <button
+              type="button"
               disabled={!selectedId}
               onClick={() => handleConfirm()}
+              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-transparent bg-[#E8C16D] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] shadow-xs active:scale-[0.98] transition cursor-pointer disabled:opacity-50"
             >
               Confirm Selection
-            </Button>
+            </button>
           </div>
         </div>
       }
     >
       {/* Search bar — same pattern as Toolbar.tsx's order search */}
       <div className="relative mb-6 w-full max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search label templates..."
-          className="pl-10"
-          floatingLabel={false}
-        />
+        <div className="group flex h-10 sm:h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
+          <Search className="h-4 w-4 text-[#B88728] shrink-0" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search label templates..."
+            className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+          />
+        </div>
       </div>
 
       {isLoading ? (

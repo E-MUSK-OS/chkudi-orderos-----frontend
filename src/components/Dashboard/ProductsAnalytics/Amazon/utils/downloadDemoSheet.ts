@@ -146,8 +146,7 @@ export async function downloadAmazonAnalyticsDemoSheet() {
       };
       operatorCell.alignment = {
         vertical: "middle",
-        horizontal: "left",
-        indent: 1,
+        horizontal: "center",
       };
       operatorCell.fill = {
         type: "pattern",
@@ -193,8 +192,7 @@ export async function downloadAmazonAnalyticsDemoSheet() {
       };
       skuCell.alignment = {
         vertical: "middle",
-        horizontal: "left",
-        indent: 1,
+        horizontal: "center",
       };
       skuCell.fill = {
         type: "pattern",
@@ -217,8 +215,7 @@ export async function downloadAmazonAnalyticsDemoSheet() {
       };
       urlCell.alignment = {
         vertical: "middle",
-        horizontal: "left",
-        indent: 1,
+        horizontal: "center",
       };
       urlCell.fill = {
         type: "pattern",

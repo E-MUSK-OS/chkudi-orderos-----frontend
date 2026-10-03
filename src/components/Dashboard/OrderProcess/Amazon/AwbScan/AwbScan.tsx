@@ -106,22 +106,24 @@ export default function AwbScan() {
   return (
     <DashboardLayout title="Amazon AWB Scan">
       <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-              Amazon AWB Scan
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              Verify packed Amazon orders in real-time by scanning AWB tracking numbers. Records are retained for 7 days.
-            </p>
+        {/* Page Header matching Product Analytics Amazon */}
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                Amazon AWB Scan
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Verify packed Amazon orders in real-time by scanning AWB tracking numbers (Retained for 7 days).
+              </p>
+            </div>
+            <a
+              href="/dashboard/order-process/amazon/order-process"
+              className="inline-flex items-center gap-2 self-start md:self-center rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:shadow-md active:scale-[0.98] cursor-pointer"
+            >
+              ← Back to Order Process
+            </a>
           </div>
-          <a
-            href="/dashboard/order-process/amazon/order-process"
-            className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2.5 rounded-xl border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm hover:bg-[#E8C16D] hover:text-[#0A0E1A] transition"
-          >
-            ← Back to Order Process
-          </a>
         </div>
 
         {/* Toolbar: Search, Status Filter, Date, Refresh */}

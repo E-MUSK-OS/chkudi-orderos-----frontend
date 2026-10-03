@@ -67,7 +67,7 @@ function DialogContent({
                 variant="ghost"
                 size="icon"
                 fullWidth={false}
-                className="absolute right-2 top-2 h-9 w-9 p-0"
+                className="absolute right-3 top-3 z-20 h-8 w-8 p-0 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
               />
             }
           >

@@ -69,6 +69,10 @@ export default function Modal({
     w-[95vw]
     p-0
     overflow-hidden
+    !rounded-3xl sm:!rounded-[32px]
+    border border-[#E7E0D2]
+    bg-white
+    shadow-2xl
     max-h-[92dvh] sm:max-h-[90vh]
     flex
     flex-col
@@ -80,16 +84,16 @@ export default function Modal({
     sticky
     top-0
     z-10
-    border-b
-    bg-white
+    border-b border-[#E7E0D2]
+    bg-[#0A0E1A]
     px-4 sm:px-6
-    py-3.5 sm:py-5
+    py-4 sm:py-5
   "
           >
-            {title && <DialogTitle className="text-lg sm:text-xl font-bold text-[#0A0E1A]">{title}</DialogTitle>}
+            {title && <DialogTitle className="text-lg sm:text-xl font-bold text-[#E8C16D]">{title}</DialogTitle>}
 
             {description && (
-              <DialogDescription className="text-xs sm:text-sm text-slate-500">{description}</DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm text-slate-300">{description}</DialogDescription>
             )}
           </DialogHeader>
         )}
@@ -113,7 +117,7 @@ export default function Modal({
       sticky
       bottom-0
       z-10
-      border-t
+      border-t border-[#E7E0D2]
       bg-white
       px-4 sm:px-6
       py-3 sm:py-4

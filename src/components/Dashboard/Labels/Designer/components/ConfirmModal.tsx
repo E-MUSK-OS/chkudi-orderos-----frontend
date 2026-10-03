@@ -1,7 +1,6 @@
 "use client";
 
 import { TriangleAlert, X } from "lucide-react";
-import Button from "@/components/ui/Button";
 
 interface Props {
   open: boolean;
@@ -25,64 +24,65 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[#111827] shadow-2xl">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+      <div className="relative w-full max-w-md overflow-hidden !rounded-3xl border border-[#E7E0D2] bg-white shadow-2xl animate-in zoom-in-95 duration-150">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 transition hover:bg-stone-800 hover:text-white"
+          className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
         {/* Icon */}
         <div className="flex justify-center pt-8">
           <div
-            className={`flex h-20 w-20 items-center justify-center rounded-full ${
-              danger ? "bg-red-100" : "bg-stone-800"
+            className={`flex h-16 w-16 items-center justify-center rounded-2xl ${
+              danger ? "bg-red-50 text-red-600 border border-red-200/60" : "bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30"
             }`}
           >
             <TriangleAlert
-              size={40}
-              className={danger ? "text-red-600" : "text-[#E8C16D]"}
+              size={32}
+              className={danger ? "text-red-600" : "text-[#B88728]"}
             />
           </div>
         </div>
 
         {/* Content */}
-        <div className="px-8 pb-8 pt-6 text-center">
-          <h2 className="text-2xl font-bold text-white">
+        <div className="px-6 pb-6 pt-4 text-center">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#0A0E1A]">
             {title}
           </h2>
 
-          <p className="mt-3 text-sm leading-6 text-slate-300">
+          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-500">
             {description}
           </p>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 bg-[#0A0E1A] px-8 py-6">
-          <Button
-            variant="outline"
+        <div className="flex gap-3 bg-slate-50/80 border-t border-[#E7E0D2] px-6 py-4">
+          <button
+            type="button"
             onClick={onClose}
-            className="w-full h-11 bg-transparent text-gray-300 border-stone-800 hover:bg-stone-800 hover:text-white"
+            className="w-full h-11 rounded-2xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs sm:text-sm font-bold transition shadow-xs cursor-pointer active:scale-[0.98]"
           >
             Cancel
-          </Button>
+          </button>
 
-          <Button
+          <button
+            type="button"
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className={`w-full h-11 ${
+            className={`w-full h-11 rounded-2xl text-xs sm:text-sm font-bold transition shadow-xs cursor-pointer active:scale-[0.98] ${
               danger 
-                ? "bg-red-600 hover:bg-red-700 text-white border-red-600" 
-                : "bg-[#0A0E1A] hover:bg-[#0A0E1A]/90 text-white"
+                ? "bg-red-600 hover:bg-red-700 text-white shadow-red-600/20" 
+                : "bg-[#0A0E1A] hover:bg-slate-900 text-white"
             }`}
           >
             {confirmLabel}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

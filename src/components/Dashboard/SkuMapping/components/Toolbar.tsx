@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Loader2, Search, Upload } from "lucide-react";
-
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import { Download, FileSpreadsheet, Loader2, Search, Upload, X } from "lucide-react";
 import {
   downloadDemoSheet,
   downloadAllRecordsSheet,
@@ -41,79 +38,89 @@ export default function Toolbar({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-      {/* Left */}
-      <div className="flex flex-1 items-center">
-        <div className="relative w-full max-w-md">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10"
-          />
-
-          <Input
+    <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
+      {/* Left side: Searchbar matching OrderOS theme */}
+      <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
+        <div className="group flex h-10 sm:h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white">
+          <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+            <Search className="h-3.5 w-3.5" />
+          </div>
+          <input
+            type="text"
             value={search}
-            placeholder="Search Short SKU / Full SKU / Barcode SKU / OrderCook SKU"
-            className="h-11 pl-10 text-sm"
-            containerClassName="space-y-0"
             onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search Short SKU, Full SKU, Barcode SKU..."
+            className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+              title="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Right */}
-      <div className="flex flex-wrap items-center gap-3 shrink-0">
-        <div className="flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4">
-          <span className="text-sm font-medium text-slate-500">Total</span>
-
-          <span className="rounded bg-[#0A0E1A] px-2 py-0.5 text-sm font-semibold text-[#E8C16D]">
+      {/* Right side: Total and Action Buttons */}
+      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+        {/* Total Badge */}
+        <div className="inline-flex h-10 sm:h-11 items-center gap-2 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 px-3.5 sm:px-4 shadow-xs">
+          <span className="text-xs sm:text-sm font-semibold text-slate-500">Total:</span>
+          <span className="rounded-lg bg-[#0A0E1A] px-2.5 py-0.5 text-xs sm:text-sm font-bold text-[#E8C16D]">
             {total}
           </span>
         </div>
 
-        <Button
-          variant="outline"
-          fullWidth={false}
-          className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
+        {/* Generate Sheet */}
+        <button
+          type="button"
           onClick={onGenerateSheet}
+          className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
         >
-          Generate Sheet
-        </Button>
+          <FileSpreadsheet className="h-4 w-4 text-[#B88728]" />
+          <span>Generate Sheet</span>
+        </button>
 
+        {/* Download Sheet / Demo Sheet */}
         {total > 0 ? (
-          <Button
-            variant="outline"
-            fullWidth={false}
+          <button
+            type="button"
             disabled={isExporting}
             onClick={handleExport}
-            className="h-11 px-5 text-sm rounded-lg whitespace-nowrap flex items-center gap-2 border-[#C89B3C]/50 text-[#C89B3C] hover:bg-[#FFF8E7] hover:border-[#C89B3C]"
+            className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer disabled:opacity-60"
           >
             {isExporting ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin text-[#B88728]" />
             ) : (
-              <Download size={16} />
+              <Download className="h-4 w-4 text-[#B88728]" />
             )}
-            Download Sheet
-          </Button>
+            <span>Download Sheet</span>
+          </button>
         ) : (
-          <Button
-            variant="outline"
-            fullWidth={false}
+          <button
+            type="button"
             onClick={handleExport}
-            className="h-11 px-5 text-sm rounded-lg whitespace-nowrap flex items-center gap-2 border-[#C89B3C]/50 text-[#C89B3C] hover:bg-[#FFF8E7] hover:border-[#C89B3C]"
+            className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
+            title="Download sample Excel template"
           >
-            <Download size={16} />
-            Demo Sheet
-          </Button>
+            <Download className="h-4 w-4 text-[#B88728]" />
+            <span>Demo Sheet</span>
+          </button>
         )}
 
-        <Button
-          fullWidth={false}
-          className="h-11 px-5 text-sm rounded-lg whitespace-nowrap flex items-center gap-2"
+        {/* Import Excel */}
+        <button
+          type="button"
           onClick={onImport}
+          className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer"
         >
-          <Upload size={16} />
-          Import Excel
-        </Button>
+          <Upload className="h-4 w-4" />
+          <span>Import Excel</span>
+        </button>
       </div>
     </div>
   );

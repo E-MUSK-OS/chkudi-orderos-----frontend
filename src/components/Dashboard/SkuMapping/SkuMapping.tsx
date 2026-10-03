@@ -42,6 +42,20 @@ export default function SkuMappingPage() {
   return (
     <DashboardLayout title="Godown Inventory Sheet">
       <div className="space-y-6">
+        {/* Top Header Card matching OrderOS theme */}
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                Godown Inventory Sheet
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+                Manage SKU barcode mappings and generate godown inventory sheets for warehouse operations.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <Toolbar
           search={search}
           total={data?.pagination.total ?? 0}

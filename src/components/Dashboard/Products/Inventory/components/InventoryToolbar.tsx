@@ -1,26 +1,27 @@
 "use client";
 
-import { Download, RotateCcw, Search, Upload } from "lucide-react";
-import { FileUp, FileDown } from "lucide-react";
-
-import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
+import { useState } from "react";
+import {
+  Download,
+  RotateCcw,
+  Search,
+  Upload,
+  ArrowRightLeft,
+  X,
+  Warehouse,
+  Boxes,
+} from "lucide-react";
 
 import type { InventoryFilters } from "../types/inventory.types";
-import { useState } from "react";
 import { useWarehouses } from "@/components/Dashboard/Warehouse/hooks/useWarehouse";
 import ImportInventoryModal from "./ImportInventoryModal";
-import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
-import { ArrowRightLeft } from "lucide-react";
+import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 import CreateTransferModal from "../../Transfer/components/CreateTransferModal";
 
 interface Props {
   filters: InventoryFilters;
-
   setFilters: React.Dispatch<React.SetStateAction<InventoryFilters>>;
-
   onRefresh: () => void;
-
   onExport: () => void;
   isExporting: boolean;
 }
@@ -36,19 +37,18 @@ const InventoryToolbar = ({
   const [transferOpen, setTransferOpen] = useState(false);
   const { data: warehouseResponse } = useWarehouses();
 
-  const warehouseOptions: SelectOption[] = [
+  const warehouseOptions = [
     {
       label: "All Warehouses",
       value: "",
     },
-
     ...(warehouseResponse?.data?.map((warehouse) => ({
       label: warehouse.warehouseName,
       value: warehouse.id,
     })) ?? []),
   ];
 
-  const statusOptions: SelectOption[] = [
+  const statusOptions = [
     {
       label: "All Status",
       value: "",
@@ -66,106 +66,158 @@ const InventoryToolbar = ({
       value: "OUT_OF_STOCK",
     },
   ];
+
+  const isFilterActive =
+    (filters.search && filters.search.trim() !== "") ||
+    Boolean(filters.warehouseId) ||
+    Boolean(filters.status);
+
   return (
-    <div className="flex flex-col gap-4 border bg-[#0A0E1A] p-4 lg:flex-row lg:items-center lg:justify-between">
-      {/* ====================================================== */}
-      {/* Search */}
-      {/* ====================================================== */}
+    <>
+      <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
+        {/* Left side: Searchbar matching OrderOS theme with increased width */}
+        <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
+          <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white">
+            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+              <Search className="h-3.5 w-3.5" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search Product / SKU..."
+              value={filters.search ?? ""}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  page: 1,
+                  search: e.target.value,
+                }))
+              }
+              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+            />
+            {filters.search && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    page: 1,
+                    search: "",
+                  }))
+                }
+                className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                title="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
 
-      <div className="relative w-full lg:max-w-sm">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          size={18}
-        />
+        {/* Right side: Filters & Actions matching Amazon Analytics */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {/* Warehouse Dropdown */}
+          <ThemeSelectDropdown
+            ariaLabel="Filter by Warehouse"
+            value={filters.warehouseId ?? ""}
+            onChange={(val) =>
+              setFilters((prev) => ({
+                ...prev,
+                page: 1,
+                warehouseId: val,
+              }))
+            }
+            options={warehouseOptions}
+            icon={<Warehouse className="h-3.5 w-3.5" />}
+          />
 
-        <Input
-          placeholder="Search Product / SKU..."
-          value={filters.search ?? ""}
-          onChange={(e) =>
-            setFilters((prev) => ({
-              ...prev,
-              page: 1,
-              search: e.target.value,
-            }))
-          }
-          className="
-              h-12
-              w-full
-              border
-              border-slate-700
-              bg-[#111827]
-              pl-11
-              pr-4
-              text-white
-              outline-none
-              transition
-              focus:border-[#E8C16D]
-            "
-        />
+          {/* Status Dropdown */}
+          <ThemeSelectDropdown
+            ariaLabel="Filter by Status"
+            value={filters.status ?? ""}
+            onChange={(val) =>
+              setFilters((prev) => ({
+                ...prev,
+                page: 1,
+                status: val,
+              }))
+            }
+            options={statusOptions}
+            icon={<Boxes className="h-3.5 w-3.5" />}
+          />
+
+          {/* Reset filter button if active */}
+          {isFilterActive && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  page: 1,
+                  search: "",
+                  warehouseId: "",
+                  status: "",
+                }))
+              }
+              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-600 hover:text-red-700 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+              title="Reset all filters"
+            >
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-red-100 text-red-600 shrink-0">
+                <X className="h-3.5 w-3.5" />
+              </div>
+              <span>Reset</span>
+            </button>
+          )}
+
+          {/* Transfer Button */}
+          <button
+            type="button"
+            onClick={() => setTransferOpen(true)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] active:scale-[0.98]"
+          >
+            <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0">
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+            </div>
+            <span>Transfer</span>
+          </button>
+
+          {/* Import Button */}
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] active:scale-[0.98]"
+          >
+            <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0">
+              <Upload className="h-3.5 w-3.5" />
+            </div>
+            <span>Import</span>
+          </button>
+
+          {/* Export Button */}
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={isExporting}
+            className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer disabled:opacity-50"
+            title="Export inventory"
+          >
+            <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0">
+              <Download className="h-3.5 w-3.5" />
+            </div>
+            <span>{isExporting ? "Exporting..." : "Export"}</span>
+          </button>
+
+          {/* Refresh Button */}
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="inline-flex items-center justify-center h-9 sm:h-10 w-9 sm:w-10 rounded-2xl border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-slate-700 transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+            title="Refresh Inventory"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="w-full lg:w-72">
-        <ReactSelect
-          options={warehouseOptions}
-          value={
-            warehouseOptions.find(
-              (option) => option.value === (filters.warehouseId ?? ""),
-            ) ?? warehouseOptions[0]
-          }
-          onChange={(option) =>
-            setFilters((prev) => ({
-              ...prev,
-              page: 1,
-              warehouseId: option?.value ?? "",
-            }))
-          }
-          placeholder="Select Warehouse"
-        />
-      </div>
-
-      <div className="w-full lg:w-56">
-        <ReactSelect
-          options={statusOptions}
-          value={
-            statusOptions.find(
-              (option) => option.value === (filters.status ?? ""),
-            ) ?? statusOptions[0]
-          }
-          onChange={(option) =>
-            setFilters((prev) => ({
-              ...prev,
-              page: 1,
-              status: option?.value ?? "",
-            }))
-          }
-          placeholder="Stock Status"
-        />
-      </div>
-
-      {/* ====================================================== */}
-      {/* Actions */}
-      {/* ====================================================== */}
-
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" onClick={() => setTransferOpen(true)}>
-          <ArrowRightLeft size={16} className="mr-2" />
-          Transfer
-        </Button>
-
-        <Button variant="outline" onClick={() => setImportOpen(true)}>
-          <FileUp size={16} className="mr-2" />
-          Import
-        </Button>
-
-        <Button variant="outline" onClick={onExport} loading={isExporting}>
-          <FileDown size={16} className="mr-2" />
-          Export
-        </Button>
-        <Button variant="secondary" onClick={onRefresh}>
-          <RotateCcw size={16} className="mr-2" />
-          Refresh
-        </Button>
-      </div>
       <ImportInventoryModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
@@ -175,7 +227,7 @@ const InventoryToolbar = ({
         open={transferOpen}
         onClose={() => setTransferOpen(false)}
       />
-    </div>
+    </>
   );
 };
 

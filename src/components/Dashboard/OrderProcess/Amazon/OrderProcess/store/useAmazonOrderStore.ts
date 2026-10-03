@@ -342,6 +342,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
             orderType: r.orderType,
             totalQuantity: r.totalQuantity,
             asinsCount: r.asinsCount,
+            combinedPages: r.combinedPages,
           }));
 
           localStorage.setItem(

@@ -2,10 +2,22 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { UploadCloud, FileSpreadsheet, Search, ArrowUpDown, FileText, CheckCircle2, RotateCcw, ArrowRight, Trash2, ChevronLeft, ChevronRight, Filter, ChevronDown } from 'lucide-react';
+import {
+  UploadCloud,
+  FileSpreadsheet,
+  Search,
+  ArrowUpDown,
+  FileText,
+  CheckCircle2,
+  RotateCcw,
+  ArrowRight,
+  Trash2,
+  ChevronDown,
+  Plus,
+  Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/Dashboard/layout/DashboardLayout';
-import Button from "@/components/ui/Button";
 import ProcessingProgressModal from './components/ProcessingProgressModal';
 import Pagination from "@/components/ui/Pagination";
 
@@ -34,7 +46,7 @@ export default function StockAnalysis() {
 
   // Pagination & Filters
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedBrand, setSelectedBrand] = useState('All');
   const [reportDays, setReportDays] = useState<number>(30);
 
@@ -397,6 +409,8 @@ export default function StockAnalysis() {
   }, [filteredAndSortedResults]);
 
   const isReadyToSubmit = orders.length > 0 && returns.length > 0;
+  const totalOrdersSize = orders.reduce((sum, item) => sum + item.file.size, 0);
+  const totalReturnsSize = returns.reduce((sum, item) => sum + item.file.size, 0);
 
   const handleDownloadExcel = () => {
     if (filteredAndSortedResults.length === 0) {
@@ -404,7 +418,7 @@ export default function StockAnalysis() {
       return;
     }
 
-    const dataToExport = filteredAndSortedResults.map(r => ({
+    const dataToExport = filteredAndSortedResults.map((r) => ({
       'Brand': r.brand,
       'Myntra SKU': r.myntraSkuCode,
       'Seller SKU': r.sellerSkuCode,
@@ -414,7 +428,7 @@ export default function StockAnalysis() {
       'Avg Orders/Day': r.avgOrdersPerDay,
       'Avg Returns/Day': r.avgReturnsPerDay,
       '15 Days Avg (Net)': r.req15Days,
-      '30 Days Avg (Net)': r.req30Days
+      '30 Days Avg (Net)': r.req30Days,
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -426,45 +440,36 @@ export default function StockAnalysis() {
 
   return (
     <DashboardLayout title="Myntra Stock Analysis">
-      <div className="space-y-6 w-full p-2 sm:p-4">
+      <div className="space-y-4 sm:space-y-6">
+        {/* Real-time Progress Modal */}
         <ProcessingProgressModal
           isOpen={isProcessing}
           progress={progress}
           currentStage={currentStage}
         />
 
-        {/* Header Information Banner */}
+        {/* Header Information Banner matching Amazon Order Process */}
         <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-md bg-[#FFF9EC] px-2.5 py-1 text-xs font-semibold text-[#B88728] border border-[#E8C16D]/30">
-                  Stock Analysis
-                </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  Auto-Calculate Net Requirements
-                </span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A]">
-                Upload Orders and Returns
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
-                Upload your Myntra Orders and Returns Excel/CSV files to automatically cross-verify SKUs and calculate exact net stock required.
+            <div className="space-y-1.5 min-w-0 max-w-2xl">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                Myntra Stock Analysis
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Upload Orders and Returns Excel/CSV files to calculate net stock requirements.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 sm:px-5 py-2.5 sm:py-3.5 text-left md:text-right shadow-2xs w-full sm:w-auto">
-                <div className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Files Ready
-                </div>
-                <div className="text-base sm:text-lg font-black text-[#0A0E1A] mt-0.5 flex items-center gap-2">
-                  <span className={orders.length > 0 ? "text-emerald-600" : "text-slate-400"}>
-                    {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
+            {/* Counter Badge */}
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 self-start md:self-center">
+              <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 shadow-xs">
+                <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] whitespace-nowrap">
+                  <span className={orders.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+                    {orders.length} Order{orders.length !== 1 ? "s" : ""}
                   </span>
-                  <span className="text-slate-300">•</span>
-                  <span className={returns.length > 0 ? "text-emerald-600" : "text-slate-400"}>
-                    {returns.length} {returns.length === 1 ? 'Return' : 'Returns'}
+                  <span className="text-slate-300 mx-1.5">•</span>
+                  <span className={returns.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+                    {returns.length} Return{returns.length !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
@@ -473,224 +478,463 @@ export default function StockAnalysis() {
         </div>
 
         {/* Side-by-Side Upload Sections */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* SECTION 1: ORDERS UPLOAD */}
-          <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:gap-6 lg:grid-cols-2">
+          {/* ======================================================== */}
+          {/* SECTION 1: ORDERS FILE UPLOAD */}
+          {/* ======================================================== */}
+          <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-200/60 shrink-0">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
-                    1. Orders File
+                <div className="min-w-0">
+                  <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
+                    1. Orders File {orders.length > 0 ? `(${orders.length})` : ""}
                   </h3>
-                  <p className="text-xs text-slate-500">Upload orders Excel/CSV</p>
+                  <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                    Upload one or multiple .xlsx, .xls, .csv files
+                  </p>
                 </div>
               </div>
 
               {orders.length > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {orders.length} Ready
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
                   Required
                 </span>
               )}
             </div>
 
-            <div className="mt-4 sm:mt-5 flex-1 flex flex-col gap-3">
-              <div
-                onClick={() => ordersInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setIsDraggingOrders(true); }}
-                onDragLeave={(e) => { e.preventDefault(); setIsDraggingOrders(false); }}
-                onDrop={(e) => { e.preventDefault(); setIsDraggingOrders(false); if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'orders'); }}
-                className={`group relative flex ${orders.length > 0 ? 'min-h-[100px] py-3' : 'min-h-[170px] sm:min-h-[220px] p-4 sm:p-6'} cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed text-center transition-all ${isDraggingOrders
-                  ? "border-[#E8C16D] bg-[#FFF9EC]"
-                  : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+            {/* Upload Box / Selected Files View */}
+            <div className="mt-4 sm:mt-5 flex-1 flex flex-col justify-between">
+              {orders.length === 0 ? (
+                <div
+                  onClick={() => ordersInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOrders(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOrders(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOrders(false);
+                    if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'orders');
+                  }}
+                  className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
+                    isDraggingOrders
+                      ? "border-[#E8C16D] bg-[#FFF9EC]"
+                      : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
                   }`}
-              >
-                {!orders.length && (
-                  <div className="mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-blue-500">
+                >
+                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-blue-600">
                     <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                )}
-                <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">{orders.length > 0 ? 'Click or drag to add more orders files' : 'Click to upload or drag & drop'}</p>
-                {!orders.length && <p className="mt-1 text-[11px] sm:text-xs text-slate-500">Excel or CSV files only</p>}
-                {!orders.length && (
-                  <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
-                    <FileSpreadsheet className="h-3.5 w-3.5 text-blue-500" /> Browse Orders
-                  </div>
-                )}
-              </div>
 
-              {orders.length > 0 && (
-                <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/20 p-2 max-h-[140px] overflow-y-auto">
-                  {orders.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2 shadow-2xs">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600">
-                          <FileText className="h-3.5 w-3.5" />
+                  <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                    Click to upload or drag & drop Orders
+                  </p>
+                  <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
+                    Select one or multiple Excel / CSV (<code className="font-mono text-blue-600 font-semibold">.xlsx, .csv</code>) files
+                  </p>
+
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-blue-500" />
+                    Browse Orders
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => ordersInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOrders(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOrders(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOrders(false);
+                    if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'orders');
+                  }}
+                  className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
+                    isDraggingOrders
+                      ? "border-[#E8C16D] bg-[#FFF9EC]"
+                      : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                  }`}
+                >
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {/* Scrollable file cards */}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="max-h-36 sm:max-h-44 overflow-y-auto space-y-2 pr-1 cursor-default"
+                    >
+                      {orders.map((item, idx) => (
+                        <div
+                          key={`${item.file.name}_${idx}`}
+                          className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600 border border-blue-200/50">
+                              <FileSpreadsheet className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-bold text-[#0A0E1A]" title={item.file.name}>
+                                {item.file.name}
+                              </p>
+                              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                                {formatFileSize(item.file.size)} • {item.data.length} rows
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOrders((prev) => prev.filter((_, i) => i !== idx));
+                              setResults([]);
+                            }}
+                            title="Remove this file"
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={item.file.name}>{item.file.name}</p>
-                          <p className="text-[10px] text-slate-500">{formatFileSize(item.file.size)} • {item.data.length} rows</p>
-                        </div>
-                      </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer summary bar */}
+                  <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                      <span className="whitespace-nowrap">
+                        {orders.length} file{orders.length > 1 ? "s" : ""}
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-emerald-700 font-medium truncate">
+                        {formatFileSize(totalOrdersSize)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
-                        onClick={() => {
-                          setOrders(prev => prev.filter((_, i) => i !== idx));
-                          setResults([]);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          ordersInputRef.current?.click();
                         }}
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                        <span>Add More</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOrders([]);
+                          setResults([]);
+                          if (ordersInputRef.current) ordersInputRef.current.value = "";
+                        }}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                        <span>Clear All</span>
                       </button>
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
-              <input ref={ordersInputRef} type="file" hidden multiple accept=".xlsx,.xls,.csv" onChange={(e) => { if (e.target.files) handleFileUpload(e.target.files, 'orders'); }} />
+
+              {/* Hidden File Input */}
+              <input
+                ref={ordersInputRef}
+                type="file"
+                hidden
+                multiple
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => {
+                  if (e.target.files) handleFileUpload(e.target.files, 'orders');
+                }}
+              />
             </div>
           </div>
 
-          {/* SECTION 2: RETURNS UPLOAD */}
-          <div className="flex flex-col rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 shrink-0">
+          {/* ======================================================== */}
+          {/* SECTION 2: RETURNS FILE UPLOAD */}
+          {/* ======================================================== */}
+          <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/60 shrink-0">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base">
-                    2. Returns File
+                <div className="min-w-0">
+                  <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
+                    2. Returns File {returns.length > 0 ? `(${returns.length})` : ""}
                   </h3>
-                  <p className="text-xs text-slate-500">Upload returns Excel/CSV</p>
+                  <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                    Upload one or multiple .xlsx, .xls, .csv files
+                  </p>
                 </div>
               </div>
 
               {returns.length > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {returns.length} Ready
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
                   Required
                 </span>
               )}
             </div>
 
-            <div className="mt-4 sm:mt-5 flex-1 flex flex-col gap-3">
-              <div
-                onClick={() => returnsInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setIsDraggingReturns(true); }}
-                onDragLeave={(e) => { e.preventDefault(); setIsDraggingReturns(false); }}
-                onDrop={(e) => { e.preventDefault(); setIsDraggingReturns(false); if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'returns'); }}
-                className={`group relative flex ${returns.length > 0 ? 'min-h-[100px] py-3' : 'min-h-[170px] sm:min-h-[220px] p-4 sm:p-6'} cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed text-center transition-all ${isDraggingReturns
-                  ? "border-[#E8C16D] bg-[#FFF9EC]"
-                  : "border-slate-300 bg-slate-50/50 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+            {/* Upload Box / Selected Files View */}
+            <div className="mt-4 sm:mt-5 flex-1 flex flex-col justify-between">
+              {returns.length === 0 ? (
+                <div
+                  onClick={() => returnsInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingReturns(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingReturns(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingReturns(false);
+                    if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'returns');
+                  }}
+                  className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
+                    isDraggingReturns
+                      ? "border-[#E8C16D] bg-[#FFF9EC]"
+                      : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
                   }`}
-              >
-                {!returns.length && (
-                  <div className="mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm transition-transform group-hover:scale-110 group-hover:text-amber-500">
+                >
+                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600">
                     <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                )}
-                <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A]">{returns.length > 0 ? 'Click or drag to add more returns files' : 'Click to upload or drag & drop'}</p>
-                {!returns.length && <p className="mt-1 text-[11px] sm:text-xs text-slate-500">Excel or CSV files only</p>}
-                {!returns.length && (
-                  <div className="mt-3 sm:mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0A0E1A] bg-white px-3 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D]">
-                    <FileSpreadsheet className="h-3.5 w-3.5 text-amber-500" /> Browse Returns
-                  </div>
-                )}
-              </div>
 
-              {returns.length > 0 && (
-                <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/20 p-2 max-h-[140px] overflow-y-auto">
-                  {returns.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200/60 bg-white p-2 shadow-2xs">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600">
-                          <FileText className="h-3.5 w-3.5" />
+                  <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                    Click to upload or drag & drop Returns
+                  </p>
+                  <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
+                    Select one or multiple Excel / CSV (<code className="font-mono text-amber-600 font-semibold">.xlsx, .csv</code>) files
+                  </p>
+
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-amber-500" />
+                    Browse Returns
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => returnsInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingReturns(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingReturns(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingReturns(false);
+                    if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'returns');
+                  }}
+                  className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
+                    isDraggingReturns
+                      ? "border-[#E8C16D] bg-[#FFF9EC]"
+                      : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                  }`}
+                >
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {/* Scrollable file cards */}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="max-h-36 sm:max-h-44 overflow-y-auto space-y-2 pr-1 cursor-default"
+                    >
+                      {returns.map((item, idx) => (
+                        <div
+                          key={`${item.file.name}_${idx}`}
+                          className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600 border border-amber-200/50">
+                              <FileSpreadsheet className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-bold text-[#0A0E1A]" title={item.file.name}>
+                                {item.file.name}
+                              </p>
+                              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                                {formatFileSize(item.file.size)} • {item.data.length} rows
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReturns((prev) => prev.filter((_, i) => i !== idx));
+                              setResults([]);
+                            }}
+                            title="Remove this file"
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-semibold text-[#0A0E1A]" title={item.file.name}>{item.file.name}</p>
-                          <p className="text-[10px] text-slate-500">{formatFileSize(item.file.size)} • {item.data.length} rows</p>
-                        </div>
-                      </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer summary bar */}
+                  <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                      <span className="whitespace-nowrap">
+                        {returns.length} file{returns.length > 1 ? "s" : ""}
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-emerald-700 font-medium truncate">
+                        {formatFileSize(totalReturnsSize)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
-                        onClick={() => {
-                          setReturns(prev => prev.filter((_, i) => i !== idx));
-                          setResults([]);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          returnsInputRef.current?.click();
                         }}
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                        <span>Add More</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReturns([]);
+                          setResults([]);
+                          if (returnsInputRef.current) returnsInputRef.current.value = "";
+                        }}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                        <span>Clear All</span>
                       </button>
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
-              <input ref={returnsInputRef} type="file" hidden multiple accept=".xlsx,.xls,.csv" onChange={(e) => { if (e.target.files) handleFileUpload(e.target.files, 'returns'); }} />
+
+              {/* Hidden File Input */}
+              <input
+                ref={returnsInputRef}
+                type="file"
+                hidden
+                multiple
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => {
+                  if (e.target.files) handleFileUpload(e.target.files, 'returns');
+                }}
+              />
             </div>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm">
-          <Button
+        {/* Action Controls Bar matching Amazon Order Process */}
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm">
+          <button
             type="button"
-            variant="outline"
-            size="md"
-            fullWidth={false}
             disabled={orders.length === 0 && returns.length === 0}
             onClick={handleClearAll}
-            leftIcon={<RotateCcw className="h-4 w-4" />}
-            className="w-full sm:w-auto"
+            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
           >
-            Clear Files
-          </Button>
+            <RotateCcw className="h-4 w-4" />
+            <span>Clear Files</span>
+          </button>
 
           <div className="flex w-full items-center gap-3 sm:w-auto">
-            <Button
+            <button
               type="button"
-              variant="secondary"
-              size="md"
-              fullWidth={false}
-              loading={isProcessing}
               disabled={!isReadyToSubmit || isProcessing}
               onClick={handleAnalyze}
-              rightIcon={<ArrowRight className="h-4 w-4" />}
-              className="w-full sm:w-auto min-w-0 sm:min-w-[200px] text-xs sm:text-sm"
+              className="w-full sm:w-auto inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-6 sm:px-8 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs hover:bg-[#d4af5a] transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing
-                ? "Analyzing Data..."
-                : isReadyToSubmit
-                  ? "Analyze Stock"
-                  : "Upload Files"}
-            </Button>
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Analyzing Data...</span>
+                </>
+              ) : isReadyToSubmit ? (
+                <>
+                  <span>
+                    Analyze Stock ({orders.length} Order{orders.length !== 1 ? "s" : ""}, {returns.length} Return{returns.length !== 1 ? "s" : ""})
+                  </span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  <span>Upload Required Files</span>
+                  <ArrowRight className="h-4 w-4 opacity-50" />
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Analysis Results */}
+        {/* Analysis Results View */}
         {results.length > 0 && (
           <div className="mt-6 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Top Action Bar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Days Info */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-10 w-full sm:w-auto">
-                <span className="text-[13px] font-medium text-slate-500 whitespace-nowrap">Report Days:</span>
-                <span className="text-[15px] font-bold text-slate-800">{reportDays}</span>
+              <div className="inline-flex h-11 items-center px-4 rounded-2xl border border-[#E7E0D2] bg-white shadow-2xs gap-2 shrink-0">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                  Report Days:
+                </span>
+                <span className="text-sm font-black text-[#0A0E1A]">{reportDays}</span>
               </div>
 
               {/* Search Bar */}
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <Search size={18} />
+                </div>
                 <input
                   type="text"
                   placeholder="Search SKU or Brand..."
@@ -699,34 +943,44 @@ export default function StockAnalysis() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 text-[15px] font-medium focus:outline-none focus:ring-1 focus:ring-[#0A0E1A] h-10"
+                  className="w-full h-11 pl-11 pr-4 rounded-2xl border border-[#E7E0D2] bg-white text-xs sm:text-sm font-medium text-[#0A0E1A] placeholder:text-slate-400 focus:outline-none focus:border-[#0A0E1A] focus:ring-1 focus:ring-[#0A0E1A] shadow-2xs transition"
                 />
               </div>
 
-              {/* Filter */}
-              <div className="flex items-center gap-3">
-                <div className="relative h-10 w-full sm:w-56" ref={brandDropdownRef}>
+              {/* Filter and Download Buttons */}
+              <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                <div className="relative h-11 w-full sm:w-56" ref={brandDropdownRef}>
                   <button
+                    type="button"
                     onClick={() => setIsBrandDropdownOpen(!isBrandDropdownOpen)}
-                    className="w-full h-full bg-[#0A0E1A] text-[#E8C16D] pl-4 pr-10 py-2 text-[15px] font-semibold flex items-center justify-between focus:outline-none"
+                    className="w-full h-full bg-[#0A0E1A] text-[#E8C16D] pl-4 pr-10 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between border border-transparent hover:bg-slate-900 active:scale-[0.98] transition shadow-xs focus:outline-none cursor-pointer"
                   >
-                    <span className="truncate">{selectedBrand === 'All' ? 'All Brands' : selectedBrand}</span>
-                    <ChevronDown className="h-4 w-4 absolute right-4 pointer-events-none stroke-[2.5]" />
+                    <span className="truncate">
+                      {selectedBrand === 'All' ? 'All Brands' : selectedBrand}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 absolute right-3.5 pointer-events-none stroke-[2.5] transition-transform duration-200 ${
+                        isBrandDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
                   </button>
+
                   {isBrandDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-0.5 w-full bg-[#0A0E1A] shadow-xl z-50 max-h-60 overflow-auto">
-                      {uniqueBrands.map(brand => (
+                    <div className="absolute top-full left-0 mt-1.5 w-full bg-[#0A0E1A] rounded-2xl border border-slate-800 shadow-xl z-50 max-h-60 overflow-y-auto p-1.5 animate-in fade-in zoom-in-95 duration-100">
+                      {uniqueBrands.map((brand) => (
                         <button
                           key={brand}
+                          type="button"
                           onClick={() => {
                             setSelectedBrand(brand);
                             setCurrentPage(1);
                             setIsBrandDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-4 py-3 text-[15px] font-semibold transition-colors ${selectedBrand === brand
-                              ? 'bg-[#E8C16D] text-[#0A0E1A]'
-                              : 'text-white hover:bg-[#E8C16D] hover:text-[#0A0E1A]'
-                            }`}
+                          className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                            selectedBrand === brand
+                              ? 'bg-[#E8C16D] text-[#0A0E1A] shadow-xs'
+                              : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                          }`}
                         >
                           {brand === 'All' ? 'All Brands' : brand}
                         </button>
@@ -737,92 +991,180 @@ export default function StockAnalysis() {
 
                 {/* Download Button */}
                 <button
+                  type="button"
                   onClick={handleDownloadExcel}
-                  className="h-10 bg-[#E8C16D] text-[#0A0E1A] px-4 py-2 text-[15px] font-semibold flex items-center gap-2 hover:bg-[#D4A343] transition-colors focus:outline-none whitespace-nowrap"
+                  className="h-11 bg-[#E8C16D] text-[#0A0E1A] px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-[#d4af5a] transition active:scale-[0.98] shadow-xs focus:outline-none whitespace-nowrap cursor-pointer"
                   title="Download Excel Report"
                 >
-                  <FileSpreadsheet className="h-5 w-5 stroke-[2.5]" />
-                  Download
+                  <FileSpreadsheet className="h-4 w-4 stroke-[2.5]" />
+                  <span>Download</span>
                 </button>
               </div>
             </div>
 
             {/* Table Area */}
-            <div className="border border-slate-200 shadow-sm bg-white">
-              <div className="overflow-x-auto">
-                <table className="w-full text-center border-collapse whitespace-nowrap">
+            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm flex flex-col">
+              <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                <table className="w-full text-center border-collapse whitespace-nowrap font-sans text-xs sm:text-sm">
                   <thead>
-                    <tr className="bg-[#0A0E1A]">
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('brand')}>
-                        <div className="flex items-center justify-center gap-1.5">Brand <ArrowUpDown size={14} className="opacity-50" /></div>
+                    <tr className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('brand')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Brand <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('myntraSkuCode')}>
-                        <div className="flex items-center justify-center gap-1.5">Myntra SKU <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('myntraSkuCode')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Myntra SKU <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('sellerSkuCode')}>
-                        <div className="flex items-center justify-center gap-1.5">Seller SKU <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('sellerSkuCode')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Seller SKU <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('orders')}>
-                        <div className="flex items-center justify-center gap-1.5">Orders <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('orders')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Orders <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('returns')}>
-                        <div className="flex items-center justify-center gap-1.5">Returns <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('returns')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Returns <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('netOrders')}>
-                        <div className="flex items-center justify-center gap-1.5">Net Orders <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('netOrders')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Net Orders <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('avgOrdersPerDay')}>
-                        <div className="flex items-center justify-center gap-1.5">Avg Orders/Day <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('avgOrdersPerDay')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Avg Orders/Day <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('avgReturnsPerDay')}>
-                        <div className="flex items-center justify-center gap-1.5">Avg Returns/Day <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('avgReturnsPerDay')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          Avg Returns/Day <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('req15Days')}>
-                        <div className="flex items-center justify-center gap-1.5">15 Days Avg <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('req15Days')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          15 Days Avg <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
-                      <th className="p-3.5 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleSort('req30Days')}>
-                        <div className="flex items-center justify-center gap-1.5">30 Days Avg <ArrowUpDown size={14} className="opacity-50" /></div>
+                      <th
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        onClick={() => handleSort('req30Days')}
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          30 Days Avg <ArrowUpDown size={14} className="opacity-70" />
+                        </div>
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm">
                     {paginatedResults.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="p-8 text-center text-slate-500">
+                        <td colSpan={10} className="py-12 text-center text-slate-500">
                           <div className="flex flex-col items-center justify-center gap-2">
-                            <Search className="h-6 w-6 text-slate-300" />
-                            <p className="text-sm">No results found</p>
+                            <Search className="h-8 w-8 text-slate-300" />
+                            <p className="font-bold text-[#0A0E1A]">No results found</p>
+                            <p className="text-xs text-slate-400">
+                              Try adjusting your search query or brand filter.
+                            </p>
                           </div>
                         </td>
                       </tr>
                     ) : (
                       paginatedResults.map((result, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors odd:bg-white even:bg-slate-50/50">
-                          <td className="p-4 text-sm text-slate-700">{result.brand}</td>
-                          <td className="p-4 text-sm text-slate-700">{result.myntraSkuCode}</td>
-                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.sellerSkuCode}</td>
-                          <td className="p-4 text-sm text-slate-700">{result.orders}</td>
-                          <td className="p-4 text-sm text-slate-700">{result.returns}</td>
-                          <td className="p-4 text-sm font-bold text-[#0A0E1A]">{result.netOrders}</td>
-                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.avgOrdersPerDay}</td>
-                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.avgReturnsPerDay}</td>
-                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.req15Days}</td>
-                          <td className="p-4 text-sm font-medium text-[#0A0E1A]">{result.req30Days}</td>
+                        <tr
+                          key={idx}
+                          className="transition-colors hover:bg-[#FAF8F5]"
+                        >
+                          <td className="p-3.5 sm:p-4 text-slate-700">{result.brand}</td>
+                          <td className="p-3.5 sm:p-4 text-slate-700">{result.myntraSkuCode}</td>
+                          <td className="p-3.5 sm:p-4 font-bold text-[#0A0E1A]">
+                            {result.sellerSkuCode}
+                          </td>
+                          <td className="p-3.5 sm:p-4 text-slate-700">{result.orders}</td>
+                          <td className="p-3.5 sm:p-4 text-slate-700">{result.returns}</td>
+                          <td className="p-3.5 sm:p-4 font-black text-[#0A0E1A]">
+                            {result.netOrders}
+                          </td>
+                          <td className="p-3.5 sm:p-4 font-medium text-slate-800">
+                            {result.avgOrdersPerDay}
+                          </td>
+                          <td className="p-3.5 sm:p-4 font-medium text-slate-800">
+                            {result.avgReturnsPerDay}
+                          </td>
+                          <td className="p-3.5 sm:p-4 font-bold text-[#B88728]">
+                            {result.req15Days}
+                          </td>
+                          <td className="p-3.5 sm:p-4 font-bold text-[#B88728]">
+                            {result.req30Days}
+                          </td>
                         </tr>
                       ))
                     )}
                   </tbody>
                   {filteredAndSortedResults.length > 0 && (
-                    <tfoot className="bg-slate-50 font-semibold border-t-2 border-slate-200">
+                    <tfoot className="bg-[#FAF8F5] font-bold border-t-2 border-[#E7E0D2] text-[#0A0E1A]">
                       <tr>
-                        <td colSpan={3} className="p-4 text-sm text-slate-900 uppercase tracking-wider text-right">Total</td>
-                        <td className="p-4 text-sm text-slate-900">{totalSummary.orders}</td>
-                        <td className="p-4 text-sm text-slate-900">{totalSummary.returns}</td>
-                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{totalSummary.netOrders}</td>
-                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{Math.round(totalSummary.avgOrdersPerDay)}</td>
-                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{Math.round(totalSummary.avgReturnsPerDay)}</td>
-                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{totalSummary.req15Days}</td>
-                        <td className="p-4 text-sm text-[#0A0E1A] font-bold">{totalSummary.req30Days}</td>
+                        <td
+                          colSpan={3}
+                          className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider text-right"
+                        >
+                          Total
+                        </td>
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-slate-900">
+                          {totalSummary.orders}
+                        </td>
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-slate-900">
+                          {totalSummary.returns}
+                        </td>
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#0A0E1A]">
+                          {totalSummary.netOrders}
+                        </td>
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                          {Math.round(totalSummary.avgOrdersPerDay)}
+                        </td>
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                          {Math.round(totalSummary.avgReturnsPerDay)}
+                        </td>
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#B88728]">
+                          {totalSummary.req15Days}
+                        </td>
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#B88728]">
+                          {totalSummary.req30Days}
+                        </td>
                       </tr>
                     </tfoot>
                   )}
@@ -837,7 +1179,8 @@ export default function StockAnalysis() {
                   total={filteredAndSortedResults.length}
                   limit={itemsPerPage}
                   itemName="records"
-                  className="bg-[#0A0E1A] px-4 py-4 mt-auto"
+                  variant="dark"
+                  className="bg-[#0A0E1A] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800"
                   onPageChange={setCurrentPage}
                   onLimitChange={(newLimit) => {
                     setItemsPerPage(newLimit);

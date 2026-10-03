@@ -64,7 +64,8 @@ export async function downloadAmazonAnalyticsInsights({
       { header: "Seller SKU", key: "sku", width: 26 },
       { header: "Associated URL", key: "url", width: 55 },
       { header: "ASIN", key: "asin", width: 18 },
-      { header: "BSR / Rank", key: "bsrRank", width: 38 },
+      { header: "Category Rank", key: "categoryRank", width: 28 },
+      { header: "Product Rank", key: "productRank", width: 28 },
       { header: "Rating & Reviews", key: "ratingReviews", width: 26 },
       { header: "Rating", key: "rating", width: 14 },
       { header: "Review Count", key: "reviewCount", width: 16 },
@@ -121,12 +122,6 @@ export async function downloadAmazonAnalyticsInsights({
       const reviews = historyItem?.reviews ?? item.reviewCount;
       const resolvedAsin = historyItem?.asin || item.asin || "-";
 
-      // Build BSR / Rank combined string
-      const bsrParts: string[] = [];
-      if (categoryRank) bsrParts.push(categoryRank);
-      if (subcategoryRank) bsrParts.push(subcategoryRank);
-      const bsrRank = bsrParts.length > 0 ? bsrParts.join(" | ") : "-";
-
       // Build Rating & Reviews combined string
       const rrParts: string[] = [];
       if (rating !== null && rating !== undefined) rrParts.push(`${rating} / 5`);
@@ -139,7 +134,8 @@ export async function downloadAmazonAnalyticsInsights({
         sku: item.sku,
         url: item.url || "-",
         asin: resolvedAsin,
-        bsrRank,
+        categoryRank: categoryRank || "-",
+        productRank: subcategoryRank || "-",
         ratingReviews,
         rating: rating !== null && rating !== undefined ? `${rating} / 5` : "-",
         reviewCount: reviews !== null && reviews !== undefined ? reviews.toLocaleString() : "-",
@@ -162,7 +158,7 @@ export async function downloadAmazonAnalyticsInsights({
       // 1. Operator Name
       const operatorCell = row.getCell(1);
       operatorCell.font = { name: "Calibri", size: 10.5, color: { argb: "FF0A0E1A" } };
-      operatorCell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+      operatorCell.alignment = { vertical: "middle", horizontal: "center" };
       operatorCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
       operatorCell.border = commonBorder;
 
@@ -176,7 +172,7 @@ export async function downloadAmazonAnalyticsInsights({
       // 3. Seller SKU
       const skuCell = row.getCell(3);
       skuCell.font = { name: "Calibri", size: 10.5, bold: true, color: { argb: "FF0A0E1A" } };
-      skuCell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+      skuCell.alignment = { vertical: "middle", horizontal: "center" };
       skuCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
       skuCell.border = commonBorder;
 
@@ -189,7 +185,7 @@ export async function downloadAmazonAnalyticsInsights({
         urlCell.value = "-";
         urlCell.font = { name: "Calibri", size: 10, color: { argb: "FF888888" } };
       }
-      urlCell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+      urlCell.alignment = { vertical: "middle", horizontal: "center" };
       urlCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
       urlCell.border = commonBorder;
 
@@ -200,36 +196,43 @@ export async function downloadAmazonAnalyticsInsights({
       asinCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
       asinCell.border = commonBorder;
 
-      // 6. BSR / Rank
-      const bsrCell = row.getCell(6);
-      bsrCell.font = { name: "Calibri", size: 10, color: { argb: "FF0A0E1A" } };
-      bsrCell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
-      bsrCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
-      bsrCell.border = commonBorder;
+      // 6. Category Rank
+      const categoryRankCell = row.getCell(6);
+      categoryRankCell.font = { name: "Calibri", size: 10, color: { argb: "FF0A0E1A" } };
+      categoryRankCell.alignment = { vertical: "middle", horizontal: "center" };
+      categoryRankCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
+      categoryRankCell.border = commonBorder;
 
-      // 7. Rating & Reviews
-      const rrCell = row.getCell(7);
+      // 7. Product Rank
+      const productRankCell = row.getCell(7);
+      productRankCell.font = { name: "Calibri", size: 10, color: { argb: "FF0A0E1A" } };
+      productRankCell.alignment = { vertical: "middle", horizontal: "center" };
+      productRankCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
+      productRankCell.border = commonBorder;
+
+      // 8. Rating & Reviews
+      const rrCell = row.getCell(8);
       rrCell.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFB88728" } };
       rrCell.alignment = { vertical: "middle", horizontal: "center" };
       rrCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
       rrCell.border = commonBorder;
 
-      // 8. Rating
-      const ratingCell = row.getCell(8);
+      // 9. Rating
+      const ratingCell = row.getCell(9);
       ratingCell.font = { name: "Calibri", size: 10, color: { argb: "FF0A0E1A" } };
       ratingCell.alignment = { vertical: "middle", horizontal: "center" };
       ratingCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
       ratingCell.border = commonBorder;
 
-      // 9. Review Count
-      const reviewCell = row.getCell(9);
+      // 10. Review Count
+      const reviewCell = row.getCell(10);
       reviewCell.font = { name: "Calibri", size: 10, color: { argb: "FF0A0E1A" } };
       reviewCell.alignment = { vertical: "middle", horizontal: "center" };
       reviewCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
       reviewCell.border = commonBorder;
 
-      // 10. Snapshot Date
-      const dateCell = row.getCell(10);
+      // 11. Snapshot Date
+      const dateCell = row.getCell(11);
       dateCell.font = { name: "Calibri", size: 10, color: { argb: "FF0A0E1A" } };
       dateCell.alignment = { vertical: "middle", horizontal: "center" };
       dateCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };

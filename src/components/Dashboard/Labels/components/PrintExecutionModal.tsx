@@ -68,59 +68,59 @@ export default function PrintExecutionModal({
 
     return (
       <div className="flex flex-col h-full space-y-4">
-        <p className="text-[#0A0E1A]">Review matched products. Uncheck any rows you do not wish to print.</p>
-        <div className="overflow-x-auto border rounded">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-[#0A0E1A] text-white">
+        <p className="text-xs sm:text-sm text-slate-600 font-medium">Review matched products. Uncheck any rows you do not wish to print.</p>
+        <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] bg-white shadow-xs">
+          <table className="w-full text-left border-collapse font-sans text-xs sm:text-sm">
+            <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
               <tr>
-                <th className="px-4 py-2 border w-12 text-center">Print</th>
-                <th className="px-4 py-2 border">SKU</th>
-                <th className="px-4 py-2 border w-48">Status</th>
-                <th className="px-4 py-2 border w-40">Preview</th>
+                <th className="px-4 py-3 border-r border-slate-800 w-12 text-center">Print</th>
+                <th className="px-4 py-3 border-r border-slate-800">SKU</th>
+                <th className="px-4 py-3 border-r border-slate-800 w-48">Status</th>
+                <th className="px-4 py-3 w-40 text-center">Preview</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#E7E0D2]">
               {queue.map((item) => (
-                <tr key={item.rowId} className="hover:bg-slate-50 border-b">
-                  <td className="px-4 py-2 text-center border-r">
+                <tr key={item.rowId} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="px-4 py-3 text-center border-r border-[#E7E0D2]">
                     <input
                       type="checkbox"
                       checked={selectedForPrint.has(item.rowId)}
                       onChange={(e) => toggleQueueRow(item.rowId, e.target.checked)}
                       disabled={item.status === "not_found" || item.status === "error"}
-                      className="w-4 h-4 cursor-pointer"
+                      className="w-4 h-4 rounded cursor-pointer accent-[#0A0E1A]"
                     />
                   </td>
-                  <td className="px-4 py-2 border-r font-medium text-slate-800">
+                  <td className="px-4 py-3 border-r border-[#E7E0D2] font-semibold text-slate-900">
                     {item.lookupSku || "-"}
                   </td>
-                  <td className="px-4 py-2 border-r">
+                  <td className="px-4 py-3 border-r border-[#E7E0D2]">
                     {item.status === "matched" && (
-                      <span className="flex items-center text-green-700">
-                        <CheckCircle2 className="w-4 h-4 mr-1" /> Matched
+                      <span className="flex items-center text-emerald-700 font-medium">
+                        <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" /> Matched
                       </span>
                     )}
                     {item.status === "multiple_matches" && (
-                      <span className="flex items-center text-yellow-600 font-medium">
-                        <AlertTriangle className="w-4 h-4 mr-1" /> Multiple Matches (Using 1st)
+                      <span className="flex items-center text-amber-700 font-medium">
+                        <AlertTriangle className="w-4 h-4 mr-1 text-amber-600" /> Multiple Matches (Using 1st)
                       </span>
                     )}
                     {item.status === "not_found" && (
-                      <span className="flex items-center text-red-600">
+                      <span className="flex items-center text-rose-600 font-medium">
                         <XCircle className="w-4 h-4 mr-1" /> Not Found
                       </span>
                     )}
                     {item.status === "error" && (
-                      <span className="flex items-center text-red-600 text-sm">
+                      <span className="flex items-center text-rose-600 text-xs font-medium">
                         <XCircle className="w-4 h-4 mr-1" /> {item.errorMessage}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2 flex justify-center">
+                  <td className="px-4 py-3 flex justify-center">
                     {(item.status === "matched" || item.status === "multiple_matches") ? (
                       <LabelPreviewThumbnail template={template} data={item.product} />
                     ) : (
-                      <div className="text-slate-400 text-sm">-</div>
+                      <div className="text-slate-400 text-xs">-</div>
                     )}
                   </td>
                 </tr>
@@ -128,11 +128,16 @@ export default function PrintExecutionModal({
             </tbody>
           </table>
         </div>
-        <div className="flex flex-col sm:flex-row sm:justify-between items-stretch sm:items-center gap-2 pt-4">
-          <span className="text-[#0A0E1A] font-medium text-xs sm:text-sm">{readyCount} of {queue.length} ready to print</span>
-          <Button variant="primary" onClick={proceedToPrinter} disabled={readyCount === 0} className="w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-stretch sm:items-center gap-2 pt-3">
+          <span className="text-[#0A0E1A] font-semibold text-xs sm:text-sm">{readyCount} of {queue.length} ready to print</span>
+          <button
+            type="button"
+            onClick={proceedToPrinter}
+            disabled={readyCount === 0}
+            className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-transparent bg-[#E8C16D] px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] shadow-xs active:scale-[0.98] transition cursor-pointer disabled:opacity-50"
+          >
             Continue
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -220,35 +225,37 @@ export default function PrintExecutionModal({
                 ? "No printers found"
                 : "Select a printer..."
             }
-            borderRadius={6}
-            height={44}
+            borderRadius={14}
+            height={42}
           />
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 pt-4">
-          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-          <Button
-            variant="outline"
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition active:scale-[0.98] cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
             onClick={printViaBrowser}
             disabled={labelCount === 0}
-            leftIcon={<Printer className="w-4 h-4" />}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
           >
-            Browser Print (Default)
-          </Button>
-          <Button
-            variant="primary"
+            <Printer className="w-4 h-4 text-[#B88728]" />
+            <span>Browser Print (Default)</span>
+          </button>
+          <button
+            type="button"
             onClick={() => startPrinting(selectedPrinter)}
             disabled={labelCount === 0 || !selectedPrinter}
-            leftIcon={<Printer className="w-4 h-4" />}
-            className={`w-full sm:w-auto ${
-              selectedPrinter && helperOnline
-                ? "bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#d4ae5c] font-semibold"
-                : ""
-            }`}
+            className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] shadow-xs active:scale-[0.98] transition cursor-pointer disabled:opacity-50"
           >
-            Silent Print (Extension)
-          </Button>
+            <Printer className="w-4 h-4" />
+            <span>Silent Print (Extension)</span>
+          </button>
         </div>
       </div>
     );
@@ -262,21 +269,21 @@ export default function PrintExecutionModal({
       <div className="flex flex-col h-full space-y-6">
         <div className="flex flex-col items-center justify-center space-y-4 py-8">
           <Loader2 className="w-10 h-10 animate-spin text-[#E8C16D]" />
-          <h3 className="text-xl font-semibold text-[#0A0E1A]">
+          <h3 className="text-xl font-bold text-[#0A0E1A]">
             Printing {completed} of {total}...
           </h3>
         </div>
 
-        <div className="overflow-x-auto border rounded max-h-64">
-          <table className="w-full text-left border-collapse text-sm">
-            <tbody>
+        <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] bg-white shadow-xs max-h-64">
+          <table className="w-full text-left border-collapse text-xs sm:text-sm font-sans">
+            <tbody className="divide-y divide-[#E7E0D2]">
               {queue.filter(q => (selectedForPrint.size > 0 ? selectedForPrint.has(q.rowId) : true)).map(item => (
-                <tr key={item.rowId} className="border-b hover:bg-slate-50">
-                  <td className="px-4 py-2 font-medium">{item.lookupSku}</td>
-                  <td className="px-4 py-2 text-right">
-                    {item.status === "pending" && <span className="text-slate-500">Sending...</span>}
-                    {item.status === "matched" && <span className="text-green-600 flex justify-end items-center"><CheckCircle2 className="w-4 h-4 mr-1"/> Sent</span>}
-                    {item.status === "error" && <span className="text-red-600 flex justify-end items-center"><XCircle className="w-4 h-4 mr-1"/> Failed</span>}
+                <tr key={item.rowId} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="px-4 py-2.5 font-semibold text-slate-900">{item.lookupSku}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    {item.status === "pending" && <span className="text-slate-500 font-medium">Sending...</span>}
+                    {item.status === "matched" && <span className="text-emerald-600 font-medium inline-flex items-center"><CheckCircle2 className="w-4 h-4 mr-1"/> Sent</span>}
+                    {item.status === "error" && <span className="text-rose-600 font-medium inline-flex items-center"><XCircle className="w-4 h-4 mr-1"/> Failed</span>}
                   </td>
                 </tr>
               ))}
@@ -295,30 +302,38 @@ export default function PrintExecutionModal({
     return (
       <div className="flex flex-col items-center justify-center space-y-6 py-6">
         {failed > 0 ? (
-          <AlertTriangle className="w-12 h-12 text-yellow-500" />
+          <AlertTriangle className="w-12 h-12 text-amber-500" />
         ) : (
-          <CheckCircle2 className="w-12 h-12 text-green-500" />
+          <CheckCircle2 className="w-12 h-12 text-emerald-500" />
         )}
         
         <div className="text-center">
           <h3 className="text-2xl font-bold text-[#0A0E1A] mb-2">Print Job Complete</h3>
-          <p className="text-lg text-slate-700">
-            {success} of {total} labels sent successfully. {failed > 0 && <span className="text-red-600">{failed} failed.</span>}
+          <p className="text-base text-slate-700">
+            {success} of {total} labels sent successfully. {failed > 0 && <span className="text-rose-600 font-bold">{failed} failed.</span>}
           </p>
-          <p className="text-sm text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2">
             Note: &quot;Sent successfully&quot; means the job was handed to the Windows print spooler.
           </p>
         </div>
 
-        <div className="flex space-x-4 pt-4">
+        <div className="flex items-center gap-3 pt-4">
           {failed > 0 && (
-            <Button variant="secondary" onClick={retryFailed}>
+            <button
+              type="button"
+              onClick={retryFailed}
+              className="h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 transition active:scale-[0.98] cursor-pointer"
+            >
               Retry Failed
-            </Button>
+            </button>
           )}
-          <Button variant="primary" onClick={handleDone}>
+          <button
+            type="button"
+            onClick={handleDone}
+            className="h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-transparent bg-[#E8C16D] px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] shadow-xs active:scale-[0.98] transition cursor-pointer"
+          >
             Done
-          </Button>
+          </button>
         </div>
       </div>
     );

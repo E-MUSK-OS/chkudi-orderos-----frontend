@@ -131,27 +131,6 @@ export async function getOrGenerateSingleOrderPdf(
 
     if (item.combinedPages && item.combinedPages.length > 0) {
       targetPages = item.combinedPages.filter((p: number) => p >= 0 && p < pageCount);
-    } else if (allResults && allResults.length > 0) {
-      const matchedList = allResults.filter((r) => r.isMatch);
-      let startP = 0;
-      for (const m of matchedList) {
-        const mCount = Math.max(m.asinsCount || 0, m.totalQuantity || 0);
-        const expectedPages =
-          m.combinedPages && m.combinedPages.length > 0
-            ? m.combinedPages.length
-            : mCount > 4 && m.pdfPages && m.pdfPages.length > 1
-              ? 2 + (m.zplPage > 0 ? 1 : 0)
-              : m.zplPage > 0
-                ? 2
-                : 1;
-        if (m.index === item.index) {
-          for (let p = startP; p < startP + expectedPages && p < pageCount; p++) {
-            targetPages.push(p);
-          }
-          break;
-        }
-        startP += expectedPages;
-      }
     }
 
     if (targetPages.length === 0) {

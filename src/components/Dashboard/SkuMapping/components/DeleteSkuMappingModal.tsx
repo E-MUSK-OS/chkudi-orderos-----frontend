@@ -1,8 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
-
-import Button from "@/components/ui/Button";
+import { Trash2, RefreshCw, X } from "lucide-react";
 
 import {
   Dialog,
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 
 import { useDeleteSkuMapping } from "../hooks/useSkuMappings";
-
 import type { SkuMapping } from "../types/skuMapping.types";
 
 interface Props {
@@ -40,7 +38,6 @@ export default function DeleteSkuMappingModal({
           toast.success(response.message);
           onClose();
         },
-
         onError: (error: Error) => {
           toast.error(error.message);
         },
@@ -48,73 +45,84 @@ export default function DeleteSkuMappingModal({
     );
   };
 
+  if (!open || !skuMapping) return null;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl overflow-hidden  border-0 p-0 shadow-2xl">
-        <DialogHeader className="border-b bg-[#0A0E1A] px-6 py-5">
-          <DialogTitle className="flex items-center gap-3 text-2xl font-semibold text-white">
-            Delete Record
-          </DialogTitle>
-
-          <p className="mt-1 text-sm text-red-100">
-            This action cannot be undone. Please review the SKU details before
-            deleting.
-          </p>
+      <DialogContent className="max-w-lg overflow-hidden border border-[#E7E0D2] p-0 shadow-2xl !rounded-3xl sm:!rounded-[32px] bg-white">
+        <DialogHeader className="border-b border-[#E7E0D2] bg-[#0A0E1A] px-6 py-5">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/30 shadow-xs">
+              <Trash2 className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl sm:text-2xl font-bold text-[#E8C16D]">
+                Delete SKU Mapping
+              </DialogTitle>
+              <p className="mt-0.5 text-xs sm:text-sm text-slate-300">
+                This action is permanent and cannot be undone.
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-6 p-6">
-          <div className="border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm font-medium text-red-700">
-              ⚠️ This record will be permanently removed from your account.
-            </p>
+        <div className="space-y-4 p-6 sm:p-7">
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Are you sure you want to delete this SKU mapping? This record will be permanently removed from your account.
+          </p>
+
+          {/* Item details card styled with OrderOS tokens */}
+          <div className="rounded-2xl border border-[#E7E0D2] bg-[#FFF9EC]/40 p-4 space-y-2.5">
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="font-semibold text-slate-500">Short SKU:</span>
+              <span className="font-bold text-[#0A0E1A]">{skuMapping.shortSku}</span>
+            </div>
+            {skuMapping.fullSku && (
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="font-semibold text-slate-500">Full SKU:</span>
+                <span className="font-medium text-slate-700">{skuMapping.fullSku}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="font-semibold text-slate-500">Barcode SKU:</span>
+              <span className="font-medium text-slate-800">{skuMapping.barcodeSku}</span>
+            </div>
+            {skuMapping.ordercookSku && (
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="font-semibold text-slate-500">OrderCook SKU:</span>
+                <span className="font-medium text-slate-700">{skuMapping.ordercookSku}</span>
+              </div>
+            )}
           </div>
 
-          {skuMapping && (
-            <div className="overflow-hidden border">
-              <div className="border-b bg-slate-50 px-4 py-3">
-                <h3 className="font-semibold text-slate-900">SKU Details</h3>
-              </div>
-
-              <div className="divide-y">
-                <div className="flex justify-between px-4 py-3">
-                  <span className="font-medium text-slate-500">Short SKU</span>
-
-                  <span className="font-semibold">{skuMapping.shortSku}</span>
-                </div>
-
-                <div className="flex justify-between px-4 py-3">
-                  <span className="font-medium text-slate-500">
-                    Barcode SKU
-                  </span>
-
-                  <span className="font-semibold">{skuMapping.barcodeSku}</span>
-                </div>
-
-                <div className="flex justify-between px-4 py-3">
-                  <span className="font-medium text-slate-500">
-                    OrderCook SKU
-                  </span>
-
-                  <span className="font-semibold">
-                    {skuMapping.ordercookSku}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-3 border-t pt-5">
-            <Button variant="outline" onClick={onClose} disabled={isPending}>
-              Cancel
-            </Button>
-
-            <Button
-              loading={isPending}
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+          {/* Action Buttons */}
+          <div className="pt-2 flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isPending}
+              className="flex-1 h-11 sm:h-12 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
-              Delete Mapping
-            </Button>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isPending}
+              className="flex-1 h-11 sm:h-12 inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-red-600 text-xs sm:text-sm font-bold text-white transition hover:bg-red-700 active:scale-[0.98] disabled:opacity-60 cursor-pointer shadow-sm shadow-red-200"
+            >
+              {isPending ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete Mapping</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </DialogContent>

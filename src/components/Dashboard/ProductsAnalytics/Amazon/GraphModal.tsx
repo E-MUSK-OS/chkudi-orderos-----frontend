@@ -30,8 +30,8 @@ export default function GraphModal({ isOpen, onClose, data, isSingleItem, title 
     [
       { type: "string", label: "Date" },
       { type: "number", label: isSingleItem ? "Reviews" : "Total Reviews" },
-      { type: "number", label: isSingleItem ? "Clothing Rank" : "Avg Clothing Rank" },
-      { type: "number", label: isSingleItem ? "Rank" : "Avg Rank" }
+      { type: "number", label: isSingleItem ? "Category Rank" : "Avg Category Rank" },
+      { type: "number", label: isSingleItem ? "Product Rank" : "Avg Product Rank" }
     ]
   ];
 

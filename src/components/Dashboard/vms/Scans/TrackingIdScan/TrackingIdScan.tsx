@@ -8,7 +8,7 @@ export default function TrackingIdScan() {
     <DashboardLayout title="TrackingId Scan">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0A0E1A]">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
             TrackingId Scans
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500">

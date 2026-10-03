@@ -46,9 +46,9 @@ export default function AmazonOrderResultPage() {
   if (isRestoring || !summary) {
     return (
       <DashboardLayout title="Amazon Order Verification Results">
-        <div className="flex h-96 flex-col items-center justify-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[#E8C16D]" />
-          <p className="text-sm font-medium text-slate-500">
+        <div className="flex h-64 sm:h-96 flex-col items-center justify-center gap-3 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm">
+          <Loader2 className="h-8 w-8 animate-spin text-[#B88728]" />
+          <p className="text-sm font-semibold text-slate-600">
             Loading batch verification data...
           </p>
         </div>

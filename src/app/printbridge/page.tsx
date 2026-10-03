@@ -274,7 +274,7 @@ export default function PrintBridgePage() {
 
         {/* Hero Section */}
         <div className="space-y-2 border-l-4 border-[#E8C16D] bg-card p-6 shadow-sm">
-          <h1 className="text-2xl font-bold tracking-tight text-[#0A0E1A] dark:text-white sm:text-3xl">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
             Set Up 1-Click Silent Printing
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
