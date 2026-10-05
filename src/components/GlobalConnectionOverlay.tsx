@@ -2,20 +2,25 @@
 
 import React, { useEffect } from "react";
 import { useConnectionStore } from "@/store/useConnectionStore";
-import { WifiOff, ServerCrash } from "lucide-react";
-import { API_BASE_URL } from "@/lib/config";
+import { socket } from "@/lib/socket";
 
 export default function GlobalConnectionOverlay() {
-  const { isOffline, isBackendDown, setOffline } = useConnectionStore();
+  const { isOffline, isBackendDown, setOffline, setBackendDown } = useConnectionStore();
 
+  // 1. Monitor Browser Network Connectivity (Offline / Online)
   useEffect(() => {
-    // Sync initial state on mount in case the store's initial value was incorrect
-    if (typeof navigator !== 'undefined') {
+    if (typeof navigator !== "undefined") {
       setOffline(!navigator.onLine);
     }
 
     const handleOffline = () => setOffline(true);
-    const handleOnline = () => setOffline(false);
+    const handleOnline = () => {
+      setOffline(false);
+      // Immediately retry socket connection when browser network restores
+      if (!socket.connected) {
+        socket.connect();
+      }
+    };
 
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
@@ -26,29 +31,40 @@ export default function GlobalConnectionOverlay() {
     };
   }, [setOffline]);
 
+  // 2. Monitor Backend / NAS Connectivity via Socket.io
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isBackendDown && !isOffline) {
-      interval = setInterval(async () => {
-        try {
-          const res = await fetch(`${API_BASE_URL}/health`, {
-            headers: {
-              "Bypass-Tunnel-Reminder": "true",
-              "ngrok-skip-browser-warning": "true"
-            }
-          });
-          if (res.ok) {
-            useConnectionStore.getState().setBackendDown(false);
-          }
-        } catch (error) {
-          // Still down
-        }
-      }, 3000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    const handleConnect = () => {
+      setBackendDown(false);
     };
-  }, [isBackendDown, isOffline]);
+
+    const handleDisconnect = (reason: string) => {
+      // Mark backend down unless manually disconnected by the client
+      if (reason !== "io client disconnect") {
+        setBackendDown(true);
+      }
+    };
+
+    const handleConnectError = () => {
+      setBackendDown(true);
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+
+    // Initial connection attempt if not already active
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      setBackendDown(false);
+    }
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
+    };
+  }, [setBackendDown]);
 
   if (!isOffline && !isBackendDown) return null;
 
