@@ -334,7 +334,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
             asin: r.asin,
             sellerSku: r.sellerSku,
             awb: r.awb,
-            customer: "Customer", // Redacted in long-term storage; full name retained in sessionStorage
+            customer: r.customer, // Redacted in long-term storage; full name retained in sessionStorage
             amount: r.amount,
             date: r.date,
             pdfPages: r.pdfPages,

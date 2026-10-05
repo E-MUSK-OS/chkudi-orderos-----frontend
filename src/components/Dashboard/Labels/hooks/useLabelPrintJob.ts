@@ -2,7 +2,8 @@ import { useState, useCallback } from "react";
 import { LabelTemplate, PrintQueueItem } from "../types/label.types";
 import { chromeExtensionPrintService } from "../services/printAgent.service";
 import { labelService } from "../services/label.service";
-import { renderLabelToCanvas, renderLabelToVectorPdf, printLabelsViaBrowser } from "@/lib/labelRenderer";
+import { renderLabelToCanvas, renderLabelToVectorPdf, printLabelsViaBrowser, rotateCanvas } from "@/lib/labelRenderer";
+import { getEffectiveCanvasDimensions } from "../Designer/utils/coordinateMath";
 
 type Step = "matching" | "review" | "printer" | "printing" | "summary";
 
@@ -266,8 +267,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
     const failed: PrintQueueItem[] = [];
     const dataUrls: string[] = [];
 
-    const widthMm = template.settings.widthMm || 100;
-    const heightMm = template.settings.heightMm || 50;
+    const { widthMm, heightMm } = getEffectiveCanvasDimensions(template.settings);
 
     for (const item of itemsToPrint) {
       try {

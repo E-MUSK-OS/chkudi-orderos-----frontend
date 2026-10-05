@@ -48,6 +48,7 @@ interface ComparisonResult {
   orderType?: "single_quantity" | "multiple_asin" | "multiple_pieces";
   totalQuantity?: number;
   asinsCount?: number;
+  items?: { asin: string; sku: string; qty: number }[];
 }
 
 /**
@@ -203,6 +204,51 @@ function isValidAsin(candidate: string): boolean {
     "CLOTHING",
   ];
   if (blacklisted.includes(upper)) return false;
+
+  return true;
+}
+
+/**
+ * Validate whether a candidate string is a plausible logistics carrier AWB tracking number.
+ */
+function isValidAwb(candidate: string): boolean {
+  if (!candidate) return false;
+  const clean = candidate.trim().toUpperCase();
+
+  // 1. Real logistics tracking numbers are at least 8 chars and at most 35 chars
+  if (clean.length < 8 || clean.length > 35) return false;
+
+  // 2. Reject Amazon Order ID format (e.g. 402-1234567-1234567)
+  if (/^\d{3}-\d{7}-\d{7}$/.test(clean)) return false;
+
+  // 3. Reject ASIN format (e.g. B0...)
+  if (/^B[0-9A-Z]{9}$/i.test(clean)) return false;
+
+  // 4. Blacklisted non-AWB terms, courier names, station headers, etc.
+  const blacklisted = [
+    "ERRY",
+    "DELIVERY",
+    "DELHIVERY",
+    "ATSPL",
+    "SORTZONE",
+    "RETURN",
+    "PREPAID",
+    "COD",
+    "STANDARD",
+    "EXPRESS",
+    "TAXINVOICE",
+    "INVOICE",
+    "ORDER",
+    "SECTOR",
+    "STATION",
+    "CUSTOMER",
+    "SHIPPED",
+    "DECLARATION",
+  ];
+  if (blacklisted.includes(clean)) return false;
+
+  // 5. Must contain digits (almost all logistics tracking IDs are numeric or alphanumeric containing digits)
+  if (!/\d/.test(clean)) return false;
 
   return true;
 }
@@ -615,12 +661,33 @@ function parseZplLabels(zplText: string): ZplLabelData[] {
 
     let awb = "";
 
-    const awbMatch =
-      decoded.match(/AWB[#\s:]*([0-9A-Z]+)/i) ||
-      decoded.match(/\^BC.*?\^FD([0-9A-Z]+)\^FS/i);
+    // 1. Check explicit "AWB" label first
+    const explicitAwbMatch = decoded.match(/AWB[#\s:]*([0-9A-Z_-]{8,35})/i);
+    if (explicitAwbMatch?.[1] && isValidAwb(explicitAwbMatch[1])) {
+      awb = explicitAwbMatch[1].trim();
+    }
 
-    if (awbMatch?.[1]) {
-      awb = awbMatch[1].trim();
+    // 2. If not found or invalid, scan ALL Code 128 (^BC) barcodes on the label
+    if (!awb) {
+      // Handles Code 128 subset switches like >; >: >8
+      const barcodeMatches = Array.from(
+        decoded.matchAll(/\^BC[^\^]*\^FD(?:>[;:568])?([0-9A-Z_-]+)\^FS/gi)
+      );
+
+      const validCandidates: string[] = [];
+      for (const m of barcodeMatches) {
+        const candidate = m[1].trim();
+        if (isValidAwb(candidate)) {
+          validCandidates.push(candidate);
+        }
+      }
+
+      if (validCandidates.length > 0) {
+        // Prioritize standard numeric / ATS format tracking IDs (10-18 chars)
+        const preferred =
+          validCandidates.find((c) => /^(?:ATS|\d{10,18})/i.test(c)) || validCandidates[0];
+        awb = preferred;
+      }
     }
 
     // ---------------------------------------------------------
@@ -1171,7 +1238,7 @@ function extractInvoiceRows(rawText: string): Array<{
   const sandwichRegex = /\.\d{2}\s+([1-9]\d{0,1})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
   for (const match of tableBody.matchAll(sandwichRegex)) {
     const q = parseInt(match[1], 10);
-    if (q >= 2 && q <= 50) pushRow(q);
+    if (q >= 1 && q <= 50) pushRow(q);
   }
 
   // If tableBody isolation failed (e.g. Page 2 transporter duplicate with no product table),
@@ -1180,18 +1247,18 @@ function extractInvoiceRows(rawText: string): Array<{
     const sandwichRegex2 = /\.\d{2}\s+([1-9]\d{0,1})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
     for (const match of text.matchAll(sandwichRegex2)) {
       const q = parseInt(match[1], 10);
-      if (q >= 2 && q <= 50) pushRow(q);
+      if (q >= 1 && q <= 50) pushRow(q);
     }
   }
 
   // Fallback 1: Reversed Pattern (Qty followed by two prices)
   if (rows.length === 0) {
-    const revRegex = /(?:^|\s)([2-9]|[1-4]\d|50)\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
+    const revRegex = /(?:^|\s)([1-9]|[1-4]\d|50)\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
     for (const match of tableBody.matchAll(revRegex)) {
       pushRow(parseInt(match[1], 10));
     }
     if (rows.length === 0 && tableBody !== text) {
-      const revRegex2 = /(?:^|\s)([2-9]|[1-4]\d|50)\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
+      const revRegex2 = /(?:^|\s)([1-9]|[1-4]\d|50)\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})\s+(?:₹)?(?:\d{1,6}(?:,\d{3})*)?(?:\.\d{2})/g;
       for (const match of text.matchAll(revRegex2)) {
         pushRow(parseInt(match[1], 10));
       }
@@ -1200,12 +1267,12 @@ function extractInvoiceRows(rawText: string): Array<{
 
   // Fallback 2: Explicit "Qty: N"
   if (rows.length === 0) {
-    const explicitRegex = /\b(?:Quantity|Qty)\s*[:\-#|=]?\s*([2-9]|[1-4]\d|50)\b/gi;
+    const explicitRegex = /\b(?:Quantity|Qty)\s*[:\-#|=]?\s*([1-9]|[1-4]\d|50)\b/gi;
     for (const match of tableBody.matchAll(explicitRegex)) {
       pushRow(parseInt(match[1], 10));
     }
     if (rows.length === 0 && tableBody !== text) {
-      const explicitRegex2 = /\b(?:Quantity|Qty)\s*[:\-#|=]?\s*([2-9]|[1-4]\d|50)\b/gi;
+      const explicitRegex2 = /\b(?:Quantity|Qty)\s*[:\-#|=]?\s*([1-9]|[1-4]\d|50)\b/gi;
       for (const match of text.matchAll(explicitRegex2)) {
         pushRow(parseInt(match[1], 10));
       }
@@ -1247,6 +1314,7 @@ function classifyOrderType(
   orderType: "single_quantity" | "multiple_asin" | "multiple_pieces";
   totalQuantity: number;
   asinsCount: number;
+  items: { asin: string; sku: string; qty: number }[];
 } {
   // 1. Extract verified product rows from the invoice table
   const rows = extractInvoiceRows(text);
@@ -1354,10 +1422,25 @@ function classifyOrderType(
     }
   }
 
+  const items: { asin: string; sku: string; qty: number }[] = [];
+  const uniqueAsinsArr = Array.from(allAsins);
+  const uniqueSkusArr = Array.from(allSkus);
+  
+  for (let i = 0; i < Math.max(rows.length, uniqueAsinsArr.length, 1); i++) {
+    const qty = rows[i]?.qty || (orderType === "multiple_pieces" ? totalQty : 1);
+    const asin = uniqueAsinsArr[i] || uniqueAsinsArr[0] || "N/A";
+    const sku = uniqueSkusArr[i] || uniqueSkusArr[0] || "N/A";
+    
+    if (asin !== "N/A" || sku !== "N/A") {
+      items.push({ asin, sku, qty });
+    }
+  }
+
   return {
     orderType,
     totalQuantity: totalQty,
     asinsCount: Math.max(asinsCount, orderType === "multiple_asin" ? 2 : 1),
+    items,
   };
 }
 
@@ -1760,6 +1843,7 @@ function buildComparisonResponse(
         orderType: classification.orderType,
         totalQuantity: classification.totalQuantity,
         asinsCount: classification.asinsCount,
+        items: classification.items,
       });
     }
   }

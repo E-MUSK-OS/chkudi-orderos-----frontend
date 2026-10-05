@@ -240,6 +240,7 @@ export function BarcodeDesign() {
             togglePreview={designer.togglePreview}
             onSave={handleSave}
             onClear={handleClear}
+            onReset={designer.resetEverything}
             isSaving={isSaving}
             templateName={designer.state.templateName}
             updateTemplateName={designer.updateTemplateName}

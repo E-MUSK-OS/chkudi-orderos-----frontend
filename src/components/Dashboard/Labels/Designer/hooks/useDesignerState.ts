@@ -2,6 +2,7 @@ import { useReducer, useEffect, useCallback, useRef, useMemo, useState } from 'r
 import { DesignerState, LabelElement, CanvasSettings, LabelTemplate } from '../../types/label.types';
 import { labelService } from '../../services/label.service';
 import { toast } from 'sonner';
+import { getEffectiveCanvasDimensions, transformElementsRotation } from '../utils/coordinateMath';
 
 const MAX_HISTORY = 50;
 
@@ -10,6 +11,7 @@ const DEFAULT_SETTINGS: CanvasSettings = {
   heightMm: 50,
   dpi: 203,
   orientation: 'landscape',
+  rotation: 0,
   gridSizeMm: 1,
   snapToGrid: true,
   colorMode: 'color', // default: full color
@@ -25,7 +27,7 @@ const INITIAL_STATE: DesignerState = {
   elements: [],
   selectedIds: [],
   zoom: 1.0,
-  previewSampleData: true,
+  previewSampleData: false,
 };
 
 type Snapshot = {
@@ -334,8 +336,16 @@ export function useDesignerState(initialTemplateId?: string | null) {
         const currentWidth = prev.settings.widthMm;
         const currentHeight = prev.settings.heightMm;
         let newElements = prev.elements;
-        
-        if (
+
+        const prevRot = ((prev.settings.rotation || 0) % 360 + 360) % 360;
+        const nextRot = newSettings.rotation !== undefined ? ((newSettings.rotation % 360) + 360) % 360 : undefined;
+        const rotationChanged = nextRot !== undefined && nextRot !== prevRot;
+
+        if (rotationChanged) {
+          const { widthMm: wOld, heightMm: hOld } = getEffectiveCanvasDimensions(prev.settings);
+          const delta = (nextRot - prevRot + 360) % 360;
+          newElements = transformElementsRotation(newElements, wOld, hOld, delta);
+        } else if (
           (newSettings.widthMm !== undefined && newSettings.widthMm !== currentWidth) ||
           (newSettings.heightMm !== undefined && newSettings.heightMm !== currentHeight)
         ) {
@@ -371,6 +381,37 @@ export function useDesignerState(initialTemplateId?: string | null) {
         };
       }
     });
+  }, []);
+
+  const resetEverything = useCallback(() => {
+    dispatch({
+      type: 'UPDATE_STATE_WITH_HISTORY',
+      payload: (prev) => {
+        const { widthMm: wCurrent, heightMm: hCurrent } = getEffectiveCanvasDimensions(prev.settings);
+        const currentRot = ((prev.settings.rotation || 0) % 360 + 360) % 360;
+
+        // If label has rotation, unrotate back to 0°
+        let elements = prev.elements;
+        if (currentRot !== 0) {
+          const delta = (360 - currentRot) % 360;
+          elements = transformElementsRotation(elements, wCurrent, hCurrent, delta);
+        }
+
+        return {
+          ...prev,
+          settings: {
+            ...DEFAULT_SETTINGS,
+            widthMm: 100,
+            heightMm: 50,
+            rotation: 0,
+          },
+          elements,
+          selectedIds: [],
+          zoom: 1.0,
+        };
+      },
+    });
+    toast.success("Reset settings, rotation (0°), and zoom (100%)");
   }, []);
 
   const updateTemplateName = useCallback((name: string) => {
@@ -558,6 +599,7 @@ export function useDesignerState(initialTemplateId?: string | null) {
     selectAll,
     clearSelection,
     setZoom,
+    resetEverything,
     updateSettings,
     updateTemplateName,
     setBackgroundImageUrl,
@@ -589,6 +631,7 @@ export function useDesignerState(initialTemplateId?: string | null) {
     selectAll,
     clearSelection,
     setZoom,
+    resetEverything,
     updateSettings,
     updateTemplateName,
     setBackgroundImageUrl,

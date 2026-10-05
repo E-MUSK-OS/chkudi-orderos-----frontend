@@ -73,6 +73,7 @@ import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import AccountLockChecker from "./AccountLockChecker";
+import GlobalConnectionOverlay from "./GlobalConnectionOverlay";
 
 export default function ClientLayout({
   children,
@@ -90,36 +91,9 @@ export default function ClientLayout({
     }
   }, [pathname]);
 
-  useEffect(() => {
-    if (!navigator.onLine) {
-      router.push("/offline");
-    }
-
-    const handleOffline = () => {
-      router.push("/offline");
-    };
-
-    const handleOnline = () => {
-      const lastPage = sessionStorage.getItem("lastVisitedPage");
-
-      if (lastPage) {
-        window.location.href = lastPage;
-      } else {
-        window.location.href = "/";
-      }
-    };
-
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
-
-    return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
-    };
-  }, [router]);
-
   return (
     <ReactQueryProvider>
+      <GlobalConnectionOverlay />
       <AccountLockChecker />
 
       {children}

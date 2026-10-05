@@ -14,10 +14,21 @@ const OperatorVMS = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const pathname = usePathname();
 
+  // On mount: detect new tab vs refresh using sessionStorage "tab marker"
   useEffect(() => {
-    const token = sessionStorage.getItem("operatorAccessToken");
+    const isExistingTab = sessionStorage.getItem("operatorTabActive");
 
-    setIsAuthenticated(!!token);
+    if (!isExistingTab) {
+      // New tab opened — wipe operator session from localStorage
+      localStorage.removeItem("operatorAccessToken");
+      localStorage.removeItem("operator");
+      localStorage.removeItem("selectedAccount");
+      setIsAuthenticated(false);
+    } else {
+      // Same tab (refresh) — check if token still exists
+      const token = localStorage.getItem("operatorAccessToken");
+      setIsAuthenticated(!!token);
+    }
   }, []);
 
   const handleLogout = async () => {
@@ -28,14 +39,16 @@ const OperatorVMS = () => {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Logout failed.");
     } finally {
-      sessionStorage.removeItem("operatorAccessToken");
-      sessionStorage.removeItem("operator");
-      sessionStorage.removeItem("selectedAccount");
+      localStorage.removeItem("operatorAccessToken");
+      localStorage.removeItem("operator");
+      localStorage.removeItem("selectedAccount");
+      sessionStorage.removeItem("operatorTabActive");
 
       setIsAuthenticated(false);
     }
   };
 
+  // Route change cleanup: if operator navigates away from VMS, auto-logout
   useEffect(() => {
     if (isAuthenticated && pathname !== "/dashboard/vms/operator/vms") {
       void handleLogout();
@@ -51,6 +64,8 @@ const OperatorVMS = () => {
       <OperatorLoginModal
         open
         onClose={() => {
+          // Mark this tab as having an active operator session
+          sessionStorage.setItem("operatorTabActive", "true");
           setIsAuthenticated(true);
         }}
       />

@@ -11,7 +11,7 @@ import {
 const BASE_URL = `${API_BASE_URL}/operator-auth`;
 
 const getHeaders = (): HeadersInit => {
-  const token = sessionStorage.getItem("operatorAccessToken");
+  const token = localStorage.getItem("operatorAccessToken");
 
   return {
     "Content-Type": "application/json",

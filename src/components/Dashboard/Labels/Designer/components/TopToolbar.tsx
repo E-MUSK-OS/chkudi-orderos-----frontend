@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Undo, Redo, Eye, Save, Trash2, ArrowLeft, Loader2, Printer } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo, Redo, Eye, Save, Trash2, ArrowLeft, Loader2, Printer, RotateCcw } from 'lucide-react';
 
 interface TopToolbarProps {
   zoom: number;
@@ -11,6 +11,7 @@ interface TopToolbarProps {
   togglePreview: () => void;
   onSave: () => void;
   onClear: () => void;
+  onReset?: () => void;
   isSaving?: boolean;
   templateName: string;
   updateTemplateName: (name: string) => void;
@@ -29,6 +30,7 @@ export function TopToolbar({
   togglePreview,
   onSave,
   onClear,
+  onReset,
   isSaving,
   templateName,
   updateTemplateName,
@@ -81,10 +83,11 @@ export function TopToolbar({
           <ZoomIn size={17} />
         </button>
         <button
-          onClick={() => setZoom(1)}
-          className="px-2 py-1 text-slate-300 hover:text-white hover:bg-[#161D2E] rounded-lg text-xs font-semibold transition cursor-pointer"
-          title="Reset Zoom"
+          onClick={onReset ? onReset : () => setZoom(1)}
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-slate-300 hover:text-white hover:bg-[#161D2E] rounded-lg text-xs font-semibold transition cursor-pointer"
+          title="Reset Everything (Dimensions, Orientation, Rotation & Zoom)"
         >
+          <RotateCcw size={12} />
           Reset
         </button>
       </div>
@@ -112,6 +115,7 @@ export function TopToolbar({
         )}
         <button
           onClick={togglePreview}
+          title={previewSampleData ? 'Switch to Edit Mode' : 'Switch to Preview Mode'}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-xs active:scale-[0.98] cursor-pointer ${
             previewSampleData 
               ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]' 

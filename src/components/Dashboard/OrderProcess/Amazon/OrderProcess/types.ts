@@ -19,6 +19,7 @@ export interface AmazonComparisonResult {
   totalQuantity?: number;
   asinsCount?: number;
   combinedPages?: number[];
+  items?: { asin: string; sku: string; qty: number }[];
 }
 
 export interface AmazonOrderSummary {

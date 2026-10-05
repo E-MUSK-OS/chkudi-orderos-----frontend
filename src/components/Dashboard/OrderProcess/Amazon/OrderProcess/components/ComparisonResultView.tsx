@@ -787,6 +787,53 @@ export default function ComparisonResultView({
         }
       };
 
+      // ==========================================
+      // FAST PATH: Fetch first 10 missing ASINs instantly
+      // ==========================================
+      const initialMissing = computeMissingAsins(map);
+      if (initialMissing.length > 0) {
+        const urgentAsins = initialMissing.slice(0, 10);
+        await Promise.all(urgentAsins.map(async (asin) => {
+          try {
+            const res = await asinImportService.getAll(asin, token);
+            if (res?.data && Array.isArray(res.data)) {
+               res.data.forEach((item: any) => {
+                  const cleanAsin = item.asin ? String(item.asin).trim().toUpperCase() : "";
+                  const cleanSku = (item.sku ? String(item.sku).trim() : "") || (item.sellerSku ? String(item.sellerSku).trim() : "");
+                  const rawRack = item.rackAddress || item.rack_address || item.rack || "";
+                  const rawBarcode = item.generateBarcode || item.generate_barcode || item.generateBarCode || "";
+
+                  if (cleanAsin && cleanSku) map.set(cleanAsin, cleanSku);
+                  if (cleanAsin) mergeDetails(cleanAsin, rawRack, rawBarcode);
+                  if (cleanSku) mergeDetails(cleanSku, rawRack, rawBarcode);
+               });
+            }
+          } catch (e) {
+            console.warn(`Fast path fetch failed for ${asin}:`, e);
+          }
+        }));
+
+        // Instantly update UI with the first 10 items
+        skuDetailsMapRef.current = detailsMap;
+        setAsinToSkuMap(new Map(map));
+        setSkuDetailsMap(new Map(detailsMap));
+        
+        const remainingAfterFast = computeMissingAsins(map);
+        if (remainingAfterFast.length === 0) {
+           if (modalMissingAsins.length > 0) {
+             clearCachedAmazonDocs();
+             orderPrintPdfCacheRef.current.clear();
+             loadedPdfDocsRef.current = null;
+           }
+           setModalMissingAsins([]);
+           setIsMissingSkuModalOpen(false);
+           return { success: true, remainingCount: 0 };
+        }
+      }
+
+      // ==========================================
+      // FULL FETCH: Load the rest of the database
+      // ==========================================
       // 1. Primary: Fetch from AsinImport table
       try {
         const asinRes = await asinImportService.getAll("", token);
@@ -2068,7 +2115,7 @@ export default function ComparisonResultView({
         currentDetailsMap = skuDetailsMapRef.current.size > 0 ? skuDetailsMapRef.current : skuDetailsMap;
       }
 
-      const picklist = generateAmazonPicklist(mappedResults, targetSet, currentDetailsMap);
+      const picklist = generateAmazonPicklist(mappedResults, targetSet, currentDetailsMap, asinToSkuMap);
 
       // Download Excel (.xlsx) picklist directly without opening a new tab
       await downloadAmazonPicklistExcel(picklist);
@@ -3610,15 +3657,61 @@ export default function ComparisonResultView({
                           </div>
                         </td>
                         <td className="w-32 min-w-[120px] px-3 sm:px-4 py-3.5 text-center font-medium">
-                          {renderItemListCell(item.asin)}
+                          {item.items && item.items.length > 0 ? (
+                            <div className="flex flex-col items-center justify-center gap-0.5 py-0.5">
+                              {item.items.map((i, idx) => {
+                                const isNotLast = idx < (item.items?.length || 1) - 1;
+                                const displayAsin = i.asin !== "N/A" ? i.asin : "--";
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
+                                  >
+                                    <span>{displayAsin}</span>
+                                    {isNotLast ? (
+                                      <span className="font-bold text-slate-400 text-[11px] ml-1">/</span>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            renderItemListCell(item.asin)
+                          )}
                         </td>
                         <td className="w-40 min-w-[140px] px-3 sm:px-4 py-3.5 text-center font-medium">
                           <div className="flex flex-col items-center justify-center gap-0.5">
-                            {renderItemListCell(item.sellerSku)}
-                            {(getOrderTypeForItem(item) === "multiple_pieces" || (getOrderTypeForItem(item) === "multiple_asin" && (item.totalQuantity || 0) > (item.asinsCount || 1))) && (
-                              <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-800">
-                                {Math.max(item.totalQuantity || 0, 2)} Pieces
-                              </span>
+                            {item.items && item.items.length > 0 ? (
+                              item.items.map((i, idx) => {
+                                const isNotLast = idx < (item.items?.length || 1) - 1;
+                                const dbSku = i.asin && i.asin !== "N/A" ? asinToSkuMap.get(i.asin.toUpperCase()) : undefined;
+                                const displaySku = dbSku && dbSku !== "N/A" && dbSku !== "-" ? dbSku : i.asin !== "N/A" ? i.asin : "UNKNOWN-SKU";
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
+                                  >
+                                    <span>{displaySku}</span>
+                                    {i.qty > 1 && (
+                                      <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 ml-0.5">
+                                        {i.qty} Pieces
+                                      </span>
+                                    )}
+                                    {isNotLast ? (
+                                      <span className="font-bold text-slate-400 text-[11px] ml-1">/</span>
+                                    ) : null}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <>
+                                {renderItemListCell(item.sellerSku)}
+                                {(getOrderTypeForItem(item) === "multiple_pieces" || (getOrderTypeForItem(item) === "multiple_asin" && (item.totalQuantity || 0) > (item.asinsCount || 1))) && (
+                                  <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-800 mt-1">
+                                    {Math.max(item.totalQuantity || 0, 2)} Pieces
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>

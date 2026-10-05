@@ -255,46 +255,51 @@ const ManageProducts = () => {
 
   return (
     <DashboardLayout title="Products">
-      <div className="space-y-6">
-        <ProductHeader
-          buttonLabel={
-            importType === "asin"
-              ? "Add ASIN"
-              : importType === "myntra"
-              ? "Add Myntra"
-              : "Add Product"
-          }
-          onAddProduct={() => {
-            if (importType === "asin") {
-              setSelectedAsin(null);
-              setAsinModalOpen(true);
-            } else if (importType === "myntra") {
-              setSelectedMyntra(null);
-              setMyntraModalOpen(true);
-            } else if (importType === "product") {
-              setModalMode("create");
-              setSelectedProduct(null);
-              setProductModalOpen(true);
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header Information Banner matching Inventory */}
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+          <ProductHeader
+            buttonLabel={
+              importType === "asin"
+                ? "Add ASIN"
+                : importType === "myntra"
+                ? "Add Myntra"
+                : "Add Product"
             }
-          }}
-        />
+            onAddProduct={() => {
+              if (importType === "asin") {
+                setSelectedAsin(null);
+                setAsinModalOpen(true);
+              } else if (importType === "myntra") {
+                setSelectedMyntra(null);
+                setMyntraModalOpen(true);
+              } else if (importType === "product") {
+                setModalMode("create");
+                setSelectedProduct(null);
+                setProductModalOpen(true);
+              }
+            }}
+          />
 
-        <ProductStats
-          importType={importType}
-          stats={productStats}
-          totalProducts={products.length}
-          asinItems={asinItems}
-          asinTotal={asinResponse?.total}
-          myntraItems={myntraItems}
-          myntraTotal={myntraResponse?.total}
-          isLoading={
-            importType === "asin"
-              ? asinLoading
-              : importType === "myntra"
-              ? myntraLoading
-              : productsLoading
-          }
-        />
+          <div className="mt-5 sm:mt-6 border-t border-[#E7E0D2] pt-5 sm:pt-6">
+            <ProductStats
+              importType={importType}
+              stats={productStats}
+              totalProducts={products.length}
+              asinItems={asinItems}
+              asinTotal={asinResponse?.total}
+              myntraItems={myntraItems}
+              myntraTotal={myntraResponse?.total}
+              isLoading={
+                importType === "asin"
+                  ? asinLoading
+                  : importType === "myntra"
+                  ? myntraLoading
+                  : productsLoading
+              }
+            />
+          </div>
+        </div>
 
         <ProductToolbar
           search={search}
@@ -326,49 +331,61 @@ const ManageProducts = () => {
           myntraData={myntraItems}
         />
 
-        {importType === "product" ? (
-          <ProductTable
-            products={paginatedProducts}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStatusChange={handleStatus}
-            expandedProductId={expandedProductId}
-            onVariantToggle={handleVariantToggle}
-          />
-        ) : importType === "asin" ? (
-          <AsinTable
-            items={paginatedAsinItems}
-            isLoading={asinLoading}
-            onEdit={handleEditAsin}
-            onDelete={handleDeleteAsin}
-          />
-        ) : (
-          <MyntraTable
-            items={paginatedMyntraItems}
-            isLoading={myntraLoading}
-            onEdit={handleEditMyntra}
-            onDelete={async (id) => {
-              try {
-                await deleteMyntraMutation.mutateAsync(id);
-              } catch (e) {
-                console.error(e);
-              }
+        {/* Table Container matching Inventory */}
+        <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col">
+          {importType === "product" ? (
+            <ProductTable
+              products={paginatedProducts}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onStatusChange={handleStatus}
+              expandedProductId={expandedProductId}
+              onVariantToggle={handleVariantToggle}
+            />
+          ) : importType === "asin" ? (
+            <AsinTable
+              items={paginatedAsinItems}
+              isLoading={asinLoading}
+              onEdit={handleEditAsin}
+              onDelete={handleDeleteAsin}
+            />
+          ) : (
+            <MyntraTable
+              items={paginatedMyntraItems}
+              isLoading={myntraLoading}
+              onEdit={handleEditMyntra}
+              onDelete={async (id) => {
+                try {
+                  await deleteMyntraMutation.mutateAsync(id);
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+            />
+          )}
+
+          <ProductPagination
+            page={page}
+            totalPages={totalPages}
+            totalRecords={totalRecords}
+            limit={pageSize}
+            pageSize={pageSize}
+            itemName={
+              importType === "asin"
+                ? "ASINs"
+                : importType === "myntra"
+                ? "Myntra SKUs"
+                : "products"
+            }
+            variant="dark"
+            className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
             }}
           />
-        )}
-
-        <ProductPagination
-          page={page}
-          totalPages={totalPages}
-          totalRecords={totalRecords}
-          limit={pageSize}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
-          }}
-        />
+        </div>
       </div>
 
       <ProductModal

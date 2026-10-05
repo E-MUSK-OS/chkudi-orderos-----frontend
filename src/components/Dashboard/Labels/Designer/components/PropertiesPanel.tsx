@@ -13,6 +13,7 @@ import ReactSelect, { SelectOption } from '@/components/ui/ReactSelect';
 import { uploadImageToCloudinary } from '../utils/uploadImage';
 import { toast } from 'sonner';
 import { binarizeImageToCanvas } from '@/lib/labelRenderer';
+import { getEffectiveCanvasDimensions } from '../utils/coordinateMath';
 
 interface PropertiesPanelProps {
   settings: CanvasSettings;
@@ -76,9 +77,12 @@ const DPI_OPTIONS: SelectOption[] = [
   { label: '300 DPI (High Res Thermal)', value: '300' },
 ];
 
-const ORIENTATIONS: SelectOption[] = [
-  { label: 'Landscape', value: 'landscape' },
-  { label: 'Portrait', value: 'portrait' },
+
+const ROTATION_OPTIONS: SelectOption[] = [
+  { label: '0°', value: '0' },
+  { label: '90°', value: '90' },
+  { label: '180°', value: '180' },
+  { label: '270°', value: '270' },
 ];
 
 export function PropertiesPanel({
@@ -105,6 +109,8 @@ export function PropertiesPanel({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
+  const { widthMm: effectiveWidthMm, heightMm: effectiveHeightMm } = getEffectiveCanvasDimensions(settings);
+
   const handleSettingsChange = (key: keyof CanvasSettings, value: any, skipHistory = false) => {
     updateSettings({ [key]: value }, skipHistory);
   };
@@ -238,20 +244,13 @@ export function PropertiesPanel({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-300">Orientation</label>
+            <label className="text-xs font-medium text-gray-300">Rotation</label>
             <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
-              options={ORIENTATIONS}
-              value={ORIENTATIONS.find(o => o.value === settings.orientation) || ORIENTATIONS[0]}
+              options={ROTATION_OPTIONS}
+              value={ROTATION_OPTIONS.find(o => Number(o.value) === (((settings.rotation ?? 0) % 360 + 360) % 360)) || ROTATION_OPTIONS[0]}
               onChange={(opt) => {
                 if (opt) {
-                  handleSettingsChange('orientation', opt.value);
-                  const w = settings.widthMm;
-                  const h = settings.heightMm;
-                  if (opt.value === 'portrait' && w > h) {
-                    updateSettings({ widthMm: h, heightMm: w });
-                  } else if (opt.value === 'landscape' && h > w) {
-                    updateSettings({ widthMm: h, heightMm: w });
-                  }
+                  handleSettingsChange('rotation', Number(opt.value));
                 }
               }}
             />
@@ -644,13 +643,13 @@ export function PropertiesPanel({
           <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Align to Canvas</h4>
           <div className="flex gap-2">
             <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', 0)} title="Align left"><AlignLeft size={16} /></button>
-            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', (settings.widthMm - selectedElement.width) / 2)} title="Center horizontally"><AlignCenter size={16} /></button>
-            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', settings.widthMm - selectedElement.width)} title="Align right"><AlignRight size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', (effectiveWidthMm - selectedElement.width) / 2)} title="Center horizontally"><AlignCenter size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', effectiveWidthMm - selectedElement.width)} title="Align right"><AlignRight size={16} /></button>
           </div>
           <div className="flex gap-2">
             <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', 0)} title="Align top"><ArrowUpToLine size={16} /></button>
-            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', (settings.heightMm - selectedElement.height) / 2)} title="Center vertically"><ArrowUp size={16} className="rotate-90" /></button>
-            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', settings.heightMm - selectedElement.height)} title="Align bottom"><ArrowDownToLine size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', (effectiveHeightMm - selectedElement.height) / 2)} title="Center vertically"><ArrowUp size={16} className="rotate-90" /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', effectiveHeightMm - selectedElement.height)} title="Align bottom"><ArrowDownToLine size={16} /></button>
           </div>
         </div>
       

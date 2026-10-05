@@ -43,10 +43,10 @@ export const useUploadQueue = () => {
       // );
       const userId = JSON.parse(localStorage.getItem("user") || "{}")?.id;
       const operatorId = JSON.parse(
-        sessionStorage.getItem("operator") || "{}",
+        localStorage.getItem("operator") || "{}",
       )?.id;
       const accountId = JSON.parse(
-        sessionStorage.getItem("selectedAccount") || "{}",
+        localStorage.getItem("selectedAccount") || "{}",
       )?.id;
 
       if (!operatorId || !accountId) {

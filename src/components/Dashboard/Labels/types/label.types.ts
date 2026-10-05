@@ -75,7 +75,8 @@ export interface CanvasSettings {
   widthMm: number;
   heightMm: number;
   dpi: 203 | 300;
-  orientation: "landscape" | "portrait";
+  orientation?: "landscape" | "portrait";
+  rotation?: number; // 0, 90, 180, 270 degrees
   gridSizeMm: number;
   snapToGrid: boolean;
   colorMode: "color" | "monochrome"; // "color" = full color print, "monochrome" = thermal B&W

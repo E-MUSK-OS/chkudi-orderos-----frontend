@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useVMS } from "../../vms/Scans/VMS/Admin/hooks/useVMS";
 import { useOperators } from "../../vms/Admin/User/operator/hooks/useOperators";
@@ -16,7 +16,10 @@ export default function StatsCards() {
     fetchOperators,
   } = useOperators();
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
     fetchOperators();
     fetchAccounts();
   }, []);
@@ -54,7 +57,7 @@ export default function StatsCards() {
     ];
   }, [data, operators]);
 
-  if (vmsLoading || operatorLoading || accountLoading) {
+  if (!isMounted || vmsLoading || operatorLoading || accountLoading) {
     return <div>Loading...</div>;
   }
 

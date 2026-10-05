@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasSettings, LabelElement } from '../../types/label.types';
-import { mmToPx } from '../utils/coordinateMath';
+import { mmToPx, getEffectiveCanvasDimensions } from '../utils/coordinateMath';
 import { CanvasRulers } from './CanvasRulers';
 import { ElementRenderer } from './ElementRenderer';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
@@ -57,8 +57,9 @@ export function DesignCanvas({
     onSelect, onToggleSelect, onSetSelection
   );
 
-  const canvasWidthPx = mmToPx(settings.widthMm, zoom);
-  const canvasHeightPx = mmToPx(settings.heightMm, zoom);
+  const { widthMm: effectiveWidthMm, heightMm: effectiveHeightMm } = getEffectiveCanvasDimensions(settings);
+  const canvasWidthPx = mmToPx(effectiveWidthMm, zoom);
+  const canvasHeightPx = mmToPx(effectiveHeightMm, zoom);
   const isMulti = selectedIds.length > 1;
 
   const groupBox = isMulti ? (() => {
@@ -80,7 +81,7 @@ export function DesignCanvas({
       <div className="relative pointer-events-none" style={{ width: canvasWidthPx, height: canvasHeightPx }}>
         {!previewSampleData && (
           <div className="absolute -top-6 -left-6 pointer-events-auto">
-            <CanvasRulers zoom={zoom} widthMm={settings.widthMm} heightMm={settings.heightMm} />
+            <CanvasRulers zoom={zoom} widthMm={effectiveWidthMm} heightMm={effectiveHeightMm} />
           </div>
         )}
 
@@ -118,8 +119,8 @@ export function DesignCanvas({
               style={{
                 left: mmToPx(settings.safeMarginMm ?? 2, zoom),
                 top: mmToPx(settings.safeMarginMm ?? 2, zoom),
-                width: mmToPx(Math.max(0, settings.widthMm - (settings.safeMarginMm ?? 2) * 2), zoom),
-                height: mmToPx(Math.max(0, settings.heightMm - (settings.safeMarginMm ?? 2) * 2), zoom),
+                width: mmToPx(Math.max(0, effectiveWidthMm - (settings.safeMarginMm ?? 2) * 2), zoom),
+                height: mmToPx(Math.max(0, effectiveHeightMm - (settings.safeMarginMm ?? 2) * 2), zoom),
                 border: '1px dashed rgba(59, 130, 246, 0.45)',
                 boxSizing: 'border-box',
                 zIndex: 1,

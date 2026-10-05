@@ -316,14 +316,39 @@ export const useAwbScanner = (
         onSuccessCallback(updated);
       }
     } catch (err: any) {
-      const errorMsg =
-        err?.message || `Invalid Barcode: Amazon AWB tracking barcode "${clean}" not found. Only valid AWB tracking barcodes can be scanned.`;
-      setMessage({
-        text: errorMsg,
-        type: "error",
-      });
-      await playSound(warningSound);
-      recordMissing(clean, errorMsg);
+      const serverMessage = err?.response?.data?.message;
+      const errorMsg = serverMessage || err?.message || `Invalid Barcode: Amazon AWB tracking barcode "${clean}" not found. Only valid AWB tracking barcodes can be scanned.`;
+
+      if (errorMsg.includes("already scanned")) {
+        const orderData = err?.response?.data?.data;
+        setMessage({
+          text: errorMsg,
+          type: "warning",
+          order: orderData,
+        });
+
+        // Edge Case: If the frontend incorrectly thought it was PENDING, but backend says SCANNED, sync them!
+        if (orderData && orderData.id) {
+          setOrders((prev) => {
+            const next = prev.map((item) =>
+              item.id === orderData.id ? { ...item, packingScanStatus: "SCANNED" as const } : item
+            );
+            const pendingList = next.filter((item) => item.packingScanStatus === "PENDING");
+            const scannedList = next.filter((item) => item.packingScanStatus === "SCANNED");
+            return [...pendingList, ...scannedList];
+          });
+        }
+
+        await playSound(alreadyScannedSound);
+        removeMissingItem(clean);
+      } else {
+        setMessage({
+          text: errorMsg,
+          type: "error",
+        });
+        await playSound(warningSound);
+        recordMissing(clean, errorMsg);
+      }
     } finally {
       setIsScanning(false);
     }

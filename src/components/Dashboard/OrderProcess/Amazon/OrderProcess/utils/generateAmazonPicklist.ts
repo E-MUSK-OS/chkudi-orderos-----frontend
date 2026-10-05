@@ -23,7 +23,8 @@ export interface PicklistResult {
 export const generateAmazonPicklist = (
   results: AmazonComparisonResult[],
   selectedRows: Set<number>,
-  skuDetailsMap?: Map<string, { rackAddress?: string; generateBarcode?: string }>
+  skuDetailsMap?: Map<string, { rackAddress?: string; generateBarcode?: string }>,
+  asinToSkuMap?: Map<string, string>
 ): PicklistResult => {
   const selectedOrders = results.filter((r) => selectedRows.has(r.index));
 
@@ -153,6 +154,30 @@ export const generateAmazonPicklist = (
     const skuToAsinMap = new Map<string, string>();
 
     groupOrders.forEach((item) => {
+      if (item.items && item.items.length > 0) {
+        item.items.forEach((i) => {
+          const asin = i.asin !== "N/A" ? i.asin : "";
+          let sku = asin ? asin : "UNKNOWN-SKU";
+          
+          if (asin && asinToSkuMap && asinToSkuMap.has(asin.toUpperCase())) {
+            const dbSku = asinToSkuMap.get(asin.toUpperCase());
+            if (dbSku && dbSku !== "-" && dbSku !== "N/A") {
+              sku = dbSku;
+            }
+          }
+          
+          if (asin) {
+            if (!skuToAsinMap.has(sku)) skuToAsinMap.set(sku, asin);
+            if (!skuToAsinMap.has(sku.toUpperCase())) skuToAsinMap.set(sku.toUpperCase(), asin);
+          }
+          
+          const currentQty = skuMap.get(sku) ?? 0;
+          skuMap.set(sku, currentQty + (i.qty || 1));
+          totalQuantity += (i.qty || 1);
+        });
+        return;
+      }
+
       const rawSkuStr =
         item.sellerSku && item.sellerSku !== "N/A"
           ? item.sellerSku
@@ -168,8 +193,22 @@ export const generateAmazonPicklist = (
       const rawAsin = item.asin && item.asin !== "N/A" ? item.asin.trim() : "";
       if (rawAsin) {
         const asins = rawAsin.split(/[\n\r]+|\s+\/\s+/).map((a) => a.trim()).filter(Boolean);
-        skus.forEach((sku, idx) => {
+        skus.forEach((skuStr, idx) => {
           const assignedAsin = asins[idx] || asins[0] || rawAsin;
+          let sku = assignedAsin ? assignedAsin : "UNKNOWN-SKU";
+          
+          if (assignedAsin && asinToSkuMap && asinToSkuMap.has(assignedAsin.toUpperCase())) {
+            const dbSku = asinToSkuMap.get(assignedAsin.toUpperCase());
+            if (dbSku && dbSku !== "-" && dbSku !== "N/A") {
+              skus[idx] = dbSku;
+              sku = dbSku;
+            } else {
+              skus[idx] = sku;
+            }
+          } else {
+             skus[idx] = sku;
+          }
+
           if (!skuToAsinMap.has(sku)) {
             skuToAsinMap.set(sku, assignedAsin);
           }

@@ -17,7 +17,7 @@ export const useOperatorAuth = () => {
       return null;
     }
 
-    const storedOperator = sessionStorage.getItem("operator");
+    const storedOperator = localStorage.getItem("operator");
 
     return storedOperator ? (JSON.parse(storedOperator) as Operator) : null;
   });
@@ -28,9 +28,9 @@ export const useOperatorAuth = () => {
     try {
       const response = await loginApi(payload);
 
-      sessionStorage.setItem("operatorAccessToken", response.data.accessToken);
+      localStorage.setItem("operatorAccessToken", response.data.accessToken);
 
-      sessionStorage.setItem(
+      localStorage.setItem(
         "operator",
         JSON.stringify(response.data.operator),
       );
@@ -54,7 +54,7 @@ export const useOperatorAuth = () => {
     try {
       const response = await getMeApi();
 
-      sessionStorage.setItem("operator", JSON.stringify(response.data));
+      localStorage.setItem("operator", JSON.stringify(response.data));
 
       setOperator(response.data);
 
@@ -82,9 +82,9 @@ export const useOperatorAuth = () => {
     } catch {
       // Ignore API errors during logout
     } finally {
-      sessionStorage.removeItem("operatorAccessToken");
-      sessionStorage.removeItem("operator");
-      sessionStorage.removeItem("selectedAccount");
+      localStorage.removeItem("operatorAccessToken");
+      localStorage.removeItem("operator");
+      localStorage.removeItem("selectedAccount");
 
       setOperator(null);
     }

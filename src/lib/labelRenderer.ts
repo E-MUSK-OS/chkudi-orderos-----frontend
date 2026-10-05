@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import React from "react";
 import { PDFDocument } from "pdf-lib";
 import { resolveVariable } from "@/components/Dashboard/Labels/Designer/utils/sampleData";
-import { mmToPx, MM_TO_PX } from "@/components/Dashboard/Labels/Designer/utils/coordinateMath";
+import { mmToPx, MM_TO_PX, getEffectiveCanvasDimensions } from "@/components/Dashboard/Labels/Designer/utils/coordinateMath";
 import { LabelTemplate } from "@/components/Dashboard/Labels/types/label.types";
 
 export const getFontFamily = (fontFamily?: string): string => {
@@ -200,11 +200,12 @@ export const renderLabelToCanvas = async (
     printDate: rawData.printDate || new Date().toLocaleDateString(),
   };
 
-  // Calculate raw pixels
-  // We apply a basic DPI scale to ensure crisp thermal printing (e.g. 203 dpi usually ~8 dots/mm)
+  // Calculate raw pixels based on orientation and rotation
   const scale = scaleOverride || (template.settings.dpi || 203) / 96; 
-  const logicalWidth = template.settings.widthMm * MM_TO_PX;
-  const logicalHeight = template.settings.heightMm * MM_TO_PX;
+  const { widthMm: effectiveWidthMm, heightMm: effectiveHeightMm } = getEffectiveCanvasDimensions(template.settings);
+
+  const logicalWidth = effectiveWidthMm * MM_TO_PX;
+  const logicalHeight = effectiveHeightMm * MM_TO_PX;
 
   canvas.width = Math.round(logicalWidth * scale);
   canvas.height = Math.round(logicalHeight * scale);
@@ -496,8 +497,7 @@ export const createLabelDom = (
   template: LabelTemplate,
   productRecord: Record<string, string>
 ): HTMLDivElement => {
-  const widthMm = template.settings.widthMm || 100;
-  const heightMm = template.settings.heightMm || 50;
+  const { widthMm, heightMm } = getEffectiveCanvasDimensions(template.settings);
 
   const page = document.createElement("div");
   page.className = "print-page font-sans antialiased";
@@ -944,13 +944,13 @@ export const renderLabelToVectorPdf = async (
   productData: ProductLookupResult
 ): Promise<string> => {
   // Render using the exact same canvas engine that Chrome Browser Print uses at 300 DPI
-  const canvas = await renderLabelToCanvas(template, productData, 300 / 96, false);
-  const pdfDoc = await PDFDocument.create();
+  let canvas = await renderLabelToCanvas(template, productData, 300 / 96, false);
 
-  const widthMm = template.settings.widthMm || 100;
-  const heightMm = template.settings.heightMm || 50;
-  const pageWidthPt = widthMm * MM_TO_PT;
-  const pageHeightPt = heightMm * MM_TO_PT;
+  const { widthMm: effectiveWidthMm, heightMm: effectiveHeightMm } = getEffectiveCanvasDimensions(template.settings);
+
+  const pdfDoc = await PDFDocument.create();
+  const pageWidthPt = effectiveWidthMm * MM_TO_PT;
+  const pageHeightPt = effectiveHeightMm * MM_TO_PT;
 
   const page = pdfDoc.addPage([pageWidthPt, pageHeightPt]);
   // Lossless PNG eliminates compression artifacts, ensuring razor-sharp text and barcodes on thermal printers

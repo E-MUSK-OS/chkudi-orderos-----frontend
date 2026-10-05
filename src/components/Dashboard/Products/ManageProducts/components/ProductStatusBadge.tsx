@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckCircle2, AlertCircle } from "lucide-react";
+
 interface Props {
   isActive: boolean;
   activeLabel?: string;
@@ -13,14 +15,18 @@ export default function ProductStatusBadge({
 }: Props) {
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold transition-colors
-        ${
-          isActive
-            ? "bg-green-100 text-green-700"
-            : "bg-red-100 text-red-700"
-        }`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold whitespace-nowrap transition-colors ${
+        isActive
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-rose-200 bg-rose-50 text-rose-700"
+      }`}
     >
-      {isActive ? activeLabel : inactiveLabel}
+      {isActive ? (
+        <CheckCircle2 className="h-3.5 w-3.5" />
+      ) : (
+        <AlertCircle className="h-3.5 w-3.5" />
+      )}
+      <span>{isActive ? activeLabel : inactiveLabel}</span>
     </span>
   );
 }

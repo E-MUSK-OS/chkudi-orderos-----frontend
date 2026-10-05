@@ -149,47 +149,47 @@ export default function ProductVariantInline({
   }, [data]);
 
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-slate-200 bg-[#FAFAFA] shadow-sm">
+    <div className="w-full overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-xs">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px] text-left text-sm">
-          <thead className="border-b border-slate-200 bg-[#0F172A] text-white">
+        <table className="w-full min-w-[700px] border-collapse text-left font-sans">
+          <thead className="bg-[#0A0E1A] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
             <tr>
               {/* Dynamic Attributes FIRST */}
               {attributes.map((attribute) => (
                 <th
                   key={attribute.id}
-                  className="px-4 py-3 sm:px-6 sm:py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-200"
+                  className="px-3 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap"
                 >
                   {attribute.attributeName}
                 </th>
               ))}
 
               {/* Variant SKU */}
-              <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-200">
+              <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 Variant SKU
               </th>
 
               {/* ASIN RIGHT NEXT TO VARIANT SKU */}
-              <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-200">
+              <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 ASIN
               </th>
 
               {/* RACK ADDRESS */}
-              <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-200">
+              <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 Rack Address
               </th>
 
-              <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-200">
+              <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 Status
               </th>
 
-              <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-200">
+              <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 Action
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 bg-white">
+          <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm font-sans">
             {isLoading ? (
               <tr>
                 <td
@@ -214,7 +214,7 @@ export default function ProductVariantInline({
                     return (
                       <td
                         key={attribute.id}
-                        className="px-6 py-4 align-middle text-sm text-slate-700"
+                        className="px-3 sm:px-4 py-3 align-middle text-slate-700"
                       >
                         {editingId === variant.id ? (
                           <input
@@ -225,7 +225,7 @@ export default function ProductVariantInline({
                                 [attribute.id ?? ""]: e.target.value,
                               }))
                             }
-                            className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                            className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                           />
                         ) : (
                           <span className="font-normal">
@@ -237,12 +237,12 @@ export default function ProductVariantInline({
                   })}
 
                   {/* Variant SKU */}
-                  <td className="px-6 py-4 align-middle text-sm font-medium text-slate-700">
+                  <td className="px-3 sm:px-4 py-3 align-middle font-semibold text-slate-900 font-mono">
                     {editingId === variant.id ? (
                       <input
                         value={editSku}
                         onChange={(e) => setEditSku(e.target.value)}
-                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                       />
                     ) : (
                       variant.variantSku
@@ -250,13 +250,13 @@ export default function ProductVariantInline({
                   </td>
 
                   {/* ASIN RIGHT NEXT TO VARIANT SKU */}
-                  <td className="px-6 py-4 align-middle text-sm text-slate-700">
+                  <td className="px-3 sm:px-4 py-3 align-middle text-slate-700">
                     {editingId === variant.id ? (
                       <input
                         value={editAsin}
                         onChange={(e) => setEditAsin(e.target.value)}
                         placeholder="ASIN"
-                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                       />
                     ) : (
                       <span className="font-mono text-slate-700">
@@ -266,13 +266,13 @@ export default function ProductVariantInline({
                   </td>
 
                   {/* RACK ADDRESS */}
-                  <td className="px-6 py-4 align-middle text-sm text-slate-700">
+                  <td className="px-3 sm:px-4 py-3 align-middle text-slate-700">
                     {editingId === variant.id ? (
                       <input
                         value={editRackAddress}
                         onChange={(e) => setEditRackAddress(e.target.value)}
                         placeholder="Rack Address"
-                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                       />
                     ) : (
                       <span className="font-medium text-slate-700">
@@ -281,7 +281,7 @@ export default function ProductVariantInline({
                     )}
                   </td>
 
-                  <td className="px-6 py-4 align-middle text-center">
+                  <td className="px-3 sm:px-4 py-3 align-middle text-center">
                     <div className="flex items-center justify-center">
                       {editingId === variant.id ? (
                         <Switch
@@ -290,10 +290,10 @@ export default function ProductVariantInline({
                         />
                       ) : (
                         <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
                             variant.isActive
                               ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border border-slate-200 bg-slate-100 text-slate-600"
+                              : "border border-rose-200 bg-rose-50 text-rose-700"
                           }`}
                         >
                           {variant.isActive ? "Active" : "Inactive"}
@@ -302,7 +302,7 @@ export default function ProductVariantInline({
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 align-middle text-center">
+                  <td className="px-3 sm:px-4 py-3 align-middle text-center">
                     <div className="flex items-center justify-center gap-2">
                       {editingId === variant.id ? (
                         <>
@@ -323,9 +323,8 @@ export default function ProductVariantInline({
                         </>
                       ) : (
                         <>
-                          <Button
-                            size="icon"
-                            variant="secondary"
+                          <button
+                            type="button"
                             onClick={() => {
                               setEditingId(variant.id);
                               setEditSku(variant.variantSku);
@@ -342,20 +341,23 @@ export default function ProductVariantInline({
 
                               setEditAttributes(values);
                             }}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] transition-all shadow-2xs active:scale-95 cursor-pointer"
+                            title="Edit variant"
                           >
-                            <Pencil size={16} />
-                          </Button>
+                            <Pencil size={15} />
+                          </button>
 
-                          <Button
-                            size="icon"
-                            variant="primary"
+                          <button
+                            type="button"
                             onClick={() => {
                               setSelectedVariant(variant);
                               setDeleteOpen(true);
                             }}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                            title="Delete variant"
                           >
-                            <Trash2 size={16} />
-                          </Button>
+                            <Trash2 size={15} />
+                          </button>
                         </>
                       )}
                     </div>
@@ -374,7 +376,7 @@ export default function ProductVariantInline({
                 return (
                   <td
                     key={attrId}
-                    className={`px-6 py-4 align-middle text-sm ${
+                    className={`px-3 sm:px-4 py-3 align-middle text-xs sm:text-sm ${
                       !editing ? "cursor-pointer" : ""
                     }`}
                     onClick={!editing ? () => handleStartAdd(attrId) : undefined}
@@ -390,7 +392,7 @@ export default function ProductVariantInline({
                           )
                         }
                         placeholder={attribute.attributeName}
-                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                        className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                       />
                     ) : (
                       <span className="text-slate-400 transition-colors hover:text-slate-600">
@@ -403,7 +405,7 @@ export default function ProductVariantInline({
 
               {/* Variant SKU */}
               <td
-                className={`px-6 py-4 align-middle text-sm ${
+                className={`px-3 sm:px-4 py-3 align-middle text-xs sm:text-sm ${
                   !editing ? "cursor-pointer" : ""
                 }`}
                 onClick={!editing ? () => handleStartAdd("sku") : undefined}
@@ -420,10 +422,10 @@ export default function ProductVariantInline({
                       setVariantSku(e.target.value);
                     }}
                     placeholder="Variant SKU"
-                    className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                    className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                   />
                 ) : (
-                  <span className="font-medium text-slate-700 transition-colors hover:text-[#C89B3C]">
+                  <span className="font-semibold text-slate-700 transition-colors hover:text-[#B88728] font-mono">
                     {variantSku || masterSku || "--"}
                   </span>
                 )}
@@ -431,7 +433,7 @@ export default function ProductVariantInline({
 
               {/* ASIN RIGHT NEXT TO VARIANT SKU */}
               <td
-                className={`px-6 py-4 align-middle text-sm ${
+                className={`px-3 sm:px-4 py-3 align-middle text-xs sm:text-sm ${
                   !editing ? "cursor-pointer" : ""
                 }`}
                 onClick={!editing ? () => handleStartAdd("asin") : undefined}
@@ -442,7 +444,7 @@ export default function ProductVariantInline({
                     value={asin}
                     onChange={(e) => setAsin(e.target.value)}
                     placeholder="ASIN"
-                    className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                    className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                   />
                 ) : (
                   <span className="font-mono text-slate-400 transition-colors hover:text-slate-600">
@@ -453,7 +455,7 @@ export default function ProductVariantInline({
 
               {/* RACK ADDRESS */}
               <td
-                className={`px-6 py-4 align-middle text-sm ${
+                className={`px-3 sm:px-4 py-3 align-middle text-xs sm:text-sm ${
                   !editing ? "cursor-pointer" : ""
                 }`}
                 onClick={!editing ? () => handleStartAdd("rack") : undefined}
@@ -464,7 +466,7 @@ export default function ProductVariantInline({
                     value={rackAddress}
                     onChange={(e) => setRackAddress(e.target.value)}
                     placeholder="Rack Address"
-                    className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-sm outline-none focus:border-[#C89B3C]"
+                    className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-1 text-xs sm:text-sm outline-none focus:border-[#E8C16D]"
                   />
                 ) : (
                   <span className="font-medium text-slate-400 transition-colors hover:text-slate-600">
@@ -474,7 +476,7 @@ export default function ProductVariantInline({
               </td>
 
               {/* Status */}
-              <td className="px-6 py-4 align-middle text-center">
+              <td className="px-3 sm:px-4 py-3 align-middle text-center">
                 <div className="flex items-center justify-center">
                   {editing ? (
                     <Switch checked={isActive} onCheckedChange={setIsActive} />
@@ -485,7 +487,7 @@ export default function ProductVariantInline({
               </td>
 
               {/* Action */}
-              <td className="px-6 py-4 align-middle text-center">
+              <td className="px-3 sm:px-4 py-3 align-middle text-center">
                 <div className="flex items-center justify-center gap-2">
                   {editing ? (
                     <>
@@ -517,15 +519,15 @@ export default function ProductVariantInline({
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      size="sm"
-                      fullWidth={false}
+                    <button
+                      type="button"
                       onClick={() =>
                         handleStartAdd(attributes[0]?.id ?? "sku")
                       }
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 py-1.5 text-xs font-bold text-[#0A0E1A] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
                     >
                       Add Variant
-                    </Button>
+                    </button>
                   )}
                 </div>
               </td>

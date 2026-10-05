@@ -1,13 +1,22 @@
 "use client";
 
 import { useRef } from "react";
-import { Download, RotateCw, Search } from "lucide-react";
+import {
+  Download,
+  RotateCw,
+  Search,
+  Upload,
+  X,
+  Layers,
+  Sparkles,
+  Boxes,
+  FileSpreadsheet,
+} from "lucide-react";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
 
-import Button from "@/components/ui/Button";
-import ReactSelect from "@/components/ui/ReactSelect";
+import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 
 interface Option {
   label: string;
@@ -114,16 +123,9 @@ export default function ProductToolbar({
     }
   };
 
-  const handleSelectImportType = (option: { label: string; value: ImportType } | null) => {
-    if (!option) return;
-    const selected = option.value;
+  const handleSelectImportType = (selected: ImportType) => {
     selectedTypeRef.current = selected;
     onImportTypeChange(selected);
-
-    // Trigger file input upload dialog
-    setTimeout(() => {
-      fileInputRef.current?.click();
-    }, 100);
   };
 
   const handleDownloadDemoSheet = async () => {
@@ -472,167 +474,176 @@ export default function ProductToolbar({
     }
   };
 
+  const isFilterActive =
+    (search && search.trim() !== "") ||
+    Boolean(status) ||
+    Boolean(category) ||
+    Boolean(brand);
+
+  const handleResetFilters = () => {
+    onSearchChange("");
+    onStatusChange("");
+    onCategoryChange("");
+    onBrandChange("");
+  };
+
+  const hasData =
+    (importType === "asin" && asinData.length > 0) ||
+    (importType === "product" && productsData.length > 0) ||
+    (importType === "myntra" && myntraData.length > 0);
+
   return (
-    <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-700 bg-[#0F172A] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between shadow-sm">
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4 xl:flex xl:flex-1 xl:items-center xl:gap-4">
-        {/* Search */}
-        <div className="relative w-full xl:max-w-xs">
-          <Search
-            size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-
-          <input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={
-              importType === "asin"
-                ? "Search ASIN, SKU, Rack..."
-                : importType === "myntra"
-                ? "Search Myntra SKU, Seller SKU, Rack..."
-                : "Search Product..."
-            }
-            className="
-              h-12
-              w-full
-              rounded-md
-              border
-              border-slate-700
-              bg-[#111827]
-              pl-11
-              pr-4
-              text-sm
-              text-white
-              outline-none
-              transition
-              focus:border-[#E8C16D]
-            "
-          />
+    <>
+      <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
+        {/* Left side: Searchbar matching OrderOS theme */}
+        <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
+          <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white">
+            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+              <Search className="h-3.5 w-3.5" />
+            </div>
+            <input
+              type="text"
+              placeholder={
+                importType === "asin"
+                  ? "Search ASIN, SKU, Rack..."
+                  : importType === "myntra"
+                  ? "Search Myntra SKU, Seller SKU, Rack..."
+                  : "Search Product / SKU..."
+              }
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                title="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Status */}
-        <div className="w-full xl:w-48">
-          <ReactSelect
+        {/* Right side: Filters & Actions */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {/* Status Dropdown */}
+          <ThemeSelectDropdown
+            ariaLabel="Filter by Status"
+            value={status}
+            onChange={(val) => onStatusChange(val)}
             options={statusOptions}
-            value={
-              statusOptions.find((option) => option.value === status) ?? statusOptions[0] ?? null
-            }
-            onChange={(option) => onStatusChange(option?.value ?? "")}
-            height={48}
-            borderColor="#334155"
-            backgroundColor="#111827"
-            textColor="#ffffff"
-            placeholderColor="#94A3B8"
-            menuBackgroundColor="#111827"
-            optionHoverColor="#1E293B"
-            optionSelectedTextColor="#ffffff"
+            icon={<Boxes className="h-3.5 w-3.5" />}
           />
-        </div>
 
-        {/* Category */}
-        <div className="w-full xl:w-52">
-          <ReactSelect
-            options={categoryOptions}
-            value={
-              categoryOptions.find((option) => option.value === category) ?? categoryOptions[0] ?? null
-            }
-            onChange={(option) => onCategoryChange(option?.value ?? "")}
-            height={48}
-            borderColor="#334155"
-            backgroundColor="#111827"
-            textColor="#ffffff"
-            placeholderColor="#94A3B8"
-            menuBackgroundColor="#111827"
-            optionHoverColor="#1E293B"
-            optionSelectedTextColor="#ffffff"
-          />
-        </div>
+          {/* Category Dropdown (if on product view) */}
+          {importType === "product" && (
+            <ThemeSelectDropdown
+              ariaLabel="Filter by Category"
+              value={category}
+              onChange={(val) => onCategoryChange(val)}
+              options={categoryOptions}
+              icon={<Layers className="h-3.5 w-3.5" />}
+            />
+          )}
 
-        {/* Brand */}
-        <div className="w-full xl:w-52">
-          <ReactSelect
-            options={brandOptions}
-            value={
-              brandOptions.find((option) => option.value === brand) ?? brandOptions[0] ?? null
-            }
-            onChange={(option) => onBrandChange(option?.value ?? "")}
-            height={48}
-            borderColor="#334155"
-            backgroundColor="#111827"
-            textColor="#ffffff"
-            placeholderColor="#94A3B8"
-            menuBackgroundColor="#111827"
-            optionHoverColor="#1E293B"
-            optionSelectedTextColor="#ffffff"
-          />
-        </div>
-      </div>
+          {/* Brand Dropdown (if on product view) */}
+          {importType === "product" && (
+            <ThemeSelectDropdown
+              ariaLabel="Filter by Brand"
+              value={brand}
+              onChange={(val) => onBrandChange(val)}
+              options={brandOptions}
+              icon={<Sparkles className="h-3.5 w-3.5" />}
+            />
+          )}
 
-      <div className="flex flex-wrap sm:flex-nowrap items-center justify-stretch sm:justify-end gap-2.5 sm:gap-3 w-full xl:w-auto">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept=".xlsx, .xls"
-          className="hidden"
-        />
-
-        {/* Import Select Dropdown using ReactSelect UI */}
-        <div className="w-full sm:w-48 flex-1 sm:flex-none">
-          <ReactSelect
+          {/* Import / View Type Dropdown */}
+          <ThemeSelectDropdown
+            ariaLabel="Select View / Import Type"
+            value={importType}
+            onChange={(val) => handleSelectImportType(val as ImportType)}
             options={importTypeOptions}
-            value={
-              importTypeOptions.find((opt) => opt.value === importType) ?? importTypeOptions[0]
-            }
-            onChange={(option) => handleSelectImportType(option as any)}
-            height={48}
-            borderColor="#E8C16D"
-            backgroundColor="#E8C16D"
-            textColor="#0A0E1A"
-            placeholderColor="#0A0E1A"
-            menuBackgroundColor="#111827"
-            optionHoverColor="#1E293B"
-            optionSelectedColor="#E8C16D"
-            optionSelectedTextColor="#0A0E1A"
-            optionTextColor="#ffffff"
-            isDisabled={isImporting}
+            icon={<FileSpreadsheet className="h-3.5 w-3.5" />}
           />
+
+          {/* Reset filter button if active */}
+          {isFilterActive && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-600 hover:text-red-700 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+              title="Reset all filters"
+            >
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-red-100 text-red-600 shrink-0">
+                <X className="h-3.5 w-3.5" />
+              </div>
+              <span>Reset</span>
+            </button>
+          )}
+
+          {/* Upload Button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] active:scale-[0.98] disabled:opacity-50"
+            title="Import Excel file"
+          >
+            <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0">
+              <Upload className="h-3.5 w-3.5" />
+            </div>
+            <span>{isImporting ? "Importing..." : "Import"}</span>
+          </button>
+
+          {/* Export / Demo Button */}
+          {hasData ? (
+            <button
+              type="button"
+              onClick={handleDownloadData}
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
+              title="Export data"
+            >
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0">
+                <Download className="h-3.5 w-3.5" />
+              </div>
+              <span>Export</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDownloadDemoSheet}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 active:scale-[0.98]"
+              title="Download demo Excel sheet"
+            >
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0">
+                <Download className="h-3.5 w-3.5" />
+              </div>
+              <span>Demo Sheet</span>
+            </button>
+          )}
+
+          {/* Refresh Button */}
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="inline-flex items-center justify-center h-9 sm:h-10 w-9 sm:w-10 rounded-2xl border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-slate-700 transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+            title="Refresh"
+          >
+            <RotateCw className="h-4 w-4" />
+          </button>
         </div>
-
-        {((importType === "asin" && asinData.length > 0) ||
-          (importType === "product" && productsData.length > 0) ||
-          (importType === "myntra" && myntraData.length > 0)) ? (
-          <Button
-            variant="secondary"
-            fullWidth={false}
-            className="h-12 flex-1 sm:flex-none"
-            leftIcon={<Download size={18} />}
-            onClick={handleDownloadData}
-          >
-            Download Data
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            fullWidth={false}
-            className="h-12 flex-1 sm:flex-none"
-            leftIcon={<Download size={18} />}
-            onClick={handleDownloadDemoSheet}
-          >
-            Demo Sheet
-          </Button>
-        )}
-
-        <Button
-          variant="secondary"
-          fullWidth={false}
-          className="h-12 flex-1 sm:flex-none"
-          leftIcon={<RotateCw size={18} />}
-          onClick={onRefresh}
-        >
-          Refresh
-        </Button>
       </div>
-    </div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept=".xlsx, .xls"
+        className="hidden"
+      />
+    </>
   );
 }

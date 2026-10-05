@@ -6,7 +6,7 @@ interface LogoutResponse {
 }
 
 export const operatorLogout = async (): Promise<LogoutResponse> => {
-  const token = sessionStorage.getItem("operatorAccessToken");
+  const token = localStorage.getItem("operatorAccessToken");
 
   if (!token) {
     throw new Error("Operator access token not found.");

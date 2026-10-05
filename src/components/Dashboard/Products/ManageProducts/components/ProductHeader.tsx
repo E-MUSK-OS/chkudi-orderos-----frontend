@@ -1,7 +1,6 @@
 "use client";
 
-import Button from "@/components/ui/Button";
-import { Package, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface Props {
   onAddProduct: () => void;
@@ -10,37 +9,28 @@ interface Props {
 
 export default function ProductHeader({ onAddProduct, buttonLabel = "Add Product" }: Props) {
   return (
-    <section className="flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex-1">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg bg-[#0A0E1A] text-[#E8C16D]">
-            <Package size={22} className="sm:hidden" />
-            <Package size={24} className="hidden sm:block" />
-          </div>
-
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold uppercase tracking-wider text-[#E8C16D]">
-              Product Management
-            </h1>
-          </div>
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="space-y-1.5 min-w-0 max-w-2xl">
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            Product Management
+          </h1>
         </div>
-
-        <p className="mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-slate-700">
-          Manage all your products, brands and categories from one place for
-          inventory, order processing and marketplace integrations.
+        <p className="text-xs sm:text-sm text-slate-500">
+          Manage all your products, brands and categories from one place for inventory, order processing and marketplace integrations.
         </p>
       </div>
 
-      <div className="w-full sm:w-auto self-stretch sm:self-auto">
-        <Button
-          fullWidth={true}
-          className="sm:w-auto"
-          leftIcon={<Plus size={18} />}
+      <div className="flex items-center gap-2.5 self-start lg:self-auto shrink-0">
+        <button
+          type="button"
           onClick={onAddProduct}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] hover:bg-slate-900 px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm transition-all active:scale-[0.98] cursor-pointer"
         >
-          {buttonLabel}
-        </Button>
+          <Plus className="h-4 w-4 stroke-[2.5]" />
+          <span>{buttonLabel}</span>
+        </button>
       </div>
-    </section>
+    </div>
   );
 }

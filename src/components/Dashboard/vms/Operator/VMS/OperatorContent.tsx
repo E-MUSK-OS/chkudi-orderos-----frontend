@@ -37,8 +37,8 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
   } | null>(null);
 
   React.useEffect(() => {
-    const operatorData = sessionStorage.getItem("operator");
-    const accountData = sessionStorage.getItem("selectedAccount");
+    const operatorData = localStorage.getItem("operator");
+    const accountData = localStorage.getItem("selectedAccount");
 
     if (operatorData) {
       setOperator(JSON.parse(operatorData));

@@ -52,7 +52,7 @@ const OperatorLoginModal: React.FC<OperatorLoginModalProps> = ({
         <div className="mt-6">
           <OperatorLoginForm
             onSuccess={(account: Account) => {
-              sessionStorage.setItem(
+              localStorage.setItem(
                 "selectedAccount",
                 JSON.stringify(account),
               );

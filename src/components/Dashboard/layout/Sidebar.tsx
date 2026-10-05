@@ -220,7 +220,7 @@ export default function Sidebar({
   // };
 
   const handleNavigation = async (href: string) => {
-    const token = sessionStorage.getItem("operatorAccessToken");
+    const token = localStorage.getItem("operatorAccessToken");
 
     if (token) {
       try {
@@ -228,9 +228,10 @@ export default function Sidebar({
       } catch (error) {
         console.error(error);
       } finally {
-        sessionStorage.removeItem("operatorAccessToken");
-        sessionStorage.removeItem("operator");
-        sessionStorage.removeItem("selectedAccount");
+        localStorage.removeItem("operatorAccessToken");
+        localStorage.removeItem("operator");
+        localStorage.removeItem("selectedAccount");
+        sessionStorage.removeItem("operatorTabActive");
       }
     }
 

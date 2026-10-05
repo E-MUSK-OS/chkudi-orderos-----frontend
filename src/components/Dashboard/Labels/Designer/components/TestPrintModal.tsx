@@ -19,7 +19,8 @@ import {
   isThermalOrLabelPrinter,
   PrinterDetail,
 } from "../../services/printAgent.service";
-import { renderLabelToCanvas, renderLabelToVectorPdf, ProductLookupResult, printLabelsViaBrowser } from "@/lib/labelRenderer";
+import { renderLabelToCanvas, renderLabelToVectorPdf, ProductLookupResult, printLabelsViaBrowser, rotateCanvas } from "@/lib/labelRenderer";
+import { getEffectiveCanvasDimensions } from "../utils/coordinateMath";
 import { labelService } from "../../services/label.service";
 import { toast } from "sonner";
 
@@ -201,8 +202,7 @@ export function TestPrintModal({
   const handleBrowserPrint = async () => {
     setIsPrinting(true);
     try {
-      const widthMm = template.settings.widthMm || 100;
-      const heightMm = template.settings.heightMm || 50;
+      const { widthMm, heightMm } = getEffectiveCanvasDimensions(template.settings);
 
       const baseCanvas = await renderLabelToCanvas(template, productData, undefined, false);
       const dataUrl = baseCanvas.toDataURL("image/png");
