@@ -52,10 +52,6 @@ export default function AmazonAnalytics() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
   const [selectedGraphItem, setSelectedGraphItem] = useState<AnalyticsData | null>(null);
-  const [analyticsTime, setAnalyticsTime] = useState("11:00");
-  const [isTimePopoverOpen, setIsTimePopoverOpen] = useState(false);
-  const [tempHour, setTempHour] = useState("11");
-  const [tempMinute, setTempMinute] = useState("00");
 
   // Date Filter State
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -86,6 +82,22 @@ export default function AmazonAnalytics() {
   const selectedItems = useMemo(() => {
     return data.filter((item) => selectedIds.includes(item.id));
   }, [data, selectedIds]);
+
+  const lastUpdatedTime = useMemo(() => {
+    if (!data || data.length === 0) return null;
+    let maxTime = 0;
+    data.forEach((item) => {
+      if (item.lastScrapedAt) {
+        // Backend stores IST time directly but Prisma returns it with a 'Z' (UTC marker).
+        // Strip the 'Z' so the browser parses it as local time to avoid double shifting.
+        const timeStr = item.lastScrapedAt.endsWith('Z') ? item.lastScrapedAt.slice(0, -1) : item.lastScrapedAt;
+        const time = new Date(timeStr).getTime();
+        if (time > maxTime) maxTime = time;
+      }
+    });
+    if (maxTime === 0) return null;
+    return format(new Date(maxTime), "hh:mm a");
+  }, [data]);
 
   const handleBulkDeleteConfirm = async () => {
     if (selectedIds.length === 0) return;
@@ -120,27 +132,8 @@ export default function AmazonAnalytics() {
     }
   };
 
-  const updateSelectedDateForTime = (timeStr: string) => {
-    const now = new Date();
-    const maxDateStr = getTodayDateStringIST(now);
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const yesterdayStr = getTodayDateStringIST(yesterday);
-
-    const { hour: currentHour, minute: currentMinute } = getIstHourAndMinute(now);
-
-    const [h, m] = timeStr.split(":");
-    const targetHour = parseInt(h, 10) || 11;
-    const targetMinute = parseInt(m, 10) || 0;
-
-    if (currentHour < targetHour || (currentHour === targetHour && currentMinute < targetMinute)) {
-      setSelectedDate(yesterdayStr);
-    } else {
-      setSelectedDate(maxDateStr);
-    }
-  };
-
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = async (showLoader = true) => {
+    if (showLoader) setIsLoading(true);
     try {
       const token = getToken();
       if (!token) return;
@@ -156,66 +149,11 @@ export default function AmazonAnalytics() {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to fetch Amazon Analytics data");
+      if (showLoader) toast.error("Failed to fetch Amazon Analytics data");
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
-
-  const fetchSettings = async () => {
-    try {
-      const token = getToken();
-      if (!token) return;
-
-      const res = await fetch(`${BASE_URL}/amazon-analytics/settings`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const resData = await res.json();
-      if (res.ok && resData.data?.time) {
-        setAnalyticsTime(resData.data.time);
-        const [h, m] = resData.data.time.split(":");
-        if (h) setTempHour(h);
-        if (m) setTempMinute(m);
-        updateSelectedDateForTime(resData.data.time);
-      }
-    } catch (error) {
-      console.error("Failed to fetch settings:", error);
-    }
-  };
-
-  const handleTimeSave = async () => {
-    const newTime = `${tempHour}:${tempMinute}`;
-    setAnalyticsTime(newTime);
-    setIsTimePopoverOpen(false);
-    updateSelectedDateForTime(newTime);
-
-    try {
-      const token = getToken();
-      if (!token) return;
-
-      const res = await fetch(`${BASE_URL}/amazon-analytics/settings`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ time: newTime }),
-      });
-
-      if (!res.ok) {
-        toast.error("Failed to save time");
-      } else {
-        toast.success("Time saved successfully");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("An error occurred while saving time");
-    }
-  };
-
-
 
   useEffect(() => {
     // Generate dates for the last 30 days strictly in IST
@@ -224,18 +162,22 @@ export default function AmazonAnalytics() {
     // Max Date (Today in IST)
     const maxDateStr = getTodayDateStringIST(now);
     setMaxDate(maxDateStr);
+    setSelectedDate(maxDateStr);
 
     // Min Date (30 Days Ago in IST)
     const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
     const minDateStr = getTodayDateStringIST(thirtyDaysAgo);
     setMinDate(minDateStr);
 
-    // Set initial default date based on current default time ("11:00")
-    updateSelectedDateForTime("11:00");
+    // Initial fetch
+    fetchData(true);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-    fetchSettings();
+    // Setup 30 minutes polling
+    const interval = setInterval(() => {
+      fetchData(false);
+    }, 30 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const uniqueOperators = useMemo(() => {
@@ -546,76 +488,20 @@ export default function AmazonAnalytics() {
                 </PopoverContent>
               </Popover>
 
-              {/* Time Filter */}
-              <Popover open={isTimePopoverOpen} onOpenChange={(open) => {
-                setIsTimePopoverOpen(open);
-                if (open && analyticsTime) {
-                  const [h, m] = analyticsTime.split(":");
-                  if (h) setTempHour(h);
-                  if (m) setTempMinute(m);
-                }
-              }}>
-                <PopoverTrigger className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
+              {/* Last Updated Time */}
+              {lastUpdatedTime && (
+                <div
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs cursor-default"
+                  title="Last Updated Time"
+                >
                   <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728]">
                     <Clock className="h-3.5 w-3.5" />
                   </div>
-                  <span className="w-[45px] sm:w-[50px] text-left">
-                    {analyticsTime || "11:00"}
-                  </span>
-                </PopoverTrigger>
-                <PopoverContent align="center" className="w-64 p-4 rounded-2xl border border-[#E7E0D2] bg-white shadow-xl">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between font-bold text-[#0A0E1A]">
-                      <span>Select Time</span>
-                      <div className="text-[#B88728] bg-[#FFF9EC] px-2 py-1 rounded-md text-xs border border-[#E8C16D]/30">
-                        {tempHour}:{tempMinute}
-                      </div>
-                    </div>
-                    <div className="flex gap-4 h-48">
-                      {/* Hours */}
-                      <div className="flex-1 flex flex-col gap-1 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
-                        <div className="text-xs font-semibold text-slate-400 mb-1 sticky top-0 bg-white z-10 py-1">Hours</div>
-                        {Array.from({ length: 24 }).map((_, i) => {
-                          const val = String(i).padStart(2, '0');
-                          return (
-                            <button
-                              key={`h-${val}`}
-                              onClick={() => setTempHour(val)}
-                              className={`py-2 px-3 rounded-xl text-sm font-semibold transition-colors ${tempHour === val ? 'bg-[#E8C16D] text-black' : 'text-slate-600 hover:bg-[#FFF9EC] hover:text-[#B88728]'}`}
-                            >
-                              {val}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {/* Minutes */}
-                      <div className="flex-1 flex flex-col gap-1 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
-                        <div className="text-xs font-semibold text-slate-400 mb-1 sticky top-0 bg-white z-10 py-1">Minutes</div>
-                        {Array.from({ length: 60 }).map((_, i) => {
-                          const val = String(i).padStart(2, '0');
-                          return (
-                            <button
-                              key={`m-${val}`}
-                              onClick={() => setTempMinute(val)}
-                              className={`py-2 px-3 rounded-xl text-sm font-semibold transition-colors ${tempMinute === val ? 'bg-[#E8C16D] text-black' : 'text-slate-600 hover:bg-[#FFF9EC] hover:text-[#B88728]'}`}
-                            >
-                              {val}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="border-t border-[#E7E0D2] pt-3 flex justify-end gap-2">
-                      <button onClick={() => setIsTimePopoverOpen(false)} className="bg-slate-100 text-slate-700 hover:bg-slate-200 px-4 py-2 rounded-xl text-sm font-bold transition-colors">
-                        Cancel
-                      </button>
-                      <button onClick={handleTimeSave} className="bg-[#0A0E1A] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors">
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  <span>{lastUpdatedTime}</span>
+                </div>
+              )}
+
+
 
               {/* Download Insights */}
               <button
