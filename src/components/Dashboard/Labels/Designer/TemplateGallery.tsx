@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Trash2, Edit2, Tag, Plus, Loader2, Search, X, LayoutGrid } from "lucide-react";
+import { Copy, Trash2, Edit2, Tag, Plus, Loader2, Search, X, LayoutGrid, Printer } from "lucide-react";
 import { labelService } from "../services/label.service";
 import { LabelTemplate, ProductLookupResult } from "../types/label.types";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
@@ -11,6 +11,7 @@ import { getMarketplaces } from "@/services/marketplaceAccount/marketplaceAccoun
 import { Marketplace } from "@/services/marketplaceAccount/marketplaceAccount.types";
 import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmModal from "./components/ConfirmModal";
+import { TestPrintModal } from "./components/TestPrintModal";
 import ReactSelect from "@/components/ui/ReactSelect";
 
 const DUMMY_PRODUCT: ProductLookupResult = {
@@ -98,6 +99,7 @@ export function TemplateGallery() {
   const [renameValue, setRenameValue] = useState("");
 
   const [editingMarketplaceId, setEditingMarketplaceId] = useState<string | null>(null);
+  const [testPrintTemplate, setTestPrintTemplate] = useState<LabelTemplate | null>(null);
   const isCancelingRename = useRef(false);
 
   const loadData = async () => {
@@ -417,9 +419,22 @@ export function TemplateGallery() {
                     Edit Template
                     <span className="transition-transform group-hover:translate-x-1">→</span>
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-400">
-                    {template.layoutJson ? `${template.layoutJson.length} items` : "Custom"}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {template.layoutJson ? `${template.layoutJson.length} items` : "Custom"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTestPrintTemplate(template);
+                      }}
+                      className="text-slate-400 hover:text-[#B88728] transition-colors p-1 rounded-md hover:bg-[#FFF9EC]"
+                      title="Test Print"
+                    >
+                      <Printer className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Action Menu */}
@@ -451,6 +466,20 @@ export function TemplateGallery() {
         confirmLabel="Delete"
         danger={true}
       />
+
+      {testPrintTemplate && (
+        <TestPrintModal
+          open={!!testPrintTemplate}
+          onClose={() => setTestPrintTemplate(null)}
+          template={testPrintTemplate}
+          previewData={{
+            title: "Sample Product Name",
+            sku: "SAMPLE-SKU-123",
+            mrp: "199.99",
+            manufacturingMonth: new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+          }}
+        />
+      )}
     </div>
   );
 }

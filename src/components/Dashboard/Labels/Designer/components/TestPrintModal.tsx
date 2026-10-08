@@ -46,22 +46,75 @@ export function TestPrintModal({
   >("checking");
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
   const [isRenderingPreview, setIsRenderingPreview] = useState<boolean>(true);
+  
+  const [skuInput, setSkuInput] = useState<string>(previewData?.sku || previewData?.asin || "");
+  const [liveData, setLiveData] = useState<Record<string, string> | null>(previewData);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<ProductLookupResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const term = skuInput.trim();
+    if (!term) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const res = await labelService.lookupProduct(term);
+        setSearchResults(res);
+      } catch (err) {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [skuInput]);
+
+  const selectProduct = useCallback((match: ProductLookupResult) => {
+    setSkuInput(match.sku || match.masterSku || "");
+    setLiveData({
+      ...previewData,
+      title: match.title || "",
+      sku: match.sku || "",
+      masterSku: match.masterSku || "",
+      brand: match.brand || "",
+      size: match.size || "",
+      mrp: match.mrp ? match.mrp.toString() : "",
+      asin: match.asin || "",
+      manufacturingMonth: match.manufacturingMonth || "",
+    } as any);
+    setIsDropdownOpen(false);
+  }, [previewData]);
+
+  useEffect(() => {
+    if (!isDropdownOpen) {
+      setLiveData(prev => ({
+        ...(prev || previewData || {}),
+        sku: skuInput || "Template Default"
+      } as any));
+    }
+  }, [skuInput, isDropdownOpen, previewData]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Prepare resolved product lookup data from previewData
-  const productData: ProductLookupResult = previewData
+  const productData: ProductLookupResult = liveData
     ? {
-        title: previewData.title,
-        sku: previewData.sku,
-        masterSku: previewData.masterSku,
-        brand: previewData.brand,
-        size: previewData.size,
-        color: previewData.color,
-        mrp: previewData.mrp ? Number(previewData.mrp) || null : null,
-        asin: previewData.asin,
-        manufacturingMonth: previewData.manufacturingMonth,
-        ...(previewData as any),
+        title: liveData.title,
+        sku: liveData.sku,
+        masterSku: liveData.masterSku,
+        brand: liveData.brand,
+        size: liveData.size,
+        color: liveData.color,
+        mrp: liveData.mrp ? Number(liveData.mrp) || null : null,
+        asin: liveData.asin,
+        manufacturingMonth: liveData.manufacturingMonth,
+        ...(liveData as any),
       }
     : {};
 
@@ -248,8 +301,7 @@ export function TestPrintModal({
     printerOptions.find((p) => p.value === selectedPrinter) ??
     (selectedPrinter ? { label: selectedPrinter, value: selectedPrinter } : null);
 
-  const displaySku = previewData?.sku || previewData?.asin || "Template Default";
-  const displayTitle = previewData?.title || template.name || "Test Label";
+  const displayTitle = liveData?.title || template.name || "Test Label";
 
   return (
     <Modal
@@ -261,12 +313,46 @@ export function TestPrintModal({
       <div className="flex flex-col space-y-5 text-[#0A0E1A]">
         {/* Info Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-          <div>
-            <span className="font-semibold text-slate-700">Testing SKU: </span>
-            <span className="font-mono bg-white px-2 py-0.5 border rounded text-[#0A0E1A] font-bold">
-              {displaySku}
-            </span>
-            <span className="ml-2 text-slate-500 line-clamp-1 sm:inline block">
+          <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto relative">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">Testing SKU: </span>
+            <div className="relative">
+              <input
+                type="text"
+                value={skuInput}
+                onChange={(e) => {
+                  setSkuInput(e.target.value);
+                  setIsDropdownOpen(true);
+                }}
+                onFocus={() => setIsDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                placeholder="Search SKU..."
+                className="font-mono bg-white px-2 py-1 border border-slate-300 rounded text-[#0A0E1A] font-bold focus:outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] transition-shadow w-full sm:w-[200px]"
+              />
+              {isDropdownOpen && (searchResults.length > 0 || isSearching) && (
+                <div className="absolute top-full left-0 mt-1 w-[300px] sm:w-[400px] max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
+                  {isSearching ? (
+                    <div className="p-3 flex items-center justify-center text-slate-400 text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" /> Searching...
+                    </div>
+                  ) : (
+                    searchResults.map((p, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => selectProduct(p)}
+                        className="px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
+                      >
+                        <div className="font-bold text-sm text-[#0A0E1A] truncate">{p.title}</div>
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-xs font-mono text-slate-500">SKU: {p.sku || p.masterSku}</span>
+                          <span className="text-xs font-semibold text-[#B88728]">₹{p.mrp || 0}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <span className="text-slate-500 line-clamp-1 flex-1 min-w-[100px]">
               {displayTitle}
             </span>
           </div>
