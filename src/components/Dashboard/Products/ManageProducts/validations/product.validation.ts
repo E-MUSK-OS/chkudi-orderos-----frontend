@@ -29,10 +29,8 @@ export const productSchema = z.object({
 
   generateBarcode: z.string().optional().default("No"),
 
-  mrp: z.preprocess(
-    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
-    z.number({ message: "MRP is required" }).min(0, "MRP must be non-negative")
-  ),
+  mrp: z.string().optional(),
+  mfgMonth: z.string().optional(),
 
   hsnCode: z.string().trim().min(1, "HSN Code is required"),
 
