@@ -169,7 +169,6 @@ export function ElementRenderer({
 
         return (
           <div
-            onDoubleClick={handleDoubleClick}
             style={{
               width: '100%',
               height: '100%',
@@ -389,6 +388,7 @@ export function ElementRenderer({
       onPointerDown={(e) => {
         onPointerDownElement(e, element.id);
       }}
+      onDoubleClick={handleDoubleClick}
     >
       {renderContent()}
 

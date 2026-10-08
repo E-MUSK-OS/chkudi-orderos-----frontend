@@ -142,6 +142,17 @@ export function BarcodeDesign() {
     }
   };
 
+  useEffect(() => {
+    const handleSaveShortcut = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleSaveShortcut);
+    return () => window.removeEventListener('keydown', handleSaveShortcut);
+  }, [handleSave]);
+
   const handleClear = () => {
     setShowClearModal(true);
   };
