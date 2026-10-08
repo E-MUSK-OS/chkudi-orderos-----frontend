@@ -201,7 +201,7 @@ export const renderLabelToCanvas = async (
   };
 
   // Calculate raw pixels based on orientation and rotation
-  const scale = scaleOverride || (template.settings.dpi || 203) / 96; 
+  const scale = scaleOverride || (template.settings.dpi || 203) / 96;
   const { widthMm: effectiveWidthMm, heightMm: effectiveHeightMm } = getEffectiveCanvasDimensions(template.settings);
 
   const logicalWidth = effectiveWidthMm * MM_TO_PX;
@@ -270,23 +270,23 @@ export const renderLabelToCanvas = async (
         ctx.restore();
         continue;
       }
-      
+
       const ptToPx = 96 / 72; // 1pt = 1.3333px at 96 DPI
       const lineHeightMultiplier = el.lineHeight || 1.2;
       let fontSizePx = (el.fontSize || 12) * ptToPx;
-      
+
       ctx.fillStyle = template.settings.colorMode === 'monochrome' ? "#000000" : (el.color || "#000000");
       ctx.textAlign = el.textAlign || "left";
       ctx.textBaseline = "middle";
 
       const paragraphs = content.split("\n");
-      
+
       // Auto-wrap lines at element width w
       const wrapText = (fsPx: number) => {
         const font = `${el.fontWeight === 'bold' ? "bold " : ""}${el.fontStyle === 'italic' ? "italic " : ""}${fsPx}px ${getFontFamily(el.fontFamily)}`;
         ctx.font = font;
         const lines: { text: string; width: number }[] = [];
-        
+
         for (const paragraph of paragraphs) {
           if (!paragraph) {
             lines.push({ text: "", width: 0 });
@@ -294,12 +294,12 @@ export const renderLabelToCanvas = async (
           }
           const words = paragraph.split(" ");
           let currentLine = "";
-          
+
           for (let n = 0; n < words.length; n++) {
             const word = words[n];
             const testLine = currentLine ? `${currentLine} ${word}` : word;
             const metrics = ctx.measureText(testLine);
-            
+
             if (metrics.width > w && currentLine) {
               lines.push({ text: currentLine, width: ctx.measureText(currentLine).width });
               // Check if the single word itself is wider than w
@@ -341,6 +341,17 @@ export const renderLabelToCanvas = async (
       };
 
       let wrappedLines = wrapText(fontSizePx);
+      if (el.maxLines && el.maxLines > 0 && wrappedLines.length > el.maxLines) {
+        wrappedLines = wrappedLines.slice(0, el.maxLines);
+        // Append ellipsis to the last line if truncated
+        const lastLineIndex = wrappedLines.length - 1;
+        if (lastLineIndex >= 0) {
+          wrappedLines[lastLineIndex].text += '...';
+          // Re-measure width just in case
+          wrappedLines[lastLineIndex].width = ctx.measureText(wrappedLines[lastLineIndex].text).width;
+        }
+      }
+
       let lineSpacing = fontSizePx * lineHeightMultiplier;
       let totalTextHeight = wrappedLines.length * lineSpacing;
 
@@ -349,24 +360,24 @@ export const renderLabelToCanvas = async (
       ctx.font = font;
 
       const drawX = el.textAlign === "center" ? w / 2 : el.textAlign === "right" ? w : 0;
-      
+
       // Vertically center like ElementRenderer (justifyContent: 'center')
       let lineY = Math.max(0, (h - totalTextHeight) / 2) + lineSpacing / 2;
-      
+
       for (const lineObj of wrappedLines) {
         if (lineY - lineSpacing / 2 > h) {
           break; // Clip lines that exceed box height
         }
         if (lineObj.text) {
           ctx.fillText(lineObj.text, drawX, lineY);
-          
+
           if (el.textDecoration === 'underline') {
             const lineWidth = lineObj.width;
             ctx.beginPath();
             let startX = drawX;
             if (el.textAlign === "center") startX -= lineWidth / 2;
             else if (el.textAlign === "right") startX -= lineWidth;
-            
+
             ctx.moveTo(startX, lineY + fontSizePx / 2);
             ctx.lineTo(startX + lineWidth, lineY + fontSizePx / 2);
             ctx.stroke();
@@ -459,8 +470,8 @@ export const renderLabelToCanvas = async (
       ctx.strokeStyle = template.settings.colorMode === 'monochrome' ? "#000000" : (el.borderColor || "#000000");
       ctx.lineWidth = (el.borderWidth || 1) * MM_TO_PX;
       ctx.beginPath();
-      ctx.moveTo(0, h/2);
-      ctx.lineTo(w, h/2);
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
       ctx.stroke();
     } else if (el.type === "image" && el.imageUrl) {
       try {
@@ -520,7 +531,7 @@ export const createLabelDom = (
     print-color-adjust: exact;
   `;
 
-    // Background Image
+  // Background Image
   if (template.backgroundImageUrl) {
     const bgImg = document.createElement("img");
     bgImg.src = template.backgroundImageUrl;
@@ -581,8 +592,25 @@ export const createLabelDom = (
         flex-direction: column;
         justify-content: center;
         box-sizing: border-box;
+        word-break: break-word;
       `;
-      textDiv.textContent = text;
+
+      const innerSpan = document.createElement("span");
+      innerSpan.textContent = text;
+
+      if (el.maxLines && el.maxLines > 0) {
+        innerSpan.style.cssText = `
+          display: -webkit-box;
+          -webkit-line-clamp: ${el.maxLines};
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          white-space: pre-wrap;
+        `;
+      } else {
+        innerSpan.style.whiteSpace = 'pre-wrap';
+      }
+
+      textDiv.appendChild(innerSpan);
       elContainer.appendChild(textDiv);
     } else if (el.type === "barcode") {
       const content = resolveVariable(el.content, el.variableSource, productRecord);
@@ -871,7 +899,7 @@ export const printLabelsViaBrowser = async (
           if (iframe.parentNode) {
             iframe.parentNode.removeChild(iframe);
           }
-        } catch (e) {}
+        } catch (e) { }
       }, 120000);
     };
 
@@ -885,7 +913,7 @@ export const printLabelsViaBrowser = async (
                 if (img.decode) {
                   try {
                     await img.decode();
-                  } catch (e) {}
+                  } catch (e) { }
                 }
                 return;
               }
@@ -894,7 +922,7 @@ export const printLabelsViaBrowser = async (
                   if (img.decode) {
                     try {
                       await img.decode();
-                    } catch (e) {}
+                    } catch (e) { }
                   }
                   imgDone();
                 };

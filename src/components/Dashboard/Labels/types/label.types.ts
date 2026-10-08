@@ -27,6 +27,7 @@ export interface TextElement extends BaseElement {
   textAlign: "left" | "center" | "right";
   color: string;
   lineHeight: number;
+  maxLines?: number;
 }
 
 export interface BarcodeElement extends BaseElement {

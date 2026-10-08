@@ -106,7 +106,7 @@ export function ElementRenderer({
   // Render Barcode
   useEffect(() => {
     if (element.type === 'barcode' && barcodeRef.current) {
-      const content = previewData 
+      const content = previewData
         ? resolveVariable(element.content, element.variableSource, previewData)
         : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
 
@@ -188,6 +188,7 @@ export function ElementRenderer({
               border: !previewSampleData && !textContent && !isEditing ? '1px dashed #ccc' : 'none',
               backgroundColor: !previewSampleData && !textContent && !isEditing ? 'rgba(0,0,0,0.05)' : 'transparent',
               pointerEvents: previewSampleData ? 'none' : 'auto',
+              wordBreak: 'break-word',
             }}
           >
             {isEditing ? (
@@ -214,13 +215,27 @@ export function ElementRenderer({
                 }}
               />
             ) : (
-              textContent || (previewSampleData ? null : <span style={{ opacity: 0.5, fontSize: '0.8em' }}>[Empty Text]</span>)
+              <div
+                style={
+                  element.maxLines && element.maxLines > 0
+                    ? {
+                      display: '-webkit-box',
+                      WebkitLineClamp: element.maxLines,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      whiteSpace: 'pre-wrap',
+                    }
+                    : { whiteSpace: 'pre-wrap' }
+                }
+              >
+                {textContent || (previewSampleData ? null : <span style={{ opacity: 0.5, fontSize: '0.8em' }}>[Empty Text]</span>)}
+              </div>
             )}
           </div>
         );
       }
       case 'barcode': {
-        const barcodeContent = previewData 
+        const barcodeContent = previewData
           ? resolveVariable(element.content, element.variableSource, previewData)
           : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
 
@@ -228,17 +243,17 @@ export function ElementRenderer({
         const fontSizePt = (element.fontSize || 10) * zoom;
 
         return (
-          <div style={{ 
-            width: '100%', 
-            height: '100%', 
-            position: 'relative', 
-            display: 'flex', 
+          <div style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
           }}>
             <div style={{ flex: 1, width: '100%', minHeight: 0, position: 'relative' }}>
-              <svg 
-                ref={barcodeRef} 
+              <svg
+                ref={barcodeRef}
                 preserveAspectRatio="none"
                 style={{ width: '100%', height: '100%', display: barcodeError ? 'none' : 'block' }}
               />
@@ -328,8 +343,8 @@ export function ElementRenderer({
             onError={(e) => {
               e.currentTarget.style.display = 'none';
               if (e.currentTarget.parentElement) {
-                e.currentTarget.parentElement.innerHTML = previewSampleData 
-                  ? '' 
+                e.currentTarget.parentElement.innerHTML = previewSampleData
+                  ? ''
                   : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background-color:#fef2f2;border:1px dashed #fca5a5;color:#ef4444;font-size:10px;">Error</div>';
               }
             }}
@@ -376,7 +391,7 @@ export function ElementRenderer({
       }}
     >
       {renderContent()}
-      
+
       {!previewSampleData && isPrimarySelection && !isMultiSelected && !element.locked && (
         <TransformHandle
           onPointerDown={(e, handle) => onPointerDownResize(e, handle, element.id)}

@@ -186,29 +186,26 @@ export default function ProductForm({
             render={({ field }) => (
               <Input
                 {...field}
-                type="number"
-                step="0.01"
-                min="0"
-                onKeyDown={(e) => {
-                  if (["-", "+", "e", "E", "/", "*", ","].includes(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                onPaste={(e) => {
-                  const pasteText = e.clipboardData.getData("text");
-                  if (/[/\-*+eE,]/.test(pasteText)) {
-                    e.preventDefault();
-                  }
-                }}
                 value={field.value ?? ""}
-                onChange={(e) => {
-                  const sanitized = e.target.value.replace(/[^0-9.]/g, "");
-                  field.onChange(
-                    sanitized === "" ? undefined : parseFloat(sanitized),
-                  );
-                }}
-                label="MRP (₹)"
+                onChange={(e) => field.onChange(e.target.value)}
+                label="MRP"
                 error={errors.mrp?.message}
+                placeholder="e.g. 2799.00 RS"
+              />
+            )}
+          />
+
+          <Controller
+            name="mfgMonth"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(e.target.value)}
+                label="MFG Month"
+                error={errors.mfgMonth?.message as string}
+                placeholder="e.g. JUL/ 26"
               />
             )}
           />

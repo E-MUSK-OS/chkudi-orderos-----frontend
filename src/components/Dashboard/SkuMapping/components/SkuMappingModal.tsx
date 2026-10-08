@@ -37,6 +37,8 @@ export default function SkuMappingModal({ open, onClose, skuMapping }: Props) {
         fullSku: skuMapping.fullSku || "",
         barcodeSku: skuMapping.barcodeSku,
         ordercookSku: skuMapping.ordercookSku || "",
+        mrp: skuMapping.mrp || "",
+        mfgMonth: skuMapping.mfgMonth || "",
       });
     }
   }, [skuMapping, reset]);
@@ -108,6 +110,25 @@ export default function SkuMappingModal({ open, onClose, skuMapping }: Props) {
               placeholder="e.g. OC-12345"
               className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">MRP</label>
+              <input
+                {...register("mrp")}
+                placeholder="e.g. 2799.00 RS"
+                className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">MFG Month</label>
+              <input
+                {...register("mfgMonth")}
+                placeholder="e.g. JUL/ 26"
+                className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+              />
+            </div>
           </div>
 
           <div className="pt-2 flex gap-3">

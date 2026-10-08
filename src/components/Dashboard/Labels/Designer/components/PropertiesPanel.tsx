@@ -1,13 +1,13 @@
 import React, { useRef, useState } from 'react';
 import { ArrowUp, ArrowDown, ArrowUpToLine, ArrowDownToLine, Copy, Trash2, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, UploadCloud, Lock, Unlock } from 'lucide-react';
-import { 
-  CanvasSettings, 
-  LabelElement, 
-  TextElement, 
-  BarcodeElement, 
-  QrCodeElement, 
-  ImageElement, 
-  ShapeElement 
+import {
+  CanvasSettings,
+  LabelElement,
+  TextElement,
+  BarcodeElement,
+  QrCodeElement,
+  ImageElement,
+  ShapeElement
 } from '../../types/label.types';
 import ReactSelect, { SelectOption } from '@/components/ui/ReactSelect';
 import { uploadImageToCloudinary } from '../utils/uploadImage';
@@ -108,7 +108,7 @@ export function PropertiesPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const { widthMm: effectiveWidthMm, heightMm: effectiveHeightMm } = getEffectiveCanvasDimensions(settings);
 
   const handleSettingsChange = (key: keyof CanvasSettings, value: any, skipHistory = false) => {
@@ -170,7 +170,7 @@ export function PropertiesPanel({
       toast.error('Please upload an image file.');
       return;
     }
-    
+
     setIsUploading(true);
     try {
       let naturalAspect: number | undefined;
@@ -202,7 +202,7 @@ export function PropertiesPanel({
   };
 
   if (!selectedElement) {
-    const backgroundOpacityBelow1OrAnyElementOpacityBelow1 = 
+    const backgroundOpacityBelow1OrAnyElementOpacityBelow1 =
       (settings.backgroundOpacity ?? 1) < 1 || allElements.some(el => (el.opacity ?? 1) < 1);
 
     return (
@@ -264,7 +264,7 @@ export function PropertiesPanel({
               onChange={(opt) => opt && handleSettingsChange('dpi', Number(opt.value))}
             />
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-xs font-medium text-gray-300">Grid Snap Step (mm)</label>
             <input
@@ -324,21 +324,19 @@ export function PropertiesPanel({
             <div className="flex gap-2">
               <button
                 onClick={() => handleSettingsChange('colorMode', 'color')}
-                className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${
-                  (settings.colorMode ?? 'color') === 'color'
+                className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${(settings.colorMode ?? 'color') === 'color'
                     ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]'
                     : 'bg-transparent text-gray-300 border-stone-700 hover:border-stone-500'
-                }`}
+                  }`}
               >
                 🎨 Color
               </button>
               <button
                 onClick={convertAllToMonochrome}
-                className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${
-                  (settings.colorMode ?? 'color') === 'monochrome'
+                className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${(settings.colorMode ?? 'color') === 'monochrome'
                     ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]'
                     : 'bg-transparent text-gray-300 border-stone-700 hover:border-stone-500'
-                }`}
+                  }`}
               >
                 ⬛ Monochrome
               </button>
@@ -406,8 +404,8 @@ export function PropertiesPanel({
                   </button>
                 </div>
               )}
-              
-              <div 
+
+              <div
                 className={`w-full border-2 border-dashed rounded-sm p-4 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${isDragging ? 'border-[#E8C16D] bg-[#1F2937]' : 'border-stone-700 hover:bg-stone-800'}`}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
                 onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
@@ -422,10 +420,10 @@ export function PropertiesPanel({
                 }}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
                   ref={fileInputRef}
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
@@ -453,7 +451,7 @@ export function PropertiesPanel({
     const top = Math.min(...selected.map(e => e.y));
     const right = Math.max(...selected.map(e => e.x + e.width));
     const bottom = Math.max(...selected.map(e => e.y + e.height));
-  
+
     const alignLeft = () => {
       const updates = unlockedSelected.map(e => ({ id: e.id, changes: { x: left } }));
       onBatchUpdateElements(updates, false);
@@ -482,7 +480,7 @@ export function PropertiesPanel({
     };
     const distributeH = () => {
       if (unlockedSelected.length < 3) return;
-      
+
       const sortedByX = [...unlockedSelected].sort((a, b) => a.x - b.x);
       const cols: LabelElement[][] = [];
       for (const el of sortedByX) {
@@ -516,7 +514,7 @@ export function PropertiesPanel({
         for (const el of col.elements) { updates.push({ id: el.id, changes: { x: el.x + deltaX } }); }
         currentX += col.width + gap;
       }
-      
+
       if (updates.length > 0) onBatchUpdateElements(updates, false);
     };
 
@@ -559,9 +557,9 @@ export function PropertiesPanel({
 
       if (updates.length > 0) onBatchUpdateElements(updates, false);
     };
-  
+
     const btnClass = "flex-1 h-9 flex items-center justify-center rounded-sm border border-stone-700 text-gray-300 hover:border-[#E8C16D] hover:text-[#E8C16D] transition-colors disabled:opacity-30 disabled:hover:border-stone-700 disabled:hover:text-gray-300";
-  
+
     return (
       <div className="w-72 bg-[#111827] border-l border-stone-800 overflow-y-auto shrink-0 font-sans text-sm">
         <div className="p-4 border-b border-stone-800 flex items-center justify-between">
@@ -625,9 +623,9 @@ export function PropertiesPanel({
           <button onClick={() => duplicateElement(selectedElement.id)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Duplicate">
             <Copy size={16} />
           </button>
-          <button 
-            onClick={() => handleUpdateDiscrete('locked', !selectedElement.locked)} 
-            className={`p-1 rounded-sm ${selectedElement.locked ? 'text-red-400 bg-red-900/20 hover:bg-red-900/40' : 'text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937]'}`} 
+          <button
+            onClick={() => handleUpdateDiscrete('locked', !selectedElement.locked)}
+            className={`p-1 rounded-sm ${selectedElement.locked ? 'text-red-400 bg-red-900/20 hover:bg-red-900/40' : 'text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937]'}`}
             title={selectedElement.locked ? "Unlock Element" : "Lock Element"}
           >
             {selectedElement.locked ? <Lock size={16} /> : <Unlock size={16} />}
@@ -652,7 +650,7 @@ export function PropertiesPanel({
             <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', effectiveHeightMm - selectedElement.height)} title="Align bottom"><ArrowDownToLine size={16} /></button>
           </div>
         </div>
-      
+
         {/* Geometry */}
         <div className="space-y-3">
           <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Geometry</h4>
@@ -805,7 +803,19 @@ export function PropertiesPanel({
                   min={1}
                   className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
                   value={(selectedElement as TextElement).fontSize}
-                  onChange={(e) => handleUpdate('fontSize', Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const el = selectedElement as TextElement;
+                    const updates: any = { fontSize: val };
+                    if (el.maxLines && el.maxLines > 0) {
+                      const lh = el.lineHeight || 1.2;
+                      const ptToMm = 25.4 / 72;
+                      updates.height = el.maxLines * val * ptToMm * lh;
+                    }
+                    if (selectedElement) {
+                       updateElement(selectedElement.id, updates, true);
+                    }
+                  }}
                   onBlur={handleCommit}
                 />
               </div>
@@ -833,27 +843,66 @@ export function PropertiesPanel({
                 max={3.0}
                 step={0.1}
                 value={(selectedElement as TextElement).lineHeight ?? 1.2}
-                onChange={(e) => handleUpdate('lineHeight', Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  const el = selectedElement as TextElement;
+                  const updates: any = { lineHeight: val };
+                  if (el.maxLines && el.maxLines > 0) {
+                    const fs = el.fontSize || 12;
+                    const ptToMm = 25.4 / 72;
+                    updates.height = el.maxLines * fs * ptToMm * val;
+                  }
+                  if (selectedElement) {
+                     updateElement(selectedElement.id, updates, true);
+                  }
+                }}
                 onPointerUp={handleCommit}
                 className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
               />
             </div>
-            <div className="space-y-1 mt-3">
-              <label className="text-xs text-gray-400">Color</label>
-              <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
+                    value={(selectedElement as TextElement).color || '#000000'}
+                    onChange={(e) => handleUpdate('color', e.target.value)}
+                    onBlur={handleCommit}
+                  />
+                  <input
+                    type="text"
+                    className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] text-xs"
+                    value={(selectedElement as TextElement).color || '#000000'}
+                    onChange={(e) => handleUpdate('color', e.target.value)}
+                    onBlur={handleCommit}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Max Lines</label>
                 <input
-                  type="color"
-                  className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
-                  value={(selectedElement as TextElement).color || '#000000'}
-                  onChange={(e) => handleUpdate('color', e.target.value)}
+                  type="number"
+                  min={0}
+                  className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] text-sm"
+                  value={(selectedElement as TextElement).maxLines || 0}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) || undefined;
+                    const updates: any = { maxLines: val };
+                    if (val && val > 0) {
+                      const el = selectedElement as TextElement;
+                      const lh = el.lineHeight || 1.2;
+                      const fs = el.fontSize || 12;
+                      const ptToMm = 25.4 / 72;
+                      updates.height = val * fs * ptToMm * lh;
+                    }
+                    if (selectedElement) {
+                       updateElement(selectedElement.id, updates, false);
+                    }
+                  }}
                   onBlur={handleCommit}
-                />
-                <input
-                  type="text"
-                  className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
-                  value={(selectedElement as TextElement).color || '#000000'}
-                  onChange={(e) => handleUpdate('color', e.target.value)}
-                  onBlur={handleCommit}
+                  placeholder="0 (Unlimited)"
                 />
               </div>
             </div>
@@ -908,7 +957,7 @@ export function PropertiesPanel({
             {(selectedElement as BarcodeElement).showText !== false && (
               <div className="space-y-3 pt-3 border-t border-stone-800">
                 <h5 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Value Typography</h5>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs text-gray-400">Font Family</label>
@@ -936,44 +985,44 @@ export function PropertiesPanel({
                 <div className="space-y-1 mt-2">
                   <label className="text-xs text-gray-400">Formatting</label>
                   <div className="flex items-center gap-1 mt-1">
-                    <button 
-                      onClick={() => handleUpdateDiscrete('fontWeight', (selectedElement as BarcodeElement).fontWeight === 'bold' ? 'normal' : 'bold')} 
+                    <button
+                      onClick={() => handleUpdateDiscrete('fontWeight', (selectedElement as BarcodeElement).fontWeight === 'bold' ? 'normal' : 'bold')}
                       className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).fontWeight === 'bold' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
                       title="Bold"
                     >
                       <Bold size={16} />
                     </button>
-                    <button 
-                      onClick={() => handleUpdateDiscrete('fontStyle', (selectedElement as BarcodeElement).fontStyle === 'italic' ? 'normal' : 'italic')} 
+                    <button
+                      onClick={() => handleUpdateDiscrete('fontStyle', (selectedElement as BarcodeElement).fontStyle === 'italic' ? 'normal' : 'italic')}
                       className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).fontStyle === 'italic' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
                       title="Italic"
                     >
                       <Italic size={16} />
                     </button>
-                    <button 
-                      onClick={() => handleUpdateDiscrete('textDecoration', (selectedElement as BarcodeElement).textDecoration === 'underline' ? 'none' : 'underline')} 
+                    <button
+                      onClick={() => handleUpdateDiscrete('textDecoration', (selectedElement as BarcodeElement).textDecoration === 'underline' ? 'none' : 'underline')}
                       className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textDecoration === 'underline' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
                       title="Underline"
                     >
                       <Underline size={16} />
                     </button>
                     <div className="w-px h-5 bg-stone-700 mx-1" />
-                    <button 
-                      onClick={() => handleUpdateDiscrete('textAlign', 'left')} 
+                    <button
+                      onClick={() => handleUpdateDiscrete('textAlign', 'left')}
                       className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textAlign === 'left' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
                       title="Align Left"
                     >
                       <AlignLeft size={16} />
                     </button>
-                    <button 
-                      onClick={() => handleUpdateDiscrete('textAlign', 'center')} 
+                    <button
+                      onClick={() => handleUpdateDiscrete('textAlign', 'center')}
                       className={`p-1.5 rounded-sm ${(!(selectedElement as BarcodeElement).textAlign || (selectedElement as BarcodeElement).textAlign === 'center') ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
                       title="Align Center"
                     >
                       <AlignCenter size={16} />
                     </button>
-                    <button 
-                      onClick={() => handleUpdateDiscrete('textAlign', 'right')} 
+                    <button
+                      onClick={() => handleUpdateDiscrete('textAlign', 'right')}
                       className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textAlign === 'right' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
                       title="Align Right"
                     >
@@ -1037,9 +1086,9 @@ export function PropertiesPanel({
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Image Settings</h4>
             <div className="space-y-2">
               <label className="text-xs text-gray-400">Image Source</label>
-              
+
               {/* Drag and Drop Zone */}
-              <div 
+              <div
                 className={`w-full border-2 border-dashed rounded-sm p-4 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${isDragging ? 'border-[#E8C16D] bg-[#1F2937]' : 'border-stone-700 hover:bg-stone-800'}`}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
                 onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
@@ -1063,10 +1112,10 @@ export function PropertiesPanel({
                 }}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
                   ref={fileInputRef}
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {

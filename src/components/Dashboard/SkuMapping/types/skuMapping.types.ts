@@ -9,7 +9,8 @@ export interface SkuMapping {
   size?: string | null;
   title?: string | null;
   qty?: number | null;
-  mrp?: number | null;
+  mrp?: string | null;
+  mfgMonth?: string | null;
   asinBarcode?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -40,6 +41,8 @@ export interface UpdateSkuMappingPayload {
   fullSku?: string;
   barcodeSku: string;
   ordercookSku: string;
+  mrp?: string;
+  mfgMonth?: string;
 }
 
 export interface ImportSkuMappingResponse {

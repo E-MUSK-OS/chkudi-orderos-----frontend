@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import MissingSkuModal from "./MissingSkuModal";
 import Pagination from "@/components/ui/Pagination";
+import { socket } from "@/lib/socket";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -1017,6 +1018,61 @@ export default function ComparisonResultView({
   }, [results, asinToSkuMap]);
 
   const router = useRouter();
+
+  // Socket listener for real-time printed updates across PCs
+  useEffect(() => {
+    if (typeof window === "undefined" || !socket) return;
+    
+    // Attempt connecting explicitly to ensure socket is connected
+    if (!socket.connected && process.env.NEXT_PUBLIC_SOCKET_URL) {
+      socket.connect();
+    }
+
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user?.id) {
+          socket.emit("join:user", user.id);
+        }
+      } catch (error) {
+        console.error("Failed to parse user for socket", error);
+      }
+    }
+
+    const handlePrinted = (data: { batchId?: string, awbs: string[] }) => {
+      let targetBatchId = activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId;
+      if (data.batchId && data.batchId !== targetBatchId) {
+         return; // belongs to a different batch
+      }
+      
+      const newlyPrintedAwbs = new Set(data.awbs);
+      let changed = false;
+      const newPrintedRows = new Set(printedRowsRef.current);
+      
+      mappedResults.forEach(item => {
+        const cleanAwb = (item.awb || "").trim();
+        if (cleanAwb && newlyPrintedAwbs.has(cleanAwb)) {
+           if (!newPrintedRows.has(item.index)) {
+              newPrintedRows.add(item.index);
+              persistedIndicesRef.current.add(item.index); // Prevent re-persisting
+              changed = true;
+           }
+        }
+      });
+      
+      if (changed) {
+         printedRowsRef.current = newPrintedRows;
+         setPrintedRows(newPrintedRows);
+      }
+    };
+    
+    socket.on("amazonOrderPrinted", handlePrinted);
+    
+    return () => {
+      socket.off("amazonOrderPrinted", handlePrinted);
+    };
+  }, [mappedResults, activeHistoryBatchId, summary]);
 
   // Helper to reliably persist printed orders directly into backend database for immediate AWB Scan verification
   const persistPrintedOrdersToAwbScan = useCallback(

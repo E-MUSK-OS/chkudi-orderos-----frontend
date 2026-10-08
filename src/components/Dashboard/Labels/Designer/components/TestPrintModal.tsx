@@ -385,18 +385,16 @@ export function TestPrintModal({
               <input
                 type="number"
                 min={1}
-                max={20}
                 value={copies}
                 onChange={(e) => {
                   const val = parseInt(e.target.value, 10);
-                  if (!isNaN(val)) setCopies(Math.max(1, Math.min(20, val)));
+                  if (!isNaN(val)) setCopies(Math.max(1, val));
                 }}
                 className="w-full text-center text-sm font-semibold text-[#0A0E1A] focus:outline-none"
               />
               <button
                 type="button"
-                onClick={() => setCopies((prev) => Math.min(20, prev + 1))}
-                disabled={copies >= 20}
+                onClick={() => setCopies((prev) => prev + 1)}
                 className="w-10 h-full flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors"
               >
                 <Plus size={14} />

@@ -16,7 +16,8 @@ export interface Product {
   asin?: string;
   rackAddress?: string;
   generateBarcode?: string;
-  mrp?: number;
+  mrp?: string;
+  mfgMonth?: string;
   hsnCode?: string;
   gstRate?: number;
   isActive: boolean;
@@ -34,7 +35,8 @@ export interface ProductPayload {
   asin?: string;
   rackAddress?: string;
   generateBarcode?: string;
-  mrp?: number;
+  mrp?: string;
+  mfgMonth?: string;
   hsnCode?: string;
   gstRate?: number;
   isActive: boolean;
@@ -116,7 +118,8 @@ export interface CreateProductPayload {
   asin?: string;
   rackAddress?: string;
   generateBarcode?: string;
-  mrp?: number;
+  mrp?: string;
+  mfgMonth?: string;
   hsnCode?: string;
   gstRate?: number;
 

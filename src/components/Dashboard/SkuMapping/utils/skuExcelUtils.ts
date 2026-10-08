@@ -24,6 +24,7 @@ export async function downloadDemoSheet(): Promise<void> {
       { header: "Title", key: "title", width: 40 },
       { header: "QTY", key: "qty", width: 12 },
       { header: "MRP", key: "mrp", width: 15 },
+      { header: "MFG MTH", key: "mfgMonth", width: 15 },
       { header: "Asin (Barcode)", key: "asinBarcode", width: 20 },
     ];
 
@@ -58,6 +59,7 @@ export async function downloadDemoSheet(): Promise<void> {
         title: "Men Casual Solid Slim Fit Cotton Shirt",
         qty: 25,
         mrp: 899,
+        mfgMonth: "JUL/ 26",
         asinBarcode: "B08F9V7XYZ",
       },
       {
@@ -71,6 +73,7 @@ export async function downloadDemoSheet(): Promise<void> {
         title: "Men Casual Solid Slim Fit Cotton Shirt",
         qty: 30,
         mrp: 899,
+        mfgMonth: "JUL/ 26",
         asinBarcode: "B08F9V7B3R",
       },
       {
@@ -84,6 +87,7 @@ export async function downloadDemoSheet(): Promise<void> {
         title: "Men Slim Fit Stretchable Denim Jeans",
         qty: 40,
         mrp: 1299,
+        mfgMonth: "AUG/ 26",
         asinBarcode: "B09G1H2JKL",
       },
       {
@@ -174,6 +178,7 @@ export async function downloadAllRecordsSheet(search?: string): Promise<void> {
       { header: "Title", key: "title", width: 40 },
       { header: "QTY", key: "qty", width: 12 },
       { header: "MRP", key: "mrp", width: 15 },
+      { header: "MFG MTH", key: "mfgMonth", width: 15 },
       { header: "Asin (Barcode)", key: "asinBarcode", width: 20 },
     ];
 
@@ -208,6 +213,7 @@ export async function downloadAllRecordsSheet(search?: string): Promise<void> {
         title: item.title || "",
         qty: item.qty !== null && item.qty !== undefined ? item.qty : "",
         mrp: item.mrp !== null && item.mrp !== undefined ? item.mrp : "",
+        mfgMonth: item.mfgMonth || "",
         asinBarcode: item.asinBarcode || "",
       });
       r.height = 22;
