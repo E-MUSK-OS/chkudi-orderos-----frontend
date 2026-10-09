@@ -74,6 +74,14 @@ export function BarcodeDesign() {
         if (designer.state.selectedIds.length > 0) {
           designer.duplicateElements(designer.state.selectedIds);
         }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+        if (designer.state.selectedIds.length > 0) {
+          e.preventDefault();
+          designer.copyElements(designer.state.selectedIds);
+        }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        designer.pasteElements();
       } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         if (designer.state.selectedIds.length > 0) {
           e.preventDefault();

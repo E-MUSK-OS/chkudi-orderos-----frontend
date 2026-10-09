@@ -575,6 +575,46 @@ export function useDesignerState(initialTemplateId?: string | null) {
     });
   }, []);
 
+  const copyElements = useCallback((ids: string[]) => {
+    const elsToCopy = state.current.elements.filter(el => ids.includes(el.id));
+    if (elsToCopy.length > 0) {
+      localStorage.setItem('designer_clipboard', JSON.stringify({ type: 'LABEL_ELEMENTS', data: elsToCopy }));
+    }
+  }, [state]);
+
+  const pasteElements = useCallback(() => {
+    try {
+      const data = localStorage.getItem('designer_clipboard');
+      if (!data) return;
+      const parsed = JSON.parse(data);
+      if (parsed && parsed.type === 'LABEL_ELEMENTS' && Array.isArray(parsed.data)) {
+        dispatch({
+          type: 'UPDATE_STATE_WITH_HISTORY',
+          payload: (prev) => {
+            let highestZ = prev.elements.length > 0 ? Math.max(...prev.elements.map(e => e.zIndex || 0)) : -1;
+            const newElements = parsed.data.map((el: any) => {
+              highestZ++;
+              return {
+                ...el,
+                id: crypto.randomUUID(),
+                x: el.x + 5,
+                y: el.y + 5,
+                zIndex: highestZ
+              };
+            });
+            return {
+              ...prev,
+              elements: [...prev.elements, ...newElements],
+              selectedIds: newElements.map((e: any) => e.id),
+            };
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Failed to paste', err);
+    }
+  }, []);
+
   return useMemo(() => ({
     state: state.current,
     isDirty,
@@ -593,6 +633,8 @@ export function useDesignerState(initialTemplateId?: string | null) {
     batchUpdateElements,
     deleteElements,
     duplicateElements,
+    copyElements,
+    pasteElements,
     selectElement,
     toggleSelect,
     setSelection,
@@ -625,6 +667,8 @@ export function useDesignerState(initialTemplateId?: string | null) {
     batchUpdateElements,
     deleteElements,
     duplicateElements,
+    copyElements,
+    pasteElements,
     selectElement,
     toggleSelect,
     setSelection,
