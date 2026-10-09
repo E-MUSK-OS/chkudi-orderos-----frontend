@@ -924,18 +924,16 @@ export default function MyntraPicklist() {
       const barcodeYesItems = picklistItems.filter(
         (item) => item.generateBarcode?.toLowerCase() === "yes"
       );
-      if (barcodeYesItems.length > 0) {
-        const barcodeYesTotalQty = barcodeYesItems.reduce((acc, item) => acc + item.qty, 0);
-        const sheet2 = workbook.addWorksheet("Barcode Yes");
-        sheet2.views = [{ state: "normal", activeCell: "A1" }];
-        populateMyntraPicklistWorksheet(
-          sheet2,
-          barcodeYesItems,
-          barcodeYesTotalQty,
-          "No Barcode Yes items found in this batch",
-          true // forceSingleColumn for Barcode Yes sheet
-        );
-      }
+      const barcodeYesTotalQty = barcodeYesItems.reduce((acc, item) => acc + item.qty, 0);
+      const sheet2 = workbook.addWorksheet("Barcode Yes");
+      sheet2.views = [{ state: "normal", activeCell: "A1" }];
+      populateMyntraPicklistWorksheet(
+        sheet2,
+        barcodeYesItems,
+        barcodeYesTotalQty,
+        "No Barcode Yes items found in this batch",
+        true // forceSingleColumn for Barcode Yes sheet
+      );
 
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `Myntra_Picklist_${picklistNo}_${now.toISOString().slice(0, 10)}.xlsx`;
