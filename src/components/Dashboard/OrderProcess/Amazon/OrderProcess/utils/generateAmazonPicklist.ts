@@ -357,9 +357,9 @@ export const buildAmazonPicklistPDFDoc = (
   const HEADER_HEIGHT = 26;
   const FOOTER_HEIGHT = 10;
   const COLUMN_GAP = 6;
-  const MAX_ROWS_PER_COLUMN = 50;
+  const MAX_ROWS_PER_COLUMN = 52;
   const hasRightColumn = picklist.items.length > MAX_ROWS_PER_COLUMN;
-  const ITEMS_PER_PAGE = hasRightColumn ? 100 : MAX_ROWS_PER_COLUMN; // 50 left + 50 right = 100 records per page, or 50 for single column
+  const ITEMS_PER_PAGE = hasRightColumn ? MAX_ROWS_PER_COLUMN * 2 : MAX_ROWS_PER_COLUMN; // 50 left + 50 right = 100 records per page, or 50 for single column
   const TABLE_WIDTH = hasRightColumn ? 94 : PAGE_WIDTH - 2 * MARGIN;
   const LEFT_X = MARGIN;
   const RIGHT_X = LEFT_X + 94 + COLUMN_GAP;
@@ -589,9 +589,9 @@ export const openAmazonPicklistTab = (picklist: PicklistResult) => {
     timeStyle: "short",
   });
 
-  const MAX_ROWS_PER_COLUMN = 50;
+  const MAX_ROWS_PER_COLUMN = 52;
   const hasRightColumn = picklist.items.length > MAX_ROWS_PER_COLUMN;
-  const ITEMS_PER_PAGE = hasRightColumn ? 100 : MAX_ROWS_PER_COLUMN;
+  const ITEMS_PER_PAGE = hasRightColumn ? MAX_ROWS_PER_COLUMN * 2 : MAX_ROWS_PER_COLUMN;
   const totalPages = Math.max(1, Math.ceil(picklist.items.length / ITEMS_PER_PAGE));
 
   const renderTableRows = (items: PicklistItem[]) =>
@@ -857,8 +857,8 @@ const populatePicklistWorksheet = (
     margins: {
       left: 0.25,
       right: 0.25,
-      top: 0.35,
-      bottom: 0.35,
+      top: 0.25,
+      bottom: 0.25,
       header: 0.2,
       footer: 0.2,
     },
@@ -889,7 +889,7 @@ const populatePicklistWorksheet = (
     right: SheetEntry[];
   }
 
-  const MAX_ROWS_PER_COLUMN = 50;
+  const MAX_ROWS_PER_COLUMN = 52;
   // Always use 2 columns if there are sections or multiple items, for symmetric layout
   const hasRightColumn = !forceSingleColumn && (items.length > MAX_ROWS_PER_COLUMN || items.some(i => (i.orderTypeLabel || "Single Quantity") !== "Single Quantity") || items.length > 1);
 
@@ -966,12 +966,12 @@ const populatePicklistWorksheet = (
     minute: "2-digit",
   });
   const dateRow = worksheet.addRow([`Picklist Generated on: ${formattedDate}`]);
-  dateRow.height = 25;
+  dateRow.height = 20;
   worksheet.mergeCells(dateRow.number, 1, dateRow.number, hasRightColumn ? 9 : 4);
   const dateCell = dateRow.getCell(1);
   dateCell.font = { bold: true, size: 12, name: "Calibri", color: { argb: "FF0F172A" } };
   dateCell.alignment = { vertical: "middle", horizontal: "center" };
-  worksheet.addRow([]).height = 10; // spacer
+  worksheet.addRow([]).height = 5; // spacer
 
   const styleHeaderCell = (cell: ExcelJS.Cell, isLeft = false) => {
     cell.font = { bold: true, color: { argb: "FF000000" }, size: 10, name: "Calibri" };
@@ -1071,7 +1071,7 @@ const populatePicklistWorksheet = (
 
     // Page Table Header Row
     const headerRow = worksheet.addRow([]);
-    headerRow.height = 20;
+    headerRow.height = 18;
 
     // Left Column Headers (Cols 1 to 4)
     headerRow.getCell(1).value = "Rack";
@@ -1101,7 +1101,7 @@ const populatePicklistWorksheet = (
     // Add data rows side-by-side
     for (let r = 0; r < numRowsOnPage; r++) {
       const dataRow = worksheet.addRow([]);
-      dataRow.height = 15;
+      dataRow.height = 14.5;
 
       const left = leftEntries[r];
       const right = rightEntries[r];

@@ -607,12 +607,12 @@ export default function MyntraPicklist() {
       fitToWidth: 1,
       fitToHeight: 0,
       margins: {
-        left: 0.25,
-        right: 0.25,
-        top: 0.35,
-        bottom: 0.35,
-        header: 0.2,
-        footer: 0.2,
+        left: 0.2,
+        right: 0.2,
+        top: 0.25,
+        bottom: 0.25,
+        header: 0.1,
+        footer: 0.1,
       },
     };
 
@@ -630,7 +630,7 @@ export default function MyntraPicklist() {
       return;
     }
 
-    const MAX_ROWS_PER_COLUMN = 50;
+    const MAX_ROWS_PER_COLUMN = 52;
     const hasRightColumn = !forceSingleColumn && items.length > 1;
 
     const itemsPerPage = hasRightColumn ? MAX_ROWS_PER_COLUMN * 2 : MAX_ROWS_PER_COLUMN;
@@ -645,12 +645,12 @@ export default function MyntraPicklist() {
       minute: "2-digit",
     });
     const dateRow = worksheet.addRow([`Picklist Generated on: ${formattedDate}`]);
-    dateRow.height = 25;
+    dateRow.height = 20;
     worksheet.mergeCells(dateRow.number, 1, dateRow.number, hasRightColumn ? 9 : 4);
     const dateCell = dateRow.getCell(1);
     dateCell.font = { bold: true, size: 12, name: "Calibri", color: { argb: "FF0F172A" } };
     dateCell.alignment = { vertical: "middle", horizontal: "center" };
-    worksheet.addRow([]).height = 10; // spacer row
+    worksheet.addRow([]).height = 5; // spacer row
 
     // 2. Header styling: Strictly Black and White (No background fill)
     const styleHeaderCell = (cell: ExcelJS.Cell, isLeft = false) => {
@@ -719,7 +719,7 @@ export default function MyntraPicklist() {
 
       // Page Table Header Row
       const headerRow = worksheet.addRow([]);
-      headerRow.height = 20;
+      headerRow.height = 18;
 
       // Left Column Headers (Cols 1 to 4)
       headerRow.getCell(1).value = "Rack";
@@ -749,7 +749,7 @@ export default function MyntraPicklist() {
       // Add data rows side-by-side
       for (let r = 0; r < numRowsOnPage; r++) {
         const dataRow = worksheet.addRow([]);
-        dataRow.height = 16;
+        dataRow.height = 14.5;
 
         const leftItem = leftItems[r];
         const rightItem = rightItems[r];
