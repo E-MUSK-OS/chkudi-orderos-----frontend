@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
-import { Upload, FileText, Loader2, Printer, RotateCcw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Upload, FileText, Loader2, Printer, RotateCcw, X, ListOrdered } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { toast } from "sonner";
-import Swal from "sweetalert2";
 import { chromeExtensionPrintService, resolveCurrentlyConnectedPrinter } from "@/components/Dashboard/Labels/services/printAgent.service";
 
 export default function InvoiceFormatter() {
@@ -13,6 +13,11 @@ export default function InvoiceFormatter() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [processedPdfDoc, setProcessedPdfDoc] = useState<PDFDocument | null>(null);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"OPTIONS" | "SELECT">("OPTIONS");
+  const [pageInput, setPageInput] = useState("");
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -131,49 +136,28 @@ export default function InvoiceFormatter() {
     }
   };
 
-  const handlePrintClick = async () => {
+  const handlePrintClick = () => {
     if (!processedPdfDoc) return;
+    setModalMode("OPTIONS");
+    setPageInput("");
+    setIsModalOpen(true);
+  };
 
-    const totalPages = processedPdfDoc.getPageCount();
-
-    const result = await Swal.fire({
-      title: "Print Options",
-      text: `PDF has ${totalPages} pages. What would you like to print?`,
-      icon: "question",
-      showDenyButton: true,
-      showCancelButton: true,
-      confirmButtonText: "All Pages",
-      denyButtonText: "Select Pages",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#10b981", // emerald-500
-      denyButtonColor: "#3b82f6", // blue-500
-    });
-
-    if (result.isConfirmed) {
-      // All Pages
-      await executePrint();
-    } else if (result.isDenied) {
-      // Select Pages
-      const { value: pageInput } = await Swal.fire({
-        title: "Select Pages",
-        input: "text",
-        inputLabel: `Enter page numbers (e.g. 1, 3-5). Max: ${totalPages}`,
-        inputPlaceholder: "1, 3-5",
-        showCancelButton: true,
-        inputValidator: (value) => {
-          if (!value) return "You need to enter page numbers!";
-        }
-      });
-
-      if (pageInput) {
-        const pagesToPrint = parsePageNumbers(pageInput, totalPages);
-        if (pagesToPrint.length === 0) {
-          toast.error("Invalid page range specified.");
-          return;
-        }
-        await executePrint(pagesToPrint);
-      }
+  const handlePrintSelectedPages = async () => {
+    if (!pageInput) {
+      toast.error("Please enter page numbers!");
+      return;
     }
+    const totalPages = processedPdfDoc?.getPageCount() || 0;
+    const pagesToPrint = parsePageNumbers(pageInput, totalPages);
+    
+    if (pagesToPrint.length === 0) {
+      toast.error("Invalid page range specified.");
+      return;
+    }
+    
+    setIsModalOpen(false);
+    await executePrint(pagesToPrint);
   };
 
   const handleResetAll = () => {
@@ -279,6 +263,94 @@ export default function InvoiceFormatter() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-md select-none"
+            onClick={() => setIsModalOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-8 shadow-2xl text-slate-900"
+            >
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-4 right-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              
+              {/* Subtle Ambient Background Glows */}
+              <div className="pointer-events-none absolute -top-16 -left-16 h-44 w-44 rounded-full bg-[#FFF9EC] blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
+              
+              <div className="relative">
+                {modalMode === "OPTIONS" ? (
+                   <div className="flex flex-col items-center text-center">
+                      <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20">
+                        <Printer className="h-6 w-6" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-800">Print Options</h3>
+                      <p className="mt-2 text-sm text-slate-500">
+                        PDF has {processedPdfDoc?.getPageCount()} pages. What would you like to print?
+                      </p>
+                      
+                      <div className="mt-8 flex w-full flex-col gap-3">
+                        <button onClick={() => { setIsModalOpen(false); executePrint(); }} className="w-full rounded-xl bg-[#E8C16D] py-3.5 text-sm font-bold text-[#0A0E1A] shadow-sm transition hover:bg-[#d6ad53] active:scale-[0.98]">
+                           Print All Pages
+                        </button>
+                        <button onClick={() => setModalMode("SELECT")} className="w-full rounded-xl bg-[#0A0E1A] py-3.5 text-sm font-bold text-[#E8C16D] shadow-sm transition hover:bg-black active:scale-[0.98]">
+                           Select Pages
+                        </button>
+                        <button onClick={() => setIsModalOpen(false)} className="w-full rounded-xl bg-slate-100 py-3.5 text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]">
+                           Cancel
+                        </button>
+                      </div>
+                   </div>
+                ) : (
+                   <div className="flex flex-col">
+                      <div className="mb-6 flex items-center gap-3">
+                         <div className="grid h-12 w-12 place-items-center rounded-full bg-blue-50 text-blue-600 ring-1 ring-blue-500/20">
+                           <ListOrdered className="h-6 w-6" />
+                         </div>
+                         <div>
+                           <h3 className="text-lg font-bold text-slate-800">Select Pages</h3>
+                           <p className="text-xs sm:text-sm text-slate-500">Enter page numbers. Max: {processedPdfDoc?.getPageCount()}</p>
+                         </div>
+                      </div>
+                      
+                      <div className="mt-2">
+                         <input 
+                           type="text" 
+                           autoFocus
+                           value={pageInput}
+                           onChange={(e) => setPageInput(e.target.value)}
+                           placeholder="e.g. 1, 3-5" 
+                           className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-sm outline-none transition focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] bg-white shadow-sm"
+                         />
+                      </div>
+                      
+                      <div className="mt-8 flex gap-3">
+                        <button onClick={() => setIsModalOpen(false)} className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]">
+                           Cancel
+                        </button>
+                        <button onClick={handlePrintSelectedPages} className="flex-1 rounded-xl bg-[#0A0E1A] py-3 text-sm font-bold text-[#E8C16D] shadow-sm transition hover:bg-black active:scale-[0.98]">
+                           Print Pages
+                        </button>
+                      </div>
+                   </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }
