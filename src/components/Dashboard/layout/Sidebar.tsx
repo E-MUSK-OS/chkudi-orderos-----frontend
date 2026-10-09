@@ -141,6 +141,10 @@ const navItems: NavItem[] = [
             label: "Stock Analysis",
             href: "/dashboard/order-process/myntra/stock-analysis",
           },
+          {
+            label: "Invoice Formatter",
+            href: "/dashboard/order-process/myntra/invoice-formatter",
+          },
         ],
       },
       {
