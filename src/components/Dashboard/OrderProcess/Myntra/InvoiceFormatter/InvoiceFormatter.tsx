@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileText, Loader2, Printer, RotateCcw, X, ListOrdered } from "lucide-react";
+import { Upload, FileText, Loader2, Printer, RotateCcw, X, ListOrdered, Download } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { toast } from "sonner";
 import { chromeExtensionPrintService, resolveCurrentlyConnectedPrinter } from "@/components/Dashboard/Labels/services/printAgent.service";
@@ -160,6 +160,16 @@ export default function InvoiceFormatter() {
     await executePrint(pagesToPrint);
   };
 
+  const handleDownloadPdf = () => {
+    if (!pdfUrl || !selectedFile) return;
+    const a = document.createElement("a");
+    a.href = pdfUrl;
+    a.download = `Formatted_${selectedFile.name}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleResetAll = () => {
     setSelectedFile(null);
     setPdfUrl(null);
@@ -190,6 +200,13 @@ export default function InvoiceFormatter() {
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>New Batch</span>
+                  </button>
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                  >
+                    <Download className="h-4 w-4 stroke-[2.5]" />
+                    <span>Download</span>
                   </button>
                   <button
                     onClick={handlePrintClick}
