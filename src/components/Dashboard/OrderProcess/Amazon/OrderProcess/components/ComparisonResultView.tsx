@@ -1024,21 +1024,26 @@ export default function ComparisonResultView({
     if (typeof window === "undefined" || !socket) return;
     
     // Attempt connecting explicitly to ensure socket is connected
-    if (!socket.connected && process.env.NEXT_PUBLIC_SOCKET_URL) {
+    if (!socket.connected) {
       socket.connect();
     }
 
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        if (user?.id) {
-          socket.emit("join:user", user.id);
+    const emitJoin = () => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user?.id) {
+            socket.emit("join:user", user.id);
+          }
+        } catch (error) {
+          console.error("Failed to parse user for socket", error);
         }
-      } catch (error) {
-        console.error("Failed to parse user for socket", error);
       }
-    }
+    };
+
+    emitJoin();
+    socket.on("connect", emitJoin);
 
     const handlePrinted = (data: { batchId?: string, awbs: string[] }) => {
       let targetBatchId = activeHistoryBatchId || (summary as any)?.id || (summary as any)?.batchId;
@@ -1070,6 +1075,7 @@ export default function ComparisonResultView({
     socket.on("amazonOrderPrinted", handlePrinted);
     
     return () => {
+      socket.off("connect", emitJoin);
       socket.off("amazonOrderPrinted", handlePrinted);
     };
   }, [mappedResults, activeHistoryBatchId, summary]);

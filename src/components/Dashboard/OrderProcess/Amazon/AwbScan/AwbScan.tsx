@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import AwbScanner from "./components/AwbScanner";
 import AwbMissingTable from "./components/AwbMissingTable";
@@ -10,6 +10,7 @@ import AwbTable from "./components/AwbTable";
 import { useAwbScanner } from "./hooks/useAwbScanner";
 import { amazonOrderService, AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 import { getTodayDateStringIST } from "./timeUtils";
+import { socket } from "@/lib/socket";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -79,6 +80,128 @@ export default function AwbScan() {
       document.removeEventListener("visibilitychange", handleFocusOrVisible);
     };
   }, [fetchOrders]);
+
+  // Debounced silent fetch for rapid sequential prints/scans
+  const fetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedFetchOrders = useCallback(() => {
+    if (fetchTimerRef.current) {
+      clearTimeout(fetchTimerRef.current);
+    }
+    fetchTimerRef.current = setTimeout(() => {
+      fetchOrders(true);
+    }, 250);
+  }, [fetchOrders]);
+
+  // Real-time Socket.IO synchronization: auto-update table and stats as soon as orders are printed or scanned
+  useEffect(() => {
+    if (typeof window === "undefined" || !socket) return;
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const emitJoin = () => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user?.id) {
+            socket.emit("join:user", user.id);
+            console.log(`👤 AwbScan joined socket room user:${user.id}`);
+          }
+        } catch (error) {
+          console.error("Failed to parse user for socket in AwbScan:", error);
+        }
+      }
+    };
+
+    emitJoin();
+    socket.on("connect", emitJoin);
+
+    const handleOrderPrinted = (data: {
+      userId?: string;
+      batchId?: string;
+      count?: number;
+      awbs?: string[];
+      orders?: AmazonOrderItem[];
+    }) => {
+      console.log("⚡ [Socket] amazonOrderPrinted received on AwbScan:", data);
+
+      const userData = localStorage.getItem("user");
+      let currentUserId: string | null = null;
+      if (userData) {
+        try {
+          currentUserId = JSON.parse(userData)?.id || null;
+        } catch {}
+      }
+
+      if (data.userId && currentUserId && data.userId !== currentUserId) {
+        return;
+      }
+
+      // Immediately trigger debounced silent refresh
+      debouncedFetchOrders();
+
+      const count = data.count || data.awbs?.length || 1;
+      toast.success(`⚡ Real-time update: ${count} newly printed order(s) added!`, {
+        id: "socket-order-printed",
+        duration: 4000,
+      });
+    };
+
+    const handleOrderStatusUpdated = (data: {
+      userId?: string;
+      id: string;
+      awb: string;
+      packingScanStatus: "PENDING" | "SCANNED";
+      order?: AmazonOrderItem;
+    }) => {
+      console.log("⚡ [Socket] amazonOrderStatusUpdated received on AwbScan:", data);
+
+      const userData = localStorage.getItem("user");
+      let currentUserId: string | null = null;
+      if (userData) {
+        try {
+          currentUserId = JSON.parse(userData)?.id || null;
+        } catch {}
+      }
+
+      if (data.userId && currentUserId && data.userId !== currentUserId) {
+        return;
+      }
+
+      // Optimistically update status if present in current page orders
+      setOrders((prev) =>
+        prev.map((item) =>
+          item.id === data.id || item.awb === data.awb
+            ? { ...item, packingScanStatus: data.packingScanStatus }
+            : item
+        )
+      );
+
+      // Debounced refresh to keep summary counts in sync
+      debouncedFetchOrders();
+    };
+
+    const handleBatchDeleted = (data: { userId?: string; batchId?: string }) => {
+      console.log("⚡ [Socket] amazonBatchDeleted received on AwbScan:", data);
+      debouncedFetchOrders();
+    };
+
+    socket.on("amazonOrderPrinted", handleOrderPrinted);
+    socket.on("amazonOrderStatusUpdated", handleOrderStatusUpdated);
+    socket.on("amazonBatchDeleted", handleBatchDeleted);
+
+    return () => {
+      if (fetchTimerRef.current) {
+        clearTimeout(fetchTimerRef.current);
+      }
+      socket.off("connect", emitJoin);
+      socket.off("amazonOrderPrinted", handleOrderPrinted);
+      socket.off("amazonOrderStatusUpdated", handleOrderStatusUpdated);
+      socket.off("amazonBatchDeleted", handleBatchDeleted);
+    };
+  }, [debouncedFetchOrders]);
 
   // Hook for barcode scanning & audio playback
   const {
