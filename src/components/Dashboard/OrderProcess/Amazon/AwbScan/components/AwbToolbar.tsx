@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, RefreshCw, Calendar as CalendarIcon, X } from "lucide-react";
+import { Search, RefreshCw, Calendar as CalendarIcon, X, Download } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
@@ -14,6 +14,7 @@ interface Props {
   selectedDate: string;
   onDateChange: (date: string) => void;
   onRefresh: () => void;
+  onExport: () => void;
   isLoading?: boolean;
   counts: {
     total: number;
@@ -30,6 +31,7 @@ export default function AwbToolbar({
   selectedDate,
   onDateChange,
   onRefresh,
+  onExport,
   isLoading,
   counts,
 }: Props) {
@@ -190,6 +192,17 @@ export default function AwbToolbar({
             </PopoverContent>
           </Popover>
         </div>
+
+        {/* Export to Excel Button */}
+        <button
+          type="button"
+          onClick={onExport}
+          disabled={isLoading}
+          className="group inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-600 bg-emerald-50 px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-emerald-700 transition-all duration-200 shadow-xs hover:bg-emerald-600 hover:text-white hover:shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-50"
+        >
+          <Download className="h-4 w-4 transition-colors" />
+          <span>Export</span>
+        </button>
 
         {/* Refresh Button with black background, gold text, and gold hover effect */}
         <button

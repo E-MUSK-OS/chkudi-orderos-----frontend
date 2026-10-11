@@ -45,15 +45,20 @@ export default function InvoiceFormatter() {
         const page = pages[i];
         const { width, height } = page.getSize();
         
+        // Calculate scale factor relative to a standard 4x6 label width (~288 points).
+        // Since invoices (A4) are much wider (~595 points), their text is drawn larger 
+        // so it looks exactly the same size when the printer scales it down to 4x6 paper.
+        const scaleFactor = width / 288;
+        
         // Add "Page X of Y" text
         const text = `Page ${i + 1} of ${totalPages}`;
-        const fontSize = 8; // Made font size smaller
-        const textWidth = font.widthOfTextAtSize(text, fontSize);
+        // Base size 9, scaled up for wider pages
+        const fontSize = 9 * scaleFactor;
         
-        // Shifted to the far left side
+        // Shift margins proportionally so they don't get squished to the edge on large pages
         page.drawText(text, {
-          x: 15, // Bottom left corner with 15pt margin
-          y: 10, 
+          x: 15 * scaleFactor, 
+          y: 12 * scaleFactor, 
           size: fontSize,
           font: font,
           color: rgb(0, 0, 0),
@@ -101,22 +106,7 @@ export default function InvoiceFormatter() {
     if (!processedPdfDoc) return;
     
     try {
-      let finalBase64 = "";
-
-      if (pagesToPrint && pagesToPrint.length > 0) {
-        // Print specific pages
-        const newDoc = await PDFDocument.create();
-        // PDFDocument page indices are 0-based
-        const pageIndices = pagesToPrint.map(p => p - 1);
-        const copiedPages = await newDoc.copyPages(processedPdfDoc, pageIndices);
-        copiedPages.forEach((page) => newDoc.addPage(page));
-        finalBase64 = await newDoc.saveAsBase64();
-      } else {
-        // Print all pages
-        finalBase64 = await processedPdfDoc.saveAsBase64();
-      }
-
-      // Auto resolve printer
+      // Auto resolve printer first
       toast.loading("Connecting to printer...", { id: "print-toast" });
       const availablePrinters = await chromeExtensionPrintService.getPrinters();
       const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
@@ -127,8 +117,40 @@ export default function InvoiceFormatter() {
         return;
       }
 
-      toast.loading(`Printing to ${printer}...`, { id: "print-toast" });
-      await chromeExtensionPrintService.printPdf(finalBase64, printer, 1);
+      // Determine pages to print (0-indexed)
+      const totalPages = processedPdfDoc.getPageCount();
+      const targetPages = (pagesToPrint && pagesToPrint.length > 0) 
+         ? pagesToPrint.map(p => p - 1) 
+         : Array.from({ length: totalPages }, (_, i) => i);
+
+      // Print in batches of 100 to prevent Chrome Native Messaging payload size crash
+      const CHUNK_SIZE = 100;
+      const totalChunks = Math.ceil(targetPages.length / CHUNK_SIZE);
+
+      if (totalChunks > 1) {
+          toast.loading(`Preparing to print ${targetPages.length} pages in ${totalChunks} batches...`, { id: "print-toast" });
+      } else {
+          toast.loading(`Printing to ${printer}...`, { id: "print-toast" });
+      }
+
+      for (let i = 0; i < totalChunks; i++) {
+         const chunkIndices = targetPages.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+         const newDoc = await PDFDocument.create();
+         const copiedPages = await newDoc.copyPages(processedPdfDoc, chunkIndices);
+         copiedPages.forEach((page) => newDoc.addPage(page));
+         const base64Chunk = await newDoc.saveAsBase64();
+         
+         if (totalChunks > 1) {
+             toast.loading(`Printing batch ${i + 1} of ${totalChunks}...`, { id: "print-toast" });
+         }
+         await chromeExtensionPrintService.printPdf(base64Chunk, printer, 1);
+         
+         // Add a small delay between batches so the printer doesn't choke
+         if (i < totalChunks - 1) {
+            await new Promise(res => setTimeout(res, 2000));
+         }
+      }
+
       toast.success("Printed successfully!", { id: "print-toast" });
     } catch (error: any) {
       console.error("Print Error:", error);

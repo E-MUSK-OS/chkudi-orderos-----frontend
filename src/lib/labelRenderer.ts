@@ -843,9 +843,9 @@ export const printLabelsViaBrowser = async (
       margin: 0 !important;
       padding: 0 !important;
       width: ${widthMm}mm !important;
-      height: 100% !important;
+      height: ${heightMm}mm !important;
       background: #ffffff !important;
-      overflow: visible !important;
+      overflow: hidden !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }

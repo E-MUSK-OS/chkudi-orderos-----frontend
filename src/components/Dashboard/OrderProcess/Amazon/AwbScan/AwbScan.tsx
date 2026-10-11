@@ -10,6 +10,8 @@ import AwbTable from "./components/AwbTable";
 import { useAwbScanner } from "./hooks/useAwbScanner";
 import { amazonOrderService, AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 import { getTodayDateStringIST } from "./timeUtils";
+import * as XLSX from "xlsx";
+import { toast } from "sonner";
 
 export default function AwbScan() {
   const [orders, setOrders] = useState<AmazonOrderItem[]>([]);
@@ -103,6 +105,50 @@ export default function AwbScan() {
     }
   );
 
+  const handleExport = async () => {
+    try {
+      toast.loading("Preparing Excel export...", { id: "export-toast" });
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("search", search.trim());
+      if (statusFilter !== "ALL") params.set("packingScanStatus", statusFilter);
+      if (selectedDate) params.set("date", selectedDate);
+      // Fetch all matching records for the export
+      params.set("page", "1");
+      params.set("limit", String(summaryCounts.total || 10000));
+
+      const res = await amazonOrderService.getOrders(`?${params.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        if (res.data.length === 0) {
+          toast.error("No data available to export.", { id: "export-toast" });
+          return;
+        }
+
+        const exportData = res.data.map((order) => ({
+          Invoices: order.invoice,
+          "Amazon Order ID": order.orderId,
+          "AWB Tracking": order.awb,
+          ASIN: order.asin,
+          "Seller SKU": order.sellerSku,
+          Customer: order.customer,
+          "Packing Scan Status": order.packingScanStatus,
+          Time: new Date(order.createdAt).toLocaleString("en-IN"),
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "AWB_Scans");
+        XLSX.writeFile(workbook, `Amazon_AWB_Scans_${selectedDate || "All"}.xlsx`);
+        
+        toast.success("Export downloaded successfully!", { id: "export-toast" });
+      } else {
+        toast.error("Failed to fetch data for export.", { id: "export-toast" });
+      }
+    } catch (err) {
+      console.error("Export error:", err);
+      toast.error("An error occurred during export.", { id: "export-toast" });
+    }
+  };
+
   return (
     <DashboardLayout title="Amazon AWB Scan">
       <div className="space-y-6">
@@ -144,6 +190,7 @@ export default function AwbScan() {
             setPage(1);
           }}
           onRefresh={() => fetchOrders(false)}
+          onExport={handleExport}
           isLoading={isLoading}
           counts={summaryCounts}
         />
