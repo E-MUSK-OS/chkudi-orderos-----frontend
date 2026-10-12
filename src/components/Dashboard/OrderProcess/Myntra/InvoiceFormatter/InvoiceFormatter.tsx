@@ -3,7 +3,24 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileText, Loader2, Printer, RotateCcw, X, ListOrdered, Download } from "lucide-react";
+import { 
+  Upload, 
+  FileText, 
+  Loader2, 
+  Printer, 
+  RotateCcw, 
+  X, 
+  ListOrdered, 
+  Download, 
+  Layers, 
+  Play, 
+  Pause, 
+  Square, 
+  FastForward, 
+  CheckCircle2, 
+  AlertCircle, 
+  Sparkles 
+} from "lucide-react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { toast } from "sonner";
 import { chromeExtensionPrintService, resolveCurrentlyConnectedPrinter } from "@/components/Dashboard/Labels/services/printAgent.service";
@@ -14,10 +31,32 @@ export default function InvoiceFormatter() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [processedPdfDoc, setProcessedPdfDoc] = useState<PDFDocument | null>(null);
 
-  // Modal State
+  // Modal & Batch Configuration State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"OPTIONS" | "SELECT">("OPTIONS");
+  const [modalTab, setModalTab] = useState<"ALL" | "BATCHES" | "CUSTOM">("ALL");
+  const [batchSize, setBatchSize] = useState<number>(20);
+  const [customBatchInput, setCustomBatchInput] = useState<string>("20");
   const [pageInput, setPageInput] = useState("");
+
+  // Live Printing State
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printProgress, setPrintProgress] = useState<{
+    currentBatch: number;
+    totalBatches: number;
+    currentRange: string;
+    sentPages: number;
+    totalPages: number;
+    statusText: string;
+    isPaused: boolean;
+    countdown: number;
+    printerName: string;
+  } | null>(null);
+
+  // Print Loop Control Refs
+  const isPrintAbortedRef = React.useRef(false);
+  const isPrintPausedRef = React.useRef(false);
+  const skipWaitResolverRef = React.useRef<(() => void) | null>(null);
+  const pauseResolverRef = React.useRef<(() => void) | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -102,9 +141,108 @@ export default function InvoiceFormatter() {
     return Array.from(pages).sort((a, b) => a - b);
   };
 
-  const executePrint = async (pagesToPrint?: number[]) => {
+  const getBatchList = (total: number, size: number) => {
+    if (total <= 0 || size <= 0) return [];
+    const list: { batchNumber: number; startPage: number; endPage: number; pageCount: number; pages: number[] }[] = [];
+    const count = Math.ceil(total / size);
+    for (let i = 0; i < count; i++) {
+      const start = i * size + 1;
+      const end = Math.min((i + 1) * size, total);
+      const pages = Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+      list.push({
+        batchNumber: i + 1,
+        startPage: start,
+        endPage: end,
+        pageCount: pages.length,
+        pages,
+      });
+    }
+    return list;
+  };
+
+  const waitWithCountdown = (seconds: number) => {
+    return new Promise<void>((resolve) => {
+      let remaining = seconds;
+      
+      const interval = setInterval(() => {
+        if (isPrintAbortedRef.current) {
+          clearInterval(interval);
+          skipWaitResolverRef.current = null;
+          resolve();
+          return;
+        }
+
+        if (isPrintPausedRef.current) {
+          return;
+        }
+
+        remaining -= 1;
+        setPrintProgress((prev) => (prev ? { ...prev, countdown: Math.max(0, remaining) } : null));
+
+        if (remaining <= 0) {
+          clearInterval(interval);
+          skipWaitResolverRef.current = null;
+          resolve();
+        }
+      }, 1000);
+
+      skipWaitResolverRef.current = () => {
+        clearInterval(interval);
+        skipWaitResolverRef.current = null;
+        resolve();
+      };
+    });
+  };
+
+  const checkPauseStatus = async () => {
+    while (isPrintPausedRef.current && !isPrintAbortedRef.current) {
+      await new Promise<void>((resolve) => {
+        pauseResolverRef.current = resolve;
+      });
+    }
+  };
+
+  const handleTogglePause = () => {
+    if (isPrintPausedRef.current) {
+      isPrintPausedRef.current = false;
+      setPrintProgress((prev) => (prev ? { ...prev, isPaused: false } : null));
+      if (pauseResolverRef.current) {
+        pauseResolverRef.current();
+        pauseResolverRef.current = null;
+      }
+    } else {
+      isPrintPausedRef.current = true;
+      setPrintProgress((prev) => (prev ? { ...prev, isPaused: true } : null));
+    }
+  };
+
+  const handleStopPrint = () => {
+    isPrintAbortedRef.current = true;
+    if (skipWaitResolverRef.current) {
+      skipWaitResolverRef.current();
+      skipWaitResolverRef.current = null;
+    }
+    if (pauseResolverRef.current) {
+      pauseResolverRef.current();
+      pauseResolverRef.current = null;
+    }
+    setIsPrinting(false);
+    setPrintProgress(null);
+    toast.info("Print job stopped. Any remaining batches were cancelled.");
+  };
+
+  const handleSkipWait = () => {
+    if (skipWaitResolverRef.current) {
+      skipWaitResolverRef.current();
+      skipWaitResolverRef.current = null;
+    }
+  };
+
+  const executePrint = async (pagesToPrint?: number[], customBatch?: number) => {
     if (!processedPdfDoc) return;
     
+    const activeBatchSize = customBatch || batchSize || 20;
+
     try {
       // Auto resolve printer first
       toast.loading("Connecting to printer...", { id: "print-toast" });
@@ -116,51 +254,98 @@ export default function InvoiceFormatter() {
         toast.error(error || "No connected printer found.", { id: "print-toast" });
         return;
       }
+      toast.dismiss("print-toast");
 
       // Determine pages to print (0-indexed)
-      const totalPages = processedPdfDoc.getPageCount();
+      const totalPagesInDoc = processedPdfDoc.getPageCount();
       const targetPages = (pagesToPrint && pagesToPrint.length > 0) 
          ? pagesToPrint.map(p => p - 1) 
-         : Array.from({ length: totalPages }, (_, i) => i);
+         : Array.from({ length: totalPagesInDoc }, (_, i) => i);
 
-      // Print in batches of 100 to prevent Chrome Native Messaging payload size crash
-      const CHUNK_SIZE = 100;
-      const totalChunks = Math.ceil(targetPages.length / CHUNK_SIZE);
+      const totalBatches = Math.ceil(targetPages.length / activeBatchSize);
 
-      if (totalChunks > 1) {
-          toast.loading(`Preparing to print ${targetPages.length} pages in ${totalChunks} batches...`, { id: "print-toast" });
+      // Reset loop control flags
+      isPrintAbortedRef.current = false;
+      isPrintPausedRef.current = false;
+      setIsPrinting(true);
+      setIsModalOpen(false);
+
+      setPrintProgress({
+        currentBatch: 1,
+        totalBatches,
+        currentRange: "",
+        sentPages: 0,
+        totalPages: targetPages.length,
+        statusText: `Preparing batch 1 of ${totalBatches}...`,
+        isPaused: false,
+        countdown: 0,
+        printerName: printer,
+      });
+
+      for (let i = 0; i < totalBatches; i++) {
+        if (isPrintAbortedRef.current) break;
+
+        // If paused, wait until user resumes
+        await checkPauseStatus();
+        if (isPrintAbortedRef.current) break;
+
+        const chunkIndices = targetPages.slice(i * activeBatchSize, (i + 1) * activeBatchSize);
+        const startPageNum = chunkIndices[0] + 1;
+        const endPageNum = chunkIndices[chunkIndices.length - 1] + 1;
+        const rangeStr = `Pages ${startPageNum}–${endPageNum}`;
+
+        setPrintProgress((prev) => prev ? {
+          ...prev,
+          currentBatch: i + 1,
+          currentRange: rangeStr,
+          statusText: `Printing Batch ${i + 1} of ${totalBatches} (${rangeStr})...`,
+          countdown: 0,
+        } : null);
+
+        const newDoc = await PDFDocument.create();
+        const copiedPages = await newDoc.copyPages(processedPdfDoc, chunkIndices);
+        copiedPages.forEach((page) => newDoc.addPage(page));
+        const base64Chunk = await newDoc.saveAsBase64();
+
+        if (isPrintAbortedRef.current) break;
+
+        await chromeExtensionPrintService.printPdf(base64Chunk, printer, 1);
+
+        const cumulativeSent = Math.min((i + 1) * activeBatchSize, targetPages.length);
+        setPrintProgress((prev) => prev ? {
+          ...prev,
+          sentPages: cumulativeSent,
+        } : null);
+
+        // Safe spacing delay between batches to let TSC DA310 printer buffer clear
+        if (i < totalBatches - 1 && !isPrintAbortedRef.current) {
+          setPrintProgress((prev) => prev ? {
+            ...prev,
+            statusText: `Batch ${i + 1} sent. Pausing 6s to prevent printer memory buffer overload...`,
+            countdown: 6,
+          } : null);
+
+          await waitWithCountdown(6);
+        }
+      }
+
+      if (isPrintAbortedRef.current) {
+        toast.info("Printing cancelled. Remaining batches were not sent.");
       } else {
-          toast.loading(`Printing to ${printer}...`, { id: "print-toast" });
+        toast.success(`Printed all ${targetPages.length} pages in ${totalBatches} batches to ${printer}!`);
       }
-
-      for (let i = 0; i < totalChunks; i++) {
-         const chunkIndices = targetPages.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-         const newDoc = await PDFDocument.create();
-         const copiedPages = await newDoc.copyPages(processedPdfDoc, chunkIndices);
-         copiedPages.forEach((page) => newDoc.addPage(page));
-         const base64Chunk = await newDoc.saveAsBase64();
-         
-         if (totalChunks > 1) {
-             toast.loading(`Printing batch ${i + 1} of ${totalChunks}...`, { id: "print-toast" });
-         }
-         await chromeExtensionPrintService.printPdf(base64Chunk, printer, 1);
-         
-         // Add a small delay between batches so the printer doesn't choke
-         if (i < totalChunks - 1) {
-            await new Promise(res => setTimeout(res, 2000));
-         }
-      }
-
-      toast.success("Printed successfully!", { id: "print-toast" });
     } catch (error: any) {
       console.error("Print Error:", error);
       toast.error(error?.message || "Failed to print.", { id: "print-toast" });
+    } finally {
+      setIsPrinting(false);
+      setPrintProgress(null);
     }
   };
 
   const handlePrintClick = () => {
     if (!processedPdfDoc) return;
-    setModalMode("OPTIONS");
+    setModalTab("ALL");
     setPageInput("");
     setIsModalOpen(true);
   };
@@ -303,6 +488,7 @@ export default function InvoiceFormatter() {
         )}
       </div>
 
+      {/* PRINT OPTIONS MODAL */}
       <AnimatePresence>
         {isModalOpen && (
           <div
@@ -315,7 +501,7 @@ export default function InvoiceFormatter() {
               exit={{ opacity: 0, scale: 0.94, y: 12 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-8 shadow-2xl text-slate-900"
+              className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-7 shadow-2xl text-slate-900"
             >
               <button
                 type="button"
@@ -325,66 +511,386 @@ export default function InvoiceFormatter() {
                 <X className="h-4 w-4" />
               </button>
               
-              {/* Subtle Ambient Background Glows */}
+              {/* Ambient Glows */}
               <div className="pointer-events-none absolute -top-16 -left-16 h-44 w-44 rounded-full bg-[#FFF9EC] blur-3xl" />
               <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
               
               <div className="relative">
-                {modalMode === "OPTIONS" ? (
-                   <div className="flex flex-col items-center text-center">
-                      <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20">
-                        <Printer className="h-6 w-6" />
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-800">Print Options</h3>
-                      <p className="mt-2 text-sm text-slate-500">
-                        PDF has {processedPdfDoc?.getPageCount()} pages. What would you like to print?
-                      </p>
-                      
-                      <div className="mt-8 flex w-full flex-col gap-3">
-                        <button onClick={() => { setIsModalOpen(false); executePrint(); }} className="w-full rounded-xl bg-[#E8C16D] py-3.5 text-sm font-bold text-[#0A0E1A] shadow-sm transition hover:bg-[#d6ad53] active:scale-[0.98]">
-                           Print All Pages
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-700 ring-1 ring-amber-500/20">
+                    <Printer className="h-6 w-6 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800">Print Options</h3>
+                    <p className="text-xs text-slate-500">
+                      Total <strong>{processedPdfDoc?.getPageCount() || 0} pages</strong> loaded in PDF
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="mb-5 flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("ALL")}
+                    className={`flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition ${
+                      modalTab === "ALL"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    All Pages (Batched)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("BATCHES")}
+                    className={`flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition ${
+                      modalTab === "BATCHES"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Quick Batches
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("CUSTOM")}
+                    className={`flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition ${
+                      modalTab === "CUSTOM"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Select Pages
+                  </button>
+                </div>
+
+                {/* Batch Size Selector (Shown in ALL and BATCHES tabs) */}
+                {modalTab !== "CUSTOM" && (
+                  <div className="mb-5 rounded-2xl border border-amber-200/70 bg-amber-50/40 p-3.5 sm:p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                        <Layers className="h-3.5 w-3.5 text-amber-600" />
+                        Batch Size (Pages per Print Job)
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                        ⚡ Recommended: 20
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {[10, 20, 30, 50].map((sz) => (
+                        <button
+                          key={sz}
+                          type="button"
+                          onClick={() => {
+                            setBatchSize(sz);
+                            setCustomBatchInput(String(sz));
+                          }}
+                          className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
+                            batchSize === sz
+                              ? "bg-[#0A0E1A] text-[#E8C16D] border-[#0A0E1A] shadow-xs"
+                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          {sz}
                         </button>
-                        <button onClick={() => setModalMode("SELECT")} className="w-full rounded-xl bg-[#0A0E1A] py-3.5 text-sm font-bold text-[#E8C16D] shadow-sm transition hover:bg-black active:scale-[0.98]">
-                           Select Pages
-                        </button>
-                        <button onClick={() => setIsModalOpen(false)} className="w-full rounded-xl bg-slate-100 py-3.5 text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]">
-                           Cancel
-                        </button>
+                      ))}
+                      <div className="relative w-16">
+                        <input
+                          type="number"
+                          min="1"
+                          max="200"
+                          value={customBatchInput}
+                          onChange={(e) => {
+                            setCustomBatchInput(e.target.value);
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val > 0) {
+                              setBatchSize(val);
+                            }
+                          }}
+                          className="w-full text-center py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-white focus:outline-none focus:border-amber-500"
+                          title="Custom batch size"
+                        />
                       </div>
-                   </div>
-                ) : (
-                   <div className="flex flex-col">
-                      <div className="mb-6 flex items-center gap-3">
-                         <div className="grid h-12 w-12 place-items-center rounded-full bg-blue-50 text-blue-600 ring-1 ring-blue-500/20">
-                           <ListOrdered className="h-6 w-6" />
-                         </div>
-                         <div>
-                           <h3 className="text-lg font-bold text-slate-800">Select Pages</h3>
-                           <p className="text-xs sm:text-sm text-slate-500">Enter page numbers. Max: {processedPdfDoc?.getPageCount()}</p>
-                         </div>
-                      </div>
-                      
-                      <div className="mt-2">
-                         <input 
-                           type="text" 
-                           autoFocus
-                           value={pageInput}
-                           onChange={(e) => setPageInput(e.target.value)}
-                           placeholder="e.g. 1, 3-5" 
-                           className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-sm outline-none transition focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] bg-white shadow-sm"
-                         />
-                      </div>
-                      
-                      <div className="mt-8 flex gap-3">
-                        <button onClick={() => setIsModalOpen(false)} className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]">
-                           Cancel
-                        </button>
-                        <button onClick={handlePrintSelectedPages} className="flex-1 rounded-xl bg-[#0A0E1A] py-3 text-sm font-bold text-[#E8C16D] shadow-sm transition hover:bg-black active:scale-[0.98]">
-                           Print Pages
-                        </button>
-                      </div>
-                   </div>
+                    </div>
+
+                    <p className="mt-2 text-[11px] leading-relaxed text-amber-900/80">
+                      Keeps print spooler file small (~2 MB) so the <strong>TSC DA310</strong> printer buffer memory doesn&apos;t overflow or reprint duplicate labels.
+                    </p>
+                  </div>
                 )}
+
+                {/* TAB 1: ALL PAGES BATCHED */}
+                {modalTab === "ALL" && (
+                  <div className="flex flex-col">
+                    {(() => {
+                      const total = processedPdfDoc?.getPageCount() || 0;
+                      const totalBatches = Math.ceil(total / batchSize);
+                      return (
+                        <>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 mb-5 space-y-2">
+                            <div className="flex justify-between text-xs text-slate-600">
+                              <span>Total Pages:</span>
+                              <strong className="text-slate-800">{total} Pages</strong>
+                            </div>
+                            <div className="flex justify-between text-xs text-slate-600">
+                              <span>Batch Strategy:</span>
+                              <strong className="text-amber-700">{totalBatches} Batches ({batchSize} pages each)</strong>
+                            </div>
+                            <div className="flex justify-between text-xs text-slate-600">
+                              <span>Buffer Cooldown:</span>
+                              <span className="text-slate-700 font-semibold">6s spacing between batches</span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setIsModalOpen(false)}
+                              className="flex-1 rounded-xl bg-slate-100 py-3.5 text-xs sm:text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsModalOpen(false);
+                                executePrint(undefined, batchSize);
+                              }}
+                              className="flex-[2] inline-flex items-center justify-center gap-2 rounded-xl bg-[#E8C16D] py-3.5 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-sm transition hover:bg-[#d6ad53] active:scale-[0.98]"
+                            >
+                              <Printer className="h-4 w-4" />
+                              <span>Print All ({totalBatches} Batches)</span>
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* TAB 2: QUICK BATCHES */}
+                {modalTab === "BATCHES" && (
+                  <div className="flex flex-col">
+                    {(() => {
+                      const total = processedPdfDoc?.getPageCount() || 0;
+                      const batchList = getBatchList(total, batchSize);
+
+                      return (
+                        <>
+                          <p className="text-xs text-slate-500 mb-3">
+                            Click any batch to print immediately (helpful if a previous label jammed or needs reprint):
+                          </p>
+                          <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1 mb-5">
+                            {batchList.map((b) => (
+                              <button
+                                key={b.batchNumber}
+                                type="button"
+                                onClick={() => {
+                                  setIsModalOpen(false);
+                                  executePrint(b.pages, b.pageCount);
+                                }}
+                                className="group flex flex-col items-start p-2.5 rounded-xl border border-slate-200 bg-white hover:border-[#E8C16D] hover:bg-amber-50/30 transition text-left cursor-pointer"
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span className="text-xs font-bold text-slate-800 group-hover:text-amber-800">
+                                    Batch {b.batchNumber}
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-600">
+                                    {b.pageCount} pgs
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-slate-500 mt-0.5">
+                                  Pages {b.startPage} – {b.endPage}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setIsModalOpen(false)}
+                              className="w-full rounded-xl bg-slate-100 py-3 text-xs sm:text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* TAB 3: CUSTOM SELECT PAGES */}
+                {modalTab === "CUSTOM" && (
+                  <div className="flex flex-col">
+                    <div className="mb-4">
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                        Page Numbers or Range
+                      </label>
+                      <input 
+                        type="text" 
+                        autoFocus
+                        value={pageInput}
+                        onChange={(e) => setPageInput(e.target.value)}
+                        placeholder="e.g. 1-20, 45, 60-80" 
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] bg-white shadow-xs font-medium"
+                      />
+                      <p className="mt-1.5 text-[11px] text-slate-400">
+                        Total PDF pages: {processedPdfDoc?.getPageCount() || 0}. If more than {batchSize} pages are selected, they will automatically be safely batched.
+                      </p>
+                    </div>
+                    
+                    <div className="mt-4 flex gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => setIsModalOpen(false)} 
+                        className="flex-1 rounded-xl bg-slate-100 py-3 text-xs sm:text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={handlePrintSelectedPages} 
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A0E1A] py-3 text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm transition hover:bg-black active:scale-[0.98]"
+                      >
+                        <Printer className="h-4 w-4" />
+                        <span>Print Pages</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* LIVE BATCH PRINTING PROGRESS MODAL */}
+      <AnimatePresence>
+        {isPrinting && printProgress && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-md select-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-8 shadow-2xl text-slate-900"
+            >
+              <div className="flex flex-col items-center text-center">
+                {/* Status Indicator Icon */}
+                <div className="relative mb-4">
+                  <div className={`grid h-16 w-16 place-items-center rounded-2xl ring-1 transition-all ${
+                    printProgress.isPaused
+                      ? "bg-amber-50 text-amber-600 ring-amber-500/20"
+                      : "bg-emerald-50 text-emerald-600 ring-emerald-500/20 animate-pulse"
+                  }`}>
+                    {printProgress.isPaused ? (
+                      <Pause className="h-7 w-7" />
+                    ) : (
+                      <Printer className="h-7 w-7 stroke-[2.2]" />
+                    )}
+                  </div>
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-500"></span>
+                  </span>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 mb-2">
+                  <span>🖨️ Printer:</span>
+                  <strong className="text-slate-900">{printProgress.printerName}</strong>
+                </div>
+
+                <h3 className="text-xl font-black text-slate-800">
+                  {printProgress.isPaused ? "Printing Paused" : "Printing in Progress"}
+                </h3>
+
+                <p className="mt-1 text-sm font-bold text-amber-700">
+                  Batch {printProgress.currentBatch} of {printProgress.totalBatches}
+                  {printProgress.currentRange ? ` (${printProgress.currentRange})` : ""}
+                </p>
+
+                {/* Progress Bar */}
+                <div className="w-full mt-5">
+                  {(() => {
+                    const pct = printProgress.totalPages > 0
+                      ? Math.min(100, Math.round((printProgress.sentPages / printProgress.totalPages) * 100))
+                      : 0;
+                    return (
+                      <>
+                        <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden ring-1 ring-slate-200/50">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-[#E8C16D] to-amber-500 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.35, ease: "easeOut" }}
+                          />
+                        </div>
+                        <div className="mt-2 flex justify-between text-xs font-semibold text-slate-500">
+                          <span>{printProgress.sentPages} of {printProgress.totalPages} pages sent</span>
+                          <span className="text-amber-700">{pct}%</span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {/* Cooldown / Waiting Banner */}
+                {printProgress.countdown > 0 && !printProgress.isPaused && (
+                  <div className="w-full mt-4 flex items-center justify-between rounded-2xl border border-amber-200/80 bg-amber-50/70 px-4 py-2.5 text-xs text-amber-950">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                      <span>Next batch in <strong>{printProgress.countdown}s</strong> (buffer cooldown)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSkipWait}
+                      className="inline-flex items-center gap-1 font-bold text-amber-700 hover:text-amber-900 cursor-pointer hover:underline"
+                    >
+                      <span>Send Now</span>
+                      <FastForward className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {printProgress.isPaused && (
+                  <div className="w-full mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 font-medium">
+                    ⏸️ Printing paused. Printer buffer is clearing. Click Resume to continue.
+                  </div>
+                )}
+
+                {/* Action Controls */}
+                <div className="mt-6 flex gap-3 w-full">
+                  <button
+                    type="button"
+                    onClick={handleTogglePause}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 py-3 text-xs sm:text-sm font-bold text-slate-700 transition active:scale-[0.98] shadow-xs cursor-pointer"
+                  >
+                    {printProgress.isPaused ? (
+                      <>
+                        <Play className="h-4 w-4 text-emerald-600 fill-emerald-600" />
+                        <span>Resume</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="h-4 w-4 text-amber-600 fill-amber-600" />
+                        <span>Pause</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStopPrint}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 py-3 text-xs sm:text-sm font-bold text-rose-700 transition active:scale-[0.98] shadow-xs cursor-pointer"
+                  >
+                    <Square className="h-4 w-4 fill-rose-700" />
+                    <span>Stop Print</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
