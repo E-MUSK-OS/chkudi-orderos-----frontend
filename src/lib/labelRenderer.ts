@@ -824,6 +824,7 @@ export const printLabelsViaBrowser = async (
       )
       .join("\n");
 
+    const isLandscape = widthMm > heightMm;
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -833,6 +834,12 @@ export const printLabelsViaBrowser = async (
     @page {
       size: ${widthMm}mm ${heightMm}mm;
       margin: 0mm !important;
+    }
+    @media print {
+      @page {
+        size: ${isLandscape ? "landscape" : "portrait"};
+        margin: 0mm !important;
+      }
     }
     *, *::before, *::after {
       box-sizing: border-box !important;

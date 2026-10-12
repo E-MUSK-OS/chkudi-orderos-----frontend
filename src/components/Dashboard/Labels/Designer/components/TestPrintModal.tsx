@@ -266,6 +266,10 @@ export function TestPrintModal({
         urls.push(dataUrl);
       }
 
+      toast.info(`Chrome Print: Ensure Layout is Landscape & Margins are None`, {
+        duration: 5000,
+      });
+
       await printLabelsViaBrowser(urls, {
         widthMm,
         heightMm,
@@ -418,14 +422,20 @@ export function TestPrintModal({
 
         {/* Extension Warning Banner */}
         {helperStatus === "extension-missing" && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-1">
-            <div className="flex items-center gap-1.5 font-semibold">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-              <span>PrintBridge Extension Not Detected</span>
+          <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-2">
+            <div className="flex items-center gap-1.5 font-bold text-amber-800">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>PrintBridge Extension Not Detected (Using Browser Print)</span>
             </div>
-            <p>
-              To print directly and silently to your thermal printer without opening dialogs, please ensure the PrintBridge extension is installed and enabled in Google Chrome or Microsoft Edge. You can still use <strong>Browser Print</strong> below.
+            <p className="text-[11px] leading-relaxed text-amber-800">
+              Browser Print વાપરતી વખતે ક્રોમ (Chrome) પ્રિન્ટ વિન્ડોમાં આ સેટિંગ્સ ખાસ ચેક કરો:
             </p>
+            <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200/70 text-[11px] font-medium space-y-1 text-slate-700">
+              <div>• <strong>Layout:</strong> <span className="text-emerald-700 font-bold">Landscape (આડું)</span></div>
+              <div>• <strong>Paper size:</strong> <span className="text-emerald-700 font-bold">{template.settings.widthMm} × {template.settings.heightMm} mm</span> (અથવા User Defined)</div>
+              <div>• <strong>Margins:</strong> <span className="text-emerald-700 font-bold">None (ઝીરો માર્જિન)</span></div>
+              <div>• <strong>Scale:</strong> <span className="text-emerald-700 font-bold">100% / Fit to printable area</span></div>
+            </div>
           </div>
         )}
 
