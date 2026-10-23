@@ -86,14 +86,8 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                 <video
                   controls
                   className="aspect-video w-full"
-                  src={`${getFullUrl(item.videoUrl)}#t=2`}
+                  src={getFullUrl(item.videoUrl) ?? undefined}
                   poster={getFullUrl(item.thumbnailUrl) ?? undefined}
-                  onLoadedMetadata={(e) => {
-                    const video = e.currentTarget;
-                    if (video.duration >= 2) {
-                      video.currentTime = 2;
-                    }
-                  }}
                 />
               ) : null}
             </div>

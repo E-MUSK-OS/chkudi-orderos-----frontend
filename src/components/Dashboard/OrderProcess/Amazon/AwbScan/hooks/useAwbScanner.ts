@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { socket } from "@/lib/socket";
 import { formatToIST, getNowIsoIST } from "../timeUtils";
 import { amazonOrderService, AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 
@@ -33,6 +34,7 @@ export const useAwbScanner = (
   const warningSound = useRef<HTMLAudioElement | null>(null);
   const successSound = useRef<HTMLAudioElement | null>(null);
   const alreadyScannedSound = useRef<HTMLAudioElement | null>(null);
+  const scannedAwbsRef = useRef<Set<string>>(new Set());
 
   // Initialize sounds
   useEffect(() => {
@@ -44,6 +46,30 @@ export const useAwbScanner = (
       warningSound.current = null;
       successSound.current = null;
       alreadyScannedSound.current = null;
+    };
+  }, []);
+
+  // Sync scannedAwbsRef from currently loaded orders with SCANNED status
+  useEffect(() => {
+    orders.forEach((o) => {
+      if (o.packingScanStatus === "SCANNED" && o.awb && o.awb !== "N/A" && o.awb !== "-") {
+        scannedAwbsRef.current.add(o.awb.trim().toLowerCase());
+      }
+    });
+  }, [orders]);
+
+  // If an order is reprinted, remove its AWB from scannedAwbsRef so it can be re-scanned cleanly
+  useEffect(() => {
+    const handleReprinted = (data: { awbs?: string[] }) => {
+      if (data?.awbs && Array.isArray(data.awbs)) {
+        data.awbs.forEach((a) => {
+          if (a) scannedAwbsRef.current.delete(a.trim().toLowerCase());
+        });
+      }
+    };
+    socket.on("amazonOrderPrinted", handleReprinted);
+    return () => {
+      socket.off("amazonOrderPrinted", handleReprinted);
     };
   }, []);
 
@@ -213,6 +239,18 @@ export const useAwbScanner = (
     }
 
     // 5. Strict AWB matching ONLY: Check against item.awb (never against orderId)
+    // Instant 0ms earlier check across all pages:
+    if (scannedAwbsRef.current.has(cleanLower)) {
+      setMessage({
+        text: `AWB tracking barcode "${clean}" is already scanned.`,
+        type: "warning",
+      });
+      await playSound(alreadyScannedSound);
+      removeMissingItem(clean);
+      setIsScanning(false);
+      return;
+    }
+
     const isAwbMatch = (itemAwb?: string | null): boolean => {
       if (!itemAwb || itemAwb.toUpperCase() === "N/A" || itemAwb === "-") return false;
       const cleanAwb = itemAwb.trim().toLowerCase();
@@ -227,6 +265,8 @@ export const useAwbScanner = (
 
     // Case 1: Already scanned
     if (existing && existing.packingScanStatus === "SCANNED") {
+      scannedAwbsRef.current.add(cleanLower);
+      if (existing.awb) scannedAwbsRef.current.add(existing.awb.trim().toLowerCase());
       setMessage({
         text: `AWB tracking barcode "${clean}" is already scanned. (${existing.orderId} • ${existing.customer})`,
         type: "warning",
@@ -241,6 +281,9 @@ export const useAwbScanner = (
 
     // Case 2: Found in local list and PENDING -> Instant Optimistic Update!
     if (existing && existing.packingScanStatus === "PENDING") {
+      scannedAwbsRef.current.add(cleanLower);
+      if (existing.awb) scannedAwbsRef.current.add(existing.awb.trim().toLowerCase());
+
       const updatedOrder: AmazonOrderItem = {
         ...existing,
         packingScanStatus: "SCANNED",
@@ -273,6 +316,7 @@ export const useAwbScanner = (
         const targetAwb = existing.awb && existing.awb !== "N/A" ? existing.awb : clean;
         const res = await amazonOrderService.updateScanStatusByAwb(targetAwb, "SCANNED");
         if (res?.data) {
+          if (res.data.awb) scannedAwbsRef.current.add(res.data.awb.trim().toLowerCase());
           setOrders((prev) =>
             prev.map((item) => (item.id === res.data.id ? { ...item, ...res.data } : item))
           );
@@ -290,6 +334,9 @@ export const useAwbScanner = (
     try {
       const res = await amazonOrderService.updateScanStatusByAwb(clean, "SCANNED");
       const updated = res.data;
+
+      scannedAwbsRef.current.add(cleanLower);
+      if (updated?.awb) scannedAwbsRef.current.add(updated.awb.trim().toLowerCase());
 
       setOrders((prev) => {
         const exists = prev.some((item) => item.id === updated.id);
@@ -316,11 +363,14 @@ export const useAwbScanner = (
         onSuccessCallback(updated);
       }
     } catch (err: any) {
-      const serverMessage = err?.response?.data?.message;
-      const errorMsg = serverMessage || err?.message || `Invalid Barcode: Amazon AWB tracking barcode "${clean}" not found. Only valid AWB tracking barcodes can be scanned.`;
+      const serverMessage = err?.message || err?.response?.data?.message;
+      const errorMsg = serverMessage || `Invalid Barcode: Amazon AWB tracking barcode "${clean}" not found. Only valid AWB tracking barcodes can be scanned.`;
 
       if (errorMsg.includes("already scanned")) {
+        scannedAwbsRef.current.add(cleanLower);
         const orderData = err?.response?.data?.data;
+        if (orderData?.awb) scannedAwbsRef.current.add(orderData.awb.trim().toLowerCase());
+
         setMessage({
           text: errorMsg,
           type: "warning",

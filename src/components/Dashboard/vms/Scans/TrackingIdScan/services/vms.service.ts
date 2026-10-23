@@ -13,6 +13,8 @@ export const updatePackingScan = async ({
   trackingId: string;
   userId: string;
 }) => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") || "" : "";
+
   const response = await fetch(
     API_ENDPOINTS.UPDATE_PACKING_SCAN,
     {
@@ -21,6 +23,7 @@ export const updatePackingScan = async ({
       headers: {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
 
       body: JSON.stringify({

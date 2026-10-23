@@ -28,6 +28,7 @@ import {
   EyeOff,
   ShieldAlert,
   Lock,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
@@ -108,6 +109,7 @@ import {
   generateAmazonPicklist,
   downloadAmazonPicklistExcel,
 } from "../utils/generateAmazonPicklist";
+import { ComparisonSummaryCards } from "./ComparisonSummaryCards";
 
 export type AmazonOrderTypeFilter = AmazonOrderType;
 
@@ -178,6 +180,24 @@ interface ComparisonResultViewProps {
   onReset?: () => void;
 }
 
+// Central registry for tracked Blob URLs to prevent memory leaks and browser tab crashes
+const trackedBlobUrls = new Set<string>();
+
+export function createTrackedBlobUrl(blob: Blob): string {
+  const url = URL.createObjectURL(blob);
+  trackedBlobUrls.add(url);
+  return url;
+}
+
+export function revokeAllTrackedBlobUrls(): void {
+  trackedBlobUrls.forEach((url) => {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {}
+  });
+  trackedBlobUrls.clear();
+}
+
 async function generateUnmatchedPdfFromFiles(
   files: any,
   results: any[]
@@ -207,7 +227,7 @@ async function generateUnmatchedPdfFromFiles(
     if (!hasPages) return "";
     const pdfBytes = await unmatchedDoc.save({ useObjectStreams: true });
     const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
-    return URL.createObjectURL(blob);
+    return createTrackedBlobUrl(blob);
   } catch (err) {
     console.warn("Failed to generate unmatched PDF on the fly:", err);
     return "";
@@ -249,7 +269,7 @@ async function generateUnmatchedZplFromFiles(
     if (!hasPages) return "";
     const pdfBytes = await unmatchedDoc.save({ useObjectStreams: true });
     const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
-    return URL.createObjectURL(blob);
+    return createTrackedBlobUrl(blob);
   } catch (err) {
     console.warn("Failed to generate unmatched ZPL PDF on the fly:", err);
     return "";
@@ -378,7 +398,7 @@ export default function ComparisonResultView({
           bytes[i] = binary.charCodeAt(i);
         }
         const blob = new Blob([bytes], { type: mimeType });
-        return URL.createObjectURL(blob);
+        return createTrackedBlobUrl(blob);
       } catch (e) {
         return "";
       }
@@ -431,7 +451,7 @@ export default function ComparisonResultView({
         .fetchBatchFileBlob(activeHistoryBatchId, "combined")
         .then((blob) => {
           if (blob && blob.size > 0) {
-            useAmazonOrderStore.setState({ combinedPdfUrl: URL.createObjectURL(blob) });
+            useAmazonOrderStore.setState({ combinedPdfUrl: createTrackedBlobUrl(blob) });
           }
         })
         .catch((e) => console.warn("Notice: On-demand combined PDF streaming notice:", e));
@@ -440,7 +460,7 @@ export default function ComparisonResultView({
         .fetchBatchFileBlob(activeHistoryBatchId, "original")
         .then((blob) => {
           if (blob && blob.size > 0) {
-            useAmazonOrderStore.setState({ originalPdfUrl: URL.createObjectURL(blob) });
+            useAmazonOrderStore.setState({ originalPdfUrl: createTrackedBlobUrl(blob) });
           }
         })
         .catch((e) => console.warn("Notice: On-demand original PDF streaming notice:", e));
@@ -449,7 +469,7 @@ export default function ComparisonResultView({
         .fetchBatchFileBlob(activeHistoryBatchId, "zpl")
         .then((blob) => {
           if (blob && blob.size > 0) {
-            useAmazonOrderStore.setState({ convertedZplPdfUrl: URL.createObjectURL(blob) });
+            useAmazonOrderStore.setState({ convertedZplPdfUrl: createTrackedBlobUrl(blob) });
           }
         })
         .catch((e) => console.warn("Notice: On-demand ZPL PDF streaming notice:", e));
@@ -458,7 +478,7 @@ export default function ComparisonResultView({
         .fetchBatchFileBlob(activeHistoryBatchId, "unmatched-pdf")
         .then((blob) => {
           if (blob && blob.size > 0) {
-            useAmazonOrderStore.setState({ unmatchedPdfUrl: URL.createObjectURL(blob) });
+            useAmazonOrderStore.setState({ unmatchedPdfUrl: createTrackedBlobUrl(blob) });
           }
         })
         .catch((e) => console.warn("Notice: On-demand unmatched PDF streaming notice:", e));
@@ -467,7 +487,7 @@ export default function ComparisonResultView({
         .fetchBatchFileBlob(activeHistoryBatchId, "unmatched-zpl")
         .then((blob) => {
           if (blob && blob.size > 0) {
-            useAmazonOrderStore.setState({ unmatchedZplPdfUrl: URL.createObjectURL(blob) });
+            useAmazonOrderStore.setState({ unmatchedZplPdfUrl: createTrackedBlobUrl(blob) });
           }
         })
         .catch((e) => console.warn("Notice: On-demand unmatched ZPL streaming notice:", e));
@@ -629,16 +649,20 @@ export default function ComparisonResultView({
   const printedRowsRef = useRef<Set<number>>(new Set());
   const printQueuePromiseRef = useRef<Promise<void>>(Promise.resolve());
   const orderPrintPdfCacheRef = useRef<Map<number, string>>(new Map());
-  const persistedIndicesRef = useRef<Set<number>>(new Set());
+  const persistedIndicesRef = useRef<Set<number>>(
+    getStoredPrintedRows(batchKey, activeHistoryBatchId, summary)
+  );
+  const inFlightPersistAwbsRef = useRef<Set<string>>(new Set());
   const prevBatchIdentifierRef = useRef<string>("");
 
-  // Strict unmount cleanup: destroy all in-memory PDF caches, combined docs, and memoizers when leaving the page
+  // Strict unmount cleanup: destroy all in-memory PDF caches, combined docs, memoizers, and revoke Blob URLs
   useEffect(() => {
     return () => {
       clearCachedAmazonDocs();
       orderPrintPdfCacheRef.current.clear();
       orderScanProgressRef.current.clear();
       loadedPdfDocsRef.current = null;
+      revokeAllTrackedBlobUrls();
     };
   }, []);
 
@@ -727,11 +751,13 @@ export default function ComparisonResultView({
 
   // Fetch ASIN to Seller SKU mapping from AsinImport table (primary), products, and variants (fallback)
   const [asinToSkuMap, setAsinToSkuMap] = useState<Map<string, string>>(new Map());
+  const asinToSkuMapRef = useRef<Map<string, string>>(new Map());
   const [skuDetailsMap, setSkuDetailsMap] = useState<
     Map<string, { rackAddress?: string; generateBarcode?: string }>
   >(new Map());
   const skuDetailsMapRef = useRef<Map<string, { rackAddress?: string; generateBarcode?: string }>>(new Map());
   const [isMappingsLoading, setIsMappingsLoading] = useState(true);
+  const [isGeneratingPicklist, setIsGeneratingPicklist] = useState(false);
 
   // Missing SKU modal state
   const [isMissingSkuModalOpen, setIsMissingSkuModalOpen] = useState(false);
@@ -816,6 +842,7 @@ export default function ComparisonResultView({
 
         // Instantly update UI with the first 10 items
         skuDetailsMapRef.current = detailsMap;
+        asinToSkuMapRef.current = new Map(map);
         setAsinToSkuMap(new Map(map));
         setSkuDetailsMap(new Map(detailsMap));
         
@@ -931,6 +958,7 @@ export default function ComparisonResultView({
       }
 
       skuDetailsMapRef.current = detailsMap;
+      asinToSkuMapRef.current = map;
       setAsinToSkuMap(map);
       setSkuDetailsMap(detailsMap);
 
@@ -1082,11 +1110,38 @@ export default function ComparisonResultView({
 
   // Helper to reliably persist printed orders directly into backend database for immediate AWB Scan verification
   const persistPrintedOrdersToAwbScan = useCallback(
-    async (items: typeof mappedResults) => {
+    async (items: typeof mappedResults, isExplicitPrint: boolean = false) => {
       if (!items || items.length === 0) return;
-      items.forEach((item) => persistedIndicesRef.current.add(item.index));
+
+      // Filter out items already in-flight or without valid identity
+      const eligibleItems = items.filter((item) => {
+        const cleanAwb = (item.awb || "").trim().toUpperCase();
+        const cleanOrder = (item.orderNumber || "").trim().toUpperCase();
+        const hasAwb = cleanAwb && cleanAwb !== "N/A" && cleanAwb !== "-";
+        const hasOrder = cleanOrder && cleanOrder !== "N/A" && cleanOrder !== "-";
+        const key = hasAwb ? `AWB:${cleanAwb}` : hasOrder ? `ORD:${cleanOrder}` : `IDX:${item.index}`;
+        if (!key) return false;
+        if (inFlightPersistAwbsRef.current.has(key)) return false;
+        return true;
+      });
+
+      if (eligibleItems.length === 0) return;
+
+      // Mark indices and in-flight keys synchronously to block any duplicate concurrent triggers
+      eligibleItems.forEach((item) => {
+        persistedIndicesRef.current.add(item.index);
+        const cleanAwb = (item.awb || "").trim().toUpperCase();
+        const cleanOrder = (item.orderNumber || "").trim().toUpperCase();
+        const hasAwb = cleanAwb && cleanAwb !== "N/A" && cleanAwb !== "-";
+        const hasOrder = cleanOrder && cleanOrder !== "N/A" && cleanOrder !== "-";
+        const key = hasAwb ? `AWB:${cleanAwb}` : hasOrder ? `ORD:${cleanOrder}` : `IDX:${item.index}`;
+        if (key) inFlightPersistAwbsRef.current.add(key);
+      });
+
       try {
         const nowIso = new Date().toISOString();
+        // Deduplicate in memory before sending payload: strictly 1 entry per unique AWB/OrderId
+        const seenPayloadKeys = new Set<string>();
         const ordersToSave: Array<{
           invoice: string;
           orderId: string;
@@ -1095,11 +1150,25 @@ export default function ComparisonResultView({
           sellerSku: string;
           customer: string;
           packingScanStatus: "PENDING";
+          isExplicitPrint?: boolean;
           createdAt: string;
           updatedAt: string;
         }> = [];
 
-        items.forEach((item) => {
+        eligibleItems.forEach((item) => {
+          const cleanAwb = (item.awb || "").trim();
+          const cleanOrder = (item.orderNumber || "").trim();
+          const hasAwb = cleanAwb && cleanAwb !== "N/A" && cleanAwb !== "-";
+          const hasOrder = cleanOrder && cleanOrder !== "N/A" && cleanOrder !== "-";
+          const payloadKey = hasAwb 
+            ? `AWB:${cleanAwb.toUpperCase()}` 
+            : hasOrder 
+              ? `ORD:${cleanOrder.toUpperCase()}` 
+              : `IDX:${item.index}`;
+
+          if (seenPayloadKeys.has(payloadKey)) return;
+          seenPayloadKeys.add(payloadKey);
+
           const inv =
             item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF"
               ? item.pdfInvoice
@@ -1110,16 +1179,19 @@ export default function ComparisonResultView({
 
           ordersToSave.push({
             invoice: inv,
-            orderId: item.orderNumber || "N/A",
-            awb: item.awb || "N/A",
+            orderId: cleanOrder || "N/A",
+            awb: cleanAwb || "N/A",
             asin: item.asin || "N/A",
             sellerSku: item.sellerSku || "N/A",
             customer: cust,
             packingScanStatus: "PENDING" as const,
+            isExplicitPrint,
             createdAt: nowIso,
             updatedAt: nowIso,
-          });
+          } as any);
         });
+
+        if (ordersToSave.length === 0) return;
 
         // If history batch sync is in flight, poll briefly for the resolved batch ID
         let targetBatchId =
@@ -1135,13 +1207,44 @@ export default function ComparisonResultView({
           }
         }
 
-        await amazonOrderService.savePrintedOrders(
-          ordersToSave,
-          undefined,
-          targetBatchId || undefined
-        );
+        try {
+          await amazonOrderService.savePrintedOrders(
+            ordersToSave,
+            undefined,
+            targetBatchId || undefined
+          );
+        } catch (initialErr) {
+          // If foreign key constraint or batch ID issue failed the request, retry immediately without batchId
+          if (targetBatchId) {
+            console.warn("Primary save with targetBatchId failed, retrying without batchId:", initialErr);
+            await amazonOrderService.savePrintedOrders(
+              ordersToSave,
+              undefined,
+              undefined
+            );
+          } else {
+            throw initialErr;
+          }
+        }
       } catch (saveErr) {
         console.warn("Background Amazon order save error for AWB scan:", saveErr);
+        // Roll back persistedIndicesRef so background sync or future print can retry saving these orders
+        eligibleItems.forEach((item) => {
+          persistedIndicesRef.current.delete(item.index);
+        });
+        toast.error("Could not sync printed orders to AWB Scan database. Please check connection.", {
+          id: "awb-scan-sync-error",
+          duration: 5000,
+        });
+      } finally {
+        eligibleItems.forEach((item) => {
+          const cleanAwb = (item.awb || "").trim().toUpperCase();
+          const cleanOrder = (item.orderNumber || "").trim().toUpperCase();
+          const hasAwb = cleanAwb && cleanAwb !== "N/A" && cleanAwb !== "-";
+          const hasOrder = cleanOrder && cleanOrder !== "N/A" && cleanOrder !== "-";
+          const key = hasAwb ? `AWB:${cleanAwb}` : hasOrder ? `ORD:${cleanOrder}` : `IDX:${item.index}`;
+          if (key) inFlightPersistAwbsRef.current.delete(key);
+        });
       }
     },
     [activeHistoryBatchId, summary]
@@ -1155,7 +1258,7 @@ export default function ComparisonResultView({
       );
       if (newlyPrintedItems.length > 0) {
         newlyPrintedItems.forEach((r) => persistedIndicesRef.current.add(r.index));
-        persistPrintedOrdersToAwbScan(newlyPrintedItems);
+        persistPrintedOrdersToAwbScan(newlyPrintedItems, false);
       }
     }
   }, [mappedResults, printedRows, persistPrintedOrdersToAwbScan]);
@@ -1174,7 +1277,7 @@ export default function ComparisonResultView({
     const syncPrintedFromDb = async () => {
       if (!mappedResults || mappedResults.length === 0) return;
       try {
-        const queryStr = `?batchId=${encodeURIComponent(activeHistoryBatchId)}&limit=2000`;
+        const queryStr = `?batchId=${encodeURIComponent(activeHistoryBatchId)}&limit=5000`;
         const res = await amazonOrderService.getOrders(queryStr);
         if (isCancelled || !res?.data || !Array.isArray(res.data)) return;
 
@@ -1472,7 +1575,7 @@ export default function ComparisonResultView({
             copied.forEach((p) => singleDoc.addPage(p));
             const b64 = await singleDoc.saveAsBase64();
             if (!isCancelled) {
-              if (orderPrintPdfCacheRef.current.size >= 2000 && !orderPrintPdfCacheRef.current.has(item.index)) {
+              if (orderPrintPdfCacheRef.current.size >= 5000 && !orderPrintPdfCacheRef.current.has(item.index)) {
                 const oldestKey = orderPrintPdfCacheRef.current.keys().next().value;
                 if (oldestKey !== undefined) {
                   orderPrintPdfCacheRef.current.delete(oldestKey);
@@ -1616,7 +1719,10 @@ export default function ComparisonResultView({
     return images;
   };
 
-  const executePrintForItems = async (targetResults: typeof mappedResults) => {
+  const executePrintForItems = async (
+    targetResults: typeof mappedResults,
+    skipPersist = false
+  ) => {
     if (modalMissingAsins.length > 0) {
       toast.error(`Cannot print orders: ${modalMissingAsins.length} ASIN(s) are missing Seller SKU. Please resolve missing SKUs first.`);
       setIsMissingSkuModalOpen(true);
@@ -1658,7 +1764,7 @@ export default function ComparisonResultView({
         }
         if (blob && blob.size > 0) {
           const base64 = await blobToBase64(blob);
-          const combUrl = URL.createObjectURL(blob);
+          const combUrl = createTrackedBlobUrl(blob);
           const newFiles = {
             ...activeFiles,
             combinedPdfBase64: base64,
@@ -1824,8 +1930,10 @@ export default function ComparisonResultView({
           return next;
         });
 
-        // Direct database save for AWB scan
-        await persistPrintedOrdersToAwbScan([singleItem]);
+        // Direct database save for AWB scan (if not already initiated by caller)
+        if (!skipPersist) {
+          await persistPrintedOrdersToAwbScan([singleItem], true);
+        }
 
         return;
       }
@@ -1883,8 +1991,10 @@ export default function ComparisonResultView({
             return next;
           });
 
-          // Direct database save for AWB scan
-          await persistPrintedOrdersToAwbScan([singleItem]);
+          // Direct database save for AWB scan (if not already initiated by caller)
+          if (!skipPersist) {
+            await persistPrintedOrdersToAwbScan([singleItem], true);
+          }
 
           return;
         }
@@ -2056,8 +2166,10 @@ export default function ComparisonResultView({
           return next;
         });
 
-        // Direct database save for AWB scan
-        await persistPrintedOrdersToAwbScan(targetResults);
+        // Direct database save for AWB scan (if not already initiated by caller)
+        if (!skipPersist) {
+          await persistPrintedOrdersToAwbScan(targetResults, true);
+        }
       } catch (printLoopErr: any) {
         throw printLoopErr;
       }
@@ -2146,10 +2258,10 @@ export default function ComparisonResultView({
     });
 
     // 3. Persist and refresh creation/updated timestamps in AWB Scan database
-    await persistPrintedOrdersToAwbScan(targetResults);
+    await persistPrintedOrdersToAwbScan(targetResults, true);
 
-    // 4. Send to physical printer
-    await executePrintForItems(targetResults);
+    // 4. Send to physical printer (pass skipPersist: true since persist is already initiated)
+    await executePrintForItems(targetResults, true);
   };
 
   const handleGeneratePicklist = async () => {
@@ -2170,14 +2282,17 @@ export default function ComparisonResultView({
       return;
     }
 
+    setIsGeneratingPicklist(true);
     try {
       let currentDetailsMap = skuDetailsMapRef.current.size > 0 ? skuDetailsMapRef.current : skuDetailsMap;
-      if (currentDetailsMap.size === 0) {
+      let currentAsinMap = asinToSkuMapRef.current.size > 0 ? asinToSkuMapRef.current : asinToSkuMap;
+      if (currentDetailsMap.size === 0 || currentAsinMap.size === 0) {
         await fetchAsinMappings();
         currentDetailsMap = skuDetailsMapRef.current.size > 0 ? skuDetailsMapRef.current : skuDetailsMap;
+        currentAsinMap = asinToSkuMapRef.current.size > 0 ? asinToSkuMapRef.current : asinToSkuMap;
       }
 
-      const picklist = generateAmazonPicklist(mappedResults, targetSet, currentDetailsMap, asinToSkuMap);
+      const picklist = generateAmazonPicklist(mappedResults, targetSet, currentDetailsMap, currentAsinMap);
 
       // Download Excel (.xlsx) picklist directly without opening a new tab
       await downloadAmazonPicklistExcel(picklist);
@@ -2194,6 +2309,8 @@ export default function ComparisonResultView({
     } catch (err) {
       console.error("Failed to generate picklist:", err);
       toast.error("Failed to generate Excel picklist.");
+    } finally {
+      setIsGeneratingPicklist(false);
     }
   };
 
@@ -2544,14 +2661,14 @@ export default function ComparisonResultView({
       markRowsAsPrinted([item.index]);
 
       // 2. Immediately persist to AWB Scan database so direct barcode scan enters AWB Scan
-      persistPrintedOrdersToAwbScan([item]);
+      persistPrintedOrdersToAwbScan([item], true);
 
-      // 3. Chain print execution to serialize printer calls
+      // 3. Chain print execution to serialize printer calls (pass skipPersist: true since persist is already initiated)
       const printTask = printQueuePromiseRef.current
         .catch(() => { })
         .then(async () => {
           try {
-            await executePrintForItems([item]);
+            await executePrintForItems([item], true);
           } catch (err) {
             // If printing threw an error, unmark so the user can re-scan and retry
             unmarkRowsAsPrinted([item.index]);
@@ -2944,146 +3061,20 @@ export default function ComparisonResultView({
         {/* =================================================== */}
         {/* STATS CARDS */}
         {/* =================================================== */}
-        <div className="mt-5 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-5 sm:pt-6">
-          {/* Card 1: Total ZPL */}
-          <article
-            onClick={() => {
-              setSelectedPdfType("zpl");
-              setActiveTab("pdf");
-            }}
-            className="cursor-pointer rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between"
-          >
-            <div>
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">
-                ZPL Labels
-              </p>
-
-              <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-                <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
-                  {summary.totalZplLabels}
-                </h3>
-
-                <span className="rounded-xl border border-amber-200/60 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">
-                  Converted
-                </span>
-              </div>
-            </div>
-          </article>
-
-          {/* Card 2: Total PDF Orders */}
-          <article
-            onClick={() => {
-              setSelectedPdfType("original");
-              setActiveTab("pdf");
-            }}
-            className="cursor-pointer rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between"
-          >
-            <div>
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">
-                PDF Orders
-              </p>
-
-              <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-                <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
-                  {summary.totalPdfOrders}
-                </h3>
-
-                <span className="rounded-xl border border-blue-200/60 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
-                  {summary.totalPdfPages} pgs
-                </span>
-              </div>
-            </div>
-          </article>
-
-          {/* Card 3: Matched Orders */}
-          <article
-            onClick={() => {
-              setActiveTab("table");
-              setPage(1);
-            }}
-            className="cursor-pointer rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between sm:col-span-2 lg:col-span-1"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">
-                  Matched Orders
-                </p>
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPdfType(unmatchedPdfCount > 0 ? "unmatched_pdf" : "unmatched_zpl");
-                    setActiveTab("pdf");
-                  }}
-                  className={`rounded-xl px-2.5 py-1 text-xs font-bold cursor-pointer transition ${summary.mismatchCount > 0
-                    ? "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-                    : "border border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  title="Click to view unmatched documents in PDF viewer"
-                >
-                  {summary.mismatchCount} Unmatched
-                </span>
-              </div>
-
-              <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-                <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
-                  {printedRows.size > 0
-                    ? `${remainingMatchedCount} / ${summary.matchedCount}`
-                    : summary.matchedCount}
-                </h3>
-
-                <span className="rounded-xl border border-emerald-200/60 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">
-                  {printedRows.size > 0
-                    ? `${printedRows.size} printed`
-                    : `${summary.matchPercentage}%`}
-                </span>
-              </div>
-            </div>
-
-            {/* Bottom Row: Improvised Sleek Excel Export Actions */}
-            <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <FileSpreadsheet className="h-3.5 w-3.5 text-slate-400" />
-                <span>Excel</span>
-              </span>
-
-              <div className="inline-flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadUnprintedExcel();
-                  }}
-                  disabled={remainingMatchedCount === 0}
-                  className="group relative inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 text-xs font-bold text-amber-900 shadow-2xs hover:shadow-xs active:scale-95 transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer"
-                  title={`Download ${remainingMatchedCount} unprinted order(s) in Excel`}
-                >
-                  <Download className="h-3 w-3 text-amber-700 group-hover:-translate-y-0.5 transition-transform" />
-                  <span>Unprinted</span>
-                  <span className="inline-flex items-center justify-center rounded-full bg-amber-200/90 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-950">
-                    {remainingMatchedCount}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadPrintedExcel();
-                  }}
-                  disabled={printedRows.size === 0}
-                  className="group relative inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-900 shadow-2xs hover:shadow-xs active:scale-95 transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer"
-                  title={`Download ${printedRows.size} printed order(s) in Excel`}
-                >
-                  <Download className="h-3 w-3 text-emerald-700 group-hover:-translate-y-0.5 transition-transform" />
-                  <span>Printed</span>
-                  <span className="inline-flex items-center justify-center rounded-full bg-emerald-200/90 px-1.5 py-0.2 text-[10px] font-extrabold text-emerald-950">
-                    {printedRows.size}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </article>
-        </div>
+        <ComparisonSummaryCards
+          summary={summary}
+          printedCount={printedRows.size}
+          remainingMatchedCount={remainingMatchedCount}
+          unmatchedPdfCount={unmatchedPdfCount}
+          unmatchedZplCount={unmatchedZplCount}
+          onSelectPdfType={setSelectedPdfType}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            if (tab === "table") setPage(1);
+          }}
+          onDownloadUnprintedExcel={handleDownloadUnprintedExcel}
+          onDownloadPrintedExcel={handleDownloadPrintedExcel}
+        />
       </div>
 
       {/* ===================================================== */}
@@ -3340,12 +3331,32 @@ export default function ComparisonResultView({
 
               <button
                 type="button"
+                disabled={isMappingsLoading || isGeneratingPicklist}
                 onClick={handleGeneratePicklist}
-                className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-3.5 sm:px-4 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] shadow-xs active:scale-[0.98]"
-                title="Download Excel picklist (2-column 40 left / 40 right A4 layout)"
+                className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-3.5 sm:px-4 items-center justify-center gap-1.5 rounded-2xl border text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] ${
+                  isMappingsLoading || isGeneratingPicklist
+                    ? "cursor-not-allowed border-[#0A0E1A]/40 bg-[#0A0E1A]/60 text-[#E8C16D]/60"
+                    : "cursor-pointer border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                }`}
+                title={
+                  isMappingsLoading || isGeneratingPicklist
+                    ? "Preparing SKU mappings for picklist..."
+                    : "Download Excel picklist (2-column 40 left / 40 right A4 layout)"
+                }
               >
-                <FileText className="h-4 w-4 shrink-0" />
-                <span className="whitespace-nowrap">Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${allPicklistOrders.length})`}</span>
+                {isMappingsLoading || isGeneratingPicklist ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#E8C16D]" />
+                    <span className="whitespace-nowrap">Generating Picklist...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 shrink-0" />
+                    <span className="whitespace-nowrap">
+                      Picklist {selectedRows.size > 0 ? `(${selectedRows.size})` : `(All ${allPicklistOrders.length})`}
+                    </span>
+                  </>
+                )}
               </button>
 
               {printedRows.size > 0 && (

@@ -7,6 +7,11 @@ import { useEffect } from "react";
 import { useRef } from "react";
 import { SCANNER_CONFIG } from "../utils/scanner.constants";
 import { toast } from "sonner";
+import {
+  persistQueueItem,
+  removeQueueItem,
+  loadPersistedQueueItems,
+} from "../utils/vmsQueueDb";
 
 export const useUploadQueue = () => {
   console.log("UPLOAD QUEUE HOOK MOUNTED");
@@ -15,6 +20,32 @@ export const useUploadQueue = () => {
   const workerRunning = useRef(false);
   const successSound = useRef<HTMLAudioElement | null>(null);
   const errorSound = useRef<HTMLAudioElement | null>(null);
+
+  // Restore uncompleted video recordings from IndexedDB upon page load / refresh
+  useEffect(() => {
+    loadPersistedQueueItems().then((items) => {
+      if (items && items.length > 0) {
+        console.log(`📦 Restored ${items.length} uncompleted VMS recordings from IndexedDB`);
+        items.forEach((item) => {
+          const currentQueue = useVMSStore.getState().uploadQueue;
+          if (!currentQueue.some((q) => q.id === item.id)) {
+            addUpload(item);
+          }
+        });
+      }
+    });
+  }, []);
+
+  // Synchronize uploadQueue items with IndexedDB
+  useEffect(() => {
+    uploadQueue.forEach((item) => {
+      if (item.status === "completed") {
+        void removeQueueItem(item.id);
+      } else {
+        void persistQueueItem(item);
+      }
+    });
+  }, [uploadQueue]);
 
   const uploadItem = async (item: UploadItem) => {
     console.log("UPLOAD =", item.trackingId);

@@ -157,7 +157,8 @@ export const generateAmazonPicklist = (
       if (item.items && item.items.length > 0) {
         item.items.forEach((i) => {
           const asin = i.asin !== "N/A" ? i.asin : "";
-          let sku = asin ? asin : "UNKNOWN-SKU";
+          const itemSku = (i.sku && i.sku !== "N/A" && i.sku !== "-") ? i.sku : "";
+          let sku = itemSku || (asin ? asin : "UNKNOWN-SKU");
           
           if (asin && asinToSkuMap && asinToSkuMap.has(asin.toUpperCase())) {
             const dbSku = asinToSkuMap.get(asin.toUpperCase());
@@ -195,7 +196,8 @@ export const generateAmazonPicklist = (
         const asins = rawAsin.split(/[\n\r]+|\s+\/\s+/).map((a) => a.trim()).filter(Boolean);
         skus.forEach((skuStr, idx) => {
           const assignedAsin = asins[idx] || asins[0] || rawAsin;
-          let sku = assignedAsin ? assignedAsin : "UNKNOWN-SKU";
+          const existingSku = (skuStr && skuStr !== "N/A" && skuStr !== "-" && skuStr !== assignedAsin) ? skuStr : "";
+          let sku = existingSku || (assignedAsin ? assignedAsin : "UNKNOWN-SKU");
           
           if (assignedAsin && asinToSkuMap && asinToSkuMap.has(assignedAsin.toUpperCase())) {
             const dbSku = asinToSkuMap.get(assignedAsin.toUpperCase());
@@ -206,7 +208,7 @@ export const generateAmazonPicklist = (
               skus[idx] = sku;
             }
           } else {
-             skus[idx] = sku;
+            skus[idx] = sku;
           }
 
           if (!skuToAsinMap.has(sku)) {
