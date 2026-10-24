@@ -1,9 +1,7 @@
 "use client";
 
 import React from "react";
-
 import OperatorLoginForm from "./OperatorLoginForm";
-
 import {
   Dialog,
   DialogContent,
@@ -22,34 +20,22 @@ const OperatorLoginModal: React.FC<OperatorLoginModalProps> = ({
   onClose,
 }) => {
   return (
-    <Dialog
-      open={open}
-      onOpenChange={() => {
-        // Prevent dialog from closing manually.
-        // Dialog will close only after successful login.
-      }}
-    >
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
-        className="max-w-[500px] px-10 py-10"
+        className="max-w-md overflow-hidden border border-[#E7E0D2] p-0 shadow-2xl !rounded-3xl sm:!rounded-[32px] bg-white"
         showCloseButton={false}
-        // onInteractOutside={(event) => {
-        //   event.preventDefault();
-        // }}
-        // onEscapeKeyDown={(event) => {
-        //   event.preventDefault();
-        // }}
       >
-        <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold">
+        <DialogHeader className="border-b border-[#E7E0D2] bg-[#0A0E1A] px-6 py-5 text-center">
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-[#E8C16D] text-center">
             Operator Login
           </DialogTitle>
 
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-1 text-xs sm:text-sm text-slate-300 text-center">
             Login to start barcode scanning and video recording.
           </p>
         </DialogHeader>
 
-        <div className="mt-6">
+        <div className="p-6 sm:p-7">
           <OperatorLoginForm
             onSuccess={(account: Account) => {
               localStorage.setItem(

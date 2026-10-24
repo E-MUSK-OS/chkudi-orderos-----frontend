@@ -7,7 +7,7 @@ import { getColumns } from "./columns";
 import DataTable from "./DataTable";
 import PreviewDialog from "./PreviewDialog";
 import Toolbar from "./Toolbar";
-import Pagination from "./Pagination";
+import Pagination from "@/components/ui/Pagination";
 import DeleteModal from "./DeleteModal";
 
 import { useVMS } from "../hooks/useVMS";
@@ -335,22 +335,28 @@ const VMSList = () => {
         columns={columns}
         data={paginatedData}
         loading={loading}
+        pagination={
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalRecords={totalRecords}
+            total={totalRecords}
+            limit={limit}
+            pageSize={limit}
+            itemName="records"
+            variant="dark"
+            className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
+            onPageChange={setPage}
+            onPageSizeChange={setLimit}
+            onLimitChange={setLimit}
+          />
+        }
       />
 
       <PreviewDialog
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         item={selectedItem}
-      />
-
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        limit={limit}
-        pageSize={limit}
-        onPageSizeChange={setLimit}
-        onPageChange={setPage}
       />
 
       <DeleteModal

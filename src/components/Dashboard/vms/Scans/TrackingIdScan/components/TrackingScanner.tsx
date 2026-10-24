@@ -69,13 +69,17 @@ export default function TrackingScanner({
   const isError = message && !isSuccess && !isWarning;
 
   return (
-    <div className="mb-6 border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm">
+    <div className="rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm mb-6">
       <div className="space-y-4">
         <div>
-          <label className="mb-2 flex items-center gap-2 text-base sm:text-lg font-bold text-[#0A0E1A]">
-            <Barcode className="h-5 w-5 text-[#B88728]" />
-            <span>Scan Tracking ID</span>
-          </label>
+          <div className="flex items-center justify-between mb-2.5">
+            <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A]">
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 text-[#B88728] shrink-0">
+                <Barcode className="h-4 w-4" />
+              </div>
+              <span>Scan Tracking ID</span>
+            </label>
+          </div>
 
           <div className="relative flex items-center">
             <input
@@ -90,23 +94,26 @@ export default function TrackingScanner({
               autoComplete="off"
               spellCheck={false}
               className="
-                h-12 sm:h-14
+                h-12 sm:h-13
                 w-full
+                rounded-2xl
                 border-2
-                border-[#E8C16D]
-                bg-[#FFF9EC]
+                border-[#E8C16D]/70
+                bg-[#FFFDF5]
+                focus:bg-white
                 px-4
                 pr-28
                 text-sm sm:text-base
                 font-mono
                 font-bold
                 text-[#0A0E1A]
-                placeholder:text-slate-500
+                placeholder:text-slate-400
                 placeholder:font-normal
                 outline-none
                 transition
+                focus:border-[#E8C16D]
                 focus:ring-2
-                focus:ring-[#E8C16D]
+                focus:ring-[#E8C16D]/30
               "
             />
 
@@ -117,14 +124,16 @@ export default function TrackingScanner({
               className="
                 absolute
                 right-2
-                h-9 sm:h-10
+                h-9 sm:h-9.5
+                rounded-xl
                 bg-[#E8C16D]
                 px-4 sm:px-5
                 text-xs sm:text-sm
                 font-bold
                 text-[#0A0E1A]
                 transition
-                hover:bg-[#d4a849]
+                hover:bg-[#d4af5a]
+                active:scale-[0.98]
                 disabled:opacity-40
                 disabled:cursor-not-allowed
                 cursor-pointer
@@ -139,12 +148,12 @@ export default function TrackingScanner({
         {/* Live Feedback Banner */}
         {message && (
           <div
-            className={`border p-3.5 text-xs sm:text-sm font-medium transition-all ${
+            className={`rounded-2xl border p-3.5 sm:p-4 text-xs sm:text-sm font-semibold transition-all ${
               isSuccess
-                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                ? "border-emerald-200 bg-emerald-50/80 text-emerald-900"
                 : isWarning
-                ? "border-amber-300 bg-amber-50 text-amber-800"
-                : "border-red-300 bg-red-50 text-red-800"
+                ? "border-amber-200 bg-amber-50/80 text-amber-900"
+                : "border-red-200 bg-red-50/80 text-red-900"
             }`}
           >
             <div className="flex items-start gap-2.5">

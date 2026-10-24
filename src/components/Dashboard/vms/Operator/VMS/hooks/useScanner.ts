@@ -164,9 +164,9 @@ export const useScanner = () => {
       onManualTypingAttempt?: () => void,
     ) => {
       // Barcode scanners send keys in rapid bursts (10-35ms).
-      // Any delay > 60ms between consecutive keys indicates manual human typing.
-      const MAX_SCANNER_INTERVAL = 60; // ms
-      const SCAN_FINISH_TIMEOUT = 120; // ms: timeout to complete if scanner has no Enter suffix
+      // Any delay > 150ms between consecutive keys indicates manual human typing.
+      const MAX_SCANNER_INTERVAL = 150; // ms
+      const SCAN_FINISH_TIMEOUT = 300; // ms: timeout to complete if scanner has no Enter suffix
 
       if (key === "Enter") {
         const now = Date.now();
@@ -183,8 +183,8 @@ export const useScanner = () => {
           scanTimer.current = null;
         }
 
-        // If manual typing was detected, or buffer is too short, or Enter was pressed slowly (> 80ms after last char)
-        if (wasHuman || code.length < SCANNER_CONFIG.MIN_LENGTH || diff > 80) {
+        // If manual typing was detected, or buffer is too short, or Enter was pressed slowly (> 180ms after last char)
+        if (wasHuman || code.length < SCANNER_CONFIG.MIN_LENGTH || diff > 180) {
           if (wasHuman || code.length > 0) {
             onManualTypingAttempt?.();
           }

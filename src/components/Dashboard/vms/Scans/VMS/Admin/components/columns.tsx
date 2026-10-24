@@ -2,12 +2,11 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
-import Button from "@/components/ui/Button";
 import type { VMSItem } from "../types";
-// import Image from "next/image";
 import { Download, Eye, Trash2 } from "lucide-react";
-import StatusBadge from "./StatusBadge";
 import { API_BASE_URL } from "@/lib/config";
+
+import Button from "@/components/ui/Button";
 
 const getFullUrl = (url?: string | null) => {
   if (!url) return undefined;
@@ -28,11 +27,13 @@ export const getColumns = ({
 }: Props): ColumnDef<VMSItem>[] => [
   {
     accessorKey: "trackingId",
-
     header: "Tracking ID",
-
+    meta: {
+      headerClassName: "w-48 min-w-[170px] text-center",
+      cellClassName: "w-48 min-w-[170px] text-center",
+    },
     cell: ({ row }) => (
-      <span className="font-mono font-bold text-[#0A0E1A] text-sm sm:text-base">
+      <span className="font-mono font-semibold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
         {row.original.trackingId}
       </span>
     ),
@@ -40,11 +41,13 @@ export const getColumns = ({
 
   {
     accessorKey: "createdAt",
-
     header: "Date",
-
+    meta: {
+      headerClassName: "w-36 min-w-[125px] text-center",
+      cellClassName: "w-36 min-w-[125px] text-center whitespace-nowrap",
+    },
     cell: ({ row }) => (
-      <span className="text-sm sm:text-base font-semibold text-slate-700 whitespace-nowrap">
+      <span className="text-xs sm:text-sm font-semibold text-slate-700 whitespace-nowrap">
         {format(new Date(row.original.createdAt), "dd MMM yyyy")}
       </span>
     ),
@@ -52,11 +55,13 @@ export const getColumns = ({
 
   {
     id: "time",
-
     header: "Time",
-
+    meta: {
+      headerClassName: "w-36 min-w-[125px] text-center",
+      cellClassName: "w-36 min-w-[125px] text-center whitespace-nowrap",
+    },
     cell: ({ row }) => (
-      <span className="text-sm sm:text-base font-semibold text-slate-600 whitespace-nowrap">
+      <span className="text-xs sm:text-sm font-medium text-slate-500 whitespace-nowrap">
         {format(new Date(row.original.createdAt), "hh:mm:ss aa")}
       </span>
     ),
@@ -64,11 +69,13 @@ export const getColumns = ({
 
   {
     id: "operator",
-
     header: "Operator",
-
+    meta: {
+      headerClassName: "w-40 min-w-[135px] text-center",
+      cellClassName: "w-40 min-w-[135px] text-center whitespace-nowrap",
+    },
     cell: ({ row }) => (
-      <span className="text-sm sm:text-base font-bold text-slate-800">
+      <span className="text-xs sm:text-sm font-semibold text-slate-900 whitespace-nowrap">
         {row.original.operator?.operatorName ?? "-"}
       </span>
     ),
@@ -76,11 +83,13 @@ export const getColumns = ({
 
   {
     id: "account",
-
     header: "Account",
-
+    meta: {
+      headerClassName: "w-40 min-w-[135px] text-center",
+      cellClassName: "w-40 min-w-[135px] text-center whitespace-nowrap",
+    },
     cell: ({ row }) => (
-      <span className="text-sm sm:text-base font-semibold text-slate-700">
+      <span className="text-xs sm:text-sm font-semibold text-slate-900 whitespace-nowrap">
         {row.original.account?.accountName ?? "-"}
       </span>
     ),
@@ -88,65 +97,78 @@ export const getColumns = ({
 
   {
     accessorKey: "thumbnailUrl",
-
     header: "Thumbnail",
-
+    meta: {
+      headerClassName: "w-32 min-w-[115px] text-center",
+      cellClassName: "w-32 min-w-[115px] text-center",
+    },
     cell: ({ row }) => {
       if (!row.original.thumbnailUrl) {
         return (
-          <div className="flex h-[60px] w-[90px] items-center justify-center rounded border border-[#E7E0D2] bg-slate-100 text-xs font-medium text-slate-400">
-            No Thumbnail
+          <div className="flex justify-center">
+            <div className="flex h-[58px] w-[90px] items-center justify-center rounded-xl border border-[#E7E0D2] bg-[#FAF8F5] text-[11px] font-semibold text-slate-400">
+              No Thumbnail
+            </div>
           </div>
         );
       }
 
       return (
-        <img
-          src={getFullUrl(row.original.thumbnailUrl)}
-          alt="thumbnail"
-          width={90}
-          height={60}
-          className="h-[60px] w-[90px] rounded border border-[#E7E0D2] object-cover shadow-xs"
-        />
+        <div className="flex justify-center">
+          <img
+            src={getFullUrl(row.original.thumbnailUrl)}
+            alt="thumbnail"
+            width={90}
+            height={58}
+            className="h-[58px] w-[90px] rounded-xl border border-[#E7E0D2] object-cover shadow-2xs"
+          />
+        </div>
       );
     },
   },
 
   {
     id: "preview",
-
     header: "Preview",
-
     enableSorting: false,
-
+    meta: {
+      headerClassName: "w-32 min-w-[115px] text-center",
+      cellClassName: "w-32 min-w-[115px] text-center",
+    },
     cell: ({ row }) => (
-      <Button
-        size="sm"
-        variant="secondary"
-        fullWidth={false}
-        leftIcon={<Eye size={16} />}
-        onClick={() => onPreview(row.original)}
-        className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
-      >
-        Preview
-      </Button>
+      <div className="flex justify-center">
+        <Button
+          size="sm"
+          variant="secondary"
+          fullWidth={false}
+          rounded="rounded-xl"
+          leftIcon={<Eye size={15} />}
+          onClick={() => onPreview(row.original)}
+          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] shadow-2xs whitespace-nowrap"
+        >
+          Preview
+        </Button>
+      </div>
     ),
   },
 
   {
     id: "actions",
-
     header: "Actions",
-
+    meta: {
+      headerClassName: "w-56 min-w-[215px] text-center",
+      cellClassName: "w-56 min-w-[215px] text-center",
+    },
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2 whitespace-nowrap">
         <Button
           size="sm"
           variant="secondary"
           fullWidth={false}
-          leftIcon={<Download size={16} />}
+          rounded="rounded-xl"
+          leftIcon={<Download size={15} />}
           onClick={() => onDownload(row.original)}
-          className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
+          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] shadow-2xs whitespace-nowrap"
         >
           Download
         </Button>
@@ -155,9 +177,10 @@ export const getColumns = ({
           size="sm"
           variant="secondary"
           fullWidth={false}
-          leftIcon={<Trash2 size={16} />}
+          rounded="rounded-xl"
+          leftIcon={<Trash2 size={15} />}
           onClick={() => onDelete(row.original)}
-          className="bg-[#E8C16D] text-[#0A0E1A] font-semibold hover:bg-[#ddb75d] shadow-sm rounded-lg"
+          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] shadow-2xs whitespace-nowrap"
         >
           Delete
         </Button>

@@ -58,6 +58,18 @@ export interface UpdateScanStatusResponse {
   data: AmazonOrderItem;
 }
 
+export interface DailyOrderSummaryData {
+  date: string | null;
+  totalOrders: number;
+  scannedOrders: number;
+  pendingOrders: number;
+}
+
+export interface GetDailySummaryResponse {
+  success: boolean;
+  data: DailyOrderSummaryData;
+}
+
 // 7-Day History Interfaces
 export interface AmazonBatchHistoryItem {
   id: string;
@@ -365,6 +377,23 @@ export const amazonOrderService = {
     return api.patch<UpdateScanStatusResponse>(
       `${BASE_URL}/scan/${encodeURIComponent(awb)}`,
       { status },
+      userToken
+    );
+  },
+
+  /**
+   * Get permanent daily order summary by date (preserved beyond 7-day retention)
+   */
+  async getDailySummary(
+    date?: string,
+    token?: string
+  ): Promise<GetDailySummaryResponse> {
+    const userToken =
+      token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
+
+    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    return api.get<GetDailySummaryResponse>(
+      `${BASE_URL}/summary${query}`,
       userToken
     );
   },

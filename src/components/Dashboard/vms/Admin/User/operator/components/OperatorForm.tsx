@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,18 +20,13 @@ import {
 
 const createSchema = z.object({
   operatorName: z.string().trim().min(2, "Operator name is required"),
-
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const updateSchema = z.object({
   operatorName: z.string().trim().min(2, "Operator name is required"),
-
   isActive: z.boolean(),
 });
-
-type CreateFormValues = z.infer<typeof createSchema>;
-type UpdateFormValues = z.infer<typeof updateSchema>;
 
 type OperatorFormProps =
   | {
@@ -53,7 +50,6 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
 }) => {
   const form = useForm<any>({
     resolver: zodResolver(mode === "create" ? createSchema : updateSchema),
-
     defaultValues:
       mode === "create"
         ? {
@@ -87,10 +83,9 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
       className="space-y-5"
     >
       {/* Operator Name */}
-
       <Input
         label="Operator Name"
-        // placeholder="Enter operator name"
+        placeholder="Enter operator name"
         {...form.register("operatorName")}
         error={
           typeof form.formState.errors.operatorName?.message === "string"
@@ -99,11 +94,12 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
         }
       />
 
+      {/* Password (Create mode only) */}
       {mode === "create" && (
         <Input
           type="password"
           label="Password"
-          //   placeholder="Enter password"
+          placeholder="Enter password"
           {...form.register("password")}
           error={
             typeof form.formState.errors.password?.message === "string"
@@ -113,17 +109,21 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
         />
       )}
 
-      {/* Status */}
-
+      {/* Status (Update mode only) */}
       {mode === "update" && (
-        <div className="flex items-center justify-between border border-slate-200 p-4">
-          <span className="text-sm font-medium text-slate-700">
-            Active Operator
-          </span>
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-[#FFFDF9] p-4">
+          <div>
+            <span className="block text-sm font-semibold text-slate-900">
+              Active Operator
+            </span>
+            <span className="text-xs text-slate-500">
+              Allow this operator to log in and scan packages
+            </span>
+          </div>
 
           <input
             type="checkbox"
-            className="h-5 w-5 cursor-pointer"
+            className="h-5 w-5 accent-[#E8C16D] cursor-pointer"
             checked={
               "isActive" in form.getValues()
                 ? Boolean(form.watch("isActive"))
@@ -134,9 +134,11 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
         </div>
       )}
 
-      <Button type="submit" loading={loading}>
-        {mode === "create" ? "Create Operator" : "Update Operator"}
-      </Button>
+      <div className="flex items-center justify-end pt-2">
+        <Button type="submit" loading={loading} fullWidth={false} className="px-8">
+          {mode === "create" ? "Create Operator" : "Update Operator"}
+        </Button>
+      </div>
     </form>
   );
 };

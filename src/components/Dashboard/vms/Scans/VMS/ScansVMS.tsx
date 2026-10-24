@@ -1,26 +1,28 @@
 "use client";
 
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
-
 import VMSList from "./Admin/components/VMSList";
 
 export default function ScansVMS() {
   return (
     <DashboardLayout title="Scans VMS">
       <div className="space-y-6">
+        {/* Header Card (Matching Amazon Analytics & Order Process UI) */}
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                VMS Scans
+              </h1>
 
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-            VMS Scans
-          </h1>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Manage all uploaded scan recordings.
-          </p>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+                Manage all uploaded scan recordings.
+              </p>
+            </div>
+          </div>
         </div>
 
         <VMSList />
-
       </div>
     </DashboardLayout>
   );

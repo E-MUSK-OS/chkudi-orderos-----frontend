@@ -37,7 +37,9 @@ export function useImportAsinExcel() {
 
     onError: (error: any) => {
       toast.error(
-        error?.message || error?.response?.data?.message || "Failed to import ASIN Excel file",
+        error?.message ||
+          error?.response?.data?.message ||
+          "Failed to import ASIN Excel file"
       );
     },
   });

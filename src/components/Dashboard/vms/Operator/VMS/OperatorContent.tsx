@@ -56,28 +56,25 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
           <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
         </div>
       </div> */}
-      <div className="mb-4 flex gap-4">
+      <div className="mb-6 flex flex-col lg:flex-row gap-4 items-stretch">
         {/* Scanner */}
         <div className="flex-1">
           <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
         </div>
 
-        <div className="w-80">
+        <div className="flex flex-wrap sm:flex-nowrap gap-3 shrink-0">
+          <div className="rounded-2xl border border-[#E7E0D2] bg-white px-5 py-3.5 min-w-[140px] shadow-sm flex flex-col justify-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Operator</p>
+            <p className="text-base sm:text-lg font-bold text-[#0A0E1A] truncate">
+              {operator?.operatorName ?? "-"}
+            </p>
+          </div>
 
-          <div className="flex gap-3">
-            <div className="border px-5 py-3 w-40">
-              <p className="text-sm text-gray-500">Operator</p>
-              <p className=" text-gray-900 text-lg">
-                {operator?.operatorName ?? "-"}
-              </p>
-            </div>
-
-            <div className="border px-5 py-3 w-40">
-              <p className="text-sm text-gray-500">Account</p>
-              <p className="text-gray-900 text-lg">
-                {selectedAccount?.accountName ?? "-"}
-              </p>
-            </div>
+          <div className="rounded-2xl border border-[#E7E0D2] bg-white px-5 py-3.5 min-w-[140px] shadow-sm flex flex-col justify-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Account</p>
+            <p className="text-base sm:text-lg font-bold text-[#0A0E1A] truncate">
+              {selectedAccount?.accountName ?? "-"}
+            </p>
           </div>
         </div>
       </div>

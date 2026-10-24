@@ -188,7 +188,9 @@ export function useImportProductsExcel() {
 
     onError: (error: any) => {
       toast.error(
-        error?.message || error?.response?.data?.message || "Failed to import Excel file",
+        error?.message ||
+          error?.response?.data?.message ||
+          "Failed to import Excel file"
       );
     },
   });

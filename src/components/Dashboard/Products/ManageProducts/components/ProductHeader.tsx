@@ -1,13 +1,20 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 
 interface Props {
   onAddProduct: () => void;
   buttonLabel?: string;
+  onDownloadDemoSheet?: () => void;
+  demoSheetLabel?: string;
 }
 
-export default function ProductHeader({ onAddProduct, buttonLabel = "Add Product" }: Props) {
+export default function ProductHeader({
+  onAddProduct,
+  buttonLabel = "Add Product",
+  onDownloadDemoSheet,
+  demoSheetLabel = "Demo Sheet",
+}: Props) {
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="space-y-1.5 min-w-0 max-w-2xl">
@@ -21,7 +28,21 @@ export default function ProductHeader({ onAddProduct, buttonLabel = "Add Product
         </p>
       </div>
 
-      <div className="flex items-center gap-2.5 self-start lg:self-auto shrink-0">
+      <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto shrink-0">
+        {onDownloadDemoSheet && (
+          <button
+            type="button"
+            onClick={onDownloadDemoSheet}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-[#E8C16D] px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+            title="Download demo Excel sheet"
+          >
+            <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+              <Download className="h-3.5 w-3.5 stroke-[2.5]" />
+            </div>
+            <span>{demoSheetLabel}</span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onAddProduct}

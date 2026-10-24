@@ -49,19 +49,22 @@ const CameraPreview = ({ camera }: CameraPreviewProps) => {
   return (
     <div className="overflow-hidden">
       {devices.length > 1 && (
-        <select aria-label="Select option"
-          value={selectedCamera}
-          onChange={(e) => setSelectedCamera(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm"
-        >
-          {devices.map((camera) => (
-            <option key={camera.id} value={camera.id}>
-              {camera.label}
-            </option>
-          ))}
-        </select>
+        <div className="mb-3">
+          <select
+            aria-label="Select option"
+            value={selectedCamera}
+            onChange={(e) => setSelectedCamera(e.target.value)}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 shadow-2xs cursor-pointer"
+          >
+            {devices.map((camera) => (
+              <option key={camera.id} value={camera.id}>
+                {camera.label}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
-      <div className="relative h-[85vh] overflow-hidden bg-black">
+      <div className="relative h-[85vh] overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-black shadow-sm">
         {/* {isRecording && (
           <div className="absolute left-4 top-4 z-20 rounded-lg bg-black/70 px-4 py-2 backdrop-blur-sm">
             <div className="flex items-center gap-2">

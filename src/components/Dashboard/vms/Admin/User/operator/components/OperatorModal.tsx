@@ -1,11 +1,7 @@
-import React from "react";
+"use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import React from "react";
+import Modal from "@/components/ui/Modal";
 
 interface OperatorModalProps {
   open: boolean;
@@ -21,20 +17,14 @@ const OperatorModal: React.FC<OperatorModalProps> = ({
   children,
 }) => {
   return (
-    <Dialog
+    <Modal
       open={open}
-      onOpenChange={(value) => {
-        if (!value) onClose();
-      }}
+      onClose={onClose}
+      title={title}
+      size="md"
     >
-      <DialogContent className="sm:max-w-xl px-10 py-10">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-
-        <div className="pt-2">{children}</div>
-      </DialogContent>
-    </Dialog>
+      <div className="pt-1">{children}</div>
+    </Modal>
   );
 };
 

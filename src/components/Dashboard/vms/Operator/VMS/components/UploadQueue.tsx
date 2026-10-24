@@ -16,32 +16,32 @@ const getStatusBadge = (status: string) => {
   switch (status) {
     case "pending":
       return (
-        <span className="flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
-          <Clock3 size={14} />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-[#FFF9EC] px-3 py-1 text-xs font-semibold text-[#B88728]">
+          <Clock3 size={13} />
           Pending
         </span>
       );
 
     case "uploading":
       return (
-        <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-          <Loader2 size={14} className="animate-spin" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+          <Loader2 size={13} className="animate-spin" />
           Uploading
         </span>
       );
 
     case "completed":
       return (
-        <span className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-          <CheckCircle2 size={14} />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <CheckCircle2 size={13} />
           Completed
         </span>
       );
 
     case "failed":
       return (
-        <span className="flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-          <XCircle size={14} />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+          <XCircle size={13} />
           Failed
         </span>
       );
@@ -56,63 +56,55 @@ const UploadQueue = () => {
   const { retryUpload } = useUploadQueue();
 
   return (
-    <div className="mt-6 border border-[#C89B3C] p-5 shadow-sm">
-      <h2 className="mb-4 text-xl">Upload Queue</h2>
+    <div className="mt-6 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm">
+      <h2 className="mb-4 text-xl font-bold text-[#0A0E1A]">Upload Queue</h2>
 
       {uploadQueue.length === 0 ? (
-        <p className="text-gray-500">No uploads yet.</p>
+        <p className="text-xs sm:text-sm text-slate-500 font-medium">No uploads yet.</p>
       ) : (
         <div className="space-y-3">
           {uploadQueue.map((item) => (
             <div
               key={item.id}
-              className="rounded-xl border bg-white p-5 shadow-sm transition hover:shadow-md"
+              className="rounded-2xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-xs transition hover:border-[#E8C16D]/40 hover:shadow-sm"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-4">
-                    {item.thumbnailUrl ? (
-                      <img
-                        src={item.thumbnailUrl}
-                        alt={item.trackingId}
-                        className="h-20 w-32 rounded-lg border object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-20 w-32 items-center justify-center rounded-lg bg-gray-100">
-                        No Preview
-                      </div>
-                    )}
-
-                    <div>
-                      <p className="font-semibold">{item.trackingId}</p>
-
-                      <p className="mt-1 text-sm text-gray-500">
-                        Created :{new Date(item.createdAt).toLocaleTimeString()}
-                      </p>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  {item.thumbnailUrl ? (
+                    <img
+                      src={item.thumbnailUrl}
+                      alt={item.trackingId}
+                      className="h-20 w-32 rounded-xl border border-slate-200 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-20 w-32 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-400">
+                      No Preview
                     </div>
-                  </div>
-                  <p className="font-semibold text-gray-900">
-                    {item.trackingId}
-                  </p>
+                  )}
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    Created : {new Date(item.createdAt).toLocaleTimeString()}
-                  </p>
+                  <div>
+                    <p className="font-mono text-sm sm:text-base font-bold text-[#0A0E1A]">
+                      {item.trackingId}
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      Created: {new Date(item.createdAt).toLocaleTimeString()}
+                    </p>
+                  </div>
                 </div>
 
                 {getStatusBadge(item.status)}
               </div>
 
-              <div className="mt-5">
-                <div className="mb-2 flex justify-between text-sm">
+              <div className="mt-4">
+                <div className="mb-1.5 flex justify-between text-xs font-semibold text-slate-600">
                   <span>Upload Progress</span>
-
-                  <span>{item.progress}%</span>
+                  <span className="font-mono">{item.progress}%</span>
                 </div>
 
-                <div className="h-3 overflow-hidden rounded-full bg-gray-200">
+                <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-green-500 transition-all duration-300"
+                    className="h-full rounded-full bg-gradient-to-r from-[#E8C16D] to-emerald-500 transition-all duration-300"
                     style={{
                       width: `${item.progress}%`,
                     }}
@@ -120,41 +112,36 @@ const UploadQueue = () => {
                 </div>
               </div>
 
-              <div className="mt-5 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  Retry : {item.retryCount}
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                <div className="text-xs font-medium text-slate-500">
+                  Retry: {item.retryCount}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     disabled={!item.videoUrl}
                     onClick={() => window.open(item.videoUrl, "_blank")}
-                    className="rounded-lg border p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="View Video"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-2xs"
                   >
-                    <Eye size={18} />
+                    <Eye size={16} />
                   </button>
 
                   <button
-                    // disabled={item.status !== "completed" || !item.videoUrl}
                     disabled={!["failed", "pending"].includes(item.status)}
-                    // onClick={() => {
-                    //   useVMSStore.getState().updateUpload(item.id, {
-                    //     status: "pending",
-                    //     retryCount: item.retryCount + 1,
-                    //     progress: 0,
-                    //   });
-                    // }}
                     onClick={() => retryUpload(item.id)}
-                    className="rounded-lg border p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="Retry Upload"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-2xs"
                   >
-                    <RotateCcw size={18} />
+                    <RotateCcw size={16} />
                   </button>
 
                   <button
                     onClick={() => removeUpload(item.id)}
-                    className="rounded-lg border p-2 text-red-600 hover:bg-red-50"
+                    title="Remove Upload"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 cursor-pointer shadow-2xs"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

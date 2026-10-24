@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Plus, Users } from "lucide-react";
 
 import DashboardLayout from "../../../layout/DashboardLayout";
-
-import Button from "@/components/ui/Button";
-
 import { useOperators } from "./operator/hooks/useOperators";
 
 import OperatorTable from "./operator/components/OperatorTable";
@@ -26,14 +24,9 @@ const User = () => {
   } = useOperators();
 
   const [openCreate, setOpenCreate] = useState(false);
-
   const [openUpdate, setOpenUpdate] = useState(false);
-
   const [openDelete, setOpenDelete] = useState(false);
-
-  const [selectedOperator, setSelectedOperator] = useState<Operator | null>(
-    null,
-  );
+  const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
 
   useEffect(() => {
     fetchOperators();
@@ -41,39 +34,51 @@ const User = () => {
 
   const handleEdit = (operator: Operator) => {
     setSelectedOperator(operator);
-
     setOpenUpdate(true);
   };
 
   const handleDelete = (operator: Operator) => {
     setSelectedOperator(operator);
-
     setOpenDelete(true);
   };
 
   return (
     <DashboardLayout title="Operator">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Operators</h2>
+        {/* Header Card (Matching Account / Amazon Analytics UI) */}
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                Operators
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+                Manage your operators
+              </p>
+            </div>
 
-            <p className="text-sm text-slate-500">Manage your operators</p>
+            <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
+              <div
+                className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs ring-2 ring-[#E8C16D]/30"
+                title="Total Operators"
+              >
+                <Users className="h-4 w-4 text-[#B88728]" />
+                <span>Total Operators: {operators.length} / 10</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setOpenCreate(true)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Operator</span>
+              </button>
+            </div>
           </div>
-
-          <Button fullWidth={false} onClick={() => setOpenCreate(true)}>
-            + Add Operator
-          </Button>
         </div>
 
-        <div className="border bg-[#0A0E1A] p-4">
-          <p className="text-lg text-[#E8C16D]">Total Operators</p>
-
-          <h3 className="mt-1 text-2xl font-bold text-white">
-            {operators.length} / 10
-          </h3>
-        </div>
-
+        {/* Table */}
         <OperatorTable
           operators={operators}
           loading={loading}
@@ -81,6 +86,7 @@ const User = () => {
           onDelete={handleDelete}
         />
 
+        {/* Create Modal */}
         <OperatorModal
           open={openCreate}
           onClose={() => setOpenCreate(false)}
@@ -91,17 +97,16 @@ const User = () => {
             loading={loading}
             onSubmit={async (data) => {
               await createOperator(data);
-
               setOpenCreate(false);
             }}
           />
         </OperatorModal>
 
+        {/* Update Modal */}
         <OperatorModal
           open={openUpdate}
           onClose={() => {
             setOpenUpdate(false);
-
             setSelectedOperator(null);
           }}
           title="Update Operator"
@@ -112,32 +117,26 @@ const User = () => {
             loading={loading}
             onSubmit={async (data) => {
               if (!selectedOperator) return;
-
               await updateOperator(selectedOperator.id, data);
-
               setOpenUpdate(false);
-
               setSelectedOperator(null);
             }}
           />
         </OperatorModal>
 
+        {/* Delete Modal */}
         <DeleteOperatorModal
           open={openDelete}
           loading={loading}
           operatorName={selectedOperator?.operatorName}
           onClose={() => {
             setOpenDelete(false);
-
             setSelectedOperator(null);
           }}
           onDelete={async () => {
             if (!selectedOperator) return;
-
             await deleteOperator(selectedOperator.id);
-
             setOpenDelete(false);
-
             setSelectedOperator(null);
           }}
         />

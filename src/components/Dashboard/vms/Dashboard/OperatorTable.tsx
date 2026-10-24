@@ -1,8 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Users } from "lucide-react";
 
 import { Operator } from "../Admin/User/operator/types/operator";
 import { useVMS } from "../../vms/Scans/VMS/Admin/hooks/useVMS";
 import type { VMSItem } from "../../vms/Scans/VMS/Admin/types";
+import Pagination from "@/components/ui/Pagination";
 
 interface Props {
   operators: Operator[];
@@ -30,6 +32,23 @@ const OperatorTable: React.FC<Props> = ({
   vmsData,
   vmsLoading = false,
 }) => {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const total = operators.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const startIndex = total === 0 ? 0 : (page - 1) * limit;
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [page, totalPages]);
+
+  const paginatedOperators = useMemo(() => {
+    return operators.slice(startIndex, startIndex + limit);
+  }, [operators, startIndex, limit]);
+
   // If vmsData is not supplied via props, fall back to internal hook query
   const vmsHook = useVMS();
   const effectiveVmsData = vmsData ?? vmsHook.data;
@@ -126,88 +145,110 @@ const OperatorTable: React.FC<Props> = ({
 
   if (loading) {
     return (
-      <div className="bg-white border border-[#E7E0D2] rounded-xl p-12 text-center shadow-sm">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#0A0E1A] border-r-transparent mb-3" />
-        <p className="text-sm sm:text-base font-medium text-slate-600">Loading operators...</p>
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent mx-auto mb-2" />
+        <p className="text-sm font-bold text-[#0A0E1A]">Loading operators...</p>
       </div>
     );
   }
 
   if (operators.length === 0) {
     return (
-      <div className="bg-white border border-[#E7E0D2] rounded-xl p-12 text-center text-slate-500 shadow-sm">
-        <p className="text-base font-semibold">No Operators Found</p>
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
+        <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30">
+          <Users className="h-7 w-7 text-[#B88728]" />
+        </div>
+        <p className="text-base font-bold text-[#0A0E1A]">No Operators Found</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[#E7E0D2] bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-[#E7E0D2]">
-          <thead className="bg-[#0A0E1A] text-[#E8C16D]">
+    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm overflow-hidden flex flex-col justify-between">
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#E7E0D2] px-5 py-4 bg-white gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 text-[#B88728] shrink-0">
+              <Users className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-[#0A0E1A] tracking-tight">
+                Recent Operators
+              </h3>
+              <p className="text-xs text-slate-500">
+                Operator performance and average recording time per VMS (Today, Last 7 Days, Total)
+              </p>
+            </div>
+          </div>
+
+          <span className="rounded-lg border border-[#E8C16D]/40 bg-[#FFF9EC] px-2.5 py-0.5 text-xs font-bold text-[#B88728] self-start sm:self-center">
+            {operators.length} Operators
+          </span>
+        </div>
+
+        <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+          <table className="w-full min-w-[950px] border-collapse text-left font-sans">
+            <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
             <tr>
-              <th className="px-4 py-3.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wider">
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-14">
                 NO.
               </th>
-              <th className="px-4 py-3.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wider">
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                 Operator Name
               </th>
-              <th className="px-4 py-3.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wider">
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                 Operator Code
               </th>
-              <th className="px-4 py-3.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wider">
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                 Status
               </th>
-              <th className="px-4 py-3.5 text-center text-xs sm:text-sm font-bold uppercase tracking-wider">
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                 Today Avg Time
               </th>
-              <th className="px-4 py-3.5 text-center text-xs sm:text-sm font-bold uppercase tracking-wider">
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                 Last 7 Days Avg
               </th>
-              <th className="px-4 py-3.5 text-center text-xs sm:text-sm font-bold uppercase tracking-wider">
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                 Total Avg Time
               </th>
             </tr>
           </thead>
 
-          <tbody className="bg-white divide-y divide-[#E7E0D2]">
-            {operators.map((operator, index) => {
+          <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm">
+            {paginatedOperators.map((operator, index) => {
               const stats = getOperatorStats(operator);
 
               return (
                 <tr
                   key={operator.id}
-                  className="hover:bg-[#FDFBF7] transition-colors"
+                  className="transition-colors hover:bg-slate-50/80"
                 >
                   {/* NO. */}
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-slate-500">
-                    {index + 1}
+                  <td className="px-4 py-3.5 text-center font-bold text-slate-500 whitespace-nowrap text-xs sm:text-sm">
+                    {startIndex + index + 1}
                   </td>
 
                   {/* Operator Name */}
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className="text-sm sm:text-base font-bold text-slate-900">
-                      {operator.operatorName}
-                    </span>
+                  <td className="px-4 py-3.5 text-center font-semibold text-slate-900 whitespace-nowrap text-xs sm:text-sm">
+                    {operator.operatorName}
                   </td>
 
                   {/* Operator Code */}
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-1 text-xs sm:text-sm font-mono font-semibold text-slate-700 bg-slate-100 rounded-md border border-slate-200">
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-mono font-bold text-slate-800 bg-slate-100 rounded-lg border border-slate-200">
                       {operator.employeeCode}
                     </span>
                   </td>
 
                   {/* Status */}
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
                     {operator.isActive ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                         Active
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 border border-rose-200">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700">
                         <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                         Inactive
                       </span>
@@ -215,56 +256,56 @@ const OperatorTable: React.FC<Props> = ({
                   </td>
 
                   {/* Today Avg Time */}
-                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
                     {isVmsLoading ? (
                       <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
                     ) : stats.todayCount > 0 ? (
                       <div className="inline-flex flex-col items-center">
-                        <span className="text-sm sm:text-base font-bold text-slate-900">
+                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
                           {formatDuration(stats.todayAvg)}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-200">
                           {stats.todayCount} VMS
                         </span>
                       </div>
                     ) : (
-                      <span className="text-slate-400 font-bold text-base">-</span>
+                      <span className="text-slate-400 font-bold text-sm">-</span>
                     )}
                   </td>
 
                   {/* Last 7 Days Avg */}
-                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
                     {isVmsLoading ? (
                       <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
                     ) : stats.weekCount > 0 ? (
                       <div className="inline-flex flex-col items-center">
-                        <span className="text-sm sm:text-base font-bold text-slate-900">
+                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
                           {formatDuration(stats.weekAvg)}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full mt-1 border border-amber-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full mt-1 border border-amber-200">
                           {stats.weekCount.toLocaleString()} VMS
                         </span>
                       </div>
                     ) : (
-                      <span className="text-slate-400 font-bold text-base">-</span>
+                      <span className="text-slate-400 font-bold text-sm">-</span>
                     )}
                   </td>
 
                   {/* Total Avg Time */}
-                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
                     {isVmsLoading ? (
                       <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
                     ) : stats.totalCount > 0 ? (
                       <div className="inline-flex flex-col items-center">
-                        <span className="text-sm sm:text-base font-bold text-slate-900">
+                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
                           {formatDuration(stats.totalAvg)}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full mt-1 border border-blue-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full mt-1 border border-blue-200">
                           {stats.totalCount.toLocaleString()} VMS
                         </span>
                       </div>
                     ) : (
-                      <span className="text-slate-400 font-bold text-base">-</span>
+                      <span className="text-slate-400 font-bold text-sm">-</span>
                     )}
                   </td>
                 </tr>
@@ -274,7 +315,26 @@ const OperatorTable: React.FC<Props> = ({
         </table>
       </div>
     </div>
-  );
+
+    {/* Pagination Bar */}
+    <Pagination
+      page={page}
+      totalPages={totalPages}
+      total={total}
+      limit={limit}
+      options={[5, 10, 20, 50]}
+      itemName="operators"
+      isLoading={loading}
+      variant="dark"
+      className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
+      onPageChange={setPage}
+      onLimitChange={(newLimit) => {
+        setLimit(newLimit);
+        setPage(1);
+      }}
+    />
+  </section>
+);
 };
 
 export default OperatorTable;

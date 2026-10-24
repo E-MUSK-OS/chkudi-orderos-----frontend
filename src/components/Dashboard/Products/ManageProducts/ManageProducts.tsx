@@ -36,6 +36,7 @@ import {
 } from "./hooks/useMyntraImports";
 import MyntraTable from "./components/MyntraTable";
 import { useQueryClient } from "@tanstack/react-query";
+import { downloadDemoSheet } from "./utils/downloadDemoSheet";
 
 const ManageProducts = () => {
   const queryClient = useQueryClient();
@@ -266,6 +267,8 @@ const ManageProducts = () => {
                 ? "Add Myntra"
                 : "Add Product"
             }
+            demoSheetLabel="Demo Sheet"
+            onDownloadDemoSheet={() => downloadDemoSheet(importType)}
             onAddProduct={() => {
               if (importType === "asin") {
                 setSelectedAsin(null);

@@ -1,13 +1,7 @@
 "use client";
 
 import React from "react";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import Modal from "@/components/ui/Modal";
 
 interface AccountModalProps {
   open: boolean;
@@ -23,22 +17,14 @@ const AccountModal: React.FC<AccountModalProps> = ({
   children,
 }) => {
   return (
-    <Dialog
+    <Modal
       open={open}
-      onOpenChange={(value) => {
-        if (!value) {
-          onClose();
-        }
-      }}
+      onClose={onClose}
+      title={title}
+      size="md"
     >
-      <DialogContent className="sm:max-w-xl px-10 py-10">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-
-        <div className="pt-2">{children}</div>
-      </DialogContent>
-    </Dialog>
+      <div className="pt-1">{children}</div>
+    </Modal>
   );
 };
 

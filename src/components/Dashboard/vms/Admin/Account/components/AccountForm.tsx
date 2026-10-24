@@ -53,7 +53,6 @@ const AccountForm: React.FC<AccountFormProps> = ({
 }) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-
     defaultValues: {
       accountName: "",
     },
@@ -114,11 +113,13 @@ const AccountForm: React.FC<AccountFormProps> = ({
         }
       />
 
-      <Button type="submit" loading={loading}>
-        {mode === "create"
-          ? "Add Account"
-          : "Update Account"}
-      </Button>
+      <div className="flex items-center justify-end">
+        <Button type="submit" loading={loading} fullWidth={false} className="px-8">
+          {mode === "create"
+            ? "Add Account"
+            : "Update Account"}
+        </Button>
+      </div>
     </form>
   );
 };
