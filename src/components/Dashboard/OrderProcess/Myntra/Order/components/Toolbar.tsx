@@ -1,9 +1,16 @@
 "use client";
 
-import { ArrowRight, Printer, Search } from "lucide-react";
-
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import React from "react";
+import {
+  ArrowRight,
+  Printer,
+  Search,
+  X,
+  PackageOpen,
+  AlertCircle,
+  Boxes,
+  Truck,
+} from "lucide-react";
 
 interface Props {
   search: string;
@@ -21,6 +28,7 @@ interface Props {
   selectedRows: number[];
   onMoveToPicking: () => void;
   onGeneratePicklist: () => void;
+  onProcess?: () => void;
 }
 
 const Toolbar = ({
@@ -32,95 +40,155 @@ const Toolbar = ({
   selectedRows,
   onMoveToPicking,
   onGeneratePicklist,
+  onProcess,
 }: Props) => {
-  const buttons = [
+  const statusCards = [
     {
-      key: "OPEN",
+      key: "OPEN" as const,
       label: "Open Orders",
       count: counts.OPEN,
+      icon: <PackageOpen className="h-5 w-5" />,
+      description: "Awaiting fulfillment",
     },
     {
-      key: "PRIORITY",
+      key: "PRIORITY" as const,
       label: "Priority Orders",
       count: counts.PRIORITY,
+      icon: <AlertCircle className="h-5 w-5" />,
+      description: "Urgent dispatch",
     },
     {
-      key: "PICKING",
+      key: "PICKING" as const,
       label: "In Picking",
       count: counts.PICKING,
+      icon: <Boxes className="h-5 w-5" />,
+      description: "Being picked & packed",
     },
     {
-      key: "TRANSIT",
+      key: "TRANSIT" as const,
       label: "In Transit",
       count: counts.TRANSIT,
+      icon: <Truck className="h-5 w-5" />,
+      description: "Dispatched to carrier",
     },
-  ] as const;
+  ];
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-        {buttons.map((button) => (
-          <Button
-            key={button.key}
-            onClick={() => onStatusChange(button.key)}
-            className={`h-12 sm:h-14 border text-xs sm:text-sm font-semibold transition-all duration-200 ${status === button.key
-                ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:text-white hover:bg-[#0A0E1A]"
-                : "bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+      {/* Status Stage Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {statusCards.map((card) => {
+          const isActive = status === card.key;
+          return (
+            <button
+              key={card.key}
+              type="button"
+              onClick={() => onStatusChange(card.key)}
+              className={`group relative flex flex-col justify-between rounded-2xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer ${
+                isActive
+                  ? "bg-[#0A0E1A] border-2 border-[#E8C16D] text-white shadow-md ring-2 ring-[#E8C16D]/30"
+                  : "bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D]/60 hover:bg-[#FFF9EC]/30 shadow-xs"
               }`}
-          >
-            {button.label} ({button.count})
-          </Button>
-        ))}
+            >
+              <div className="flex items-center justify-between w-full mb-3">
+                <span
+                  className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider ${
+                    isActive ? "text-[#E8C16D]" : "text-slate-500 group-hover:text-[#B88728]"
+                  }`}
+                >
+                  {card.label}
+                </span>
+                <div
+                  className={`grid h-8 w-8 place-items-center rounded-xl border transition-colors ${
+                    isActive
+                      ? "bg-[#E8C16D]/20 text-[#E8C16D] border-[#E8C16D]/40"
+                      : "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/30 group-hover:bg-[#E8C16D]/20"
+                  }`}
+                >
+                  {card.icon}
+                </div>
+              </div>
+
+              <div className="flex items-baseline justify-between w-full">
+                <div
+                  className={`text-2xl sm:text-3xl font-black tracking-tight ${
+                    isActive ? "text-white" : "text-[#0A0E1A]"
+                  }`}
+                >
+                  {card.count.toLocaleString()}
+                </div>
+                <span className="text-[11px] font-medium text-slate-400 hidden sm:inline-block">
+                  {card.description}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Search & Actions */}
-      <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full lg:max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
-          <Input
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search Order ID..."
-            className="pl-10 text-sm"
-          />
+      {/* Searchbar & Stage Actions */}
+      <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+        {/* Left side: Search input */}
+        <div className="w-full md:max-w-md transition-all">
+          <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white">
+            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+              <Search className="h-3.5 w-3.5" />
+            </div>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => onSearch(e.target.value)}
+              placeholder="Search Order ID..."
+              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => onSearch("")}
+                className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                title="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
+        {/* Right side: Action Buttons for selected orders */}
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           {(status === "OPEN" || status === "PRIORITY") && (
-            <Button
-              fullWidth={false}
-              className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
+            <button
+              type="button"
               disabled={selectedRows.length === 0}
               onClick={onMoveToPicking}
+              className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
             >
-              <ArrowRight className="mr-2 h-4 w-4" />
-              Move To In Picking ({selectedRows.length})
-            </Button>
+              <ArrowRight className="h-4 w-4" />
+              <span>Move To In Picking ({selectedRows.length})</span>
+            </button>
           )}
 
           {status === "PICKING" && (
             <div className="flex flex-wrap items-center gap-3">
-              <Button
-                variant="secondary"
-                fullWidth={false}
-                className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
+              <button
+                type="button"
                 disabled={selectedRows.length === 0}
                 onClick={onGeneratePicklist}
+                className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
               >
-                <Printer className="mr-2 h-4 w-4" />
-                Generate Picklist ({selectedRows.length})
-              </Button>
+                <Printer className="h-4 w-4 text-[#B88728]" />
+                <span>Generate Picklist ({selectedRows.length})</span>
+              </button>
 
-              <Button
-                fullWidth={false}
-                className="h-11 px-5 text-sm rounded-lg whitespace-nowrap"
+              <button
+                type="button"
                 disabled={selectedRows.length === 0}
-                onClick={() => {}}
+                onClick={onProcess || (() => {})}
+                className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
               >
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Process ({selectedRows.length})
-              </Button>
+                <ArrowRight className="h-4 w-4" />
+                <span>Process ({selectedRows.length})</span>
+              </button>
             </div>
           )}
         </div>

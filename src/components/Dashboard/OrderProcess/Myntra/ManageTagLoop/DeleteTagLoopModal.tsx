@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Button from "@/components/ui/Button";
 
 import {
   AlertTriangle,
@@ -38,139 +37,133 @@ export default function DeleteTagLoopModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl overflow-hidden border-0 p-0 shadow-2xl">
+      <DialogContent className="!rounded-3xl sm:!rounded-[32px] border border-[#E7E0D2] max-w-xl sm:max-w-2xl overflow-hidden bg-white p-0 shadow-2xl">
         {/* Header */}
-        <DialogHeader className="border-b border-[#1A2235] bg-[#0A0E1A] px-10 py-8">
-          <div className="flex items-center gap-5">
-            <div className="flex h-16 w-16 items-center justify-center bg-[#E8C16D] shadow-lg">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-            </div>
+        <div className="border-b border-[#1A2235] bg-[#0A0E1A] px-6 sm:px-8 py-5 sm:py-6">
+          <DialogHeader>
+            <div className="flex items-center gap-4">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/30 shadow-xs shrink-0">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
 
-            <div>
-              <DialogTitle className="text-3xl font-bold text-[#E8C16D]">
-                Delete Tag Loop
-              </DialogTitle>
-
-              <p className="mt-2 text-sm text-slate-300">
-                This action is permanent and cannot be undone.
-              </p>
+              <div className="text-left">
+                <DialogTitle className="text-xl sm:text-2xl font-black text-[#E8C16D] tracking-tight">
+                  Delete Tag Loop
+                </DialogTitle>
+                <p className="mt-0.5 text-xs sm:text-sm text-slate-300">
+                  This action is permanent and cannot be undone.
+                </p>
+              </div>
             </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
+        </div>
 
         {/* Body */}
-        <div className="space-y-8 bg-[#F8F9FB] px-10 py-8">
-          {/* Description */}
-          <div>
-            <p className="text-base leading-7 text-slate-600">
-              You are about to permanently delete this Tag Loop and all tags
-              associated with it. Once deleted, this information cannot be
-              recovered.
-            </p>
+        <div className="space-y-6 sm:space-y-7 p-6 sm:p-8 bg-white">
+          {/* Danger notice */}
+          <div className="rounded-2xl border border-red-200/80 bg-red-50/50 p-4 sm:p-4.5 text-xs sm:text-sm leading-relaxed text-red-800">
+            You are about to permanently delete this Tag Loop sequence and all associated tracking data. Once deleted, this range cannot be recovered or restored.
           </div>
 
-          {/* Tag Range */}
-          <div className="border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center gap-3">
-              <Boxes className="h-5 w-5 text-[#C89B3C]" />
-
-              <p className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-                Tag Range
+          {/* Tag Range Target */}
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-[#FAF8F5] p-5 sm:p-6 shadow-2xs">
+            <div className="mb-4 flex items-center gap-2">
+              <Boxes className="h-4 w-4 text-[#B88728]" />
+              <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0A0E1A]">
+                Target Sequence Range
               </p>
             </div>
 
-            <div className="flex items-center justify-center gap-6">
-              <div className="bg-[#0A0E1A] px-6 py-4">
-                <p className="text-xs uppercase tracking-widest text-slate-400">
-                  Start
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-4">
+              <div className="rounded-xl border border-[#E7E0D2] bg-white p-4 shadow-2xs">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Start Tag
                 </p>
-
-                <h3 className="mt-2 text-2xl font-bold text-white">
+                <h3 className="mt-1.5 font-mono text-lg sm:text-xl font-black text-[#0A0E1A] break-all">
                   {tagLoop.startTag}
                 </h3>
               </div>
 
-              <ArrowRight className="h-8 w-8 text-[#C89B3C]" />
+              <div className="flex items-center justify-center">
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 shadow-2xs rotate-90 md:rotate-0">
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </div>
 
-              <div className="bg-[#E8C16D] px-6 py-4">
-                <p className="text-xs uppercase tracking-widest text-[#6B4E00]">
-                  End
+              <div className="rounded-xl border border-[#E7E0D2] bg-white p-4 shadow-2xs text-left md:text-right">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  End Tag
                 </p>
-
-                <h3 className="mt-2 text-2xl font-bold text-[#0A0E1A]">
+                <h3 className="mt-1.5 font-mono text-lg sm:text-xl font-black text-[#B88728] break-all">
                   {tagLoop.endTag}
                 </h3>
               </div>
             </div>
           </div>
 
-
-          <div className="grid grid-cols-3 gap-5">
-            <div className="border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:shadow-md">
-              <PackageCheck className="mx-auto h-8 w-8 text-[#C89B3C]" />
-
-              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-slate-500">
+          {/* 3-Column stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-[#FAF8F5] p-4 text-center shadow-2xs">
+              <PackageCheck className="mx-auto h-6 w-6 text-[#B88728]" />
+              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Total Tags
               </p>
-
-              <h3 className="mt-2 text-3xl font-bold text-slate-900">
-                {tagLoop.total}
-              </h3>
+              <h4 className="mt-1 text-xl sm:text-2xl font-black text-[#0A0E1A]">
+                {tagLoop.total.toLocaleString()}
+              </h4>
             </div>
 
-            <div className="border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:shadow-md">
-              <CheckCircle2 className="mx-auto h-8 w-8 text-green-600" />
-
-              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-slate-500">
+            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-[#FAF8F5] p-4 text-center shadow-2xs">
+              <CheckCircle2 className="mx-auto h-6 w-6 text-emerald-600" />
+              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Available
               </p>
-
-              <h3 className="mt-2 text-3xl font-bold text-green-600">
-                {tagLoop.available}
-              </h3>
+              <h4 className="mt-1 text-xl sm:text-2xl font-black text-emerald-600">
+                {tagLoop.available.toLocaleString()}
+              </h4>
             </div>
 
-            <div className="border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:shadow-md">
-              <Boxes className="mx-auto h-8 w-8 text-orange-600" />
-
-              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-slate-500">
+            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-[#FAF8F5] p-4 text-center shadow-2xs">
+              <Boxes className="mx-auto h-6 w-6 text-amber-600" />
+              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Used
               </p>
-
-              <h3 className="mt-2 text-3xl font-bold text-orange-600">
-                {tagLoop.used}
-              </h3>
+              <h4 className="mt-1 text-xl sm:text-2xl font-black text-amber-700">
+                {tagLoop.used.toLocaleString()}
+              </h4>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-4 border-t border-slate-200 bg-white px-10 py-6">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
-            Cancel
-          </Button>
+          {/* Footer buttons */}
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-5 text-xs sm:text-sm font-bold text-slate-700 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
 
-          <Button
-            onClick={onDelete}
-            disabled={loading}
-            className="bg-red-600 text-white hover:bg-red-700"
-          >
-            {loading ? (
-              <>
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Forever
-              </>
-            )}
-          </Button>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-red-600 hover:bg-red-700 text-white px-6 text-xs sm:text-sm font-bold shadow-xs transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete Forever</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
