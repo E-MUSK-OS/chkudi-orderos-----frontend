@@ -30,6 +30,7 @@ export default function InvoiceFormatter() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [processedPdfDoc, setProcessedPdfDoc] = useState<PDFDocument | null>(null);
+  const [marginMode, setMarginMode] = useState<"EDGE" | "COMPACT" | "STANDARD">("EDGE");
 
   // Modal & Batch Configuration State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,7 +71,7 @@ export default function InvoiceFormatter() {
     }
   };
 
-  const processPDF = async (file: File) => {
+  const processPDF = async (file: File, mode: "EDGE" | "COMPACT" | "STANDARD" = marginMode) => {
     setIsProcessing(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -84,30 +85,41 @@ export default function InvoiceFormatter() {
       const TARGET_WIDTH = 4 * 72;  // 288 pt
       const TARGET_HEIGHT = 6 * 72; // 432 pt
 
-      // Margins for oversized pages (e.g. A4 / Letter invoices)
-      const MARGIN_X = 2;       // 2 pt side margins (~0.7mm) to minimize left/right whitespace
-      const TOP_MARGIN = 6;     // 6 pt top margin
-      const BOTTOM_MARGIN = 18; // 18 pt bottom margin gives clear spacing for "Page X of Y"
-      const availInvoiceW = TARGET_WIDTH - 2 * MARGIN_X;                // 284 pt
-      const availInvoiceH = TARGET_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN; // 408 pt
+      // Margins & Crop values for oversized pages (e.g. A4 / Letter invoices)
+      // "EDGE" eliminates both outer paper padding and source A4 whitespace padding
+      let cropX = 24;
+      let cropY = 16;
+      let sideMargin = 1;
+
+      if (mode === "COMPACT") {
+        cropX = 14;
+        cropY = 10;
+        sideMargin = 2;
+      } else if (mode === "STANDARD") {
+        cropX = 0;
+        cropY = 0;
+        sideMargin = 4;
+      }
+
+      const availInvoiceW = TARGET_WIDTH - (2 * sideMargin);
+      const availInvoiceH = TARGET_HEIGHT - 16; // 416 pt
 
       for (let i = 0; i < totalPages; i++) {
         const srcPage = srcDoc.getPage(i);
+        const { width: origW, height: origH } = srcPage.getSize();
         const rot = (srcPage.getRotation().angle || 0) % 360;
 
         const newPage = formattedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
 
         try {
-          const embedded = await formattedDoc.embedPage(srcPage);
-
-          // Calculate effective visual width & height according to page rotation
           const isSideways = rot === 90 || rot === 270;
-          const visualW = isSideways ? embedded.height : embedded.width;
-          const visualH = isSideways ? embedded.width : embedded.height;
+          const visualW = isSideways ? origH : origW;
+          const visualH = isSideways ? origW : origH;
 
           // Check if page is already ~4x6 (e.g. Myntra shipping label ~288x432 pt or 100x150 mm)
           const isAlready4x6 = Math.abs(visualW - TARGET_WIDTH) <= 25 && Math.abs(visualH - TARGET_HEIGHT) <= 25;
 
+          let embedded;
           let scale: number;
           let scaledVisualW: number;
           let scaledVisualH: number;
@@ -115,19 +127,39 @@ export default function InvoiceFormatter() {
           let targetY: number;
 
           if (isAlready4x6) {
-            // Label is already 4x6: fit 1:1 without extra shrinking to keep barcodes sharp
+            // Label is already 4x6: fit 1:1 without extra shrinking or cropping to keep barcodes sharp
+            embedded = await formattedDoc.embedPage(srcPage);
             scale = Math.min(TARGET_WIDTH / visualW, TARGET_HEIGHT / visualH);
             scaledVisualW = visualW * scale;
             scaledVisualH = visualH * scale;
             targetX = (TARGET_WIDTH - scaledVisualW) / 2;
             targetY = (TARGET_HEIGHT - scaledVisualH) / 2;
           } else {
-            // Invoice (A4, Letter, etc.): scale down to fit comfortably in 4x6 paper area
-            scale = Math.min(availInvoiceW / visualW, availInvoiceH / visualH);
-            scaledVisualW = visualW * scale;
-            scaledVisualH = visualH * scale;
+            // Invoice (A4, Letter, etc.): crop the outer blank padding to eliminate left/right white gap
+            if (cropX > 0 || cropY > 0) {
+              const boxLeft = isSideways ? cropY : cropX;
+              const boxBottom = isSideways ? cropX : cropY;
+              const boxRight = isSideways ? (origW - cropY) : (origW - cropX);
+              const boxTop = isSideways ? (origH - cropX) : (origH - cropY);
+
+              embedded = await formattedDoc.embedPage(srcPage, {
+                left: boxLeft,
+                bottom: boxBottom,
+                right: boxRight,
+                top: boxTop,
+              });
+            } else {
+              embedded = await formattedDoc.embedPage(srcPage);
+            }
+
+            const embVisualW = isSideways ? embedded.height : embedded.width;
+            const embVisualH = isSideways ? embedded.width : embedded.height;
+
+            scale = Math.min(availInvoiceW / embVisualW, availInvoiceH / embVisualH);
+            scaledVisualW = embVisualW * scale;
+            scaledVisualH = embVisualH * scale;
             targetX = (TARGET_WIDTH - scaledVisualW) / 2;
-            targetY = BOTTOM_MARGIN + (availInvoiceH - scaledVisualH) / 2;
+            targetY = 14 + (availInvoiceH - scaledVisualH) / 2;
           }
 
           const drawW = embedded.width * scale;
@@ -171,8 +203,8 @@ export default function InvoiceFormatter() {
         const text = `Page ${i + 1} of ${totalPages}`;
         newPage.drawText(text, {
           x: 14,
-          y: 8,
-          size: 8.5,
+          y: 7,
+          size: 8,
           font: font,
           color: rgb(0, 0, 0),
         });
@@ -451,10 +483,18 @@ export default function InvoiceFormatter() {
     document.body.removeChild(a);
   };
 
+  const handleMarginModeChange = async (mode: "EDGE" | "COMPACT" | "STANDARD") => {
+    setMarginMode(mode);
+    if (selectedFile) {
+      await processPDF(selectedFile, mode);
+    }
+  };
+
   const handleResetAll = () => {
     setSelectedFile(null);
     setPdfUrl(null);
     setProcessedPdfDoc(null);
+    setMarginMode("EDGE");
   };
 
   return (
@@ -563,6 +603,52 @@ export default function InvoiceFormatter() {
           </div>
         ) : (
           <div className="flex-1 rounded-3xl border border-[#E7E0D2] bg-white shadow-sm overflow-hidden flex flex-col min-h-[70vh]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7E0D2] bg-slate-50/70 px-4 py-3 sm:px-6">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700">Invoice Side Margins:</span>
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                  ⚡ Default: Zero Margin (Edge-to-Edge)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => handleMarginModeChange("EDGE")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                    marginMode === "EDGE"
+                      ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                  title="Zero Margin: Eliminates side gaps so invoice extends completely edge-to-edge"
+                >
+                  Zero Margin (Edge-to-Edge)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMarginModeChange("COMPACT")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                    marginMode === "COMPACT"
+                      ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                  title="Compact: Small side margins"
+                >
+                  Compact
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMarginModeChange("STANDARD")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                    marginMode === "STANDARD"
+                      ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                  title="Standard: Normal A4 margins"
+                >
+                  Standard
+                </button>
+              </div>
+            </div>
             <iframe src={pdfUrl} className="w-full h-[70vh] border-none" title="PDF Viewer" />
           </div>
         )}
