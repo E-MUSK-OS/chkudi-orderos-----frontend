@@ -19,9 +19,9 @@ import {
   FastForward, 
   CheckCircle2, 
   AlertCircle, 
-  Sparkles 
+  Sparkles,
 } from "lucide-react";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
 import { toast } from "sonner";
 import { chromeExtensionPrintService, resolveCurrentlyConnectedPrinter } from "@/components/Dashboard/Labels/services/printAgent.service";
 
@@ -74,38 +74,112 @@ export default function InvoiceFormatter() {
     setIsProcessing(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const srcDoc = await PDFDocument.load(arrayBuffer);
+      const formattedDoc = await PDFDocument.create();
+      const font = await formattedDoc.embedFont(StandardFonts.Helvetica);
 
-      const pages = pdfDoc.getPages();
-      const totalPages = pages.length;
+      const totalPages = srcDoc.getPageCount();
 
-      for (let i = 0; i < pages.length; i++) {
-        const page = pages[i];
-        const { width, height } = page.getSize();
-        
-        // Calculate scale factor relative to a standard 4x6 label width (~288 points).
-        // Since invoices (A4) are much wider (~595 points), their text is drawn larger 
-        // so it looks exactly the same size when the printer scales it down to 4x6 paper.
-        const scaleFactor = width / 288;
-        
-        // Add "Page X of Y" text
+      // Standard 4" x 6" label printer paper size in PDF points (72 pt / inch)
+      const TARGET_WIDTH = 4 * 72;  // 288 pt
+      const TARGET_HEIGHT = 6 * 72; // 432 pt
+
+      // Margins for oversized pages (e.g. A4 / Letter invoices)
+      const MARGIN_X = 6;       // 6 pt side margins (~2.1mm)
+      const TOP_MARGIN = 8;     // 8 pt top margin
+      const BOTTOM_MARGIN = 20; // 20 pt bottom margin gives clear spacing for "Page X of Y"
+      const availInvoiceW = TARGET_WIDTH - 2 * MARGIN_X;                // 276 pt
+      const availInvoiceH = TARGET_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN; // 404 pt
+
+      for (let i = 0; i < totalPages; i++) {
+        const srcPage = srcDoc.getPage(i);
+        const rot = (srcPage.getRotation().angle || 0) % 360;
+
+        const newPage = formattedDoc.addPage([TARGET_WIDTH, TARGET_HEIGHT]);
+
+        try {
+          const embedded = await formattedDoc.embedPage(srcPage);
+
+          // Calculate effective visual width & height according to page rotation
+          const isSideways = rot === 90 || rot === 270;
+          const visualW = isSideways ? embedded.height : embedded.width;
+          const visualH = isSideways ? embedded.width : embedded.height;
+
+          // Check if page is already ~4x6 (e.g. Myntra shipping label ~288x432 pt or 100x150 mm)
+          const isAlready4x6 = Math.abs(visualW - TARGET_WIDTH) <= 25 && Math.abs(visualH - TARGET_HEIGHT) <= 25;
+
+          let scale: number;
+          let scaledVisualW: number;
+          let scaledVisualH: number;
+          let targetX: number;
+          let targetY: number;
+
+          if (isAlready4x6) {
+            // Label is already 4x6: fit 1:1 without extra shrinking to keep barcodes sharp
+            scale = Math.min(TARGET_WIDTH / visualW, TARGET_HEIGHT / visualH);
+            scaledVisualW = visualW * scale;
+            scaledVisualH = visualH * scale;
+            targetX = (TARGET_WIDTH - scaledVisualW) / 2;
+            targetY = (TARGET_HEIGHT - scaledVisualH) / 2;
+          } else {
+            // Invoice (A4, Letter, etc.): scale down to fit comfortably in 4x6 paper area
+            scale = Math.min(availInvoiceW / visualW, availInvoiceH / visualH);
+            scaledVisualW = visualW * scale;
+            scaledVisualH = visualH * scale;
+            targetX = (TARGET_WIDTH - scaledVisualW) / 2;
+            targetY = BOTTOM_MARGIN + (availInvoiceH - scaledVisualH) / 2;
+          }
+
+          const drawW = embedded.width * scale;
+          const drawH = embedded.height * scale;
+
+          let drawX = targetX;
+          let drawY = targetY;
+
+          if (rot === 90) {
+            drawX = targetX + scaledVisualW;
+            drawY = targetY;
+          } else if (rot === 180) {
+            drawX = targetX + scaledVisualW;
+            drawY = targetY + scaledVisualH;
+          } else if (rot === 270) {
+            drawX = targetX;
+            drawY = targetY + scaledVisualH;
+          }
+
+          if (rot !== 0) {
+            newPage.drawPage(embedded, {
+              x: drawX,
+              y: drawY,
+              width: drawW,
+              height: drawH,
+              rotate: degrees(rot),
+            });
+          } else {
+            newPage.drawPage(embedded, {
+              x: drawX,
+              y: drawY,
+              width: drawW,
+              height: drawH,
+            });
+          }
+        } catch (embedError) {
+          console.warn(`Could not embed page ${i + 1}:`, embedError);
+        }
+
+        // Draw uniform "Page X of Y" text at bottom left
         const text = `Page ${i + 1} of ${totalPages}`;
-        // Base size 9, scaled up for wider pages
-        const fontSize = 9 * scaleFactor;
-        
-        // Shift margins proportionally so they don't get squished to the edge on large pages
-        page.drawText(text, {
-          x: 15 * scaleFactor, 
-          y: 12 * scaleFactor, 
-          size: fontSize,
+        newPage.drawText(text, {
+          x: 14,
+          y: 8,
+          size: 8.5,
           font: font,
           color: rgb(0, 0, 0),
         });
       }
 
-      setProcessedPdfDoc(pdfDoc);
-      const pdfBytes = await pdfDoc.save();
+      setProcessedPdfDoc(formattedDoc);
+      const pdfBytes = await formattedDoc.save();
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
@@ -371,7 +445,7 @@ export default function InvoiceFormatter() {
     if (!pdfUrl || !selectedFile) return;
     const a = document.createElement("a");
     a.href = pdfUrl;
-    a.download = `Formatted_${selectedFile.name}`;
+    a.download = `Formatted_4x6_${selectedFile.name}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -390,11 +464,17 @@ export default function InvoiceFormatter() {
         <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-                Myntra Invoice Page Numbering
-              </h1>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                  Myntra Invoice & Label 4×6 Formatter
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200/80 px-2.5 py-1 text-xs font-bold text-amber-800">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                  Auto 4×6 Thermal Fit
+                </span>
+              </div>
               <p className="text-xs sm:text-sm text-slate-500 break-words">
-                Upload a merged Myntra Invoice & Label PDF to automatically format page numbers.
+                Upload merged Myntra Invoice & Label PDF. Labels & A4 Invoices are automatically fitted to 4×6 thermal printer paper with page numbering.
               </p>
             </div>
 
@@ -436,7 +516,7 @@ export default function InvoiceFormatter() {
         {isProcessing ? (
           <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-[#E7E0D2] bg-white p-8">
             <Loader2 className="h-10 w-10 animate-spin text-[#E8C16D]" />
-            <p className="mt-4 text-sm font-medium text-slate-600">Processing PDF and formatting page numbers...</p>
+            <p className="mt-4 text-sm font-medium text-slate-600">Formatting pages to 4×6 thermal size and adding page numbers...</p>
           </div>
         ) : !pdfUrl ? (
           <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
@@ -471,8 +551,8 @@ export default function InvoiceFormatter() {
                 <h3 className="mb-1 text-sm sm:text-base font-bold text-slate-800">
                   Click to upload or drag & drop PDF
                 </h3>
-                <p className="mb-6 text-xs text-slate-500 max-w-[280px]">
-                  Select a Myntra Invoice PDF file (.pdf)
+                <p className="mb-6 text-xs text-slate-500 max-w-[320px]">
+                  Select a Myntra Invoice & Label PDF file (.pdf). Labels and Invoices will be automatically formatted to 4×6.
                 </p>
                 <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors group-hover:border-[#E8C16D] group-hover:text-[#E8C16D]">
                   <FileText className="h-4 w-4" />
