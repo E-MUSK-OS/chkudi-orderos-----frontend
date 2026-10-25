@@ -85,11 +85,11 @@ export default function InvoiceFormatter() {
       const TARGET_HEIGHT = 6 * 72; // 432 pt
 
       // Margins for oversized pages (e.g. A4 / Letter invoices)
-      const MARGIN_X = 6;       // 6 pt side margins (~2.1mm)
-      const TOP_MARGIN = 8;     // 8 pt top margin
-      const BOTTOM_MARGIN = 20; // 20 pt bottom margin gives clear spacing for "Page X of Y"
-      const availInvoiceW = TARGET_WIDTH - 2 * MARGIN_X;                // 276 pt
-      const availInvoiceH = TARGET_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN; // 404 pt
+      const MARGIN_X = 2;       // 2 pt side margins (~0.7mm) to minimize left/right whitespace
+      const TOP_MARGIN = 6;     // 6 pt top margin
+      const BOTTOM_MARGIN = 18; // 18 pt bottom margin gives clear spacing for "Page X of Y"
+      const availInvoiceW = TARGET_WIDTH - 2 * MARGIN_X;                // 284 pt
+      const availInvoiceH = TARGET_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN; // 408 pt
 
       for (let i = 0; i < totalPages; i++) {
         const srcPage = srcDoc.getPage(i);
