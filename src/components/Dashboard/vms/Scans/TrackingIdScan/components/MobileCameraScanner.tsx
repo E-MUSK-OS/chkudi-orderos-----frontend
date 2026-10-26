@@ -207,11 +207,63 @@ export default function MobileCameraScanner({
     }
   }, []);
 
+  // Multi-tier progressive camera acquisition to guarantee preview works on ANY low-end phone
+  const acquireCameraStream = async (): Promise<MediaStream> => {
+    // Tier 1: Ideal 720p environment camera (modern and mid-range devices)
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+    } catch (err1) {
+      console.warn("Tier 1 constraint failed, falling back to basic environment:", err1);
+    }
+
+    // Tier 2: Flexible environment camera without fixed resolutions (low-end phones)
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+    } catch (err2) {
+      console.warn("Tier 2 constraint failed, falling back to default camera:", err2);
+    }
+
+    // Tier 3: Universal fallback - ANY available camera (100% device compatibility)
+    return await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: false,
+    });
+  };
+
   const startStreamWithScanner = useCallback(
     async (stream: MediaStream) => {
       streamRef.current = stream;
       isStoppingRef.current = false;
 
+      const videoEl = videoRef.current;
+      if (!videoEl) {
+        setIsLoading(false);
+        return;
+      }
+
+      // CRITICAL: Attach media stream to video element immediately so preview is NEVER black
+      try {
+        videoEl.srcObject = stream;
+        videoEl.setAttribute("playsinline", "true");
+        videoEl.setAttribute("webkit-playsinline", "true");
+        videoEl.setAttribute("autoplay", "true");
+        videoEl.muted = true;
+        await videoEl.play();
+      } catch (playErr) {
+        console.warn("Video play error:", playErr);
+      }
+
+      // Check camera capabilities (torch, hardware zoom, autofocus)
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
         const capabilities = (videoTrack as any).getCapabilities?.();
@@ -222,7 +274,6 @@ export default function MobileCameraScanner({
           if ("zoom" in capabilities) {
             setHasHardwareZoom(true);
           }
-          // Enable continuous autofocus for sharp barcode lines
           if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
             try {
               await (videoTrack as any).applyConstraints({
@@ -235,13 +286,7 @@ export default function MobileCameraScanner({
         }
       }
 
-      const videoEl = videoRef.current;
-      if (!videoEl) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if native BarcodeDetector is supported (Runs in C++ on GPU/NPU at 60 FPS)
+      // 1. ENGINE: Native BarcodeDetector if available (Runs on GPU/NPU at 60 FPS)
       let nativeDetectorStarted = false;
       if (typeof window !== "undefined" && "BarcodeDetector" in window) {
         try {
@@ -252,65 +297,60 @@ export default function MobileCameraScanner({
             (f) => supported.length === 0 || supported.includes(f)
           );
 
-          const nativeDetector = new BarcodeDetectorClass({ formats: activeFormats });
+          if (activeFormats.length > 0) {
+            const nativeDetector = new BarcodeDetectorClass({ formats: activeFormats });
+            let isDetecting = false;
 
-          // Non-blocking concurrency lock to prevent promise queue congestion
-          let isDetecting = false;
-
-          const scanNativeLoop = async () => {
-            if (isStoppingRef.current) return;
-            if (!videoEl || videoEl.readyState < 2) {
-              rafIdRef.current = requestAnimationFrame(scanNativeLoop);
-              return;
-            }
-
-            if (!isDetecting) {
-              isDetecting = true;
-              try {
-                const barcodes = await nativeDetector.detect(videoEl);
-                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                  handleBarcodeFound(barcodes[0].rawValue);
-                }
-              } catch {
-                // Ignore transient frame read error
-              } finally {
-                isDetecting = false;
+            const scanNativeLoop = async () => {
+              if (isStoppingRef.current) return;
+              if (!videoEl || videoEl.readyState < 2 || videoEl.videoWidth === 0) {
+                rafIdRef.current = requestAnimationFrame(scanNativeLoop);
+                return;
               }
-            }
 
-            if (!isStoppingRef.current) {
-              rafIdRef.current = requestAnimationFrame(scanNativeLoop);
-            }
-          };
+              if (!isDetecting) {
+                isDetecting = true;
+                try {
+                  const barcodes = await nativeDetector.detect(videoEl);
+                  if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                    handleBarcodeFound(barcodes[0].rawValue);
+                  }
+                } catch {
+                  // Ignore transient frame read error
+                } finally {
+                  isDetecting = false;
+                }
+              }
 
-          nativeDetectorStarted = true;
-          rafIdRef.current = requestAnimationFrame(scanNativeLoop);
+              if (!isStoppingRef.current) {
+                rafIdRef.current = requestAnimationFrame(scanNativeLoop);
+              }
+            };
+
+            nativeDetectorStarted = true;
+            rafIdRef.current = requestAnimationFrame(scanNativeLoop);
+          }
         } catch (e) {
           console.warn("Native BarcodeDetector init failed, will use ZXing fallback:", e);
         }
       }
 
-      // If native BarcodeDetector is NOT active, run optimized ZXing fallback
-      // (Do NOT run both simultaneously to avoid CPU starvation and GC stutters)
+      // 2. FALLBACK ENGINE: Lightweight ZXing on video element (runs on all low-end phones & iOS Safari)
       if (!nativeDetectorStarted) {
         try {
           const hints = new Map<DecodeHintType, any>();
           hints.set(DecodeHintType.POSSIBLE_FORMATS, FAST_BARCODE_FORMATS);
 
           const codeReader = new BrowserMultiFormatReader(hints, {
-            delayBetweenScanAttempts: 40,
+            delayBetweenScanAttempts: 60, // Light on low-end CPUs
             delayBetweenScanSuccess: 450,
           });
 
-          const controls = await codeReader.decodeFromStream(
-            stream,
-            videoEl,
-            (result, _error) => {
-              if (result) {
-                handleBarcodeFound(result.getText());
-              }
+          const controls = await codeReader.decodeFromVideoElement(videoEl, (result) => {
+            if (result) {
+              handleBarcodeFound(result.getText());
             }
-          );
+          });
           controlsRef.current = controls;
         } catch (err) {
           console.warn("ZXing fallback decode error:", err);
@@ -332,18 +372,7 @@ export default function MobileCameraScanner({
     setErrorMsg(null);
 
     try {
-      // Request Full HD 1080p resolution so barcodes at a distance have crisp pixel definition
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { min: 1280, ideal: 1920, max: 3840 },
-          height: { min: 720, ideal: 1080, max: 2160 },
-          frameRate: { ideal: 60, min: 30 },
-        },
-        audio: false,
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await acquireCameraStream();
       sessionStorage.setItem("vms_camera_permission_granted", "true");
       setPermissionStatus("granted");
       await startStreamWithScanner(stream);
@@ -478,10 +507,10 @@ export default function MobileCameraScanner({
             <div className="flex items-center gap-1.5">
               <h3 className="text-sm font-bold leading-tight">Ultra Barcode Scanner</h3>
               <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                1080p Turbo
+                Live
               </span>
             </div>
-            <p className="text-[10px] text-slate-300">Long-Distance & All Barcodes Active</p>
+            <p className="text-[10px] text-slate-300">All Barcodes & QR Codes Active</p>
           </div>
         </div>
 
@@ -513,19 +542,22 @@ export default function MobileCameraScanner({
       </div>
 
       {/* Main Viewport Area */}
-      <div className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden bg-black">
-        {/* Video stream with digital zoom scaling support */}
+      <div className="relative flex-1 min-h-0 w-full h-full flex items-center justify-center overflow-hidden bg-black">
+        {/* Real-time Camera Preview Video Element */}
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
           style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
             transform: !hasHardwareZoom && currentZoom > 1 ? `scale(${currentZoom})` : "none",
             transformOrigin: "center center",
             transition: "transform 0.2s ease-out",
           }}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+          className={`absolute inset-0 transition-opacity duration-300 ${
             permissionStatus === "granted" ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -780,7 +812,7 @@ export default function MobileCameraScanner({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span>Ultra-Fast 0ms Detection • Long Distance Enabled</span>
+              <span>Ultra-Fast 0ms Detection • All Devices Compatible</span>
             </div>
           </div>
         )}
@@ -825,7 +857,7 @@ export default function MobileCameraScanner({
         ) : (
           <p className="text-center text-[11px] text-slate-400">
             {permissionStatus === "granted"
-              ? "Scanning active. Tap 2x or 3x zoom for distant barcodes."
+              ? "Scanning active. Point at barcode to scan."
               : "Allow camera permission to begin scanning."}
           </p>
         )}
@@ -833,4 +865,5 @@ export default function MobileCameraScanner({
     </div>
   );
 }
+
 
