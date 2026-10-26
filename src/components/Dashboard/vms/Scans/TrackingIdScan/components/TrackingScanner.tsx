@@ -20,6 +20,7 @@ export default function TrackingScanner({
   message,
 }: Props) {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isScanActive, setIsScanActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const focusAndSelectInput = useCallback(() => {
@@ -35,33 +36,49 @@ export default function TrackingScanner({
 
   useEffect(() => {
     if (message) {
+      setIsScanActive(true);
+      const timer = setTimeout(() => setIsScanActive(false), 350);
       requestAnimationFrame(() => {
         focusAndSelectInput();
       });
       const t = setTimeout(() => {
         focusAndSelectInput();
       }, 30);
-      return () => clearTimeout(t);
+      return () => {
+        clearTimeout(t);
+        clearTimeout(timer);
+      };
     }
   }, [message, focusAndSelectInput]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (!value.trim()) return;
-      onScan();
-      setTimeout(() => {
-        focusAndSelectInput();
-      }, 30);
-    }
-  };
+  const triggerScan = useCallback(() => {
+    // Strip hidden scanner prefix/suffix control characters
+    const cleanValue = value.replace(/[\x00-\x1F\x7F]/g, "").trim();
+    if (!cleanValue) return;
 
-  const handleSubmit = () => {
-    if (!value.trim()) return;
+    if (cleanValue !== value) {
+      onChange(cleanValue);
+    }
+
+    setIsScanActive(true);
+    setTimeout(() => setIsScanActive(false), 350);
+
     onScan();
     setTimeout(() => {
       focusAndSelectInput();
     }, 30);
+  }, [value, onChange, onScan, focusAndSelectInput]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Hardware handheld scanners typically emit Enter or Tab after reading
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      triggerScan();
+    }
+  };
+
+  const handleSubmit = () => {
+    triggerScan();
   };
 
   const isSuccess =
@@ -78,10 +95,21 @@ export default function TrackingScanner({
         <div>
           <div className="flex items-center justify-between mb-2.5">
             <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white">
-              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 text-[#B88728] dark:text-[#E8C16D] shrink-0">
+              <div
+                className={`grid h-7 w-7 place-items-center rounded-lg border transition-all duration-200 shrink-0 ${
+                  isScanActive
+                    ? "bg-[#E8C16D] border-[#E8C16D] text-[#0A0E1A] scale-110 shadow-[0_0_12px_#E8C16D]"
+                    : "bg-[#FFF9EC] dark:bg-[#1A160E] border-[#E8C16D]/30 text-[#B88728] dark:text-[#E8C16D]"
+                }`}
+              >
                 <Barcode className="h-4 w-4" />
               </div>
-              <span>Scan Tracking ID</span>
+              <div className="flex items-center gap-2">
+                <span>Scan Tracking ID</span>
+                <span className="text-[10px] font-normal text-slate-400 hidden sm:inline">
+                  (Supports all USB/Bluetooth scanners & Mobile Camera)
+                </span>
+              </div>
             </label>
 
             {/* Mobile-Only: Camera Scanner Button (Hidden on tablet, laptop & desktop) */}
@@ -107,12 +135,11 @@ export default function TrackingScanner({
               placeholder="Scan barcode or enter tracking ID..."
               autoComplete="off"
               spellCheck={false}
-              className="
+              className={`
                 h-12 sm:h-13
                 w-full
                 rounded-2xl
                 border-2
-                border-[#E8C16D]/70
                 bg-[#FFFDF5] dark:bg-[#080B11]
                 focus:bg-white dark:focus:bg-[#0B0F17]
                 px-4
@@ -124,11 +151,14 @@ export default function TrackingScanner({
                 placeholder:text-slate-400 dark:placeholder:text-slate-500
                 placeholder:font-normal
                 outline-none
-                transition
-                focus:border-[#E8C16D]
-                focus:ring-2
-                focus:ring-[#E8C16D]/30
-              "
+                transition-all
+                duration-150
+                ${
+                  isScanActive
+                    ? "border-emerald-400 ring-4 ring-emerald-400/25 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                    : "border-[#E8C16D]/70 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+                }
+              `}
             />
 
             <button
