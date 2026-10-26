@@ -15,6 +15,7 @@ import {
   useDismissNotification,
   useMarkNotificationRead,
 } from "../hooks/useNotifications";
+import { showDeleteConfirmation } from "@/utils/deleteConfirmation";
 
 import { Notification } from "../types/notification";
 
@@ -54,11 +55,11 @@ export default function NotificationModal({
       open={open}
       onOpenChange={onClose}
     >
-      <DialogContent className="max-w-xl p-10">
+      <DialogContent className="max-w-xl rounded-3xl border border-[#E7E0D2] p-8 shadow-2xl dark:border-white/[0.1] dark:bg-[#0F1626]">
 
         <DialogHeader>
 
-          <DialogTitle>
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
             {notification.title}
           </DialogTitle>
 
@@ -68,13 +69,13 @@ export default function NotificationModal({
 
           <div>
 
-            <p className="text-muted-foreground leading-7">
+            <p className="text-slate-600 dark:text-slate-300 text-sm leading-7">
               {notification.message}
             </p>
 
           </div>
 
-          <div className="text-sm text-gray-500">
+          <div className="text-xs text-slate-400 dark:text-slate-500">
 
             Created :
 
@@ -86,22 +87,29 @@ export default function NotificationModal({
 
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 border-t border-[#E7E0D2] pt-4 dark:border-white/[0.08]">
 
             <Button
               variant="outline"
               onClick={onClose}
+              className="rounded-2xl active:scale-[0.98]"
             >
               Close
             </Button>
 
             <Button
-            //   variant="destructive"
-              onClick={() => {
-                dismiss(notification.id);
+              onClick={async () => {
+                const result = await showDeleteConfirmation({
+                  title: "Delete Notification",
+                  text: "Are you sure you want to delete this notification?",
+                });
 
-                onClose();
+                if (result.isConfirmed) {
+                  dismiss(notification.id);
+                  onClose();
+                }
               }}
+              className="rounded-2xl active:scale-[0.98]"
             >
               Dismiss
             </Button>

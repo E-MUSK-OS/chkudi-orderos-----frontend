@@ -128,22 +128,23 @@ export default function MarketplaceAccounts() {
 
   return (
     <>
-      <section className="border border-[#E7E0D2] bg-white p-5 shadow-sm">
+      <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
         {/* Header */}
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-bold text-[#0A0E1A]">
+            <h3 className="text-xl sm:text-2xl font-bold text-[#0A0E1A] dark:text-white">
               Marketplace Accounts
             </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               Connect and manage your marketplace seller accounts.
             </p>
           </div>
 
           <Button
             fullWidth={false}
+            className="w-full sm:w-auto min-h-[42px] sm:min-h-[44px] h-11 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98] shrink-0"
             leftIcon={<Plus size={18} />}
             onClick={() => {
               setSelectedAccount(null);
@@ -158,17 +159,31 @@ export default function MarketplaceAccounts() {
         {/* Body */}
 
         <div className="mt-6">
-          {loading && <p className="text-sm text-slate-500">Loading...</p>}
+          {loading && <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>}
 
           {!loading && accounts.length === 0 && (
-            <div className="flex h-52 flex-col items-center justify-center border border-dashed border-[#E7E0D2]">
-              <h4 className="text-lg font-semibold">
+            <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#E7E0D2] bg-[#FAF8F5] dark:border-white/[0.1] dark:bg-white/[0.02] p-6 text-center">
+              <h4 className="text-base sm:text-lg font-semibold text-[#0A0E1A] dark:text-white">
                 No Marketplace Connected
               </h4>
 
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm">
                 Connect your first marketplace account to start syncing orders.
               </p>
+
+              <div className="mt-4 w-full sm:w-auto flex justify-center">
+                <Button
+                  fullWidth={false}
+                  className="w-full max-w-xs sm:w-auto min-h-[40px] sm:min-h-[44px] h-11 px-5 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
+                  leftIcon={<Plus size={18} />}
+                  onClick={() => {
+                    setSelectedAccount(null);
+                    setModalOpen(true);
+                  }}
+                >
+                  Add Marketplace
+                </Button>
+              </div>
             </div>
           )}
 

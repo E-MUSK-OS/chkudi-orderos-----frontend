@@ -2982,12 +2982,12 @@ export default function ComparisonResultView({
 
   if (!summary || results.length === 0) {
     return (
-      <div className="rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/30 text-[#B88728]">
+      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 text-[#B88728] dark:text-[#E8C16D]">
           <AlertTriangle className="h-8 w-8" />
         </div>
-        <h3 className="text-xl font-bold text-[#0A0E1A]">No Processed Order Data Found</h3>
-        <p className="mx-auto mt-2 mb-6 max-w-md text-sm text-slate-500">
+        <h3 className="text-xl font-bold text-[#0A0E1A] dark:text-white">No Processed Order Data Found</h3>
+        <p className="mx-auto mt-2 mb-6 max-w-md text-sm text-slate-500 dark:text-slate-400">
           Please upload both Amazon PDF and ZPL files to run conversion and verification.
         </p>
         <Button
@@ -3006,16 +3006,16 @@ export default function ComparisonResultView({
       {/* ===================================================== */}
       {/* AMAZON ORDER VERIFICATION RESULTS SECTION */}
       {/* ===================================================== */}
-      <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1.5">
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Amazon Order Process Results
             </h1>
 
-            <p className="text-xs sm:text-sm text-slate-500 break-words">
-              Files: <strong className="text-slate-800">{summary.pdfFileName}</strong> &{" "}
-              <strong className="text-slate-800">{summary.zplFileName}</strong>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 break-words">
+              Files: <strong className="text-slate-800 dark:text-slate-200">{summary.pdfFileName}</strong> &{" "}
+              <strong className="text-slate-800 dark:text-slate-200">{summary.zplFileName}</strong>
             </p>
           </div>
 
@@ -3023,7 +3023,7 @@ export default function ComparisonResultView({
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer"
+              className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer"
             >
               <RotateCcw size={16} />
               New Batch
@@ -3033,16 +3033,16 @@ export default function ComparisonResultView({
 
         {/* Persistent Warning Banner if any Seller SKU is missing */}
         {modalMissingAsins.length > 0 && (
-          <div className="mt-5 rounded-2xl border border-rose-300 bg-rose-50/90 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="mt-5 rounded-2xl border border-rose-300 dark:border-rose-900/50 bg-rose-50/90 dark:bg-rose-950/30 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-rose-100 text-rose-700">
+              <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400">
                 <ShieldAlert className="h-5 w-5 animate-pulse" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-rose-900">
+                <h4 className="text-sm font-bold text-rose-900 dark:text-rose-200">
                   Strict Guard Active: {modalMissingAsins.length} ASIN(s) Missing Seller SKU
                 </h4>
-                <p className="text-xs text-rose-700">
+                <p className="text-xs text-rose-700 dark:text-rose-300">
                   Order dispatch and label printing are locked until all Seller SKUs are mapped in Products.
                 </p>
               </div>
@@ -3050,7 +3050,7 @@ export default function ComparisonResultView({
             <button
               type="button"
               onClick={() => setIsMissingSkuModalOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] px-4 py-2.5 text-xs font-bold text-[#E8C16D] shadow-sm transition active:scale-95 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] px-4 py-2.5 text-xs font-bold text-[#E8C16D] shadow-sm transition active:scale-95 cursor-pointer"
             >
               <Lock className="h-3.5 w-3.5" />
               <span>Resolve Missing SKUs ({modalMissingAsins.length})</span>
@@ -3092,7 +3092,7 @@ export default function ComparisonResultView({
             className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 sm:px-5 items-center justify-center gap-2 rounded-2xl border text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 cursor-pointer ${
               activeTab === "table"
                 ? "border-transparent bg-[#E8C16D] text-[#0A0E1A] shadow-xs"
-                : "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D]"
+                : "border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D]"
             }`}
           >
             Matched Orders ({showPrinted ? summary.matchedCount : remainingMatchedCount})
@@ -3135,8 +3135,8 @@ export default function ComparisonResultView({
 
         {/* ROW 1 RIGHT: Instant Auto-Print Search Bar (Starts EXACTLY where Single Quantity Dropdown starts) */}
         <div className="w-full xl:min-w-[480px]">
-          <div className="group relative flex items-center gap-2.5 rounded-2xl border-2 border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all w-full h-11 sm:h-12 focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
-            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FAF0D4] text-[#B88728] shrink-0 border border-[#E8C16D]/40">
+          <div className="group relative flex items-center gap-2.5 rounded-2xl border-2 border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all w-full h-11 sm:h-12 focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
+            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FAF0D4] dark:bg-[#251E11] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/40">
               <Zap className="h-3.5 w-3.5 animate-pulse" />
             </div>
             <input
@@ -3183,7 +3183,7 @@ export default function ComparisonResultView({
                   }
                 }
               }}
-              className="w-full bg-transparent text-xs sm:text-sm font-bold text-[#0A0E1A] placeholder:text-slate-500 placeholder:font-normal outline-none"
+              className="w-full bg-transparent text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 placeholder:font-normal outline-none"
             />
             {autoPrintQuery ? (
               <button
@@ -3199,7 +3199,7 @@ export default function ComparisonResultView({
                   setAutoPrintQuery("");
                   autoPrintInputRef.current?.focus();
                 }}
-                className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer shrink-0"
                 title="Clear scanner input"
               >
                 <X className="h-3.5 w-3.5" />
@@ -3209,7 +3209,7 @@ export default function ComparisonResultView({
         </div>
 
         {/* FULL WIDTH DIVIDER BETWEEN ROW 1 (Tabs/Scan) AND ROW 2 (Filters/Actions) */}
-        <div className="col-span-full border-b border-[#E7E0D2] my-0.5" />
+        <div className="col-span-full border-b border-[#E7E0D2] dark:border-white/[0.08] my-0.5" />
 
         {/* ROW 2 (Rendered when activeTab === "table") */}
         {activeTab === "table" && (
@@ -3217,8 +3217,8 @@ export default function ComparisonResultView({
             {/* ROW 2 LEFT: Search Box + Connected Printer Selection */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full">
               {/* Search Box */}
-              <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white flex-1 min-w-[200px]">
-                <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+              <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:focus-within:bg-[#0B0F17] flex-1 min-w-[200px]">
+                <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
                   <Search className="h-3.5 w-3.5" />
                 </div>
                 <input
@@ -3229,7 +3229,7 @@ export default function ComparisonResultView({
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+                  className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none"
                 />
                 {searchQuery && (
                   <button
@@ -3238,7 +3238,7 @@ export default function ComparisonResultView({
                       setSearchQuery("");
                       setPage(1);
                     }}
-                    className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                    className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer shrink-0"
                     title="Clear search"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -3322,7 +3322,7 @@ export default function ComparisonResultView({
                 <button
                   type="button"
                   onClick={() => setIsMissingSkuModalOpen(true)}
-                  className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+                  className="inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60 text-red-600 dark:text-red-400 px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                   title="Click to view ASINs missing Seller SKU in database"
                 >
                   <span className="whitespace-nowrap">Missing Sku ({missingSkuItems.length})</span>
@@ -3336,7 +3336,7 @@ export default function ComparisonResultView({
                 className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-3.5 sm:px-4 items-center justify-center gap-1.5 rounded-2xl border text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] ${
                   isMappingsLoading || isGeneratingPicklist
                     ? "cursor-not-allowed border-[#0A0E1A]/40 bg-[#0A0E1A]/60 text-[#E8C16D]/60"
-                    : "cursor-pointer border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                    : "cursor-pointer border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
                 }`}
                 title={
                   isMappingsLoading || isGeneratingPicklist
@@ -3369,8 +3369,8 @@ export default function ComparisonResultView({
                   }}
                   className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-2xl border px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer ${
                     showPrinted
-                      ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                      : "border-[#E8C16D] bg-[#FFF9EC] text-[#0A0E1A] hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30"
+                      ? "border-emerald-300 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/60"
+                      : "border-[#E8C16D] dark:border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#251E11] ring-2 ring-[#E8C16D]/30"
                   }`}
                   title={showPrinted ? "Return to unprinted orders" : "View only already printed orders"}
                 >
@@ -3381,7 +3381,7 @@ export default function ComparisonResultView({
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="whitespace-nowrap">Show Printed ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})</span>
                     </>
                   )}
@@ -3395,7 +3395,7 @@ export default function ComparisonResultView({
                 className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-4 sm:px-5 items-center justify-center gap-1.5 rounded-2xl border text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] ${
                   selectedRows.size > 0
                     ? "cursor-pointer border-transparent bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A]"
-                    : "cursor-not-allowed border-[#E8C16D]/40 bg-[#E8C16D]/25 text-[#0A0E1A]/60"
+                    : "cursor-not-allowed border-[#E8C16D]/40 bg-[#E8C16D]/25 dark:bg-[#E8C16D]/15 text-[#0A0E1A]/60 dark:text-[#E8C16D]/40"
                 }`}
               >
                 <Printer className="h-4 w-4 shrink-0" />
@@ -3414,13 +3414,13 @@ export default function ComparisonResultView({
 
           {/* Active "Show Printed Only" Banner Indicator */}
           {showPrinted && (
-            <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-xs sm:text-sm text-emerald-900 shadow-xs">
+            <div className="flex items-center justify-between rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/90 dark:bg-emerald-950/30 px-4 py-3 text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 shadow-xs">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="font-bold">
                   Viewing Printed Orders Only ({filteredResults.length})
                 </span>
-                <span className="text-xs text-slate-500 hidden sm:inline">
+                <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
                   — Displaying only orders that have already been printed.
                 </span>
               </div>
@@ -3431,7 +3431,7 @@ export default function ComparisonResultView({
                   setPage(1);
                   setSelectedRows(new Set());
                 }}
-                className="font-bold underline underline-offset-4 hover:opacity-80 cursor-pointer text-xs ml-2 shrink-0 text-emerald-700"
+                className="font-bold underline underline-offset-4 hover:opacity-80 cursor-pointer text-xs ml-2 shrink-0 text-emerald-700 dark:text-emerald-400"
               >
                 Back to Unprinted ({unprintedInCurrentTypeCount})
               </button>
@@ -3443,7 +3443,7 @@ export default function ComparisonResultView({
           {/* =================================================== */}
           <div className="space-y-3 md:hidden">
             {/* Mobile Select All Bar */}
-            <div className="flex items-center justify-between rounded-2xl border border-[#E7E0D2] bg-[#0A0E1A] p-3 text-xs font-bold text-white shadow-xs">
+            <div className="flex items-center justify-between rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] p-3 text-xs font-bold text-white shadow-xs">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
                   checked={allPageSelected}
@@ -3457,7 +3457,7 @@ export default function ComparisonResultView({
             </div>
 
             {paginatedResults.length === 0 ? (
-              <div className="rounded-2xl border border-[#E7E0D2] bg-white p-6 sm:p-8 text-center text-xs text-slate-500 shadow-sm space-y-2">
+              <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-8 text-center text-xs text-slate-500 dark:text-slate-400 shadow-sm space-y-2">
                 <p>
                   {showPrinted
                     ? "No printed orders match your current search or filter."
@@ -3473,7 +3473,7 @@ export default function ComparisonResultView({
                       setPage(1);
                       setSelectedRows(new Set());
                     }}
-                    className="font-bold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                    className="font-bold text-[#B88728] dark:text-[#E8C16D] underline underline-offset-4 hover:opacity-80 cursor-pointer"
                   >
                     View printed orders ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})
                   </button>
@@ -3485,7 +3485,7 @@ export default function ComparisonResultView({
                       setPage(1);
                       setSelectedRows(new Set());
                     }}
-                    className="font-bold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                    className="font-bold text-[#B88728] dark:text-[#E8C16D] underline underline-offset-4 hover:opacity-80 cursor-pointer"
                   >
                     Return to unprinted orders ({unprintedInCurrentTypeCount})
                   </button>
@@ -3497,12 +3497,12 @@ export default function ComparisonResultView({
                   key={item.index}
                   className={`rounded-2xl border p-3.5 sm:p-4 shadow-sm transition-all space-y-2.5 ${
                     selectedRows.has(item.index)
-                      ? "border-[#E8C16D] bg-[#FFF9EC]/40 ring-1 ring-[#E8C16D]"
-                      : "border-[#E7E0D2] bg-white hover:border-[#E8C16D]/40"
+                      ? "border-[#E8C16D] bg-[#FFF9EC]/40 dark:bg-[#1A160E]/50 ring-1 ring-[#E8C16D]"
+                      : "border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] hover:border-[#E8C16D]/40"
                   }`}
                 >
                   {/* Card Header */}
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-2">
                     <label className="flex items-center gap-2 cursor-pointer min-w-0 flex-1">
                       <Checkbox
                         checked={selectedRows.has(item.index)}
@@ -3510,13 +3510,13 @@ export default function ComparisonResultView({
                           handleSelectRow(item.index, Boolean(checked))
                         }
                       />
-                      <span className="font-mono text-xs font-bold text-[#0A0E1A] truncate">
+                      <span className="font-mono text-xs font-bold text-[#0A0E1A] dark:text-white truncate">
                         {item.orderNumber}
                       </span>
                     </label>
 
                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      <span className="rounded-lg bg-amber-100/80 px-2 py-0.5 text-[10px] font-bold text-amber-900 uppercase tracking-wider border border-amber-200/60">
+                      <span className="rounded-lg bg-amber-100/80 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider border border-amber-200/60 dark:border-amber-900/40">
                         {getOrderTypeLabel(getOrderTypeForItem(item))}
                       </span>
                     </div>
@@ -3525,58 +3525,58 @@ export default function ComparisonResultView({
                   {/* Card Detail Grid (Symmetrical 2x2 with full-width top & bottom) */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {/* Invoices */}
-                    <div className="col-span-2 rounded-xl bg-[#FAF8F5] border border-[#E7E0D2]/60 p-2 space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                    <div className="col-span-2 rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
                         Invoice
                       </span>
                       {item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
-                        <span className="font-bold text-blue-600 truncate block">
+                        <span className="font-bold text-blue-600 dark:text-blue-400 truncate block">
                           {item.pdfInvoice}
                         </span>
                       ) : item.zplInvoice &&
                         item.zplInvoice !== "Not Found in ZPL" &&
                         item.zplInvoice !== "N/A" ? (
-                        <span className="font-bold text-blue-600 truncate block">
+                        <span className="font-bold text-blue-600 dark:text-blue-400 truncate block">
                           {item.zplInvoice}
                         </span>
                       ) : (
-                        <span className="italic text-slate-400 text-[11px] block">
+                        <span className="italic text-slate-400 dark:text-slate-500 text-[11px] block">
                           N/A
                         </span>
                       )}
                     </div>
 
                     {/* Seller SKU */}
-                    <div className="rounded-xl bg-[#FAF8F5] border border-[#E7E0D2]/60 p-2 space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                    <div className="rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
                         Seller SKU
                       </span>
-                      <div className="break-all font-semibold text-slate-800">
+                      <div className="break-all font-semibold text-slate-800 dark:text-slate-200">
                         {renderItemListCell(item.sellerSku)}
                       </div>
                     </div>
 
                     {/* ASIN */}
-                    <div className="rounded-xl bg-[#FAF8F5] border border-[#E7E0D2]/60 p-2 space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                    <div className="rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
                         ASIN
                       </span>
-                      <div className="break-all font-semibold text-slate-800">
+                      <div className="break-all font-semibold text-slate-800 dark:text-slate-200">
                         {renderItemListCell(item.asin)}
                       </div>
                     </div>
 
                     {/* AWB Tracking */}
-                    <div className="rounded-xl bg-[#FAF8F5] border border-[#E7E0D2]/60 p-2 space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                    <div className="rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
                         AWB Tracking
                       </span>
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-semibold text-slate-800 truncate block">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">
                           {item.awb || "N/A"}
                         </span>
                         {printedRows.has(item.index) && (
-                          <span className="rounded-md bg-blue-50 border border-blue-200/60 px-1.5 py-0.2 text-[9px] font-bold text-blue-700 inline-flex items-center gap-0.5 shrink-0">
+                          <span className="rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 px-1.5 py-0.2 text-[9px] font-bold text-blue-700 dark:text-blue-300 inline-flex items-center gap-0.5 shrink-0">
                             <CheckCircle2 className="h-2.5 w-2.5" /> Printed
                           </span>
                         )}
@@ -3584,21 +3584,21 @@ export default function ComparisonResultView({
                     </div>
 
                     {/* Total Quantity */}
-                    <div className="rounded-xl bg-[#FAF8F5] border border-[#E7E0D2]/60 p-2 space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                    <div className="rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
                         Total Quantity
                       </span>
-                      <span className="font-bold text-slate-800 truncate block">
+                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
                         {item.totalQuantity || 1} {item.totalQuantity === 1 ? "Piece" : "Pieces"}
                       </span>
                     </div>
 
                     {/* Customer */}
-                    <div className="col-span-2 rounded-xl bg-[#FAF8F5] border border-[#E7E0D2]/60 p-2 space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                    <div className="col-span-2 rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
                         Customer
                       </span>
-                      <span className="font-semibold text-slate-800 truncate block">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">
                         {cleanCustomerName(item.customer) || "N/A"}
                       </span>
                     </div>
@@ -3611,10 +3611,10 @@ export default function ComparisonResultView({
           {/* =================================================== */}
           {/* DESKTOP VIEW: FULL COMPARISON TABLE (>= 768px) */}
           {/* =================================================== */}
-          <div className="hidden md:block w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm">
+          <div className="hidden md:block w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
             <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
               <table className="w-full min-w-[940px] lg:min-w-[1000px] border-collapse text-left font-sans">
-                <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
+                <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
                   <tr>
                     <th className="w-12 min-w-[44px] px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center">
@@ -3632,13 +3632,13 @@ export default function ComparisonResultView({
                     <th className="w-40 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm font-sans">
+                <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-sans">
                   {paginatedResults.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                      <td colSpan={7} className="py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-                          <p className="font-bold text-[#0A0E1A]">
+                          <p className="font-bold text-[#0A0E1A] dark:text-white">
                             {showPrinted
                               ? "No printed orders match your current search or filter."
                               : printedRows.size > 0
@@ -3653,7 +3653,7 @@ export default function ComparisonResultView({
                                 setPage(1);
                                 setSelectedRows(new Set());
                               }}
-                              className="text-xs font-bold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                              className="text-xs font-bold text-[#B88728] dark:text-[#E8C16D] underline underline-offset-4 hover:opacity-80 cursor-pointer"
                             >
                               Click here to view printed orders ({printedInCurrentTypeCount > 0 ? printedInCurrentTypeCount : printedRows.size})
                             </button>
@@ -3665,7 +3665,7 @@ export default function ComparisonResultView({
                                 setPage(1);
                                 setSelectedRows(new Set());
                               }}
-                              className="text-xs font-bold text-[#B88728] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                              className="text-xs font-bold text-[#B88728] dark:text-[#E8C16D] underline underline-offset-4 hover:opacity-80 cursor-pointer"
                             >
                               Click here to return to unprinted orders ({unprintedInCurrentTypeCount})
                             </button>
@@ -3677,7 +3677,7 @@ export default function ComparisonResultView({
                     paginatedResults.map((item) => (
                       <tr
                         key={item.index}
-                        className="transition hover:bg-[#FAF8F5]"
+                        className="transition hover:bg-[#FAF8F5] dark:hover:bg-white/[0.06]"
                       >
                         <td className="w-12 min-w-[44px] px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center">
@@ -3692,44 +3692,44 @@ export default function ComparisonResultView({
                         <td className="w-36 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-medium whitespace-nowrap">
                           {item.isMatch ? (
                             item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
-                              <span className="font-semibold text-slate-900">{item.pdfInvoice}</span>
+                              <span className="font-semibold text-slate-900 dark:text-white">{item.pdfInvoice}</span>
                             ) : item.zplInvoice &&
                               item.zplInvoice !== "Not Found in ZPL" &&
                               item.zplInvoice !== "N/A" ? (
-                              <span className="font-semibold text-slate-900">{item.zplInvoice}</span>
+                              <span className="font-semibold text-slate-900 dark:text-white">{item.zplInvoice}</span>
                             ) : (
-                              <span className="italic text-slate-400">N/A</span>
+                              <span className="italic text-slate-400 dark:text-slate-500">N/A</span>
                             )
                           ) : item.zplInvoice === "Not Found in ZPL" ? (
                             <div className="flex flex-col items-center gap-1">
-                              <span className="font-semibold text-slate-900">{item.pdfInvoice || "N/A"}</span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700">
+                              <span className="font-semibold text-slate-900 dark:text-white">{item.pdfInvoice || "N/A"}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300">
                                 Missing in ZPL
                               </span>
                             </div>
                           ) : (
                             <div className="flex flex-col items-center gap-1">
-                              <span className="font-semibold text-slate-900">{item.zplInvoice || "N/A"}</span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700">
+                              <span className="font-semibold text-slate-900 dark:text-white">{item.zplInvoice || "N/A"}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
                                 Missing in PDF
                               </span>
                             </div>
                           )}
                         </td>
-                        <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-semibold text-slate-900 whitespace-nowrap">
+                        <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                           <span>{item.orderNumber}</span>
                         </td>
                         <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-medium whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
-                            <span className="font-semibold text-slate-900">{item.awb}</span>
+                            <span className="font-semibold text-slate-900 dark:text-white">{item.awb}</span>
                             {printedRows.has(item.index) && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200/60 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                              <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
                                 <CheckCircle2 className="h-3 w-3" /> Printed
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="w-32 min-w-[120px] px-3 sm:px-4 py-3.5 text-center font-medium">
+                        <td className="w-32 min-w-[120px] px-3 sm:px-4 py-3.5 text-center font-medium text-slate-900 dark:text-white">
                           {item.items && item.items.length > 0 ? (
                             <div className="flex flex-col items-center justify-center gap-0.5 py-0.5">
                               {item.items.map((i, idx) => {
@@ -3742,7 +3742,7 @@ export default function ComparisonResultView({
                                   >
                                     <span>{displayAsin}</span>
                                     {isNotLast ? (
-                                      <span className="font-bold text-slate-400 text-[11px] ml-1">/</span>
+                                       <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
                                     ) : null}
                                   </div>
                                 );
@@ -3752,7 +3752,7 @@ export default function ComparisonResultView({
                             renderItemListCell(item.asin)
                           )}
                         </td>
-                        <td className="w-40 min-w-[140px] px-3 sm:px-4 py-3.5 text-center font-medium">
+                        <td className="w-40 min-w-[140px] px-3 sm:px-4 py-3.5 text-center font-medium text-slate-900 dark:text-white">
                           <div className="flex flex-col items-center justify-center gap-0.5">
                             {item.items && item.items.length > 0 ? (
                               item.items.map((i, idx) => {
@@ -3766,12 +3766,12 @@ export default function ComparisonResultView({
                                   >
                                     <span>{displaySku}</span>
                                     {i.qty > 1 && (
-                                      <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 ml-0.5">
+                                      <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 ml-0.5">
                                         {i.qty} Pieces
                                       </span>
                                     )}
                                     {isNotLast ? (
-                                      <span className="font-bold text-slate-400 text-[11px] ml-1">/</span>
+                                      <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
                                     ) : null}
                                   </div>
                                 );
@@ -3780,7 +3780,7 @@ export default function ComparisonResultView({
                               <>
                                 {renderItemListCell(item.sellerSku)}
                                 {(getOrderTypeForItem(item) === "multiple_pieces" || (getOrderTypeForItem(item) === "multiple_asin" && (item.totalQuantity || 0) > (item.asinsCount || 1))) && (
-                                  <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-800 mt-1">
+                                  <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 mt-1">
                                     {Math.max(item.totalQuantity || 0, 2)} Pieces
                                   </span>
                                 )}
@@ -3788,7 +3788,7 @@ export default function ComparisonResultView({
                             )}
                           </div>
                         </td>
-                        <td className="w-40 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-semibold text-slate-900 whitespace-nowrap">
+                        <td className="w-40 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                           {cleanCustomerName(item.customer)}
                         </td>
                       </tr>
@@ -3809,7 +3809,7 @@ export default function ComparisonResultView({
             limit={limit}
             itemName="records"
             variant="dark"
-            className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
+            className="border-t border-slate-800 dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
             onPageChange={setPage}
             onLimitChange={(newLimit) => {
               setLimit(newLimit);
@@ -3823,18 +3823,18 @@ export default function ComparisonResultView({
       {/* TAB 2: PDF VIEWER (COMBINED / CONVERTED ZPL / ORIGINAL UPLOADED) */}
       {/* ======================================================== */}
       {activeTab === "pdf" && (
-        <div className="space-y-4 border border-[#E7E0D2] bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm">
+        <div className="space-y-4 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-[#0A0E1A] flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white flex items-center gap-2">
                 {selectedPdfType.startsWith("unmatched") ? (
                   <AlertTriangle className="h-5 w-5 text-red-500" />
                 ) : (
-                  <FileText className="h-5 w-5 text-[#B88728]" />
+                  <FileText className="h-5 w-5 text-[#B88728] dark:text-[#E8C16D]" />
                 )}
                 {currentPdfConfig.title}
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {currentPdfConfig.description}
               </p>
             </div>
@@ -3877,7 +3877,7 @@ export default function ComparisonResultView({
           </div>
 
           {currentPdfConfig.url ? (
-            <div className="h-[480px] sm:h-[650px] lg:h-[750px] w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-[#0A0E1A]">
+            <div className="h-[480px] sm:h-[650px] lg:h-[750px] w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11]">
               <iframe
                 src={`${currentPdfConfig.url}#toolbar=1&navpanes=1&statusbar=1`}
                 className="h-full w-full border-none"
@@ -3885,7 +3885,7 @@ export default function ComparisonResultView({
               />
             </div>
           ) : (
-            <div className="py-16 text-center text-xs sm:text-sm text-slate-500">
+            <div className="py-16 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               {currentPdfConfig.unavailableText}
             </div>
           )}

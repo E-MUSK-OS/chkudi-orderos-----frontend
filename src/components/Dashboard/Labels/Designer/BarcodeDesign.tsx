@@ -19,6 +19,8 @@ import { LivePreview } from './components/LivePreview';
 import { ProductLookupResult, LabelElement, LabelTemplate } from '../types/label.types';
 import { TestPrintModal } from './components/TestPrintModal';
 
+import { Wrench, Sliders, Layout, X } from 'lucide-react';
+
 export function BarcodeDesign() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -27,6 +29,7 @@ export function BarcodeDesign() {
   const [isSaving, setIsSaving] = useState(false);
   const [previewData, setPreviewData] = useState<Record<string, string> | null>(null);
   const [isTestPrintOpen, setIsTestPrintOpen] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<'canvas' | 'tools' | 'properties'>('canvas');
 
   const [showClearModal, setShowClearModal] = useState(false);
   const [showBackModal, setShowBackModal] = useState(false);
@@ -237,81 +240,216 @@ export function BarcodeDesign() {
 
   return (
     <DashboardLayout title="Barcode Design">
-      <div className="flex w-full h-[calc(100vh-4rem)] bg-brand-navy overflow-hidden font-sans">
-        {!designer.state.previewSampleData && (
-          <Toolbox 
-            elements={designer.state.elements} 
-            selectedIds={designer.state.selectedIds}
-            onAddElement={designer.addElement} 
-            onDistributeVertically={handleDistributeVertically}
-          />
-        )}
+      <div className="relative flex flex-col w-full h-[calc(100vh-4rem)] bg-brand-navy dark:bg-[#080B11] overflow-hidden font-sans">
+        <div className="flex-1 flex w-full min-h-0 overflow-hidden relative">
+          {/* Desktop Toolbox */}
+          {!designer.state.previewSampleData && (
+            <Toolbox 
+              className="hidden lg:flex"
+              elements={designer.state.elements} 
+              selectedIds={designer.state.selectedIds}
+              onAddElement={designer.addElement} 
+              onDistributeVertically={handleDistributeVertically}
+            />
+          )}
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <TopToolbar
-            zoom={designer.state.zoom}
-            setZoom={designer.setZoom}
-            canUndo={designer.canUndo}
-            canRedo={designer.canRedo}
-            undo={designer.undo}
-            redo={designer.redo}
-            previewSampleData={designer.state.previewSampleData}
-            togglePreview={designer.togglePreview}
-            onSave={handleSave}
-            onClear={handleClear}
-            onReset={designer.resetEverything}
-            isSaving={isSaving}
-            templateName={designer.state.templateName}
-            updateTemplateName={designer.updateTemplateName}
-            onBack={handleBack}
-            onTestPrint={() => setIsTestPrintOpen(true)}
-          />
+          {/* Center Column: Toolbar + Canvas */}
+          <div className="flex-1 flex flex-col min-w-0 h-full relative">
+            <TopToolbar
+              zoom={designer.state.zoom}
+              setZoom={designer.setZoom}
+              canUndo={designer.canUndo}
+              canRedo={designer.canRedo}
+              undo={designer.undo}
+              redo={designer.redo}
+              previewSampleData={designer.state.previewSampleData}
+              togglePreview={designer.togglePreview}
+              onSave={handleSave}
+              onClear={handleClear}
+              onReset={designer.resetEverything}
+              isSaving={isSaving}
+              templateName={designer.state.templateName}
+              updateTemplateName={designer.updateTemplateName}
+              onBack={handleBack}
+              onTestPrint={() => setIsTestPrintOpen(true)}
+              activeMobileTab={activeMobileTab}
+              setActiveMobileTab={setActiveMobileTab}
+              hasSelectedElement={Boolean(selectedElementId || designer.state.selectedIds.length > 0)}
+            />
 
-          <DesignCanvas
-            settings={designer.state.settings}
-            elements={designer.state.elements}
-            selectedElementId={designer.state.previewSampleData ? null : selectedElementId}
-            selectedIds={designer.state.previewSampleData ? [] : designer.state.selectedIds}
-            zoom={designer.state.zoom}
-            previewSampleData={designer.state.previewSampleData}
-            previewData={designer.state.previewSampleData ? previewData : null}
-            backgroundImageUrl={designer.state.backgroundImageUrl}
-            onSelect={designer.selectElement}
-            onToggleSelect={designer.toggleSelect}
-            onSetSelection={designer.setSelection}
-            onUpdateElement={designer.updateElement}
-            onBatchUpdateElements={designer.batchUpdateElements}
-            commitHistory={designer.commitHistory}
-          />
+            <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
+              <DesignCanvas
+                settings={designer.state.settings}
+                elements={designer.state.elements}
+                selectedElementId={designer.state.previewSampleData ? null : selectedElementId}
+                selectedIds={designer.state.previewSampleData ? [] : designer.state.selectedIds}
+                zoom={designer.state.zoom}
+                previewSampleData={designer.state.previewSampleData}
+                previewData={designer.state.previewSampleData ? previewData : null}
+                backgroundImageUrl={designer.state.backgroundImageUrl}
+                onSelect={designer.selectElement}
+                onToggleSelect={designer.toggleSelect}
+                onSetSelection={designer.setSelection}
+                onUpdateElement={designer.updateElement}
+                onBatchUpdateElements={designer.batchUpdateElements}
+                commitHistory={designer.commitHistory}
+              />
+
+              {/* Floating Quick Action Pill on Mobile when Element Selected */}
+              {selectedElementId && (
+                <button
+                  onClick={() => setActiveMobileTab('properties')}
+                  className="lg:hidden absolute bottom-3 right-3 z-10 flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#E8C16D] text-[#0A0E1A] font-bold text-xs shadow-lg active:scale-95 transition cursor-pointer"
+                >
+                  <Sliders size={14} />
+                  <span>Edit Element</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Right Panel (Properties or Preview) */}
+          {designer.state.previewSampleData ? (
+            <PreviewPanel
+              className="hidden lg:flex"
+              onSelectData={setPreviewData}
+              onTestPrint={() => setIsTestPrintOpen(true)}
+            />
+          ) : (
+            <PropertiesPanel
+              className="hidden lg:flex"
+              settings={designer.state.settings}
+              updateSettings={designer.updateSettings}
+              backgroundImageUrl={designer.state.backgroundImageUrl}
+              setBackgroundImageUrl={designer.setBackgroundImageUrl}
+              selectedElement={designer.state.elements.find(e => e.id === selectedElementId)}
+              selectedIds={designer.state.selectedIds}
+              allElements={designer.state.elements}
+              updateElement={designer.updateElement}
+              onBatchUpdateElements={designer.batchUpdateElements}
+              onDeleteElements={designer.deleteElements}
+              onDuplicateElements={designer.duplicateElements}
+              deleteElement={designer.deleteElement}
+              duplicateElement={designer.duplicateElement}
+              bringForward={designer.bringForward}
+              sendBackward={designer.sendBackward}
+              bringToFront={designer.bringToFront}
+              sendToBack={designer.sendToBack}
+              commitHistory={designer.commitHistory}
+            />
+          )}
+
+          {/* Mobile Overlay: Tools Drawer */}
+          {activeMobileTab === 'tools' && !designer.state.previewSampleData && (
+            <div className="lg:hidden absolute inset-0 z-40 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-150">
+              <div className="bg-[#111827] dark:bg-[#0F1626] border-t border-stone-800 dark:border-white/[0.08] rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b border-stone-800 dark:border-white/[0.08]">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-[#E8C16D]" />
+                    <span className="font-bold text-sm text-white">Insert Element</span>
+                  </div>
+                  <button
+                    onClick={() => setActiveMobileTab('canvas')}
+                    className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                <div className="overflow-y-auto custom-scrollbar flex-1">
+                  <Toolbox 
+                    isMobileGrid
+                    elements={designer.state.elements} 
+                    selectedIds={designer.state.selectedIds}
+                    onAddElement={designer.addElement} 
+                    onDistributeVertically={handleDistributeVertically}
+                    onAfterAdd={() => setActiveMobileTab('canvas')}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Overlay: Properties Panel Drawer */}
+          {activeMobileTab === 'properties' && (
+            <div className="lg:hidden absolute inset-0 z-40 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-150">
+              <div className="bg-[#111827] dark:bg-[#0F1626] border-t border-stone-800 dark:border-white/[0.08] rounded-t-3xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+                <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0">
+                  {designer.state.previewSampleData ? (
+                    <PreviewPanel
+                      onSelectData={setPreviewData}
+                      onTestPrint={() => setIsTestPrintOpen(true)}
+                      onCloseMobile={() => setActiveMobileTab('canvas')}
+                    />
+                  ) : (
+                    <PropertiesPanel
+                      settings={designer.state.settings}
+                      updateSettings={designer.updateSettings}
+                      backgroundImageUrl={designer.state.backgroundImageUrl}
+                      setBackgroundImageUrl={designer.setBackgroundImageUrl}
+                      selectedElement={designer.state.elements.find(e => e.id === selectedElementId)}
+                      selectedIds={designer.state.selectedIds}
+                      allElements={designer.state.elements}
+                      updateElement={designer.updateElement}
+                      onBatchUpdateElements={designer.batchUpdateElements}
+                      onDeleteElements={designer.deleteElements}
+                      onDuplicateElements={designer.duplicateElements}
+                      deleteElement={designer.deleteElement}
+                      duplicateElement={designer.duplicateElement}
+                      bringForward={designer.bringForward}
+                      sendBackward={designer.sendBackward}
+                      bringToFront={designer.bringToFront}
+                      sendToBack={designer.sendToBack}
+                      commitHistory={designer.commitHistory}
+                      onCloseMobile={() => setActiveMobileTab('canvas')}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {designer.state.previewSampleData ? (
-          <PreviewPanel
-            onSelectData={setPreviewData}
-            onTestPrint={() => setIsTestPrintOpen(true)}
-          />
-        ) : (
-          <PropertiesPanel
-            settings={designer.state.settings}
-            updateSettings={designer.updateSettings}
-            backgroundImageUrl={designer.state.backgroundImageUrl}
-            setBackgroundImageUrl={designer.setBackgroundImageUrl}
-            selectedElement={designer.state.elements.find(e => e.id === selectedElementId)}
-            selectedIds={designer.state.selectedIds}
-            allElements={designer.state.elements}
-            updateElement={designer.updateElement}
-            onBatchUpdateElements={designer.batchUpdateElements}
-            onDeleteElements={designer.deleteElements}
-            onDuplicateElements={designer.duplicateElements}
-            deleteElement={designer.deleteElement}
-            duplicateElement={designer.duplicateElement}
-            bringForward={designer.bringForward}
-            sendBackward={designer.sendBackward}
-            bringToFront={designer.bringToFront}
-            sendToBack={designer.sendToBack}
-            commitHistory={designer.commitHistory}
-          />
-        )}
+        {/* Mobile Bottom Dock Navigation Bar */}
+        <div className="lg:hidden flex items-center justify-around bg-[#0A0E1A] dark:bg-[#080B11] border-t border-[#E7E0D2]/20 dark:border-white/[0.08] px-2 py-1.5 shrink-0 z-20">
+          <button
+            onClick={() => setActiveMobileTab(activeMobileTab === 'tools' ? 'canvas' : 'tools')}
+            className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl transition ${
+              activeMobileTab === 'tools'
+                ? 'text-[#E8C16D] font-bold bg-[#161D2E]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Wrench size={18} />
+            <span className="text-[10px] mt-0.5">Tools</span>
+          </button>
+
+          <button
+            onClick={() => setActiveMobileTab('canvas')}
+            className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl transition ${
+              activeMobileTab === 'canvas'
+                ? 'text-[#E8C16D] font-bold bg-[#161D2E]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Layout size={18} />
+            <span className="text-[10px] mt-0.5">Canvas</span>
+          </button>
+
+          <button
+            onClick={() => setActiveMobileTab(activeMobileTab === 'properties' ? 'canvas' : 'properties')}
+            className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl transition relative ${
+              activeMobileTab === 'properties'
+                ? 'text-[#E8C16D] font-bold bg-[#161D2E]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sliders size={18} />
+            <span className="text-[10px] mt-0.5">Properties</span>
+            {selectedElementId && (
+              <span className="absolute top-1 right-3 h-2 w-2 rounded-full bg-[#E8C16D] ring-2 ring-[#0A0E1A]" />
+            )}
+          </button>
+        </div>
       </div>
 
       <ConfirmModal

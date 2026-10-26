@@ -960,18 +960,18 @@ export default function MyntraPicklist() {
         {/* ===================================================== */}
         {/* HEADER SECTION matching Amazon Order Process */}
         {/* ===================================================== */}
-        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 {hasResults ? "Myntra Picklist Results" : "Myntra Picklist"}
               </h1>
 
-              <p className="text-xs sm:text-sm text-slate-500 break-words">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 break-words">
                 {hasResults ? (
                   <>
                     Files:{" "}
-                    <strong className="text-slate-800">
+                    <strong className="text-slate-800 dark:text-slate-200">
                       {excelFiles.map((f) => f.name).join(", ") || "Myntra Orders"}
                     </strong>
                   </>
@@ -987,7 +987,7 @@ export default function MyntraPicklist() {
                   <button
                     type="button"
                     onClick={handleResetAll}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs active:scale-[0.98]"
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>New Batch</span>
@@ -1004,9 +1004,9 @@ export default function MyntraPicklist() {
                   </button>
                 </>
               ) : (
-                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 shadow-xs">
-                  <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] whitespace-nowrap">
-                    <span className={excelFiles.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#080B11] shadow-xs">
+                  <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap">
+                    <span className={excelFiles.length > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                       {excelFiles.length} Excel File{excelFiles.length !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -1017,16 +1017,16 @@ export default function MyntraPicklist() {
 
           {/* Persistent Warning Banner identical to Amazon Order Process */}
           {hasResults && missingMyntraSkus.length > 0 && (
-            <div className="mt-5 rounded-2xl sm:rounded-3xl border border-rose-300 bg-rose-50/90 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="mt-5 rounded-2xl sm:rounded-3xl border border-rose-300 dark:border-rose-900/50 bg-rose-50/90 dark:bg-rose-950/20 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 border border-rose-200/60">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/40">
                   <ShieldAlert className="h-5 w-5 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-rose-900">
+                  <h4 className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-300">
                     Strict Guard Active: {missingMyntraSkus.length} Myntra SKU(s) Missing Seller SKU
                   </h4>
-                  <p className="text-[11px] sm:text-xs text-rose-700">
+                  <p className="text-[11px] sm:text-xs text-rose-700 dark:text-rose-400">
                     Picklist export is locked until all Myntra SKUs are mapped in Products.
                   </p>
                 </div>
@@ -1034,7 +1034,7 @@ export default function MyntraPicklist() {
               <button
                 type="button"
                 onClick={() => setIsMissingSkuModalOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] hover:bg-slate-900 px-4 py-2.5 text-xs font-bold text-[#E8C16D] shadow-xs transition active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] dark:bg-[#080B11] hover:bg-slate-900 dark:hover:bg-black border border-transparent dark:border-white/[0.1] px-4 py-2.5 text-xs font-bold text-[#E8C16D] shadow-xs transition active:scale-95 cursor-pointer"
               >
                 <Lock className="h-3.5 w-3.5" />
                 <span>Resolve Missing SKUs ({missingMyntraSkus.length})</span>
@@ -1044,67 +1044,67 @@ export default function MyntraPicklist() {
 
           {/* KPI Stats Cards */}
           {hasResults && (
-            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-5 sm:pt-6">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 border-t border-[#E7E0D2] dark:border-white/[0.08] pt-5 sm:pt-6">
               {/* Total Orders */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Total Orders</p>
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Orders</p>
                 <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
+                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
                     {summary.totalOrders.toLocaleString()}
                   </h3>
-                  <span className="rounded-xl border border-blue-200/60 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+                  <span className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-400">
                     Orders
                   </span>
                 </div>
               </article>
 
               {/* Total Units */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Total Units</p>
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Units</p>
                 <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
+                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
                     {summary.totalUnits.toLocaleString()}
                   </h3>
-                  <span className="rounded-xl border border-indigo-200/60 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
+                  <span className="rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-400">
                     Units
                   </span>
                 </div>
               </article>
 
               {/* Unique SKUs */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Unique SKUs</p>
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unique SKUs</p>
                 <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
+                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
                     {summary.uniqueSkus.toLocaleString()}
                   </h3>
-                  <span className="rounded-xl border border-amber-200/60 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">
+                  <span className="rounded-xl border border-amber-200/60 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-400">
                     SKUs
                   </span>
                 </div>
               </article>
 
               {/* Matched SKUs */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Matched SKUs</p>
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Matched SKUs</p>
                 <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-emerald-700">
+                  <h3 className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400">
                     {summary.matchedSkus.toLocaleString()}
                   </h3>
-                  <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                  <span className="rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
                     Matched
                   </span>
                 </div>
               </article>
 
               {/* Unmatched SKUs */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between col-span-2 sm:col-span-1">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Unmatched SKUs</p>
+              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between col-span-2 sm:col-span-1">
+                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unmatched SKUs</p>
                 <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-rose-700">
+                  <h3 className="text-2xl sm:text-3xl font-black text-rose-700 dark:text-rose-400">
                     {summary.unmatchedSkus.toLocaleString()}
                   </h3>
-                  <span className="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
+                  <span className="rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-400">
                     Unmatched
                   </span>
                 </div>
@@ -1115,13 +1115,13 @@ export default function MyntraPicklist() {
 
         {/* Processing State Indicator */}
         {isProcessing && (
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-8 sm:p-12 shadow-sm text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] animate-pulse mb-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-8 sm:p-12 shadow-sm text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 text-[#B88728] dark:text-[#E8C16D] animate-pulse mb-3">
               <Sparkles className="h-7 w-7 animate-spin" />
             </div>
-            <h3 className="text-lg font-bold text-[#0A0E1A]">Processing Your Picklist...</h3>
-            <p className="text-sm font-medium text-slate-500 mt-1">{processingStep}</p>
-            <div className="w-full max-w-md mx-auto bg-slate-100 rounded-full h-2.5 mt-4 overflow-hidden border border-slate-200">
+            <h3 className="text-lg font-bold text-[#0A0E1A] dark:text-white">Processing Your Picklist...</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{processingStep}</p>
+            <div className="w-full max-w-md mx-auto bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 mt-4 overflow-hidden border border-slate-200 dark:border-slate-700">
               <div className="bg-[#E8C16D] h-full w-2/3 animate-[pulse_1s_ease-in-out_infinite] rounded-full" />
             </div>
           </div>
@@ -1131,29 +1131,29 @@ export default function MyntraPicklist() {
         {!hasResults && !isProcessing && (
           <>
             <div className="grid grid-cols-1 gap-6">
-              <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+              <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3 sm:pb-3.5 gap-2">
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 shrink-0">
+                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40 shrink-0">
                       <FileSpreadsheet className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
+                      <h3 className="font-bold text-[#0A0E1A] dark:text-white text-sm sm:text-base truncate">
                         Excel Order Files {excelFiles.length > 0 ? `(${excelFiles.length})` : ""}
                       </h3>
-                      <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
                         Upload one or multiple .xlsx, .xls, .csv files
                       </p>
                     </div>
                   </div>
 
                   {excelFiles.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 shrink-0">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       {excelFiles.length} Ready
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
+                    <span className="inline-flex items-center rounded-lg bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 shrink-0">
                       Required
                     </span>
                   )}
@@ -1169,22 +1169,22 @@ export default function MyntraPicklist() {
                       onDrop={handleDrop}
                       className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                         isDragging
-                          ? "border-[#E8C16D] bg-[#FFF9EC]"
-                          : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
+                          ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                          : "border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-[#0D121D]"
                       }`}
                     >
-                      <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-emerald-600">
+                      <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0B0F17] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-emerald-600">
                         <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                       </div>
 
-                      <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                      <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                         Click to upload or drag & drop Excel(s)
                       </p>
-                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
-                        Select one or multiple Myntra Order Excel (<code className="font-mono text-emerald-600 font-semibold">.xlsx, .xls, .csv</code>) files
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-xs sm:max-w-none">
+                        Select one or multiple Myntra Order Excel (<code className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">.xlsx, .xls, .csv</code>) files
                       </p>
 
-                      <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                      <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0B0F17] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.1] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                         <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" />
                         Browse Excel Files
                       </div>
@@ -1197,8 +1197,8 @@ export default function MyntraPicklist() {
                       onDrop={handleDrop}
                       className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
                         isDragging
-                          ? "border-[#E8C16D] bg-[#FFF9EC]"
-                          : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                          ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                          : "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10 hover:border-[#E8C16D]/70"
                       }`}
                     >
                       <div className="flex-1 flex flex-col min-h-0">
@@ -1210,17 +1210,17 @@ export default function MyntraPicklist() {
                           {excelFiles.map((file, idx) => (
                             <div
                               key={`${file.name}_${idx}`}
-                              className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
+                              className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
                             >
                               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200/50">
+                                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
                                   <FileSpreadsheet className="h-4 w-4" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-xs font-bold text-[#0A0E1A]" title={file.name}>
+                                  <p className="truncate text-xs font-bold text-[#0A0E1A] dark:text-white" title={file.name}>
                                     {file.name}
                                   </p>
-                                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                                     {formatFileSize(file.size)}
                                   </p>
                                 </div>
@@ -1233,7 +1233,7 @@ export default function MyntraPicklist() {
                                   handleRemoveSingleFile(idx);
                                 }}
                                 title="Remove this file"
-                                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 dark:text-slate-500 transition hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -1243,27 +1243,27 @@ export default function MyntraPicklist() {
                       </div>
 
                       {/* Footer summary bar */}
-                      <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                      <div className="mt-3 pt-2.5 border-t border-emerald-200/70 dark:border-emerald-900/40 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-300 min-w-0 truncate">
                           <span className="whitespace-nowrap">
                             {excelFiles.length} file{excelFiles.length > 1 ? "s" : ""}
                           </span>
                           <span className="text-slate-400">•</span>
-                          <span className="text-emerald-700 font-medium truncate">
+                          <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
                             {formatFileSize(totalExcelSize)}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               fileInputRef.current?.click();
                             }}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] px-3 py-1.5 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                           >
-                            <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                            <Plus className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                             <span>Add More</span>
                           </button>
 
@@ -1273,7 +1273,7 @@ export default function MyntraPicklist() {
                               e.stopPropagation();
                               handleRemoveAllFiles();
                             }}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-white dark:bg-[#080B11] hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5 text-red-500" />
                             <span>Clear All</span>
@@ -1300,8 +1300,8 @@ export default function MyntraPicklist() {
 
                   {/* File Error Display */}
                   {fileError && (
-                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 sm:p-3 text-xs text-red-700 border border-red-200">
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/30 p-2.5 sm:p-3 text-xs text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50">
+                      <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                       <span>{fileError}</span>
                     </div>
                   )}
@@ -1310,12 +1310,12 @@ export default function MyntraPicklist() {
             </div>
 
             {/* Action Controls Bar */}
-            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm">
               <button
                 type="button"
                 disabled={excelFiles.length === 0}
                 onClick={handleResetAll}
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 dark:disabled:hover:bg-[#080B11] disabled:hover:text-slate-700"
               >
                 <RotateCcw className="h-4 w-4" />
                 <span>Clear Files</span>
@@ -1356,12 +1356,12 @@ export default function MyntraPicklist() {
         {/* RESULTS SECTION: Interactive Table Preview */}
         {/* ===================================================== */}
         {hasResults && !isProcessing && (
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm space-y-4">
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm space-y-4">
             {/* Table Toolbar: Search (Left) & Filter Tabs (Right) */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#E7E0D2]">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#E7E0D2] dark:border-white/[0.08]">
               {/* Search Box (Left) */}
-              <div className="group flex items-center gap-2.5 rounded-2xl border border-[#E7E0D2] bg-white px-3.5 sm:px-4 h-11 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white w-full sm:w-80 md:w-96">
-                <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30">
+              <div className="group flex items-center gap-2.5 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 h-11 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:focus-within:bg-[#080B11] w-full sm:w-80 md:w-96">
+                <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
                   <Search className="h-3.5 w-3.5" />
                 </div>
                 <input
@@ -1372,7 +1372,7 @@ export default function MyntraPicklist() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+                  className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none"
                 />
                 {searchQuery && (
                   <button
@@ -1381,7 +1381,7 @@ export default function MyntraPicklist() {
                       setSearchQuery("");
                       setCurrentPage(1);
                     }}
-                    className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                    className="grid h-5 w-5 place-items-center rounded-full text-slate-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer shrink-0"
                     title="Clear search"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -1391,7 +1391,7 @@ export default function MyntraPicklist() {
 
               {/* Status Filter Tabs & Missing SKU Button (Right) */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
-                <div className="inline-flex h-11 items-center rounded-2xl border border-[#E7E0D2] bg-slate-50/80 p-1 shadow-xs">
+                <div className="inline-flex h-11 items-center rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#080B11] p-1 shadow-xs">
                   <button
                     type="button"
                     onClick={() => {
@@ -1400,8 +1400,8 @@ export default function MyntraPicklist() {
                     }}
                     className={`h-full px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       statusFilter === "ALL"
-                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
-                        : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
+                        ? "bg-[#0A0E1A] dark:bg-black text-[#E8C16D] shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-[#0A0E1A] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.04]"
                     }`}
                   >
                     <span>All</span>
@@ -1409,7 +1409,7 @@ export default function MyntraPicklist() {
                       className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
                         statusFilter === "ALL"
                           ? "bg-[#FFF9EC]/15 text-[#E8C16D]"
-                          : "bg-slate-200/70 text-slate-700"
+                          : "bg-slate-200/70 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {picklistItems.length}
@@ -1424,8 +1424,8 @@ export default function MyntraPicklist() {
                     }}
                     className={`h-full px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       statusFilter === "MATCHED"
-                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
-                        : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
+                        ? "bg-[#0A0E1A] dark:bg-black text-[#E8C16D] shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-[#0A0E1A] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.04]"
                     }`}
                   >
                     <span>Matched</span>
@@ -1433,7 +1433,7 @@ export default function MyntraPicklist() {
                       className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
                         statusFilter === "MATCHED"
                           ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                          : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40"
                       }`}
                     >
                       {summary.matchedSkus}
@@ -1448,8 +1448,8 @@ export default function MyntraPicklist() {
                     }}
                     className={`h-full px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       statusFilter === "UNMATCHED"
-                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
-                        : "text-slate-600 hover:text-[#0A0E1A] hover:bg-white/60"
+                        ? "bg-[#0A0E1A] dark:bg-black text-[#E8C16D] shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-[#0A0E1A] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.04]"
                     }`}
                   >
                     <span>Unmatched</span>
@@ -1457,7 +1457,7 @@ export default function MyntraPicklist() {
                       className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
                         statusFilter === "UNMATCHED"
                           ? "bg-rose-500/20 text-rose-300"
-                          : "bg-rose-50 text-rose-700 border border-rose-200/60"
+                          : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40"
                       }`}
                     >
                       {summary.unmatchedSkus}
@@ -1469,18 +1469,20 @@ export default function MyntraPicklist() {
                   <button
                     type="button"
                     onClick={() => setIsMissingSkuModalOpen(true)}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                     title="Click to view Myntra SKUs missing Seller SKU in database"
                   >
                     <span className="whitespace-nowrap">Missing Sku ({missingMyntraSkus.length})</span>
                   </button>
                 )}
               </div>
-            </div>            {/* Table View */}
-            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm flex flex-col">
+            </div>
+
+            {/* Table View */}
+            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col">
               <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                 <table className="w-full min-w-[750px] border-collapse text-left font-sans">
-                  <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
+                  <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
                     <tr>
                       <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[120px]">Rack</th>
                       <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[160px]">Seller SKU</th>
@@ -1491,14 +1493,14 @@ export default function MyntraPicklist() {
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm font-sans">
+                  <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-sans">
                     {filteredItems.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                        <td colSpan={6} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                           <div className="flex flex-col items-center justify-center gap-2">
-                            <Search className="h-8 w-8 text-slate-300" />
-                            <p className="font-bold text-[#0A0E1A]">No matching picklist records found</p>
-                            <p className="text-xs text-slate-400">Try adjusting your search query or filter tab.</p>
+                            <Search className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                            <p className="font-bold text-[#0A0E1A] dark:text-white">No matching picklist records found</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search query or filter tab.</p>
                           </div>
                         </td>
                       </tr>
@@ -1507,16 +1509,16 @@ export default function MyntraPicklist() {
                         <tr
                           key={item.id}
                           className={`transition-colors ${
-                            item.status === "UNMATCHED" ? "bg-rose-50/40 hover:bg-rose-50/70" : "hover:bg-slate-50/80"
+                            item.status === "UNMATCHED" ? "bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-50/70 dark:hover:bg-rose-950/40" : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
                           }`}
                         >
                           {/* Rack Badge */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
                             {item.rack === "-" || item.rack === "Unassigned" || !item.rack ? (
-                              <span className="text-slate-400 font-normal italic">-</span>
+                              <span className="text-slate-400 dark:text-slate-500 font-normal italic">-</span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs sm:text-sm font-semibold bg-[#FFF9EC] text-[#0A0E1A] border border-[#E8C16D]/40">
-                                <Archive className="h-3.5 w-3.5 text-[#B88728]" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs sm:text-sm font-semibold bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] border border-[#E8C16D]/40">
+                                <Archive className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                                 {item.rack}
                               </span>
                             )}
@@ -1525,7 +1527,7 @@ export default function MyntraPicklist() {
                           {/* Seller SKU */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
                             <div className="inline-flex items-center justify-center gap-2">
-                              <span className="text-xs sm:text-sm font-semibold text-slate-900">
+                              <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
                                 {item.sellerSku}
                               </span>
                               {item.sellerSku !== "Not Mapped" && (
@@ -1533,10 +1535,10 @@ export default function MyntraPicklist() {
                                   type="button"
                                   onClick={() => copyToClipboard(item.sellerSku)}
                                   title="Copy Seller SKU"
-                                  className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                                  className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition cursor-pointer"
                                 >
                                   {copiedSku === item.sellerSku ? (
-                                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                    <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                                   ) : (
                                     <Copy className="h-3.5 w-3.5" />
                                   )}
@@ -1547,21 +1549,21 @@ export default function MyntraPicklist() {
 
                           {/* Qty */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-900">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
                               {item.qty}
                             </span>
                           </td>
 
                           {/* Generate Barcode */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-300">
                               {item.generateBarcode || "-"}
                             </span>
                           </td>
 
                           {/* Myntra SKU */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
-                            <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-300">
                               {item.myntraSku}
                             </span>
                           </td>
@@ -1569,11 +1571,11 @@ export default function MyntraPicklist() {
                           {/* Status Badge */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
                             {item.status === "MATCHED" ? (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Matched
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40">
                                 <AlertCircle className="h-3.5 w-3.5" /> Unmatched
                               </span>
                             )}
@@ -1594,7 +1596,7 @@ export default function MyntraPicklist() {
                   limit={itemsPerPage}
                   itemName="records"
                   variant="dark"
-                  className="bg-[#0A0E1A] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800"
+                  className="bg-[#0A0E1A] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800 dark:border-white/[0.08]"
                   onPageChange={setCurrentPage}
                   onLimitChange={(newLimit) => {
                     setItemsPerPage(newLimit);

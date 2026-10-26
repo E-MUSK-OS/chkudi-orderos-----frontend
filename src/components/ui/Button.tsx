@@ -47,16 +47,19 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const variants = {
-    primary: "bg-[#0A0E1A] text-white hover:bg-[#161D2E]",
+    primary:
+      "bg-[#0A0E1A] text-white hover:bg-[#161D2E] dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)] dark:hover:brightness-105",
 
-    secondary: "bg-[#E8C16D] text-black hover:bg-[#ddb75d]",
+    secondary:
+      "bg-[#E8C16D] text-black hover:bg-[#ddb75d] dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#E8B83D]",
 
     outline:
-      "border border-[#E2E5EA] bg-white text-[#0A0E1A] hover:bg-[#F8F8F8]",
+      "border border-[#E2E5EA] bg-white text-[#0A0E1A] hover:bg-[#F8F8F8] dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-slate-200 dark:hover:bg-white/[0.08] dark:hover:text-white",
 
-    ghost: "bg-transparent text-[#0A0E1A] hover:bg-[#F3F4F6]",
+    ghost:
+      "bg-transparent text-[#0A0E1A] hover:bg-[#F3F4F6] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white",
 
-    danger: "bg-red-600 text-white hover:bg-red-700",
+    danger: "bg-red-600 text-white hover:bg-red-700 dark:bg-rose-600 dark:hover:bg-rose-500",
   };
 
   const sizes = {

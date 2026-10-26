@@ -33,7 +33,7 @@ export const getColumns = ({
       cellClassName: "w-48 min-w-[170px] text-center",
     },
     cell: ({ row }) => (
-      <span className="font-mono font-semibold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
+      <span className="font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm whitespace-nowrap">
         {row.original.trackingId}
       </span>
     ),
@@ -47,7 +47,7 @@ export const getColumns = ({
       cellClassName: "w-36 min-w-[125px] text-center whitespace-nowrap",
     },
     cell: ({ row }) => (
-      <span className="text-xs sm:text-sm font-semibold text-slate-700 whitespace-nowrap">
+      <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
         {format(new Date(row.original.createdAt), "dd MMM yyyy")}
       </span>
     ),
@@ -61,7 +61,7 @@ export const getColumns = ({
       cellClassName: "w-36 min-w-[125px] text-center whitespace-nowrap",
     },
     cell: ({ row }) => (
-      <span className="text-xs sm:text-sm font-medium text-slate-500 whitespace-nowrap">
+      <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
         {format(new Date(row.original.createdAt), "hh:mm:ss aa")}
       </span>
     ),
@@ -75,7 +75,7 @@ export const getColumns = ({
       cellClassName: "w-40 min-w-[135px] text-center whitespace-nowrap",
     },
     cell: ({ row }) => (
-      <span className="text-xs sm:text-sm font-semibold text-slate-900 whitespace-nowrap">
+      <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">
         {row.original.operator?.operatorName ?? "-"}
       </span>
     ),
@@ -89,7 +89,7 @@ export const getColumns = ({
       cellClassName: "w-40 min-w-[135px] text-center whitespace-nowrap",
     },
     cell: ({ row }) => (
-      <span className="text-xs sm:text-sm font-semibold text-slate-900 whitespace-nowrap">
+      <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">
         {row.original.account?.accountName ?? "-"}
       </span>
     ),
@@ -106,7 +106,7 @@ export const getColumns = ({
       if (!row.original.thumbnailUrl) {
         return (
           <div className="flex justify-center">
-            <div className="flex h-[58px] w-[90px] items-center justify-center rounded-xl border border-[#E7E0D2] bg-[#FAF8F5] text-[11px] font-semibold text-slate-400">
+            <div className="flex h-[58px] w-[90px] items-center justify-center rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-white/[0.03] text-[11px] font-semibold text-slate-400 dark:text-slate-500">
               No Thumbnail
             </div>
           </div>
@@ -120,7 +120,7 @@ export const getColumns = ({
             alt="thumbnail"
             width={90}
             height={58}
-            className="h-[58px] w-[90px] rounded-xl border border-[#E7E0D2] object-cover shadow-2xs"
+            className="h-[58px] w-[90px] rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] object-cover shadow-2xs"
           />
         </div>
       );
@@ -144,7 +144,7 @@ export const getColumns = ({
           rounded="rounded-xl"
           leftIcon={<Eye size={15} />}
           onClick={() => onPreview(row.original)}
-          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] shadow-2xs whitespace-nowrap"
+          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#e0b040] shadow-2xs whitespace-nowrap cursor-pointer"
         >
           Preview
         </Button>
@@ -168,7 +168,7 @@ export const getColumns = ({
           rounded="rounded-xl"
           leftIcon={<Download size={15} />}
           onClick={() => onDownload(row.original)}
-          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] shadow-2xs whitespace-nowrap"
+          className="h-9 px-3.5 text-xs font-semibold border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] shadow-2xs whitespace-nowrap cursor-pointer"
         >
           Download
         </Button>
@@ -180,7 +180,7 @@ export const getColumns = ({
           rounded="rounded-xl"
           leftIcon={<Trash2 size={15} />}
           onClick={() => onDelete(row.original)}
-          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] shadow-2xs whitespace-nowrap"
+          className="h-9 px-3.5 text-xs font-semibold border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 shadow-2xs whitespace-nowrap cursor-pointer"
         >
           Delete
         </Button>

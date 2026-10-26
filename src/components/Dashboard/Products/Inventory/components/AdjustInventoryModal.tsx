@@ -119,19 +119,19 @@ export default function AdjustInventoryModal({
       >
         {/* Current Stock */}
 
-        <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
+        <div className="grid grid-cols-2 gap-4 rounded-lg border border-[#E7E0D2] bg-[#FDFBF7] p-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
           <div>
-            <p className="text-xs text-slate-500">Available Stock</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Available Stock</p>
 
-            <p className="text-lg font-semibold">
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">
               {inventory?.availableStock ?? 0}
             </p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-500">Reserved Stock</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Reserved Stock</p>
 
-            <p className="text-lg font-semibold">
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">
               {inventory?.reservedStock ?? 0}
             </p>
           </div>
@@ -140,7 +140,7 @@ export default function AdjustInventoryModal({
         {/* Adjustment Type */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Adjustment Type
           </label>
 

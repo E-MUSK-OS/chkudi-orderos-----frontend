@@ -939,13 +939,13 @@ export default function OrderProcess() {
         {/* Upload Form */}
         <>
           {/* Header Information Banner matching Product Analytics Amazon */}
-          <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+          <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1.5 min-w-0 max-w-2xl">
                 <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Amazon Order Processing
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                   Upload PDF and ZPL files to verify and match orders.
                 </p>
               </div>
@@ -953,13 +953,13 @@ export default function OrderProcess() {
               {/* Progress Badge & 7-Day History Dropdown */}
               <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 self-start md:self-center">
                 <AmazonProcessHistoryDropdown />
-                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 shadow-xs">
-                  <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] whitespace-nowrap">
-                    <span className={pdfFiles.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-white/[0.02] shadow-xs">
+                  <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap">
+                    <span className={pdfFiles.length > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                       {pdfFiles.length} PDF{pdfFiles.length !== 1 ? "s" : ""}
                     </span>
-                    <span className="text-slate-300 mx-1.5">•</span>
-                    <span className={zplFiles.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+                    <span className="text-slate-300 dark:text-slate-700 mx-1.5">•</span>
+                    <span className={zplFiles.length > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                       {zplFiles.length} ZPL{zplFiles.length !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -973,27 +973,27 @@ export default function OrderProcess() {
             {/* ======================================================== */}
             {/* SECTION 1: PDF FILE UPLOAD */}
             {/* ======================================================== */}
-            <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+            <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3 sm:pb-3.5 gap-2">
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-red-50 text-red-600 border border-red-200/60 shrink-0">
+                  <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-900/40 shrink-0">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
+                    <h3 className="font-bold text-[#0A0E1A] dark:text-white text-sm sm:text-base truncate">
                       1. PDF Invoices {pdfFiles.length > 0 ? `(${pdfFiles.length})` : ""}
                     </h3>
-                    <p className="text-[11px] sm:text-xs text-slate-500 truncate">Upload one or multiple .pdf files</p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Upload one or multiple .pdf files</p>
                   </div>
                 </div>
 
                 {pdfFiles.length > 0 ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 shrink-0">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     {pdfFiles.length} Ready
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
+                  <span className="inline-flex items-center rounded-lg bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 shrink-0">
                     Required
                   </span>
                 )}
@@ -1009,22 +1009,22 @@ export default function OrderProcess() {
                     onDrop={handlePdfDrop}
                     className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                       isDraggingPdf
-                        ? "border-[#E8C16D] bg-[#FFF9EC]"
-                        : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
+                        ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                        : "border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-white/[0.02] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-white/[0.04]"
                     }`}
                   >
-                    <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-red-600">
+                    <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0A0E1A] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-red-600 dark:group-hover:text-red-400">
                       <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                     </div>
 
-                    <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                    <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                       Click to upload or drag & drop PDF(s)
                     </p>
-                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
-                      Select one or multiple Adobe PDF (<code className="font-mono text-red-600 font-semibold">.pdf</code>) files
+                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-xs sm:max-w-none">
+                      Select one or multiple Adobe PDF (<code className="font-mono text-red-600 dark:text-red-400 font-semibold">.pdf</code>) files
                     </p>
 
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0A0E1A] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                       <FileText className="h-3.5 w-3.5 text-red-500" />
                       Browse PDF Files
                     </div>
@@ -1037,8 +1037,8 @@ export default function OrderProcess() {
                     onDrop={handlePdfDrop}
                     className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
                       isDraggingPdf
-                        ? "border-[#E8C16D] bg-[#FFF9EC]"
-                        : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                        ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                        : "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/20 dark:bg-emerald-950/10 hover:border-[#E8C16D]/70"
                     }`}
                   >
                     <div className="flex-1 flex flex-col min-h-0">
@@ -1050,17 +1050,17 @@ export default function OrderProcess() {
                         {pdfFiles.map((file, idx) => (
                           <div
                             key={`${file.name}_${idx}`}
-                            className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
+                            className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
                           >
                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-red-50 text-red-600 border border-red-200/50">
+                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-900/40">
                                 <FileCheck className="h-4 w-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-bold text-[#0A0E1A]" title={file.name}>
+                                <p className="truncate text-xs font-bold text-[#0A0E1A] dark:text-white" title={file.name}>
                                   {file.name}
                                 </p>
-                                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                                <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                                   {formatFileSize(file.size)}
                                 </p>
                               </div>
@@ -1073,7 +1073,7 @@ export default function OrderProcess() {
                                 handleRemoveSinglePdf(idx);
                               }}
                               title="Remove this PDF"
-                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -1083,23 +1083,23 @@ export default function OrderProcess() {
                     </div>
 
                     {/* Footer summary bar */}
-                    <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                    <div className="mt-3 pt-2.5 border-t border-emerald-200/70 dark:border-emerald-800/40 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-200 min-w-0 truncate">
                         <span className="whitespace-nowrap">{pdfFiles.length} file{pdfFiles.length > 1 ? "s" : ""}</span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-emerald-700 font-medium truncate">{formatFileSize(totalPdfSize)}</span>
+                        <span className="text-slate-400 dark:text-slate-500">•</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">{formatFileSize(totalPdfSize)}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             pdfInputRef.current?.click();
                           }}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#251E11] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                         >
-                          <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                          <Plus className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                           <span>Add More</span>
                         </button>
 
@@ -1109,9 +1109,9 @@ export default function OrderProcess() {
                             e.stopPropagation();
                             handleRemoveAllPdfs();
                           }}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-white dark:bg-[#080B11] hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
                           <span>Clear All</span>
                         </button>
                       </div>
@@ -1135,8 +1135,8 @@ export default function OrderProcess() {
 
                 {/* PDF Error Display */}
                 {pdfError && (
-                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 sm:p-3 text-xs text-red-700 border border-red-200">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/40 p-2.5 sm:p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/40">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                     <span>{pdfError}</span>
                   </div>
                 )}
@@ -1146,27 +1146,27 @@ export default function OrderProcess() {
             {/* ======================================================== */}
             {/* SECTION 2: ZPL FILE UPLOAD */}
             {/* ======================================================== */}
-            <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+            <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3 sm:pb-3.5 gap-2">
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/60 shrink-0">
+                  <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 shrink-0">
                     <Barcode className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
+                    <h3 className="font-bold text-[#0A0E1A] dark:text-white text-sm sm:text-base truncate">
                       2. ZPL Barcodes {zplFiles.length > 0 ? `(${zplFiles.length})` : ""}
                     </h3>
-                    <p className="text-[11px] sm:text-xs text-slate-500 truncate">Upload one or multiple .zpl files</p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Upload one or multiple .zpl files</p>
                   </div>
                 </div>
 
                 {zplFiles.length > 0 ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 shrink-0">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     {zplFiles.length} Ready
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
+                  <span className="inline-flex items-center rounded-lg bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 shrink-0">
                     Required
                   </span>
                 )}
@@ -1182,22 +1182,22 @@ export default function OrderProcess() {
                     onDrop={handleZplDrop}
                     className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                       isDraggingZpl
-                        ? "border-[#E8C16D] bg-[#FFF9EC]"
-                        : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
+                        ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                        : "border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-white/[0.02] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-white/[0.04]"
                     }`}
                   >
-                    <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600">
+                    <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0A0E1A] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600 dark:group-hover:text-amber-400">
                       <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                     </div>
 
-                    <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                    <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                       Click to upload or drag & drop ZPL(s)
                     </p>
-                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
-                      Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600 font-semibold">.zpl</code>) files
+                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-xs sm:max-w-none">
+                      Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600 dark:text-amber-400 font-semibold">.zpl</code>) files
                     </p>
 
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0A0E1A] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                       <Barcode className="h-3.5 w-3.5 text-amber-600" />
                       Browse ZPL Files
                     </div>
@@ -1210,8 +1210,8 @@ export default function OrderProcess() {
                     onDrop={handleZplDrop}
                     className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
                       isDraggingZpl
-                        ? "border-[#E8C16D] bg-[#FFF9EC]"
-                        : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                        ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                        : "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/20 dark:bg-emerald-950/10 hover:border-[#E8C16D]/70"
                     }`}
                   >
                     <div className="flex-1 flex flex-col min-h-0">
@@ -1223,17 +1223,17 @@ export default function OrderProcess() {
                         {zplFiles.map((file, idx) => (
                           <div
                             key={`${file.name}_${idx}`}
-                            className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
+                            className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
                           >
                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600 border border-amber-200/50">
+                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/40">
                                 <Barcode className="h-4 w-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-bold text-[#0A0E1A]" title={file.name}>
+                                <p className="truncate text-xs font-bold text-[#0A0E1A] dark:text-white" title={file.name}>
                                   {file.name}
                                 </p>
-                                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                                <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                                   {formatFileSize(file.size)}
                                 </p>
                               </div>
@@ -1246,7 +1246,7 @@ export default function OrderProcess() {
                                 handleRemoveSingleZpl(idx);
                               }}
                               title="Remove this ZPL"
-                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -1256,23 +1256,23 @@ export default function OrderProcess() {
                     </div>
 
                     {/* Footer summary bar */}
-                    <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                    <div className="mt-3 pt-2.5 border-t border-emerald-200/70 dark:border-emerald-800/40 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-200 min-w-0 truncate">
                         <span className="whitespace-nowrap">{zplFiles.length} file{zplFiles.length > 1 ? "s" : ""}</span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-emerald-700 font-medium truncate">{formatFileSize(totalZplSize)}</span>
+                        <span className="text-slate-400 dark:text-slate-500">•</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">{formatFileSize(totalZplSize)}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             zplInputRef.current?.click();
                           }}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#251E11] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                         >
-                          <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                          <Plus className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                           <span>Add More</span>
                         </button>
 
@@ -1282,9 +1282,9 @@ export default function OrderProcess() {
                             e.stopPropagation();
                             handleRemoveAllZpls();
                           }}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-white dark:bg-[#080B11] hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
                           <span>Clear All</span>
                         </button>
                       </div>
@@ -1308,8 +1308,8 @@ export default function OrderProcess() {
 
                 {/* ZPL Error Display */}
                 {zplError && (
-                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 sm:p-3 text-xs text-red-700 border border-red-200">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/40 p-2.5 sm:p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/40">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                     <span>{zplError}</span>
                   </div>
                 )}
@@ -1318,12 +1318,12 @@ export default function OrderProcess() {
           </div>
 
           {/* Action Controls */}
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm">
             <button
               type="button"
               disabled={pdfFiles.length === 0 && zplFiles.length === 0}
               onClick={handleResetAll}
-              className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
+              className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.04] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
             >
               <RotateCcw className="h-4 w-4" />
               <span>Clear All</span>

@@ -127,7 +127,7 @@ const InventoryPage = () => {
     <DashboardLayout title="Inventory">
       <div className="space-y-4 sm:space-y-6">
         {/* Header Information Banner matching Product Analytics Amazon */}
-        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
               <div className="flex items-center gap-2.5">
@@ -137,74 +137,74 @@ const InventoryPage = () => {
                   </h1>
                 </div>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                 Track real-time stock levels, allocations, and inventory transfers.
               </p>
             </div>
           </div>
 
           {/* KPI Stats Cards */}
-          <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-5 sm:pt-6">
+          <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 border-t border-[#E7E0D2] pt-5 sm:pt-6 dark:border-white/[0.08]">
             {/* Total Records */}
-            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Total Items</p>
+            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+              <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Items</p>
               <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
+                <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
                   {stats.totalItems.toLocaleString()}
                 </h3>
-                <span className="rounded-xl border border-blue-200/60 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+                <span className="rounded-xl border border-blue-200/60 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400">
                   Records
                 </span>
               </div>
             </article>
 
             {/* Total Available Units */}
-            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Available Units</p>
+            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+              <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Available Units</p>
               <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A]">
+                <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
                   {stats.totalAvailable.toLocaleString()}
                 </h3>
-                <span className="rounded-xl border border-amber-200/60 bg-[#FFF9EC] px-2.5 py-1 text-xs font-bold text-[#B88728]">
+                <span className="rounded-xl border border-amber-200/60 bg-[#FFF9EC] px-2.5 py-1 text-xs font-bold text-[#B88728] dark:border-[#F5C451]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451]">
                   Units
                 </span>
               </div>
             </article>
 
             {/* In Stock */}
-            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">In Stock</p>
+            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+              <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">In Stock</p>
               <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                <h3 className="text-2xl sm:text-3xl font-black text-emerald-600">
+                <h3 className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
                   {stats.inStock.toLocaleString()}
                 </h3>
-                <span className="rounded-xl border border-emerald-200/60 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                <span className="rounded-xl border border-emerald-200/60 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400">
                   Healthy
                 </span>
               </div>
             </article>
 
             {/* Low Stock */}
-            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Low Stock</p>
+            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+              <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Low Stock</p>
               <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                <h3 className="text-2xl sm:text-3xl font-black text-amber-600">
+                <h3 className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">
                   {stats.lowStock.toLocaleString()}
                 </h3>
-                <span className="rounded-xl border border-amber-200/60 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+                <span className="rounded-xl border border-amber-200/60 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400">
                   Reorder
                 </span>
               </div>
             </article>
 
             {/* Out of Stock */}
-            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Out of Stock</p>
+            <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+              <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Out of Stock</p>
               <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                <h3 className="text-2xl sm:text-3xl font-black text-rose-600">
+                <h3 className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400">
                   {stats.outOfStock.toLocaleString()}
                 </h3>
-                <span className="rounded-xl border border-rose-200/60 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
+                <span className="rounded-xl border border-rose-200/60 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-400">
                   Zero Stock
                 </span>
               </div>

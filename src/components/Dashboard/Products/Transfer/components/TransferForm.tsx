@@ -199,7 +199,7 @@ export default function TransferForm({ onClose }: Props) {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             From Warehouse
           </label>
 
@@ -215,7 +215,7 @@ export default function TransferForm({ onClose }: Props) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             To Warehouse
           </label>
 
@@ -236,7 +236,7 @@ export default function TransferForm({ onClose }: Props) {
       {/* ====================================================== */}
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
           Notes
         </label>
 
@@ -254,9 +254,16 @@ export default function TransferForm({ onClose }: Props) {
             px-4
             py-3
             text-sm
+            text-slate-800
+            placeholder:text-slate-400
             outline-none
             transition
             focus:border-[#E8C16D]
+            dark:border-white/[0.08]
+            dark:bg-[#0F1626]
+            dark:text-white
+            dark:placeholder:text-slate-500
+            dark:focus:border-[#F5C451]
           "
         />
       </div>
@@ -265,29 +272,17 @@ export default function TransferForm({ onClose }: Props) {
       {/* Products */}
       {/* ====================================================== */}
 
-      <div className="overflow-hidden border border-slate-200 bg-white">
-        <div className="flex flex-col gap-4 border-b bg-slate-50 p-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="overflow-hidden border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0F1626]">
+        <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 p-5 lg:flex-row lg:items-end lg:justify-between dark:border-white/[0.08] dark:bg-[#080B11]">
           <div>
-            <h3 className="text-base font-semibold text-slate-800">Products</h3>
+            <h3 className="text-base font-semibold text-slate-800 dark:text-white">Products</h3>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Search SKU and add products to transfer.
             </p>
           </div>
 
-          <div className="flex w-full gap-3 lg:w-auto">
-            {/* <Input
-              placeholder="Enter SKU..."
-              value={searchSku}
-              onChange={(e) => setSearchSku(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddProduct();
-                }
-              }}
-              className="w-full lg:w-80"
-            /> */}
+          <div className="flex flex-col sm:flex-row w-full gap-3 lg:w-auto">
             <div className="relative w-full lg:w-80">
               <Input
                 placeholder="Search SKU..."
@@ -296,9 +291,9 @@ export default function TransferForm({ onClose }: Props) {
               />
 
               {showDropdown && (
-                <div className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border bg-white shadow-lg">
+                <div className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-[#E7E0D2] bg-white shadow-lg dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50">
                   {searchResults.length === 0 ? (
-                    <div className="p-4 text-sm text-slate-500">
+                    <div className="p-4 text-sm text-slate-500 dark:text-slate-400">
                       No products found.
                     </div>
                   ) : (
@@ -307,19 +302,19 @@ export default function TransferForm({ onClose }: Props) {
                         key={inventory.id}
                         type="button"
                         onClick={() => addInventoryItem(inventory)}
-                        className="flex w-full items-center justify-between border-b px-4 py-3 text-left hover:bg-slate-50"
+                        className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left hover:bg-slate-50 dark:border-white/[0.06] dark:hover:bg-white/[0.05]"
                       >
                         <div>
-                          <p className="font-medium">
+                          <p className="font-medium text-slate-900 dark:text-white font-mono">
                             {inventory.productVariant.variantSku}
                           </p>
 
-                          <p className="text-sm text-slate-500">
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
                             {inventory.productVariant.product.productName}
                           </p>
                         </div>
 
-                        <span className="text-sm font-semibold text-green-600">
+                        <span className="text-sm font-semibold text-green-600 dark:text-emerald-400">
                           {inventory.availableStock}
                         </span>
                       </button>
@@ -333,6 +328,8 @@ export default function TransferForm({ onClose }: Props) {
               <Button
                 onClick={handleAddProduct}
                 loading={searchInventory.isPending}
+                fullWidth={false}
+                className="w-full sm:w-auto min-h-[42px] sm:min-h-[44px] h-11 px-5 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
               >
                 <Plus size={16} className="mr-2" />
                 Add
@@ -350,12 +347,12 @@ export default function TransferForm({ onClose }: Props) {
       {/* Footer */}
       {/* ====================================================== */}
 
-      <div className="flex justify-end gap-3 border-t pt-5">
-        <Button variant="secondary" onClick={onClose}>
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 border-t pt-5 w-full">
+        <Button variant="secondary" onClick={onClose} fullWidth={false} className="w-full sm:w-auto min-h-[42px] sm:min-h-[44px] h-11 px-6 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]">
           Cancel
         </Button>
 
-        <Button onClick={handleSubmit} loading={createTransfer.isPending}>
+        <Button onClick={handleSubmit} loading={createTransfer.isPending} fullWidth={false} className="w-full sm:w-auto min-h-[42px] sm:min-h-[44px] h-11 px-6 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]">
           Create Transfer
         </Button>
       </div>

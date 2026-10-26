@@ -33,49 +33,49 @@ export default function DeleteModal({
     >
       <DialogContent
         showCloseButton={false}
-        className="w-[calc(100vw-24px)] xs:w-[calc(100vw-32px)] sm:w-full max-w-[460px] max-h-[calc(100dvh-2rem)] sm:max-h-[90vh] overflow-y-auto !rounded-2xl sm:!rounded-3xl border border-[#E7E0D2] bg-white p-0 shadow-2xl outline-none"
+        className="w-[calc(100vw-24px)] xs:w-[calc(100vw-32px)] sm:w-full max-w-[460px] max-h-[calc(100dvh-2rem)] sm:max-h-[90vh] overflow-y-auto !rounded-2xl sm:!rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-0 shadow-2xl outline-none"
       >
         {/* Accessible close button with proper hover state */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-3.5 top-3.5 z-20 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
+          className="absolute right-3.5 top-3.5 z-20 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="space-y-4 sm:space-y-6 p-5 sm:p-7">
           {/* Warning Icon */}
-          <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-red-50 border border-red-200 shadow-xs">
-            <AlertTriangle className="h-7 w-7 sm:h-8 sm:w-8 text-red-600" />
+          <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 shadow-xs">
+            <AlertTriangle className="h-7 w-7 sm:h-8 sm:w-8 text-red-600 dark:text-red-400" />
           </div>
 
           {/* Text Content */}
           <div className="space-y-2 text-center">
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               {title}
             </h3>
 
-            <p className="max-w-sm mx-auto text-xs sm:text-sm leading-relaxed text-slate-500 break-words px-1">
+            <p className="max-w-sm mx-auto text-xs sm:text-sm leading-relaxed text-slate-500 dark:text-slate-400 break-words px-1">
               {description}
             </p>
 
             {/* Selected Item */}
             {itemName && (
-              <div className="mx-auto max-w-xs rounded-xl border border-red-100 bg-red-50 py-2 sm:py-2.5 px-3 sm:px-4 text-center">
-                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-red-500">
+              <div className="mx-auto max-w-xs rounded-xl border border-red-100 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 py-2 sm:py-2.5 px-3 sm:px-4 text-center">
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
                   Selected
                 </p>
-                <p className="mt-0.5 sm:mt-1 break-all font-mono text-xs sm:text-sm font-bold text-red-700">
+                <p className="mt-0.5 sm:mt-1 break-all font-mono text-xs sm:text-sm font-bold text-red-700 dark:text-red-300">
                   {itemName}
                 </p>
               </div>
             )}
 
             {/* Warning */}
-            <div className="mx-auto max-w-xs rounded-xl border border-amber-200 bg-[#FFF9EC] py-2 px-3 text-center">
-              <p className="text-[11px] sm:text-xs font-semibold text-amber-800">
+            <div className="mx-auto max-w-xs rounded-xl border border-amber-200 dark:border-amber-900/40 bg-[#FFF9EC] dark:bg-amber-950/20 py-2 px-3 text-center">
+              <p className="text-[11px] sm:text-xs font-semibold text-amber-800 dark:text-amber-300">
                 This action is permanent and cannot be undone.
               </p>
             </div>
@@ -89,7 +89,7 @@ export default function DeleteModal({
               fullWidth={false}
               onClick={onClose}
               disabled={loading}
-              className="w-full sm:w-auto sm:min-w-[130px] rounded-xl sm:rounded-2xl border-slate-200 text-slate-700 hover:bg-slate-50 h-10 sm:h-11 text-xs sm:text-sm font-semibold"
+              className="w-full sm:w-auto sm:min-w-[130px] rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] h-10 sm:h-11 text-xs sm:text-sm font-semibold"
             >
               Cancel
             </Button>
@@ -101,7 +101,7 @@ export default function DeleteModal({
               loading={loading}
               onClick={onDelete}
               leftIcon={<Trash2 size={16} />}
-              className="w-full sm:w-auto sm:min-w-[130px] rounded-xl sm:rounded-2xl bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-200 h-10 sm:h-11 text-xs sm:text-sm font-bold"
+              className="w-full sm:w-auto sm:min-w-[130px] rounded-xl sm:rounded-2xl bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-200 dark:shadow-none h-10 sm:h-11 text-xs sm:text-sm font-bold"
             >
               Delete
             </Button>

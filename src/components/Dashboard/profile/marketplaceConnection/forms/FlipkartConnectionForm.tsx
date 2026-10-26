@@ -16,11 +16,11 @@ export default function FlipkartConnectionForm() {
 
       <div>
 
-        <h3 className="text-xl font-bold text-[#0A0E1A]">
+        <h3 className="text-xl font-bold text-[#0A0E1A] dark:text-white">
           Flipkart Seller API Configuration
         </h3>
 
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Enter your Flipkart Seller API credentials to connect your seller
           account.
         </p>
@@ -56,13 +56,13 @@ export default function FlipkartConnectionForm() {
 
       {/* Info */}
 
-      <div className="rounded-lg border border-[#E8C16D] bg-[#FFF9EC] p-5">
+      <div className="rounded-lg border border-[#E8C16D] bg-[#FFF9EC] p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
 
-        <h4 className="font-semibold">
+        <h4 className="font-semibold text-[#0A0E1A] dark:text-[#F5C451]">
           Before Connecting
         </h4>
 
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600">
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600 dark:text-slate-300">
 
           <li>
             API access must be enabled in Flipkart Seller Hub.

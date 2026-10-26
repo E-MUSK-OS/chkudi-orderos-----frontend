@@ -113,8 +113,13 @@ const AccountForm: React.FC<AccountFormProps> = ({
         }
       />
 
-      <div className="flex items-center justify-end">
-        <Button type="submit" loading={loading} fullWidth={false} className="px-8">
+      <div className="flex items-center justify-end w-full">
+        <Button
+          type="submit"
+          loading={loading}
+          fullWidth={false}
+          className="w-full sm:w-auto px-8 min-h-[42px] sm:min-h-[44px] h-11 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
+        >
           {mode === "create"
             ? "Add Account"
             : "Update Account"}

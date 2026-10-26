@@ -35,9 +35,8 @@ export default function AccountStatus() {
 
       {/* Account Status */}
 
-      <section className="border border-[#E7E0D2] bg-white p-5 shadow-sm">
-
-        <h3 className="text-xl font-bold text-[#0A0E1A]">
+      <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+        <h3 className="text-xl font-bold text-[#0A0E1A] dark:text-white">
           Account Status
         </h3>
 
@@ -47,11 +46,11 @@ export default function AccountStatus() {
 
           <div className="flex items-center justify-between">
 
-            <span className="text-sm font-medium text-slate-600">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
               Email Verification
             </span>
 
-            <span className="inline-flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="inline-flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border dark:border-emerald-500/30">
               <ShieldCheck size={14} />
 
               {user?.isEmailVerified
@@ -65,11 +64,11 @@ export default function AccountStatus() {
 
           <div className="flex items-center justify-between">
 
-            <span className="text-sm font-medium text-slate-600">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
               User Name
             </span>
 
-            <span className="max-w-40 truncate text-xs font-semibold text-slate-500">
+            <span className="max-w-40 truncate text-xs font-semibold text-slate-500 dark:text-slate-300">
               {user?.username || "Not Available"}
             </span>
 
@@ -79,11 +78,11 @@ export default function AccountStatus() {
 
           <div className="flex items-center justify-between">
 
-            <span className="text-sm font-medium text-slate-600">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
               Email
             </span>
 
-            <span className="max-w-40 truncate text-xs font-semibold text-slate-500">
+            <span className="max-w-40 truncate text-xs font-semibold text-slate-500 dark:text-slate-300">
               {user?.email || "--"}
             </span>
 

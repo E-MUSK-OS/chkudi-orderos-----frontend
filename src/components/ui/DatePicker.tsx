@@ -32,16 +32,22 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     cursor-pointer
     items-center
     gap-2
+    rounded-xl
+    sm:rounded-2xl
     border
-    border-slate-700
-    bg-[#111827]
+    border-[#E7E0D2]
+    bg-white
+    text-[#0A0E1A]
     px-4
-    text-white
     transition
-    hover:bg-[#1E293B]
+    hover:bg-[#FDFBF7]
+    dark:border-white/[0.1]
+    dark:bg-[#0F1626]
+    dark:text-slate-100
+    dark:hover:bg-[#131B2E]
   "
       >
-        <CalendarIcon size={18} />
+        <CalendarIcon size={18} className="text-slate-400 dark:text-slate-400" />
         <span>{label}</span>
       </PopoverTrigger>
 
@@ -50,9 +56,15 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
         className="
           w-auto
           border
-          border-slate-700
-          bg-[#111827]
+          border-[#E7E0D2]
+          bg-white
+          text-[#0A0E1A]
           p-3
+          shadow-xl
+          rounded-xl
+          dark:border-white/[0.1]
+          dark:bg-[#0F1626]
+          dark:text-slate-100
         "
       >
         <Calendar

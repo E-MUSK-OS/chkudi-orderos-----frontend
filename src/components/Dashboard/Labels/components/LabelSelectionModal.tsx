@@ -139,18 +139,18 @@ function LabelCard({
       onDoubleClick={onConfirm}
       aria-pressed={selected}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border bg-[#111827] text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E8C16D] focus-visible:ring-offset-2",
+        "group relative flex flex-col overflow-hidden rounded-2xl border bg-white dark:bg-[#111827] text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E8C16D] focus-visible:ring-offset-2",
         selected
           ? "border-[#E8C16D] shadow-lg ring-2 ring-[#E8C16D]"
-          : "border-stone-800 hover:-translate-y-0.5 hover:border-[#E8C16D]/60 hover:shadow-md"
+          : "border-[#E7E0D2] dark:border-stone-800 hover:-translate-y-0.5 hover:border-[#E8C16D]/60 hover:shadow-md"
       )}
     >
-      <div className="relative aspect-[4/3] border-b border-stone-800">
+      <div className="relative aspect-[4/3] border-b border-[#E7E0D2] dark:border-stone-800">
         <LabelPreview template={template} />
 
         {/* YouTube-style hover affordance */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30">
-          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#0A0E1A] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <span className="rounded-full bg-white/90 dark:bg-[#0A0E1A]/90 px-3 py-1 text-xs font-semibold text-[#0A0E1A] dark:text-[#E8C16D] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             {selected ? "Selected" : "Click to select"}
           </span>
         </div>
@@ -164,16 +164,16 @@ function LabelCard({
       </div>
 
       <div className="flex h-24 flex-col p-4">
-        <h3 className="truncate font-semibold text-white" title={template.name}>
+        <h3 className="truncate font-semibold text-[#0A0E1A] dark:text-white" title={template.name}>
           {template.name}
         </h3>
         <div className="mt-1 flex items-center gap-2">
           {marketplaceName && (
-            <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+            <span className="inline-flex items-center rounded border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
               {marketplaceName}
             </span>
           )}
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500 dark:text-slate-400">
             {template.settings.widthMm}x{template.settings.heightMm}mm
           </span>
         </div>
@@ -262,7 +262,7 @@ export default function LabelSelectionModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 sm:px-6 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition active:scale-[0.98] cursor-pointer"
+              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-5 sm:px-6 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition active:scale-[0.98] cursor-pointer"
             >
               Cancel
             </button>
@@ -280,14 +280,14 @@ export default function LabelSelectionModal({
     >
       {/* Search bar — same pattern as Toolbar.tsx's order search */}
       <div className="relative mb-6 w-full max-w-md">
-        <div className="group flex h-10 sm:h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
+        <div className="group flex h-10 sm:h-11 items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
           <Search className="h-4 w-4 text-[#B88728] shrink-0" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search label templates..."
-            className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none"
+            className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none"
           />
         </div>
       </div>

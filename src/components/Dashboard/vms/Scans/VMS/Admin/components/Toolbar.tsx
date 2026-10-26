@@ -76,14 +76,14 @@ export default function Toolbar({
   onRefresh,
 }: Props) {
   return (
-    <div className="mb-6 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mb-6 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       {/* Left Filters */}
       <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:flex-wrap xl:flex-nowrap lg:items-center">
         {/* Search */}
         <div className="relative w-full lg:w-72 xl:w-80">
           <Search
             size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none"
           />
 
           <input
@@ -96,13 +96,17 @@ export default function Toolbar({
               rounded-2xl
               border
               border-slate-200
+              dark:border-white/[0.08]
               bg-white
+              dark:bg-[#080B11]
               pl-11
               pr-4
               text-xs sm:text-sm
               font-semibold
               text-[#0A0E1A]
+              dark:text-white
               placeholder:text-slate-400
+              dark:placeholder:text-slate-500
               placeholder:font-normal
               outline-none
               transition
@@ -125,15 +129,6 @@ export default function Toolbar({
             onChange={(option) => onStatusChange(option?.value ?? "")}
             placeholder="Status"
             height={46}
-            borderColor="#E2E8F0"
-            backgroundColor="#ffffff"
-            textColor="#0A0E1A"
-            placeholderColor="#94A3B8"
-            menuBackgroundColor="#ffffff"
-            optionHoverColor="#FFF9EC"
-            optionSelectedColor="#E8C16D"
-            optionSelectedTextColor="#0A0E1A"
-            optionTextColor="#0A0E1A"
             borderRadius={16}
           />
         </div>
@@ -149,15 +144,6 @@ export default function Toolbar({
             onChange={(option) => onOperatorChange(option?.value ?? "")}
             placeholder="Operator"
             height={46}
-            borderColor="#E2E8F0"
-            backgroundColor="#ffffff"
-            textColor="#0A0E1A"
-            placeholderColor="#94A3B8"
-            menuBackgroundColor="#ffffff"
-            optionHoverColor="#FFF9EC"
-            optionSelectedColor="#E8C16D"
-            optionSelectedTextColor="#0A0E1A"
-            optionTextColor="#0A0E1A"
             borderRadius={16}
           />
         </div>
@@ -173,15 +159,6 @@ export default function Toolbar({
             onChange={(option) => onAccountChange(option?.value ?? "")}
             placeholder="Account"
             height={46}
-            borderColor="#E2E8F0"
-            backgroundColor="#ffffff"
-            textColor="#0A0E1A"
-            placeholderColor="#94A3B8"
-            menuBackgroundColor="#ffffff"
-            optionHoverColor="#FFF9EC"
-            optionSelectedColor="#E8C16D"
-            optionSelectedTextColor="#0A0E1A"
-            optionTextColor="#0A0E1A"
             borderRadius={16}
           />
         </div>
@@ -204,16 +181,16 @@ export default function Toolbar({
         <button
           type="button"
           onClick={onDownload}
-          className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
         >
-          <Download className="h-4 w-4 text-[#B88728]" />
+          <Download className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <span>Download</span>
         </button>
 
         <button
           type="button"
           onClick={onRefresh}
-          className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] cursor-pointer active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] dark:bg-[#F5C451] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#080B11] transition-all shadow-xs hover:bg-[#d4af5a] dark:hover:bg-[#e0b040] cursor-pointer active:scale-[0.98]"
         >
           <RotateCw className="h-4 w-4" />
           <span>Refresh</span>

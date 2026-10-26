@@ -328,12 +328,13 @@ export default function Sidebar({
                   toggleMenu(item);
                 }
               }}
-              className={`group flex h-12 w-full items-center justify-between cursor-pointer
-transition-all duration-300 ease-out
+              className={`group flex h-12 w-full items-center justify-between cursor-pointer transition-all duration-300 ease-out
               ${
                 isSelfActive
-                  ? "bg-[#E8C16D] text-[#0A0E1A]"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white"
+                  ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
+                  : active
+                  ? "text-white bg-white/[0.06]"
+                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
               }`}
               style={{
                 paddingLeft: `${16 + level * 20}px`,
@@ -341,7 +342,16 @@ transition-all duration-300 ease-out
               }}
             >
               <div className="flex items-center gap-3">
-                {item.icon && <item.icon size={20} />}
+                {item.icon && (
+                  <item.icon
+                    size={20}
+                    className={`shrink-0 transition-colors ${
+                      isSelfActive || active
+                        ? "text-[#F5C451]"
+                        : "text-slate-400 group-hover:text-slate-200"
+                    }`}
+                  />
+                )}
 
                 {!sidebarCollapsed && (
                   <span className="truncate">{item.label}</span>
@@ -349,7 +359,25 @@ transition-all duration-300 ease-out
               </div>
 
               {!sidebarCollapsed &&
-                (isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+                (isOpen ? (
+                  <ChevronUp
+                    size={18}
+                    className={
+                      isSelfActive || active
+                        ? "text-[#F5C451]"
+                        : "text-slate-400 group-hover:text-slate-200"
+                    }
+                  />
+                ) : (
+                  <ChevronDown
+                    size={18}
+                    className={
+                      isSelfActive || active
+                        ? "text-[#F5C451]"
+                        : "text-slate-400 group-hover:text-slate-200"
+                    }
+                  />
+                ))}
             </button>
 
             <AnimatePresence initial={false}>
@@ -383,57 +411,17 @@ transition-all duration-300 ease-out
           </div>
         );
       }
-      // if (item.label === "Logout") {
-      //   return (
-      //     <button
-      //       key={item.label}
-      //       type="button"
-      //       onClick={() => setLogoutOpen(true)}
-      //       className={`
-      //   flex w-full items-center gap-3 px-4 py-3
-      //   transition hover:bg-[#1B2435]
-      // `}
-      //     >
-      //       {item.icon && <item.icon size={20} />}
 
-      //       {!sidebarCollapsed && <span>{item.label}</span>}
-      //     </button>
-      //   );
-      // }
       return (
-        // <Link
-        //   key={item.label}
-        //   href={item.href!}
-        //   onClick={() => setSidebarOpen(false)}
-        //   className={`flex h-12 items-center transition-colors
-        //   ${
-        //     active
-        //       ? "bg-[#E8C16D] text-[#0A0E1A]"
-        //       : "text-slate-300 hover:bg-white/10 hover:text-white"
-        //   }`}
-        //   style={{
-        //     paddingLeft: `${16 + level * 20}px`,
-        //     paddingRight: "16px",
-        //   }}
-        // >
-        //   <div className="flex items-center gap-3">
-        //     {item.icon && <item.icon size={20} />}
-
-        //     {!sidebarCollapsed && (
-        //       <span className="truncate">{item.label}</span>
-        //     )}
-        //   </div>
-        // </Link>
-
         <button
           key={item.label}
           type="button"
           onClick={() => handleNavigation(item.href!)}
-          className={`flex h-12 w-full items-center transition-colors
+          className={`group flex h-12 w-full items-center cursor-pointer transition-all duration-300 ease-out
   ${
     active
-      ? "bg-[#E8C16D] text-[#0A0E1A]"
-      : "text-slate-300 hover:bg-white/10 hover:text-white"
+      ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
+      : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
   }`}
           style={{
             paddingLeft: `${16 + level * 20}px`,
@@ -441,7 +429,16 @@ transition-all duration-300 ease-out
           }}
         >
           <div className="flex items-center gap-3">
-            {item.icon && <item.icon size={20} />}
+            {item.icon && (
+              <item.icon
+                size={20}
+                className={`shrink-0 transition-colors ${
+                  active
+                    ? "text-[#F5C451]"
+                    : "text-slate-400 group-hover:text-slate-200"
+                }`}
+              />
+            )}
 
             {!sidebarCollapsed && (
               <span className="truncate">{item.label}</span>
@@ -459,12 +456,12 @@ transition-all duration-300 ease-out
           type="button"
           aria-label="Close Sidebar Overlay"
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 h-screen border-r border-[#E7E0D2] bg-[#0A0E1A] text-white transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
+        className={`fixed inset-y-0 left-0 z-40 h-screen border-r border-white/[0.08] bg-[#080B11] text-white transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
   ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
   ${sidebarCollapsed ? "w-72 lg:w-[88px]" : "w-72"}`}
       >
@@ -473,13 +470,12 @@ transition-all duration-300 ease-out
   ${sidebarCollapsed ? "px-5 lg:px-4" : "px-5"}`}
         >
           {/* Logo */}
-
           <div
             className={`flex items-center gap-3
           ${sidebarCollapsed ? "lg:justify-center" : "justify-between"}`}
           >
             <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#E8C16D] font-bold text-xl text-[#0A0E1A]">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#F5C451] via-[#E8B83D] to-[#D99A1E] font-black text-xl text-[#080B11] shadow-[0_0_16px_rgba(245,196,81,0.35)]">
                 OS
               </div>
 
@@ -489,16 +485,15 @@ transition-all duration-300 ease-out
                 sidebarCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
               }`}
               >
-                <p className="text-xs uppercase text-[#E8C16D]">Chakudee</p>
-
-                <h1 className="text-2xl font-bold">OrderOS</h1>
+                <p className="text-xs uppercase font-bold tracking-wider text-[#F5C451]">Chakudee</p>
+                <h1 className="text-2xl font-bold tracking-tight text-white">OrderOS</h1>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
-              className="grid h-10 w-10 place-items-center text-slate-300 hover:text-white lg:hidden"
+              className="grid h-10 w-10 place-items-center rounded-lg text-slate-400 hover:bg-white/[0.08] hover:text-white lg:hidden cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -510,7 +505,7 @@ transition-all duration-300 ease-out
               marginRight: "-19px",
               paddingRight: "10px",
               scrollbarWidth: "thin",
-              scrollbarColor: "rgba(232, 193, 109, 0.8) transparent",
+              scrollbarColor: "rgba(245, 196, 81, 0.35) transparent",
             }}
           >
             {renderMenu(navItems)}
@@ -524,31 +519,31 @@ transition-all duration-300 ease-out
               background: transparent;
             }
             .custom-scroll::-webkit-scrollbar-thumb {
-              background: rgba(232, 193, 109, 0.8);
+              background: rgba(245, 196, 81, 0.35);
               border-radius: 9999px;
             }
             .custom-scroll::-webkit-scrollbar-thumb:hover {
-              background: rgba(232, 193, 109, 0.8);
+              background: rgba(245, 196, 81, 0.55);
             }
           `}</style>
 
           <div
-            className={`mt-auto border-t border-white/10 pt-5 text-sm text-slate-400
+            className={`mt-auto border-t border-white/[0.08] pt-5 text-sm text-slate-400
   ${sidebarCollapsed ? "lg:text-center lg:text-xs" : ""}`}
           >
             <span
-              className={`block overflow-hidden whitespace-nowrap transition-all duration-300 text-[#E8C16D] uppercase
+              className={`block overflow-hidden whitespace-nowrap transition-all duration-300 text-[#F5C451]/80 hover:text-[#F5C451] uppercase font-semibold text-xs tracking-wider
     ${sidebarCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"}`}
             >
               Developed by : NetuTechno
             </span>
 
             {sidebarCollapsed && (
-              <div className="hidden lg:flex h-10 w-10 items-center justify-center ">
+              <div className="hidden lg:flex h-10 w-10 mx-auto items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02]">
                 <img
                   src="/image/netu-logo.jpeg"
                   alt="NetuTechno"
-                  className="h-12 w-12 object-contain"
+                  className="h-10 w-10 object-contain"
                 />
               </div>
             )}

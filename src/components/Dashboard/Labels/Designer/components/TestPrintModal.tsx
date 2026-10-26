@@ -314,11 +314,11 @@ export function TestPrintModal({
       title="Test Print Label"
       size="lg"
     >
-      <div className="flex flex-col space-y-5 text-[#0A0E1A]">
+      <div className="flex flex-col space-y-5 text-[#0A0E1A] dark:text-slate-200">
         {/* Info Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs">
           <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto relative">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">Testing SKU: </span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">Testing SKU: </span>
             <div className="relative">
               <input
                 type="text"
@@ -330,10 +330,10 @@ export function TestPrintModal({
                 onFocus={() => setIsDropdownOpen(true)}
                 onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
                 placeholder="Search SKU..."
-                className="font-mono bg-white px-2 py-1 border border-slate-300 rounded text-[#0A0E1A] font-bold focus:outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] transition-shadow w-full sm:w-[200px]"
+                className="font-mono bg-white dark:bg-[#0B0F17] px-2 py-1 border border-slate-300 dark:border-white/[0.1] rounded text-[#0A0E1A] dark:text-white font-bold focus:outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] transition-shadow w-full sm:w-[200px]"
               />
               {isDropdownOpen && (searchResults.length > 0 || isSearching) && (
-                <div className="absolute top-full left-0 mt-1 w-[300px] sm:w-[400px] max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
+                <div className="absolute top-full left-0 mt-1 w-[300px] sm:w-[400px] max-h-60 overflow-y-auto bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg shadow-xl z-50 py-1">
                   {isSearching ? (
                     <div className="p-3 flex items-center justify-center text-slate-400 text-sm">
                       <Loader2 className="w-4 h-4 animate-spin mr-2" /> Searching...
@@ -343,12 +343,12 @@ export function TestPrintModal({
                       <div
                         key={idx}
                         onClick={() => selectProduct(p)}
-                        className="px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
+                        className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/[0.04] cursor-pointer border-b border-slate-100 dark:border-white/[0.06] last:border-0"
                       >
-                        <div className="font-bold text-sm text-[#0A0E1A] truncate">{p.title}</div>
+                        <div className="font-bold text-sm text-[#0A0E1A] dark:text-white truncate">{p.title}</div>
                         <div className="flex justify-between items-center mt-1">
-                          <span className="text-xs font-mono text-slate-500">SKU: {p.sku || p.masterSku}</span>
-                          <span className="text-xs font-semibold text-[#B88728]">₹{p.mrp || 0}</span>
+                          <span className="text-xs font-mono text-slate-500 dark:text-slate-400">SKU: {p.sku || p.masterSku}</span>
+                          <span className="text-xs font-semibold text-[#B88728] dark:text-[#E8C16D]">₹{p.mrp || 0}</span>
                         </div>
                       </div>
                     ))
@@ -356,35 +356,35 @@ export function TestPrintModal({
                 </div>
               )}
             </div>
-            <span className="text-slate-500 line-clamp-1 flex-1 min-w-[100px]">
+            <span className="text-slate-500 dark:text-slate-400 line-clamp-1 flex-1 min-w-[100px]">
               {displayTitle}
             </span>
           </div>
-          <div className="text-slate-500 font-medium whitespace-nowrap">
+          <div className="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
             {template.settings.widthMm} × {template.settings.heightMm} mm ({template.settings.dpi || 203} DPI)
           </div>
         </div>
 
         {/* Live Canvas Preview */}
-        <div className="flex flex-col items-center justify-center p-4 bg-slate-100 rounded-lg border border-slate-200 min-h-[140px] relative overflow-hidden">
+        <div className="flex flex-col items-center justify-center p-4 bg-slate-100 dark:bg-[#080B11] rounded-lg border border-slate-200 dark:border-white/[0.08] min-h-[140px] relative overflow-hidden">
           {isRenderingPreview && (
-            <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
+            <div className="absolute inset-0 bg-white/70 dark:bg-black/70 flex items-center justify-center z-10">
               <Loader2 className="w-6 h-6 animate-spin text-[#E8C16D]" />
             </div>
           )}
-          <div className="shadow-md bg-white border border-stone-300 p-1 rounded">
+          <div className="shadow-md bg-white border border-stone-300 dark:border-white/[0.1] p-1 rounded">
             <canvas
               ref={canvasRef}
               className="max-h-[160px] max-w-full object-contain mx-auto"
             />
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">
             Exact render preview matching canvas elements and preview data.
           </p>
         </div>
 
         {/* PrintBridge Extension Status */}
-        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs sm:text-sm">
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-[#080B11] rounded-lg border border-slate-200 dark:border-white/[0.08] text-xs sm:text-sm">
           <div className="flex items-center space-x-2.5">
             <div
               className={`w-3 h-3 rounded-full ${
@@ -395,7 +395,7 @@ export function TestPrintModal({
                   : "bg-red-500"
               }`}
             />
-            <span className="font-medium text-slate-800">
+            <span className="font-medium text-slate-800 dark:text-slate-200">
               PrintBridge Extension:{" "}
               {helperStatus === "online"
                 ? "Active (Ready for Silent Print)"
@@ -422,15 +422,15 @@ export function TestPrintModal({
 
         {/* Extension Warning Banner */}
         {helperStatus === "extension-missing" && (
-          <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-2">
-            <div className="flex items-center gap-1.5 font-bold text-amber-800">
+          <div className="p-3.5 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-xl text-xs text-amber-900 dark:text-amber-300 space-y-2">
+            <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
               <span>PrintBridge Extension Not Detected (Using Browser Print)</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-amber-800">
+            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-400">
               Browser Print વાપરતી વખતે ક્રોમ (Chrome) પ્રિન્ટ વિન્ડોમાં આ સેટિંગ્સ ખાસ ચેક કરો:
             </p>
-            <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200/70 text-[11px] font-medium space-y-1 text-slate-700">
+            <div className="bg-white/80 dark:bg-[#0B0F17]/80 p-2.5 rounded-lg border border-amber-200/70 dark:border-amber-900/40 text-[11px] font-medium space-y-1 text-slate-700 dark:text-slate-300">
               <div>• <strong>Layout:</strong> <span className="text-emerald-700 font-bold">Landscape (આડું)</span></div>
               <div>• <strong>Paper size:</strong> <span className="text-emerald-700 font-bold">{template.settings.widthMm} × {template.settings.heightMm} mm</span> (અથવા User Defined)</div>
               <div>• <strong>Margins:</strong> <span className="text-emerald-700 font-bold">None (ઝીરો માર્જિન)</span></div>
@@ -442,7 +442,7 @@ export function TestPrintModal({
         {/* Printer Selection & Copies */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
           <div className="sm:col-span-2 space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
               Target Printer
             </label>
             <ReactSelect
@@ -466,15 +466,15 @@ export function TestPrintModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
               Copies
             </label>
-            <div className="flex items-center border border-stone-300 rounded-md h-[42px] bg-white overflow-hidden">
+            <div className="flex items-center border border-stone-300 dark:border-white/[0.1] rounded-md h-[42px] bg-white dark:bg-[#080B11] overflow-hidden">
               <button
                 type="button"
                 onClick={() => setCopies((prev) => Math.max(1, prev - 1))}
                 disabled={copies <= 1}
-                className="w-10 h-full flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                className="w-10 h-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
               >
                 <Minus size={14} />
               </button>
@@ -486,12 +486,12 @@ export function TestPrintModal({
                   const val = parseInt(e.target.value, 10);
                   if (!isNaN(val)) setCopies(Math.max(1, val));
                 }}
-                className="w-full text-center text-sm font-semibold text-[#0A0E1A] focus:outline-none"
+                className="w-full text-center text-sm font-semibold text-[#0A0E1A] dark:text-white bg-transparent focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => setCopies((prev) => prev + 1)}
-                className="w-10 h-full flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                className="w-10 h-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
               >
                 <Plus size={14} />
               </button>
@@ -500,7 +500,7 @@ export function TestPrintModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-4 border-t border-slate-200">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-4 border-t border-slate-200 dark:border-white/[0.08]">
           <Button
             variant="outline"
             onClick={onClose}

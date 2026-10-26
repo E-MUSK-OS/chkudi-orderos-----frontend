@@ -73,7 +73,7 @@ export function DesignCanvas({
 
   return (
     <div
-      className="relative flex-1 overflow-auto bg-[#F7F5F0] flex items-center justify-center p-8"
+      className="relative flex-1 overflow-auto bg-[#F7F5F0] dark:bg-[#080B11] flex items-center justify-center p-2 sm:p-4 md:p-8"
       onPointerMove={previewSampleData ? undefined : handlePointerMove}
       onPointerUp={previewSampleData ? undefined : handlePointerUp}
       onPointerLeave={previewSampleData ? undefined : handlePointerUp}
@@ -88,13 +88,13 @@ export function DesignCanvas({
         <div
           ref={containerRef}
           onPointerDown={previewSampleData ? undefined : handlePointerDownCanvas}
-          className="absolute inset-0 bg-white shadow-lg overflow-hidden shrink-0 pointer-events-auto"
+          className="absolute inset-0 bg-white dark:bg-[#0F1626] shadow-lg dark:shadow-[0_0_50px_rgba(0,0,0,0.85)] border border-[#E7E0D2] dark:border-white/[0.12] overflow-hidden shrink-0 pointer-events-auto [--canvas-grid:#E7E0D2] dark:[--canvas-grid:rgba(255,255,255,0.08)] [--canvas-fg:#000000] dark:[--canvas-fg:#FFFFFF] [--canvas-margin:rgba(59,130,246,0.45)] dark:[--canvas-margin:rgba(232,193,109,0.5)]"
           style={{
             width: canvasWidthPx,
             height: canvasHeightPx,
             cursor: previewSampleData ? 'default' : (isInteracting ? 'move' : 'default'),
             backgroundImage: !previewSampleData && settings.snapToGrid
-              ? `linear-gradient(to right, #E7E0D2 1px, transparent 1px), linear-gradient(to bottom, #E7E0D2 1px, transparent 1px)`
+              ? `linear-gradient(to right, var(--canvas-grid, #E7E0D2) 1px, transparent 1px), linear-gradient(to bottom, var(--canvas-grid, #E7E0D2) 1px, transparent 1px)`
               : 'none',
             backgroundSize: `${mmToPx(settings.gridSizeMm, zoom)}px ${mmToPx(settings.gridSizeMm, zoom)}px`,
           }}
@@ -121,7 +121,7 @@ export function DesignCanvas({
                 top: mmToPx(settings.safeMarginMm ?? 2, zoom),
                 width: mmToPx(Math.max(0, effectiveWidthMm - (settings.safeMarginMm ?? 2) * 2), zoom),
                 height: mmToPx(Math.max(0, effectiveHeightMm - (settings.safeMarginMm ?? 2) * 2), zoom),
-                border: '1px dashed rgba(59, 130, 246, 0.45)',
+                border: '1px dashed var(--canvas-margin, rgba(59, 130, 246, 0.45))',
                 boxSizing: 'border-box',
                 zIndex: 1,
               }}

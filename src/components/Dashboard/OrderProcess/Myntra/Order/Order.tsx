@@ -109,13 +109,13 @@ const Order = () => {
     <DashboardLayout title="Order Process">
       <div className="space-y-6">
         {/* Header Card (Matching Amazon Analytics) */}
-        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A]">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Myntra Order Process
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
                 Manage, prioritize, and process Myntra customer orders across Open, Priority, In Picking, and In Transit fulfillment stages.
               </p>
             </div>
@@ -139,10 +139,10 @@ const Order = () => {
                     <button
                       type="button"
                       onClick={handleGeneratePicklist}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
                       title="Download formatted Picklist PDF"
                     >
-                      <Printer className="h-4 w-4 text-[#B88728]" />
+                      <Printer className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
                       <span>Picklist ({selectedRows.length})</span>
                     </button>
 
@@ -190,7 +190,7 @@ const Order = () => {
 
         {/* Pagination Footer with Dark Variant matching Amazon Analytics */}
         {totalRecords > 0 && (
-          <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800 shadow-sm">
+          <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800 dark:border-white/[0.08] shadow-sm">
             <Pagination
               page={currentPage}
               totalPages={totalPages}

@@ -19,13 +19,14 @@ export default function SettingCard({
   return (
     <div
       className={`
+        rounded-2xl
         border
         p-5
         transition-all
         ${
           checked
-                ? "border-[#0A0E1A] bg-[#E8C16D]/20"
-            : "border-slate-200 bg-white"
+            ? "border-[#E8C16D] bg-[#FFF9EC]/50 dark:border-[#F5C451]/50 dark:bg-[#F5C451]/10"
+            : "border-[#E7E0D2] bg-white dark:border-white/[0.08] dark:bg-[#0F1626]"
         }
       `}
     >
@@ -39,12 +40,12 @@ export default function SettingCard({
           <div className="flex items-center gap-2">
             {icon}
 
-            <h4 className="font-semibold text-slate-900">
+            <h4 className="font-semibold text-slate-900 dark:text-white">
               {title}
             </h4>
           </div>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {description}
           </p>
         </div>

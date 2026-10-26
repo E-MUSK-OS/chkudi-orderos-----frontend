@@ -145,196 +145,196 @@ const OperatorTable: React.FC<Props> = ({
 
   if (loading) {
     return (
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent mx-auto mb-2" />
-        <p className="text-sm font-bold text-[#0A0E1A]">Loading operators...</p>
+        <p className="text-sm font-bold text-[#0A0E1A] dark:text-white">Loading operators...</p>
       </div>
     );
   }
 
   if (operators.length === 0) {
     return (
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
-        <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30">
-          <Users className="h-7 w-7 text-[#B88728]" />
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
+        <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30">
+          <Users className="h-7 w-7 text-[#B88728] dark:text-[#E8C16D]" />
         </div>
-        <p className="text-base font-bold text-[#0A0E1A]">No Operators Found</p>
+        <p className="text-base font-bold text-[#0A0E1A] dark:text-white">No Operators Found</p>
       </div>
     );
   }
 
   return (
-    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm overflow-hidden flex flex-col justify-between">
+    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden flex flex-col justify-between">
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#E7E0D2] px-5 py-4 bg-white gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#E7E0D2] dark:border-white/[0.08] px-5 py-4 bg-white dark:bg-[#0F1626] gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 text-[#B88728] shrink-0">
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 text-[#B88728] dark:text-[#E8C16D] shrink-0">
               <Users className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-[#0A0E1A] tracking-tight">
+              <h3 className="text-base sm:text-lg font-black text-[#0A0E1A] dark:text-white tracking-tight">
                 Recent Operators
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Operator performance and average recording time per VMS (Today, Last 7 Days, Total)
               </p>
             </div>
           </div>
 
-          <span className="rounded-lg border border-[#E8C16D]/40 bg-[#FFF9EC] px-2.5 py-0.5 text-xs font-bold text-[#B88728] self-start sm:self-center">
+          <span className="rounded-lg border border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-2.5 py-0.5 text-xs font-bold text-[#B88728] dark:text-[#E8C16D] self-start sm:self-center">
             {operators.length} Operators
           </span>
         </div>
 
         <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
           <table className="w-full min-w-[950px] border-collapse text-left font-sans">
-            <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
-            <tr>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-14">
-                NO.
-              </th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
-                Operator Name
-              </th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
-                Operator Code
-              </th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
-                Status
-              </th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
-                Today Avg Time
-              </th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
-                Last 7 Days Avg
-              </th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
-                Total Avg Time
-              </th>
-            </tr>
-          </thead>
+            <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+              <tr>
+                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-14">
+                  NO.
+                </th>
+                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  Operator Name
+                </th>
+                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  Operator Code
+                </th>
+                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  Status
+                </th>
+                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  Today Avg Time
+                </th>
+                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  Last 7 Days Avg
+                </th>
+                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  Total Avg Time
+                </th>
+              </tr>
+            </thead>
 
-          <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm">
-            {paginatedOperators.map((operator, index) => {
-              const stats = getOperatorStats(operator);
+            <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm">
+              {paginatedOperators.map((operator, index) => {
+                const stats = getOperatorStats(operator);
 
-              return (
-                <tr
-                  key={operator.id}
-                  className="transition-colors hover:bg-slate-50/80"
-                >
-                  {/* NO. */}
-                  <td className="px-4 py-3.5 text-center font-bold text-slate-500 whitespace-nowrap text-xs sm:text-sm">
-                    {startIndex + index + 1}
-                  </td>
+                return (
+                  <tr
+                    key={operator.id}
+                    className="transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
+                  >
+                    {/* NO. */}
+                    <td className="px-4 py-3.5 text-center font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs sm:text-sm">
+                      {startIndex + index + 1}
+                    </td>
 
-                  {/* Operator Name */}
-                  <td className="px-4 py-3.5 text-center font-semibold text-slate-900 whitespace-nowrap text-xs sm:text-sm">
-                    {operator.operatorName}
-                  </td>
+                    {/* Operator Name */}
+                    <td className="px-4 py-3.5 text-center font-semibold text-slate-900 dark:text-white whitespace-nowrap text-xs sm:text-sm">
+                      {operator.operatorName}
+                    </td>
 
-                  {/* Operator Code */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-mono font-bold text-slate-800 bg-slate-100 rounded-lg border border-slate-200">
-                      {operator.employeeCode}
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    {operator.isActive ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Active
+                    {/* Operator Code */}
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] rounded-lg border border-slate-200 dark:border-white/[0.08]">
+                        {operator.employeeCode}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                        Inactive
-                      </span>
-                    )}
-                  </td>
+                    </td>
 
-                  {/* Today Avg Time */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    {isVmsLoading ? (
-                      <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
-                    ) : stats.todayCount > 0 ? (
-                      <div className="inline-flex flex-col items-center">
-                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                          {formatDuration(stats.todayAvg)}
+                    {/* Status */}
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      {operator.isActive ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          Active
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-200">
-                          {stats.todayCount} VMS
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                          Inactive
                         </span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 font-bold text-sm">-</span>
-                    )}
-                  </td>
+                      )}
+                    </td>
 
-                  {/* Last 7 Days Avg */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    {isVmsLoading ? (
-                      <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
-                    ) : stats.weekCount > 0 ? (
-                      <div className="inline-flex flex-col items-center">
-                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                          {formatDuration(stats.weekAvg)}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full mt-1 border border-amber-200">
-                          {stats.weekCount.toLocaleString()} VMS
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 font-bold text-sm">-</span>
-                    )}
-                  </td>
+                    {/* Today Avg Time */}
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      {isVmsLoading ? (
+                        <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
+                      ) : stats.todayCount > 0 ? (
+                        <div className="inline-flex flex-col items-center">
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono">
+                            {formatDuration(stats.todayAvg)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full mt-1 border border-emerald-200 dark:border-emerald-900/40">
+                            {stats.todayCount} VMS
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-bold text-sm">-</span>
+                      )}
+                    </td>
 
-                  {/* Total Avg Time */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    {isVmsLoading ? (
-                      <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
-                    ) : stats.totalCount > 0 ? (
-                      <div className="inline-flex flex-col items-center">
-                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                          {formatDuration(stats.totalAvg)}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full mt-1 border border-blue-200">
-                          {stats.totalCount.toLocaleString()} VMS
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 font-bold text-sm">-</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    {/* Last 7 Days Avg */}
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      {isVmsLoading ? (
+                        <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
+                      ) : stats.weekCount > 0 ? (
+                        <div className="inline-flex flex-col items-center">
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono">
+                            {formatDuration(stats.weekAvg)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full mt-1 border border-amber-200 dark:border-amber-900/40">
+                            {stats.weekCount.toLocaleString()} VMS
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-bold text-sm">-</span>
+                      )}
+                    </td>
+
+                    {/* Total Avg Time */}
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      {isVmsLoading ? (
+                        <span className="text-xs text-slate-400 animate-pulse">Calculating...</span>
+                      ) : stats.totalCount > 0 ? (
+                        <div className="inline-flex flex-col items-center">
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono">
+                            {formatDuration(stats.totalAvg)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full mt-1 border border-blue-200 dark:border-blue-900/40">
+                            {stats.totalCount.toLocaleString()} VMS
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-bold text-sm">-</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
-    {/* Pagination Bar */}
-    <Pagination
-      page={page}
-      totalPages={totalPages}
-      total={total}
-      limit={limit}
-      options={[5, 10, 20, 50]}
-      itemName="operators"
-      isLoading={loading}
-      variant="dark"
-      className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
-      onPageChange={setPage}
-      onLimitChange={(newLimit) => {
-        setLimit(newLimit);
-        setPage(1);
-      }}
-    />
-  </section>
-);
+      {/* Pagination Bar */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        options={[5, 10, 20, 50]}
+        itemName="operators"
+        isLoading={loading}
+        variant="dark"
+        className="border-t border-slate-800 dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+        onPageChange={setPage}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
+      />
+    </section>
+  );
 };
 
 export default OperatorTable;

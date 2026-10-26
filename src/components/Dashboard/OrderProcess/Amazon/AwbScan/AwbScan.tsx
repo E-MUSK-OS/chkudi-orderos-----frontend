@@ -276,19 +276,19 @@ export default function AwbScan() {
     <DashboardLayout title="Amazon AWB Scan">
       <div className="space-y-6">
         {/* Page Header matching Product Analytics Amazon */}
-        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Amazon AWB Scan
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                 Verify packed Amazon orders in real-time by scanning AWB tracking numbers (Retained for 7 days).
               </p>
             </div>
             <a
               href="/dashboard/order-process/amazon/order-process"
-              className="inline-flex items-center gap-2 self-start md:self-center rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:shadow-md active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-2 self-start md:self-center rounded-2xl border border-[#0A0E1A] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#131926] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#E8C16D] dark:text-[#F5C451] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] hover:shadow-md active:scale-[0.98] cursor-pointer"
             >
               ← Back to Order Process
             </a>

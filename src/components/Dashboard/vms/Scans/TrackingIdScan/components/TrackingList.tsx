@@ -150,6 +150,9 @@ export default function TrackingList() {
         onScan={() => {
           handleScan(scanValue);
         }}
+        onCameraScan={(code) => {
+          handleScan(code);
+        }}
       />
 
       <MissingTrackingList

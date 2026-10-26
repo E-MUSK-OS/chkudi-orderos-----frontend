@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
-
 import Button from "@/components/ui/Button";
 
 import {
@@ -26,35 +24,23 @@ export default function NotificationList() {
   const notifications = data?.data ?? [];
 
   if (isLoading) {
-    return <div className="py-20 text-center">Loading...</div>;
+    return <div className="py-20 text-center text-slate-500 dark:text-slate-400">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
+      <section className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+        <div className="space-y-1.5 min-w-0 max-w-2xl">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            Notifications
+          </h1>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-primary/10 p-3">
-            <Bell className="h-6 w-6" />
-          </div>
-
-          <div>
-            <h1 className="text-2xl font-bold">Notifications</h1>
-
-            <p className="text-sm text-muted-foreground">
-              Stay updated with all activities.
-            </p>
-          </div>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Stay updated with all activities.
+          </p>
         </div>
-
-        {/* {notifications.length > 0 && (
-          <Button variant="outline" onClick={() => markAllRead()}>
-            <CheckCheck className="mr-2 h-4 w-4" />
-            Mark All Read
-          </Button>
-        )} */}
-      </div>
+      </section>
 
       {notifications.length === 0 ? (
         <EmptyNotification />

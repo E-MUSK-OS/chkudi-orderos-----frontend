@@ -57,6 +57,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               text-slate-400
               transition-colors
               group-focus-within:text-[#C89B3C]
+              dark:group-focus-within:text-[#F5C451]
             "
             >
               {leftIcon}
@@ -72,19 +73,21 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               peer
               h-14
               w-full
+              rounded-xl
+              sm:rounded-2xl
 
               border
               border-slate-200
+              dark:border-white/[0.1]
 
               bg-white
-
-              pl-12
-              pr-12
+              dark:bg-[#0F1626]
 
               text-[15px]
               text-slate-900
+              dark:text-slate-100
 
-              shadow-sm
+              shadow-2xs
 
               outline-none
 
@@ -92,12 +95,17 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               duration-300
 
               hover:border-slate-300
-              hover:shadow-md
+              dark:hover:border-white/[0.2]
+              hover:shadow-xs
 
               focus:border-[#C89B3C]
+              dark:focus:border-[#F5C451]
               focus:ring-4
               focus:ring-[#C89B3C]/10
+              dark:focus:ring-[#F5C451]/15
             `,
+              leftIcon ? "pl-12" : "pl-4",
+              rightIcon ? "pr-12" : "pr-4",
               inputClassName,
               className,
             )}
@@ -113,15 +121,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
                 absolute
 
-                left-12
-
                 top-1/2
 
                 -translate-y-1/2
 
                 bg-white
+                dark:bg-[#0F1626]
 
-                px-1
+                px-1.5
 
                 text-[15px]
 
@@ -131,13 +138,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 duration-200
 
                 peer-focus:-top-0
-                peer-focus:text-[15px]
+                peer-focus:text-[13px]
                 peer-focus:text-[#C89B3C]
+                dark:peer-focus:text-[#F5C451]
 
-                peer-[:not(:placeholder-shown)]:-top-1
-                peer-[:not(:placeholder-shown)]:text-[11px]
+                peer-[:not(:placeholder-shown)]:-top-0.5
+                peer-[:not(:placeholder-shown)]:text-[12px]
                 peer-[:not(:placeholder-shown)]:text-slate-500
+                dark:peer-[:not(:placeholder-shown)]:text-slate-400
               `,
+                leftIcon ? "left-12" : "left-4",
                 labelClassName,
               )}
             >

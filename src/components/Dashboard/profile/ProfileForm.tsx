@@ -76,29 +76,24 @@ export default function ProfileForm() {
   };
 
   return (
-    <section className="border border-[#E7E0D2] bg-white p-5 shadow-sm">
-
-      <div className="flex items-start gap-4 border-b border-[#E7E0D2] pb-5">
-
-        <div className="grid h-14 w-14 shrink-0 place-items-center bg-[#E8C16D] text-2xl font-bold uppercase text-[#0A0E1A]">
+    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+      <div className="flex items-start gap-4 border-b border-[#E7E0D2] pb-5 dark:border-white/[0.08]">
+        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#E8C16D] text-2xl font-bold uppercase text-[#0A0E1A] dark:bg-[#F5C451] dark:text-[#080B11] shadow-xs">
           {(user?.fullName ||
             user?.email ||
             "U").charAt(0)}
         </div>
 
         <div className="min-w-0">
-
-          <h3 className="text-2xl font-bold">
+          <h3 className="text-xl sm:text-2xl font-bold text-[#0A0E1A] dark:text-white">
             {user?.fullName || "User"}
           </h3>
 
-          <p className="mt-1 truncate text-sm text-slate-500">
+          <p className="mt-1 truncate text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             {user?.email ||
               "No email found"}
           </p>
-
         </div>
-
       </div>
 
       <form
@@ -106,18 +101,15 @@ export default function ProfileForm() {
         className="mt-6 space-y-5"
       >
         <div className="grid gap-5 md:grid-cols-2">
-
           <label>
-
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
               Full Name
             </span>
 
-            <div className="mt-2 flex h-12 items-center gap-3 border border-[#E2E5EA] px-4 focus-within:border-[#C89B3C]">
-
+            <div className="mt-2 flex h-11 sm:h-12 items-center gap-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-4 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451]">
               <UserRound
                 size={18}
-                className="text-slate-400"
+                className="text-slate-400 dark:text-slate-500 shrink-0"
               />
 
               <input
@@ -130,24 +122,20 @@ export default function ProfileForm() {
                       e.target.value,
                   }))
                 }
-                className="w-full bg-transparent outline-none"
+                className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
-
             </div>
-
           </label>
 
           <label>
-
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
               Email Address
             </span>
 
-            <div className="mt-2 flex h-12 items-center gap-3 border border-[#E2E5EA] px-4 focus-within:border-[#C89B3C]">
-
+            <div className="mt-2 flex h-11 sm:h-12 items-center gap-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-4 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451]">
               <Mail
                 size={18}
-                className="text-slate-400"
+                className="text-slate-400 dark:text-slate-500 shrink-0"
               />
 
               <input
@@ -160,26 +148,20 @@ export default function ProfileForm() {
                       e.target.value,
                   }))
                 }
-                className="w-full bg-transparent outline-none"
+                className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
-
             </div>
-
           </label>
-
         </div>
 
         <button
           type="submit"
-          className="flex h-12 items-center gap-2 bg-[#0A0E1A] px-5 font-semibold text-white hover:bg-[#161D2E]"
+          className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] px-6 text-xs sm:text-sm font-bold text-white shadow-xs transition-all active:scale-[0.98] cursor-pointer dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)]"
         >
           <Save size={18} />
-
           Update Profile
         </button>
-
       </form>
-
     </section>
   );
 }

@@ -179,7 +179,7 @@ export function ElementRenderer({
               textDecoration: element.textDecoration === 'underline' ? 'underline' : 'none',
               textAlign: element.textAlign,
               lineHeight: element.lineHeight,
-              color: colorMode === 'monochrome' ? '#000000' : (element.color || '#000000'),
+              color: colorMode === 'monochrome' ? 'var(--canvas-fg, #000000)' : (!element.color || element.color === '#000000' ? 'var(--canvas-fg, #000000)' : element.color),
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -254,6 +254,7 @@ export function ElementRenderer({
               <svg
                 ref={barcodeRef}
                 preserveAspectRatio="none"
+                className="dark:invert dark:brightness-150"
                 style={{ width: '100%', height: '100%', display: barcodeError ? 'none' : 'block' }}
               />
             </div>
@@ -267,7 +268,7 @@ export function ElementRenderer({
                   textDecoration: element.textDecoration === 'underline' ? 'underline' : 'none',
                   textAlign: element.textAlign || 'center',
                   lineHeight: 1.1,
-                  color: colorMode === 'monochrome' ? '#000000' : (element.color || '#000000'),
+                  color: colorMode === 'monochrome' ? 'var(--canvas-fg, #000000)' : (!element.color || element.color === '#000000' ? 'var(--canvas-fg, #000000)' : element.color),
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -293,7 +294,7 @@ export function ElementRenderer({
           : (element.content === 'Double click to edit' && element.variableSource ? element.variableSource : element.content);
 
         return (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="dark:invert dark:brightness-150" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <QRCodeSVG
               value={qrContent || ' '}
               size={Math.min(widthPx, heightPx)}
@@ -357,7 +358,7 @@ export function ElementRenderer({
             style={{
               width: '100%',
               height: `${strokePx}px`,
-              backgroundColor: colorMode === 'monochrome' ? '#000000' : element.borderColor,
+              backgroundColor: colorMode === 'monochrome' ? 'var(--canvas-fg, #000000)' : (!element.borderColor || element.borderColor === '#000000' ? 'var(--canvas-fg, #000000)' : element.borderColor),
               marginTop: `${(heightPx - strokePx) / 2}px`,
             }}
           />
@@ -369,9 +370,9 @@ export function ElementRenderer({
             style={{
               width: '100%',
               height: '100%',
-              border: `${mmToPx(element.borderWidth, zoom)}px solid ${colorMode === 'monochrome' ? '#000000' : element.borderColor}`,
+              border: `${mmToPx(element.borderWidth, zoom)}px solid ${colorMode === 'monochrome' ? 'var(--canvas-fg, #000000)' : (!element.borderColor || element.borderColor === '#000000' ? 'var(--canvas-fg, #000000)' : element.borderColor)}`,
               backgroundColor: colorMode === 'monochrome'
-                ? (element.fillColor && element.fillColor !== 'transparent' && element.fillColor !== '#ffffff' ? '#000000' : (element.fillColor || 'transparent'))
+                ? (element.fillColor && element.fillColor !== 'transparent' && element.fillColor !== '#ffffff' ? 'var(--canvas-fg, #000000)' : (element.fillColor || 'transparent'))
                 : (element.fillColor || 'transparent'),
             }}
           />

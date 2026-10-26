@@ -97,11 +97,18 @@ export default function ThemeSelectDropdown({
           focus:ring-2
           focus:ring-[#E8C16D]/30
           outline-none
+          dark:border-white/[0.08]
+          dark:bg-[#0B0F17]
+          dark:text-white
+          dark:hover:border-[#F5C451]/50
+          dark:hover:bg-white/[0.04]
+          dark:focus:border-[#F5C451]
+          dark:focus:ring-[#F5C451]/30
           ${buttonClassName}
         `}
       >
         {icon && (
-          <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0">
+          <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] dark:bg-[#F5C451]/15 dark:text-[#F5C451] shrink-0">
             {icon}
           </div>
         )}
@@ -109,7 +116,7 @@ export default function ThemeSelectDropdown({
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 text-[#B88728] transition-transform duration-200 ${
+          className={`h-3.5 w-3.5 shrink-0 text-[#B88728] dark:text-[#F5C451] transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -135,6 +142,9 @@ export default function ThemeSelectDropdown({
             fade-in
             zoom-in-95
             duration-100
+            dark:border-white/[0.08]
+            dark:bg-[#0F1626]
+            dark:shadow-black/50
             ${align === "right" ? "right-0" : "left-0"}
             ${menuClassName}
           `}
@@ -169,14 +179,14 @@ export default function ThemeSelectDropdown({
                     text-left
                     ${
                       isSelected
-                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
-                        : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728]"
+                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs dark:bg-[#F5C451] dark:text-black"
+                        : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                     }
                   `}
                 >
                   <span className="truncate">{opt.label}</span>
                   {isSelected && (
-                    <Check className="h-3.5 w-3.5 text-[#E8C16D] shrink-0 stroke-[2.5]" />
+                    <Check className="h-3.5 w-3.5 text-[#E8C16D] dark:text-black shrink-0 stroke-[2.5]" />
                   )}
                 </button>
               );

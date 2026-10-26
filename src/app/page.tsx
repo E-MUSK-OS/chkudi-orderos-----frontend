@@ -18,7 +18,7 @@ export default function Home() {
   }, [router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0] text-slate-800 dark:bg-[#080B11] dark:text-slate-200">
       <p className="text-lg font-medium">Loading...</p>
     </main>
   );

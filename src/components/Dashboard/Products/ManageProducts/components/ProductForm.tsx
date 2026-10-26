@@ -147,7 +147,7 @@ export default function ProductForm({
     <form
       id="product-form"
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-8 p-6"
+      className="space-y-6 sm:space-y-8 py-4 sm:py-6 px-0.5 sm:px-1"
     >
       {/* ================= Product Information ================= */}
 
@@ -225,7 +225,6 @@ export default function ProductForm({
                   <div className="relative group">
                     <ReactSelect
                       height={56}
-                      borderColor="#e2e8f0"
                       placeholder={hasValue ? "Select Yes / No" : " "}
                       options={generateBarcodeOptions}
                       value={
@@ -241,10 +240,10 @@ export default function ProductForm({
                     />
                     <label
                       className={cn(
-                        "pointer-events-none absolute left-4 bg-white px-1 transition-all duration-200 z-10",
+                        "pointer-events-none absolute left-4 bg-white dark:bg-[#0B0F17] px-1 transition-all duration-200 z-10",
                         hasValue
-                          ? "-top-2 text-[11px] text-slate-500 font-medium"
-                          : "top-1/2 -translate-y-1/2 text-[15px] text-slate-400",
+                          ? "-top-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium"
+                          : "top-1/2 -translate-y-1/2 text-[15px] text-slate-400 dark:text-slate-500",
                       )}
                     >
                       Generate Barcode
@@ -361,7 +360,6 @@ export default function ProductForm({
                   <div className="relative group">
                     <ReactSelect
                       height={56}
-                      borderColor="#e2e8f0"
                       placeholder={hasValue ? "Select GST %" : " "}
                       options={gstOptions}
                       value={
@@ -377,10 +375,10 @@ export default function ProductForm({
                     />
                     <label
                       className={cn(
-                        "pointer-events-none absolute left-4 bg-white px-1 transition-all duration-200 z-10",
+                        "pointer-events-none absolute left-4 bg-white dark:bg-[#0B0F17] px-1 transition-all duration-200 z-10",
                         hasValue
-                          ? "-top-2 text-[11px] text-slate-500 font-medium"
-                          : "top-1/2 -translate-y-1/2 text-[15px] text-slate-400"
+                          ? "-top-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium"
+                          : "top-1/2 -translate-y-1/2 text-[15px] text-slate-400 dark:text-slate-500"
                       )}
                     >
                       GST %
@@ -409,13 +407,13 @@ export default function ProductForm({
           control={control}
           name="isActive"
           render={({ field }) => (
-            <div className="flex h-14 items-center justify-between rounded-md border border-slate-200 px-4">
+            <div className="flex h-14 items-center justify-between rounded-md border border-slate-200 dark:border-white/[0.08] px-4">
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">
                   Active Product
                 </p>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Enable or disable this product.
                 </p>
               </div>

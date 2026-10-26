@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Select, { GroupBase, Props, StylesConfig } from "react-select";
+import { useTheme } from "@/providers/ThemeProvider";
 
 export interface SelectOption {
   label: string;
@@ -26,31 +27,55 @@ interface ReactSelectProps extends Props<
   height?: number;
 }
 
+const emptySubscribe = () => () => {};
+
 export default function ReactSelect({
-  borderColor = "#E7E0D2",
-  backgroundColor = "#ffffff",
-  textColor = "#111827",
-  placeholderColor = "#9CA3AF",
-  menuBackgroundColor = "#ffffff",
-  optionHoverColor = "#F8F5EE",
-  optionSelectedColor = "#E8C16D",
-  optionSelectedTextColor = "#111827",
+  borderColor,
+  backgroundColor,
+  textColor,
+  placeholderColor,
+  menuBackgroundColor,
+  optionHoverColor,
+  optionSelectedColor,
+  optionSelectedTextColor,
   optionTextColor,
-  borderRadius = 0,
+  borderRadius = 16,
   height = 44,
   ...props
 }: ReactSelectProps) {
-  const [mounted, setMounted] = useState(false);
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
-  if (!mounted) {
+  const resolvedBorderColor =
+    borderColor ?? (isDark ? "rgba(255, 255, 255, 0.1)" : "#E7E0D2");
+  const resolvedBgColor =
+    backgroundColor ?? (isDark ? "#0F1626" : "#ffffff");
+  const resolvedTextColor =
+    textColor ?? (isDark ? "#F8FAFC" : "#111827");
+  const resolvedPlaceholderColor =
+    placeholderColor ?? (isDark ? "#64748B" : "#9CA3AF");
+  const resolvedMenuBgColor =
+    menuBackgroundColor ?? (isDark ? "#0F1626" : "#ffffff");
+  const resolvedOptionHoverColor =
+    optionHoverColor ?? (isDark ? "#131B2E" : "#F8F5EE");
+  const resolvedOptionSelectedColor =
+    optionSelectedColor ?? (isDark ? "#F5C451" : "#E8C16D");
+  const resolvedOptionSelectedTextColor =
+    optionSelectedTextColor ?? (isDark ? "#080B11" : "#111827");
+  const resolvedOptionTextColor =
+    optionTextColor ?? (isDark ? "#CBD5E1" : "#111827");
+
+  if (!isMounted) {
     return (
       <div
-        style={{ height }}
-        className="w-full animate-pulse border bg-slate-100"
+        style={{ height, borderRadius }}
+        className="w-full animate-pulse border border-[#E7E0D2] bg-slate-100 dark:border-white/[0.1] dark:bg-[#0F1626]"
       />
     );
   }
@@ -61,13 +86,17 @@ export default function ReactSelect({
       minHeight: height,
       height,
       borderRadius,
-      borderColor: state.isFocused ? borderColor : borderColor,
-      backgroundColor: state.isDisabled ? "#F3F4F6" : backgroundColor,
+      borderColor: resolvedBorderColor,
+      backgroundColor: state.isDisabled
+        ? isDark
+          ? "#131B2E"
+          : "#F3F4F6"
+        : resolvedBgColor,
       boxShadow: "none",
       cursor: state.isDisabled ? "not-allowed" : "pointer",
       opacity: state.isDisabled ? 0.7 : 1,
       "&:hover": {
-        borderColor,
+        borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : resolvedBorderColor,
       },
     }),
 
@@ -80,19 +109,19 @@ export default function ReactSelect({
     input: (base) => ({
       ...base,
       margin: 0,
-      color: textColor,
+      color: resolvedTextColor,
     }),
 
     singleValue: (base) => ({
       ...base,
-      color: textColor,
+      color: resolvedTextColor,
       fontSize: 14,
       fontWeight: 600,
     }),
 
     placeholder: (base) => ({
       ...base,
-      color: placeholderColor,
+      color: resolvedPlaceholderColor,
       fontSize: 14,
     }),
 
@@ -102,17 +131,21 @@ export default function ReactSelect({
 
     dropdownIndicator: (base) => ({
       ...base,
-      color: textColor,
+      color: isDark ? "#94A3B8" : resolvedTextColor,
       "&:hover": {
-        color: textColor,
+        color: isDark ? "#F5C451" : resolvedTextColor,
       },
     }),
 
     menu: (base) => ({
       ...base,
-      backgroundColor: menuBackgroundColor,
+      backgroundColor: resolvedMenuBgColor,
       borderRadius,
       overflow: "hidden",
+      border: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid #E7E0D2",
+      boxShadow: isDark
+        ? "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)"
+        : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
       zIndex: 100,
     }),
 
@@ -127,25 +160,30 @@ export default function ReactSelect({
       fontSize: 14,
       fontWeight: state.isSelected ? 600 : 500,
       backgroundColor: state.isSelected
-        ? optionSelectedColor
+        ? resolvedOptionSelectedColor
         : state.isFocused
-          ? optionHoverColor
-          : menuBackgroundColor,
+          ? resolvedOptionHoverColor
+          : resolvedMenuBgColor,
       color: state.isSelected
-        ? optionSelectedTextColor
-        : optionTextColor || (menuBackgroundColor !== "#ffffff" ? "#ffffff" : textColor),
+        ? resolvedOptionSelectedTextColor
+        : resolvedOptionTextColor,
       "&:active": {
-        backgroundColor: optionSelectedColor,
+        backgroundColor: resolvedOptionSelectedColor,
       },
     }),
   };
 
   return (
-    <Select aria-label="Select option"
+    <Select
+      aria-label="Select option"
       styles={styles}
       isSearchable={false}
-      getOptionLabel={(option) => (option ? option.label ?? (option as any).name ?? "" : "")}
-      getOptionValue={(option) => (option ? option.value ?? (option as any).id ?? "" : "")}
+      getOptionLabel={(option) =>
+        option ? option.label ?? (option as any).name ?? "" : ""
+      }
+      getOptionValue={(option) =>
+        option ? option.value ?? (option as any).id ?? "" : ""
+      }
       {...props}
     />
   );

@@ -344,8 +344,8 @@ const VMSList = () => {
             limit={limit}
             pageSize={limit}
             itemName="records"
-            variant="dark"
-            className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
+            variant="light"
+            className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
             onPageChange={setPage}
             onPageSizeChange={setLimit}
             onLimitChange={setLimit}

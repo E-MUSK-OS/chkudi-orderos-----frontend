@@ -952,15 +952,15 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="flex h-[92dvh] sm:h-[90vh] w-[95vw] lg:w-[calc(100vw-6rem)] xl:w-[calc(100vw-18rem)] max-w-7xl flex-col p-0 !rounded-3xl sm:!rounded-[32px] border border-[#E7E0D2] overflow-hidden bg-white shadow-2xl">
-        <DialogHeader className="border-b border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-4 sm:py-5">
+      <DialogContent className="flex h-[92dvh] sm:h-[90vh] w-[95vw] lg:w-[calc(100vw-6rem)] xl:w-[calc(100vw-18rem)] max-w-7xl flex-col p-0 !rounded-3xl sm:!rounded-[32px] border border-[#E7E0D2] dark:border-white/[0.08] overflow-hidden bg-white dark:bg-[#0F1626] shadow-2xl">
+        <DialogHeader className="border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-4 sm:py-5">
           <div className="flex items-start justify-between">
             <div>
               <DialogTitle className="text-xl sm:text-2xl font-bold text-[#E8C16D]">
                 Generate Excel Sheet
               </DialogTitle>
 
-              <p className="mt-1 text-xs sm:text-sm text-slate-300">
+              <p className="mt-1 text-xs sm:text-sm text-slate-300 dark:text-slate-400">
                 Scan or enter Short SKU. Full SKU, Barcode SKU and OrderCook SKU are
                 filled automatically.
               </p>
@@ -970,7 +970,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
 
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 sm:pt-5 px-4 sm:px-6">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs sm:text-sm font-bold text-slate-700">Print Mode:</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Print Mode:</span>
             <div className="w-full sm:w-44 min-w-[140px]">
               <ReactSelect
                 options={PRINT_MODE_OPTIONS}
@@ -1006,16 +1006,16 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             <button
               type="button"
               onClick={handleDownloadDemoFormat}
-              className="inline-flex h-10.5 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 shadow-xs active:scale-[0.98] transition cursor-pointer min-w-[130px]"
+              className="inline-flex h-10.5 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#E8C16D]/10 px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#F5C451] hover:bg-[#FFF3D6] dark:hover:bg-[#E8C16D]/20 ring-1 ring-[#E8C16D]/30 shadow-xs active:scale-[0.98] transition cursor-pointer min-w-[130px]"
             >
-              <Download className="h-4 w-4 text-[#B88728]" />
+              <Download className="h-4 w-4 text-[#B88728] dark:text-[#F5C451]" />
               <span>Download</span>
             </button>
 
             <button
               type="button"
               onClick={clearSheet}
-              className="inline-flex h-10.5 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-xs active:scale-[0.98] transition cursor-pointer min-w-[120px]"
+              className="inline-flex h-10.5 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-xs active:scale-[0.98] transition cursor-pointer min-w-[120px]"
             >
               <Trash2 className="h-4 w-4" />
               <span>Clear Sheet</span>
@@ -1023,41 +1023,41 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </div>
         </div>
         <div className="flex-1 overflow-hidden px-4 sm:px-6 py-3 sm:py-4">
-          <div className="h-full overflow-auto rounded-2xl sm:rounded-[24px] border border-[#E7E0D2] bg-white shadow-xs">
+          <div className="h-full overflow-auto rounded-2xl sm:rounded-[24px] border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xs">
             <table className="min-w-[750px] w-full table-fixed border-collapse">
-              <thead className="sticky top-0 z-10 bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
+              <thead className="sticky top-0 z-10 bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
                 <tr>
-                  <th className="w-12 border-b border-r border-slate-800 px-4 py-3 text-center">
+                  <th className="w-12 border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-center">
                     <Checkbox
                       checked={selectedRowIds.size > 0 && selectedRowIds.size === rows.filter(r => r.shortSku.trim() || r.barcodeSku.trim()).length}
                       onCheckedChange={(checked) => toggleAllRows(!!checked)}
                       className="border-white data-[state=checked]:bg-[#E8C16D] data-[state=checked]:text-[#0A0E1A]"
                     />
                   </th>
-                  <th className="w-16 border-b border-r border-slate-800 px-4 py-3 text-left">#</th>
+                  <th className="w-16 border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left">#</th>
 
-                  <th className={printMode === "multiple" ? "w-[28%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[30%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[28%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left" : "w-[30%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left"}>
                     Short SKU
                   </th>
 
                   {printMode === "multiple" && (
-                    <th className="w-24 border-b border-r border-slate-800 px-4 py-3 text-left">
+                    <th className="w-24 border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left">
                       Qty
                     </th>
                   )}
 
-                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[26%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left" : "w-[26%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left"}>
                     Full SKU
                   </th>
 
-                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[22%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left" : "w-[22%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left"}>
                     Barcode SKU
                   </th>
 
-                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 px-4 py-3 text-left" : "w-[22%] border-b border-r border-slate-800 px-4 py-3 text-left"}>
+                  <th className={printMode === "multiple" ? "w-[24%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left" : "w-[22%] border-b border-r border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left"}>
                     OrderCook SKU
                   </th>
-                  <th className="w-24 border-b border-slate-800 px-4 py-3 text-left">Action</th>
+                  <th className="w-24 border-b border-slate-800 dark:border-white/[0.08] px-4 py-3 text-left">Action</th>
                 </tr>
               </thead>
 
@@ -1065,26 +1065,26 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                 {rows.map((row, index) => (
                   <tr
                     key={row.id}
-                    className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                    className={index % 2 === 0 ? "bg-white dark:bg-[#0F1626]" : "bg-slate-50 dark:bg-white/[0.02]"}
                   >
-                    <td className="border px-4 py-3 text-center">
+                    <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3 text-center">
                       <Checkbox
                         checked={selectedRowIds.has(row.id)}
                         onCheckedChange={(checked) => toggleRow(row.id, !!checked)}
                       />
                     </td>
-                    <td className="border px-4 py-3">
+                    <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3 text-slate-700 dark:text-slate-300">
                       <div className="flex items-center gap-2">
                         <span>{index + 1}</span>
                         {printedRowIds.has(row.id) && (
                           <span title="Printed">
-                            <BadgeCheck className="w-4 h-4 text-green-600" />
+                            <BadgeCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
                           </span>
                         )}
                       </div>
                     </td>
 
-                    <td className="border px-4 py-3">
+                    <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3">
                       <div className="relative">
                         <input
                           ref={(el) => {
@@ -1092,7 +1092,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                           }}
                           value={row.shortSku}
                           placeholder="Enter Short SKU"
-                          className="w-full border-none bg-transparent outline-none"
+                          className="w-full border-none bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none"
                           // onChange={(e) => {
                           //   const updated = [...rows];
                           //   updated[index].shortSku =
@@ -1400,7 +1400,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                     </td>
 
                     {printMode === "multiple" && (
-                      <td className="border px-4 py-3 text-center">
+                      <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3 text-center">
                         <input
                           ref={(el) => {
                             qtyInputRefs.current[index] = el;
@@ -1408,7 +1408,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                           type="number"
                           min="1"
                           value={row.quantity ?? 1}
-                          className="w-full border-none bg-transparent text-left font-medium text-slate-800 outline-none"
+                          className="w-full border-none bg-transparent text-left font-medium text-slate-800 dark:text-slate-200 outline-none"
                           onChange={(e) => {
                             const val = e.target.value === "" ? "" : Math.max(1, parseInt(e.target.value, 10) || 1);
                             const updated = [...rows];
@@ -1451,23 +1451,23 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
                       </td>
                     )}
 
-                    <td className="border px-4 py-3 text-left text-slate-700">
+                    <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3 text-left text-slate-700 dark:text-slate-300">
                       {row.loading ? "Searching..." : row.fullSku || "-"}
                     </td>
 
-                    <td className="border px-4 py-3 text-left">
+                    <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3 text-left text-slate-800 dark:text-slate-200">
                       {row.loading ? "Searching..." : row.barcodeSku || "-"}
                     </td>
 
-                    <td className="border px-4 py-3 text-left">
+                    <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3 text-left text-slate-800 dark:text-slate-200">
                       {row.loading ? "Searching..." : row.ordercookSku || "-"}
                     </td>
-                    <td className="border px-4 py-3 text-left">
+                    <td className="border border-slate-200 dark:border-white/[0.06] px-4 py-3 text-left">
                       <button
                         type="button"
                         onClick={() => deleteRow(row.id)}
                         disabled={rows.length === 1}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition disabled:opacity-40 cursor-pointer"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition disabled:opacity-40 cursor-pointer"
                         title="Delete row"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -1480,12 +1480,12 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
           </div>
         </div>
 
-        <div className="border-t border-[#E7E0D2] bg-white px-4 sm:px-6 py-3 sm:py-4">
+        <div className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 sm:px-6 text-xs sm:text-sm font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
+              className="w-full sm:w-auto h-10.5 sm:h-11 inline-flex items-center justify-center rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] px-5 sm:px-6 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-white/[0.03] active:scale-[0.98] cursor-pointer"
             >
               Close
             </button>

@@ -501,19 +501,19 @@ export default function InvoiceFormatter() {
     <DashboardLayout title="Invoice Formatter">
       <div className="space-y-4 sm:space-y-6">
         {/* HEADER SECTION matching Amazon Order Process */}
-        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Myntra Invoice & Label 4×6 Formatter
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200/80 px-2.5 py-1 text-xs font-bold text-amber-800">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                   Auto 4×6 Thermal Fit
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 break-words">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 break-words">
                 Upload merged Myntra Invoice & Label PDF. Labels & A4 Invoices are automatically fitted to 4×6 thermal printer paper with page numbering.
               </p>
             </div>
@@ -523,14 +523,14 @@ export default function InvoiceFormatter() {
                 <>
                   <button
                     onClick={handleResetAll}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] bg-[#0A0E1A] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs active:scale-[0.98]"
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>New Batch</span>
                   </button>
                   <button
                     onClick={handleDownloadPdf}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 shadow-xs transition active:scale-[0.98] cursor-pointer"
                   >
                     <Download className="h-4 w-4 stroke-[2.5]" />
                     <span>Download</span>
@@ -544,8 +544,8 @@ export default function InvoiceFormatter() {
                   </button>
                 </>
               ) : (
-                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 shadow-xs">
-                  <span className="text-xs sm:text-sm font-semibold text-slate-500">0 PDF Files</span>
+                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-white/[0.02] shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">0 PDF Files</span>
                 </div>
               )}
             </div>
@@ -554,30 +554,30 @@ export default function InvoiceFormatter() {
 
         {/* CONTENT SECTION */}
         {isProcessing ? (
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-[#E7E0D2] bg-white p-8">
+          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-8">
             <Loader2 className="h-10 w-10 animate-spin text-[#E8C16D]" />
-            <p className="mt-4 text-sm font-medium text-slate-600">Formatting pages to 4×6 thermal size and adding page numbers...</p>
+            <p className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-300">Formatting pages to 4×6 thermal size and adding page numbers...</p>
           </div>
         ) : !pdfUrl ? (
-          <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+          <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
             <div className="mb-4 sm:mb-6 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-500/20">
+                  <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20 dark:ring-emerald-800/40">
                     <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
                   <div>
-                    <h2 className="text-base sm:text-lg font-bold text-slate-800">PDF Order File</h2>
-                    <p className="text-xs sm:text-sm text-slate-500">Upload one .pdf file</p>
+                    <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white">PDF Order File</h2>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Upload one .pdf file</p>
                   </div>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-600/20">
+                <span className="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 ring-1 ring-amber-600/20 dark:ring-amber-800/40">
                   Required
                 </span>
               </div>
             </div>
 
-            <div className="relative group flex min-h-[220px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[#E8C16D]/60 bg-[#E8C16D]/[0.02] hover:bg-[#E8C16D]/5 hover:border-[#E8C16D] p-6 sm:p-8 text-center transition-all duration-300">
+            <div className="relative group flex min-h-[220px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[#E8C16D]/60 bg-[#E8C16D]/[0.02] dark:bg-white/[0.01] hover:bg-[#E8C16D]/5 dark:hover:bg-white/[0.03] hover:border-[#E8C16D] p-6 sm:p-8 text-center transition-all duration-300">
               <input
                 type="file"
                 accept=".pdf"
@@ -585,16 +585,16 @@ export default function InvoiceFormatter() {
                 className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
               <div className="flex flex-col items-center justify-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#E8C16D] shadow-sm ring-1 ring-black/5 group-hover:scale-110 transition-transform">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white dark:bg-[#0A0E1A] text-[#E8C16D] shadow-sm ring-1 ring-black/5 dark:ring-white/[0.08] group-hover:scale-110 transition-transform">
                   <Upload className="h-6 w-6" />
                 </div>
-                <h3 className="mb-1 text-sm sm:text-base font-bold text-slate-800">
+                <h3 className="mb-1 text-sm sm:text-base font-bold text-slate-800 dark:text-white">
                   Click to upload or drag & drop PDF
                 </h3>
-                <p className="mb-6 text-xs text-slate-500 max-w-[320px]">
+                <p className="mb-6 text-xs text-slate-500 dark:text-slate-400 max-w-[320px]">
                   Select a Myntra Invoice & Label PDF file (.pdf). Labels and Invoices will be automatically formatted to 4×6.
                 </p>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors group-hover:border-[#E8C16D] group-hover:text-[#E8C16D]">
+                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0A0E1A] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-colors group-hover:border-[#E8C16D] group-hover:text-[#E8C16D]">
                   <FileText className="h-4 w-4" />
                   <span>Browse PDF File</span>
                 </div>
@@ -602,22 +602,22 @@ export default function InvoiceFormatter() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 rounded-3xl border border-[#E7E0D2] bg-white shadow-sm overflow-hidden flex flex-col min-h-[70vh]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7E0D2] bg-slate-50/70 px-4 py-3 sm:px-6">
+          <div className="flex-1 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden flex flex-col min-h-[70vh]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/70 dark:bg-white/[0.02] px-4 py-3 sm:px-6">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-700">Invoice Side Margins:</span>
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Invoice Side Margins:</span>
+                <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full">
                   ⚡ Default: Zero Margin (Edge-to-Edge)
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1 shadow-xs">
+              <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-1 shadow-xs">
                 <button
                   type="button"
                   onClick={() => handleMarginModeChange("EDGE")}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                     marginMode === "EDGE"
                       ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                   }`}
                   title="Zero Margin: Eliminates side gaps so invoice extends completely edge-to-edge"
                 >
@@ -629,7 +629,7 @@ export default function InvoiceFormatter() {
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                     marginMode === "COMPACT"
                       ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                   }`}
                   title="Compact: Small side margins"
                 >
@@ -641,7 +641,7 @@ export default function InvoiceFormatter() {
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                     marginMode === "STANDARD"
                       ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                   }`}
                   title="Standard: Normal A4 margins"
                 >
@@ -667,43 +667,43 @@ export default function InvoiceFormatter() {
               exit={{ opacity: 0, scale: 0.94, y: 12 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-7 shadow-2xl text-slate-900"
+              className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-7 shadow-2xl text-slate-900 dark:text-white"
             >
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                className="absolute top-4 right-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X className="h-4 w-4" />
               </button>
               
               {/* Ambient Glows */}
-              <div className="pointer-events-none absolute -top-16 -left-16 h-44 w-44 rounded-full bg-[#FFF9EC] blur-3xl" />
+              <div className="pointer-events-none absolute -top-16 -left-16 h-44 w-44 rounded-full bg-[#FFF9EC] dark:bg-[#E8C16D]/5 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
               
               <div className="relative">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-700 ring-1 ring-amber-500/20">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/20 dark:ring-amber-800/40">
                     <Printer className="h-6 w-6 stroke-[2.2]" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-800">Print Options</h3>
-                    <p className="text-xs text-slate-500">
+                    <h3 className="text-xl font-black text-slate-800 dark:text-white">Print Options</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Total <strong>{processedPdfDoc?.getPageCount() || 0} pages</strong> loaded in PDF
                     </p>
                   </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="mb-5 flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
+                <div className="mb-5 flex rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#080B11] p-1">
                   <button
                     type="button"
                     onClick={() => setModalTab("ALL")}
                     className={`flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition ${
                       modalTab === "ALL"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "bg-white dark:bg-[#161D2E] text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                     }`}
                   >
                     All Pages (Batched)
@@ -713,8 +713,8 @@ export default function InvoiceFormatter() {
                     onClick={() => setModalTab("BATCHES")}
                     className={`flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition ${
                       modalTab === "BATCHES"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "bg-white dark:bg-[#161D2E] text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                     }`}
                   >
                     Quick Batches
@@ -724,8 +724,8 @@ export default function InvoiceFormatter() {
                     onClick={() => setModalTab("CUSTOM")}
                     className={`flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition ${
                       modalTab === "CUSTOM"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "bg-white dark:bg-[#161D2E] text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                     }`}
                   >
                     Select Pages
@@ -734,13 +734,13 @@ export default function InvoiceFormatter() {
 
                 {/* Batch Size Selector (Shown in ALL and BATCHES tabs) */}
                 {modalTab !== "CUSTOM" && (
-                  <div className="mb-5 rounded-2xl border border-amber-200/70 bg-amber-50/40 p-3.5 sm:p-4">
+                  <div className="mb-5 rounded-2xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 p-3.5 sm:p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                        <Layers className="h-3.5 w-3.5 text-amber-600" />
+                      <span className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                        <Layers className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                         Batch Size (Pages per Print Job)
                       </span>
-                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
                         ⚡ Recommended: 20
                       </span>
                     </div>
@@ -756,8 +756,8 @@ export default function InvoiceFormatter() {
                           }}
                           className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
                             batchSize === sz
-                              ? "bg-[#0A0E1A] text-[#E8C16D] border-[#0A0E1A] shadow-xs"
-                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                              ? "bg-[#0A0E1A] text-[#E8C16D] border-[#0A0E1A] dark:border-[#E8C16D]/40 shadow-xs"
+                              : "bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                           }`}
                         >
                           {sz}
@@ -776,13 +776,13 @@ export default function InvoiceFormatter() {
                               setBatchSize(val);
                             }
                           }}
-                          className="w-full text-center py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-white focus:outline-none focus:border-amber-500"
+                          className="w-full text-center py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
                           title="Custom batch size"
                         />
                       </div>
                     </div>
 
-                    <p className="mt-2 text-[11px] leading-relaxed text-amber-900/80">
+                    <p className="mt-2 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-300/80">
                       Keeps print spooler file small (~2 MB) so the <strong>TSC DA310</strong> printer buffer memory doesn&apos;t overflow or reprint duplicate labels.
                     </p>
                   </div>
@@ -796,18 +796,18 @@ export default function InvoiceFormatter() {
                       const totalBatches = Math.ceil(total / batchSize);
                       return (
                         <>
-                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 mb-5 space-y-2">
-                            <div className="flex justify-between text-xs text-slate-600">
+                          <div className="rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-white/[0.02] p-4 mb-5 space-y-2">
+                            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                               <span>Total Pages:</span>
-                              <strong className="text-slate-800">{total} Pages</strong>
+                              <strong className="text-slate-800 dark:text-white">{total} Pages</strong>
                             </div>
-                            <div className="flex justify-between text-xs text-slate-600">
+                            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                               <span>Batch Strategy:</span>
-                              <strong className="text-amber-700">{totalBatches} Batches ({batchSize} pages each)</strong>
+                              <strong className="text-amber-700 dark:text-amber-400">{totalBatches} Batches ({batchSize} pages each)</strong>
                             </div>
-                            <div className="flex justify-between text-xs text-slate-600">
+                            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                               <span>Buffer Cooldown:</span>
-                              <span className="text-slate-700 font-semibold">6s spacing between batches</span>
+                              <span className="text-slate-700 dark:text-slate-300 font-semibold">6s spacing between batches</span>
                             </div>
                           </div>
 
@@ -815,7 +815,7 @@ export default function InvoiceFormatter() {
                             <button
                               type="button"
                               onClick={() => setIsModalOpen(false)}
-                              className="flex-1 rounded-xl bg-slate-100 py-3.5 text-xs sm:text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
+                              className="flex-1 rounded-xl bg-slate-100 dark:bg-white/[0.06] py-3.5 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-white/[0.1] active:scale-[0.98]"
                             >
                               Cancel
                             </button>
@@ -846,7 +846,7 @@ export default function InvoiceFormatter() {
 
                       return (
                         <>
-                          <p className="text-xs text-slate-500 mb-3">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                             Click any batch to print immediately (helpful if a previous label jammed or needs reprint):
                           </p>
                           <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1 mb-5">
@@ -858,17 +858,17 @@ export default function InvoiceFormatter() {
                                   setIsModalOpen(false);
                                   executePrint(b.pages, b.pageCount);
                                 }}
-                                className="group flex flex-col items-start p-2.5 rounded-xl border border-slate-200 bg-white hover:border-[#E8C16D] hover:bg-amber-50/30 transition text-left cursor-pointer"
+                                className="group flex flex-col items-start p-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition text-left cursor-pointer"
                               >
                                 <div className="flex items-center justify-between w-full">
-                                  <span className="text-xs font-bold text-slate-800 group-hover:text-amber-800">
+                                  <span className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-amber-800 dark:group-hover:text-amber-300">
                                     Batch {b.batchNumber}
                                   </span>
-                                  <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-600">
+                                  <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400">
                                     {b.pageCount} pgs
                                   </span>
                                 </div>
-                                <span className="text-[11px] text-slate-500 mt-0.5">
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                                   Pages {b.startPage} – {b.endPage}
                                 </span>
                               </button>
@@ -879,7 +879,7 @@ export default function InvoiceFormatter() {
                             <button
                               type="button"
                               onClick={() => setIsModalOpen(false)}
-                              className="w-full rounded-xl bg-slate-100 py-3 text-xs sm:text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
+                              className="w-full rounded-xl bg-slate-100 dark:bg-white/[0.06] py-3 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-white/[0.1] active:scale-[0.98]"
                             >
                               Close
                             </button>
@@ -894,7 +894,7 @@ export default function InvoiceFormatter() {
                 {modalTab === "CUSTOM" && (
                   <div className="flex flex-col">
                     <div className="mb-4">
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                         Page Numbers or Range
                       </label>
                       <input 
@@ -903,9 +903,9 @@ export default function InvoiceFormatter() {
                         value={pageInput}
                         onChange={(e) => setPageInput(e.target.value)}
                         placeholder="e.g. 1-20, 45, 60-80" 
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] bg-white shadow-xs font-medium"
+                        className="w-full rounded-xl border border-slate-300 dark:border-white/[0.15] px-4 py-3 text-sm outline-none transition focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] bg-white dark:bg-[#080B11] text-slate-900 dark:text-white shadow-xs font-medium"
                       />
-                      <p className="mt-1.5 text-[11px] text-slate-400">
+                      <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
                         Total PDF pages: {processedPdfDoc?.getPageCount() || 0}. If more than {batchSize} pages are selected, they will automatically be safely batched.
                       </p>
                     </div>
@@ -914,14 +914,14 @@ export default function InvoiceFormatter() {
                       <button 
                         type="button"
                         onClick={() => setIsModalOpen(false)} 
-                        className="flex-1 rounded-xl bg-slate-100 py-3 text-xs sm:text-sm font-bold text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
+                        className="flex-1 rounded-xl bg-slate-100 dark:bg-white/[0.06] py-3 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-white/[0.1] active:scale-[0.98]"
                       >
                         Cancel
                       </button>
                       <button 
                         type="button"
                         onClick={handlePrintSelectedPages} 
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A0E1A] py-3 text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm transition hover:bg-black active:scale-[0.98]"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A0E1A] dark:bg-[#E8C16D] py-3 text-xs sm:text-sm font-bold text-[#E8C16D] dark:text-[#0A0E1A] shadow-sm transition hover:bg-black dark:hover:bg-[#d4af5a] active:scale-[0.98]"
                       >
                         <Printer className="h-4 w-4" />
                         <span>Print Pages</span>
@@ -944,15 +944,15 @@ export default function InvoiceFormatter() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 12 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-8 shadow-2xl text-slate-900"
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] p-6 sm:p-8 shadow-2xl text-slate-900 dark:text-white"
             >
               <div className="flex flex-col items-center text-center">
                 {/* Status Indicator Icon */}
                 <div className="relative mb-4">
                   <div className={`grid h-16 w-16 place-items-center rounded-2xl ring-1 transition-all ${
                     printProgress.isPaused
-                      ? "bg-amber-50 text-amber-600 ring-amber-500/20"
-                      : "bg-emerald-50 text-emerald-600 ring-emerald-500/20 animate-pulse"
+                      ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 ring-amber-500/20 dark:ring-amber-800/40"
+                      : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20 dark:ring-emerald-800/40 animate-pulse"
                   }`}>
                     {printProgress.isPaused ? (
                       <Pause className="h-7 w-7" />
@@ -966,16 +966,16 @@ export default function InvoiceFormatter() {
                   </span>
                 </div>
 
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 mb-2">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
                   <span>🖨️ Printer:</span>
-                  <strong className="text-slate-900">{printProgress.printerName}</strong>
+                  <strong className="text-slate-900 dark:text-white">{printProgress.printerName}</strong>
                 </div>
 
-                <h3 className="text-xl font-black text-slate-800">
+                <h3 className="text-xl font-black text-slate-800 dark:text-white">
                   {printProgress.isPaused ? "Printing Paused" : "Printing in Progress"}
                 </h3>
 
-                <p className="mt-1 text-sm font-bold text-amber-700">
+                <p className="mt-1 text-sm font-bold text-amber-700 dark:text-amber-400">
                   Batch {printProgress.currentBatch} of {printProgress.totalBatches}
                   {printProgress.currentRange ? ` (${printProgress.currentRange})` : ""}
                 </p>
@@ -988,7 +988,7 @@ export default function InvoiceFormatter() {
                       : 0;
                     return (
                       <>
-                        <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden ring-1 ring-slate-200/50">
+                        <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden ring-1 ring-slate-200/50 dark:ring-white/[0.08]">
                           <motion.div
                             className="h-full bg-gradient-to-r from-[#E8C16D] to-amber-500 rounded-full"
                             initial={{ width: 0 }}
@@ -996,9 +996,9 @@ export default function InvoiceFormatter() {
                             transition={{ duration: 0.35, ease: "easeOut" }}
                           />
                         </div>
-                        <div className="mt-2 flex justify-between text-xs font-semibold text-slate-500">
+                        <div className="mt-2 flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
                           <span>{printProgress.sentPages} of {printProgress.totalPages} pages sent</span>
-                          <span className="text-amber-700">{pct}%</span>
+                          <span className="text-amber-700 dark:text-amber-400">{pct}%</span>
                         </div>
                       </>
                     );
@@ -1007,15 +1007,15 @@ export default function InvoiceFormatter() {
 
                 {/* Cooldown / Waiting Banner */}
                 {printProgress.countdown > 0 && !printProgress.isPaused && (
-                  <div className="w-full mt-4 flex items-center justify-between rounded-2xl border border-amber-200/80 bg-amber-50/70 px-4 py-2.5 text-xs text-amber-950">
+                  <div className="w-full mt-4 flex items-center justify-between rounded-2xl border border-amber-200/80 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-950/30 px-4 py-2.5 text-xs text-amber-950 dark:text-amber-200">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                      <Loader2 className="h-4 w-4 animate-spin text-amber-600 dark:text-amber-400" />
                       <span>Next batch in <strong>{printProgress.countdown}s</strong> (buffer cooldown)</span>
                     </div>
                     <button
                       type="button"
                       onClick={handleSkipWait}
-                      className="inline-flex items-center gap-1 font-bold text-amber-700 hover:text-amber-900 cursor-pointer hover:underline"
+                      className="inline-flex items-center gap-1 font-bold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 cursor-pointer hover:underline"
                     >
                       <span>Send Now</span>
                       <FastForward className="h-3.5 w-3.5" />
@@ -1024,7 +1024,7 @@ export default function InvoiceFormatter() {
                 )}
 
                 {printProgress.isPaused && (
-                  <div className="w-full mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 font-medium">
+                  <div className="w-full mt-4 rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/30 px-4 py-2.5 text-xs text-amber-900 dark:text-amber-200 font-medium">
                     ⏸️ Printing paused. Printer buffer is clearing. Click Resume to continue.
                   </div>
                 )}
@@ -1034,16 +1034,16 @@ export default function InvoiceFormatter() {
                   <button
                     type="button"
                     onClick={handleTogglePause}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 py-3 text-xs sm:text-sm font-bold text-slate-700 transition active:scale-[0.98] shadow-xs cursor-pointer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] py-3 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] shadow-xs cursor-pointer"
                   >
                     {printProgress.isPaused ? (
                       <>
-                        <Play className="h-4 w-4 text-emerald-600 fill-emerald-600" />
+                        <Play className="h-4 w-4 text-emerald-600 dark:text-emerald-400 fill-emerald-600" />
                         <span>Resume</span>
                       </>
                     ) : (
                       <>
-                        <Pause className="h-4 w-4 text-amber-600 fill-amber-600" />
+                        <Pause className="h-4 w-4 text-amber-600 dark:text-amber-400 fill-amber-600" />
                         <span>Pause</span>
                       </>
                     )}
@@ -1051,9 +1051,9 @@ export default function InvoiceFormatter() {
                   <button
                     type="button"
                     onClick={handleStopPrint}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 py-3 text-xs sm:text-sm font-bold text-rose-700 transition active:scale-[0.98] shadow-xs cursor-pointer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/60 py-3 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 transition active:scale-[0.98] shadow-xs cursor-pointer"
                   >
-                    <Square className="h-4 w-4 fill-rose-700" />
+                    <Square className="h-4 w-4 fill-rose-700 dark:fill-rose-400" />
                     <span>Stop Print</span>
                   </button>
                 </div>

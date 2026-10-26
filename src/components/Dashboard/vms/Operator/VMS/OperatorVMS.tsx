@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 
 import OperatorContent from "./OperatorContent";
-import OperatorLoginModal from "../auth/components/OperatorLoginModal";
+import OperatorLoginForm from "../auth/components/OperatorLoginForm";
+import { Account } from "@/components/Dashboard/vms/Admin/Account/types/account";
 import { operatorLogout } from "@/services/operatorAuth.service";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
@@ -55,26 +56,37 @@ const OperatorVMS = () => {
     }
   }, [pathname]);
 
-  if (isAuthenticated === null) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <OperatorLoginModal
-        open
-        onClose={() => {
-          // Mark this tab as having an active operator session
-          sessionStorage.setItem("operatorTabActive", "true");
-          setIsAuthenticated(true);
-        }}
-      />
-    );
-  }
-
   return (
     <DashboardLayout title="Operator VMS">
-      <OperatorContent onLogout={handleLogout} />
+      {isAuthenticated === null ? (
+        <div className="flex h-96 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
+        </div>
+      ) : !isAuthenticated ? (
+        <div className="flex min-h-[70vh] items-center justify-center py-6 sm:py-10">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626]">
+            <div className="border-b border-[#E7E0D2] bg-[#0A0E1A] px-6 py-5 text-center dark:border-white/[0.08] dark:bg-[#080B11]">
+              <h2 className="text-xl font-bold text-[#E8C16D] sm:text-2xl">
+                Operator Login
+              </h2>
+              <p className="mt-1 text-xs text-slate-300 sm:text-sm">
+                Login to start barcode scanning and video recording.
+              </p>
+            </div>
+            <div className="p-6 sm:p-7">
+              <OperatorLoginForm
+                onSuccess={(account: Account) => {
+                  localStorage.setItem("selectedAccount", JSON.stringify(account));
+                  sessionStorage.setItem("operatorTabActive", "true");
+                  setIsAuthenticated(true);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <OperatorContent onLogout={handleLogout} />
+      )}
     </DashboardLayout>
   );
 };

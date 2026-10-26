@@ -111,12 +111,12 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
 
       {/* Status (Update mode only) */}
       {mode === "update" && (
-        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-[#FFFDF9] p-4">
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-[#FFFDF9] dark:bg-[#080B11] p-4">
           <div>
-            <span className="block text-sm font-semibold text-slate-900">
+            <span className="block text-sm font-semibold text-slate-900 dark:text-white">
               Active Operator
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               Allow this operator to log in and scan packages
             </span>
           </div>
@@ -134,8 +134,13 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
         </div>
       )}
 
-      <div className="flex items-center justify-end pt-2">
-        <Button type="submit" loading={loading} fullWidth={false} className="px-8">
+      <div className="flex items-center justify-end pt-2 w-full">
+        <Button
+          type="submit"
+          loading={loading}
+          fullWidth={false}
+          className="w-full sm:w-auto px-8 min-h-[42px] sm:min-h-[44px] h-11 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
+        >
           {mode === "create" ? "Create Operator" : "Update Operator"}
         </Button>
       </div>

@@ -31,7 +31,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/60 duration-100 backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className,
       )}
       {...props}
@@ -53,7 +53,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none",
+          "fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none dark:bg-[#0F1626] dark:text-white dark:ring-white/10 dark:border dark:border-white/[0.08]",
           className,
         )}
         {...props}
@@ -67,11 +67,11 @@ function DialogContent({
                 variant="ghost"
                 size="icon"
                 fullWidth={false}
-                className="absolute right-3 top-3 z-20 h-8 w-8 p-0 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                className="absolute right-2.5 top-2.5 sm:right-3 sm:top-3 z-20 h-8 w-8 sm:h-9 sm:w-9 p-0 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
               />
             }
           >
-            <XIcon className="h-5 w-5" />
+            <XIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

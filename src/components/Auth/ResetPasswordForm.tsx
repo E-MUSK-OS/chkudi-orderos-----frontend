@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, Lock, Package } from "lucide-react";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,36 +59,47 @@ export default function ResetPasswordForm({
   };
 
   return (
-    <div className="flex items-center justify-center bg-[#FCFBF9] px-8 py-14 lg:px-16 h-full">
+    <div className="flex items-center justify-center bg-[#FCFBF9] px-4 py-8 sm:px-8 sm:py-12 md:px-10 lg:px-12 xl:px-16 w-full h-full dark:bg-[#0F1626]">
       <motion.div
         initial={{
           opacity: 0,
-          x: 40,
+          x: 20,
         }}
         animate={{
           opacity: 1,
           x: 0,
         }}
         transition={{
-          duration: 0.5,
+          duration: 0.4,
         }}
-        className="w-full max-w-md"
+        className="w-full max-w-md mx-auto"
       >
-        <span className="text-lg uppercase text-[#C89B3C]">Password Reset</span>
+        {/* Mobile / Tablet Brand Header */}
+        <div className="lg:hidden flex items-center justify-center gap-2.5 pb-4 mb-4 sm:pb-5 sm:mb-5 border-b border-slate-100 dark:border-white/[0.06]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C89B3C]/30 bg-[#C89B3C]/10 dark:border-[#F5C451]/30 dark:bg-[#F5C451]/10">
+            <Package size={18} className="text-[#E8C170] dark:text-[#F5C451]" />
+          </div>
+          <span className="font-display text-lg sm:text-xl tracking-[2px] uppercase text-[#C89B3C] dark:text-[#F5C451] font-bold">
+            Chakudee <span className="text-[#0A0E1A] dark:text-white">OrderOS</span>
+          </span>
+        </div>
 
-        <div className="mt-2 h-px w-30 bg-gradient-to-r from-[#C89B3C] to-transparent" />
+        <span className="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#C89B3C] dark:text-[#F5C451]">
+          Password Reset
+        </span>
 
-        <h1 className="mt-5 font-heading text-4xl uppercase text-[#0A0E1A]">
+        <div className="mt-2 h-px w-20 sm:w-28 bg-gradient-to-r from-[#C89B3C] to-transparent dark:from-[#F5C451]" />
+
+        <h1 className="mt-3.5 sm:mt-5 font-heading text-2xl sm:text-3xl lg:text-4xl uppercase text-[#0A0E1A] dark:text-white">
           Create New Password
         </h1>
 
-        <p className="mt-2 text-lg leading-7 text-[#64748B]">
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-[#64748B] dark:text-slate-400">
           Your new password must be different from your previous password.
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-10 space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 sm:mt-8 space-y-4 sm:space-y-5">
           {/* Password */}
-
           <Input
             label="New Password"
             type={showPassword ? "text" : "password"}
@@ -97,7 +108,7 @@ export default function ResetPasswordForm({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-slate-400 hover:text-[#C89B3C]"
+                className="text-slate-400 hover:text-[#C89B3C] dark:hover:text-[#F5C451] transition-colors"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -107,7 +118,6 @@ export default function ResetPasswordForm({
           />
 
           {/* Confirm Password */}
-
           <Input
             label="Confirm Password"
             type={showConfirmPassword ? "text" : "password"}
@@ -116,7 +126,7 @@ export default function ResetPasswordForm({
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="text-slate-400 hover:text-[#C89B3C]"
+                className="text-slate-400 hover:text-[#C89B3C] dark:hover:text-[#F5C451] transition-colors"
               >
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -128,7 +138,7 @@ export default function ResetPasswordForm({
           <Button
             type="submit"
             loading={isSubmitting}
-            rightIcon={<span className="text-[#E8C170]">→</span>}
+            rightIcon={<span className="text-[#E8C170] dark:text-[#080B11]">→</span>}
           >
             Reset Password
           </Button>

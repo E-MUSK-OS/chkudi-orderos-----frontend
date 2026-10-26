@@ -59,11 +59,11 @@ function Calendar({
           defaultClassNames.nav,
         ),
         button_previous: cn(
-          "flex h-9 w-9 items-center justify-center border border-[#E7E0D2] bg-[#E8C16D] text-black hover:bg-[#ddb75d] rounded-md transition",
+          "flex h-9 w-9 items-center justify-center border border-[#E7E0D2] bg-[#E8C16D] text-black hover:bg-[#ddb75d] rounded-md transition dark:border-white/[0.08] dark:bg-[#F5C451] dark:text-black dark:hover:bg-[#e6b540]",
           defaultClassNames.button_previous,
         ),
         button_next: cn(
-          "flex h-9 w-9 items-center justify-center border border-[#E7E0D2] bg-[#E8C16D] text-black hover:bg-[#ddb75d] rounded-md transition",
+          "flex h-9 w-9 items-center justify-center border border-[#E7E0D2] bg-[#E8C16D] text-black hover:bg-[#ddb75d] rounded-md transition dark:border-white/[0.08] dark:bg-[#F5C451] dark:text-black dark:hover:bg-[#e6b540]",
           defaultClassNames.button_next,
         ),
         month_caption: cn(
@@ -83,16 +83,16 @@ function Calendar({
           defaultClassNames.dropdown,
         ),
         caption_label: cn(
-          "font-bold select-none text-[#0A0E1A]",
+          "font-bold select-none text-[#0A0E1A] dark:text-white",
           captionLayout === "label"
             ? "text-base"
-            : "flex items-center gap-1 rounded-(--cell-radius) text-base text-[#0A0E1A] [&>svg]:size-3.5 [&>svg]:text-[#0A0E1A]",
+            : "flex items-center gap-1 rounded-(--cell-radius) text-base text-[#0A0E1A] dark:text-white [&>svg]:size-3.5 [&>svg]:text-[#0A0E1A] [&>svg]:dark:text-white",
           defaultClassNames.caption_label,
         ),
         month_grid: cn("w-full border-collapse", defaultClassNames.month_grid),
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
-          "flex-1 rounded-(--cell-radius) text-[0.8rem] font-bold text-slate-700 select-none",
+          "flex-1 rounded-(--cell-radius) text-[0.8rem] font-bold text-slate-700 dark:text-slate-400 select-none",
           defaultClassNames.weekday,
         ),
         week: cn("mt-2 flex w-full", defaultClassNames.week),
@@ -105,7 +105,7 @@ function Calendar({
           defaultClassNames.week_number,
         ),
         day: cn(
-          "group/day relative aspect-square h-full w-full rounded-(--cell-radius) p-0 text-center text-slate-800 select-none [&:last-child[data-selected=true]_button]:rounded-r-(--cell-radius)",
+          "group/day relative aspect-square h-full w-full rounded-(--cell-radius) p-0 text-center text-slate-800 dark:text-slate-200 select-none [&:last-child[data-selected=true]_button]:rounded-r-(--cell-radius)",
           props.showWeekNumber
             ? "[&:nth-child(2)[data-selected=true]_button]:rounded-l-(--cell-radius)"
             : "[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)",
@@ -121,14 +121,14 @@ function Calendar({
           defaultClassNames.range_end,
         ),
         today: cn(
-          "rounded-(--cell-radius) border border-[#E8C16D] bg-[#E8C16D]/15 text-slate-900 font-bold data-[selected=true]:rounded-none",
+          "rounded-(--cell-radius) border border-[#E8C16D] bg-[#E8C16D]/15 text-slate-900 font-bold data-[selected=true]:rounded-none dark:border-[#F5C451] dark:bg-[#F5C451]/15 dark:text-[#F5C451]",
           defaultClassNames.today,
         ),
         outside: cn(
-          "text-slate-300 aria-selected:text-slate-300",
+          "text-slate-300 aria-selected:text-slate-300 dark:text-slate-600 dark:aria-selected:text-slate-600",
           defaultClassNames.outside,
         ),
-        disabled: cn("text-slate-300 opacity-50", defaultClassNames.disabled),
+        disabled: cn("text-slate-300 opacity-50 dark:text-slate-700", defaultClassNames.disabled),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
       }}
@@ -228,24 +228,35 @@ function CalendarDayButton({
     border-0
 
     text-slate-800
+    dark:text-slate-200
 
     hover:text-slate-900
+    dark:hover:text-white
 
     hover:bg-[#E8C16D]/20
+    dark:hover:bg-[#F5C451]/20
 
     font-semibold
 
     data-[selected-single=true]:bg-[#E8C16D]
     data-[selected-single=true]:text-black
+    dark:data-[selected-single=true]:bg-[#F5C451]
+    dark:data-[selected-single=true]:text-black
 
     data-[range-start=true]:bg-[#E8C16D]
     data-[range-start=true]:text-black
+    dark:data-[range-start=true]:bg-[#F5C451]
+    dark:data-[range-start=true]:text-black
 
     data-[range-end=true]:bg-[#E8C16D]
     data-[range-end=true]:text-black
+    dark:data-[range-end=true]:bg-[#F5C451]
+    dark:data-[range-end=true]:text-black
 
     data-[range-middle=true]:bg-[#E8C16D]/20
     data-[range-middle=true]:text-slate-900
+    dark:data-[range-middle=true]:bg-[#F5C451]/20
+    dark:data-[range-middle=true]:text-white
     `,
         className,
       )}

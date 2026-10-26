@@ -37,9 +37,9 @@ export default function DeleteTagLoopModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="!rounded-3xl sm:!rounded-[32px] border border-[#E7E0D2] max-w-xl sm:max-w-2xl overflow-hidden bg-white p-0 shadow-2xl">
+      <DialogContent className="!rounded-3xl sm:!rounded-[32px] border border-[#E7E0D2] dark:border-white/[0.08] max-w-xl sm:max-w-2xl overflow-hidden bg-white dark:bg-[#0F1626] p-0 shadow-2xl">
         {/* Header */}
-        <div className="border-b border-[#1A2235] bg-[#0A0E1A] px-6 sm:px-8 py-5 sm:py-6">
+        <div className="border-b border-[#1A2235] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-6 sm:px-8 py-5 sm:py-6">
           <DialogHeader>
             <div className="flex items-center gap-4">
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/30 shadow-xs shrink-0">
@@ -50,7 +50,7 @@ export default function DeleteTagLoopModal({
                 <DialogTitle className="text-xl sm:text-2xl font-black text-[#E8C16D] tracking-tight">
                   Delete Tag Loop
                 </DialogTitle>
-                <p className="mt-0.5 text-xs sm:text-sm text-slate-300">
+                <p className="mt-0.5 text-xs sm:text-sm text-slate-300 dark:text-slate-400">
                   This action is permanent and cannot be undone.
                 </p>
               </div>
@@ -59,42 +59,42 @@ export default function DeleteTagLoopModal({
         </div>
 
         {/* Body */}
-        <div className="space-y-6 sm:space-y-7 p-6 sm:p-8 bg-white">
+        <div className="space-y-6 sm:space-y-7 p-6 sm:p-8 bg-white dark:bg-[#0F1626]">
           {/* Danger notice */}
-          <div className="rounded-2xl border border-red-200/80 bg-red-50/50 p-4 sm:p-4.5 text-xs sm:text-sm leading-relaxed text-red-800">
+          <div className="rounded-2xl border border-red-200/80 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20 p-4 sm:p-4.5 text-xs sm:text-sm leading-relaxed text-red-800 dark:text-red-300">
             You are about to permanently delete this Tag Loop sequence and all associated tracking data. Once deleted, this range cannot be recovered or restored.
           </div>
 
           {/* Tag Range Target */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-[#FAF8F5] p-5 sm:p-6 shadow-2xs">
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] p-5 sm:p-6 shadow-2xs">
             <div className="mb-4 flex items-center gap-2">
-              <Boxes className="h-4 w-4 text-[#B88728]" />
-              <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0A0E1A]">
+              <Boxes className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
+              <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0A0E1A] dark:text-white">
                 Target Sequence Range
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-4">
-              <div className="rounded-xl border border-[#E7E0D2] bg-white p-4 shadow-2xs">
-                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <div className="rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] p-4 shadow-2xs">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Start Tag
                 </p>
-                <h3 className="mt-1.5 font-mono text-lg sm:text-xl font-black text-[#0A0E1A] break-all">
+                <h3 className="mt-1.5 font-mono text-lg sm:text-xl font-black text-[#0A0E1A] dark:text-white break-all">
                   {tagLoop.startTag}
                 </h3>
               </div>
 
               <div className="flex items-center justify-center">
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 shadow-2xs rotate-90 md:rotate-0">
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/40 shadow-2xs rotate-90 md:rotate-0">
                   <ArrowRight className="h-4 w-4" />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#E7E0D2] bg-white p-4 shadow-2xs text-left md:text-right">
-                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <div className="rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] p-4 shadow-2xs text-left md:text-right">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   End Tag
                 </p>
-                <h3 className="mt-1.5 font-mono text-lg sm:text-xl font-black text-[#B88728] break-all">
+                <h3 className="mt-1.5 font-mono text-lg sm:text-xl font-black text-[#B88728] dark:text-[#E8C16D] break-all">
                   {tagLoop.endTag}
                 </h3>
               </div>
@@ -103,32 +103,32 @@ export default function DeleteTagLoopModal({
 
           {/* 3-Column stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-[#FAF8F5] p-4 text-center shadow-2xs">
-              <PackageCheck className="mx-auto h-6 w-6 text-[#B88728]" />
-              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] p-4 text-center shadow-2xs">
+              <PackageCheck className="mx-auto h-6 w-6 text-[#B88728] dark:text-[#E8C16D]" />
+              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Total Tags
               </p>
-              <h4 className="mt-1 text-xl sm:text-2xl font-black text-[#0A0E1A]">
+              <h4 className="mt-1 text-xl sm:text-2xl font-black text-[#0A0E1A] dark:text-white">
                 {tagLoop.total.toLocaleString()}
               </h4>
             </div>
 
-            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-[#FAF8F5] p-4 text-center shadow-2xs">
-              <CheckCircle2 className="mx-auto h-6 w-6 text-emerald-600" />
-              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] p-4 text-center shadow-2xs">
+              <CheckCircle2 className="mx-auto h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Available
               </p>
-              <h4 className="mt-1 text-xl sm:text-2xl font-black text-emerald-600">
+              <h4 className="mt-1 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
                 {tagLoop.available.toLocaleString()}
               </h4>
             </div>
 
-            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-[#FAF8F5] p-4 text-center shadow-2xs">
-              <Boxes className="mx-auto h-6 w-6 text-amber-600" />
-              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] p-4 text-center shadow-2xs">
+              <Boxes className="mx-auto h-6 w-6 text-amber-600 dark:text-amber-400" />
+              <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Used
               </p>
-              <h4 className="mt-1 text-xl sm:text-2xl font-black text-amber-700">
+              <h4 className="mt-1 text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-400">
                 {tagLoop.used.toLocaleString()}
               </h4>
             </div>
@@ -140,7 +140,7 @@ export default function DeleteTagLoopModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="inline-flex h-11 items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-5 text-xs sm:text-sm font-bold text-slate-700 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#080B11] hover:bg-slate-200 dark:hover:bg-white/[0.04] px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>

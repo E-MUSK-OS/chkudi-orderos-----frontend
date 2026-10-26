@@ -39,19 +39,19 @@ export default function OfflinePage() {
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#F7F5F0]">
-      <div className="text-center p-8 max-w-md bg-[#0A0E1A] shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-[#F7F5F0] dark:bg-[#080B11]">
+      <div className="text-center p-8 max-w-md bg-[#0A0E1A] shadow-2xl dark:border dark:border-white/[0.08] dark:bg-[#0F1626]">
         <div className="text-6xl mb-4">📡</div>
         
-        <h1 className="text-3xl font-bold text-[#E8C16D] mb-3">
+        <h1 className="text-3xl font-bold text-[#E8C16D] dark:text-[#F5C451] mb-3">
           No Internet Connection
         </h1>
         
-        <p className="text-white mb-2">
+        <p className="text-white dark:text-slate-200 mb-2">
           Please check your network connection
         </p>
         
-        <p className="text-md text-white mb-6">
+        <p className="text-md text-white dark:text-slate-300 mb-6">
           {navigator.onLine ? (
             "✅ Connected! Redirecting to Home..."
           ) : (
@@ -74,7 +74,7 @@ export default function OfflinePage() {
                 alert("Still offline! Please check your connection.");
               }
             }}
-            className="px-6 py-2.5 bg-[#E8C16D] text-white transition-colors"
+            className="px-6 py-2.5 bg-[#E8C16D] text-[#0A0E1A] font-semibold transition-colors dark:bg-[#F5C451]"
           >
             Try Again
           </button>
@@ -85,13 +85,13 @@ export default function OfflinePage() {
                 window.close();
               }
             }}
-            className="px-6 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+            className="px-6 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/[0.1]"
           >
             Close
           </button>
         </div>
 
-        <div className="mt-6 text-sm text-white">
+        <div className="mt-6 text-sm text-white/80 dark:text-slate-400">
           <p>💡 Check your WiFi or Mobile Data</p>
           <p>🔄 Turn Airplane Mode on/off</p>
           <p>📱 Restart your router</p>

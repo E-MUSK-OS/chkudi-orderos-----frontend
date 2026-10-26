@@ -252,8 +252,8 @@ export default function Pagination({
   const isLight = variant === "light";
 
   const defaultContainerClass = isLight
-    ? "mt-6 flex flex-col gap-4 rounded-xl border border-[#E7E0D2] bg-white text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors"
-    : "mt-6 flex flex-col gap-4 rounded-xl border border-slate-800 bg-[#0F172A] text-gray-300 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors";
+    ? "mt-6 flex flex-col gap-4 rounded-xl border border-[#E7E0D2] bg-white text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300"
+    : "mt-6 flex flex-col gap-4 rounded-xl border border-slate-800 bg-[#0F172A] text-gray-300 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#090D17]";
 
   const containerClasses = className
     ? `flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-colors ${className}`
@@ -262,17 +262,17 @@ export default function Pagination({
   return (
     <div className={containerClasses}>
       {/* Left count indicator */}
-      <div className={`text-xs sm:text-sm text-center sm:text-left ${isLight ? "text-slate-600" : "text-slate-300"}`}>
+      <div className={`text-xs sm:text-sm text-center sm:text-left ${isLight ? "text-slate-600 dark:text-slate-400" : "text-slate-300 dark:text-slate-400"}`}>
         Showing{" "}
-        <span className={`font-bold ${isLight ? "text-[#0A0E1A]" : "text-white"}`}>
+        <span className={`font-bold ${isLight ? "text-[#0A0E1A] dark:text-white" : "text-white"}`}>
           {start}
         </span>
         {" - "}
-        <span className={`font-bold ${isLight ? "text-[#0A0E1A]" : "text-white"}`}>
+        <span className={`font-bold ${isLight ? "text-[#0A0E1A] dark:text-white" : "text-white"}`}>
           {end}
         </span>
         {" of "}
-        <span className={`font-bold ${isLight ? "text-[#0A0E1A]" : "text-white"}`}>
+        <span className={`font-bold ${isLight ? "text-[#0A0E1A] dark:text-white" : "text-white"}`}>
           {currentTotal}
         </span>{" "}
         {itemName}
@@ -282,7 +282,7 @@ export default function Pagination({
       <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
         {/* Rows Per Page dropdown */}
         <div className="flex items-center gap-1.5">
-          <span className={`text-xs sm:text-sm font-medium ${isLight ? "text-slate-600" : "text-slate-300"}`}>
+          <span className={`text-xs sm:text-sm font-medium ${isLight ? "text-slate-600 dark:text-slate-400" : "text-slate-300 dark:text-slate-400"}`}>
             Rows:
           </span>
           <RowsPerPageDropdown
@@ -317,8 +317,8 @@ export default function Pagination({
             disabled:cursor-not-allowed
             ${
               isLight
-                ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E]"
-                : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D]"
+                ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
+                : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
             }
           `}
         >
@@ -343,12 +343,12 @@ export default function Pagination({
             whitespace-nowrap
             ${
               isLight
-                ? "border-[#E7E0D2] bg-[#FFF9EC] text-[#0A0E1A]"
-                : "border-slate-700 bg-[#141B2D] text-white"
+                ? "border-[#E7E0D2] bg-[#FFF9EC] text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#141B2D] dark:text-white"
+                : "border-slate-700 bg-[#141B2D] text-white dark:border-white/[0.08] dark:bg-[#0F1626]"
             }
           `}
         >
-          <span className={isLight ? "text-[#B88728]" : "text-[#E8C16D]"}>{page}</span>
+          <span className={isLight ? "text-[#B88728] dark:text-[#F5C451]" : "text-[#E8C16D] dark:text-[#F5C451]"}>{page}</span>
           <span className="mx-1 text-slate-500 font-normal">/</span>
           <span>{Math.max(totalPages, 1)}</span>
         </div>
@@ -377,8 +377,8 @@ export default function Pagination({
             disabled:cursor-not-allowed
             ${
               isLight
-                ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E]"
-                : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D]"
+                ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
+                : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
             }
           `}
         >

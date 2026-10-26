@@ -45,8 +45,8 @@ export default function MarketplaceConnectionModal({
       <div className="space-y-8 p-6">
         {/* Marketplace Info */}
 
-        <div className="flex items-center gap-4 border border-[#E7E0D2] bg-[#FCFBF8] p-5">
-          <div className="flex h-20 w-20 items-center justify-center">
+        <div className="flex items-center gap-4 rounded-2xl border border-[#E7E0D2] bg-[#FCFBF8] p-5 dark:border-white/[0.08] dark:bg-white/[0.03]">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-white p-2 shadow-2xs dark:border-white/[0.08] dark:bg-white/[0.04]">
             <img
               src={
                 MARKETPLACE_LOGOS[
@@ -59,15 +59,15 @@ export default function MarketplaceConnectionModal({
           </div>
 
           <div>
-            <h3 className="text-2xl font-bold">
+            <h3 className="text-2xl font-bold text-[#0A0E1A] dark:text-white">
               {account.marketplace.marketplaceName}
             </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Seller : {account.sellerName}
             </p>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Seller Code : {account.sellerCode}
             </p>
           </div>

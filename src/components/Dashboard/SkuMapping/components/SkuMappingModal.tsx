@@ -65,68 +65,68 @@ export default function SkuMappingModal({ open, onClose, skuMapping }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg overflow-hidden border border-[#E7E0D2] p-0 shadow-2xl !rounded-3xl sm:!rounded-[32px] bg-white">
-        <DialogHeader className="border-b border-[#E7E0D2] bg-[#0A0E1A] px-6 py-5">
+      <DialogContent className="max-w-lg overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08] p-0 shadow-2xl !rounded-3xl sm:!rounded-[32px] bg-white dark:bg-[#0F1626]">
+        <DialogHeader className="border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-6 py-5">
           <DialogTitle className="text-xl sm:text-2xl font-bold text-[#E8C16D]">
             Edit SKU Mapping
           </DialogTitle>
-          <p className="mt-1 text-xs sm:text-sm text-slate-300">
+          <p className="mt-1 text-xs sm:text-sm text-slate-300 dark:text-slate-400">
             Update the barcode and SKU mapping details for this product.
           </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-6 sm:p-7">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Short SKU</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Short SKU</label>
             <input
               {...register("shortSku", { required: true })}
               placeholder="e.g. TS-BLK-M"
-              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Full SKU</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Full SKU</label>
             <input
               {...register("fullSku")}
               placeholder="e.g. TS-BLK-M-FULL"
-              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Barcode SKU</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Barcode SKU</label>
             <input
               {...register("barcodeSku", { required: true })}
               placeholder="e.g. 890123456789"
-              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] font-mono outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">OrderCook SKU</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">OrderCook SKU</label>
             <input
               {...register("ordercookSku")}
               placeholder="e.g. OC-12345"
-              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+              className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">MRP</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">MRP</label>
               <input
                 {...register("mrp")}
                 placeholder="e.g. 2799.00 RS"
-                className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+                className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">MFG Month</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">MFG Month</label>
               <input
                 {...register("mfgMonth")}
                 placeholder="e.g. JUL/ 26"
-                className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
+                className="w-full h-10 sm:h-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30"
               />
             </div>
           </div>
@@ -135,7 +135,7 @@ export default function SkuMappingModal({ open, onClose, skuMapping }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-11 sm:h-12 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
+              className="flex-1 h-11 sm:h-12 inline-flex items-center justify-center rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-white/[0.03] active:scale-[0.98] cursor-pointer"
             >
               Cancel
             </button>

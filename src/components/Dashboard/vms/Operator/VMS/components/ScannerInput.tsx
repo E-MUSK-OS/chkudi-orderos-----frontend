@@ -237,7 +237,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
                       e.stopPropagation();
                       clearInput();
                     }}
-                    className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
                     title="Clear Tracking ID"
                   >
                     <X className="h-4 w-4" />
@@ -266,7 +266,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
               spellCheck={false}
               floatingLabel={false}
               placeholder="Scan barcode with scanner (Manual typing disabled)..."
-              className="flex-1 px-4 py-3 w-full bg-white text-[#0A0E1A] font-mono font-bold text-sm sm:text-base border-2 border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D] outline-none shadow-xs rounded-lg placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 cursor-default"
+              className="flex-1 px-4 py-3 w-full bg-white dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white font-mono font-bold text-sm sm:text-base border-2 border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D] outline-none shadow-xs rounded-lg placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 cursor-default"
             />
           </div>
 
@@ -274,7 +274,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
             <button
               onClick={() => handleSubmit()}
               disabled={isProcessing || !trackingId.trim()}
-              className="w-full h-full flex gap-3 justify-center items-center bg-[#0A0E1A] hover:bg-[#161D2E] px-6 py-3 font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm rounded-lg"
+              className="w-full h-full flex gap-3 justify-center items-center bg-[#0A0E1A] dark:bg-[#080B11] hover:bg-[#161D2E] dark:hover:bg-[#131926] border border-[#0A0E1A] dark:border-white/[0.08] px-6 py-3 font-semibold text-white dark:text-[#E8C16D] transition disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm rounded-lg"
             >
               Submit
               <Send className="h-4 w-4" />
@@ -284,14 +284,14 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
         {/* Inline Error Notice */}
         {scanError && (
-          <div className="flex items-center gap-2.5 rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 animate-in fade-in slide-in-from-top-1">
-            <AlertTriangle className="h-5 w-5 shrink-0 text-red-600" />
+          <div className="flex items-center gap-2.5 rounded-lg border border-red-300 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 px-4 py-2.5 text-sm font-semibold text-red-700 dark:text-red-400 animate-in fade-in slide-in-from-top-1">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
             <span>{scanError}</span>
           </div>
         )}
 
         {isProcessing && (
-          <p className="text-sm font-semibold text-blue-600 animate-pulse">Processing scan...</p>
+          <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 animate-pulse">Processing scan...</p>
         )}
       </div>
 

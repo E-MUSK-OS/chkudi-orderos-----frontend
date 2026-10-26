@@ -258,7 +258,7 @@ const ManageProducts = () => {
     <DashboardLayout title="Products">
       <div className="space-y-4 sm:space-y-6">
         {/* Header Information Banner matching Inventory */}
-        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <ProductHeader
             buttonLabel={
               importType === "asin"
@@ -284,7 +284,7 @@ const ManageProducts = () => {
             }}
           />
 
-          <div className="mt-5 sm:mt-6 border-t border-[#E7E0D2] pt-5 sm:pt-6">
+          <div className="mt-5 sm:mt-6 border-t border-[#E7E0D2] dark:border-white/[0.08] pt-5 sm:pt-6">
             <ProductStats
               importType={importType}
               stats={productStats}
@@ -335,7 +335,7 @@ const ManageProducts = () => {
         />
 
         {/* Table Container matching Inventory */}
-        <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col">
+        <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col">
           {importType === "product" ? (
             <ProductTable
               products={paginatedProducts}

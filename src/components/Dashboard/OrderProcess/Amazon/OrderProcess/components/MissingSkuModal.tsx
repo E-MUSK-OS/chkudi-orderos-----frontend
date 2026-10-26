@@ -132,16 +132,16 @@ export default function MissingSkuModal({
           exit={{ opacity: 0, scale: 0.94, y: 12 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-2xl text-slate-900"
+          className="relative w-full max-w-md sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-2xl text-slate-900 dark:text-white"
         >
           {/* Subtle Ambient Background Glows */}
-          <div className="pointer-events-none absolute -top-16 -left-16 h-44 w-44 rounded-full bg-[#FFF9EC] blur-3xl" />
+          <div className="pointer-events-none absolute -top-16 -left-16 h-44 w-44 rounded-full bg-[#FFF9EC] dark:bg-[#E8C16D]/5 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
 
           {/* Top Pill Badge - Strictly Blocking Indication */}
           <div className="flex justify-center mb-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3.5 py-1 text-[11px] font-bold text-rose-700 border border-rose-200/80 shadow-2xs">
-              <Lock className="h-3 w-3 text-rose-600" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 px-3.5 py-1 text-[11px] font-bold text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-900/40 shadow-2xs">
+              <Lock className="h-3 w-3 text-rose-600 dark:text-rose-400" />
               Order Dispatch Strictly Locked ({missingAsins.length} Missing)
             </span>
           </div>
@@ -176,20 +176,20 @@ export default function MissingSkuModal({
 
           {/* Title & Subtitle */}
           <div className="text-center space-y-1 mb-3.5">
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight text-[#0A0E1A]">
+            <h3 className="text-xl sm:text-2xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Seller SKU Not Found!
             </h3>
-            <p className="text-xs text-slate-500 max-w-xs sm:max-w-sm mx-auto leading-relaxed">
-              The following <strong className="text-rose-600 font-bold">{missingAsins.length} ASIN(s)</strong> do not have a matching <strong className="text-[#B88728] font-bold">Seller SKU</strong> saved in your database. You cannot proceed until all SKUs are mapped:
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs sm:max-w-sm mx-auto leading-relaxed">
+              The following <strong className="text-rose-600 dark:text-rose-400 font-bold">{missingAsins.length} ASIN(s)</strong> do not have a matching <strong className="text-[#B88728] dark:text-[#E8C16D] font-bold">Seller SKU</strong> saved in your database. You cannot proceed until all SKUs are mapped:
             </p>
           </div>
 
           {/* ASIN List Scroll Box */}
-          <div className="mb-3.5 max-h-28 overflow-y-auto rounded-xl border border-amber-200/70 bg-[#FFFDF7] p-2.5 flex flex-wrap gap-1.5 justify-center shadow-inner">
+          <div className="mb-3.5 max-h-28 overflow-y-auto rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-[#FFFDF7] dark:bg-[#080B11] p-2.5 flex flex-wrap gap-1.5 justify-center shadow-inner">
             {missingAsins.map((asin, idx) => (
               <span
                 key={idx}
-                className="rounded-md bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 text-[#B88728] text-xs font-mono font-bold tracking-wider shadow-2xs"
+                className="rounded-md bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/25 dark:border-amber-500/40 px-2.5 py-0.5 text-[#B88728] dark:text-[#E8C16D] text-xs font-mono font-bold tracking-wider shadow-2xs"
               >
                 {asin}
               </span>
@@ -197,8 +197,8 @@ export default function MissingSkuModal({
           </div>
 
           {/* Instruction Box */}
-          <div className="mb-4 rounded-2xl border border-[#E8C16D]/60 bg-gradient-to-r from-[#FFFDF5] via-[#FFF9EC] to-[#FFFDF5] p-3 text-xs font-semibold text-slate-800 shadow-2xs flex items-start gap-2.5">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-[#B88728] mt-0.5" />
+          <div className="mb-4 rounded-2xl border border-[#E8C16D]/60 dark:border-[#E8C16D]/30 bg-gradient-to-r from-[#FFFDF5] via-[#FFF9EC] to-[#FFFDF5] dark:from-[#16130C] dark:via-[#1A160E] dark:to-[#16130C] p-3 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-[#B88728] dark:text-[#E8C16D] mt-0.5" />
             <p className="leading-relaxed">
               1. <strong>Download Excel</strong> or click <strong>Go to Products</strong> (opens in new tab) to add the missing SKUs.<br />
               2. Return here and click <strong>&ldquo;Re-check &amp; Verify SKUs&rdquo;</strong> to unlock and continue.
@@ -212,16 +212,16 @@ export default function MissingSkuModal({
               <button
                 type="button"
                 onClick={handleDownloadExcel}
-                className="w-full sm:flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100/80 px-4 text-xs sm:text-sm font-bold text-emerald-800 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+                className="w-full sm:flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-emerald-600/30 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/60 px-4 text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-300 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
               >
-                <FileDown className="h-4 w-4 text-emerald-700" />
+                <FileDown className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                 <span>Download Excel</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleGoToProducts}
-                className="w-full sm:flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-[#FFF9EC] hover:bg-[#FFF3D6] px-4 text-xs sm:text-sm font-bold text-[#B88728] transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+                className="w-full sm:flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300 dark:border-amber-800/50 bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#251E11] px-4 text-xs sm:text-sm font-bold text-[#B88728] dark:text-[#E8C16D] transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
                 title="Opens Products in a new tab so your uploaded files are preserved"
               >
                 <span>Go to Products</span>
@@ -246,7 +246,7 @@ export default function MissingSkuModal({
                 type="button"
                 onClick={handleCancelAndReset}
                 disabled={isChecking}
-                className="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 px-4 text-xs font-semibold text-slate-500 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+                className="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-900/40 hover:text-rose-700 dark:hover:text-rose-400 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 <span>Cancel & Back to Upload</span>
@@ -255,7 +255,7 @@ export default function MissingSkuModal({
           </div>
 
           {/* Footer Note */}
-          <div className="mt-3.5 text-center text-[11px] font-medium text-slate-400">
+          <div className="mt-3.5 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500">
             OrderOS strictly prohibits order dispatch with missing SKUs.
           </div>
         </motion.div>

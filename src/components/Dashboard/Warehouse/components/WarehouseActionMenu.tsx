@@ -49,6 +49,12 @@ export default function WarehouseActionMenu({
           hover:bg-slate-50
           hover:text-slate-900
           hover:shadow-md
+          dark:border-white/[0.08]
+          dark:bg-[#0F1626]
+          dark:text-slate-300
+          dark:hover:bg-white/[0.06]
+          dark:hover:text-white
+          dark:hover:border-white/20
         "
       >
         <MoreHorizontal size={18} />
@@ -64,6 +70,8 @@ export default function WarehouseActionMenu({
           bg-white
           p-1.5
           shadow-xl
+          dark:border-white/[0.08]
+          dark:bg-[#0F1626]
         "
       >
         <DropdownMenuItem
@@ -75,6 +83,9 @@ export default function WarehouseActionMenu({
             cursor-pointer
             transition-colors
             hover:bg-slate-100
+            dark:text-slate-200
+            dark:hover:bg-white/10
+            dark:hover:text-white
           "
         >
           <Pencil size={16} />
@@ -90,6 +101,9 @@ export default function WarehouseActionMenu({
             cursor-pointer
             transition-colors
             hover:bg-blue-50
+            dark:text-slate-200
+            dark:hover:bg-white/10
+            dark:hover:text-white
           "
         >
           {isActive ? (
@@ -111,7 +125,7 @@ export default function WarehouseActionMenu({
           )}
         </DropdownMenuItem>
 
-        <div className="my-1 border-t border-slate-100" />
+        <div className="my-1 border-t border-slate-100 dark:border-white/[0.06]" />
 
         <DropdownMenuItem
           onClick={onDelete}
@@ -125,6 +139,9 @@ export default function WarehouseActionMenu({
             hover:bg-red-50
             focus:bg-red-50
             focus:text-red-600
+            dark:text-red-400
+            dark:hover:bg-red-500/15
+            dark:focus:bg-red-500/15
           "
         >
           <Trash2 size={16} />

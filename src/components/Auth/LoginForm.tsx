@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useForm } from "react-hook-form";
@@ -60,25 +60,37 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex items-center justify-center bg-[#FCFBF9] px-8 py-14 lg:px-16 h-full">
+    <div className="flex items-center justify-center bg-[#FCFBF9] px-4 py-8 sm:px-8 sm:py-12 md:px-10 lg:px-12 xl:px-16 w-full h-full dark:bg-[#0F1626]">
       <motion.div
-        initial={{ opacity: 0, x: 40 }}
+        initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-md mx-auto"
       >
-        <span className="text-lg uppercase text-[#C89B3C]">OrderOS Access</span>
-        <div className="mt-2 h-px w-30 bg-gradient-to-r from-[#C89B3C] to-transparent" />
+        {/* Mobile / Tablet Brand Header */}
+        <div className="lg:hidden flex items-center justify-center gap-2.5 pb-4 mb-4 sm:pb-5 sm:mb-5 border-b border-slate-100 dark:border-white/[0.06]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C89B3C]/30 bg-[#C89B3C]/10 dark:border-[#F5C451]/30 dark:bg-[#F5C451]/10">
+            <Package size={18} className="text-[#E8C170] dark:text-[#F5C451]" />
+          </div>
+          <span className="font-display text-lg sm:text-xl tracking-[2px] uppercase text-[#C89B3C] dark:text-[#F5C451] font-bold">
+            Chakudee <span className="text-[#0A0E1A] dark:text-white">OrderOS</span>
+          </span>
+        </div>
 
-        <h1 className="mt-5 font-heading text-4xl text-[#0A0E1A] uppercase">
+        <span className="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#C89B3C] dark:text-[#F5C451]">
+          OrderOS Access
+        </span>
+        <div className="mt-2 h-px w-20 sm:w-28 bg-gradient-to-r from-[#C89B3C] to-transparent dark:from-[#F5C451]" />
+
+        <h1 className="mt-3.5 sm:mt-5 font-heading text-2xl sm:text-3xl lg:text-4xl uppercase text-[#0A0E1A] dark:text-white">
           Welcome back
         </h1>
 
-        <p className="mt-2 text-xl text-[#64748B]">
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base text-[#64748B] dark:text-slate-400">
           Sign in to pick up where you left off.
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-10 space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 sm:mt-8 space-y-4 sm:space-y-5">
           <div>
             <Input
               label="Email Address"
@@ -98,7 +110,7 @@ export default function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-[#C89B3C]"
+                  className="text-slate-400 hover:text-[#C89B3C] dark:hover:text-[#F5C451] transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -108,25 +120,18 @@ export default function LoginForm() {
             />
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <label className="flex items-center gap-2 text-md text-[#64748B]">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs sm:text-sm">
+            <label className="flex items-center gap-2 text-[#64748B] dark:text-slate-400 cursor-pointer select-none">
               <input
                 type="checkbox"
                 {...register("remember")}
-                className="
-    h-4
-    w-4
-    border-[#E2E5EA]
-    accent-[#E8C16D]
-    focus:ring-[#E8C16D]/30
-    cursor-pointer
-  "
+                className="h-4 w-4 rounded border-[#E2E5EA] accent-[#E8C16D] focus:ring-[#E8C16D]/30 cursor-pointer dark:border-white/[0.2] dark:accent-[#F5C451]"
               />
-              Remember me
+              <span>Remember me</span>
             </label>
             <Link
               href="/forgot-password"
-              className="text-md font-medium text-[#0A0E1A] hover:text-[#C89B3C]"
+              className="font-medium text-[#0A0E1A] hover:text-[#C89B3C] dark:text-slate-300 dark:hover:text-[#F5C451] transition-colors"
             >
               Forgot password?
             </Link>
@@ -135,32 +140,26 @@ export default function LoginForm() {
           <Button
             type="submit"
             loading={isSubmitting}
-            rightIcon={<span className="text-[#E8C16D]">→</span>}
+            rightIcon={<span className="text-[#E8C16D] dark:text-[#080B11]">→</span>}
           >
             Sign In
           </Button>
 
           {/* Divider */}
           <div className="flex items-center pt-1">
-            <div className="h-px flex-1 bg-[#E2E5EA]" />
-            <span className="mx-3 font-mono text-xs uppercase tracking-wide text-[#94A3B8]">
+            <div className="h-px flex-1 bg-[#E2E5EA] dark:bg-white/[0.08]" />
+            <span className="mx-3 font-mono text-[11px] sm:text-xs uppercase tracking-wide text-[#94A3B8] dark:text-slate-500">
               or
             </span>
-            <div className="h-px flex-1 bg-[#E2E5EA]" />
+            <div className="h-px flex-1 bg-[#E2E5EA] dark:bg-white/[0.08]" />
           </div>
 
-          <div className="mt-8 text-center">
-            <p className="text-lg text-[#64748B]">
+          <div className="mt-6 sm:mt-8 text-center">
+            <p className="text-xs sm:text-sm md:text-base text-[#64748B] dark:text-slate-400">
               Don&#39;t have an account?{" "}
               <Link
                 href="/signup"
-                className="
-        font-semibold
-        text-[#C89B3C]
-        transition-colors
-        duration-300
-        hover:text-[#B88A2C]
-      "
+                className="font-semibold text-[#C89B3C] transition-colors duration-300 hover:text-[#B88A2C] dark:text-[#F5C451] dark:hover:text-[#F5C451]/80"
               >
                 Create an account
               </Link>

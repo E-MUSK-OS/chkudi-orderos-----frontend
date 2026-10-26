@@ -47,7 +47,7 @@ export default function QrCodeModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg overflow-hidden rounded-2xl border-2 border-red-500 bg-white shadow-2xl animate-in zoom-in-95 duration-150"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border-2 border-red-500 bg-white dark:bg-[#0F1626] shadow-2xl animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Accent Strip */}
@@ -56,7 +56,7 @@ export default function QrCodeModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
+          className="absolute top-4 right-4 rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
           title="Close (or press Enter/Escape)"
         >
           <X className="h-5 w-5" />
@@ -64,48 +64,48 @@ export default function QrCodeModal({
 
         <div className="p-6 sm:p-8 text-center">
           {/* Animated Warning Icon */}
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 border-4 border-red-50 shadow-inner">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/40 border-4 border-red-50 dark:border-red-900/30 shadow-inner">
             <div className="relative flex items-center justify-center">
-              <QrCode className="h-10 w-10 text-red-600" />
+              <QrCode className="h-10 w-10 text-red-600 dark:text-red-400" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-12 w-1.5 rotate-45 rounded-full bg-red-600 ring-2 ring-white" />
+                <div className="h-12 w-1.5 rotate-45 rounded-full bg-red-600 dark:bg-red-500 ring-2 ring-white dark:ring-[#0B0F17]" />
               </div>
             </div>
           </div>
 
           {/* Title */}
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0A0E1A] tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0A0E1A] dark:text-white tracking-tight">
             Not Valid QR Code
           </h2>
 
-          <p className="mt-2 text-sm sm:text-base font-semibold text-red-600">
+          <p className="mt-2 text-sm sm:text-base font-semibold text-red-600 dark:text-red-400">
             QR codes cannot be used for VMS recording.
           </p>
 
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Please scan the package's <span className="font-bold text-slate-800">Linear Barcode (Tracking ID / AWB)</span>, not the QR code.
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Please scan the package's <span className="font-bold text-slate-800 dark:text-slate-200">Linear Barcode (Tracking ID / AWB)</span>, not the QR code.
           </p>
 
           {/* Scanned Value Preview */}
           {scannedValue && (
-            <div className="mt-5 rounded-xl border border-red-200 bg-red-50/80 p-3.5 text-left">
+            <div className="mt-5 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/30 p-3.5 text-left">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-red-700">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-red-700 dark:text-red-400">
                   Scanned Value (QR Payload)
                 </span>
-                <span className="text-[10px] font-semibold text-red-500">
+                <span className="text-[10px] font-semibold text-red-500 dark:text-red-400">
                   {scannedValue.length} characters
                 </span>
               </div>
-              <p className="font-mono text-xs font-semibold text-red-900 break-all line-clamp-3 select-all">
+              <p className="font-mono text-xs font-semibold text-red-900 dark:text-red-300 break-all line-clamp-3 select-all">
                 {scannedValue}
               </p>
             </div>
           )}
 
           {/* Helper Advice Banner */}
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 text-left flex items-start gap-2.5">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+          <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-300 text-left flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
             <div>
               <span className="font-bold">Tip:</span> Point the red scanner beam directly at the long 1D barcode on the shipping label.
             </div>
@@ -117,15 +117,15 @@ export default function QrCodeModal({
               fullWidth
               size="md"
               onClick={onClose}
-              className="bg-[#0A0E1A] hover:bg-[#161D2E] text-white font-bold py-3.5 shadow-md rounded-xl"
+              className="bg-[#0A0E1A] dark:bg-[#1A160E] hover:bg-[#161D2E] dark:hover:bg-[#262014] text-white dark:text-[#E8C16D] border border-transparent dark:border-[#E8C16D]/30 font-bold py-3.5 shadow-md rounded-xl"
             >
               <Check className="h-5 w-5 mr-1" />
               OK / Scan Again
             </Button>
           </div>
 
-          <p className="mt-3 text-[11px] text-slate-400">
-            Press <kbd className="px-1.5 py-0.5 bg-slate-100 border rounded text-slate-600 font-mono">Enter</kbd>, <kbd className="px-1.5 py-0.5 bg-slate-100 border rounded text-slate-600 font-mono">Space</kbd>, or scan next barcode to dismiss
+          <p className="mt-3 text-[11px] text-slate-400 dark:text-slate-500">
+            Press <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/[0.06] border dark:border-white/[0.08] rounded text-slate-600 dark:text-slate-300 font-mono">Enter</kbd>, <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/[0.06] border dark:border-white/[0.08] rounded text-slate-600 dark:text-slate-300 font-mono">Space</kbd>, or scan next barcode to dismiss
           </p>
         </div>
       </div>

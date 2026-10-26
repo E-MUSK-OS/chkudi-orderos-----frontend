@@ -19,14 +19,14 @@ export function CanvasRulers({ zoom, widthMm, heightMm }: CanvasRulersProps) {
       ticks.push(
         <div
           key={`h-${i}`}
-          className="absolute bottom-0 border-l border-black"
+          className="absolute bottom-0 border-l border-black dark:border-white/20"
           style={{
             left: mmToPx(i, zoom),
             height: isMajor ? '100%' : '50%',
           }}
         >
           {isMajor && (
-            <span className="absolute -top-4 -left-1 text-[9px] text-black">
+            <span className="absolute -top-4 -left-1 text-[9px] font-mono text-black dark:text-slate-300 select-none">
               {i}
             </span>
           )}
@@ -43,14 +43,14 @@ export function CanvasRulers({ zoom, widthMm, heightMm }: CanvasRulersProps) {
       ticks.push(
         <div
           key={`v-${i}`}
-          className="absolute right-0 border-t border-black"
+          className="absolute right-0 border-t border-black dark:border-white/20"
           style={{
             top: mmToPx(i, zoom),
             width: isMajor ? '100%' : '50%',
           }}
         >
           {isMajor && (
-            <span className="absolute -left-5 -top-2.5 text-[9px] text-black transform rotate-[-90deg]">
+            <span className="absolute -left-5 -top-2.5 text-[9px] font-mono text-black dark:text-slate-300 transform rotate-[-90deg] select-none">
               {i}
             </span>
           )}
@@ -63,17 +63,17 @@ export function CanvasRulers({ zoom, widthMm, heightMm }: CanvasRulersProps) {
   return (
     <>
       {/* Horizontal Ruler */}
-      <div className="absolute top-0 left-6 h-6 bg-white border-b border-black overflow-hidden" style={{ width: mmToPx(widthMm, zoom) }}>
+      <div className="absolute top-0 left-6 h-6 bg-white dark:bg-[#0F1626] border-b border-black dark:border-white/15 overflow-hidden" style={{ width: mmToPx(widthMm, zoom) }}>
         {renderHorizontalRuler()}
       </div>
 
       {/* Vertical Ruler */}
-      <div className="absolute top-6 left-0 w-6 bg-white border-r border-black overflow-hidden" style={{ height: mmToPx(heightMm, zoom) }}>
+      <div className="absolute top-6 left-0 w-6 bg-white dark:bg-[#0F1626] border-r border-black dark:border-white/15 overflow-hidden" style={{ height: mmToPx(heightMm, zoom) }}>
         {renderVerticalRuler()}
       </div>
       
       {/* Corner */}
-      <div className="absolute top-0 left-0 w-6 h-6 bg-white border-b border-r border-black" />
+      <div className="absolute top-0 left-0 w-6 h-6 bg-white dark:bg-[#0F1626] border-b border-r border-black dark:border-white/15" />
     </>
   );
 }

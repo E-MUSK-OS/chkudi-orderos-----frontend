@@ -157,17 +157,17 @@ export default function ProductStats({
       {cards.map((item) => (
         <article
           key={item.title}
-          className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 flex flex-col justify-between"
+          className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between"
         >
-          <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">
+          <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             {item.title}
           </p>
 
           <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
             {isLoading ? (
-              <div className="h-8 sm:h-9 w-20 animate-pulse rounded-lg bg-slate-100" />
+              <div className="h-8 sm:h-9 w-20 animate-pulse rounded-lg bg-slate-100 dark:bg-white/[0.06]" />
             ) : (
-              <h3 className={`text-2xl sm:text-3xl font-black ${item.valueClass ?? "text-[#0A0E1A]"}`}>
+              <h3 className={`text-2xl sm:text-3xl font-black ${item.valueClass ?? "text-[#0A0E1A]"} dark:text-white`}>
                 {Number(item.value ?? 0).toLocaleString()}
               </h3>
             )}

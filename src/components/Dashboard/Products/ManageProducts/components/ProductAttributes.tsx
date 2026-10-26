@@ -71,6 +71,7 @@ export default function ProductAttributes({
           type="button"
           variant="secondary"
           fullWidth={false}
+          className="w-full sm:w-auto min-h-[42px] sm:min-h-[44px] h-11 px-5 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
           onClick={() =>
             append({
               attributeName: "",

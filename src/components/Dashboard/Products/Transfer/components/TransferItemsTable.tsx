@@ -61,14 +61,14 @@ export default function TransferItemsTable({ items, setItems }: Props) {
   if (items.length === 0) {
     return (
       <>
-        <div className="border border-slate-200">
+        <div className="border border-slate-200 dark:border-white/[0.08] dark:bg-[#0F1626]">
           <div className="flex h-56 items-center justify-center">
             <div className="text-center">
-              <p className="text-base font-semibold text-slate-700">
+              <p className="text-base font-semibold text-slate-700 dark:text-slate-300">
                 No products added
               </p>
 
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                 Click "Add Product" to add products.
               </p>
             </div>
@@ -85,51 +85,51 @@ export default function TransferItemsTable({ items, setItems }: Props) {
 
   return (
     <>
-      <div className="overflow-hidden border border-slate-200">
+      <div className="overflow-hidden border border-slate-200 dark:border-white/[0.08]">
         <table className="w-full">
-          <thead className="bg-slate-50">
-            <tr className="border-b">
-              <th className="w-14 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+          <thead className="bg-slate-50 dark:bg-[#080B11]">
+            <tr className="border-b border-slate-200 dark:border-white/[0.08]">
+              <th className="w-14 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 #
               </th>
 
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 SKU
               </th>
 
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 Product
               </th>
 
-              <th className="w-36 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+              <th className="w-36 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 Available
               </th>
 
-              <th className="w-44 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+              <th className="w-44 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 Transfer Qty
               </th>
 
-              <th className="w-24 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+              <th className="w-24 px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 Action
               </th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
             {items.map((item, index) => (
               <tr
                 key={item.sku}
-                className="border-b transition hover:bg-slate-50"
+                className="border-b border-slate-100 transition hover:bg-slate-50 dark:border-white/[0.06] dark:hover:bg-white/[0.06]"
               >
-                <td className="text-center text-sm text-slate-500">
+                <td className="text-center text-sm text-slate-500 dark:text-slate-400">
                   {index + 1}
                 </td>
 
-                <td className="px-4 py-4 font-medium">{item.sku}</td>
+                <td className="px-4 py-4 font-medium text-slate-900 dark:text-white font-mono">{item.sku}</td>
 
-                <td className="px-4 py-4">{item.product}</td>
+                <td className="px-4 py-4 text-slate-800 dark:text-slate-200">{item.product}</td>
 
-                <td className="text-center font-semibold text-green-600">
+                <td className="text-center font-semibold text-green-600 dark:text-emerald-400">
                   {item.available}
                 </td>
 
@@ -145,7 +145,7 @@ export default function TransferItemsTable({ items, setItems }: Props) {
                   <button
                     type="button"
                     onClick={() => removeItem(index)}
-                    className="rounded-md p-2 text-red-500 transition hover:bg-red-50"
+                    className="rounded-md p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/15 dark:text-red-400 cursor-pointer"
                   >
                     <Trash2 size={18} />
                   </button>

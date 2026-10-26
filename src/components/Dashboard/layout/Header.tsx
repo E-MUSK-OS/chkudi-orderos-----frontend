@@ -21,6 +21,8 @@ import { useNotificationSound } from "@/components/Dashboard/Notification/hooks/
 import { useBrowserNotification } from "@/components/Dashboard/Notification/hooks/useBrowserNotification";
 import { useNotificationSocket } from "@/components/Dashboard/Notification/hooks/useNotificationSocket";
 
+import ThemeToggle from "./ThemeToggle";
+
 interface HeaderProps {
   title: string;
   sidebarCollapsed: boolean;
@@ -55,7 +57,6 @@ export default function Header({
 
     if (notificationOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      <Bell size={19} />;
     }
 
     return () => {
@@ -126,63 +127,63 @@ export default function Header({
   }, [unreadCount]);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-3 sm:px-4 md:px-8 py-3 sm:py-4 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-[#E7E0D2] bg-[#F7F5F0]/95 px-3 sm:px-4 md:px-8 py-3 backdrop-blur-xl transition-colors shrink-0 dark:border-white/[0.08] dark:bg-[#080B11]/80">
       <div className="flex items-center gap-2.5 sm:gap-4">
         <button
           type="button"
           aria-label="Open Sidebar"
           onClick={() => setSidebarOpen(true)}
-          className="grid h-11 w-11 place-items-center bg-white text-[#0A0E1A] shadow-sm lg:hidden"
+          className="grid h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-xs hover:border-[#E8C16D] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-200 dark:hover:border-[#F5C451]/50 dark:hover:text-[#F5C451] lg:hidden transition-all cursor-pointer shrink-0"
         >
-          <Menu size={21} />
+          <Menu size={20} />
         </button>
 
         <button
           type="button"
           aria-label={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           onClick={() => setSidebarCollapsed((prev) => !prev)}
-          className="hidden h-11 w-11 place-items-center border border-[#E7E0D2] bg-white text-slate-600 shadow-sm transition-colors hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] lg:grid"
+          className="hidden h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-slate-600 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#131B2E] dark:hover:text-[#F5C451] lg:grid cursor-pointer shrink-0"
         >
           {sidebarCollapsed ? (
-            <PanelLeftOpen size={19} />
+            <PanelLeftOpen size={18} />
           ) : (
-            <PanelLeftClose size={19} />
+            <PanelLeftClose size={18} />
           )}
         </button>
 
-        <div className="hidden h-11 max-w-md flex-1 items-center gap-3 bg-white px-4 shadow-sm md:flex">
-          <Search size={18} className="text-slate-400" />
+        <div className="hidden h-11 max-w-md flex-1 items-center gap-2.5 rounded-xl border border-[#E7E0D2] bg-white px-3.5 shadow-xs transition-all focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/20 dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-inner dark:focus-within:border-[#F5C451]/50 dark:focus-within:bg-[#0F1626] dark:focus-within:ring-2 dark:focus-within:ring-[#F5C451]/15 md:flex shrink-0">
+          <Search size={16} className="shrink-0 text-slate-400" />
 
           <input
             type="search"
             placeholder="Search orders, products..."
-            className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+            className="min-w-0 flex-1 bg-transparent text-xs sm:text-sm text-[#0A0E1A] dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
 
-        <div className="hidden xl:flex flex-col leading-tight">
-          <span className="text-md font-semibold text-[#0A0E1A]">
+        <div className="hidden xl:flex h-11 items-center gap-3 rounded-xl border border-[#E7E0D2] bg-white px-3.5 shadow-xs dark:border-white/[0.08] dark:bg-[#0F1626] shrink-0">
+          <span className="text-xs font-semibold text-[#0A0E1A] dark:text-slate-200">
             {formattedDate}
           </span>
-
-          <span className="text-sm text-slate-500">{formattedTime}</span>
+          <span className="h-3 w-px bg-slate-200 dark:bg-white/[0.1]" />
+          <span className="font-mono text-xs font-semibold text-[#B88728] dark:text-[#F5C451] flex items-center gap-1.5">
+            {formattedTime}
+          </span>
         </div>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2.5 sm:gap-3">
           <div className="relative">
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+
               <button
                 type="button"
                 onClick={() => router.push("/dashboard/warehouse")}
-                className="group relative grid h-11 w-11 place-items-center bg-white text-slate-600 shadow-sm transition-colors hover:text-[#C89B3C] cursor-pointer"
+                className="group relative grid h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-slate-600 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#131B2E] dark:hover:text-[#F5C451] cursor-pointer shrink-0"
               >
-                <Warehouse size={19} />
+                <Warehouse size={18} />
 
-                {/* {unreadCount > 0 && (
-                  <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
-                )} */}
-
-                <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap bg-[#0A0E1A] px-2 py-1 text-xs font-medium text-white opacity-0 transition-all duration-200 group-hover:opacity-100">
+                <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.1] dark:bg-[#0F1626] px-2.5 py-1 text-xs font-medium text-white dark:text-slate-200 shadow-xl opacity-0 transition-all duration-150 group-hover:opacity-100 z-50">
                   Warehouse
                 </span>
               </button>
@@ -190,14 +191,17 @@ export default function Header({
               <button
                 type="button"
                 onClick={() => setNotificationOpen((prev) => !prev)}
-                className="group relative grid h-11 w-11 place-items-center bg-white text-slate-600 shadow-sm transition-colors hover:text-[#C89B3C] cursor-pointer"
+                className="group relative grid h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-slate-600 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#131B2E] dark:hover:text-[#F5C451] cursor-pointer shrink-0"
               >
-                <Bell size={19} />
+                <Bell size={18} />
 
                 {unreadCount > 0 && (
-                  <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                  <span className="absolute right-2 top-2 flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[#B88728] dark:bg-[#F5C451]" />
+                  </span>
                 )}
-                <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#0A0E1A] px-2 py-1 text-xs font-medium text-white opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.1] dark:bg-[#0F1626] px-2.5 py-1 text-xs font-medium text-white dark:text-slate-200 shadow-xl opacity-0 transition-all duration-150 group-hover:opacity-100 z-50">
                   Notification
                 </span>
               </button>

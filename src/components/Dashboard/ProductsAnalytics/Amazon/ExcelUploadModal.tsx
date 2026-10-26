@@ -200,9 +200,9 @@ export default function ExcelUploadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl !rounded-3xl sm:!rounded-[32px] overflow-hidden border border-[#E7E0D2] bg-white shadow-2xl relative m-4">
+      <div className="w-full max-w-2xl !rounded-3xl sm:!rounded-[32px] overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-2xl relative m-4">
         {/* Header Banner */}
-        <div className="bg-[#0A0E1A] px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-800 text-left">
+        <div className="bg-[#0A0E1A] dark:bg-[#080B11] px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-800 dark:border-white/[0.08] text-left">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-[#FFF9EC]/10 border border-[#E8C16D]/30 text-[#E8C16D] shrink-0">
@@ -220,7 +220,7 @@ export default function ExcelUploadModal({
 
             <button
               onClick={onClose}
-              className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+              className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-slate-800 dark:hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
               disabled={isUploading}
             >
               <X size={18} />
@@ -230,9 +230,9 @@ export default function ExcelUploadModal({
 
         <div className="p-5 sm:p-6 space-y-4">
           {/* Demo Sheet Banner */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-[#E8C16D]/40 bg-[#FFF9EC]/80 p-3 sm:p-3.5 text-xs shadow-2xs">
-            <div className="flex items-center gap-2.5 text-slate-800 font-medium">
-              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#0A0E1A] text-[#E8C16D] shrink-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-[#E8C16D]/40 bg-[#FFF9EC]/80 dark:bg-[#1A160E]/80 p-3 sm:p-3.5 text-xs shadow-2xs">
+            <div className="flex items-center gap-2.5 text-slate-800 dark:text-slate-200 font-medium">
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] shrink-0">
                 <FileSpreadsheet className="h-4 w-4" />
               </div>
               <span>
@@ -243,9 +243,9 @@ export default function ExcelUploadModal({
             <button
               type="button"
               onClick={downloadAmazonAnalyticsDemoSheet}
-              className="inline-flex h-8 sm:h-8.5 items-center gap-1.5 rounded-xl border border-[#E8C16D] bg-white hover:bg-[#FFF9EC] px-3.5 text-xs font-bold text-[#0A0E1A] shadow-2xs transition-all active:scale-[0.98] cursor-pointer shrink-0"
+              className="inline-flex h-8 sm:h-8.5 items-center gap-1.5 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-white dark:bg-[#080B11] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] px-3.5 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] shadow-2xs transition-all active:scale-[0.98] cursor-pointer shrink-0"
             >
-              <FileDown className="h-3.5 w-3.5 text-[#B88728]" />
+              <FileDown className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Download Demo Sheet</span>
             </button>
           </div>
@@ -260,38 +260,38 @@ export default function ExcelUploadModal({
                 onDrop={handleDrop}
                 className={`group relative flex min-h-[180px] sm:min-h-[210px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-[24px] border-2 border-dashed p-6 sm:p-8 text-center transition-all ${
                   isDragging
-                    ? "border-[#E8C16D] bg-[#FFF9EC]"
-                    : "border-[#E7E0D2] bg-[#FAF8F5]/80 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40"
+                    ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                    : "border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5]/80 dark:bg-[#080B11]/80 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 dark:hover:bg-[#1A160E]/40"
                 }`}
               >
-                <div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] shadow-xs transition-transform group-hover:scale-105">
+                <div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 text-[#B88728] dark:text-[#E8C16D] shadow-xs transition-transform group-hover:scale-105">
                   <UploadCloud className="h-7 w-7" />
                 </div>
 
-                <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                   Click to upload or drag & drop Excel(s)
                 </p>
-                <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
-                  Select a valid Excel (<code className="font-mono text-[#B88728] font-bold">.xlsx</code>) file
+                <p className="mt-1 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
+                  Select a valid Excel (<code className="font-mono text-[#B88728] dark:text-[#E8C16D] font-bold">.xlsx</code>) file
                 </p>
 
-                <div className="mt-3.5 inline-flex items-center gap-2 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D2] shadow-2xs group-hover:border-[#E8C16D]">
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-[#B88728]" />
+                <div className="mt-3.5 inline-flex items-center gap-2 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-white dark:bg-[#0F1626] px-3.5 py-1.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D]">
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                   <span>Browse Excel Files</span>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col justify-between rounded-2xl border border-[#E7E0D2] bg-[#FAF8F5] p-3.5 sm:p-4 shadow-xs">
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-2xs">
+              <div className="flex flex-col justify-between rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] p-3.5 sm:p-4 shadow-xs">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-2xs">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
                       <FileSpreadsheet className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-[#0A0E1A]" title={file.name}>
+                      <p className="truncate text-sm font-bold text-[#0A0E1A] dark:text-white" title={file.name}>
                         {file.name}
                       </p>
-                      <p className="text-xs text-slate-500 font-medium">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
@@ -304,7 +304,7 @@ export default function ExcelUploadModal({
                         setFile(null);
                         if (fileInputRef.current) fileInputRef.current.value = "";
                       }}
-                      className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer"
+                      className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-500 transition cursor-pointer"
                       title="Remove file"
                     >
                       <X size={16} />
@@ -316,7 +316,7 @@ export default function ExcelUploadModal({
                   <button
                     onClick={onClose}
                     disabled={isUploading}
-                    className="h-11 sm:h-12 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition active:scale-[0.98] cursor-pointer"
+                    className="h-11 sm:h-12 inline-flex items-center justify-center rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition active:scale-[0.98] cursor-pointer"
                   >
                     Cancel
                   </button>

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { ArrowUp, ArrowDown, ArrowUpToLine, ArrowDownToLine, Copy, Trash2, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, UploadCloud, Lock, Unlock } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpToLine, ArrowDownToLine, Copy, Trash2, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, UploadCloud, Lock, Unlock, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   CanvasSettings,
   LabelElement,
@@ -34,6 +35,8 @@ interface PropertiesPanelProps {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   commitHistory: () => void;
+  className?: string;
+  onCloseMobile?: () => void;
 }
 
 const PRESET_SIZES: SelectOption[] = [
@@ -103,7 +106,9 @@ export function PropertiesPanel({
   sendBackward,
   bringToFront,
   sendToBack,
-  commitHistory
+  commitHistory,
+  className,
+  onCloseMobile,
 }: PropertiesPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -206,9 +211,17 @@ export function PropertiesPanel({
       (settings.backgroundOpacity ?? 1) < 1 || allElements.some(el => (el.opacity ?? 1) < 1);
 
     return (
-      <div className="w-72 bg-[#111827] border-l border-stone-800 overflow-y-auto shrink-0 font-sans text-sm">
-        <div className="p-4 border-b border-stone-800 font-semibold text-white">
-          Canvas Properties
+      <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between font-semibold text-white">
+          <span>Canvas Properties</span>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="lg:hidden px-2.5 py-1 rounded-lg bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition"
+            >
+              Done
+            </button>
+          )}
         </div>
         <div className="p-4 space-y-5">
           <div className="space-y-2">
@@ -561,10 +574,18 @@ export function PropertiesPanel({
     const btnClass = "flex-1 h-9 flex items-center justify-center rounded-sm border border-stone-700 text-gray-300 hover:border-[#E8C16D] hover:text-[#E8C16D] transition-colors disabled:opacity-30 disabled:hover:border-stone-700 disabled:hover:text-gray-300";
 
     return (
-      <div className="w-72 bg-[#111827] border-l border-stone-800 overflow-y-auto shrink-0 font-sans text-sm">
-        <div className="p-4 border-b border-stone-800 flex items-center justify-between">
+      <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between">
           <span className="font-semibold text-white">{selectedIds.length} elements selected</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            {onCloseMobile && (
+              <button
+                onClick={onCloseMobile}
+                className="lg:hidden mr-1 px-2.5 py-1 rounded-lg bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition"
+              >
+                Done
+              </button>
+            )}
             <button onClick={() => onDuplicateElements(selectedIds)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Duplicate all (Ctrl+D)">
               <Copy size={16} />
             </button>
@@ -604,10 +625,18 @@ export function PropertiesPanel({
 
   // Common properties
   return (
-    <div className="w-72 bg-[#111827] border-l border-stone-800 overflow-y-auto shrink-0 font-sans text-sm">
-      <div className="p-4 border-b border-stone-800 flex items-center justify-between">
+    <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+      <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between">
         <span className="font-semibold text-white capitalize">{selectedElement.type} Properties</span>
         <div className="flex items-center gap-1">
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="lg:hidden mr-1 px-2.5 py-1 rounded-lg bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition"
+            >
+              Done
+            </button>
+          )}
           <button onClick={() => bringToFront(selectedElement.id)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Bring to Front">
             <ArrowUpToLine size={16} />
           </button>

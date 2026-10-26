@@ -13,11 +13,11 @@ interface CardProps {
 
 const StatusCard = ({ title, value, online }: CardProps) => {
   return (
-    <div className="border border-[#C89B3C] p-5 shadow-sm">
-      <p className="text-lg text-gray-500">{title}</p>
+    <div className="border border-[#C89B3C] dark:border-[#C89B3C]/40 bg-white dark:bg-[#0F1626] p-5 shadow-sm rounded-xl">
+      <p className="text-lg text-gray-500 dark:text-slate-400">{title}</p>
 
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-lg ">{value}</span>
+        <span className="text-lg text-slate-800 dark:text-white font-semibold">{value}</span>
 
         {online !== undefined && (
           <span

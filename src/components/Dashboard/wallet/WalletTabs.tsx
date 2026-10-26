@@ -41,7 +41,7 @@ export default function WalletTabs({ transactions, loading }: Props) {
     <div className="mt-8">
       {/* Tabs */}
 
-      <div className="flex flex-wrap gap-3 border-b border-[#E7E0D2]">
+      <div className="flex flex-wrap gap-3 border-b border-[#E7E0D2] dark:border-white/[0.08]">
         {tabs.map((tab) => {
           const Icon = tab.icon;
 
@@ -51,12 +51,10 @@ export default function WalletTabs({ transactions, loading }: Props) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 border-b-2 px-5 py-4 text-sm font-semibold transition-all
-
-              ${
+              className={`flex items-center gap-2 rounded-t-xl border-b-2 px-5 py-3.5 text-sm font-semibold transition-all cursor-pointer ${
                 active
-                  ? "border-[#C89B3C] text-[#C89B3C]"
-                  : "border-transparent text-slate-500 hover:text-[#0A0E1A]"
+                  ? "border-[#B88728] text-[#B88728] bg-[#FFF9EC]/50 dark:border-[#F5C451] dark:text-[#F5C451] dark:bg-white/[0.04]"
+                  : "border-transparent text-slate-500 hover:text-[#0A0E1A] hover:bg-slate-50/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.02]"
               }`}
             >
               <Icon size={18} />

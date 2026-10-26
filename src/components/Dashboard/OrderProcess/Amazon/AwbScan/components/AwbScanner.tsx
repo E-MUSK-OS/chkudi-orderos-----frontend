@@ -91,17 +91,17 @@ export default function AwbScanner({
   };
 
   return (
-    <div className="rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm">
+    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-sm">
       <div className="space-y-4">
         <div>
           <div className="flex items-center justify-between mb-2.5">
-            <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A]">
-              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 text-[#B88728] shrink-0">
+            <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white">
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] dark:bg-[#E8C16D]/10 border border-[#E8C16D]/30 dark:border-[#E8C16D]/20 text-[#B88728] dark:text-[#F5C451] shrink-0">
                 <Barcode className="h-4 w-4" />
               </div>
               <span>Scan Amazon AWB Tracking Barcode</span>
             </label>
-            <span className="rounded-md bg-[#0A0E1A] px-2 py-0.5 text-[11px] font-bold text-[#E8C16D]">
+            <span className="rounded-md bg-[#0A0E1A] dark:bg-[#131926] px-2 py-0.5 text-[11px] font-bold text-[#E8C16D] dark:text-[#F5C451]">
               AWB Only
             </span>
           </div>
@@ -124,15 +124,15 @@ export default function AwbScanner({
                 rounded-2xl
                 border-2
                 border-[#E8C16D]/70
-                bg-[#FFFDF5]
-                focus:bg-white
+                bg-[#FFFDF5] dark:bg-[#131926]
+                focus:bg-white dark:focus:bg-[#131926]
                 px-4
                 pr-28
                 text-sm sm:text-base
                 font-mono
                 font-bold
-                text-[#0A0E1A]
-                placeholder:text-slate-400
+                text-[#0A0E1A] dark:text-white
+                placeholder:text-slate-400 dark:placeholder:text-slate-500
                 placeholder:font-normal
                 outline-none
                 transition
@@ -168,7 +168,7 @@ export default function AwbScanner({
               {isScanning ? "Scanning..." : "Submit"}
             </button>
           </div>
-          <p className="mt-1.5 text-xs font-medium text-slate-500">
+          <p className="mt-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
             Only the shipping AWB tracking barcode is valid.
           </p>
         </div>
@@ -178,19 +178,19 @@ export default function AwbScanner({
           <div
             className={`rounded-2xl border p-3.5 sm:p-4 text-xs sm:text-sm font-semibold transition-all ${
               message.type === "success"
-                ? "border-emerald-200 bg-emerald-50/80 text-emerald-900"
+                ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-300"
                 : message.type === "warning"
-                ? "border-amber-200 bg-amber-50/80 text-amber-900"
-                : "border-red-200 bg-red-50/80 text-red-900"
+                ? "border-amber-200 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300"
+                : "border-red-200 dark:border-red-500/20 bg-red-50/80 dark:bg-red-500/10 text-red-900 dark:text-red-300"
             }`}
           >
             <div className="flex items-start gap-2.5">
               {message.type === "success" ? (
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
               ) : message.type === "warning" ? (
-                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
               ) : (
-                <AlertCircle className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
+                <AlertCircle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
               )}
               <div className="leading-snug">{message.text}</div>
             </div>

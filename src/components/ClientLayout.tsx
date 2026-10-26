@@ -70,6 +70,7 @@
 
 import { Toaster } from "sonner";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import AccountLockChecker from "./AccountLockChecker";
@@ -92,13 +93,15 @@ export default function ClientLayout({
   }, [pathname]);
 
   return (
-    <ReactQueryProvider>
-      <GlobalConnectionOverlay />
-      <AccountLockChecker />
+    <ThemeProvider>
+      <ReactQueryProvider>
+        <GlobalConnectionOverlay />
+        <AccountLockChecker />
 
-      {children}
+        {children}
 
-      <Toaster position="top-right" richColors closeButton duration={3000} />
-    </ReactQueryProvider>
+        <Toaster position="top-right" richColors closeButton duration={3000} />
+      </ReactQueryProvider>
+    </ThemeProvider>
   );
 }

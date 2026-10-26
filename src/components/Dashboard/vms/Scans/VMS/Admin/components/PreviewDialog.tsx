@@ -65,11 +65,11 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
       }}
     >
       <div
-        className="relative w-full max-w-5xl my-auto max-h-[calc(100dvh-1.25rem)] sm:max-h-[92vh] flex flex-col overflow-hidden border border-[#E7E0D2] bg-white rounded-2xl sm:rounded-3xl shadow-2xl"
+        className="relative w-full max-w-5xl my-auto max-h-[calc(100dvh-1.25rem)] sm:max-h-[92vh] flex flex-col overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] rounded-2xl sm:rounded-3xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
+        <div className="flex items-center justify-between gap-3 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
           <div className="min-w-0 pr-2">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#E8C16D] leading-tight">
               Video Preview
@@ -94,7 +94,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-3 items-start">
             {/* Video Container */}
             <div className="lg:col-span-2">
-              <div className="overflow-hidden border border-[#E7E0D2] bg-black rounded-xl sm:rounded-2xl shadow-sm flex items-center justify-center">
+              <div className="overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08] bg-black rounded-xl sm:rounded-2xl shadow-sm flex items-center justify-center">
                 {item.videoUrl ? (
                   <video
                     controls
@@ -104,7 +104,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                     poster={getFullUrl(item.thumbnailUrl) ?? undefined}
                   />
                 ) : (
-                  <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-[#0A0E1A] p-6 text-center">
+                  <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-[#0A0E1A] dark:bg-[#080B11] p-6 text-center">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-slate-400">
                       <Clock3 className="h-6 w-6" />
                     </div>
@@ -121,8 +121,8 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
 
             {/* Details Card */}
             <div className="w-full">
-              <div className="border border-[#E7E0D2] bg-[#FFFDF9] p-4 sm:p-5 rounded-xl sm:rounded-2xl">
-                <p className="mb-3 sm:mb-4 text-xs font-bold text-[#0A0E1A] uppercase tracking-wider">
+              <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FFFDF9] dark:bg-[#080B11] p-4 sm:p-5 rounded-xl sm:rounded-2xl">
+                <p className="mb-3 sm:mb-4 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] uppercase tracking-wider">
                   Scan Details
                 </p>
 
@@ -133,7 +133,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                       <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                         Date
                       </p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                         {format(new Date(item.createdAt), "dd MMM yyyy")}
                       </p>
                     </div>
@@ -145,7 +145,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                       <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                         Time
                       </p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                         {format(new Date(item.createdAt), "hh:mm:ss aa")}
                       </p>
                     </div>
@@ -157,7 +157,7 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                       <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                         Operator
                       </p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                         {item.operator?.operatorName || "-"}
                       </p>
                     </div>
@@ -169,17 +169,17 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
                       <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                         Duration
                       </p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                         {item.duration ? `${item.duration}s` : "-"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="col-span-2 lg:col-span-1 min-w-0 pt-2 border-t border-[#E7E0D2]/70">
+                  <div className="col-span-2 lg:col-span-1 min-w-0 pt-2 border-t border-[#E7E0D2]/70 dark:border-white/[0.08]">
                     <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                       Tracking ID
                     </p>
-                    <p className="break-all font-mono text-xs sm:text-sm font-bold text-[#0A0E1A] mt-0.5">
+                    <p className="break-all font-mono text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white mt-0.5">
                       {item.trackingId}
                     </p>
                   </div>
@@ -190,13 +190,13 @@ export default function PreviewDialog({ open, onOpenChange, item }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 sm:gap-3 border-t border-[#E7E0D2] px-4 sm:px-6 py-3 sm:py-4 bg-white shrink-0">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 sm:gap-3 border-t border-[#E7E0D2] dark:border-white/[0.08] px-4 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0F1626] shrink-0">
           <Button
             type="button"
             variant="outline"
             fullWidth={false}
             onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto border border-slate-200 bg-white text-slate-700 font-bold hover:bg-slate-50 rounded-xl sm:rounded-2xl px-5 h-10 sm:h-11 text-xs sm:text-sm"
+            className="w-full sm:w-auto border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-white/[0.04] rounded-xl sm:rounded-2xl px-5 h-10 sm:h-11 text-xs sm:text-sm"
           >
             Close
           </Button>

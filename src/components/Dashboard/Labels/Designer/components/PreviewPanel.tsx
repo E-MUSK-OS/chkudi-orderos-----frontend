@@ -4,9 +4,13 @@ import { labelService } from '../../services/label.service';
 import { ProductLookupResult } from '../../types/label.types';
 import { toast } from 'sonner';
 
+import { cn } from '@/lib/utils';
+
 interface Props {
   onSelectData: (data: Record<string, string> | null) => void;
   onTestPrint?: () => void;
+  className?: string;
+  onCloseMobile?: () => void;
 }
 
 const WORST_CASE_DATA: ProductLookupResult = {
@@ -21,7 +25,7 @@ const WORST_CASE_DATA: ProductLookupResult = {
   manufacturingMonth: "December 2029",
 };
 
-export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
+export function PreviewPanel({ onSelectData, onTestPrint, className, onCloseMobile }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ProductLookupResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,18 +71,28 @@ export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
   };
 
   return (
-    <div className="w-80 bg-[#0A0E1A] border-l border-stone-800 flex flex-col h-full overflow-hidden text-white">
-      <div className="p-4 border-b border-stone-800">
-        <h3 className="font-semibold text-sm mb-4 text-[#E8C16D]">Live Preview Data</h3>
+    <div className={cn("w-full lg:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] flex flex-col h-full overflow-hidden text-white", className)}>
+      <div className="p-4 border-b border-stone-800 dark:border-white/[0.08]">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-sm text-[#E8C16D]">Live Preview Data</h3>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="lg:hidden px-2.5 py-1 rounded-lg bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition"
+            >
+              Done
+            </button>
+          )}
+        </div>
         <p className="text-[11px] text-gray-400 mb-4">
           Test your template against real products or worst-case long text to ensure text wrapping and barcodes don't break.
         </p>
         <button
           onClick={() => handleSelect(WORST_CASE_DATA)}
-          className={`w-full py-2 mb-4 text-xs rounded border transition-colors flex items-center justify-center gap-2 ${
+          className={`w-full py-2 mb-4 text-xs rounded-sm dark:rounded-xl border transition-colors flex items-center justify-center gap-2 cursor-pointer font-bold ${
             selectedProduct?.sku === WORST_CASE_DATA.sku
-              ? 'border-amber-500 bg-amber-500/20 text-amber-500'
-              : 'border-stone-700 bg-[#111827] text-stone-300 hover:border-amber-500 hover:text-amber-500'
+              ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+              : 'border-stone-700 dark:border-white/[0.1] bg-[#1F2937] dark:bg-[#080B11] text-stone-300 hover:border-amber-500 hover:text-amber-500'
           }`}
         >
           <AlertTriangle size={14} />
@@ -88,7 +102,7 @@ export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 bg-[#111827] border border-stone-700 rounded px-3 py-1.5 text-sm text-white placeholder-stone-400 focus:outline-none focus:border-[#E8C16D]"
+            className="flex-1 bg-[#1F2937] dark:bg-[#080B11] border border-stone-700 dark:border-white/[0.1] rounded-sm dark:rounded-xl px-3 py-1.5 text-sm text-white placeholder-stone-400 focus:outline-none focus:border-[#E8C16D]"
             placeholder="Search SKU or Name..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -97,7 +111,7 @@ export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
           <button
             onClick={handleSearch}
             disabled={isLoading}
-            className="bg-[#E8C16D] text-[#0A0E1A] px-3 py-1.5 rounded disabled:opacity-50 hover:bg-[#d4ae5c]"
+            className="bg-[#E8C16D] text-[#0A0E1A] px-3 py-1.5 rounded-sm dark:rounded-xl disabled:opacity-50 hover:bg-[#d4ae5c] cursor-pointer"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
           </button>
@@ -108,21 +122,21 @@ export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
         {results.map((product, idx) => (
           <div
             key={idx}
-            className={`p-3 rounded border cursor-pointer text-sm transition-colors ${
+            className={`p-3 rounded-sm dark:rounded-xl border cursor-pointer text-sm transition-colors ${
               selectedProduct?.sku === product.sku
                 ? 'border-[#E8C16D] bg-[#E8C16D]/10 text-white'
-                : 'border-stone-800 bg-[#111827] text-stone-300 hover:border-stone-600'
+                : 'border-stone-800 dark:border-white/[0.08] bg-[#1F2937]/50 dark:bg-[#080B11] text-stone-300 hover:border-stone-600'
             }`}
             onClick={() => handleSelect(product)}
           >
-            <div className="font-medium text-white line-clamp-1" title={product.title}>
+            <div className="font-semibold text-white line-clamp-1" title={product.title}>
               {product.title || 'Unknown Title'}
             </div>
-            <div className="text-xs text-stone-500 mt-1">SKU: {product.sku}</div>
-            <div className="text-xs text-stone-500 flex justify-between items-center mt-1">
+            <div className="text-xs text-stone-400 mt-1">SKU: {product.sku}</div>
+            <div className="text-xs text-stone-400 flex justify-between items-center mt-1">
               <span>{product.color} {product.size}</span>
               <div className="flex items-center gap-2">
-                {product.mrp && <span>₹{product.mrp}</span>}
+                {product.mrp && <span className="text-[#E8C16D] font-bold">₹{product.mrp}</span>}
                 {selectedProduct?.sku === product.sku && onTestPrint && (
                   <button
                     type="button"
@@ -130,7 +144,7 @@ export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
                       e.stopPropagation();
                       onTestPrint();
                     }}
-                    className="flex items-center gap-1 text-[11px] font-semibold bg-[#E8C16D] text-[#0A0E1A] px-2 py-0.5 rounded hover:bg-[#d4ae5c] transition-colors"
+                    className="flex items-center gap-1 text-[11px] font-semibold bg-[#E8C16D] text-[#0A0E1A] px-2 py-0.5 rounded-sm dark:rounded-lg hover:bg-[#d4ae5c] transition-colors cursor-pointer"
                   >
                     <Printer size={12} />
                     Print
@@ -142,11 +156,11 @@ export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
         ))}
       </div>
 
-      <div className="p-4 border-t border-stone-800 bg-[#111827] space-y-2.5">
+      <div className="p-4 border-t border-stone-800 dark:border-white/[0.08] bg-[#1F2937]/30 dark:bg-[#080B11] space-y-2.5">
         {onTestPrint && (
           <button
             onClick={onTestPrint}
-            className="w-full py-2.5 px-4 text-sm font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#d4ae5c] rounded transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-[0.99]"
+            className="w-full py-2.5 px-4 text-sm font-bold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#d4ae5c] rounded-sm dark:rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs active:scale-[0.99] cursor-pointer"
           >
             <Printer size={16} />
             {selectedProduct ? `Test Print (${selectedProduct.sku})` : "Test Print Label"}
@@ -154,7 +168,7 @@ export function PreviewPanel({ onSelectData, onTestPrint }: Props) {
         )}
         <button
           onClick={clearSelection}
-          className="w-full py-1.5 text-xs text-stone-400 border border-stone-700 rounded hover:bg-stone-800 hover:text-stone-200 transition-colors"
+          className="w-full py-1.5 text-xs text-stone-400 border border-stone-700 dark:border-white/[0.1] rounded-sm dark:rounded-xl hover:bg-[#1F2937] dark:hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer"
         >
           Clear Data
         </button>

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import { Barcode, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { Barcode, CheckCircle2, AlertTriangle, AlertCircle, Camera } from "lucide-react";
+import MobileCameraScanner from "./MobileCameraScanner";
 
 interface Props {
   value: string;
   onChange: (value: string) => void;
   onScan: () => void;
+  onCameraScan?: (code: string) => void;
   message?: string;
 }
 
@@ -14,8 +16,10 @@ export default function TrackingScanner({
   value,
   onChange,
   onScan,
+  onCameraScan,
   message,
 }: Props) {
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const focusAndSelectInput = useCallback(() => {
@@ -69,16 +73,26 @@ export default function TrackingScanner({
   const isError = message && !isSuccess && !isWarning;
 
   return (
-    <div className="rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm mb-6">
+    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-sm mb-6">
       <div className="space-y-4">
         <div>
           <div className="flex items-center justify-between mb-2.5">
-            <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A]">
-              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 text-[#B88728] shrink-0">
+            <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white">
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 text-[#B88728] dark:text-[#E8C16D] shrink-0">
                 <Barcode className="h-4 w-4" />
               </div>
               <span>Scan Tracking ID</span>
             </label>
+
+            {/* Mobile-Only: Camera Scanner Button (Hidden on tablet, laptop & desktop) */}
+            <button
+              type="button"
+              onClick={() => setIsCameraOpen(true)}
+              className="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#252014] text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer"
+            >
+              <Camera size={14} />
+              <span>Camera Scan</span>
+            </button>
           </div>
 
           <div className="relative flex items-center">
@@ -99,15 +113,15 @@ export default function TrackingScanner({
                 rounded-2xl
                 border-2
                 border-[#E8C16D]/70
-                bg-[#FFFDF5]
-                focus:bg-white
+                bg-[#FFFDF5] dark:bg-[#080B11]
+                focus:bg-white dark:focus:bg-[#0B0F17]
                 px-4
                 pr-28
                 text-sm sm:text-base
                 font-mono
                 font-bold
-                text-[#0A0E1A]
-                placeholder:text-slate-400
+                text-[#0A0E1A] dark:text-white
+                placeholder:text-slate-400 dark:placeholder:text-slate-500
                 placeholder:font-normal
                 outline-none
                 transition
@@ -150,10 +164,10 @@ export default function TrackingScanner({
           <div
             className={`rounded-2xl border p-3.5 sm:p-4 text-xs sm:text-sm font-semibold transition-all ${
               isSuccess
-                ? "border-emerald-200 bg-emerald-50/80 text-emerald-900"
+                ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300"
                 : isWarning
-                ? "border-amber-200 bg-amber-50/80 text-amber-900"
-                : "border-red-200 bg-red-50/80 text-red-900"
+                ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300"
+                : "border-red-200 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/40 text-red-900 dark:text-red-300"
             }`}
           >
             <div className="flex items-start gap-2.5">
@@ -169,6 +183,24 @@ export default function TrackingScanner({
           </div>
         )}
       </div>
+
+      {/* Mobile-Only: Camera Barcode Viewfinder Modal */}
+      <MobileCameraScanner
+        isOpen={isCameraOpen}
+        onClose={() => {
+          setIsCameraOpen(false);
+          setTimeout(() => focusAndSelectInput(), 50);
+        }}
+        onScan={(code) => {
+          if (onCameraScan) {
+            onCameraScan(code);
+          } else {
+            onChange(code);
+            onScan();
+          }
+        }}
+        message={message}
+      />
     </div>
   );
 }

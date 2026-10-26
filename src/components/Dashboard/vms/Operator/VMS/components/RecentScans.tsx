@@ -31,32 +31,32 @@ const RecentScans = ({ scanner }: Props) => {
   };
 
   return (
-    <div className="mt-6 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm">
+    <div className="mt-6 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-sm">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-[#0A0E1A]">Recent Scans</h2>
+        <h2 className="text-xl font-bold text-[#0A0E1A] dark:text-white">Recent Scans</h2>
       </div>
 
       {scanHistory.length === 0 ? (
-        <p className="text-xs sm:text-sm text-slate-500 font-medium">No scans yet.</p>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">No scans yet.</p>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
           {scanHistory.map((scan, index) => (
             <div
               key={`${scan.trackingId}-${index}`}
-              className="flex items-center justify-between py-3.5 px-2 hover:bg-slate-50/70 transition-colors rounded-xl"
+              className="flex items-center justify-between py-3.5 px-2 hover:bg-slate-50/70 dark:hover:bg-white/[0.06] transition-colors rounded-xl"
             >
               <div>
-                <p className="font-mono text-sm sm:text-base font-bold text-[#0A0E1A]">
+                <p className="font-mono text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white">
                   {scan.trackingId}
                 </p>
 
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                   {new Date(scan.scannedAt).toLocaleTimeString()}
                 </p>
               </div>
 
               <div>
-                <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 uppercase">
+                <span className="inline-flex items-center rounded-full border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 dark:text-blue-400 uppercase">
                   {scan.source}
                 </span>
               </div>

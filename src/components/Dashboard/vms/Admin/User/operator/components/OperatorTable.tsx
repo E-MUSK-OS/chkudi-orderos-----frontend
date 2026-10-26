@@ -39,29 +39,29 @@ const OperatorTable: React.FC<Props> = ({
 
   if (loading) {
     return (
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent mx-auto mb-2" />
-        <p className="text-sm font-bold text-[#0A0E1A]">Loading operators...</p>
+        <p className="text-sm font-bold text-[#0A0E1A] dark:text-white">Loading operators...</p>
       </div>
     );
   }
 
   if (operators.length === 0) {
     return (
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm">
-        <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30">
-          <Users className="h-7 w-7 text-[#B88728]" />
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
+        <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 dark:border-[#E8C16D]/20">
+          <Users className="h-7 w-7 text-[#B88728] dark:text-[#E8C16D]" />
         </div>
-        <p className="text-base font-bold text-[#0A0E1A]">No Operators Found</p>
+        <p className="text-base font-bold text-[#0A0E1A] dark:text-white">No Operators Found</p>
       </div>
     );
   }
 
   return (
-    <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col justify-between">
+    <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col justify-between">
       <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
         <table className="w-full min-w-[650px] border-collapse text-left font-sans">
-          <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
+          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
             <tr>
               <th className="px-5 py-3.5 sm:py-4 text-left font-semibold">
                 Operator Name
@@ -81,28 +81,28 @@ const OperatorTable: React.FC<Props> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm font-sans">
+          <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-sans">
             {paginatedOperators.map((operator) => (
               <tr
                 key={operator.id}
-                className="hover:bg-slate-50/80 transition-colors"
+                className="hover:bg-slate-50/80 dark:hover:bg-white/[0.06] transition-colors"
               >
-                <td className="px-5 py-3.5 sm:py-4 font-semibold text-slate-900">
+                <td className="px-5 py-3.5 sm:py-4 font-semibold text-slate-900 dark:text-white">
                   {operator.operatorName}
                 </td>
 
-                <td className="px-5 py-3.5 sm:py-4 font-mono text-xs sm:text-sm text-slate-700">
+                <td className="px-5 py-3.5 sm:py-4 font-mono text-xs sm:text-sm text-slate-700 dark:text-slate-300">
                   {operator.employeeCode}
                 </td>
 
                 <td className="px-5 py-3.5 sm:py-4">
                   {operator.isActive ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       Active
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/30 px-3 py-1 text-xs font-semibold text-rose-700 dark:text-rose-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                       Inactive
                     </span>
@@ -114,7 +114,7 @@ const OperatorTable: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => onEdit(operator)}
-                      className="rounded-xl p-2 text-slate-600 hover:text-[#B88728] hover:bg-[#FFF9EC] transition cursor-pointer"
+                      className="rounded-xl p-2 text-slate-600 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] transition cursor-pointer"
                       title="Edit"
                     >
                       <Edit size={18} />
@@ -123,7 +123,7 @@ const OperatorTable: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => onDelete(operator)}
-                      className="rounded-xl p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                      className="rounded-xl p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer"
                       title="Delete"
                     >
                       <Trash2 size={18} />
@@ -146,7 +146,7 @@ const OperatorTable: React.FC<Props> = ({
         itemName="operators"
         isLoading={loading}
         variant="dark"
-        className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5"
+        className="border-t border-slate-800 dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
         onPageChange={setPage}
         onLimitChange={(newLimit) => {
           setLimit(newLimit);

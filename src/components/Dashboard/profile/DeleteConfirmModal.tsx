@@ -36,8 +36,8 @@ export default function DeleteConfirmModal({
       description={description}
     >
       <div className="space-y-6 p-6">
-        <div className="rounded-md border border-red-200 bg-red-50 p-4">
-          <p className="text-sm text-red-700">
+        <div className="rounded-md border border-red-200 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10">
+          <p className="text-sm text-red-700 dark:text-red-400">
             This action cannot be undone.
           </p>
         </div>

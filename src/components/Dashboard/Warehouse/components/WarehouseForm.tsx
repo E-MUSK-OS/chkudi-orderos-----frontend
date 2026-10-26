@@ -104,7 +104,7 @@ export default function WarehouseForm({
     <form
       id="warehouse-form"
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-8 p-6"
+      className="space-y-6 sm:space-y-8 py-4 sm:py-6 px-0.5 sm:px-1"
     >
       {/* ================= Basic Information ================= */}
 

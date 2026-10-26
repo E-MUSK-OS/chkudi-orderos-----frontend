@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   --color-background: var(--background);
@@ -46,8 +46,12 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --color-brand-navy: #0A0E1A;
-  --color-brand-gold: #E8C16D;
+  --color-brand-navy: #080B11;
+  --color-brand-gold: #F5C451;
+  --color-obsidian-canvas: #080B11;
+  --color-obsidian-card: #0F1626;
+  --color-obsidian-card-elevated: #131B2E;
+  --color-obsidian-border: rgba(255, 255, 255, 0.08);
 }
 
 @utility font-heading {
@@ -60,6 +64,23 @@
 
 body {
   font-family: var(--font-body), sans-serif;
+  background-color: #F7F5F0;
+  color: #0A0E1A;
+}
+
+.dark body {
+  background-color: #080B11;
+  color: #F8FAFC;
+}
+
+::selection {
+  background-color: rgba(232, 193, 109, 0.35);
+  color: #0A0E1A;
+}
+
+.dark ::selection {
+  background-color: rgba(245, 196, 81, 0.25);
+  color: #FCD34D;
 }
 
 :root {
@@ -141,10 +162,16 @@ body {
   html {
     @apply font-sans;
   }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+  textarea,
+  select {
+    border-radius: 1rem;
+  }
 }
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -152,10 +179,121 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #0a0e1a;
+  background: rgba(10, 14, 26, 0.2);
   border-radius: 999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #0a0e1a;
+  background: rgba(10, 14, 26, 0.4);
 }
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(245, 196, 81, 0.25);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 196, 81, 0.45);
+}
+
+/* SweetAlert2 OrderOS Theme Overrides */
+.swal2-container {
+  backdrop-filter: blur(8px) !important;
+  background-color: rgba(10, 14, 26, 0.7) !important;
+  z-index: 9999 !important;
+}
+
+.swal2-container.swal2-backdrop-show {
+  background: rgba(10, 14, 26, 0.7) !important;
+}
+
+div:where(.swal2-container) div:where(.swal2-popup) {
+  border-radius: 1.5rem !important; /* rounded-3xl */
+  padding: 1.75rem 2rem !important;
+  border: 1px solid #E7E0D2 !important;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+html.dark div:where(.swal2-container) div:where(.swal2-popup) {
+  background-color: #0F1626 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 0, 0, 0.5) !important;
+}
+
+div:where(.swal2-container) .swal2-html-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+div:where(.swal2-container) .swal2-actions {
+  width: 100% !important;
+  margin-top: 1.5rem !important;
+  padding-top: 1.25rem !important;
+  border-top: 1px solid #E7E0D2 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+}
+
+html.dark div:where(.swal2-container) .swal2-actions {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+div:where(.swal2-container) button.swal2-cancel {
+  order: 1 !important;
+  height: 2.75rem !important; /* h-11 */
+  padding: 0 1.25rem !important;
+  border-radius: 1rem !important; /* rounded-2xl */
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  border: 1px solid #E2E5EA !important;
+  background-color: #FFFFFF !important;
+  color: #0A0E1A !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+div:where(.swal2-container) button.swal2-cancel:hover {
+  background-color: #F8F8F8 !important;
+}
+
+html.dark div:where(.swal2-container) button.swal2-cancel {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: #E2E8F0 !important;
+}
+
+html.dark div:where(.swal2-container) button.swal2-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+div:where(.swal2-container) button.swal2-confirm {
+  order: 2 !important;
+  height: 2.75rem !important; /* h-11 */
+  padding: 0 1.5rem !important;
+  border-radius: 1rem !important; /* rounded-2xl */
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  background-color: #DC2626 !important;
+  color: #FFFFFF !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+div:where(.swal2-container) button.swal2-confirm:hover {
+  background-color: #B91C1C !important;
+}
+
+html.dark div:where(.swal2-container) button.swal2-confirm {
+  background-color: #E11D48 !important;
+  box-shadow: 0 0 20px rgba(225, 29, 72, 0.35) !important;
+}
+
+html.dark div:where(.swal2-container) button.swal2-confirm:hover {
+  background-color: #BE123C !important;
+}
+

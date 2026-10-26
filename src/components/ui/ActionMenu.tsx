@@ -116,7 +116,7 @@ export default function ActionMenu({ items }: Props) {
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-[#C89B3C] hover:text-[#C89B3C]"
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-[#C89B3C] hover:text-[#C89B3C] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:text-[#F5C451] cursor-pointer"
       >
         <MoreVertical size={18} />
       </button>
@@ -129,7 +129,7 @@ export default function ActionMenu({ items }: Props) {
               top: position.top,
               left: position.left,
             }}
-            className="fixed z-[9999] w-52 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
+            className="fixed z-[9999] w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-white/[0.1] dark:bg-[#0F1626] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
           >
             {items.map((item) => {
               const Icon = item.icon;
@@ -142,12 +142,12 @@ export default function ActionMenu({ items }: Props) {
                     setOpen(false);
                     item.onClick();
                   }}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition ${
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition cursor-pointer ${
                     item.disabled ? "opacity-50 cursor-not-allowed" : ""
                   } ${
                     item.variant === "danger"
-                      ? "text-red-600 hover:bg-red-50"
-                      : "text-slate-700 hover:bg-slate-50"
+                      ? "text-red-600 hover:bg-red-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                      : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.06] dark:hover:text-[#F5C451]"
                   }`}
                 >
                   <Icon size={16} />

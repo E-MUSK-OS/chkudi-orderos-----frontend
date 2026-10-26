@@ -449,26 +449,26 @@ export default function StockAnalysis() {
         />
 
         {/* Header Information Banner matching Amazon Order Process */}
-        <div className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Myntra Stock Analysis
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                 Upload Orders and Returns Excel/CSV files to calculate net stock requirements.
               </p>
             </div>
 
             {/* Counter Badge */}
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 self-start md:self-center">
-              <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] bg-slate-50/80 shadow-xs">
-                <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] whitespace-nowrap">
-                  <span className={orders.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+              <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#080B11] shadow-xs">
+                <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap">
+                  <span className={orders.length > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                     {orders.length} Order{orders.length !== 1 ? "s" : ""}
                   </span>
-                  <span className="text-slate-300 mx-1.5">•</span>
-                  <span className={returns.length > 0 ? "text-emerald-700" : "text-slate-400"}>
+                  <span className="text-slate-300 dark:text-slate-600 mx-1.5">•</span>
+                  <span className={returns.length > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                     {returns.length} Return{returns.length !== 1 ? "s" : ""}
                   </span>
                 </div>
@@ -482,29 +482,29 @@ export default function StockAnalysis() {
           {/* ======================================================== */}
           {/* SECTION 1: ORDERS FILE UPLOAD */}
           {/* ======================================================== */}
-          <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+          <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3 sm:pb-3.5 gap-2">
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-200/60 shrink-0">
+                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40 shrink-0">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
+                  <h3 className="font-bold text-[#0A0E1A] dark:text-white text-sm sm:text-base truncate">
                     1. Orders File {orders.length > 0 ? `(${orders.length})` : ""}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
                     Upload one or multiple .xlsx, .xls, .csv files
                   </p>
                 </div>
               </div>
 
               {orders.length > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 shrink-0">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {orders.length} Ready
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
+                <span className="inline-flex items-center rounded-lg bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 shrink-0">
                   Required
                 </span>
               )}
@@ -533,22 +533,22 @@ export default function StockAnalysis() {
                   }}
                   className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                     isDraggingOrders
-                      ? "border-[#E8C16D] bg-[#FFF9EC]"
-                      : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
+                      ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                      : "border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-[#0D121D]"
                   }`}
                 >
-                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-blue-600">
+                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0B0F17] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-blue-600">
                     <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
 
-                  <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                  <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                     Click to upload or drag & drop Orders
                   </p>
-                  <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
-                    Select one or multiple Excel / CSV (<code className="font-mono text-blue-600 font-semibold">.xlsx, .csv</code>) files
+                  <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-xs sm:max-w-none">
+                    Select one or multiple Excel / CSV (<code className="font-mono text-blue-600 dark:text-blue-400 font-semibold">.xlsx, .csv</code>) files
                   </p>
 
-                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0B0F17] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.1] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                     <FileSpreadsheet className="h-3.5 w-3.5 text-blue-500" />
                     Browse Orders
                   </div>
@@ -574,8 +574,8 @@ export default function StockAnalysis() {
                   }}
                   className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
                     isDraggingOrders
-                      ? "border-[#E8C16D] bg-[#FFF9EC]"
-                      : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                      ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                      : "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10 hover:border-[#E8C16D]/70"
                   }`}
                 >
                   <div className="flex-1 flex flex-col min-h-0">
@@ -587,17 +587,17 @@ export default function StockAnalysis() {
                       {orders.map((item, idx) => (
                         <div
                           key={`${item.file.name}_${idx}`}
-                          className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
+                          className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600 border border-blue-200/50">
+                            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40">
                               <FileSpreadsheet className="h-4 w-4" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-bold text-[#0A0E1A]" title={item.file.name}>
+                              <p className="truncate text-xs font-bold text-[#0A0E1A] dark:text-white" title={item.file.name}>
                                 {item.file.name}
                               </p>
-                              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                                 {formatFileSize(item.file.size)} • {item.data.length} rows
                               </p>
                             </div>
@@ -611,7 +611,7 @@ export default function StockAnalysis() {
                               setResults([]);
                             }}
                             title="Remove this file"
-                            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 dark:text-slate-500 transition hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -621,27 +621,27 @@ export default function StockAnalysis() {
                   </div>
 
                   {/* Footer summary bar */}
-                  <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                  <div className="mt-3 pt-2.5 border-t border-emerald-200/70 dark:border-emerald-900/40 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-300 min-w-0 truncate">
                       <span className="whitespace-nowrap">
                         {orders.length} file{orders.length > 1 ? "s" : ""}
                       </span>
                       <span className="text-slate-400">•</span>
-                      <span className="text-emerald-700 font-medium truncate">
+                      <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
                         {formatFileSize(totalOrdersSize)}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           ordersInputRef.current?.click();
                         }}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] px-3 py-1.5 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                       >
-                        <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                        <Plus className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                         <span>Add More</span>
                       </button>
 
@@ -653,7 +653,7 @@ export default function StockAnalysis() {
                           setResults([]);
                           if (ordersInputRef.current) ordersInputRef.current.value = "";
                         }}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-white dark:bg-[#080B11] hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         <span>Clear All</span>
@@ -680,29 +680,29 @@ export default function StockAnalysis() {
           {/* ======================================================== */}
           {/* SECTION 2: RETURNS FILE UPLOAD */}
           {/* ======================================================== */}
-          <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-3.5 gap-2">
+          <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm transition-all hover:border-[#E8C16D]/40 hover:shadow-md dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3 sm:pb-3.5 gap-2">
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/60 shrink-0">
+                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40 shrink-0">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-[#0A0E1A] text-sm sm:text-base truncate">
+                  <h3 className="font-bold text-[#0A0E1A] dark:text-white text-sm sm:text-base truncate">
                     2. Returns File {returns.length > 0 ? `(${returns.length})` : ""}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
                     Upload one or multiple .xlsx, .xls, .csv files
                   </p>
                 </div>
               </div>
 
               {returns.length > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200 shrink-0">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 shrink-0">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {returns.length} Ready
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shrink-0">
+                <span className="inline-flex items-center rounded-lg bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 shrink-0">
                   Required
                 </span>
               )}
@@ -731,22 +731,22 @@ export default function StockAnalysis() {
                   }}
                   className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                     isDraggingReturns
-                      ? "border-[#E8C16D] bg-[#FFF9EC]"
-                      : "border-[#E7E0D2] bg-[#FAF8F5] hover:border-[#E8C16D] hover:bg-[#FFFDF5]"
+                      ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                      : "border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-[#0D121D]"
                   }`}
                 >
-                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white text-slate-500 border border-slate-200 shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600">
+                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0B0F17] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600">
                     <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
 
-                  <p className="text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                  <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                     Click to upload or drag & drop Returns
                   </p>
-                  <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-xs sm:max-w-none">
-                    Select one or multiple Excel / CSV (<code className="font-mono text-amber-600 font-semibold">.xlsx, .csv</code>) files
+                  <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-xs sm:max-w-none">
+                    Select one or multiple Excel / CSV (<code className="font-mono text-amber-600 dark:text-amber-400 font-semibold">.xlsx, .csv</code>) files
                   </p>
 
-                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0B0F17] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.1] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                     <FileSpreadsheet className="h-3.5 w-3.5 text-amber-500" />
                     Browse Returns
                   </div>
@@ -772,8 +772,8 @@ export default function StockAnalysis() {
                   }}
                   className={`flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] flex-col justify-between rounded-2xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
                     isDraggingReturns
-                      ? "border-[#E8C16D] bg-[#FFF9EC]"
-                      : "border-emerald-200 bg-emerald-50/20 hover:border-[#E8C16D]/70"
+                      ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
+                      : "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10 hover:border-[#E8C16D]/70"
                   }`}
                 >
                   <div className="flex-1 flex flex-col min-h-0">
@@ -785,17 +785,17 @@ export default function StockAnalysis() {
                       {returns.map((item, idx) => (
                         <div
                           key={`${item.file.name}_${idx}`}
-                          className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] bg-white p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
+                          className="flex items-center justify-between gap-2.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-2.5 sm:p-3 shadow-2xs hover:border-[#E8C16D]/40 transition"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600 border border-amber-200/50">
+                            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40">
                               <FileSpreadsheet className="h-4 w-4" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-bold text-[#0A0E1A]" title={item.file.name}>
+                              <p className="truncate text-xs font-bold text-[#0A0E1A] dark:text-white" title={item.file.name}>
                                 {item.file.name}
                               </p>
-                              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                                 {formatFileSize(item.file.size)} • {item.data.length} rows
                               </p>
                             </div>
@@ -809,7 +809,7 @@ export default function StockAnalysis() {
                               setResults([]);
                             }}
                             title="Remove this file"
-                            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 dark:text-slate-500 transition hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -819,27 +819,27 @@ export default function StockAnalysis() {
                   </div>
 
                   {/* Footer summary bar */}
-                  <div className="mt-3 pt-2.5 border-t border-emerald-200/70 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 min-w-0 truncate">
+                  <div className="mt-3 pt-2.5 border-t border-emerald-200/70 dark:border-emerald-900/40 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-300 min-w-0 truncate">
                       <span className="whitespace-nowrap">
                         {returns.length} file{returns.length > 1 ? "s" : ""}
                       </span>
                       <span className="text-slate-400">•</span>
-                      <span className="text-emerald-700 font-medium truncate">
+                      <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
                         {formatFileSize(totalReturnsSize)}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           returnsInputRef.current?.click();
                         }}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] bg-[#FFF9EC] hover:bg-[#FFF3D6] px-3 py-1.5 rounded-xl border border-[#E8C16D] ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] px-3 py-1.5 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 ring-2 ring-[#E8C16D]/20 shadow-xs transition active:scale-[0.98] cursor-pointer"
                       >
-                        <Plus className="h-3.5 w-3.5 text-[#B88728]" />
+                        <Plus className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                         <span>Add More</span>
                       </button>
 
@@ -851,7 +851,7 @@ export default function StockAnalysis() {
                           setResults([]);
                           if (returnsInputRef.current) returnsInputRef.current.value = "";
                         }}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-white hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-white dark:bg-[#080B11] hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 shadow-xs transition active:scale-[0.98] cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         <span>Clear All</span>
@@ -877,12 +877,12 @@ export default function StockAnalysis() {
         </div>
 
         {/* Action Controls Bar matching Amazon Order Process */}
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3.5 sm:p-5 shadow-sm">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm">
           <button
             type="button"
             disabled={orders.length === 0 && returns.length === 0}
             onClick={handleClearAll}
-            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
+            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 dark:disabled:hover:bg-[#080B11] disabled:hover:text-slate-700"
           >
             <RotateCcw className="h-4 w-4" />
             <span>Clear Files</span>
@@ -923,16 +923,16 @@ export default function StockAnalysis() {
             {/* Top Action Bar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Days Info */}
-              <div className="inline-flex h-11 items-center px-4 rounded-2xl border border-[#E7E0D2] bg-white shadow-2xs gap-2 shrink-0">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+              <div className="inline-flex h-11 items-center px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] shadow-2xs gap-2 shrink-0">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                   Report Days:
                 </span>
-                <span className="text-sm font-black text-[#0A0E1A]">{reportDays}</span>
+                <span className="text-sm font-black text-[#0A0E1A] dark:text-white">{reportDays}</span>
               </div>
 
               {/* Search Bar */}
               <div className="relative flex-1">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500">
                   <Search size={18} />
                 </div>
                 <input
@@ -943,7 +943,7 @@ export default function StockAnalysis() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full h-11 pl-11 pr-4 rounded-2xl border border-[#E7E0D2] bg-white text-xs sm:text-sm font-medium text-[#0A0E1A] placeholder:text-slate-400 focus:outline-none focus:border-[#0A0E1A] focus:ring-1 focus:ring-[#0A0E1A] shadow-2xs transition"
+                  className="w-full h-11 pl-11 pr-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] text-xs sm:text-sm font-medium text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#0A0E1A] dark:focus:border-[#E8C16D] focus:ring-1 focus:ring-[#0A0E1A] dark:focus:ring-[#E8C16D] shadow-2xs transition"
                 />
               </div>
 
@@ -953,7 +953,7 @@ export default function StockAnalysis() {
                   <button
                     type="button"
                     onClick={() => setIsBrandDropdownOpen(!isBrandDropdownOpen)}
-                    className="w-full h-full bg-[#0A0E1A] text-[#E8C16D] pl-4 pr-10 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between border border-transparent hover:bg-slate-900 active:scale-[0.98] transition shadow-xs focus:outline-none cursor-pointer"
+                    className="w-full h-full bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] pl-4 pr-10 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between border border-transparent dark:border-white/[0.08] hover:bg-slate-900 dark:hover:bg-white/[0.04] active:scale-[0.98] transition shadow-xs focus:outline-none cursor-pointer"
                   >
                     <span className="truncate">
                       {selectedBrand === 'All' ? 'All Brands' : selectedBrand}
@@ -966,7 +966,7 @@ export default function StockAnalysis() {
                   </button>
 
                   {isBrandDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-1.5 w-full bg-[#0A0E1A] rounded-2xl border border-slate-800 shadow-xl z-50 max-h-60 overflow-y-auto p-1.5 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute top-full left-0 mt-1.5 w-full bg-[#0A0E1A] dark:bg-[#080B11] rounded-2xl border border-slate-800 dark:border-white/[0.1] shadow-xl z-50 max-h-60 overflow-y-auto p-1.5 animate-in fade-in zoom-in-95 duration-100">
                       {uniqueBrands.map((brand) => (
                         <button
                           key={brand}
@@ -979,7 +979,7 @@ export default function StockAnalysis() {
                           className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                             selectedBrand === brand
                               ? 'bg-[#E8C16D] text-[#0A0E1A] shadow-xs'
-                              : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                              : 'text-slate-200 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-white/[0.06] hover:text-white'
                           }`}
                         >
                           {brand === 'All' ? 'All Brands' : brand}
@@ -1003,13 +1003,13 @@ export default function StockAnalysis() {
             </div>
 
             {/* Table Area */}
-            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm flex flex-col">
+            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col">
               <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                 <table className="w-full text-center border-collapse whitespace-nowrap font-sans text-xs sm:text-sm">
                   <thead>
-                    <tr className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2]">
+                    <tr className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('brand')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1017,7 +1017,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('myntraSkuCode')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1025,7 +1025,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('sellerSkuCode')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1033,7 +1033,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('orders')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1041,7 +1041,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('returns')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1049,7 +1049,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('netOrders')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1057,7 +1057,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('avgOrdersPerDay')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1065,7 +1065,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('avgReturnsPerDay')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1073,7 +1073,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('req15Days')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1081,7 +1081,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('req30Days')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1090,14 +1090,14 @@ export default function StockAnalysis() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E7E0D2] bg-white text-xs sm:text-sm">
+                  <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm">
                     {paginatedResults.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="py-12 text-center text-slate-500">
+                        <td colSpan={10} className="py-12 text-center text-slate-500 dark:text-slate-400">
                           <div className="flex flex-col items-center justify-center gap-2">
-                            <Search className="h-8 w-8 text-slate-300" />
-                            <p className="font-bold text-[#0A0E1A]">No results found</p>
-                            <p className="text-xs text-slate-400">
+                            <Search className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                            <p className="font-bold text-[#0A0E1A] dark:text-white">No results found</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">
                               Try adjusting your search query or brand filter.
                             </p>
                           </div>
@@ -1107,28 +1107,28 @@ export default function StockAnalysis() {
                       paginatedResults.map((result, idx) => (
                         <tr
                           key={idx}
-                          className="transition-colors hover:bg-[#FAF8F5]"
+                          className="transition-colors hover:bg-[#FAF8F5] dark:hover:bg-white/[0.06]"
                         >
-                          <td className="p-3.5 sm:p-4 text-slate-700">{result.brand}</td>
-                          <td className="p-3.5 sm:p-4 text-slate-700">{result.myntraSkuCode}</td>
-                          <td className="p-3.5 sm:p-4 font-bold text-[#0A0E1A]">
+                          <td className="p-3.5 sm:p-4 text-slate-700 dark:text-slate-300">{result.brand}</td>
+                          <td className="p-3.5 sm:p-4 text-slate-700 dark:text-slate-300">{result.myntraSkuCode}</td>
+                          <td className="p-3.5 sm:p-4 font-bold text-[#0A0E1A] dark:text-white">
                             {result.sellerSkuCode}
                           </td>
-                          <td className="p-3.5 sm:p-4 text-slate-700">{result.orders}</td>
-                          <td className="p-3.5 sm:p-4 text-slate-700">{result.returns}</td>
-                          <td className="p-3.5 sm:p-4 font-black text-[#0A0E1A]">
+                          <td className="p-3.5 sm:p-4 text-slate-700 dark:text-slate-300">{result.orders}</td>
+                          <td className="p-3.5 sm:p-4 text-slate-700 dark:text-slate-300">{result.returns}</td>
+                          <td className="p-3.5 sm:p-4 font-black text-[#0A0E1A] dark:text-white">
                             {result.netOrders}
                           </td>
-                          <td className="p-3.5 sm:p-4 font-medium text-slate-800">
+                          <td className="p-3.5 sm:p-4 font-medium text-slate-800 dark:text-slate-200">
                             {result.avgOrdersPerDay}
                           </td>
-                          <td className="p-3.5 sm:p-4 font-medium text-slate-800">
+                          <td className="p-3.5 sm:p-4 font-medium text-slate-800 dark:text-slate-200">
                             {result.avgReturnsPerDay}
                           </td>
-                          <td className="p-3.5 sm:p-4 font-bold text-[#B88728]">
+                          <td className="p-3.5 sm:p-4 font-bold text-[#B88728] dark:text-[#E8C16D]">
                             {result.req15Days}
                           </td>
-                          <td className="p-3.5 sm:p-4 font-bold text-[#B88728]">
+                          <td className="p-3.5 sm:p-4 font-bold text-[#B88728] dark:text-[#E8C16D]">
                             {result.req30Days}
                           </td>
                         </tr>
@@ -1136,33 +1136,33 @@ export default function StockAnalysis() {
                     )}
                   </tbody>
                   {filteredAndSortedResults.length > 0 && (
-                    <tfoot className="bg-[#FAF8F5] font-bold border-t-2 border-[#E7E0D2] text-[#0A0E1A]">
+                    <tfoot className="bg-[#FAF8F5] dark:bg-[#080B11] font-bold border-t-2 border-[#E7E0D2] dark:border-white/[0.08] text-[#0A0E1A] dark:text-white">
                       <tr>
                         <td
                           colSpan={3}
-                          className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider text-right"
+                          className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider text-right"
                         >
                           Total
                         </td>
-                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-slate-900">
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                           {totalSummary.orders}
                         </td>
-                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-slate-900">
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                           {totalSummary.returns}
                         </td>
-                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#0A0E1A]">
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#0A0E1A] dark:text-white">
                           {totalSummary.netOrders}
                         </td>
-                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                           {Math.round(totalSummary.avgOrdersPerDay)}
                         </td>
-                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-[#0A0E1A]">
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                           {Math.round(totalSummary.avgReturnsPerDay)}
                         </td>
-                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#B88728]">
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#B88728] dark:text-[#E8C16D]">
                           {totalSummary.req15Days}
                         </td>
-                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#B88728]">
+                        <td className="p-3.5 sm:p-4 text-xs sm:text-sm font-black text-[#B88728] dark:text-[#E8C16D]">
                           {totalSummary.req30Days}
                         </td>
                       </tr>
@@ -1180,7 +1180,7 @@ export default function StockAnalysis() {
                   limit={itemsPerPage}
                   itemName="records"
                   variant="dark"
-                  className="bg-[#0A0E1A] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800"
+                  className="bg-[#0A0E1A] dark:bg-[#080B11] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800 dark:border-white/[0.08]"
                   onPageChange={setCurrentPage}
                   onLimitChange={(newLimit) => {
                     setItemsPerPage(newLimit);

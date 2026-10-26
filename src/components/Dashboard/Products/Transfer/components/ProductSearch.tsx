@@ -100,27 +100,27 @@ export default function ProductSearchModal({
 
         {/* Table */}
 
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/[0.08]">
           <table className="w-full">
-            <thead className="bg-slate-50">
-              <tr>
+            <thead className="bg-slate-50 dark:bg-[#080B11]">
+              <tr className="border-b border-slate-200 dark:border-white/[0.08]">
                 <th className="w-16 py-3"></th>
 
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                   SKU
                 </th>
 
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                   Product
                 </th>
 
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase">
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                   Available
                 </th>
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
               {filteredProducts.map((product) => {
                 const selected =
                   selectedProducts.includes(product.id);
@@ -131,9 +131,9 @@ export default function ProductSearchModal({
                     onClick={() =>
                       toggleProduct(product.id)
                     }
-                    className={`cursor-pointer border-t transition hover:bg-slate-50 ${
+                    className={`cursor-pointer border-t border-slate-100 dark:border-white/[0.06] transition hover:bg-slate-50 dark:hover:bg-white/[0.06] ${
                       selected
-                        ? "bg-amber-50"
+                        ? "bg-amber-50 dark:bg-[#F5C451]/10"
                         : ""
                     }`}
                   >
@@ -150,8 +150,8 @@ export default function ProductSearchModal({
                         border
                         ${
                           selected
-                            ? "border-amber-500 bg-amber-500 text-white"
-                            : ""
+                            ? "border-amber-500 bg-amber-500 text-white dark:border-[#F5C451] dark:bg-[#F5C451] dark:text-black"
+                            : "border-slate-300 dark:border-white/20"
                         }
                       `}
                       >
@@ -161,15 +161,15 @@ export default function ProductSearchModal({
                       </div>
                     </td>
 
-                    <td className="px-4 py-4 font-medium">
+                    <td className="px-4 py-4 font-medium text-slate-900 dark:text-white font-mono">
                       {product.sku}
                     </td>
 
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 text-slate-800 dark:text-slate-200">
                       {product.name}
                     </td>
 
-                    <td className="text-center font-semibold text-green-600">
+                    <td className="text-center font-semibold text-green-600 dark:text-emerald-400">
                       {product.available}
                     </td>
                   </tr>
@@ -181,20 +181,25 @@ export default function ProductSearchModal({
 
         {/* Footer */}
 
-        <div className="flex justify-between">
-          <p className="text-sm text-slate-500">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Selected : {selectedProducts.length}
           </p>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-2 w-full sm:w-auto">
             <Button
               variant="secondary"
+              fullWidth={false}
+              className="w-full sm:w-auto min-h-[42px] sm:min-h-[44px] h-11 px-5 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
               onClick={onClose}
             >
               Cancel
             </Button>
 
-            <Button>
+            <Button
+              fullWidth={false}
+              className="w-full sm:w-auto min-h-[42px] sm:min-h-[44px] h-11 px-5 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
+            >
               Add Selected
             </Button>
           </div>
