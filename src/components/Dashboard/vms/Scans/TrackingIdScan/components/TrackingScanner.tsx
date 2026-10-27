@@ -12,6 +12,18 @@ interface Props {
   message?: string;
 }
 
+// Helper to detect mobile devices where focusing inputs forces the on-screen keyboard to pop up
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false;
+  const isTouch = "maxTouchPoints" in navigator && navigator.maxTouchPoints > 0;
+  const isSmallScreen = window.innerWidth < 768;
+  const isMobileUA =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  return (isTouch && isSmallScreen) || isMobileUA || isSmallScreen;
+};
+
 export default function TrackingScanner({
   value,
   onChange,
@@ -23,33 +35,61 @@ export default function TrackingScanner({
   const [isScanActive, setIsScanActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const focusAndSelectInput = useCallback(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    input.focus();
-    input.setSelectionRange(0, input.value.length);
-  }, []);
+  const focusAndSelectInput = useCallback(
+    (forceDesktopOnly = true) => {
+      const input = inputRef.current;
+      if (!input) return;
+
+      // On mobile devices or while camera scanner is open, never programmatically focus the input
+      // to prevent the virtual soft-keyboard from popping up.
+      if (forceDesktopOnly && (isMobileDevice() || isCameraOpen)) {
+        if (document.activeElement === input) {
+          input.blur();
+        }
+        return;
+      }
+
+      input.focus();
+      input.setSelectionRange(0, input.value.length);
+    },
+    [isCameraOpen]
+  );
 
   useEffect(() => {
-    focusAndSelectInput();
+    // Only auto-focus on desktop to avoid popping keyboard on mobile page load
+    if (!isMobileDevice()) {
+      focusAndSelectInput();
+    }
   }, [focusAndSelectInput]);
 
   useEffect(() => {
     if (message) {
       setIsScanActive(true);
       const timer = setTimeout(() => setIsScanActive(false), 350);
-      requestAnimationFrame(() => {
-        focusAndSelectInput();
-      });
-      const t = setTimeout(() => {
-        focusAndSelectInput();
-      }, 30);
+
+      // On mobile: ensure keyboard is dismissed; On desktop: keep input focused for rapid handheld scanning
+      if (isMobileDevice() || isCameraOpen) {
+        if (inputRef.current && document.activeElement === inputRef.current) {
+          inputRef.current.blur();
+        }
+      } else {
+        requestAnimationFrame(() => {
+          focusAndSelectInput();
+        });
+        const t = setTimeout(() => {
+          focusAndSelectInput();
+        }, 30);
+        return () => {
+          clearTimeout(t);
+          clearTimeout(timer);
+        };
+      }
+
       return () => {
-        clearTimeout(t);
         clearTimeout(timer);
       };
     }
-  }, [message, focusAndSelectInput]);
+  }, [message, focusAndSelectInput, isCameraOpen]);
 
   const triggerScan = useCallback(() => {
     // Strip hidden scanner prefix/suffix control characters
@@ -64,10 +104,15 @@ export default function TrackingScanner({
     setTimeout(() => setIsScanActive(false), 350);
 
     onScan();
-    setTimeout(() => {
-      focusAndSelectInput();
-    }, 30);
-  }, [value, onChange, onScan, focusAndSelectInput]);
+
+    if (!isMobileDevice() && !isCameraOpen) {
+      setTimeout(() => {
+        focusAndSelectInput();
+      }, 30);
+    } else if (inputRef.current && document.activeElement === inputRef.current) {
+      inputRef.current.blur();
+    }
+  }, [value, onChange, onScan, focusAndSelectInput, isCameraOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Hardware handheld scanners typically emit Enter or Tab after reading
@@ -130,8 +175,16 @@ export default function TrackingScanner({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={focusAndSelectInput}
-              onClick={focusAndSelectInput}
+              onFocus={() => {
+                if (inputRef.current) {
+                  inputRef.current.setSelectionRange(0, inputRef.current.value.length);
+                }
+              }}
+              onClick={() => {
+                if (inputRef.current) {
+                  inputRef.current.setSelectionRange(0, inputRef.current.value.length);
+                }
+              }}
               placeholder="Scan barcode or enter tracking ID..."
               autoComplete="off"
               spellCheck={false}
@@ -219,7 +272,9 @@ export default function TrackingScanner({
         isOpen={isCameraOpen}
         onClose={() => {
           setIsCameraOpen(false);
-          setTimeout(() => focusAndSelectInput(), 50);
+          if (!isMobileDevice()) {
+            setTimeout(() => focusAndSelectInput(), 50);
+          }
         }}
         onScan={(code) => {
           if (onCameraScan) {

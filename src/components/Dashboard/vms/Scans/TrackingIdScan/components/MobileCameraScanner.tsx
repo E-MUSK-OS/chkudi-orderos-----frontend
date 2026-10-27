@@ -59,6 +59,153 @@ const NATIVE_FORMATS = [
   "upc_e",
 ];
 
+interface ScanZoneCoords {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/**
+ * Calculates the bounding box of the visual scan reticle in video pixel coordinates.
+ * Takes into account object-fit: cover and CSS transforms.
+ */
+function getScanZoneInVideoCoords(
+  videoEl: HTMLVideoElement | null,
+  scanZoneEl: HTMLElement | null
+): ScanZoneCoords | null {
+  if (!videoEl || videoEl.videoWidth === 0 || videoEl.videoHeight === 0) {
+    return null;
+  }
+
+  const vw = videoEl.videoWidth;
+  const vh = videoEl.videoHeight;
+
+  // Fallback to center 75% x 45% of camera frame if DOM element is not mounted yet
+  if (!scanZoneEl) {
+    const defaultW = vw * 0.75;
+    const defaultH = vh * 0.45;
+    const defX1 = (vw - defaultW) / 2;
+    const defY1 = (vh - defaultH) / 2;
+    return {
+      x1: defX1,
+      y1: defY1,
+      x2: defX1 + defaultW,
+      y2: defY1 + defaultH,
+    };
+  }
+
+  const videoRect = videoEl.getBoundingClientRect();
+  const zoneRect = scanZoneEl.getBoundingClientRect();
+
+  if (videoRect.width === 0 || videoRect.height === 0) {
+    return null;
+  }
+
+  // Account for object-fit: cover uniform scaling
+  const scale = Math.max(videoRect.width / vw, videoRect.height / vh);
+  const renderedWidth = vw * scale;
+  const renderedHeight = vh * scale;
+
+  // Offset of rendered video relative to element bounding box
+  const offsetX = (videoRect.width - renderedWidth) / 2;
+  const offsetY = (videoRect.height - renderedHeight) / 2;
+
+  const videoContentLeft = videoRect.left + offsetX;
+  const videoContentTop = videoRect.top + offsetY;
+
+  // Convert zoneRect (screen client coords) to video pixel coords
+  const x1 = Math.max(0, (zoneRect.left - videoContentLeft) / scale);
+  const y1 = Math.max(0, (zoneRect.top - videoContentTop) / scale);
+  const x2 = Math.min(vw, (zoneRect.right - videoContentLeft) / scale);
+  const y2 = Math.min(vh, (zoneRect.bottom - videoContentTop) / scale);
+
+  if (x2 <= x1 || y2 <= y1) {
+    return null;
+  }
+
+  return { x1, y1, x2, y2 };
+}
+
+/**
+ * Computes the center coordinates of a detected barcode from its corner points or bounding box.
+ */
+function getBarcodeCenter(barcode: any): { x: number; y: number } {
+  if (Array.isArray(barcode.cornerPoints) && barcode.cornerPoints.length > 0) {
+    const sum = barcode.cornerPoints.reduce(
+      (acc: { x: number; y: number }, pt: { x: number; y: number }) => ({
+        x: acc.x + (pt.x || 0),
+        y: acc.y + (pt.y || 0),
+      }),
+      { x: 0, y: 0 }
+    );
+    return {
+      x: sum.x / barcode.cornerPoints.length,
+      y: sum.y / barcode.cornerPoints.length,
+    };
+  }
+
+  const bb = barcode.boundingBox;
+  if (bb) {
+    const left = bb.x ?? bb.left ?? 0;
+    const top = bb.y ?? bb.top ?? 0;
+    const width = bb.width ?? 0;
+    const height = bb.height ?? 0;
+    return {
+      x: left + width / 2,
+      y: top + height / 2,
+    };
+  }
+
+  return { x: 0, y: 0 };
+}
+
+/**
+ * Checks if a detected barcode falls strictly inside the visible scan reticle area.
+ */
+function isBarcodeInsideZone(barcode: any, zone: ScanZoneCoords): boolean {
+  const center = getBarcodeCenter(barcode);
+
+  // Allow a small 6% margin to account for slight border touches, but strictly reject external barcodes
+  const marginX = (zone.x2 - zone.x1) * 0.06;
+  const marginY = (zone.y2 - zone.y1) * 0.06;
+
+  const inX = center.x >= zone.x1 - marginX && center.x <= zone.x2 + marginX;
+  const inY = center.y >= zone.y1 - marginY && center.y <= zone.y2 + marginY;
+
+  if (!inX || !inY) return false;
+
+  const bb = barcode.boundingBox;
+  if (bb) {
+    const bbX1 = bb.x ?? bb.left ?? 0;
+    const bbY1 = bb.y ?? bb.top ?? 0;
+    const bbX2 = bbX1 + (bb.width ?? 0);
+    const bbY2 = bbY1 + (bb.height ?? 0);
+
+    const hasOverlap =
+      bbX1 < zone.x2 + marginX &&
+      bbX2 > zone.x1 - marginX &&
+      bbY1 < zone.y2 + marginY &&
+      bbY2 > zone.y1 - marginY;
+
+    if (!hasOverlap) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Calculates Euclidean distance between barcode center and scan zone center.
+ */
+function getDistanceToZoneCenter(barcode: any, zone: ScanZoneCoords): number {
+  const center = getBarcodeCenter(barcode);
+  const zoneCenterX = (zone.x1 + zone.x2) / 2;
+  const zoneCenterY = (zone.y1 + zone.y2) / 2;
+  const dx = center.x - zoneCenterX;
+  const dy = center.y - zoneCenterY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 export default function MobileCameraScanner({
   isOpen,
   onClose,
@@ -70,6 +217,8 @@ export default function MobileCameraScanner({
   const streamRef = useRef<MediaStream | null>(null);
   const rafIdRef = useRef<number | null>(null);
   const isStoppingRef = useRef(false);
+  const scanZoneRef = useRef<HTMLDivElement>(null);
+  const zxingTimeoutRef = useRef<any>(null);
 
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>("checking");
   const [hasTorch, setHasTorch] = useState(false);
@@ -114,6 +263,11 @@ export default function MobileCameraScanner({
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
+    }
+
+    if (zxingTimeoutRef.current !== null) {
+      clearTimeout(zxingTimeoutRef.current);
+      zxingTimeoutRef.current = null;
     }
 
     try {
@@ -312,8 +466,27 @@ export default function MobileCameraScanner({
                 isDetecting = true;
                 try {
                   const barcodes = await nativeDetector.detect(videoEl);
-                  if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                    handleBarcodeFound(barcodes[0].rawValue);
+                  if (barcodes && barcodes.length > 0) {
+                    const zone = getScanZoneInVideoCoords(videoEl, scanZoneRef.current);
+                    if (zone) {
+                      // Filter: strictly keep only barcodes whose position is inside the reticle scanning area
+                      const validBarcodes = barcodes.filter((b: any) =>
+                        isBarcodeInsideZone(b, zone)
+                      );
+
+                      if (validBarcodes.length > 0) {
+                        // Prioritize barcode closest to the center crosshairs
+                        validBarcodes.sort(
+                          (a: any, b: any) =>
+                            getDistanceToZoneCenter(a, zone) - getDistanceToZoneCenter(b, zone)
+                        );
+
+                        const primary = validBarcodes[0];
+                        if (primary && primary.rawValue) {
+                          handleBarcodeFound(primary.rawValue);
+                        }
+                      }
+                    }
                   }
                 } catch {
                   // Ignore transient frame read error
@@ -335,23 +508,84 @@ export default function MobileCameraScanner({
         }
       }
 
-      // 2. FALLBACK ENGINE: Lightweight ZXing on video element (runs on all low-end phones & iOS Safari)
+      // 2. FALLBACK ENGINE: Lightweight ZXing cropped strictly to the viewfinder reticle
       if (!nativeDetectorStarted) {
         try {
           const hints = new Map<DecodeHintType, any>();
           hints.set(DecodeHintType.POSSIBLE_FORMATS, FAST_BARCODE_FORMATS);
 
           const codeReader = new BrowserMultiFormatReader(hints, {
-            delayBetweenScanAttempts: 60, // Light on low-end CPUs
+            delayBetweenScanAttempts: 60,
             delayBetweenScanSuccess: 450,
           });
 
-          const controls = await codeReader.decodeFromVideoElement(videoEl, (result) => {
-            if (result) {
-              handleBarcodeFound(result.getText());
+          // Offscreen cropped canvas: only captures pixels inside the reticle
+          const cropCanvas = document.createElement("canvas");
+          const cropCtx = cropCanvas.getContext("2d", { willReadFrequently: true });
+          let isZxingDecoding = false;
+
+          const scanZxingLoop = () => {
+            if (isStoppingRef.current) return;
+            if (!videoEl || videoEl.readyState < 2 || videoEl.videoWidth === 0) {
+              zxingTimeoutRef.current = setTimeout(scanZxingLoop, 80);
+              return;
             }
-          });
-          controlsRef.current = controls;
+
+            if (!isZxingDecoding) {
+              isZxingDecoding = true;
+              try {
+                const zone = getScanZoneInVideoCoords(videoEl, scanZoneRef.current);
+                if (zone && cropCtx) {
+                  const targetW = Math.round(zone.x2 - zone.x1);
+                  const targetH = Math.round(zone.y2 - zone.y1);
+
+                  if (targetW > 10 && targetH > 10) {
+                    if (cropCanvas.width !== targetW || cropCanvas.height !== targetH) {
+                      cropCanvas.width = targetW;
+                      cropCanvas.height = targetH;
+                    }
+
+                    // Crop video frame strictly to the reticle coordinates
+                    cropCtx.drawImage(
+                      videoEl,
+                      zone.x1,
+                      zone.y1,
+                      targetW,
+                      targetH,
+                      0,
+                      0,
+                      targetW,
+                      targetH
+                    );
+
+                    const result = codeReader.decodeFromCanvas(cropCanvas);
+                    if (result && result.getText()) {
+                      handleBarcodeFound(result.getText());
+                    }
+                  }
+                }
+              } catch {
+                // NotFoundException is thrown every frame when no barcode is inside reticle
+              } finally {
+                isZxingDecoding = false;
+              }
+            }
+
+            if (!isStoppingRef.current) {
+              zxingTimeoutRef.current = setTimeout(scanZxingLoop, 70);
+            }
+          };
+
+          controlsRef.current = {
+            stop: () => {
+              if (zxingTimeoutRef.current !== null) {
+                clearTimeout(zxingTimeoutRef.current);
+                zxingTimeoutRef.current = null;
+              }
+            },
+          } as any;
+
+          zxingTimeoutRef.current = setTimeout(scanZxingLoop, 100);
         } catch (err) {
           console.warn("ZXing fallback decode error:", err);
         }
@@ -716,6 +950,7 @@ export default function MobileCameraScanner({
           <div className="relative z-10 flex flex-col items-center pointer-events-none px-4 w-full">
             {/* Viewfinder Targeting Box - Wider reticle for wide 1D barcodes from distance */}
             <div
+              ref={scanZoneRef}
               className={`relative w-[88%] max-w-[360px] h-52 sm:h-56 rounded-2xl overflow-hidden transition-all duration-200 ${
                 isReading
                   ? "border-2 border-emerald-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.65),0_0_35px_#10b981,inset_0_0_25px_rgba(16,185,129,0.35)]"

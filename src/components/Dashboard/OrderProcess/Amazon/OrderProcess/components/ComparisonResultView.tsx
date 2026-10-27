@@ -45,6 +45,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
+import { useTheme } from "@/providers/ThemeProvider";
 import {
   useAmazonOrderStore,
   loadFilesFromIDB,
@@ -307,6 +308,25 @@ export default function ComparisonResultView({
 
   const [activeTab, setActiveTab] = useState<"table" | "pdf">("table");
   const [selectedPdfType, setSelectedPdfType] = useState<AmazonPdfViewType>("combined");
+
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const selectThemeStyles = useMemo(
+    () => ({
+      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#0A0E1A",
+      backgroundColor: "#0A0E1A",
+      textColor: "#E8C16D",
+      placeholderColor: "#E8C16D",
+      menuBackgroundColor: "#0A0E1A",
+      optionHoverColor: "#161D2E",
+      optionSelectedColor: "#E8C16D",
+      optionSelectedTextColor: "#0A0E1A",
+      optionTextColor: "#ffffff",
+      menuPortalTarget: typeof window !== "undefined" ? document.body : undefined,
+    }),
+    [isDark]
+  );
 
   // Fast in-memory PDF document caching for instant barcode scan printing
   const loadedPdfDocsRef = useRef<{
@@ -683,6 +703,16 @@ export default function ComparisonResultView({
 
   const markRowsAsPrinted = useCallback(
     (indices: number[]) => {
+      // Safeguard: Ensure any existing printed indices from store summary are preserved
+      const summaryIndices = (useAmazonOrderStore.getState().summary as any)?.printedIndices;
+      const existingSummaryIndices: number[] = Array.isArray(summaryIndices) ? summaryIndices : [];
+      existingSummaryIndices.forEach((idx) => {
+        if (typeof idx === "number") {
+          printedRowsRef.current.add(idx);
+          persistedIndicesRef.current.add(idx);
+        }
+      });
+
       indices.forEach((idx) => {
         printedRowsRef.current.add(idx);
         persistedIndicesRef.current.add(idx);
@@ -1214,16 +1244,22 @@ export default function ComparisonResultView({
             targetBatchId || undefined
           );
         } catch (initialErr) {
-          // If foreign key constraint or batch ID issue failed the request, retry immediately without batchId
-          if (targetBatchId) {
-            console.warn("Primary save with targetBatchId failed, retrying without batchId:", initialErr);
+          // If primary save attempt failed (e.g. temporary network glitch or timeout), retry with targetBatchId preserved
+          console.warn("Primary save with targetBatchId failed, retrying with targetBatchId:", initialErr);
+          try {
+            await amazonOrderService.savePrintedOrders(
+              ordersToSave,
+              undefined,
+              targetBatchId || undefined
+            );
+          } catch (retryErr) {
+            // As a last resort only if batch foreign key actually fails, save without batchId so order scan is not lost
+            console.warn("Retry with targetBatchId failed, fallback to general save without batchId:", retryErr);
             await amazonOrderService.savePrintedOrders(
               ordersToSave,
               undefined,
               undefined
             );
-          } else {
-            throw initialErr;
           }
         }
       } catch (saveErr) {
@@ -1286,24 +1322,30 @@ export default function ComparisonResultView({
 
         res.data.forEach((o) => {
           if (o.orderId && o.orderId !== "N/A" && o.orderId !== "-") {
-            dbPrintedOrderIds.add(o.orderId.trim());
+            dbPrintedOrderIds.add(o.orderId.trim().toUpperCase());
           }
           if (o.awb && o.awb !== "N/A" && o.awb !== "-") {
-            dbPrintedAwbs.add(o.awb.trim());
+            dbPrintedAwbs.add(o.awb.trim().toUpperCase());
           }
         });
 
         let hasNewPrinted = false;
         mappedResults.forEach((item) => {
           if (!item.isMatch) return;
-          const cleanOrder = (item.orderNumber || "").trim();
-          const cleanAwb = (item.awb || "").trim();
+          const cleanOrder = (item.orderNumber || "").trim().toUpperCase();
+          const cleanAwb = (item.awb || "").trim().toUpperCase();
 
-          // Verify print strictly by AWB Tracking (not Amazon order id, because same person can have multiple orders)
-          const isPrintedInDb =
+          const hasAwbMatch =
             cleanAwb && cleanAwb !== "N/A" && cleanAwb !== "-"
               ? dbPrintedAwbs.has(cleanAwb)
               : false;
+          const hasOrderMatch =
+            cleanOrder && cleanOrder !== "N/A" && cleanOrder !== "-"
+              ? dbPrintedOrderIds.has(cleanOrder)
+              : false;
+
+          // Verify print strictly by AWB Tracking when available; fallback to Order ID when AWB is absent
+          const isPrintedInDb = hasAwbMatch || (!cleanAwb || cleanAwb === "N/A" || cleanAwb === "-" ? hasOrderMatch : false);
 
           if (isPrintedInDb) {
             persistedIndicesRef.current.add(item.index);
@@ -1318,6 +1360,17 @@ export default function ComparisonResultView({
           const updated = new Set(printedRowsRef.current);
           setPrintedRows(updated);
           savePrintedRowsToStorage(batchKey, updated, activeHistoryBatchId, mappedResults);
+
+          // Synchronize Zustand summary so subsequent prints in this session never drop historical prints!
+          useAmazonOrderStore.setState((state) => ({
+            summary: state.summary
+              ? {
+                  ...state.summary,
+                  printedIndices: Array.from(updated),
+                  printedCount: updated.size,
+                }
+              : state.summary,
+          }));
         }
       } catch (err) {
         console.warn("Failed to sync printed orders from DB:", err);
@@ -3121,14 +3174,7 @@ export default function ComparisonResultView({
                 }
               }}
               height={48}
-              borderColor="#0A0E1A"
-              backgroundColor="#0A0E1A"
-              textColor="#E8C16D"
-              placeholderColor="#E8C16D"
-              menuBackgroundColor="#0A0E1A"
-              optionHoverColor="#161D2E"
-              optionSelectedColor="#E8C16D"
-              optionSelectedTextColor="#0A0E1A"
+              {...selectThemeStyles}
             />
           </div>
         </div>
@@ -3274,16 +3320,7 @@ export default function ComparisonResultView({
                       : "Select Printer"
                   }
                   height={48}
-                  borderColor="#0A0E1A"
-                  backgroundColor="#0A0E1A"
-                  textColor="#E8C16D"
-                  placeholderColor="#E8C16D"
-                  menuBackgroundColor="#0A0E1A"
-                  optionHoverColor="#161D2E"
-                  optionSelectedColor="#E8C16D"
-                  optionSelectedTextColor="#0A0E1A"
-                  optionTextColor="#ffffff"
-                  menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
+                  {...selectThemeStyles}
                 />
               </div>
             </div>
@@ -3306,15 +3343,7 @@ export default function ComparisonResultView({
                     }
                   }}
                   height={48}
-                  borderColor="#0A0E1A"
-                  backgroundColor="#0A0E1A"
-                  textColor="#E8C16D"
-                  placeholderColor="#E8C16D"
-                  menuBackgroundColor="#0A0E1A"
-                  optionHoverColor="#161D2E"
-                  optionSelectedColor="#E8C16D"
-                  optionSelectedTextColor="#0A0E1A"
-                  menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
+                  {...selectThemeStyles}
                 />
               </div>
 
@@ -3854,14 +3883,7 @@ export default function ComparisonResultView({
                     }
                   }}
                   height={48}
-                  borderColor="#0A0E1A"
-                  backgroundColor="#0A0E1A"
-                  textColor="#E8C16D"
-                  placeholderColor="#E8C16D"
-                  menuBackgroundColor="#0A0E1A"
-                  optionHoverColor="#161D2E"
-                  optionSelectedColor="#E8C16D"
-                  optionSelectedTextColor="#0A0E1A"
+                  {...selectThemeStyles}
                 />
               </div>
 
