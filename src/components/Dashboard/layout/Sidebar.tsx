@@ -17,6 +17,10 @@ import {
   ChevronUp,
   ClipboardCheck,
   Package,
+  FileSpreadsheet,
+  ShoppingBag,
+  Settings,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -186,6 +190,69 @@ const navItems: NavItem[] = [
       },
     ],
   },
+  {
+    label: "Transaction",
+    icon: ArrowLeftRight,
+    children: [
+      {
+        label: "Sales",
+        children: [
+          {
+            label: "PO Based",
+            children: [
+              {
+                label: "Upload Requested PO",
+                href: "/dashboard/transaction/sales/po-based/upload-requested-po",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Offline Sales",
+    icon: FileSpreadsheet,
+    children: [
+      {
+        label: "Sales Challan",
+        href: "/dashboard/offline-sales/sales-challan",
+      },
+      {
+        label: "Sales Invoice",
+        href: "/dashboard/offline-sales/sales-invoice",
+      },
+    ],
+  },
+  {
+    label: "Purchase",
+    icon: ShoppingBag,
+    children: [
+      {
+        label: "Finish Goods",
+        children: [
+          {
+            label: "Purchase Challan",
+            href: "/dashboard/purchase/finish-goods/challan",
+          },
+          {
+            label: "Purchase Invoice",
+            href: "/dashboard/purchase/finish-goods/invoice",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Setting",
+    icon: Settings,
+    children: [
+      {
+        label: "Webstore",
+        href: "/dashboard/setting/webstore",
+      },
+    ],
+  },
 ];
 
 export default function Sidebar({
@@ -252,7 +319,11 @@ export default function Sidebar({
     for (const item of items) {
       const nextTrail = [...trail, item.label];
 
-      if (item.href && path === item.href) {
+      if (
+        (item.href && path === item.href) ||
+        (item.href === "/dashboard/purchase/finish-goods/invoice" && path === "/dashboard/purchase-invoice") ||
+        (item.href === "/dashboard/purchase/finish-goods/challan" && path === "/dashboard/purchase-challan")
+      ) {
         return trail;
       }
 
@@ -282,6 +353,18 @@ export default function Sidebar({
 
   const isMenuActive = (item: NavItem): boolean => {
     if (item.href && pathname === item.href) {
+      return true;
+    }
+    if (
+      item.href === "/dashboard/purchase/finish-goods/invoice" &&
+      pathname === "/dashboard/purchase-invoice"
+    ) {
+      return true;
+    }
+    if (
+      item.href === "/dashboard/purchase/finish-goods/challan" &&
+      pathname === "/dashboard/purchase-challan"
+    ) {
       return true;
     }
 

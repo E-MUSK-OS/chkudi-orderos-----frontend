@@ -1,0 +1,35 @@
+export interface RequestedPOItem {
+  id: string;
+  lineNo: number;
+  sku: string;
+  productTitle?: string;
+  asin?: string;
+  quantity: number;
+  unitPrice?: number;
+  taxRate?: number;
+  totalAmount?: number;
+  hsn?: string;
+}
+
+export interface RequestedPO {
+  id: string;
+  storeId: string;
+  storeName: string;
+  marketplaceName: string;
+  poNumber: string;
+  poDate: string;
+  fileName: string;
+  itemsCount: number;
+  totalQuantity: number;
+  totalAmount: number;
+  status: "Uploaded" | "Processed" | "Pending";
+  createdAt: string;
+  items: RequestedPOItem[];
+}
+
+export interface UploadPOFormState {
+  poNumber: string;
+  poDate: string;
+  file: File | null;
+  fileName: string;
+}
