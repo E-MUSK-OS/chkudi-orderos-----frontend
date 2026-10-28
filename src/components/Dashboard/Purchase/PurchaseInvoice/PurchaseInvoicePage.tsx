@@ -48,6 +48,7 @@ export default function PurchaseInvoicePage() {
 
   // List View State
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [filters, setFilters] = useState<PurchaseInvoiceFilterState>({
     invoiceNo: "",
@@ -585,9 +586,21 @@ export default function PurchaseInvoicePage() {
   // -------------------------------------------------------------
   const handleDownloadDetail = async () => {
     try {
-      toast.info("Generating Purchase Invoices Detail report...");
-      await purchaseInvoiceService.downloadDetail(filters);
-      toast.success("Detail excel report downloaded!");
+      if (viewMode !== "list") {
+        await purchaseInvoiceService.downloadSingleInvoiceDetail(formData, items);
+        toast.success(`Downloaded Purchase Invoice #${formData.invoiceNo || ""} Detail Excel`);
+      } else {
+        const downloadFilters =
+          selectedInvoiceIds.length > 0
+            ? { ...filters, ids: selectedInvoiceIds.join(",") }
+            : filters;
+        await purchaseInvoiceService.downloadDetail(downloadFilters);
+        toast.success(
+          selectedInvoiceIds.length > 0
+            ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Detail Excel`
+            : "Detail excel report downloaded!"
+        );
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to download detail excel.");
@@ -596,9 +609,21 @@ export default function PurchaseInvoicePage() {
 
   const handleDownloadSkuWise = async () => {
     try {
-      toast.info("Generating SKU Wise report...");
-      await purchaseInvoiceService.downloadSkuWise(filters);
-      toast.success("SKU Wise report downloaded!");
+      if (viewMode !== "list") {
+        await purchaseInvoiceService.downloadSingleInvoiceSkuWise(formData, items);
+        toast.success(`Downloaded Purchase Invoice #${formData.invoiceNo || ""} SKU Wise Excel`);
+      } else {
+        const downloadFilters =
+          selectedInvoiceIds.length > 0
+            ? { ...filters, ids: selectedInvoiceIds.join(",") }
+            : filters;
+        await purchaseInvoiceService.downloadSkuWise(downloadFilters);
+        toast.success(
+          selectedInvoiceIds.length > 0
+            ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) SKU Wise Excel`
+            : "SKU Wise report downloaded!"
+        );
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to download SKU wise excel.");
@@ -607,12 +632,42 @@ export default function PurchaseInvoicePage() {
 
   const handleDownloadTally = async () => {
     try {
-      toast.info("Generating Tally Format report...");
-      await purchaseInvoiceService.downloadTally(filters);
-      toast.success("Tally format report downloaded!");
+      if (viewMode !== "list") {
+        await purchaseInvoiceService.downloadSingleInvoiceTally(formData, items);
+        toast.success(`Downloaded Purchase Invoice #${formData.invoiceNo || ""} Tally Excel`);
+      } else {
+        const downloadFilters =
+          selectedInvoiceIds.length > 0
+            ? { ...filters, ids: selectedInvoiceIds.join(",") }
+            : filters;
+        await purchaseInvoiceService.downloadTally(downloadFilters);
+        toast.success(
+          selectedInvoiceIds.length > 0
+            ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Tally Excel`
+            : "Tally format report downloaded!"
+        );
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to download Tally excel.");
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    try {
+      const invoicesToExport =
+        selectedInvoiceIds.length > 0
+          ? invoices.filter((inv) => selectedInvoiceIds.includes(inv.id))
+          : invoices;
+      await purchaseInvoiceService.downloadInvoicesTableExcel(invoicesToExport);
+      toast.success(
+        selectedInvoiceIds.length > 0
+          ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Excel`
+          : "Downloaded Invoices Excel"
+      );
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to download invoices excel.");
     }
   };
 
@@ -625,8 +680,8 @@ export default function PurchaseInvoicePage() {
             <PurchaseInvoiceListHeader
               onAddNew={handleResetToNew}
               onDownloadDetail={handleDownloadDetail}
-              onDownloadAll={handleDownloadDetail}
-              onDownloadSummary={handleDownloadSkuWise}
+              onDownloadAll={handleDownloadAll}
+              onDownloadSummary={handleDownloadAll}
               onDownloadSkuWise={handleDownloadSkuWise}
               onDownloadTally={handleDownloadTally}
               onCloseInvoice={() => router.push("/dashboard/purchase/finish-goods/challan")}
@@ -644,6 +699,8 @@ export default function PurchaseInvoicePage() {
             <PurchaseInvoiceTable
               invoices={invoices}
               loading={listLoading}
+              selectedIds={selectedInvoiceIds}
+              onSelectionChange={setSelectedInvoiceIds}
               onEdit={(inv) => populateFromInvoice(inv)}
               onDelete={handleDeleteClick}
               onCreditNote={(inv) => {

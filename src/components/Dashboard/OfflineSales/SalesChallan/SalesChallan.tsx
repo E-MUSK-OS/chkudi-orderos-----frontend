@@ -34,6 +34,7 @@ export default function SalesChallan() {
     null
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedChallanIds, setSelectedChallanIds] = useState<string[]>([]);
 
   // Filters State
   const [filters, setFilters] = useState<ChallanFiltersState>({
@@ -199,8 +200,16 @@ export default function SalesChallan() {
       toast.info("No challans available to download.");
       return;
     }
-    downloadChallansExcel(challans);
-    toast.success("Sales Challans excel downloaded.");
+    const challansToExport =
+      selectedChallanIds.length > 0
+        ? challans.filter((c) => selectedChallanIds.includes(c.id))
+        : challans;
+    downloadChallansExcel(challansToExport);
+    toast.success(
+      selectedChallanIds.length > 0
+        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) Excel`
+        : "Sales Challans excel downloaded."
+    );
   };
 
   const handleDownloadSkuWise = () => {
@@ -208,8 +217,16 @@ export default function SalesChallan() {
       toast.info("No challans available to download.");
       return;
     }
-    downloadSkuWiseExcel(challans);
-    toast.success("SKU Wise Challans excel downloaded.");
+    const challansToExport =
+      selectedChallanIds.length > 0
+        ? challans.filter((c) => selectedChallanIds.includes(c.id))
+        : challans;
+    downloadSkuWiseExcel(challansToExport);
+    toast.success(
+      selectedChallanIds.length > 0
+        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) SKU Wise Excel`
+        : "SKU Wise Challans excel downloaded."
+    );
   };
 
   return (
@@ -244,6 +261,8 @@ export default function SalesChallan() {
             <ChallanTable
               challans={challans}
               loading={loading}
+              selectedIds={selectedChallanIds}
+              onSelectionChange={setSelectedChallanIds}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
               onView={handleView}

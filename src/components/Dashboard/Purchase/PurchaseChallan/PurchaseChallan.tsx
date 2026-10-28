@@ -34,6 +34,7 @@ export default function PurchaseChallan() {
     null
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedChallanIds, setSelectedChallanIds] = useState<string[]>([]);
 
   // Filters State matching Image 1
   const [filters, setFilters] = useState<PurchaseChallanFiltersState>({
@@ -200,8 +201,16 @@ export default function PurchaseChallan() {
       toast.info("No purchase challans available to download.");
       return;
     }
-    downloadPurchaseChallansExcel(challans);
-    toast.success("Purchase Challans excel downloaded.");
+    const challansToExport =
+      selectedChallanIds.length > 0
+        ? challans.filter((c) => selectedChallanIds.includes(c.id))
+        : challans;
+    downloadPurchaseChallansExcel(challansToExport);
+    toast.success(
+      selectedChallanIds.length > 0
+        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) Excel`
+        : "Purchase Challans excel downloaded."
+    );
   };
 
   const handleDownloadSkuWise = () => {
@@ -209,8 +218,16 @@ export default function PurchaseChallan() {
       toast.info("No purchase challans available to download.");
       return;
     }
-    downloadPurchaseSkuWiseExcel(challans);
-    toast.success("SKU Wise Purchase Challans excel downloaded.");
+    const challansToExport =
+      selectedChallanIds.length > 0
+        ? challans.filter((c) => selectedChallanIds.includes(c.id))
+        : challans;
+    downloadPurchaseSkuWiseExcel(challansToExport);
+    toast.success(
+      selectedChallanIds.length > 0
+        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) SKU Wise Excel`
+        : "SKU Wise Purchase Challans excel downloaded."
+    );
   };
 
   return (
@@ -245,6 +262,8 @@ export default function PurchaseChallan() {
             <PurchaseChallanTable
               challans={challans}
               loading={loading}
+              selectedIds={selectedChallanIds}
+              onSelectionChange={setSelectedChallanIds}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
               onView={handleView}

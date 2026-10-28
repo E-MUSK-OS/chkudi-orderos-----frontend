@@ -9,6 +9,8 @@ import Pagination from "@/components/ui/Pagination";
 interface PurchaseChallanTableProps {
   challans: PurchaseChallan[];
   loading: boolean;
+  selectedIds?: string[];
+  onSelectionChange?: (ids: string[]) => void;
   onEdit: (challan: PurchaseChallan) => void;
   onDelete?: (challan: PurchaseChallan) => void;
   onView?: (challan: PurchaseChallan) => void;
@@ -36,12 +38,23 @@ export const getPartyChallanDisplay = (ch: PurchaseChallan): string => {
 export default function PurchaseChallanTable({
   challans,
   loading,
+  selectedIds: controlledSelectedIds,
+  onSelectionChange,
   onEdit,
   onDelete,
   onView,
 }: PurchaseChallanTableProps) {
   const router = useRouter();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
+  const selectedIds = controlledSelectedIds ?? internalSelectedIds;
+
+  const updateSelectedIds = (newIds: string[]) => {
+    if (onSelectionChange) {
+      onSelectionChange(newIds);
+    } else {
+      setInternalSelectedIds(newIds);
+    }
+  };
   const [sortField, setSortField] = useState<keyof PurchaseChallan>("createdAt");
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [page, setPage] = useState(1);
@@ -91,15 +104,19 @@ export default function PurchaseChallanTable({
 
   const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(paginatedChallans.map((c) => c.id));
+      const pageIds = paginatedChallans.map((c) => c.id);
+      updateSelectedIds(Array.from(new Set([...selectedIds, ...pageIds])));
     } else {
-      setSelectedIds([]);
+      const pageIds = new Set(paginatedChallans.map((c) => c.id));
+      updateSelectedIds(selectedIds.filter((id) => !pageIds.has(id)));
     }
   };
 
   const toggleSelectOne = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    updateSelectedIds(
+      selectedIds.includes(id)
+        ? selectedIds.filter((item) => item !== id)
+        : [...selectedIds, id]
     );
   };
 

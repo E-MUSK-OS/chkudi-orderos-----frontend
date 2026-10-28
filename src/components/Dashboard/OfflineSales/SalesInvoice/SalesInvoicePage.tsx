@@ -48,6 +48,7 @@ export default function SalesInvoicePage() {
 
   // List View State
   const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [filters, setFilters] = useState<SalesInvoiceFilterState>({
     invoiceNo: "",
@@ -311,19 +312,19 @@ export default function SalesInvoicePage() {
     setViewMode("create");
   };
 
-function formatDateForPicker(dateVal: any): string {
-  if (!dateVal) return "";
-  const str = String(dateVal);
-  const dmy = str.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
-  if (dmy) return `${dmy[1]}-${dmy[2]}-${dmy[3]}`;
+  function formatDateForPicker(dateVal: any): string {
+    if (!dateVal) return "";
+    const str = String(dateVal);
+    const dmy = str.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
+    if (dmy) return `${dmy[1]}-${dmy[2]}-${dmy[3]}`;
 
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return str;
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}-${month}-${year}`;
-}
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return str;
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
 
   const populateFromInvoice = (inv: SalesInvoice) => {
     setActiveInvoice(inv);
@@ -641,8 +642,38 @@ function formatDateForPicker(dateVal: any): string {
   // Downloads
   const handleDownloadDetail = async () => {
     try {
-      await salesInvoiceService.downloadDetail(activeInvoice?.id);
-      toast.success("Downloaded Invoice Detail Excel");
+      if (viewMode !== "list") {
+        await salesInvoiceService.downloadSingleInvoiceDetail(formData, items);
+        toast.success(`Downloaded Sales Invoice #${formData.invoiceNo || ""} Detail Excel`);
+      } else {
+        const downloadFilters =
+          selectedInvoiceIds.length > 0
+            ? { ...filters, ids: selectedInvoiceIds.join(",") }
+            : filters;
+        await salesInvoiceService.downloadDetail(downloadFilters);
+        toast.success(
+          selectedInvoiceIds.length > 0
+            ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Detail Excel`
+            : "Downloaded Invoices Detail Excel"
+        );
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Download failed.");
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    try {
+      const invoicesToExport =
+        selectedInvoiceIds.length > 0
+          ? invoices.filter((inv) => selectedInvoiceIds.includes(inv.id))
+          : invoices;
+      await salesInvoiceService.downloadInvoicesTableExcel(invoicesToExport);
+      toast.success(
+        selectedInvoiceIds.length > 0
+          ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Excel`
+          : "Downloaded Invoices Excel"
+      );
     } catch (err: any) {
       toast.error(err.message || "Download failed.");
     }
@@ -650,8 +681,21 @@ function formatDateForPicker(dateVal: any): string {
 
   const handleDownloadSkuWise = async () => {
     try {
-      await salesInvoiceService.downloadSkuWise(activeInvoice?.id);
-      toast.success("Downloaded SKU Wise Excel");
+      if (viewMode !== "list") {
+        await salesInvoiceService.downloadSingleInvoiceSkuWise(formData, items);
+        toast.success(`Downloaded Sales Invoice #${formData.invoiceNo || ""} SKU Wise Excel`);
+      } else {
+        const downloadFilters =
+          selectedInvoiceIds.length > 0
+            ? { ...filters, ids: selectedInvoiceIds.join(",") }
+            : filters;
+        await salesInvoiceService.downloadSkuWise(downloadFilters);
+        toast.success(
+          selectedInvoiceIds.length > 0
+            ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) SKU Wise Excel`
+            : "Downloaded SKU Wise Excel"
+        );
+      }
     } catch (err: any) {
       toast.error(err.message || "Download failed.");
     }
@@ -659,8 +703,21 @@ function formatDateForPicker(dateVal: any): string {
 
   const handleDownloadTally = async () => {
     try {
-      await salesInvoiceService.downloadTally(activeInvoice?.id);
-      toast.success("Downloaded Tally XML/Excel");
+      if (viewMode !== "list") {
+        await salesInvoiceService.downloadSingleInvoiceTally(formData, items);
+        toast.success(`Downloaded Sales Invoice #${formData.invoiceNo || ""} Tally Excel`);
+      } else {
+        const downloadFilters =
+          selectedInvoiceIds.length > 0
+            ? { ...filters, ids: selectedInvoiceIds.join(",") }
+            : filters;
+        await salesInvoiceService.downloadTally(downloadFilters);
+        toast.success(
+          selectedInvoiceIds.length > 0
+            ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Tally Excel`
+            : "Downloaded Tally Excel"
+        );
+      }
     } catch (err: any) {
       toast.error(err.message || "Download failed.");
     }
@@ -677,8 +734,8 @@ function formatDateForPicker(dateVal: any): string {
             <InvoiceListHeader
               onAddNew={handleResetToNew}
               onDownloadDetail={handleDownloadDetail}
-              onDownloadAll={handleDownloadDetail}
-              onDownloadSummary={handleDownloadSkuWise}
+              onDownloadAll={handleDownloadAll}
+              onDownloadSummary={handleDownloadAll}
               onDownloadSkuWise={handleDownloadSkuWise}
               onDownloadTally={handleDownloadTally}
               onCloseInvoice={() => router.push("/dashboard/offline-sales/sales-challan")}
@@ -694,6 +751,8 @@ function formatDateForPicker(dateVal: any): string {
             <InvoiceTable
               invoices={invoices}
               loading={listLoading}
+              selectedIds={selectedInvoiceIds}
+              onSelectionChange={setSelectedInvoiceIds}
               onEdit={(inv) => populateFromInvoice(inv)}
               onCreditNote={(inv) => {
                 populateFromInvoice(inv);

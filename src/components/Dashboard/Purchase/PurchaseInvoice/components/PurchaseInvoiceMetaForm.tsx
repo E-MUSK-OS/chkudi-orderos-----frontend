@@ -81,20 +81,31 @@ export default function PurchaseInvoiceMetaForm({
           />
         </div>
 
-        {/* OC Challan No */}
+        {/* OC Challan No (Editable for direct invoice, linked & read-only when converted from challan) */}
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
             OC Challan No
           </label>
-          <input
-            type="text"
-            value={formData.challanNo || ""}
-            readOnly
-            tabIndex={-1}
-            title="Linked Challan Number (Non-editable)"
-            placeholder="Challan No"
-            className="w-full h-9 px-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-[#E9ECEF] dark:bg-[#1A2234] border border-slate-300 dark:border-white/[0.12] rounded-xl cursor-not-allowed select-none focus:outline-none shadow-inner"
-          />
+          {formData.challanId ? (
+            <input
+              type="text"
+              value={formData.challanNo || ""}
+              readOnly
+              tabIndex={-1}
+              title="Linked Challan Number (Non-editable)"
+              placeholder="Challan No"
+              className="w-full h-9 px-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-[#E9ECEF] dark:bg-[#1A2234] border border-slate-300 dark:border-white/[0.12] rounded-xl cursor-not-allowed select-none focus:outline-none shadow-inner"
+            />
+          ) : (
+            <input
+              type="text"
+              value={formData.challanNo || ""}
+              disabled={disabled}
+              onChange={(e) => onChange({ challanNo: e.target.value })}
+              placeholder="Challan No"
+              className="w-full h-9 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 focus:outline-none transition-all"
+            />
+          )}
         </div>
 
         {/* Challan Date */}

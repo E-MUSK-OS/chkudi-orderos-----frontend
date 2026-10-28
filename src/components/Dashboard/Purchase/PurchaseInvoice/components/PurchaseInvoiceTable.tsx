@@ -13,6 +13,8 @@ interface PurchaseInvoiceTableProps {
   onCreditNote?: (invoice: PurchaseInvoice) => void;
   onPrint?: (invoice: PurchaseInvoice) => void;
   onPrintMultiple?: (invoiceIds: string[]) => void;
+  selectedIds?: string[];
+  onSelectionChange?: (selectedIds: string[]) => void;
 }
 
 function formatCurrency(num: number | undefined | null): string {
@@ -87,8 +89,18 @@ export default function PurchaseInvoiceTable({
   onCreditNote,
   onPrint,
   onPrintMultiple,
+  selectedIds: propSelectedIds,
+  onSelectionChange,
 }: PurchaseInvoiceTableProps) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
+  const selectedIds = propSelectedIds !== undefined ? propSelectedIds : internalSelectedIds;
+
+  const updateSelection = (newIds: string[]) => {
+    if (propSelectedIds === undefined) {
+      setInternalSelectedIds(newIds);
+    }
+    onSelectionChange?.(newIds);
+  };
   const [sortField, setSortField] = useState<keyof PurchaseInvoice>("createdAt");
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [page, setPage] = useState(1);
@@ -136,16 +148,21 @@ export default function PurchaseInvoiceTable({
 
   const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(paginatedInvoices.map((inv) => inv.id));
+      const pageIds = paginatedInvoices.map((inv) => inv.id);
+      const newIds = Array.from(new Set([...selectedIds, ...pageIds]));
+      updateSelection(newIds);
     } else {
-      setSelectedIds([]);
+      const pageIdSet = new Set(paginatedInvoices.map((inv) => inv.id));
+      const newIds = selectedIds.filter((id) => !pageIdSet.has(id));
+      updateSelection(newIds);
     }
   };
 
   const toggleSelectOne = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    const newIds = selectedIds.includes(id)
+      ? selectedIds.filter((item) => item !== id)
+      : [...selectedIds, id];
+    updateSelection(newIds);
   };
 
   const handlePrintSelected = () => {
@@ -163,6 +180,18 @@ export default function PurchaseInvoiceTable({
           {/* Header matching legacy software columns */}
           <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11]">
             <tr>
+              <th className="px-4 py-3.5 text-center w-12">
+                <input
+                  type="checkbox"
+                  checked={
+                    paginatedInvoices.length > 0 &&
+                    paginatedInvoices.every((inv) => selectedIds.includes(inv.id))
+                  }
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
+                />
+              </th>
+
               <th className="px-3 py-3 text-center text-xs font-bold text-white dark:text-[#E8C16D] w-10">
                 No.
               </th>
@@ -300,18 +329,6 @@ export default function PurchaseInvoiceTable({
                   <Printer className="w-3.5 h-3.5" />
                 </button>
               </th>
-
-              <th className="px-3 py-3 text-center w-10">
-                <input
-                  type="checkbox"
-                  checked={
-                    paginatedInvoices.length > 0 &&
-                    paginatedInvoices.every((inv) => selectedIds.includes(inv.id))
-                  }
-                  onChange={toggleSelectAll}
-                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
-                />
-              </th>
             </tr>
           </thead>
 
@@ -357,6 +374,16 @@ export default function PurchaseInvoiceTable({
                       isSelected ? "bg-amber-50/40 dark:bg-amber-950/20" : ""
                     }`}
                   >
+                    {/* Checkbox Column (First) */}
+                    <td className="px-4 py-2.5 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectOne(inv.id)}
+                        className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
+                      />
+                    </td>
+
                     {/* No. */}
                     <td className="px-3 py-2.5 text-center font-mono text-slate-500 text-xs">
                       {itemIndex}
@@ -469,16 +496,6 @@ export default function PurchaseInvoiceTable({
                       >
                         <Printer className="w-3.5 h-3.5" />
                       </button>
-                    </td>
-
-                    {/* Checkbox */}
-                    <td className="px-3 py-2.5 text-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelectOne(inv.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
-                      />
                     </td>
                   </tr>
                 );
