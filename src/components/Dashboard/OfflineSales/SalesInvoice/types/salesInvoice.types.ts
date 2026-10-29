@@ -161,4 +161,5 @@ export interface SalesInvoiceFilterState {
   status?: string;
   page?: number;
   limit?: number;
+  ids?: string;
 }

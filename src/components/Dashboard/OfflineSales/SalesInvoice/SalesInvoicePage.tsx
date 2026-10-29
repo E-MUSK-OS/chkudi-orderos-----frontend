@@ -664,16 +664,18 @@ export default function SalesInvoicePage() {
 
   const handleDownloadAll = async () => {
     try {
-      const invoicesToExport =
-        selectedInvoiceIds.length > 0
-          ? invoices.filter((inv) => selectedInvoiceIds.includes(inv.id))
-          : invoices;
-      await salesInvoiceService.downloadInvoicesTableExcel(invoicesToExport);
-      toast.success(
-        selectedInvoiceIds.length > 0
-          ? `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Excel`
-          : "Downloaded Invoices Excel"
-      );
+      if (selectedInvoiceIds.length > 0) {
+        const selectedInvoices = invoices.filter((inv) =>
+          selectedInvoiceIds.includes(inv.id)
+        );
+        await salesInvoiceService.downloadInvoicesTableExcel(selectedInvoices);
+        toast.success(
+          `Downloaded ${selectedInvoiceIds.length} Selected Invoice(s) Excel`
+        );
+      } else {
+        await salesInvoiceService.downloadInvoicesTableExcel(invoices);
+        toast.success("Downloaded Invoices Excel");
+      }
     } catch (err: any) {
       toast.error(err.message || "Download failed.");
     }
