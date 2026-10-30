@@ -11,6 +11,7 @@ import {
   Sparkles,
   Boxes,
   FileSpreadsheet,
+  Store,
 } from "lucide-react";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -41,11 +42,15 @@ interface Props {
   brand: string;
   onBrandChange: (value: string) => void;
 
+  marketplace?: string;
+  onMarketplaceChange?: (value: string) => void;
+
   importType: ImportType;
   onImportTypeChange: (value: ImportType) => void;
 
   categoryOptions: Option[];
   brandOptions: Option[];
+  marketplaceOptions?: Option[];
 
   onRefresh: () => void;
 
@@ -103,11 +108,15 @@ export default function ProductToolbar({
   brand,
   onBrandChange,
 
+  marketplace = "",
+  onMarketplaceChange,
+
   importType,
   onImportTypeChange,
 
   categoryOptions,
   brandOptions,
+  marketplaceOptions = [],
 
   onRefresh,
 
@@ -247,13 +256,15 @@ export default function ProductToolbar({
     (search && search.trim() !== "") ||
     Boolean(status) ||
     Boolean(category) ||
-    Boolean(brand);
+    Boolean(brand) ||
+    Boolean(marketplace);
 
   const handleResetFilters = () => {
     onSearchChange("");
     onStatusChange("");
     onCategoryChange("");
     onBrandChange("");
+    onMarketplaceChange?.("");
   };
 
   const hasData =
@@ -326,6 +337,17 @@ export default function ProductToolbar({
               onChange={(val) => onBrandChange(val)}
               options={brandOptions}
               icon={<Sparkles className="h-3.5 w-3.5" />}
+            />
+          )}
+
+          {/* Marketplace Dropdown (if on product view) */}
+          {importType === "product" && marketplaceOptions.length > 0 && onMarketplaceChange && (
+            <ThemeSelectDropdown
+              ariaLabel="Filter by Marketplace"
+              value={marketplace}
+              onChange={(val) => onMarketplaceChange(val)}
+              options={marketplaceOptions}
+              icon={<Store className="h-3.5 w-3.5" />}
             />
           )}
 

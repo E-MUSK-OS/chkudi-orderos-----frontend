@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronDown, Plus, Check } from "lucide-react";
+import { ChevronDown, Plus, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
 import { toast } from "sonner";
@@ -205,9 +205,25 @@ export default function DropdownWithOther({
         )}
       </div>
 
-      {/* Inline Custom Input when 'Other' is selected (clean input without banner text) */}
+      {/* Inline Custom Input when 'Other' is selected */}
       {isOtherActive && (
-        <div className="p-2 sm:p-2.5 rounded-2xl border border-[#E8C16D] dark:border-[#F5C451]/40 bg-[#FFFDF9] dark:bg-[#131B2E] shadow-sm animate-in fade-in-50 slide-in-from-top-1 duration-200">
+        <div className="p-3 rounded-2xl border border-[#E8C16D] dark:border-[#F5C451]/50 bg-[#FFFDF9] dark:bg-[#131B2E] shadow-md space-y-2 animate-in fade-in-50 slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#B88728] dark:text-[#F5C451]">
+              Add New {label.replace(/\./g, "").trim()}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOtherActive(false);
+                setCustomValue("");
+              }}
+              className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+              title="Close"
+            >
+              <X size={14} />
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <input
               ref={customInputRef}
@@ -218,25 +234,22 @@ export default function DropdownWithOther({
                 if (e.key === "Enter") {
                   e.preventDefault();
                   handleCustomSubmit();
+                } else if (e.key === "Escape") {
+                  setIsOtherActive(false);
+                  setCustomValue("");
                 }
               }}
-              placeholder={`Enter other ${label.replace(/\./g, "").toLowerCase()}...`}
-              className="flex-1 h-10 px-3.5 text-xs sm:text-sm font-medium rounded-xl border border-slate-200 bg-white text-[#0A0E1A] placeholder:text-slate-400 outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:border-white/[0.1] dark:bg-[#0B0F17] dark:text-white dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20"
+              placeholder={`Enter new ${label.replace(/\./g, "").toLowerCase()}...`}
+              className="flex-1 min-w-0 h-10 px-3.5 text-xs sm:text-sm font-medium rounded-xl border border-slate-200 bg-white text-[#0A0E1A] placeholder:text-slate-400 outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:border-white/[0.1] dark:bg-[#0B0F17] dark:text-white dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 shadow-xs"
             />
             <button
               type="button"
               onClick={handleCustomSubmit}
               disabled={!customValue.trim() || saveOptionMutation.isPending}
-              className="h-10 px-4 rounded-xl bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:hover:bg-[#e6b540] dark:text-black text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shrink-0 shadow-sm"
+              className="h-10 px-4 rounded-xl bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:hover:bg-[#e6b540] dark:text-black text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shrink-0 shadow-sm flex items-center gap-1.5"
             >
-              {saveOptionMutation.isPending ? "Saving..." : "Add"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsOtherActive(false)}
-              className="h-10 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded-xl cursor-pointer"
-            >
-              Cancel
+              <Plus size={14} />
+              <span>{saveOptionMutation.isPending ? "Saving..." : "Add"}</span>
             </button>
           </div>
         </div>

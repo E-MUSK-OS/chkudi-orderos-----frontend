@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { productCategoryOptions } from "./constants/product.constants";
+import { productCategoryOptions, defaultMarketplaceOptions } from "./constants/product.constants";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -37,6 +37,7 @@ import {
   useDeleteMyntraImport,
 } from "./hooks/useMyntraImports";
 import MyntraTable from "./components/MyntraTable";
+import { useDropdownOptions } from "./hooks/useDropdownOptions";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadDemoSheet } from "./utils/downloadDemoSheet";
 import { exportProductsExcel } from "./utils/exportProductsExcel";
@@ -63,6 +64,7 @@ const ManageProducts = () => {
   const [status, setStatus] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
+  const [marketplace, setMarketplace] = useState("");
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -134,6 +136,31 @@ const ManageProducts = () => {
     { label: "TOPLOT", value: "TOPLOT" },
   ];
 
+  // Marketplace Options
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
+
+  const marketplaceOptions = useMemo(() => {
+    const list = [
+      { label: "All Marketplaces", value: "" },
+      ...defaultMarketplaceOptions,
+    ];
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "marketplace")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, { label: string; value: string }>();
+    [...list, ...dbSaved].forEach((o) => {
+      const v = o.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: o.label || v, value: v });
+      } else if (v === "" && !map.has("")) {
+        map.set("", { label: o.label, value: "" });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
   const products = productsResponse?.data ?? [];
 
   const [page, setPage] = useState(1);
@@ -149,7 +176,37 @@ const ManageProducts = () => {
     const matchesCategory = category === "" || product.category === category;
     const matchesBrand = brand === "" || product.brand === brand;
 
-    return matchesSearch && matchesStatus && matchesCategory && matchesBrand;
+    const matchesMarketplace = (() => {
+      if (!marketplace || marketplace.trim() === "") return true;
+      const filterLower = marketplace.toLowerCase().trim();
+
+      const rawMkt = (product as any)?.marketplace;
+      let mkts: string[] = [];
+      if (Array.isArray(rawMkt)) {
+        mkts = rawMkt.map((m) => String(m).toLowerCase().trim()).filter(Boolean);
+      } else if (typeof rawMkt === "string" && rawMkt.trim()) {
+        mkts = rawMkt.split(",").map((m) => m.toLowerCase().trim()).filter(Boolean);
+      } else {
+        const mktAttr = (product.attributes || []).find(
+          (a: any) => (a.attributeName || "").toLowerCase().trim() === "marketplace"
+        );
+        if (mktAttr?.attributeValue?.trim()) {
+          mkts = mktAttr.attributeValue.split(",").map((s: string) => s.toLowerCase().trim()).filter(Boolean);
+        }
+      }
+
+      if (mkts.length === 0) {
+        mkts = ["all"];
+      }
+
+      if (filterLower === "all") {
+        return mkts.includes("all");
+      }
+
+      return mkts.includes(filterLower) || mkts.includes("all");
+    })();
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesBrand && matchesMarketplace;
   });
 
   const totalRecords =
@@ -264,6 +321,7 @@ const ManageProducts = () => {
     setStatus("");
     setCategory("");
     setBrand("");
+    setMarketplace("");
 
     if (importType === "myntra") {
       refetchMyntra();
@@ -362,6 +420,9 @@ const ManageProducts = () => {
           onCategoryChange={setCategory}
           brand={brand}
           onBrandChange={setBrand}
+          marketplace={marketplace}
+          onMarketplaceChange={setMarketplace}
+          marketplaceOptions={marketplaceOptions}
           importType={importType}
           onImportTypeChange={(type) => {
             setImportType(type);
