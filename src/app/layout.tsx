@@ -46,7 +46,6 @@
 // }
 
 import type { Metadata } from "next";
-import Script from "next/script";
 import { aeonik, dmSans } from "@/lib/fonts";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -75,9 +74,8 @@ export default function RootLayout({
       )}
     >
       <head>
-        <Script
+        <script
           id="theme-initializer"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

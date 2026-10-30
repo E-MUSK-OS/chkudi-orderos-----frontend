@@ -1,0 +1,1281 @@
+import React, { useRef, useState } from 'react';
+import { ArrowUp, ArrowDown, ArrowUpToLine, ArrowDownToLine, Copy, Trash2, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, UploadCloud, Lock, Unlock, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  CanvasSettings,
+  LabelElement,
+  TextElement,
+  BarcodeElement,
+  QrCodeElement,
+  ImageElement,
+  ShapeElement
+} from '../../types/label.types';
+import ReactSelect, { SelectOption } from '@/components/ui/ReactSelect';
+import { uploadImageToCloudinary } from '../utils/uploadImage';
+import { toast } from 'sonner';
+import { binarizeImageToCanvas } from '@/lib/labelRenderer';
+import { getEffectiveCanvasDimensions } from '../utils/coordinateMath';
+
+interface PropertiesPanelProps {
+  settings: CanvasSettings;
+  updateSettings: (settings: Partial<CanvasSettings>, skipHistory?: boolean) => void;
+  backgroundImageUrl: string | null;
+  setBackgroundImageUrl: (url: string | null) => void;
+  selectedElement?: LabelElement;
+  selectedIds: string[];
+  allElements: LabelElement[];
+  updateElement: (id: string, updates: Partial<LabelElement>, skipHistory?: boolean) => void;
+  onBatchUpdateElements: (updates: { id: string; changes: Partial<LabelElement> }[], skipHistory?: boolean) => void;
+  onDeleteElements: (ids: string[]) => void;
+  onDuplicateElements: (ids: string[]) => void;
+  deleteElement: (id: string) => void;
+  duplicateElement: (id: string) => void;
+  bringForward: (id: string) => void;
+  sendBackward: (id: string) => void;
+  bringToFront: (id: string) => void;
+  sendToBack: (id: string) => void;
+  commitHistory: () => void;
+  className?: string;
+  onCloseMobile?: () => void;
+}
+
+const PRESET_SIZES: SelectOption[] = [
+  { label: '100x50mm (Shipping Label)', value: '100x50' },
+  { label: '50x30mm (Barcode Tag)', value: '50x30' },
+  { label: '50x25mm (Jewelry/Small)', value: '50x25' },
+  { label: '60x40mm (Standard Product)', value: '60x40' },
+  { label: 'Custom', value: 'custom' },
+];
+
+const VARIABLE_SOURCES: SelectOption[] = [
+  { label: 'Custom Value', value: 'custom' },
+  { label: 'Product Title ({{title}})', value: '{{title}}' },
+  { label: 'Product SKU ({{sku}})', value: '{{sku}}' },
+  { label: 'Product Full SKU ({{fullSku}})', value: '{{fullSku}}' },
+  { label: 'Product MRP ({{mrp}})', value: '{{mrp}}' },
+  { label: 'Product ASIN ({{asin}})', value: '{{asin}}' },
+  { label: 'Product Size ({{size}})', value: '{{size}}' },
+  { label: 'Product Color ({{color}})', value: '{{color}}' },
+  { label: 'Manufacturing Month ({{manufacturingMonth}})', value: '{{manufacturingMonth}}' },
+  { label: 'Current Date ({{printDate}})', value: '{{printDate}}' },
+  { label: 'Product Quantity ({{quantity}})', value: '{{quantity}}' },
+];
+
+const BARCODE_FORMATS: SelectOption[] = [
+  { label: 'CODE128', value: 'CODE128' },
+  { label: 'EAN13', value: 'EAN13' },
+  { label: 'UPC', value: 'UPC' },
+  { label: 'CODE39', value: 'CODE39' },
+];
+
+const FONTS: SelectOption[] = [
+  { label: 'Inter', value: 'Inter' },
+  { label: 'Arial', value: 'Arial' },
+  { label: 'Monospace', value: 'monospace' },
+  { label: 'Serif', value: 'serif' },
+];
+
+const DPI_OPTIONS: SelectOption[] = [
+  { label: '203 DPI (Standard Thermal)', value: '203' },
+  { label: '300 DPI (High Res Thermal)', value: '300' },
+];
+
+
+const ROTATION_OPTIONS: SelectOption[] = [
+  { label: '0°', value: '0' },
+  { label: '90°', value: '90' },
+  { label: '180°', value: '180' },
+  { label: '270°', value: '270' },
+];
+
+export function PropertiesPanel({
+  settings,
+  updateSettings,
+  backgroundImageUrl,
+  setBackgroundImageUrl,
+  selectedElement,
+  selectedIds,
+  allElements,
+  updateElement,
+  onBatchUpdateElements,
+  onDeleteElements,
+  onDuplicateElements,
+  deleteElement,
+  duplicateElement,
+  bringForward,
+  sendBackward,
+  bringToFront,
+  sendToBack,
+  commitHistory,
+  className,
+  onCloseMobile,
+}: PropertiesPanelProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { widthMm: effectiveWidthMm, heightMm: effectiveHeightMm } = getEffectiveCanvasDimensions(settings);
+
+  const handleSettingsChange = (key: keyof CanvasSettings, value: any, skipHistory = false) => {
+    updateSettings({ [key]: value }, skipHistory);
+  };
+
+  const convertAllToMonochrome = () => {
+    handleSettingsChange('colorMode', 'monochrome');
+    const updates: { id: string; changes: Partial<LabelElement> }[] = [];
+    for (const el of allElements) {
+      if (el.type === 'text') {
+        if (el.color && el.color !== '#000000') {
+          updates.push({ id: el.id, changes: { color: '#000000' } as any });
+        }
+      } else if (el.type === 'barcode') {
+        if (el.color && el.color !== '#000000') {
+          updates.push({ id: el.id, changes: { color: '#000000' } as any });
+        }
+      } else if (el.type === 'line' || el.type === 'rectangle') {
+        const shapeChanges: Partial<ShapeElement> = {};
+        if (el.borderColor && el.borderColor !== '#000000') shapeChanges.borderColor = '#000000';
+        if (el.type === 'rectangle' && el.fillColor && el.fillColor !== 'transparent' && el.fillColor !== '#ffffff') {
+          shapeChanges.fillColor = '#000000';
+        }
+        if (Object.keys(shapeChanges).length > 0) {
+          updates.push({ id: el.id, changes: shapeChanges as any });
+        }
+      }
+    }
+    if (updates.length > 0 && onBatchUpdateElements) {
+      onBatchUpdateElements(updates, false);
+    }
+  };
+
+  const handlePresetChange = (val: string) => {
+    if (val === 'custom') return;
+    const [w, h] = val.split('x').map(Number);
+    updateSettings({ widthMm: w, heightMm: h });
+  };
+
+  const handleUpdate = (key: string, value: any) => {
+    if (selectedElement) {
+      updateElement(selectedElement.id, { [key]: value }, true);
+    }
+  };
+
+  const handleCommit = () => {
+    commitHistory();
+  };
+
+  const handleUpdateDiscrete = (key: string, value: any) => {
+    if (selectedElement) {
+      updateElement(selectedElement.id, { [key]: value }, false);
+    }
+  };
+
+  const handleImageUpload = async (file: File, onComplete: (url: string, naturalAspect?: number) => void) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      let naturalAspect: number | undefined;
+      const objectUrl = URL.createObjectURL(file);
+      const tempImg = new Image();
+      await new Promise<void>((resolve) => {
+        tempImg.onload = () => {
+          if (tempImg.naturalWidth && tempImg.naturalHeight) {
+            naturalAspect = tempImg.naturalWidth / tempImg.naturalHeight;
+          }
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+        tempImg.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+        tempImg.src = objectUrl;
+      });
+
+      const url = await uploadImageToCloudinary(file);
+      onComplete(url, naturalAspect);
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      toast.error('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  if (!selectedElement) {
+    const backgroundOpacityBelow1OrAnyElementOpacityBelow1 =
+      (settings.backgroundOpacity ?? 1) < 1 || allElements.some(el => (el.opacity ?? 1) < 1);
+
+    return (
+      <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between font-semibold text-white">
+          <span>Canvas Properties</span>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="lg:hidden px-2.5 py-1 rounded-lg bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition"
+            >
+              Done
+            </button>
+          )}
+        </div>
+        <div className="p-4 space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-300">Preset Size</label>
+            <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+              options={PRESET_SIZES}
+              value={PRESET_SIZES.find(o => o.value === `${settings.widthMm}x${settings.heightMm}`) || PRESET_SIZES[4]}
+              onChange={(opt) => opt && handlePresetChange(opt.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-300">Width (mm)</label>
+              <input
+                type="number"
+                min={1}
+                className="w-full h-11 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] transition-colors"
+                value={settings.widthMm}
+                onChange={(e) => handleSettingsChange('widthMm', Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-300">Height (mm)</label>
+              <input
+                type="number"
+                min={1}
+                className="w-full h-11 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] transition-colors"
+                value={settings.heightMm}
+                onChange={(e) => handleSettingsChange('heightMm', Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-300">Rotation</label>
+            <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+              options={ROTATION_OPTIONS}
+              value={ROTATION_OPTIONS.find(o => Number(o.value) === (((settings.rotation ?? 0) % 360 + 360) % 360)) || ROTATION_OPTIONS[0]}
+              onChange={(opt) => {
+                if (opt) {
+                  handleSettingsChange('rotation', Number(opt.value));
+                }
+              }}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-300">DPI Target</label>
+            <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+              options={DPI_OPTIONS}
+              value={DPI_OPTIONS.find(o => o.value === String(settings.dpi)) || DPI_OPTIONS[0]}
+              onChange={(opt) => opt && handleSettingsChange('dpi', Number(opt.value))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-300">Grid Snap Step (mm)</label>
+            <input
+              type="number"
+              min={0.1}
+              step={0.1}
+              className="w-full h-11 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] transition-colors"
+              value={settings.gridSizeMm}
+              onChange={(e) => handleSettingsChange('gridSizeMm', Number(e.target.value))}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="snapToGrid"
+              checked={settings.snapToGrid}
+              onChange={(e) => handleSettingsChange('snapToGrid', e.target.checked)}
+              className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
+            />
+            <label htmlFor="snapToGrid" className="text-sm text-gray-300 cursor-pointer">
+              Snap to Grid
+            </label>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-300">Safe Margin (mm)</label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  id="showSafeMargin"
+                  checked={settings.showSafeMargin !== false}
+                  onChange={(e) => handleSettingsChange('showSafeMargin', e.target.checked)}
+                  className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
+                />
+                <label htmlFor="showSafeMargin" className="text-xs text-gray-400 cursor-pointer">
+                  Show Guide
+                </label>
+              </div>
+            </div>
+            <input
+              type="number"
+              min={0}
+              max={Math.max(0, Math.floor(Math.min(settings.widthMm, settings.heightMm) / 2) - 1)}
+              step={0.5}
+              className="w-full h-11 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] transition-colors"
+              value={settings.safeMarginMm ?? 2}
+              onChange={(e) => handleSettingsChange('safeMarginMm', Math.max(0, Number(e.target.value)))}
+            />
+            <p className="text-[10px] text-gray-500">
+              Blue dashed line adjusts dynamically to show the thermal safe printable zone ({settings.safeMarginMm ?? 2}mm inner boundary).
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <label className="text-xs font-medium text-gray-300">Print Color Mode</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSettingsChange('colorMode', 'color')}
+                className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${(settings.colorMode ?? 'color') === 'color'
+                    ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]'
+                    : 'bg-transparent text-gray-300 border-stone-700 hover:border-stone-500'
+                  }`}
+              >
+                🎨 Color
+              </button>
+              <button
+                onClick={convertAllToMonochrome}
+                className={`flex-1 h-9 rounded-sm border text-xs font-medium transition-colors ${(settings.colorMode ?? 'color') === 'monochrome'
+                    ? 'bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]'
+                    : 'bg-transparent text-gray-300 border-stone-700 hover:border-stone-500'
+                  }`}
+              >
+                ⬛ Monochrome
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-500">
+              {(settings.colorMode ?? 'color') === 'color'
+                ? 'Label renders in full color — use with inkjet/laser printers.'
+                : 'Label converts to B&W — use with thermal printers (TSC, Zebra).'}
+            </p>
+            {(settings.colorMode ?? 'color') === 'monochrome' && backgroundOpacityBelow1OrAnyElementOpacityBelow1 && (
+              <p className="text-[10px] text-amber-500 mt-1">Monochrome mode prints pure black and white. Semi-transparent items may disappear.</p>
+            )}
+          </div>
+
+          <div className="space-y-3 pt-4 border-stone-800">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Background Image</h4>
+            <div className="space-y-2">
+              {backgroundImageUrl && (
+                <div className="flex gap-2">
+                  <div className="relative h-20 flex-1 border border-stone-800 rounded-sm overflow-hidden bg-[#0A0E1A]">
+                    <img src={backgroundImageUrl} alt="Background" className="w-full h-full object-contain" />
+                  </div>
+                  <button
+                    onClick={() => setBackgroundImageUrl(null)}
+                    className="h-20 px-3 bg-red-900/20 text-red-400 rounded-sm hover:bg-red-900/40 transition-colors border border-red-900/50 flex flex-col justify-center items-center gap-1"
+                  >
+                    <Trash2 size={14} />
+                    <span className="text-[10px]">Clear</span>
+                  </button>
+                </div>
+              )}
+
+              {backgroundImageUrl && (
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-gray-400">Opacity</label>
+                    <span className="text-xs text-gray-500">{Math.round((settings.backgroundOpacity ?? 1) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={Math.round((settings.backgroundOpacity ?? 1) * 100)}
+                    onChange={(e) => handleSettingsChange('backgroundOpacity', Number(e.target.value) / 100, true)}
+                    onPointerUp={handleCommit}
+                    className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const canvas = await binarizeImageToCanvas(backgroundImageUrl, 225);
+                        const pureBlackDataUrl = canvas.toDataURL('image/png');
+                        setBackgroundImageUrl(pureBlackDataUrl);
+                        toast.success('Background converted to 100% pure solid black!');
+                      } catch (e) {
+                        toast.error('Failed to convert background');
+                      }
+                    }}
+                    className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2 flex items-center justify-center gap-1.5"
+                  >
+                    <span>⬛</span>
+                    <span>Convert Background to Pure Black</span>
+                  </button>
+                </div>
+              )}
+
+              <div
+                className={`w-full border-2 border-dashed rounded-sm p-4 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${isDragging ? 'border-[#E8C16D] bg-[#1F2937]' : 'border-stone-700 hover:bg-stone-800'}`}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleImageUpload(e.dataTransfer.files[0], setBackgroundImageUrl);
+                  }
+                }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleImageUpload(e.target.files[0], setBackgroundImageUrl);
+                    }
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                />
+                <UploadCloud size={24} className={`pointer-events-none ${isDragging ? "text-[#E8C16D]" : "text-gray-400"}`} />
+                <span className="text-xs text-gray-500 pointer-events-none">
+                  {isUploading ? "Uploading..." : isDragging ? "Drop here!" : (backgroundImageUrl ? "Replace Background" : "Upload Background")}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedIds.length > 1) {
+    const selected = allElements.filter(el => selectedIds.includes(el.id));
+    const unlockedSelected = selected.filter(el => !el.locked);
+    const left = Math.min(...selected.map(e => e.x));
+    const top = Math.min(...selected.map(e => e.y));
+    const right = Math.max(...selected.map(e => e.x + e.width));
+    const bottom = Math.max(...selected.map(e => e.y + e.height));
+
+    const alignLeft = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { x: left } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignCenterH = () => {
+      const centerX = (left + right) / 2;
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { x: centerX - e.width / 2 } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignRight = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { x: right - e.width } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignTop = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { y: top } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignMiddleV = () => {
+      const centerY = (top + bottom) / 2;
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { y: centerY - e.height / 2 } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const alignBottom = () => {
+      const updates = unlockedSelected.map(e => ({ id: e.id, changes: { y: bottom - e.height } }));
+      onBatchUpdateElements(updates, false);
+    };
+    const distributeH = () => {
+      if (unlockedSelected.length < 3) return;
+
+      const sortedByX = [...unlockedSelected].sort((a, b) => a.x - b.x);
+      const cols: LabelElement[][] = [];
+      for (const el of sortedByX) {
+        if (cols.length === 0) { cols.push([el]); } else {
+          const currentCol = cols[cols.length - 1];
+          const colAvgX = currentCol.reduce((sum, e) => sum + e.x, 0) / currentCol.length;
+          if (Math.abs(el.x - colAvgX) < 2) { currentCol.push(el); }
+          else { cols.push([el]); }
+        }
+      }
+
+      if (cols.length < 3) return;
+
+      const colBounds = cols.map(col => {
+        const left = Math.min(...col.map(e => e.x));
+        const right = Math.max(...col.map(e => e.x + e.width));
+        return { left, right, width: right - left, elements: col };
+      });
+
+      const leftCol = colBounds[0];
+      const rightCol = colBounds[colBounds.length - 1];
+      const totalSpace = rightCol.left - (leftCol.left + leftCol.width);
+      const middleCols = colBounds.slice(1, -1);
+      const totalMiddleWidths = middleCols.reduce((sum, c) => sum + c.width, 0);
+      const gap = (totalSpace - totalMiddleWidths) / (colBounds.length - 1);
+
+      const updates: { id: string; changes: { x: number } }[] = [];
+      let currentX = leftCol.left + leftCol.width + gap;
+      for (const col of middleCols) {
+        const deltaX = currentX - col.left;
+        for (const el of col.elements) { updates.push({ id: el.id, changes: { x: el.x + deltaX } }); }
+        currentX += col.width + gap;
+      }
+
+      if (updates.length > 0) onBatchUpdateElements(updates, false);
+    };
+
+    const distributeV = () => {
+      if (unlockedSelected.length < 3) return;
+
+      const sortedByY = [...unlockedSelected].sort((a, b) => a.y - b.y);
+      const rows: LabelElement[][] = [];
+      for (const el of sortedByY) {
+        if (rows.length === 0) { rows.push([el]); } else {
+          const currentRow = rows[rows.length - 1];
+          const rowAvgY = currentRow.reduce((sum, e) => sum + e.y, 0) / currentRow.length;
+          if (Math.abs(el.y - rowAvgY) < 2) { currentRow.push(el); }
+          else { rows.push([el]); }
+        }
+      }
+
+      if (rows.length < 3) return;
+
+      const rowBounds = rows.map(row => {
+        const top = Math.min(...row.map(e => e.y));
+        const bottom = Math.max(...row.map(e => e.y + e.height));
+        return { top, bottom, height: bottom - top, elements: row };
+      });
+
+      const topRow = rowBounds[0];
+      const bottomRow = rowBounds[rowBounds.length - 1];
+      const totalSpace = bottomRow.top - (topRow.top + topRow.height);
+      const middleRows = rowBounds.slice(1, -1);
+      const totalMiddleHeights = middleRows.reduce((sum, r) => sum + r.height, 0);
+      const gap = (totalSpace - totalMiddleHeights) / (rowBounds.length - 1);
+
+      const updates: { id: string; changes: { y: number } }[] = [];
+      let currentY = topRow.top + topRow.height + gap;
+      for (const row of middleRows) {
+        const deltaY = currentY - row.top;
+        for (const el of row.elements) { updates.push({ id: el.id, changes: { y: el.y + deltaY } }); }
+        currentY += row.height + gap;
+      }
+
+      if (updates.length > 0) onBatchUpdateElements(updates, false);
+    };
+
+    const btnClass = "flex-1 h-9 flex items-center justify-center rounded-sm border border-stone-700 text-gray-300 hover:border-[#E8C16D] hover:text-[#E8C16D] transition-colors disabled:opacity-30 disabled:hover:border-stone-700 disabled:hover:text-gray-300";
+
+    return (
+      <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between">
+          <span className="font-semibold text-white">{selectedIds.length} elements selected</span>
+          <div className="flex items-center gap-1.5">
+            {onCloseMobile && (
+              <button
+                onClick={onCloseMobile}
+                className="lg:hidden mr-1 px-2.5 py-1 rounded-lg bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition"
+              >
+                Done
+              </button>
+            )}
+            <button onClick={() => onDuplicateElements(selectedIds)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Duplicate all (Ctrl+D)">
+              <Copy size={16} />
+            </button>
+            <button onClick={() => onDeleteElements(selectedIds)} className="p-1 text-red-500 hover:text-red-400 hover:bg-red-900/20 rounded-sm" title="Delete all (Delete)">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          <p className="text-[11px] text-gray-500">Resize and rotate are single-element only. Move, align, distribute, delete and duplicate work on the whole selection.</p>
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Align</h4>
+            <div className="flex gap-2">
+              <button className={btnClass} onClick={alignLeft} title="Align left"><AlignLeft size={16} /></button>
+              <button className={btnClass} onClick={alignCenterH} title="Align center horizontal"><AlignCenter size={16} /></button>
+              <button className={btnClass} onClick={alignRight} title="Align right"><AlignRight size={16} /></button>
+            </div>
+            <div className="flex gap-2">
+              <button className={btnClass} onClick={alignTop} title="Align top"><ArrowUpToLine size={16} /></button>
+              <button className={btnClass} onClick={alignMiddleV} title="Align middle"><ArrowUp size={16} className="rotate-90" /></button>
+              <button className={btnClass} onClick={alignBottom} title="Align bottom"><ArrowDownToLine size={16} /></button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Distribute</h4>
+            <div className="flex gap-2">
+              <button className={btnClass} disabled={unlockedSelected.length < 3} onClick={distributeH} title={unlockedSelected.length < 3 ? "Need 3 or more elements" : "Distribute horizontally"}>H</button>
+              <button className={btnClass} disabled={unlockedSelected.length < 3} onClick={distributeV} title={unlockedSelected.length < 3 ? "Need 3 or more elements" : "Distribute vertically"}>V</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const btnClassSingle = "flex-1 h-9 flex items-center justify-center rounded-sm border border-stone-700 text-gray-300 hover:border-[#E8C16D] hover:text-[#E8C16D] transition-colors disabled:opacity-30 disabled:hover:border-stone-700 disabled:hover:text-gray-300";
+
+  // Common properties
+  return (
+    <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+      <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between">
+        <span className="font-semibold text-white capitalize">{selectedElement.type} Properties</span>
+        <div className="flex items-center gap-1">
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="lg:hidden mr-1 px-2.5 py-1 rounded-lg bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition"
+            >
+              Done
+            </button>
+          )}
+          <button onClick={() => bringToFront(selectedElement.id)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Bring to Front">
+            <ArrowUpToLine size={16} />
+          </button>
+          <button onClick={() => bringForward(selectedElement.id)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Bring Forward">
+            <ArrowUp size={16} />
+          </button>
+          <button onClick={() => sendBackward(selectedElement.id)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Send Backward">
+            <ArrowDown size={16} />
+          </button>
+          <button onClick={() => sendToBack(selectedElement.id)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Send to Back">
+            <ArrowDownToLine size={16} />
+          </button>
+          <button onClick={() => duplicateElement(selectedElement.id)} className="p-1 text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937] rounded-sm" title="Duplicate">
+            <Copy size={16} />
+          </button>
+          <button
+            onClick={() => handleUpdateDiscrete('locked', !selectedElement.locked)}
+            className={`p-1 rounded-sm ${selectedElement.locked ? 'text-red-400 bg-red-900/20 hover:bg-red-900/40' : 'text-gray-400 hover:text-[#E8C16D] hover:bg-[#1F2937]'}`}
+            title={selectedElement.locked ? "Unlock Element" : "Lock Element"}
+          >
+            {selectedElement.locked ? <Lock size={16} /> : <Unlock size={16} />}
+          </button>
+          <button onClick={() => deleteElement(selectedElement.id)} className="p-1 text-red-500 hover:text-red-400 hover:bg-red-900/20 rounded-sm" title="Delete">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-5">
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Align to Canvas</h4>
+          <div className="flex gap-2">
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', 0)} title="Align left"><AlignLeft size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', (effectiveWidthMm - selectedElement.width) / 2)} title="Center horizontally"><AlignCenter size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('x', effectiveWidthMm - selectedElement.width)} title="Align right"><AlignRight size={16} /></button>
+          </div>
+          <div className="flex gap-2">
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', 0)} title="Align top"><ArrowUpToLine size={16} /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', (effectiveHeightMm - selectedElement.height) / 2)} title="Center vertically"><ArrowUp size={16} className="rotate-90" /></button>
+            <button className={btnClassSingle} onClick={() => handleUpdateDiscrete('y', effectiveHeightMm - selectedElement.height)} title="Align bottom"><ArrowDownToLine size={16} /></button>
+          </div>
+        </div>
+
+        {/* Geometry */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Geometry</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">X (mm)</label>
+              <input
+                type="number"
+                className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                value={selectedElement.x}
+                onChange={(e) => handleUpdate('x', Number(e.target.value))}
+                onBlur={handleCommit}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Y (mm)</label>
+              <input
+                type="number"
+                className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                value={selectedElement.y}
+                onChange={(e) => handleUpdate('y', Number(e.target.value))}
+                onBlur={handleCommit}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Width (mm)</label>
+              <input
+                type="number"
+                min={1}
+                className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                value={selectedElement.width}
+                onChange={(e) => handleUpdate('width', Math.max(1, Number(e.target.value)))}
+                onBlur={handleCommit}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Height (mm)</label>
+              <input
+                type="number"
+                min={1}
+                className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                value={selectedElement.height}
+                onChange={(e) => handleUpdate('height', Math.max(1, Number(e.target.value)))}
+                onBlur={handleCommit}
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-400">Rotation</label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={0}
+                  max={360}
+                  step={1}
+                  value={Math.round(selectedElement.rotation ?? 0)}
+                  onChange={(e) => {
+                    let v = Number(e.target.value);
+                    if (v < 0) v = 0;
+                    if (v > 360) v = 360;
+                    handleUpdate('rotation', v);
+                  }}
+                  onBlur={handleCommit}
+                  className="w-16 h-7 px-2 text-xs bg-transparent text-white border border-stone-700 rounded-sm focus:outline-none focus:border-[#E8C16D] text-right"
+                />
+                <span className="text-xs text-gray-500">°</span>
+              </div>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={360}
+              step={1}
+              value={Math.round(selectedElement.rotation ?? 0)}
+              onChange={(e) => handleUpdate('rotation', Number(e.target.value))}
+              onPointerUp={handleCommit}
+              onKeyUp={handleCommit}
+              className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-gray-600">
+              <span>0°</span>
+              <button onClick={() => handleUpdateDiscrete('rotation', 90)} className="hover:text-[#E8C16D] transition-colors">90°</button>
+              <button onClick={() => handleUpdateDiscrete('rotation', 180)} className="hover:text-[#E8C16D] transition-colors">180°</button>
+              <button onClick={() => handleUpdateDiscrete('rotation', 270)} className="hover:text-[#E8C16D] transition-colors">270°</button>
+              <span>360°</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-400">Opacity</label>
+              <span className="text-xs text-gray-500">{Math.round((selectedElement.opacity ?? 1) * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round((selectedElement.opacity ?? 1) * 100)}
+              onChange={(e) => handleUpdate('opacity', Number(e.target.value) / 100)}
+              onPointerUp={handleCommit}
+              className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
+            />
+            {(selectedElement.type === 'barcode' || selectedElement.type === 'qrcode') && (selectedElement.opacity ?? 1) < 0.7 && (
+              <p className="text-[10px] text-amber-500">Low opacity can make {selectedElement.type === 'barcode' ? 'barcodes' : 'QR codes'} unscannable.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="w-full h-px bg-stone-800" />
+
+        {/* Type specific properties */}
+        {selectedElement.type === 'text' && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Typography & Data</h4>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Data Binding</label>
+              <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                height={36}
+                options={VARIABLE_SOURCES}
+                value={VARIABLE_SOURCES.find(o => o.value === (selectedElement as TextElement).variableSource) || VARIABLE_SOURCES[0]}
+                onChange={(opt) => opt && handleUpdateDiscrete('variableSource', opt.value === 'custom' ? undefined : opt.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Content</label>
+              <textarea
+                className="w-full p-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] resize-none"
+                rows={3}
+                value={(selectedElement as TextElement).content}
+                onChange={(e) => handleUpdate('content', e.target.value)}
+                onBlur={handleCommit}
+                disabled={!!(selectedElement as TextElement).variableSource}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Font Family</label>
+                <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                  height={36}
+                  options={FONTS}
+                  value={FONTS.find(o => o.value === (selectedElement as TextElement).fontFamily) || FONTS[0]}
+                  onChange={(opt) => opt && handleUpdateDiscrete('fontFamily', opt.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Font Size (pt)</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                  value={(selectedElement as TextElement).fontSize}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const el = selectedElement as TextElement;
+                    const updates: any = { fontSize: val };
+                    if (el.maxLines && el.maxLines > 0) {
+                      const lh = el.lineHeight || 1.2;
+                      const ptToMm = 25.4 / 72;
+                      updates.height = el.maxLines * val * ptToMm * lh;
+                    }
+                    if (selectedElement) {
+                       updateElement(selectedElement.id, updates, true);
+                    }
+                  }}
+                  onBlur={handleCommit}
+                />
+              </div>
+            </div>
+            <div className="space-y-1 mt-3">
+              <label className="text-xs text-gray-400">Formatting</label>
+              <div className="flex items-center gap-1 mt-1">
+                <button onClick={() => handleUpdateDiscrete('fontWeight', (selectedElement as TextElement).fontWeight === 'bold' ? 'normal' : 'bold')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).fontWeight === 'bold' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Bold size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('fontStyle', (selectedElement as TextElement).fontStyle === 'italic' ? 'normal' : 'italic')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).fontStyle === 'italic' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Italic size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('textDecoration', (selectedElement as TextElement).textDecoration === 'underline' ? 'none' : 'underline')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textDecoration === 'underline' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><Underline size={16} /></button>
+                <div className="w-px h-5 bg-stone-300 mx-1" />
+                <button onClick={() => handleUpdateDiscrete('textAlign', 'left')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'left' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignLeft size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('textAlign', 'center')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'center' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignCenter size={16} /></button>
+                <button onClick={() => handleUpdateDiscrete('textAlign', 'right')} className={`p-1.5 rounded-sm ${(selectedElement as TextElement).textAlign === 'right' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}><AlignRight size={16} /></button>
+              </div>
+            </div>
+            <div className="space-y-1 mt-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-gray-400">Line Height</label>
+                <span className="text-xs text-gray-500">{((selectedElement as TextElement).lineHeight ?? 1.2).toFixed(1)}</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={3.0}
+                step={0.1}
+                value={(selectedElement as TextElement).lineHeight ?? 1.2}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  const el = selectedElement as TextElement;
+                  const updates: any = { lineHeight: val };
+                  if (el.maxLines && el.maxLines > 0) {
+                    const fs = el.fontSize || 12;
+                    const ptToMm = 25.4 / 72;
+                    updates.height = el.maxLines * fs * ptToMm * val;
+                  }
+                  if (selectedElement) {
+                     updateElement(selectedElement.id, updates, true);
+                  }
+                }}
+                onPointerUp={handleCommit}
+                className="w-full h-1.5 appearance-none rounded-full bg-stone-700 accent-[#E8C16D] cursor-pointer"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
+                    value={(selectedElement as TextElement).color || '#000000'}
+                    onChange={(e) => handleUpdate('color', e.target.value)}
+                    onBlur={handleCommit}
+                  />
+                  <input
+                    type="text"
+                    className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] text-xs"
+                    value={(selectedElement as TextElement).color || '#000000'}
+                    onChange={(e) => handleUpdate('color', e.target.value)}
+                    onBlur={handleCommit}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Max Lines</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] text-sm"
+                  value={(selectedElement as TextElement).maxLines || 0}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) || undefined;
+                    const updates: any = { maxLines: val };
+                    if (val && val > 0) {
+                      const el = selectedElement as TextElement;
+                      const lh = el.lineHeight || 1.2;
+                      const fs = el.fontSize || 12;
+                      const ptToMm = 25.4 / 72;
+                      updates.height = val * fs * ptToMm * lh;
+                    }
+                    if (selectedElement) {
+                       updateElement(selectedElement.id, updates, false);
+                    }
+                  }}
+                  onBlur={handleCommit}
+                  placeholder="0 (Unlimited)"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedElement.type === 'barcode' && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Barcode Settings</h4>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Data Binding</label>
+              <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                height={36}
+                options={VARIABLE_SOURCES}
+                value={VARIABLE_SOURCES.find(o => o.value === (selectedElement as BarcodeElement).variableSource) || VARIABLE_SOURCES[0]}
+                onChange={(opt) => opt && handleUpdateDiscrete('variableSource', opt.value === 'custom' ? undefined : opt.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Value</label>
+              <input
+                type="text"
+                className="w-full h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                value={(selectedElement as BarcodeElement).content}
+                onChange={(e) => handleUpdate('content', e.target.value)}
+                onBlur={handleCommit}
+                disabled={!!(selectedElement as BarcodeElement).variableSource}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Format</label>
+              <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                height={36}
+                options={BARCODE_FORMATS}
+                value={BARCODE_FORMATS.find(o => o.value === (selectedElement as BarcodeElement).barcodeFormat) || BARCODE_FORMATS[0]}
+                onChange={(opt) => opt && handleUpdateDiscrete('barcodeFormat', opt.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showText"
+                checked={(selectedElement as BarcodeElement).showText}
+                onChange={(e) => handleUpdateDiscrete('showText', e.target.checked)}
+                className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
+              />
+              <label htmlFor="showText" className="text-sm text-gray-300 cursor-pointer">
+                Show Text Below
+              </label>
+            </div>
+
+            {(selectedElement as BarcodeElement).showText !== false && (
+              <div className="space-y-3 pt-3 border-t border-stone-800">
+                <h5 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Value Typography</h5>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Family</label>
+                    <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                      height={36}
+                      options={FONTS}
+                      value={FONTS.find(o => o.value === (selectedElement as BarcodeElement).fontFamily) || FONTS[0]}
+                      onChange={(opt) => opt && handleUpdateDiscrete('fontFamily', opt.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Size (pt)</label>
+                    <input
+                      type="number"
+                      min={6}
+                      max={36}
+                      className="w-full h-9 px-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                      value={(selectedElement as BarcodeElement).fontSize || 10}
+                      onChange={(e) => handleUpdate('fontSize', Number(e.target.value))}
+                      onBlur={handleCommit}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 mt-2">
+                  <label className="text-xs text-gray-400">Formatting</label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <button
+                      onClick={() => handleUpdateDiscrete('fontWeight', (selectedElement as BarcodeElement).fontWeight === 'bold' ? 'normal' : 'bold')}
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).fontWeight === 'bold' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Bold"
+                    >
+                      <Bold size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleUpdateDiscrete('fontStyle', (selectedElement as BarcodeElement).fontStyle === 'italic' ? 'normal' : 'italic')}
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).fontStyle === 'italic' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Italic"
+                    >
+                      <Italic size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleUpdateDiscrete('textDecoration', (selectedElement as BarcodeElement).textDecoration === 'underline' ? 'none' : 'underline')}
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textDecoration === 'underline' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Underline"
+                    >
+                      <Underline size={16} />
+                    </button>
+                    <div className="w-px h-5 bg-stone-700 mx-1" />
+                    <button
+                      onClick={() => handleUpdateDiscrete('textAlign', 'left')}
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textAlign === 'left' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Align Left"
+                    >
+                      <AlignLeft size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleUpdateDiscrete('textAlign', 'center')}
+                      className={`p-1.5 rounded-sm ${(!(selectedElement as BarcodeElement).textAlign || (selectedElement as BarcodeElement).textAlign === 'center') ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Align Center"
+                    >
+                      <AlignCenter size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleUpdateDiscrete('textAlign', 'right')}
+                      className={`p-1.5 rounded-sm ${(selectedElement as BarcodeElement).textAlign === 'right' ? 'bg-[#E8C16D] text-white' : 'text-gray-500 hover:bg-[#1F2937]'}`}
+                      title="Align Right"
+                    >
+                      <AlignRight size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1 mt-2">
+                  <label className="text-xs text-gray-400">Text Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
+                      value={(selectedElement as BarcodeElement).color || '#000000'}
+                      onChange={(e) => handleUpdate('color', e.target.value)}
+                      onBlur={handleCommit}
+                    />
+                    <input
+                      type="text"
+                      className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                      value={(selectedElement as BarcodeElement).color || '#000000'}
+                      onChange={(e) => handleUpdate('color', e.target.value)}
+                      onBlur={handleCommit}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {selectedElement.type === 'qrcode' && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">QR Code Settings</h4>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Data Binding</label>
+              <ReactSelect menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                height={36}
+                options={VARIABLE_SOURCES}
+                value={VARIABLE_SOURCES.find(o => o.value === (selectedElement as QrCodeElement).variableSource) || VARIABLE_SOURCES[0]}
+                onChange={(opt) => opt && handleUpdateDiscrete('variableSource', opt.value === 'custom' ? undefined : opt.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Value</label>
+              <textarea
+                className="w-full p-2 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] resize-none"
+                rows={3}
+                value={(selectedElement as QrCodeElement).content}
+                onChange={(e) => handleUpdate('content', e.target.value)}
+                onBlur={handleCommit}
+                disabled={!!(selectedElement as QrCodeElement).variableSource}
+              />
+            </div>
+          </div>
+        )}
+
+        {selectedElement.type === 'image' && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Image Settings</h4>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Image Source</label>
+
+              {/* Drag and Drop Zone */}
+              <div
+                className={`w-full border-2 border-dashed rounded-sm p-4 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${isDragging ? 'border-[#E8C16D] bg-[#1F2937]' : 'border-stone-700 hover:bg-stone-800'}`}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleImageUpload(e.dataTransfer.files[0], (url, naturalAspect) => {
+                      if (selectedElement) {
+                        const updates: Partial<ImageElement> = { imageUrl: url };
+                        if (naturalAspect && naturalAspect > 0) {
+                          const currentW = selectedElement.width || 30;
+                          updates.height = Math.max(5, Math.round((currentW / naturalAspect) * 10) / 10);
+                        }
+                        updateElement(selectedElement.id, updates, false);
+                      }
+                    });
+                  }
+                }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleImageUpload(e.target.files[0], (url, naturalAspect) => {
+                        if (selectedElement) {
+                          const updates: Partial<ImageElement> = { imageUrl: url };
+                          if (naturalAspect && naturalAspect > 0) {
+                            const currentW = selectedElement.width || 30;
+                            updates.height = Math.max(5, Math.round((currentW / naturalAspect) * 10) / 10);
+                          }
+                          updateElement(selectedElement.id, updates, false);
+                        }
+                      });
+                    }
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                />
+                <UploadCloud size={24} className={`pointer-events-none ${isDragging ? "text-[#E8C16D]" : "text-gray-400"}`} />
+                <span className="text-xs text-gray-500 pointer-events-none">
+                  {isUploading ? "Uploading..." : isDragging ? "Drop here!" : "Click or Drag & Drop Image"}
+                </span>
+              </div>
+
+              {/* Show URL preview/fallback */}
+              {(selectedElement as ImageElement).imageUrl && (
+                <input
+                  type="text"
+                  placeholder="Or paste URL here..."
+                  className="w-full h-9 px-3 bg-transparent text-gray-300 border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D] text-xs truncate"
+                  value={(selectedElement as ImageElement).imageUrl}
+                  onChange={(e) => handleUpdate('imageUrl', e.target.value)}
+                  onBlur={handleCommit}
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="keepAspectRatio"
+                checked={(selectedElement as ImageElement).keepAspectRatio}
+                onChange={(e) => handleUpdateDiscrete('keepAspectRatio', e.target.checked)}
+                className="rounded-sm border-stone-700 text-[#E8C16D] focus:ring-[#E8C16D]"
+              />
+              <label htmlFor="keepAspectRatio" className="text-sm text-gray-300 cursor-pointer">
+                Keep Aspect Ratio
+              </label>
+            </div>
+
+            {(selectedElement as ImageElement).imageUrl && (
+              <div className="space-y-2 pt-2 border-t border-stone-800">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const canvas = await binarizeImageToCanvas((selectedElement as ImageElement).imageUrl, 225);
+                      const pureBlackDataUrl = canvas.toDataURL('image/png');
+                      handleUpdateDiscrete('imageUrl', pureBlackDataUrl);
+                      toast.success('Image converted to 100% pure solid black!');
+                    } catch (e) {
+                      toast.error('Failed to convert image');
+                    }
+                  }}
+                  className="w-full h-8 px-2 text-xs bg-stone-800 hover:bg-stone-700 text-[#E8C16D] border border-stone-700 rounded-sm transition-colors mt-2 flex items-center justify-center gap-1.5"
+                >
+                  <span>⬛</span>
+                  <span>Convert to Pure Black (Thermal Ready)</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(selectedElement.type === 'line' || selectedElement.type === 'rectangle') && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Shape Settings</h4>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Stroke Width (mm)</label>
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                className="w-full h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                value={(selectedElement as ShapeElement).borderWidth}
+                onChange={(e) => handleUpdate('borderWidth', Number(e.target.value))}
+                onBlur={handleCommit}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">Stroke Color</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
+                  value={(selectedElement as ShapeElement).borderColor}
+                  onChange={(e) => handleUpdate('borderColor', e.target.value)}
+                  onBlur={handleCommit}
+                />
+                <input
+                  type="text"
+                  className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                  value={(selectedElement as ShapeElement).borderColor}
+                  onChange={(e) => handleUpdate('borderColor', e.target.value)}
+                  onBlur={handleCommit}
+                />
+              </div>
+            </div>
+            {selectedElement.type === 'rectangle' && (
+              <div className="space-y-2">
+                <label className="text-xs text-gray-400">Fill Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    className="w-9 h-9 border border-stone-800 p-0 rounded-sm"
+                    value={(selectedElement as ShapeElement).fillColor || '#ffffff'}
+                    onChange={(e) => handleUpdate('fillColor', e.target.value)}
+                    onBlur={handleCommit}
+                  />
+                  <input
+                    type="text"
+                    className="flex-1 h-9 px-3 bg-transparent text-white border border-stone-800 rounded-sm focus:outline-none focus:border-[#E8C16D]"
+                    value={(selectedElement as ShapeElement).fillColor || ''}
+                    placeholder="transparent"
+                    onChange={(e) => handleUpdate('fillColor', e.target.value)}
+                    onBlur={handleCommit}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

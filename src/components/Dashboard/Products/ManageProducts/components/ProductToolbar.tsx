@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 import { validateImportSheetFormat } from "../utils/validateImportSheet";
 import { downloadDemoSheet } from "../utils/downloadDemoSheet";
+import { exportProductsExcel } from "../utils/exportProductsExcel";
 
 interface Option {
   label: string;
@@ -54,6 +55,9 @@ interface Props {
   productsData?: any[];
   asinData?: any[];
   myntraData?: any[];
+
+  selectedCount?: number;
+  onExportProducts?: () => void;
 }
 
 const statusOptions = [
@@ -112,6 +116,8 @@ export default function ProductToolbar({
   productsData = [],
   asinData = [],
   myntraData = [],
+  selectedCount = 0,
+  onExportProducts,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedTypeRef = useRef<ImportType>(importType);
@@ -221,52 +227,15 @@ export default function ProductToolbar({
         );
         toast.success("ASIN data downloaded successfully!");
       } else {
-        const worksheet = workbook.addWorksheet("Products");
-        worksheet.columns = [
-          { header: "Product Name", key: "productName", width: 30 },
-          { header: "Master SKU", key: "masterSku", width: 22 },
-          { header: "Brand", key: "brand", width: 18 },
-          { header: "Category", key: "category", width: 18 },
-          { header: "Sub Category", key: "subCategory", width: 18 },
-          { header: "Description", key: "description", width: 35 },
-          { header: "ASIN", key: "asin", width: 20 },
-          { header: "Rack Address", key: "rackAddress", width: 18 },
-          { header: "Generate Barcode", key: "generateBarcode", width: 20 },
-          { header: "MRP", key: "mrp", width: 15 },
-          { header: "HSN Code", key: "hsnCode", width: 16 },
-          { header: "GST %", key: "gstRate", width: 14 },
-        ];
-        const headerRow = worksheet.getRow(1);
-        headerRow.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
-        headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A0E1A" } };
-        headerRow.alignment = { vertical: "middle", horizontal: "center" };
-        headerRow.height = 28;
+        if (onExportProducts) {
+          onExportProducts();
+          return;
+        }
 
-        productsData.forEach((item) => {
-          const r = worksheet.addRow({
-            productName: item.productName,
-            masterSku: item.masterSku,
-            brand: item.brand,
-            category: item.category,
-            subCategory: item.subCategory,
-            description: item.description,
-            asin: item.asin,
-            rackAddress: item.rackAddress,
-            generateBarcode: item.generateBarcode,
-            mrp: item.mrp,
-            hsnCode: item.hsnCode,
-            gstRate: item.gstRate,
-          });
-          r.height = 22;
-          r.alignment = { vertical: "middle" };
-        });
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(
-          new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-          "products-data.xlsx"
+        await exportProductsExcel(
+          productsData || [],
+          Boolean(selectedCount && selectedCount > 0)
         );
-        toast.success("Products data downloaded successfully!");
       }
     } catch (err) {
       console.error(err);
@@ -404,12 +373,20 @@ export default function ProductToolbar({
               type="button"
               onClick={handleDownloadData}
               className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer dark:border-[#F5C451]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:ring-[#F5C451]/20 dark:hover:bg-[#F5C451]/25"
-              title="Export data"
+              title={
+                importType === "product" && selectedCount > 0
+                  ? `Export ${selectedCount} selected product(s)`
+                  : "Export data"
+              }
             >
               <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#F5C451]/20 dark:text-[#F5C451]">
                 <Download className="h-3.5 w-3.5" />
               </div>
-              <span>Export</span>
+              <span>
+                {importType === "product" && selectedCount > 0
+                  ? `Export (${selectedCount})`
+                  : "Export"}
+              </span>
             </button>
           ) : (
             <button

@@ -21,6 +21,9 @@ export interface ProductVariant {
   asin?: string | null;
 
   rackAddress?: string | null;
+  imageUrl?: string | null;
+
+  imgfileurl?: string | null;
 
   isActive: boolean;
 

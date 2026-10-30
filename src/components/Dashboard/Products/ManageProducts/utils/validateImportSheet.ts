@@ -112,27 +112,35 @@ export async function validateImportSheetFormat(
         };
       }
     } else {
-      // product import
-      const hasProductName = normalizedHeaders.some((h) =>
-        ["productname", "product", "title"].includes(h)
-      );
-      const hasMasterSku = normalizedHeaders.some((h) =>
-        ["mastersku", "sku", "masterskucode"].includes(h)
-      );
+      // product import: supports the exported/demo sheet format (Variant SKU, Asin, Rack Address, Color, Size, Gender)
+      // as well as the classic product sheet (Product Name, Master SKU)
+      const hasVariantSku =
+        normalizedHeaders.some((h) =>
+          ["variantsku", "mastersku", "productsku"].includes(h)
+        ) ||
+        (normalizedHeaders.includes("sku") &&
+          (normalizedHeaders.includes("color") ||
+            normalizedHeaders.includes("colour") ||
+            normalizedHeaders.includes("size") ||
+            normalizedHeaders.includes("gender") ||
+            normalizedHeaders.includes("productname")));
 
-      // Check if user accidentally uploaded ASIN or Myntra sheet
       const hasMyntraSku = normalizedHeaders.some((h) =>
-        ["myntrasku", "myntraskucode"].includes(h)
+        ["myntrasku", "myntraskucode", "platformsku"].includes(h)
       );
-      const isAsinOnly =
-        !hasProductName &&
-        normalizedHeaders.includes("asin") &&
-        normalizedHeaders.length <= 5;
 
-      if (!hasProductName || !hasMasterSku || hasMyntraSku || isAsinOnly) {
+      const isAsinSheet =
+        normalizedHeaders.includes("asin") &&
+        normalizedHeaders.includes("generatebarcode") &&
+        !normalizedHeaders.includes("variantsku") &&
+        !normalizedHeaders.includes("color") &&
+        !normalizedHeaders.includes("size");
+
+      if (!hasVariantSku || hasMyntraSku || isAsinSheet) {
         return {
           valid: false,
-          message: "Please upload the appropriate sheet format for Product Import! You can download the demo sheet for reference.",
+          message:
+            "Please upload the appropriate sheet format for Product Import! You can download the demo sheet for reference.",
         };
       }
     }

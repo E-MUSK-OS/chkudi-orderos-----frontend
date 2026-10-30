@@ -36,6 +36,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       errorClassName,
 
       id,
+      placeholder,
 
       ...props
     },
@@ -43,6 +44,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const generatedId = useId();
     const inputId = id || generatedId;
+    const hasValue =
+      props.value !== undefined &&
+      props.value !== null &&
+      String(props.value).length > 0;
 
     return (
       <div className={cn("space-y-2", containerClassName)}>
@@ -67,7 +72,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
-            placeholder={floatingLabel ? " " : props.placeholder}
+            placeholder={
+              floatingLabel && label
+                ? placeholder || " "
+                : placeholder
+            }
             className={cn(
               `
               peer
@@ -104,6 +113,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               focus:ring-[#C89B3C]/10
               dark:focus:ring-[#F5C451]/15
             `,
+              floatingLabel &&
+                label &&
+                "placeholder:text-transparent focus:placeholder:text-slate-400 dark:focus:placeholder:text-slate-500",
               leftIcon ? "pl-12" : "pl-4",
               rightIcon ? "pr-12" : "pr-4",
               inputClassName,
@@ -118,11 +130,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               className={cn(
                 `
                 pointer-events-none
-
                 absolute
-
+                z-10
                 top-1/2
-
                 -translate-y-1/2
 
                 bg-white
@@ -131,22 +141,24 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 px-1.5
 
                 text-[15px]
-
                 text-slate-400
 
                 transition-all
                 duration-200
 
-                peer-focus:-top-0
-                peer-focus:text-[13px]
+                peer-focus:-top-2
+                peer-focus:text-[11px]
+                peer-focus:font-medium
                 peer-focus:text-[#C89B3C]
                 dark:peer-focus:text-[#F5C451]
 
-                peer-[:not(:placeholder-shown)]:-top-0.5
-                peer-[:not(:placeholder-shown)]:text-[12px]
+                peer-[:not(:placeholder-shown)]:-top-2
+                peer-[:not(:placeholder-shown)]:text-[11px]
+                peer-[:not(:placeholder-shown)]:font-medium
                 peer-[:not(:placeholder-shown)]:text-slate-500
                 dark:peer-[:not(:placeholder-shown)]:text-slate-400
               `,
+                hasValue && "-top-2 text-[11px] font-medium text-slate-500 dark:text-slate-400",
                 leftIcon ? "left-12" : "left-4",
                 labelClassName,
               )}

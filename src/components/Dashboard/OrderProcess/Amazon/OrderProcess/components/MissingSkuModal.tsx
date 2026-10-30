@@ -36,7 +36,7 @@ export default function MissingSkuModal({
 
   const handleGoToProducts = () => {
     // Open in a new tab so the user does NOT lose their current uploaded PDF/ZPL batch!
-    window.open("/dashboard/products/manage-products", "_blank");
+    window.open("/dashboard/settings/manage-product/product-profile", "_blank");
   };
 
   const handleRefresh = async () => {

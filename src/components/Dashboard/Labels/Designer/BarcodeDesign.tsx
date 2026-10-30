@@ -142,7 +142,7 @@ export function BarcodeDesign() {
         const newTemplate = await labelService.createTemplate(templateData);
         designer.setIsDirty(false);
         toast.success("Template created successfully");
-        router.replace(`/dashboard/labels/designer?id=${newTemplate.id}`);
+        router.replace(`/dashboard/settings/labels/label-config?id=${newTemplate.id}`);
       }
       designer.setIsDirty(false);
     } catch (error) {
@@ -172,7 +172,7 @@ export function BarcodeDesign() {
     if (designer.isDirty) {
       setShowBackModal(true);
     } else {
-      router.push('/dashboard/labels/designer');
+      router.push('/dashboard/settings/labels/label-config');
     }
   };
 
@@ -463,7 +463,7 @@ export function BarcodeDesign() {
       <ConfirmModal
         open={showBackModal}
         onClose={() => setShowBackModal(false)}
-        onConfirm={() => router.push('/dashboard/labels/designer')}
+        onConfirm={() => router.push('/dashboard/settings/labels/label-config')}
         title="Discard Unsaved Changes?"
         description="You have unsaved changes. Are you sure you want to leave? Your changes will be lost."
         confirmLabel="Discard Changes"

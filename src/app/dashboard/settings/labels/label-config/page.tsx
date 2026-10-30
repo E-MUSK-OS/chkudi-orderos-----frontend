@@ -22,7 +22,7 @@ function DesignerContent() {
   );
 }
 
-export default function DesignerPage() {
+export default function LabelConfigPage() {
   return (
     <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-[#E8C16D]" size={32} /></div>}>
       <DesignerContent />

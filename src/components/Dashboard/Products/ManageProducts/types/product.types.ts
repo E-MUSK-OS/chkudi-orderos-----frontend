@@ -5,13 +5,40 @@ export interface ProductStats {
   totalBrands?: number;
 }
 
+export interface ProductAttribute {
+  id?: string;
+  attributeName: string;
+  attributeValue?: string;
+}
+
+export interface ProductAttributePayload {
+  id?: string;
+  attributeName: string;
+  attributeValue?: string;
+}
+
 export interface Product {
   id: string;
   productName: string;
   masterSku: string;
   brand: string;
   category: string;
-  subCategory: string;
+  sku?: string;
+  subCategory?: string;
+  unit?: string;
+  sizeList?: string;
+  colors?: string[];
+  gender?: string;
+  referenceParty?: string;
+  productCost?: number;
+  dealerRate?: number;
+  retailRate?: number;
+  openingStock?: number;
+  reorderLevelStock?: number;
+  minimumStock?: number;
+  productPoints?: number;
+  isPaired?: boolean;
+  availability?: string;
   description?: string;
   asin?: string;
   rackAddress?: string;
@@ -20,8 +47,12 @@ export interface Product {
   mfgMonth?: string;
   hsnCode?: string;
   gstRate?: number;
+  imageUrl?: string;
+
+  imgfileurl?: string;
   isActive: boolean;
   attributes: ProductAttribute[];
+  variants?: any[];
   createdAt: string;
 }
 
@@ -30,7 +61,23 @@ export interface ProductPayload {
   masterSku: string;
   brand?: string;
   category: string;
+  sku?: string;
   subCategory?: string;
+  unit?: string;
+  sizeList?: string;
+  colors?: string[];
+  gender?: string;
+  referenceParty?: string;
+  productCost?: number;
+  dealerRate?: number;
+  retailRate?: number;
+  openingStock?: number;
+  reorderLevelStock?: number;
+  minimumStock?: number;
+  productPoints?: number;
+  isPaired?: boolean;
+  availability?: string;
+  attributes?: ProductAttributePayload[];
   description?: string;
   asin?: string;
   rackAddress?: string;
@@ -39,6 +86,9 @@ export interface ProductPayload {
   mfgMonth?: string;
   hsnCode?: string;
   gstRate?: number;
+  imageUrl?: string;
+
+  imgfileurl?: string;
   isActive: boolean;
 }
 
@@ -58,62 +108,28 @@ export interface ProductStatsResponse {
   data: ProductStats;
 }
 
-// export interface Product {
-//   id: string;
-
-//   productName: string;
-//   masterSku: string;
-
-//   brand?: string;
-//   category: string;
-//   subCategory?: string;
-
-//   description?: string;
-
-//   isActive: boolean;
-
-//   createdAt: string;
-//   updatedAt: string;
-// }
-
-export interface ProductAttribute {
-  id?: string;
-  attributeName: string;
-}
-
-export interface ProductAttributePayload {
-  id?: string;
-  attributeName: string;
-}
-
-export interface ProductAttributePayload {
-  id?: string;
-  attributeName: string;
-}
-
-// export interface ProductPayload {
-//   productName: string;
-//   masterSku: string;
-
-//   brand?: string;
-//   category: string;
-//   subCategory?: string;
-
-//   description?: string;
-
-//   isActive: boolean;
-
-//   attributes: ProductAttributePayload[];
-// }
-
 export interface CreateProductPayload {
   productName: string;
   masterSku: string;
-
   brand?: string;
   category: string;
+  sku?: string;
   subCategory?: string;
-
+  unit?: string;
+  sizeList?: string;
+  colors?: string[];
+  gender?: string;
+  referenceParty?: string;
+  productCost?: number;
+  dealerRate?: number;
+  retailRate?: number;
+  openingStock?: number;
+  reorderLevelStock?: number;
+  minimumStock?: number;
+  productPoints?: number;
+  isPaired?: boolean;
+  availability?: string;
+  attributes?: ProductAttributePayload[];
   description?: string;
   asin?: string;
   rackAddress?: string;
@@ -122,37 +138,41 @@ export interface CreateProductPayload {
   mfgMonth?: string;
   hsnCode?: string;
   gstRate?: number;
+  imageUrl?: string;
 
+  imgfileurl?: string;
   isActive: boolean;
-
-  attributes: ProductAttributePayload[];
 }
 
-// export interface UpdateProductPayload extends Partial<CreateProductPayload> {}
 export type UpdateProductPayload = Partial<CreateProductPayload>;
 
 export interface UpdateProductStatusPayload {
   isActive: boolean;
 }
 
-// export interface ProductResponse {
-//   success: boolean;
-//   message: string;
-//   data: Product;
-// }
+export interface DropdownOptionItem {
+  id: string;
+  field: string;
+  value: string;
+  label: string;
+}
 
-// export interface ProductsResponse {
-//   success: boolean;
-//   data: Product[];
-// }
+export interface DropdownOptionsData {
+  savedOptions: DropdownOptionItem[];
+  parties: string[];
+  distinctFromProducts: {
+    categories: string[];
+    brands: string[];
+    units: string[];
+    genders: string[];
+    referenceParties: string[];
+    rackAddresses: string[];
+    availabilities: string[];
+    colors: string[];
+  };
+}
 
-// export interface ProductStats {
-//   totalProducts: number;
-//   activeProducts: number;
-//   inactiveProducts: number;
-// }
-
-// export interface ProductStatsResponse {
-//   success: boolean;
-//   data: ProductStats;
-// }
+export interface DropdownOptionsResponse {
+  success: boolean;
+  data: DropdownOptionsData;
+}

@@ -74,6 +74,7 @@ export function useCreateProductVariant() {
       queryClient.invalidateQueries({
         queryKey: [...QUERY_KEY, variables.productId],
       });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
@@ -114,13 +115,28 @@ export function useUpdateProductVariant() {
 
     onSuccess: (response, variables) => {
       if (variables.data.productId) {
+        queryClient.removeQueries({
+          queryKey: [
+            ...QUERY_KEY,
+            variables.data.productId,
+          ],
+        });
+        queryClient.removeQueries({
+          queryKey: ["products", variables.data.productId],
+        });
         queryClient.invalidateQueries({
           queryKey: [
             ...QUERY_KEY,
             variables.data.productId,
           ],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["products", variables.data.productId],
+        });
       }
+      queryClient.removeQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
@@ -165,6 +181,7 @@ export function useDeleteProductVariant() {
           variables.productId,
         ],
       });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(

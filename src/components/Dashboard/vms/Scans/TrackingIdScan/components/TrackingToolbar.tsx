@@ -124,7 +124,7 @@ export default function TrackingToolbar({
               <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
                 <CalendarIcon className="h-3.5 w-3.5" />
               </div>
-              <span className="text-left font-bold whitespace-nowrap min-w-[85px] sm:min-w-[95px]">
+              <span suppressHydrationWarning className="text-left font-bold whitespace-nowrap min-w-[85px] sm:min-w-[95px]">
                 {formattedDate}
               </span>
             </PopoverTrigger>

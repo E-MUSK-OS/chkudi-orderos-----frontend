@@ -20,11 +20,11 @@ export default function ProductHeader({
       <div className="space-y-1.5 min-w-0 max-w-2xl">
         <div className="flex items-center gap-2.5">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-            Product Management
+            Product Profile
           </h1>
         </div>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          Manage all your products, brands and categories from one place for inventory, order processing and marketplace integrations.
+          Manage all your product profiles, brands and categories from one place for inventory, order processing and marketplace integrations.
         </p>
       </div>
 

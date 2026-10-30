@@ -1,7 +1,7 @@
 import SkuMapping from '@/components/Dashboard/SkuMapping/SkuMapping'
 import React from 'react'
 
-const GodownInventorySheetPage = () => {
+const LabelPrintPage = () => {
   return (
     <div>
       <SkuMapping />
@@ -9,5 +9,4 @@ const GodownInventorySheetPage = () => {
   )
 }
 
-export default GodownInventorySheetPage
-
+export default LabelPrintPage

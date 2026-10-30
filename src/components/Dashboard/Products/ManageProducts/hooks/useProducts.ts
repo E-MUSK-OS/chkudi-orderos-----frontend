@@ -54,6 +54,7 @@ export function useCreateProduct() {
 
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["product-variants"] });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
@@ -62,7 +63,7 @@ export function useCreateProduct() {
 
     onError: (error: any) => {
       toast.error(
-        error?.message || error?.response?.data?.message || "Failed to create product",
+        error?.response?.data?.message || error?.message || "Failed to create product",
       );
     },
   });
@@ -83,8 +84,47 @@ export function useUpdateProduct() {
       data: UpdateProductPayload;
     }) => productService.update(id, data, getToken()),
 
-    onSuccess: (response) => {
+    onSuccess: (response, variables) => {
+      // 1. Immediately update cache for the product list so the table updates INSTANTLY
+      queryClient.setQueryData(QUERY_KEY, (oldData: any) => {
+        if (!oldData) return oldData;
+        const mergedProduct = {
+          ...(response?.data || {}),
+          ...variables.data,
+          id: variables.id,
+        };
+        if (Array.isArray(oldData)) {
+          return oldData.map((p: any) => (p.id === variables.id ? { ...p, ...mergedProduct } : p));
+        }
+        if (Array.isArray(oldData.data)) {
+          return {
+            ...oldData,
+            data: oldData.data.map((p: any) =>
+              p.id === variables.id ? { ...p, ...mergedProduct } : p
+            ),
+          };
+        }
+        return oldData;
+      });
+
+      // 2. Immediately update cache for the single product
+      queryClient.setQueryData([...QUERY_KEY, variables.id], (oldSingle: any) => {
+        const mergedProduct = {
+          ...(response?.data || {}),
+          ...variables.data,
+          id: variables.id,
+        };
+        if (!oldSingle) return { success: true, data: mergedProduct };
+        return {
+          ...oldSingle,
+          data: { ...(oldSingle.data || {}), ...mergedProduct },
+        };
+      });
+      // 3. Invalidate and refetch queries
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEY, variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["product-variants", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["product-variants"] });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
@@ -93,7 +133,7 @@ export function useUpdateProduct() {
 
     onError: (error: any) => {
       toast.error(
-        error?.message || error?.response?.data?.message || "Failed to update product",
+        error?.response?.data?.message || error?.message || "Failed to update product",
       );
     },
   });

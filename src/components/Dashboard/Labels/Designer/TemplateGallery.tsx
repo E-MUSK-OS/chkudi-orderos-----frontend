@@ -229,7 +229,7 @@ export function TemplateGallery() {
 
           <button
             type="button"
-            onClick={() => router.push("/dashboard/labels/designer?id=new")}
+            onClick={() => router.push("/dashboard/settings/labels/label-config?id=new")}
             className="inline-flex items-center justify-center gap-2 w-full sm:w-auto self-stretch sm:self-start md:self-center min-h-[42px] sm:min-h-[44px] rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer"
           >
             <Plus className="h-4 w-4" />
@@ -324,7 +324,7 @@ export function TemplateGallery() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {/* Create New Card */}
           <div
-            onClick={() => router.push("/dashboard/labels/designer?id=new")}
+            onClick={() => router.push("/dashboard/settings/labels/label-config?id=new")}
             className="group cursor-pointer rounded-2xl sm:rounded-3xl border-2 border-dashed border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#0F1626] hover:bg-[#FFFDF5] dark:hover:bg-[#121824] hover:border-[#E8C16D] p-6 flex flex-col items-center justify-center aspect-[4/3] transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5"
           >
             <div className="w-14 h-14 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/40 group-hover:bg-[#E8C16D] group-hover:text-[#0A0E1A] flex items-center justify-center mb-3 transition-all duration-200 shadow-xs group-hover:scale-110">
@@ -343,7 +343,7 @@ export function TemplateGallery() {
             <div
               key={template.id}
               className="group cursor-pointer rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-hidden hover:border-[#E8C16D] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col relative"
-              onClick={() => router.push(`/dashboard/labels/designer?id=${template.id}`)}
+              onClick={() => router.push(`/dashboard/settings/labels/label-config?id=${template.id}`)}
             >
               <div className="aspect-[4/3] border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] relative flex items-center justify-center p-3">
                 <TemplateThumbnail template={template} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { CheckCircle2, Clock, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 import type { VMSItem } from "../../VMS/Admin/types";
@@ -24,9 +25,27 @@ export default function TrackingTable({
   onPageChange,
   onLimitChange,
 }: Props) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const startIndex = total === 0 ? 0 : (page - 1) * limit;
   const endIndex = Math.min(startIndex + limit, total);
+
+  // Prevent hydration mismatch between server-rendered HTML and client
+  if (!mounted) {
+    return (
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
+        <div className="flex h-64 items-center justify-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-medium gap-2">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
+          <span>Loading Tracking records...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">

@@ -44,7 +44,7 @@ export default function WebstoreHeader({
         {/* Breadcrumb matching Screenshot: Setting / Webstore */}
         <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
           <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-            Setting
+            Settings
           </span>
           <span>/</span>
           <button

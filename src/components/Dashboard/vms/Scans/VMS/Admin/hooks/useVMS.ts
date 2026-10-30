@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getUserVMS, deleteVMS as deleteVMSApi } from "../services/vms.service";
@@ -10,17 +10,16 @@ import type { VMSItem, GetVMSResponse } from "../types";
 export const useVMS = () => {
   const queryClient = useQueryClient();
 
-  const userId = useMemo(() => {
-    if (typeof window === "undefined") return "";
+  const [userId, setUserId] = useState<string>("");
 
+  useEffect(() => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-      return user?.id || "";
+      if (user?.id) {
+        setUserId(user.id);
+      }
     } catch (error) {
       console.error("Failed to read user from localStorage:", error);
-
-      return "";
     }
   }, []);
 

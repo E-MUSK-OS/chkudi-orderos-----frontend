@@ -7,6 +7,8 @@ import type {
   ProductResponse,
   ProductsResponse,
   ProductStatsResponse,
+  DropdownOptionsResponse,
+  DropdownOptionItem,
 } from "../types/product.types";
 
 const BASE_URL = "/products";
@@ -101,5 +103,44 @@ export const productService = {
       formData,
       token,
     );
+  },
+  getDropdownOptions(token?: string) {
+    return api.get<DropdownOptionsResponse>(`${BASE_URL}/dropdown-options`, token);
+  },
+
+  saveDropdownOption(
+    data: { field: string; value: string; label?: string },
+    token?: string,
+  ) {
+    return api.post<{ success: boolean; data: DropdownOptionItem }>(
+      `${BASE_URL}/dropdown-options`,
+      data,
+      token,
+    );
+  },
+
+  uploadProductImage(
+    formData: FormData,
+    token?: string
+  ) {
+    return api.post<{
+      success: boolean;
+      message: string;
+      data: {
+        masterSku: string;
+        color: string;
+        fileName: string;
+        imageUrl: string;
+
+        imgfileurl?: string;
+      };
+    }>(`${BASE_URL}/upload-image`, formData, token);
+  },
+
+  getProductImages(masterSku: string, token?: string) {
+    return api.get<{
+      success: boolean;
+      data: Record<string, string>;
+    }>(`${BASE_URL}/images?masterSku=${encodeURIComponent(masterSku)}`, token);
   },
 };

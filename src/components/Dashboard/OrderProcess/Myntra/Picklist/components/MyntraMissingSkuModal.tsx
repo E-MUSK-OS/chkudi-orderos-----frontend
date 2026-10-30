@@ -37,7 +37,7 @@ export default function MyntraMissingSkuModal({
 
   const handleGoToProducts = () => {
     // Open in a new tab directly on the Myntra tab so the user does NOT lose their current uploaded Excel files!
-    window.open("/dashboard/products/manage-products?type=myntra", "_blank");
+    window.open("/dashboard/settings/manage-product/product-profile?type=myntra", "_blank");
   };
 
   const handleRefresh = async () => {

@@ -146,21 +146,15 @@ export const downloadDemoSheet = async (type: ImportType) => {
       );
       toast.success("ASIN Import demo sheet downloaded successfully!");
     } else {
-      const worksheet = workbook.addWorksheet("Product Import");
+      const worksheet = workbook.addWorksheet("Product Variants");
 
       worksheet.columns = [
-        { header: "Product Name", key: "productName", width: 30 },
-        { header: "Master SKU", key: "masterSku", width: 22 },
-        { header: "Brand", key: "brand", width: 18 },
-        { header: "Category", key: "category", width: 18 },
-        { header: "Sub Category", key: "subCategory", width: 18 },
-        { header: "Description", key: "description", width: 35 },
-        { header: "ASIN", key: "asin", width: 20 },
-        { header: "Rack Address", key: "rackAddress", width: 18 },
-        { header: "Generate Barcode", key: "generateBarcode", width: 20 },
-        { header: "MRP", key: "mrp", width: 15 },
-        { header: "HSN Code", key: "hsnCode", width: 16 },
-        { header: "GST %", key: "gstRate", width: 14 },
+        { header: "Variant SKU", key: "variantSku", width: 28 },
+        { header: "Asin", key: "asin", width: 22 },
+        { header: "Rack Address", key: "rackAddress", width: 20 },
+        { header: "Color", key: "color", width: 18 },
+        { header: "Size", key: "size", width: 16 },
+        { header: "Gender", key: "gender", width: 18 },
       ];
 
       const headerRow = worksheet.getRow(1);
@@ -180,32 +174,36 @@ export const downloadDemoSheet = async (type: ImportType) => {
 
       const sampleRows = [
         {
-          productName: "Men Casual Solid Cotton Shirt",
-          masterSku: "SH-BLU-001",
-          brand: "TOPLOT",
-          category: "Clothing",
-          subCategory: "Shirts",
-          description: "100% Premium Cotton Slim Fit Shirt",
+          variantSku: "SH-BLU-001-Blue-M",
           asin: "B08F9V7XYZ",
           rackAddress: "RACK001",
-          generateBarcode: "Yes",
-          mrp: 899,
-          hsnCode: "6205",
-          gstRate: "5%",
+          color: "Blue",
+          size: "M",
+          gender: "Men",
         },
         {
-          productName: "Men Slim Fit Stretchable Jeans",
-          masterSku: "JN-BLK-001",
-          brand: "Roadster",
-          category: "Clothing",
-          subCategory: "Jeans",
-          description: "Comfortable stretch denim jeans",
+          variantSku: "SH-BLU-001-Blue-L",
+          asin: "B08F9V7XYL",
+          rackAddress: "RACK001",
+          color: "Blue",
+          size: "L",
+          gender: "Men",
+        },
+        {
+          variantSku: "JN-BLK-001-Black-32",
           asin: "B09G1H2JKL",
           rackAddress: "RACK002",
-          generateBarcode: "No",
-          mrp: 1299,
-          hsnCode: "6203",
-          gstRate: "12%",
+          color: "Black",
+          size: "32",
+          gender: "Men",
+        },
+        {
+          variantSku: "KT-RED-001-Red-S",
+          asin: "B07X1V9ABC",
+          rackAddress: "RACK003",
+          color: "Red",
+          size: "S",
+          gender: "Women",
         },
       ];
 
@@ -213,6 +211,19 @@ export const downloadDemoSheet = async (type: ImportType) => {
         const r = worksheet.addRow(item);
         r.height = 22;
         r.alignment = { vertical: "middle" };
+      });
+
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE2E8F0" } },
+            left: { style: "thin", color: { argb: "FFE2E8F0" } },
+            bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+            right: { style: "thin", color: { argb: "FFE2E8F0" } },
+          };
+          cell.font = { name: "Calibri", size: 10 };
+        });
       });
 
       const buffer = await workbook.xlsx.writeBuffer();

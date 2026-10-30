@@ -99,17 +99,9 @@ const navItems: NavItem[] = [
   },
   {
     label: "Products",
-    href: "/dashboard/products/manage-products",
+    href: "/dashboard/products/inventory",
     icon: Package,
     children: [
-      // {
-      //   label: "Dashboard",
-      //   href: "/dashboard/products",
-      // },
-      {
-        label: "Products",
-        href: "/dashboard/products/manage-products",
-      },
       {
         label: "Inventory",
         href: "/dashboard/products/inventory",
@@ -177,20 +169,6 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Barcode/Labels",
-    icon: ScanBarcode,
-    children: [
-      {
-        label: "Designer",
-        href: "/dashboard/labels/designer",
-      },
-      {
-        label: "Godown Inventory Sheet",
-        href: "/dashboard/labels/godown-inventory-sheet",
-      },
-    ],
-  },
-  {
     label: "Transaction",
     icon: ArrowLeftRight,
     children: [
@@ -244,12 +222,36 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Setting",
+    label: "Settings",
     icon: Settings,
     children: [
       {
+        label: "Manage Product",
+        href: "/dashboard/settings/manage-product/product-profile",
+        children: [
+          {
+            label: "Product Profile",
+            href: "/dashboard/settings/manage-product/product-profile",
+          },
+        ],
+      },
+      {
         label: "Webstore",
-        href: "/dashboard/setting/webstore",
+        href: "/dashboard/settings/webstore",
+      },
+      {
+        label: "Barcode/Labels",
+        icon: ScanBarcode,
+        children: [
+          {
+            label: "Label Config",
+            href: "/dashboard/settings/labels/label-config",
+          },
+          {
+            label: "Label Print",
+            href: "/dashboard/settings/labels/label-print",
+          },
+        ],
       },
     ],
   },
@@ -322,7 +324,13 @@ export default function Sidebar({
       if (
         (item.href && path === item.href) ||
         (item.href === "/dashboard/purchase/finish-goods/invoice" && path === "/dashboard/purchase-invoice") ||
-        (item.href === "/dashboard/purchase/finish-goods/challan" && path === "/dashboard/purchase-challan")
+        (item.href === "/dashboard/purchase/finish-goods/challan" && path === "/dashboard/purchase-challan") ||
+        ((item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
+          path.startsWith("/dashboard/settings/manage-product")) ||
+        (item.href === "/dashboard/settings/labels/label-config" &&
+          (path === "/dashboard/settings/labels/label-config" || path.startsWith("/dashboard/settings/labels/label-config"))) ||
+        (item.href === "/dashboard/settings/labels/label-print" &&
+          path === "/dashboard/settings/labels/label-print")
       ) {
         return trail;
       }
@@ -364,6 +372,24 @@ export default function Sidebar({
     if (
       item.href === "/dashboard/purchase/finish-goods/challan" &&
       pathname === "/dashboard/purchase-challan"
+    ) {
+      return true;
+    }
+    if (
+      (item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
+      pathname.startsWith("/dashboard/settings/manage-product")
+    ) {
+      return true;
+    }
+    if (
+      item.href === "/dashboard/settings/labels/label-config" &&
+      (pathname === "/dashboard/settings/labels/label-config" || pathname.startsWith("/dashboard/settings/labels/label-config"))
+    ) {
+      return true;
+    }
+    if (
+      item.href === "/dashboard/settings/labels/label-print" &&
+      pathname === "/dashboard/settings/labels/label-print"
     ) {
       return true;
     }

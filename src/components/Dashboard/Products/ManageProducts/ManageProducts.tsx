@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { productCategoryOptions } from "./constants/product.constants";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -37,8 +39,12 @@ import {
 import MyntraTable from "./components/MyntraTable";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadDemoSheet } from "./utils/downloadDemoSheet";
+import { exportProductsExcel } from "./utils/exportProductsExcel";
+import { toast } from "sonner";
 
 const ManageProducts = () => {
+  const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [importType, setImportType] = useState<ImportType>("product");
 
@@ -117,8 +123,8 @@ const ManageProducts = () => {
   // Category Options
   const categoryOptions = [
     { label: "All Categories", value: "" },
-    { label: "Trousers", value: "Trousers" },
-    { label: "Co Ord Set", value: "Co Ord Set" },
+    ...productCategoryOptions.filter((o) => o.value !== "other"),
+
   ];
 
   // Brand Options
@@ -170,6 +176,48 @@ const ManageProducts = () => {
   );
 
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+
+  const handleToggleSelect = (productId: string) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    const currentPageIds = paginatedProducts.map((p) => p.id);
+    const isAllSelected =
+      currentPageIds.length > 0 &&
+      currentPageIds.every((id) => selectedProductIds.includes(id));
+
+    if (isAllSelected) {
+      setSelectedProductIds((prev) =>
+        prev.filter((id) => !currentPageIds.includes(id))
+      );
+    } else {
+      setSelectedProductIds((prev) =>
+        Array.from(new Set([...prev, ...currentPageIds]))
+      );
+    }
+  };
+
+  const handleExportProducts = () => {
+    const isSelectedOnly = selectedProductIds.length > 0;
+    const targetProducts = isSelectedOnly
+      ? products.filter((p) => selectedProductIds.includes(p.id))
+      : filteredProducts.length > 0
+      ? filteredProducts
+      : products;
+
+    if (targetProducts.length === 0) {
+      toast.error("No products to export.");
+      return;
+    }
+
+    exportProductsExcel(targetProducts, isSelectedOnly);
+  };
 
   const handleVariantToggle = (product: Product) => {
     if (expandedProductId === product.id) {
@@ -255,7 +303,7 @@ const ManageProducts = () => {
   };
 
   return (
-    <DashboardLayout title="Products">
+    <DashboardLayout title="Product Profile">
       <div className="space-y-4 sm:space-y-6">
         {/* Header Information Banner matching Inventory */}
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
@@ -277,9 +325,10 @@ const ManageProducts = () => {
                 setSelectedMyntra(null);
                 setMyntraModalOpen(true);
               } else if (importType === "product") {
-                setModalMode("create");
-                setSelectedProduct(null);
-                setProductModalOpen(true);
+                router.push("/dashboard/settings/manage-product/product-profile/add-product");
+
+
+
               }
             }}
           />
@@ -332,6 +381,8 @@ const ManageProducts = () => {
           productsData={products}
           asinData={asinItems}
           myntraData={myntraItems}
+          selectedCount={selectedProductIds.length}
+          onExportProducts={handleExportProducts}
         />
 
         {/* Table Container matching Inventory */}
@@ -344,6 +395,9 @@ const ManageProducts = () => {
               onStatusChange={handleStatus}
               expandedProductId={expandedProductId}
               onVariantToggle={handleVariantToggle}
+              selectedProductIds={selectedProductIds}
+              onToggleSelect={handleToggleSelect}
+              onToggleSelectAll={handleToggleSelectAll}
             />
           ) : importType === "asin" ? (
             <AsinTable
@@ -393,6 +447,10 @@ const ManageProducts = () => {
 
       <ProductModal
         open={productModalOpen}
+        onDeleteClick={() => {
+          setProductModalOpen(false);
+          setDeleteModalOpen(true);
+        }}
         mode={modalMode}
         product={selectedProduct ?? undefined}
         onClose={() => {
