@@ -223,7 +223,25 @@ export function useImportProductsExcel() {
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
-      toast.success(response?.message || "Excel file imported successfully");
+      const resData = (response as any)?.data || response;
+      const notFoundCount =
+        resData?.notFoundCount ?? (Array.isArray(resData?.errors) ? resData.errors.length : 0);
+      const updatedCount = resData?.updatedCount ?? resData?.importedCount ?? 0;
+      const msg = (response as any)?.message || resData?.message;
+
+      if (updatedCount > 0 && notFoundCount > 0) {
+        toast.warning(msg || `Updated ${updatedCount} variant(s). ${notFoundCount} variant(s) were not found in database.`, {
+          duration: 8000,
+        });
+      } else if (updatedCount > 0) {
+        toast.success(msg || `Successfully updated ${updatedCount} variant(s)!`);
+      } else if (notFoundCount > 0) {
+        toast.error(msg || `0 variants updated. ${notFoundCount} variant(s) were not found in the database.`, {
+          duration: 8000,
+        });
+      } else {
+        toast.info(msg || "No records to update.");
+      }
     },
 
     onError: (error: any) => {

@@ -48,7 +48,7 @@ export const defaultMarketplaceOptions: OptionItem[] = [
   { label: "Myntra", value: "Myntra" },
   { label: "Amazon", value: "Amazon" },
   { label: "Flipkart", value: "Flipkart" },
-  { label: "Meesho", value: "Meesho" },
+
 ];
 
 export const marketplaceOptions = defaultMarketplaceOptions;
@@ -57,6 +57,7 @@ export const brandOptions: OptionItem[] = [
   { label: "No Brand", value: "No Brand" },
   { label: "R.Code", value: "R.Code" },
   { label: "TOPLOT", value: "TOPLOT" },
+  { label: "TAGDO", value: "TAGDO" },
 ];
 
 export const unitOptions: OptionItem[] = [
@@ -72,10 +73,10 @@ export const unitOptions: OptionItem[] = [
 export const genderOptions: OptionItem[] = [
   { label: "Men", value: "Men" },
   { label: "Women", value: "Women" },
-  { label: "Unisex", value: "Unisex" },
   { label: "Boys", value: "Boys" },
   { label: "Girls", value: "Girls" },
   { label: "Kids", value: "Kids" },
+  { label: "Unisex", value: "Unisex" },
 ];
 
 export const gstOptions: OptionItem[] = [
@@ -130,6 +131,7 @@ export const defaultColorPresets: ColorPreset[] = [
 ];
 
 export const defaultAlphaSizes: string[] = [
+  "XS",
   "S",
   "M",
   "L",

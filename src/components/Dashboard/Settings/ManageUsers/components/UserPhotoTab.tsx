@@ -23,337 +23,13 @@ import { toast } from "sonner";
 import { getAvatarUrl } from "../utils/avatarUrl";
 import { getCurrentUser, type UserPermissions } from "@/utils/pagePermissions";
 
-export interface PagePermission {
-  id: string;
-  name: string;
-  description: string;
-  category: "dashboard";
-  path: string;
-  create: boolean;
-  read: boolean;
-  update: boolean;
-  delete: boolean;
-}
+import {
+  getDynamicPermissionDefinitions,
+  type PagePermission,
+} from "@/constants/navigation";
 
-export const DEFAULT_PERMISSIONS: PagePermission[] = [
-  // 1. Dashboard Root
-  {
-    id: "dashboard",
-    name: "Dashboard (Home)",
-    description: "Main OrderOS KPI metrics and executive overview",
-    category: "dashboard",
-    path: "/dashboard",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 2. VMS Module
-  {
-    id: "vms",
-    name: "VMS - Dashboard",
-    description: "Video Management System camera status & analytics",
-    category: "dashboard",
-    path: "/dashboard/vms",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "vms/scans",
-    name: "VMS - Scans (VMS Scan)",
-    description: "Real-time packing recording & scan desk",
-    category: "dashboard",
-    path: "/dashboard/vms/scans/vms",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "vms/scans/trackingid-scan",
-    name: "VMS - Tracking ID Scan",
-    description: "Verify and scan parcel tracking barcodes",
-    category: "dashboard",
-    path: "/dashboard/vms/scans/trackingid-scan",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "vms/operator",
-    name: "VMS - Operator",
-    description: "Operator recording station & packing verification",
-    category: "dashboard",
-    path: "/dashboard/vms/operator/vms",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "vms/admin",
-    name: "VMS - Admin",
-    description: "VMS administrative settings & system control",
-    category: "dashboard",
-    path: "/dashboard/vms/admin",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "vms/admin/users",
-    name: "VMS - Admin: Users",
-    description: "Manage VMS station operator accounts & credentials",
-    category: "dashboard",
-    path: "/dashboard/vms/admin/users",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "vms/admin/account",
-    name: "VMS - Admin: Accounts Name",
-    description: "Manage channel account mapping & nicknames",
-    category: "dashboard",
-    path: "/dashboard/vms/admin/account",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 3. Products & Inventory
-  {
-    id: "products/inventory",
-    name: "Products - Inventory",
-    description: "Warehouse stock levels, bin locations & quantity ledger",
-    category: "dashboard",
-    path: "/dashboard/products/inventory",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "settings/manage-product",
-    name: "Products - Product Profile",
-    description: "Master product catalog, SKU grouping & variants",
-    category: "dashboard",
-    path: "/dashboard/settings/manage-product/product-profile",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 4. Order Process
-  {
-    id: "order-process",
-    name: "Order Process - Dashboard",
-    description: "Centralized order processing dashboard",
-    category: "dashboard",
-    path: "/dashboard/order-process",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "order-process/myntra/manage-tag-loop",
-    name: "Myntra - Manage Tag Loop",
-    description: "Tag loops and security seal tracking for Myntra",
-    category: "dashboard",
-    path: "/dashboard/order-process/myntra/manage-tag-loop",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "order-process/myntra/myntra-order",
-    name: "Myntra - Myntra Order",
-    description: "Myntra dispatch orders and customer shipments",
-    category: "dashboard",
-    path: "/dashboard/order-process/myntra/myntra-order",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "order-process/myntra/myntra-picklist",
-    name: "Myntra - Myntra Picklist",
-    description: "Generate, verify, and confirm warehouse picklists",
-    category: "dashboard",
-    path: "/dashboard/order-process/myntra/myntra-picklist",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "order-process/myntra/stock-analysis",
-    name: "Myntra - Stock Analysis",
-    description: "Stock reconciliation & inventory analysis",
-    category: "dashboard",
-    path: "/dashboard/order-process/myntra/stock-analysis",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "order-process/myntra/invoice-formatter",
-    name: "Myntra - Invoice Formatter",
-    description: "Format and standardize Myntra customer invoices",
-    category: "dashboard",
-    path: "/dashboard/order-process/myntra/invoice-formatter",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "order-process/amazon/order-process",
-    name: "Amazon - Order Process",
-    description: "Amazon batches, shipping labels & dispatch processing",
-    category: "dashboard",
-    path: "/dashboard/order-process/amazon/order-process",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "order-process/amazon/awb-scan",
-    name: "Amazon - AWB Scan",
-    description: "Scan and verify Amazon shipping AWB barcodes",
-    category: "dashboard",
-    path: "/dashboard/order-process/amazon/awb-scan",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 5. Products Analytics
-  {
-    id: "products-analytics/amazon",
-    name: "Products Analytics - Amazon",
-    description: "Amazon sales velocity, performance & revenue insights",
-    category: "dashboard",
-    path: "/dashboard/products-analytics/amazon",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 6. Transaction
-  {
-    id: "transaction/sales/po-based",
-    name: "Transaction - Sales PO Based",
-    description: "Upload and process requested buyer purchase orders",
-    category: "dashboard",
-    path: "/dashboard/transaction/sales/po-based/upload-requested-po",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 7. Offline Sales
-  {
-    id: "offline-sales/sales-challan",
-    name: "Offline Sales - Sales Challan",
-    description: "Generate and manage offline delivery challans",
-    category: "dashboard",
-    path: "/dashboard/offline-sales/sales-challan",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "offline-sales/sales-invoice",
-    name: "Offline Sales - Sales Invoice",
-    description: "Create and export GST-compliant sales invoices",
-    category: "dashboard",
-    path: "/dashboard/offline-sales/sales-invoice",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 8. Purchase
-  {
-    id: "purchase/finish-goods/challan",
-    name: "Purchase - Purchase Challan",
-    description: "Inward finished goods delivery challans",
-    category: "dashboard",
-    path: "/dashboard/purchase/finish-goods/challan",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "purchase/finish-goods/invoice",
-    name: "Purchase - Purchase Invoice",
-    description: "Inward supplier purchase invoices and billing",
-    category: "dashboard",
-    path: "/dashboard/purchase/finish-goods/invoice",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  // 9. Settings
-  {
-    id: "settings/webstore",
-    name: "Settings - Webstore",
-    description: "Webstore credentials, API keys & channel sync",
-    category: "dashboard",
-    path: "/dashboard/settings/webstore",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "settings/labels/label-config",
-    name: "Settings - Label Config",
-    description: "Configure barcode template dimensions and printer setup",
-    category: "dashboard",
-    path: "/dashboard/settings/labels/label-config",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "settings/labels/label-print",
-    name: "Settings - Label Print",
-    description: "Thermal & laser barcode label printing station",
-    category: "dashboard",
-    path: "/dashboard/settings/labels/label-print",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-  {
-    id: "settings/manage-users",
-    name: "Settings - Manage Users",
-    description: "Manage user profiles, credentials & permission matrix",
-    category: "dashboard",
-    path: "/dashboard/settings/manage-users/user-profile",
-    create: true,
-    read: true,
-    update: true,
-    delete: true,
-  },
-];
+export type { PagePermission };
+export const DEFAULT_PERMISSIONS = getDynamicPermissionDefinitions();
 
 const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   dashboard: "dashboard",
@@ -450,15 +126,31 @@ export default function UserPhotoTab({
         .toUpperCase()
     : "U";
 
-  // Initialize permissions
+  // Initialize dynamic permissions from navigation
   const [permissions, setPermissions] = useState<PagePermission[]>(() => {
+    const dynamicDefs = getDynamicPermissionDefinitions();
     if (rights) {
       try {
         const parsed = JSON.parse(rights);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return DEFAULT_PERMISSIONS.map((def) => {
-            const found = parsed.find((p: any) => p.id === def.id);
-            return found ? { ...def, ...found } : def;
+          return dynamicDefs.map((def) => {
+            const found = parsed.find(
+              (p: any) =>
+                p &&
+                (p.id === def.id ||
+                  p.id === def.path.replace(/^\/dashboard\/?/, "") ||
+                  p.path === def.path ||
+                  PERMISSION_ID_TO_PAGE_SLUG[p.id] === def.id)
+            );
+            return found
+              ? {
+                  ...def,
+                  create: typeof found.create === "boolean" ? found.create : def.create,
+                  read: typeof found.read === "boolean" ? found.read : def.read,
+                  update: typeof found.update === "boolean" ? found.update : def.update,
+                  delete: typeof found.delete === "boolean" ? found.delete : def.delete,
+                }
+              : def;
           });
         }
       } catch (e) {
@@ -466,7 +158,7 @@ export default function UserPhotoTab({
       }
     }
     if (allowedPages && allowedPages.includes("ALL")) {
-      return DEFAULT_PERMISSIONS.map((def) => ({
+      return dynamicDefs.map((def) => ({
         ...def,
         create: true,
         read: true,
@@ -475,9 +167,15 @@ export default function UserPhotoTab({
       }));
     }
     if (allowedPages && allowedPages.length > 0) {
-      return DEFAULT_PERMISSIONS.map((def) => {
-        const slug = PERMISSION_ID_TO_PAGE_SLUG[def.id];
-        const isGranted = slug ? allowedPages.includes(slug) : false;
+      return dynamicDefs.map((def) => {
+        const slug = PERMISSION_ID_TO_PAGE_SLUG[def.id] || def.id;
+        const isGranted =
+          allowedPages.includes("ALL") ||
+          allowedPages.includes(slug) ||
+          allowedPages.includes(def.id) ||
+          allowedPages.some(
+            (p) => def.id.startsWith(p) || p.startsWith(def.id) || def.path.endsWith(p)
+          );
         return {
           ...def,
           create: isGranted,
@@ -487,7 +185,7 @@ export default function UserPhotoTab({
         };
       });
     }
-    return DEFAULT_PERMISSIONS;
+    return dynamicDefs;
   });
 
   useEffect(() => {
@@ -496,14 +194,30 @@ export default function UserPhotoTab({
 
   // Sync internal state when external rights or allowedPages change
   useEffect(() => {
+    const dynamicDefs = getDynamicPermissionDefinitions();
     if (rights) {
       try {
         const parsed = JSON.parse(rights);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setPermissions(
-            DEFAULT_PERMISSIONS.map((def) => {
-              const found = parsed.find((p: any) => p.id === def.id);
-              return found ? { ...def, ...found } : def;
+            dynamicDefs.map((def) => {
+              const found = parsed.find(
+                (p: any) =>
+                  p &&
+                  (p.id === def.id ||
+                    p.id === def.path.replace(/^\/dashboard\/?/, "") ||
+                    p.path === def.path ||
+                    PERMISSION_ID_TO_PAGE_SLUG[p.id] === def.id)
+              );
+              return found
+                ? {
+                    ...def,
+                    create: typeof found.create === "boolean" ? found.create : def.create,
+                    read: typeof found.read === "boolean" ? found.read : def.read,
+                    update: typeof found.update === "boolean" ? found.update : def.update,
+                    delete: typeof found.delete === "boolean" ? found.delete : def.delete,
+                  }
+                : def;
             })
           );
           return;
@@ -514,7 +228,7 @@ export default function UserPhotoTab({
     }
     if (allowedPages && allowedPages.includes("ALL")) {
       setPermissions(
-        DEFAULT_PERMISSIONS.map((def) => ({
+        dynamicDefs.map((def) => ({
           ...def,
           create: true,
           read: true,
@@ -526,9 +240,15 @@ export default function UserPhotoTab({
     }
     if (allowedPages && allowedPages.length > 0) {
       setPermissions(
-        DEFAULT_PERMISSIONS.map((def) => {
-          const slug = PERMISSION_ID_TO_PAGE_SLUG[def.id];
-          const isGranted = slug ? allowedPages.includes(slug) : false;
+        dynamicDefs.map((def) => {
+          const slug = PERMISSION_ID_TO_PAGE_SLUG[def.id] || def.id;
+          const isGranted =
+            allowedPages.includes("ALL") ||
+            allowedPages.includes(slug) ||
+            allowedPages.includes(def.id) ||
+            allowedPages.some(
+              (p) => def.id.startsWith(p) || p.startsWith(def.id) || def.path.endsWith(p)
+            );
           return {
             ...def,
             create: isGranted,
@@ -560,9 +280,13 @@ export default function UserPhotoTab({
 
     const activeSlugs = new Set<string>();
     newPermissions.forEach((p) => {
-      if (p.create || p.read || p.update || p.delete) {
-        const slug = PERMISSION_ID_TO_PAGE_SLUG[p.id];
-        if (slug) activeSlugs.add(slug);
+      if (p.read || p.create || p.update || p.delete) {
+        const slug = PERMISSION_ID_TO_PAGE_SLUG[p.id] || p.id;
+        activeSlugs.add(slug);
+        activeSlugs.add(p.id);
+        if (p.path) {
+          activeSlugs.add(p.path.replace(/^\/dashboard\/?/, ""));
+        }
       }
     });
 
@@ -969,7 +693,7 @@ export default function UserPhotoTab({
 
                 return (
                   <tr
-                    key={row.id}
+                    key={`${row.id}-${index}`}
                     className={`hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.04] transition-colors ${
                       isRestrictedForAdmin ? "opacity-40 pointer-events-none bg-slate-50/50 dark:bg-black/20" : ""
                     }`}

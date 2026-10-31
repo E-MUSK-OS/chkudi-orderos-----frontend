@@ -8,6 +8,7 @@ import { ShieldAlert } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import LogoutModal from "./LogoutModal";
+import DynamicActionShield from "./DynamicActionShield";
 import { authService } from "@/services/auth/auth.service";
 import {
   getCurrentUser,
@@ -107,7 +108,9 @@ export default function DashboardLayout({
                 </Link>
               </div>
             ) : (
-              children
+              <DynamicActionShield>
+                {children}
+              </DynamicActionShield>
             )}
           </div>
         </section>

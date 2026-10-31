@@ -5,10 +5,32 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import UserProfileForm from "@/components/Dashboard/Settings/ManageUsers/components/UserProfileForm";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 export default function CreateUserPage() {
   const router = useRouter();
   const returnPath = "/dashboard/settings/manage-users/user-profile";
+  const { canCreate } = usePagePermissions("settings/manage-users");
+
+  if (!canCreate) {
+    return (
+      <DashboardLayout title="Create User Profile">
+        <div className="rounded-3xl border border-red-200 dark:border-red-500/20 bg-red-50/30 dark:bg-red-500/5 p-8 text-center space-y-3">
+          <h2 className="text-lg font-bold text-red-600 dark:text-red-400">Access Denied</h2>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            You do not have permission to create users.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push(returnPath)}
+            className="h-10 px-5 rounded-2xl text-xs font-bold bg-[#E8C16D] text-[#0A0E1A]"
+          >
+            Back to User Profile
+          </button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Create User Profile">

@@ -34,6 +34,7 @@ interface Props {
   attributes: ProductAttribute[];
   masterSku?: string;
   product?: Product;
+  marketplace?: string | string[];
 }
 
 interface ColorGroup {
@@ -58,6 +59,7 @@ export default function ProductVariantInline({
   attributes,
   masterSku,
   product,
+  marketplace,
 }: Props) {
   const { data, isLoading } = useProductVariants(productId);
   const createVariant = useCreateProductVariant();
@@ -71,6 +73,32 @@ export default function ProductVariantInline({
   );
 
   const effectiveMasterSku = (masterSku || product?.masterSku || "").trim();
+
+  // Normalize active marketplace selection
+  const activeMarketplaces = useMemo(() => {
+    const raw = marketplace ?? product?.marketplace ?? "All";
+    if (Array.isArray(raw)) {
+      return raw.map((m) => String(m).trim().toLowerCase());
+    }
+    if (typeof raw === "string") {
+      return raw
+        .split(",")
+        .map((m) => m.trim().toLowerCase())
+        .filter(Boolean);
+    }
+    return ["all"];
+  }, [marketplace, product?.marketplace]);
+
+  const isAllMarketplace =
+    activeMarketplaces.length === 0 || activeMarketplaces.includes("all");
+  const showAsin =
+    isAllMarketplace || activeMarketplaces.includes("amazon");
+  const showMyntraSku =
+    isAllMarketplace || activeMarketplaces.includes("myntra");
+  const showFsnCode =
+    isAllMarketplace ||
+    activeMarketplaces.includes("flipkart") ||
+    activeMarketplaces.includes("flipcart");
 
   // Helper to ensure clean absolute image URLs without duplicate /api/v1 prefixes
   const toFullImageUrl = (url?: string | null) => {
@@ -154,6 +182,8 @@ export default function ProductVariantInline({
   const [editSku, setEditSku] = useState("");
   const [editSize, setEditSize] = useState("");
   const [editAsin, setEditAsin] = useState("");
+  const [editMyntraSku, setEditMyntraSku] = useState("");
+  const [editFsnCode, setEditFsnCode] = useState("");
   const [editRackAddress, setEditRackAddress] = useState("");
   const [editStatus, setEditStatus] = useState(true);
   const [editOtherAttrs, setEditOtherAttrs] = useState<Record<string, string>>(
@@ -166,6 +196,8 @@ export default function ProductVariantInline({
   const [newSizesInput, setNewSizesInput] = useState("");
   const [customBaseSku, setCustomBaseSku] = useState("");
   const [newAsin, setNewAsin] = useState("");
+  const [newMyntraSku, setNewMyntraSku] = useState("");
+  const [newFsnCode, setNewFsnCode] = useState("");
   const [newRackAddress, setNewRackAddress] = useState("");
   const [newIsActive, setNewIsActive] = useState(true);
   const [isSavingBatch, setIsSavingBatch] = useState(false);
@@ -446,6 +478,8 @@ export default function ProductVariantInline({
     setEditSku(variant.variantSku);
     setEditSize(getSizeValue(variant));
     setEditAsin(variant.asin || "");
+    setEditMyntraSku(variant.myntraSku || "");
+    setEditFsnCode(variant.fsnCode || "");
     setEditRackAddress(variant.rackAddress || "");
     setEditStatus(variant.isActive);
 
@@ -532,6 +566,8 @@ export default function ProductVariantInline({
         productId,
         variantSku: editSku.trim(),
         asin: editAsin.trim() || undefined,
+        myntraSku: editMyntraSku.trim() || undefined,
+        fsnCode: editFsnCode.trim() || undefined,
         rackAddress: editRackAddress.trim() || undefined,
         isActive: editStatus,
         attributes: formattedAttrs,
@@ -622,6 +658,8 @@ export default function ProductVariantInline({
           productId,
           variantSku: targetSku,
           asin: newAsin.trim() || undefined,
+          myntraSku: newMyntraSku.trim() || undefined,
+          fsnCode: newFsnCode.trim() || undefined,
           rackAddress: newRackAddress.trim() || undefined,
           isActive: newIsActive,
           attributes: formattedAttrs,
@@ -642,6 +680,8 @@ export default function ProductVariantInline({
       setNewSizesInput("");
       setCustomBaseSku("");
       setNewAsin("");
+      setNewMyntraSku("");
+      setNewFsnCode("");
       setNewRackAddress("");
       setNewIsActive(true);
     } catch (err: any) {
@@ -760,6 +800,8 @@ export default function ProductVariantInline({
     }
   };
 
+  const tableColSpan = (hasSizeAttribute ? 7 : 6) + extraAttributes.length + (showAsin ? 1 : 0) + (showMyntraSku ? 1 : 0) + (showFsnCode ? 1 : 0);
+
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#0F1626]">
       <div className="overflow-x-auto">
@@ -798,10 +840,24 @@ export default function ProductVariantInline({
                 </th>
               ))}
 
-              {/* ASIN */}
-              <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
-                ASIN
-              </th>
+              {/* Dynamic Marketplace Identifiers */}
+              {showAsin && (
+                <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                  ASIN
+                </th>
+              )}
+
+              {showMyntraSku && (
+                <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                  Myntra SKU
+                </th>
+              )}
+
+              {showFsnCode && (
+                <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                  FSN Code
+                </th>
+              )}
 
               {/* Rack Address */}
               <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
@@ -824,7 +880,7 @@ export default function ProductVariantInline({
             {isLoading ? (
               <tr>
                 <td
-                  colSpan={extraAttributes.length + (hasSizeAttribute ? 8 : 7)}
+                  colSpan={tableColSpan}
                   className="py-8 text-center text-sm text-slate-500 dark:text-slate-400"
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -836,7 +892,7 @@ export default function ProductVariantInline({
             ) : colorGroups.length === 0 ? (
               <tr>
                 <td
-                  colSpan={extraAttributes.length + (hasSizeAttribute ? 8 : 7)}
+                  colSpan={tableColSpan}
                   className="py-6 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400"
                 >
                   No variants found. Add colors and sizes below.
@@ -1196,32 +1252,90 @@ export default function ProductVariantInline({
                       </td>
                     ))}
 
-                    {/* 4. ASIN Column */}
-                    <td className="px-3.5 py-3.5 align-top">
-                      <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
-                        {group.variants.map((variant) => {
-                          const isEditing = editingId === variant.id;
+                    {/* Dynamic Marketplace Columns */}
+                    {showAsin && (
+                      <td className="px-3.5 py-3.5 align-top">
+                        <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
+                          {group.variants.map((variant) => {
+                            const isEditing = editingId === variant.id;
 
-                          return (
-                            <div
-                              key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
-                            >
-                              {isEditing ? (
-                                <input
-                                  value={editAsin}
-                                  onChange={(e) => setEditAsin(e.target.value)}
-                                  placeholder="ASIN"
-                                  className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
-                                />
-                              ) : (
-                                <span>{variant.asin || "--"}</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </td>
+                            return (
+                              <div
+                                key={variant.id}
+                                className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
+                              >
+                                {isEditing ? (
+                                  <input
+                                    value={editAsin}
+                                    onChange={(e) => setEditAsin(e.target.value)}
+                                    placeholder="ASIN"
+                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                  />
+                                ) : (
+                                  <span>{variant.asin || "--"}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    )}
+
+                    {showMyntraSku && (
+                      <td className="px-3.5 py-3.5 align-top">
+                        <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
+                          {group.variants.map((variant) => {
+                            const isEditing = editingId === variant.id;
+
+                            return (
+                              <div
+                                key={variant.id}
+                                className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
+                              >
+                                {isEditing ? (
+                                  <input
+                                    value={editMyntraSku}
+                                    onChange={(e) => setEditMyntraSku(e.target.value)}
+                                    placeholder="Myntra SKU"
+                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                  />
+                                ) : (
+                                  <span>{variant.myntraSku || "--"}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    )}
+
+                    {showFsnCode && (
+                      <td className="px-3.5 py-3.5 align-top">
+                        <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
+                          {group.variants.map((variant) => {
+                            const isEditing = editingId === variant.id;
+
+                            return (
+                              <div
+                                key={variant.id}
+                                className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
+                              >
+                                {isEditing ? (
+                                  <input
+                                    value={editFsnCode}
+                                    onChange={(e) => setEditFsnCode(e.target.value)}
+                                    placeholder="FSN Code"
+                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                  />
+                                ) : (
+                                  <span>{variant.fsnCode || "--"}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    )}
 
                     {/* 5. Rack Address Column */}
                     <td className="px-3.5 py-3.5 align-top">
@@ -1530,24 +1644,66 @@ export default function ProductVariantInline({
                 );
               })}
 
-              {/* ASIN */}
-              <td className="px-3.5 py-3 align-top">
-                {isAdding ? (
-                  <input
-                    value={newAsin}
-                    onChange={(e) => setNewAsin(e.target.value)}
-                    placeholder="ASIN (optional)"
-                    className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
-                  />
-                ) : (
-                  <span
-                    onClick={() => setIsAdding(true)}
-                    className="cursor-pointer text-slate-400 text-xs"
-                  >
-                    --
-                  </span>
-                )}
-              </td>
+              {/* Dynamic Marketplace Columns */}
+              {showAsin && (
+                <td className="px-3.5 py-3 align-top">
+                  {isAdding ? (
+                    <input
+                      value={newAsin}
+                      onChange={(e) => setNewAsin(e.target.value)}
+                      placeholder="ASIN (optional)"
+                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                    />
+                  ) : (
+                    <span
+                      onClick={() => setIsAdding(true)}
+                      className="cursor-pointer text-slate-400 text-xs"
+                    >
+                      --
+                    </span>
+                  )}
+                </td>
+              )}
+
+              {showMyntraSku && (
+                <td className="px-3.5 py-3 align-top">
+                  {isAdding ? (
+                    <input
+                      value={newMyntraSku}
+                      onChange={(e) => setNewMyntraSku(e.target.value)}
+                      placeholder="Myntra SKU (optional)"
+                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                    />
+                  ) : (
+                    <span
+                      onClick={() => setIsAdding(true)}
+                      className="cursor-pointer text-slate-400 text-xs"
+                    >
+                      --
+                    </span>
+                  )}
+                </td>
+              )}
+
+              {showFsnCode && (
+                <td className="px-3.5 py-3 align-top">
+                  {isAdding ? (
+                    <input
+                      value={newFsnCode}
+                      onChange={(e) => setNewFsnCode(e.target.value)}
+                      placeholder="FSN Code (optional)"
+                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                    />
+                  ) : (
+                    <span
+                      onClick={() => setIsAdding(true)}
+                      className="cursor-pointer text-slate-400 text-xs"
+                    >
+                      --
+                    </span>
+                  )}
+                </td>
+              )}
 
               {/* Rack Address */}
               <td className="px-3.5 py-3 align-top">
@@ -1610,6 +1766,8 @@ export default function ProductVariantInline({
                           setNewSizesInput("");
                           setCustomBaseSku("");
                           setNewAsin("");
+                          setNewMyntraSku("");
+                          setNewFsnCode("");
                           setNewRackAddress("");
                           setNewIsActive(true);
                         }}

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Mail, Phone, Eye, Edit2, Trash2 } from "lucide-react";
 import type { ManagedUser } from "../types/userManagement.types";
 import { getAvatarUrl } from "../utils/avatarUrl";
-import { getCurrentUser } from "@/utils/pagePermissions";
+import { getCurrentUser, usePagePermissions } from "@/utils/pagePermissions";
 
 interface Props {
   user: ManagedUser;
@@ -17,6 +17,7 @@ interface Props {
 
 export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelete }: Props) {
   const currentUser = React.useMemo(() => getCurrentUser(), []);
+  const { canUpdate, canDelete } = usePagePermissions("settings/manage-users");
   const isSuperAdminCard = user.role === "SUPERADMIN";
   const canModify = !(currentUser?.role === "ADMIN" && isSuperAdminCard);
   // Initials fallback
@@ -190,7 +191,7 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
             <span>View</span>
           </button>
 
-          {canModify && (
+          {canModify && canUpdate && (
             <button
               type="button"
               onClick={() => onEdit(user)}
@@ -201,7 +202,7 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
             </button>
           )}
 
-          {canModify && onDelete && (
+          {canModify && canDelete && onDelete && (
             <button
               type="button"
               onClick={() => onDelete(user)}

@@ -123,6 +123,16 @@ const InventoryTable = ({
                 !isOutOfStock &&
                 inventory.availableStock <= inventory.reorderLevel;
 
+              const variantAsin =
+                inventory.productVariant?.asin ||
+                inventory.productVariant?.product?.asin;
+              const variantMyntra =
+                inventory.productVariant?.myntraSku ||
+                inventory.productVariant?.product?.myntraSku;
+              const variantFsn =
+                inventory.productVariant?.fsnCode ||
+                inventory.productVariant?.product?.fsnCode;
+
               return (
                 <tr
                   key={inventory.id}
@@ -142,11 +152,39 @@ const InventoryTable = ({
                     </div>
                   </td>
 
-                  {/* Variant SKU */}
-                  <td className="px-3 sm:px-4 py-3.5 text-left whitespace-nowrap">
-                    <span className="text-xs sm:text-sm font-semibold text-slate-900 font-mono dark:text-slate-200">
+                  {/* Variant SKU & Marketplace Identifiers */}
+                  <td className="px-3 sm:px-4 py-3.5 text-left">
+                    <span className="text-xs sm:text-sm font-semibold text-slate-900 font-mono dark:text-slate-200 block">
                       {inventory.productVariant?.variantSku || "-"}
                     </span>
+                    {(variantAsin || variantMyntra || variantFsn) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        {variantAsin && (
+                          <span
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30 shadow-2xs"
+                            title={`ASIN: ${variantAsin}`}
+                          >
+                            ASIN: {variantAsin}
+                          </span>
+                        )}
+                        {variantMyntra && (
+                          <span
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-pink-50 text-pink-700 border border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/30 shadow-2xs"
+                            title={`Myntra SKU: ${variantMyntra}`}
+                          >
+                            Myntra: {variantMyntra}
+                          </span>
+                        )}
+                        {variantFsn && (
+                          <span
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30 shadow-2xs"
+                            title={`FSN Code: ${variantFsn}`}
+                          >
+                            FSN: {variantFsn}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </td>
 
                   {/* Warehouse */}

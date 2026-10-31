@@ -40,6 +40,8 @@ export const productSchema = z.object({
 
   description: z.string().optional().default(""),
   asin: z.string().optional().default(""),
+  myntraSku: z.string().optional().default(""),
+  fsnCode: z.string().optional().default(""),
   rackAddress: z.string().optional().default(""),
   generateBarcode: z.string().optional().default("No"),
   mrp: z.preprocess(

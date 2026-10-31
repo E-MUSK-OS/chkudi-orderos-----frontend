@@ -1,9 +1,15 @@
 import { authService } from "@/services/auth/auth.service";
+import { verifyClientActionPermission } from "@/services/api";
 
 export const fetchWithAuth = async (
   url: string,
   options: RequestInit = {}
 ): Promise<Response> => {
+  const method = (options.method || "GET").toUpperCase();
+  if (!verifyClientActionPermission(url, method)) {
+    throw new Error(`Access denied. You do not have '${method}' permission for this module.`);
+  }
+
   let accessToken = localStorage.getItem("accessToken");
 
   const makeRequest = (token: string |null) =>

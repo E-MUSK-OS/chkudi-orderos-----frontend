@@ -17,6 +17,7 @@ import { useWarehouses } from "@/components/Dashboard/Warehouse/hooks/useWarehou
 import ImportInventoryModal from "./ImportInventoryModal";
 import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 import CreateTransferModal from "../../Transfer/components/CreateTransferModal";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 interface Props {
   filters: InventoryFilters;
@@ -35,6 +36,7 @@ const InventoryToolbar = ({
 }: Props) => {
   const [importOpen, setImportOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const { canCreate } = usePagePermissions("products/inventory");
   const { data: warehouseResponse } = useWarehouses();
 
   const warehouseOptions = [
@@ -181,6 +183,7 @@ const InventoryToolbar = ({
           </button>
 
           {/* Import Button */}
+          {canCreate && (
           <button
             type="button"
             onClick={() => setImportOpen(true)}
@@ -191,6 +194,8 @@ const InventoryToolbar = ({
             </div>
             <span>Import</span>
           </button>
+
+          )}
 
           {/* Export Button */}
           <button

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import ActionMenu from "@/components/ui/ActionMenu";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 import type { Product } from "../types/product.types";
 
@@ -26,28 +27,33 @@ export default function ProductActionMenu({
   onDelete,
   onStatusChange,
 }: Props) {
-  return (
-    <ActionMenu
-      items={[
-        {
-          label: "Edit Product",
-          icon: Pencil,
-          onClick: () => onEdit(product),
-        },
-        {
-          label: product.isActive
-            ? "Mark as Inactive"
-            : "Mark as Active",
-          icon: RefreshCcw,
-          onClick: () => onStatusChange(product),
-        },
-        {
-          label: "Delete Product",
-          icon: Trash2,
-          variant: "danger",
-          onClick: () => onDelete(product),
-        },
-      ]}
-    />
-  );
+  const { canUpdate, canDelete } = usePagePermissions("settings/manage-product");
+
+  const items: any[] = [];
+
+  if (canUpdate) {
+    items.push({
+      label: "Edit Product",
+      icon: Pencil,
+      onClick: () => onEdit(product),
+    });
+    items.push({
+      label: product.isActive ? "Mark as Inactive" : "Mark as Active",
+      icon: RefreshCcw,
+      onClick: () => onStatusChange(product),
+    });
+  }
+
+  if (canDelete) {
+    items.push({
+      label: "Delete Product",
+      icon: Trash2,
+      variant: "danger",
+      onClick: () => onDelete(product),
+    });
+  }
+
+  if (items.length === 0) return null;
+
+  return <ActionMenu items={items} />;
 }

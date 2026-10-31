@@ -1,11 +1,15 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+
 export interface UserPermissions {
   id?: string;
   fullName?: string;
   email?: string;
   role?: string;
   allowedPages?: string[];
+  rights?: string | null;
   avatar?: string;
 }
 
@@ -44,28 +48,7 @@ export function isRouteAllowed(
   // Super Admin has unrestricted access to all pages
   if (user.role === "SUPERADMIN") return true;
 
-  const allowed = user.allowedPages || [];
-
-  // "ALL" grants full access
-  if (allowed.includes("ALL")) return true;
-
-  // For ADMIN with empty allowedPages (legacy / unconfigured), default to allow all.
-  // If Super Admin has assigned specific pages to this Admin (non-empty), strictly enforce them.
-  if (user.role === "ADMIN" && allowed.length === 0) {
-    return true;
-  }
-
-  // Standard USER with no allowed pages assigned has 0 access
-  if (user.role === "USER" && allowed.length === 0) {
-    return false;
-  }
-
   const cleanPath = pathname.split("?")[0].replace(/\/+$/, "") || "/";
-
-  // Dashboard root
-  if (cleanPath === "/dashboard" || cleanPath === "") {
-    return allowed.includes("dashboard") || allowed.includes("ALL");
-  }
 
   // Extract relative subPath under /dashboard
   let subPath = cleanPath;
@@ -80,6 +63,61 @@ export function isRouteAllowed(
   // Manage users protection (strictly Admin / SuperAdmin only)
   if (subPath.startsWith("settings/manage-users") && user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
     return false;
+  }
+
+  // 1. Primary source of truth: granular rights JSON matrix
+  if (user.rights) {
+    try {
+      const rightsList = typeof user.rights === "string" ? JSON.parse(user.rights) : user.rights;
+      if (Array.isArray(rightsList) && rightsList.length > 0) {
+        const cleanQuery = subPath.toLowerCase();
+
+        let match = rightsList.find((p: any) => {
+          if (!p || !p.id) return false;
+          const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+          const cleanPath = (p.path || "").replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+          const mapped = (PERMISSION_ID_TO_PAGE_SLUG[p.id] || "").toLowerCase();
+          return cleanId === cleanQuery || cleanPath === cleanQuery || mapped === cleanQuery;
+        });
+
+        if (!match) {
+          match = rightsList.find((p: any) => {
+            if (!p || !p.id) return false;
+            const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+            const cleanPath = (p.path || "").replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+            return cleanId.startsWith(cleanQuery) || cleanQuery.startsWith(cleanId) ||
+                   cleanPath.startsWith(cleanQuery) || cleanQuery.startsWith(cleanPath);
+          });
+        }
+
+        if (match) {
+          return Boolean(match.read);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse user rights in isRouteAllowed:", e);
+    }
+  }
+
+  const allowed = user.allowedPages || [];
+
+  // "ALL" grants full access if not explicitly restricted in rights
+  if (allowed.includes("ALL")) return true;
+
+  // For ADMIN with empty allowedPages (legacy / unconfigured), default to allow all.
+  // If Super Admin has assigned specific pages to this Admin (non-empty), strictly enforce them.
+  if (user.role === "ADMIN" && allowed.length === 0) {
+    return true;
+  }
+
+  // Standard USER with no allowed pages assigned has 0 access
+  if (user.role === "USER" && allowed.length === 0) {
+    return false;
+  }
+
+  // Dashboard root
+  if (cleanPath === "/dashboard" || cleanPath === "") {
+    return allowed.includes("dashboard") || allowed.includes("ALL");
   }
 
   // 1. Exact or prefix match against any allowed page
@@ -154,6 +192,11 @@ export function isNavItemAllowed(
   if (!user) return true;
   if (user.role === "SUPERADMIN") return true;
 
+  // Check based on href first if present
+  if (item.href) {
+    return isRouteAllowed(item.href, user);
+  }
+
   const allowed = user.allowedPages || [];
   if (allowed.includes("ALL")) return true;
 
@@ -163,11 +206,6 @@ export function isNavItemAllowed(
 
   if (user.role === "USER" && allowed.length === 0) {
     return false;
-  }
-
-  // Check based on href if present
-  if (item.href) {
-    return isRouteAllowed(item.href, user);
   }
 
   // Label-based fallback for parent groups without direct href
@@ -202,8 +240,10 @@ export function filterNavItemsForUser(
   if (user.role === "SUPERADMIN") return items;
 
   const allowed = user.allowedPages || [];
-  if (allowed.includes("ALL")) return items;
-  if (user.role === "ADMIN" && allowed.length === 0) return items;
+  if (!user.rights) {
+    if (allowed.includes("ALL")) return items;
+    if (user.role === "ADMIN" && allowed.length === 0) return items;
+  }
 
   return items
     .map((item) => {
@@ -258,4 +298,250 @@ export function getFirstAllowedRoute(user?: UserPermissions | null): string {
   if (allowed.includes("settings")) return "/dashboard/settings/manage-product/product-profile";
 
   return "/dashboard";
+}
+
+/**
+ * =========================================================================
+ * GRANULAR CRUD PERMISSIONS (Create, Read, Update, Delete)
+ * =========================================================================
+ */
+
+export interface PageCrudPermission {
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
+  dashboard: "dashboard",
+  vms: "vms",
+  "vms/scans": "vms/scans",
+  "vms/scans/trackingid-scan": "vms/scans/trackingid-scan",
+  "vms/operator": "vms/operator",
+  "vms/admin": "vms/admin",
+  "vms/admin/users": "vms/admin/users",
+  "vms/admin/account": "vms/admin/account",
+  "products/inventory": "products/inventory",
+  "settings/manage-product": "settings/manage-product",
+  "order-process": "order-process",
+  "order-process/myntra/manage-tag-loop": "order-process/myntra/manage-tag-loop",
+  "order-process/myntra/myntra-order": "order-process/myntra/myntra-order",
+  "order-process/myntra/myntra-picklist": "order-process/myntra/myntra-picklist",
+  "order-process/myntra/stock-analysis": "order-process/myntra/stock-analysis",
+  "order-process/myntra/invoice-formatter": "order-process/myntra/invoice-formatter",
+  "order-process/amazon/order-process": "order-process/amazon/order-process",
+  "order-process/amazon/awb-scan": "order-process/amazon/awb-scan",
+  "products-analytics/amazon": "products-analytics/amazon",
+  "transaction/sales/po-based": "transaction/sales/po-based",
+  "offline-sales/sales-challan": "offline-sales/sales-challan",
+  "offline-sales/sales-invoice": "offline-sales/sales-invoice",
+  "purchase/finish-goods/challan": "purchase/finish-goods/challan",
+  "purchase/finish-goods/invoice": "purchase/finish-goods/invoice",
+  "settings/webstore": "settings/webstore",
+  "settings/labels/label-config": "settings/labels/label-config",
+  "settings/labels/label-print": "settings/labels/label-print",
+  "settings/manage-users": "settings/manage-users",
+  vms_tracking: "vms/scans/trackingid-scan",
+  products_profile: "settings/manage-product",
+  order_process_amazon: "order-process/amazon/order-process",
+  order_process_myntra: "order-process/myntra/myntra-picklist",
+  warehouse_inventory: "products/inventory",
+  sku_mapping: "settings/labels/label-print",
+  barcode_labels: "settings/labels/label-config",
+  settings_manage_users: "settings/manage-users",
+  order_purchase_mat: "purchase/finish-goods/challan",
+  challan_purchase_mat: "purchase/finish-goods/challan",
+  invoice_purchase_mat: "purchase/finish-goods/invoice",
+  debit_note_mat: "offline-sales/sales-invoice",
+  order_desk_purchase_mat: "purchase/finish-goods/challan",
+};
+
+/**
+ * Evaluates the user's specific CRUD rights for a given page/resource.
+ */
+export function getPagePermission(
+  pageSlug: string,
+  user?: UserPermissions | null
+): PageCrudPermission {
+  if (!user) {
+    return { create: true, read: true, update: true, delete: true };
+  }
+
+  // Super Admin has unrestricted CRUD access to all resources
+  if (user.role === "SUPERADMIN") {
+    return { create: true, read: true, update: true, delete: true };
+  }
+
+  // 1. If user has rights JSON matrix stored, it is the PRIMARY source of truth!
+  if (user.rights) {
+    try {
+      const rightsList = typeof user.rights === "string" ? JSON.parse(user.rights) : user.rights;
+      if (Array.isArray(rightsList) && rightsList.length > 0) {
+        const cleanQuery = pageSlug.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+
+        // 1. Exact match
+        let match = rightsList.find((p: any) => {
+          if (!p || !p.id) return false;
+          const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+          const cleanPath = (p.path || "").replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+          const mapped = (PERMISSION_ID_TO_PAGE_SLUG[p.id] || "").toLowerCase();
+          return cleanId === cleanQuery || cleanPath === cleanQuery || mapped === cleanQuery;
+        });
+
+        // 2. Prefix / StartsWith match
+        if (!match) {
+          match = rightsList.find((p: any) => {
+            if (!p || !p.id) return false;
+            const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+            const cleanPath = (p.path || "").replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+            return cleanId.startsWith(cleanQuery) || cleanQuery.startsWith(cleanId) ||
+                   cleanPath.startsWith(cleanQuery) || cleanQuery.startsWith(cleanPath);
+          });
+        }
+
+        // 3. Substring match
+        if (!match) {
+          match = rightsList.find((p: any) => {
+            if (!p || !p.id) return false;
+            const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
+            return cleanId.includes(cleanQuery) || cleanQuery.includes(cleanId);
+          });
+        }
+
+        if (match) {
+          return {
+            create: Boolean(match.create),
+            read: Boolean(match.read),
+            update: Boolean(match.update),
+            delete: Boolean(match.delete),
+          };
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse user rights:", e);
+    }
+  }
+
+  // 2. Fallback: "ALL" page access grants full permissions if no specific rights entry exists
+  const allowed = user.allowedPages || [];
+  if (allowed.includes("ALL")) {
+    return { create: true, read: true, update: true, delete: true };
+  }
+
+  // Fallback: If no granular rights matrix exists, fall back to route-level access
+  const routeAllowed = isRouteAllowed(pageSlug, user);
+  return {
+    create: routeAllowed,
+    read: routeAllowed,
+    update: routeAllowed,
+    delete: routeAllowed,
+  };
+}
+
+export function canUserCreate(pageSlug: string, user?: UserPermissions | null): boolean {
+  return getPagePermission(pageSlug, user).create;
+}
+
+export function canUserRead(pageSlug: string, user?: UserPermissions | null): boolean {
+  return getPagePermission(pageSlug, user).read;
+}
+
+export function canUserUpdate(pageSlug: string, user?: UserPermissions | null): boolean {
+  return getPagePermission(pageSlug, user).update;
+}
+
+export function canUserDelete(pageSlug: string, user?: UserPermissions | null): boolean {
+  return getPagePermission(pageSlug, user).delete;
+}
+
+/**
+ * React hook to reactively retrieve Create, Read, Update, Delete rights
+ * for the current logged-in user on a specific page/resource.
+ */
+export function usePagePermissions(pageSlug: string) {
+  const [currentUser, setCurrentUser] = useState<UserPermissions | null>(null);
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+
+    const handleStorage = () => {
+      setCurrentUser(getCurrentUser());
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const perms = getPagePermission(pageSlug, currentUser);
+  const isAllowed = isRouteAllowed(pageSlug, currentUser);
+
+  return {
+    ...perms,
+    canCreate: perms.create,
+    canRead: perms.read,
+    canUpdate: perms.update,
+    canDelete: perms.delete,
+    isAllowed,
+    user: currentUser,
+  };
+}
+
+/**
+ * Normalizes any dashboard pathname into a canonical page slug.
+ */
+export function getSlugFromPathname(pathname: string): string {
+  if (!pathname) return "dashboard";
+  let clean = pathname.split("?")[0].replace(/\/+$/, "");
+  if (clean.startsWith("/dashboard/")) {
+    clean = clean.slice("/dashboard/".length);
+  } else if (clean === "/dashboard" || clean === "") {
+    return "dashboard";
+  } else if (clean.startsWith("/")) {
+    clean = clean.slice(1);
+  }
+
+  // Normalize sub-action routes to their parent resource IDs
+  if (clean.startsWith("settings/manage-users")) {
+    return "settings/manage-users";
+  }
+  if (clean.startsWith("settings/manage-product")) {
+    return "settings/manage-product";
+  }
+  if (clean.startsWith("order-process/amazon/order-process")) {
+    return "order-process/amazon/order-process";
+  }
+  if (clean.startsWith("order-process/amazon/awb-scan")) {
+    return "order-process/amazon/awb-scan";
+  }
+  if (clean.startsWith("products/inventory")) {
+    return "products/inventory";
+  }
+  if (clean.startsWith("vms/scans")) {
+    return clean.includes("trackingid") ? "vms/scans/trackingid-scan" : "vms/scans";
+  }
+  if (clean.startsWith("vms/operator")) {
+    return "vms/operator";
+  }
+  if (clean.startsWith("vms/admin")) {
+    if (clean.includes("users")) return "vms/admin/users";
+    if (clean.includes("account")) return "vms/admin/account";
+    return "vms/admin";
+  }
+
+  return clean;
+}
+
+/**
+ * React hook that automatically detects the current active route via Next.js usePathname()
+ * and dynamically retrieves Create, Read, Update, Delete rights for the active page
+ * with zero manual configuration required!
+ */
+export function useCurrentPagePermissions(overrideSlug?: string) {
+  const pathname = usePathname();
+  const slug = overrideSlug || getSlugFromPathname(pathname || "");
+  const perms = usePagePermissions(slug);
+  return {
+    ...perms,
+    slug,
+  };
 }

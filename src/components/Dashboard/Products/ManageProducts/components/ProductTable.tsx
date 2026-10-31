@@ -438,14 +438,14 @@ export default function ProductTable({
                   {/* Kardex Pricing (Product Cost, MRP, Dealer Rate, Retail Rate) */}
                   <td className="px-3 sm:px-4 py-3.5 align-middle whitespace-nowrap">
                     <div className="space-y-0.5 text-xs">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-slate-400 dark:text-slate-500">Cost:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 dark:text-slate-500 w-9 shrink-0">Cost:</span>
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
                           ₹{product.productCost ?? 0}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-slate-400 dark:text-slate-500">MRP:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 dark:text-slate-500 w-9 shrink-0">MRP:</span>
                         <span className="font-semibold text-[#B88728] dark:text-[#F5C451]">
                           ₹{product.mrp || 0}
                         </span>
@@ -470,6 +470,7 @@ export default function ProductTable({
                     <div className="flex items-center justify-center">
                       <ProductActionMenu
                         product={product}
+
                         onEdit={onEdit}
                         onDelete={onDelete}
                         onStatusChange={onStatusChange}
@@ -500,7 +501,7 @@ export default function ProductTable({
                   <tr>
                     <td
                       colSpan={9}
-                      className="border-t border-[#E7E0D2] bg-slate-50/60 p-3 sm:p-5 dark:border-white/[0.08] dark:bg-[#080B11]/50"
+                      className="border-t border-[#E7E0D2] bg-slate-50/60 p-2 sm:p-4 md:p-5 dark:border-white/[0.08] dark:bg-[#080B11]/50"
                     >
                       <ProductVariantInline
                         productId={product.id}
@@ -513,6 +514,7 @@ export default function ProductTable({
                         }
                         masterSku={product.masterSku}
                         product={product}
+
                       />
                     </td>
                   </tr>

@@ -16,7 +16,15 @@ export default function AccountLockChecker() {
       }
 
       try {
-        await authService.getMe(token);
+        const response = await authService.getMe(token);
+        if (response?.data) {
+          const currentRaw = localStorage.getItem("user");
+          const newRaw = JSON.stringify(response.data);
+          if (currentRaw !== newRaw) {
+            localStorage.setItem("user", newRaw);
+            window.dispatchEvent(new Event("storage"));
+          }
+        }
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Something went wrong";
@@ -34,7 +42,7 @@ export default function AccountLockChecker() {
     // First check
     checkAccount();
 
-    // Every 5 minutes
+    // Polling check every 30 seconds
     const interval = setInterval(checkAccount, 30 * 1000);
 
     return () => clearInterval(interval);

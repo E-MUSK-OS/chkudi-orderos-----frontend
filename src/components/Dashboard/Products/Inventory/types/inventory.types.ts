@@ -20,6 +20,9 @@ export interface Inventory {
     id: string;
     variantSku: string;
     isActive: boolean;
+    asin?: string | null;
+    myntraSku?: string | null;
+    fsnCode?: string | null;
 
     product: {
       id: string;
@@ -27,6 +30,10 @@ export interface Inventory {
       masterSku: string;
       brand?: string;
       category: string;
+      marketplace?: string;
+      asin?: string | null;
+      myntraSku?: string | null;
+      fsnCode?: string | null;
     };
 
     attributes: {

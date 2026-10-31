@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { useAmazonOrderStore } from "../store/useAmazonOrderStore";
 import { amazonOrderService, AmazonBatchHistoryItem } from "../services/amazonOrder.service";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 interface AmazonProcessHistoryDropdownProps {
   className?: string;
@@ -29,6 +30,7 @@ export default function AmazonProcessHistoryDropdown({
   className = "",
 }: AmazonProcessHistoryDropdownProps) {
   const router = useRouter();
+  const { canDelete } = usePagePermissions("order-process/amazon/order-process");
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -197,6 +199,10 @@ export default function AmazonProcessHistoryDropdown({
 
   const handleDeleteBatch = async (batchId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canDelete) {
+      toast.error("Access denied. You do not have permission to delete batches.");
+      return;
+    }
     const confirmed = window.confirm(
       "Are you sure you want to delete this batch? All printed orders associated with this batch will also be permanently deleted."
     );
@@ -404,7 +410,8 @@ export default function AmazonProcessHistoryDropdown({
                           </span>
                         )}
 
-                        <button
+                        {canDelete && (
+<button
                           type="button"
                           onClick={(e) => handleDeleteBatch(batch.id, e)}
                           disabled={isItemLoading}
@@ -417,6 +424,7 @@ export default function AmazonProcessHistoryDropdown({
                             <Trash2 className="h-3.5 w-3.5" />
                           )}
                         </button>
+                        )}
                       </div>
                     </div>
 

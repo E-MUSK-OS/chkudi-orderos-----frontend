@@ -119,6 +119,8 @@ const defaultValues: ProductFormValues = {
   referenceParty: "",
   description: "",
   asin: "",
+  myntraSku: "",
+  fsnCode: "",
   rackAddress: "",
   generateBarcode: "No",
   mrp: "",
@@ -875,6 +877,8 @@ export default function ProductForm({
         referenceParty: initialReferenceParty,
         description: activeProduct.description ?? "",
         asin: activeProduct.asin ?? "",
+        myntraSku: (activeProduct as any).myntraSku ?? "",
+        fsnCode: (activeProduct as any).fsnCode ?? "",
         rackAddress: initialRackAddress,
         generateBarcode: activeProduct.generateBarcode ?? "No",
         mrp: initialMrp,
@@ -1005,6 +1009,8 @@ export default function ProductForm({
         referenceParty: values.referenceParty ? values.referenceParty.trim() : "",
         description: values.description ? values.description.trim() : "",
         asin: values.asin ? values.asin.trim() : "",
+        myntraSku: (values as any).myntraSku ? (values as any).myntraSku.trim() : "",
+        fsnCode: (values as any).fsnCode ? (values as any).fsnCode.trim() : "",
         rackAddress: values.rackAddress ? values.rackAddress.trim() : "",
         hsnCode: values.hsnCode ? values.hsnCode.trim() : "",
         mrp: values.mrp !== undefined && values.mrp !== null ? String(values.mrp).trim() : "0",
@@ -1114,6 +1120,8 @@ export default function ProductForm({
                     productId: createdProduct.id,
                     variantSku: targetVariantSku,
                     asin: sanitizedPayload.asin || undefined,
+                    myntraSku: (sanitizedPayload as any).myntraSku || undefined,
+                    fsnCode: (sanitizedPayload as any).fsnCode || undefined,
                     rackAddress: sanitizedPayload.rackAddress || undefined,
                     isActive: sanitizedPayload.isActive ?? true,
                     attributes: combo.attributeList,
@@ -1285,6 +1293,20 @@ export default function ProductForm({
                         attributes: combo.attributeList,
                         rackAddress: values.rackAddress || undefined,
                         asin: values.asin || undefined,
+                      myntraSku: (values as any).myntraSku || undefined,
+                      fsnCode: (values as any).fsnCode || undefined,
+
+
+  
+  
+
+
+  
+  
+
+
+  
+  
                       },
                       token
                     )
@@ -1321,6 +1343,14 @@ export default function ProductForm({
                       attributes: combo.attributeList,
                       rackAddress: values.rackAddress || undefined,
                       asin: values.asin || undefined,
+                      myntraSku: (values as any).myntraSku || undefined,
+                      fsnCode: (values as any).fsnCode || undefined,
+
+
+
+
+
+
                     },
                     token
                   )
@@ -1347,6 +1377,14 @@ export default function ProductForm({
                       productId: product.id,
                       variantSku: targetVariantSku,
                       asin: values.asin || undefined,
+                      myntraSku: (values as any).myntraSku || undefined,
+                      fsnCode: (values as any).fsnCode || undefined,
+
+
+
+
+
+
                       rackAddress: values.rackAddress || undefined,
                       isActive: values.isActive ?? true,
                       attributes: combo.attributeList,
@@ -1375,6 +1413,8 @@ export default function ProductForm({
         queryClient.invalidateQueries({ queryKey: ["product", activeId] });
       }
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["inventories"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
 
       setIsSubmittingVariants(false);
       onSuccess();
@@ -1602,250 +1642,245 @@ export default function ProductForm({
           {/* PRODUCT ATTRIBUTES SECTION (Dynamic according to Category)   */}
           {/* ============================================================ */}
           <div className="pt-3 border-t border-slate-200/80 dark:border-white/[0.08] space-y-3.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-200/60 dark:border-white/[0.05]">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/20 shadow-2xs">
-                  <Tags className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
-                      Product Attributes
-                    </h4>
-                    {watchedCategory && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-[#F5C451]/10 dark:text-[#F5C451] dark:border-[#F5C451]/20">
-                        {watchedCategory}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Attribute options tailored for {watchedCategory ? `"${watchedCategory}"` : "this category"} to keep complete product records.
-                  </p>
-                </div>
-              </div>
-
-              {/* Attribute Action Buttons */}
-              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                
-
-                {/* Add Attribute Button */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    append({
-                      attributeName: "",
-                      attributeValue: "",
-                    })
-                  }
-                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold bg-[#FFF9EC] text-[#0A0E1A] border border-[#E8C16D] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 active:scale-[0.98] transition-all cursor-pointer dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/40 dark:hover:bg-[#F5C451]/25 shrink-0 shadow-xs"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Add Attribute</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick-Add Attribute Options for Category */}
-           
-
-            {/* Core Preset Attribute Grid (Only shows the ones that apply to this category) */}
-            {(categoryConfig.hasColors || categoryConfig.hasGender || categoryConfig.hasSizeList) && (
-              <div
-                className={cn(
-                  "grid gap-4",
-                  categoryConfig.hasColors && categoryConfig.hasGender && categoryConfig.hasSizeList
-                    ? "grid-cols-1 md:grid-cols-3"
-                    : (Number(categoryConfig.hasColors) + Number(categoryConfig.hasGender) + Number(categoryConfig.hasSizeList) === 2)
-                    ? "grid-cols-1 md:grid-cols-2"
-                    : "grid-cols-1"
-                )}
-              >
-                {/* 1. Colors */}
-                {categoryConfig.hasColors && (
-                  <Controller
-                    name="colors"
-                    control={control}
-                    render={({ field }) => (
-                      <ColorMultiSelect
-                        label={categoryConfig.colorsLabel || "Colors"}
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        additionalColors={dynamicColors}
-                        error={errors.colors?.message}
-                      />
-                    )}
-                  />
-                )}
-
-                {/* 2. Gender */}
-                {categoryConfig.hasGender && (
-                  <Controller
-                    name="gender"
-                    control={control}
-                    render={({ field }) => (
-                      <DropdownWithOther
-                        label={categoryConfig.genderLabel || "Gender"}
-                        value={field.value || ""}
-                        options={genderOptions}
-                        onChange={field.onChange}
-                        placeholder="Select Gender..."
-                        fieldKey="gender"
-                        error={errors.gender?.message}
-                      />
-                    )}
-                  />
-                )}
-
-                {/* 3. Size List (Not required) */}
-                {categoryConfig.hasSizeList && (
-                  <Controller
-                    name="sizeList"
-                    control={control}
-                    render={({ field }) => (
-                      <SizeMultiSelect
-                        label={categoryConfig.sizeLabel || "Size List"}
-                        required={false}
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        additionalSizes={
-                          categoryConfig.sizeLabel.toLowerCase().includes("shoe")
-                            ? defaultShoeSizes
-                            : defaultNumericSizes
-                        }
-                        error={errors.sizeList?.message}
-                      />
-                    )}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Added Custom Attributes (Field & Value option with save and delete buttons) */}
-            {fields.map((fieldItem, index) => {
-              const currentName = fieldItem.attributeName || "";
-              const dynamicPlaceholder = getAttributePlaceholder(currentName);
-              
-
-              return (
-                <div
-                  key={fieldItem.id}
-                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_44px] items-end gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-[#0B0F17]/60 border border-slate-200/80 dark:border-white/[0.08]"
-                >
-                  {/* Attribute Name (Field) */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                      Attribute Name
-                    </label>
-                    <Controller
-                      control={control}
-                      name={`attributes.${index}.attributeName`}
-                      render={({ field }) => (
-                        <input
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="e.g. Storage, RAM, Material, Weight..."
-                          className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
-                        />
-                      )}
-                    />
-                    {errors.attributes?.[index]?.attributeName && (
-                      <p className="text-[11px] text-rose-500">
-                        {errors.attributes[index]?.attributeName?.message}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-200/60 dark:border-white/[0.05]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/20 shadow-2xs">
+                      <Tags className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
+                          Product Attributes
+                        </h4>
+                        {watchedCategory && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-[#F5C451]/10 dark:text-[#F5C451] dark:border-[#F5C451]/20">
+                            {watchedCategory}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Attribute options tailored for {watchedCategory ? `"${watchedCategory}"` : "this category"} to keep complete product records.
                       </p>
-                    )}
+                    </div>
                   </div>
 
-                  {/* Attribute Value (Value) */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                      Attribute Value
-                    </label>
-                    <Controller
-                      control={control}
-                      name={`attributes.${index}.attributeValue`}
-                      render={({ field }) => (
-                        <input
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder={dynamicPlaceholder}
-                          className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
-                        />
-                      )}
-                    />
-                    {errors.attributes?.[index]?.attributeValue && (
-                      <p className="text-[11px] text-rose-500">
-                        {errors.attributes[index]?.attributeValue?.message}
-                      </p>
-                    )}
-                  </div>
-
-                  
-
-                  {/* Delete Button */}
-                  <div className="flex items-center justify-end sm:justify-center">
+                  {/* Attribute Action Buttons */}
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    {/* Add Attribute Button */}
                     <button
                       type="button"
-                      onClick={() => {
-                        const currentAttr = getValues(`attributes.${index}`);
-                        const name = currentAttr?.attributeName || fieldItem.attributeName || "Attribute";
-                        setDeleteAttrIndex(index);
-                        setDeleteAttrName(name);
-                      }}
-                      title="Remove attribute"
-                      className="h-11 sm:h-12 w-full sm:w-11 flex items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-slate-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50/60 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/10 active:scale-95 transition-all cursor-pointer shadow-xs"
+                      onClick={() =>
+                        append({
+                          attributeName: "",
+                          attributeValue: "",
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold bg-[#FFF9EC] text-[#0A0E1A] border border-[#E8C16D] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 active:scale-[0.98] transition-all cursor-pointer dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/40 dark:hover:bg-[#F5C451]/25 shrink-0 shadow-xs"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add Attribute</span>
                     </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-             {allSuggestedAttributes.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 p-2.5 rounded-xl bg-slate-50/70 dark:bg-[#0B0F17]/50 border border-slate-200/60 dark:border-white/[0.05]">
-                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 mr-1 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-[#B88728] dark:text-[#F5C451]" />
-                  Add {watchedCategory || "Category"} Attributes:
-                </span>
-                {allSuggestedAttributes.map((attrName) => {
-                  const isAdded = fields.some(
-                    (f) => f.attributeName?.trim().toLowerCase() === attrName.toLowerCase()
-                  );
+
+                {/* Core Preset Attribute Grid (Only shows the ones that apply to this category) */}
+                {(categoryConfig.hasColors || categoryConfig.hasGender || categoryConfig.hasSizeList) && (
+                  <div
+                    className={cn(
+                      "grid gap-4",
+                      categoryConfig.hasColors && categoryConfig.hasGender && categoryConfig.hasSizeList
+                        ? "grid-cols-1 md:grid-cols-3"
+                        : (Number(categoryConfig.hasColors) + Number(categoryConfig.hasGender) + Number(categoryConfig.hasSizeList) === 2)
+                        ? "grid-cols-1 md:grid-cols-2"
+                        : "grid-cols-1"
+                    )}
+                  >
+                    {/* 1. Colors */}
+                    {categoryConfig.hasColors && (
+                      <Controller
+                        name="colors"
+                        control={control}
+                        render={({ field }) => (
+                          <ColorMultiSelect
+                            label={categoryConfig.colorsLabel || "Colors"}
+                            value={field.value || []}
+                            onChange={field.onChange}
+                            additionalColors={dynamicColors}
+                            error={errors.colors?.message}
+                          />
+                        )}
+                      />
+                    )}
+
+                    {/* 2. Gender */}
+                    {categoryConfig.hasGender && (
+                      <Controller
+                        name="gender"
+                        control={control}
+                        render={({ field }) => (
+                          <DropdownWithOther
+                            label={categoryConfig.genderLabel || "Gender"}
+                            value={field.value || ""}
+                            options={genderOptions}
+                            onChange={field.onChange}
+                            placeholder="Select Gender..."
+                            fieldKey="gender"
+                            error={errors.gender?.message}
+                          />
+                        )}
+                      />
+                    )}
+
+                    {/* 3. Size List (Not required) */}
+                    {categoryConfig.hasSizeList && (
+                      <Controller
+                        name="sizeList"
+                        control={control}
+                        render={({ field }) => (
+                          <SizeMultiSelect
+                            label={categoryConfig.sizeLabel || "Size List"}
+                            required={false}
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            additionalSizes={
+                              categoryConfig.sizeLabel.toLowerCase().includes("shoe")
+                                ? defaultShoeSizes
+                                : defaultNumericSizes
+                            }
+                            error={errors.sizeList?.message}
+                          />
+                        )}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* Added Custom Attributes (Field & Value option with save and delete buttons) */}
+                {fields.map((fieldItem, index) => {
+                  const currentName = fieldItem.attributeName || "";
+                  const dynamicPlaceholder = getAttributePlaceholder(currentName);
+
                   return (
-                    <button
-                      key={attrName}
-                      type="button"
-                      onClick={() => {
-                        if (!isAdded) {
-                          append({
-                            attributeName: attrName,
-                            attributeValue: "",
-                          });
-                          toast.success(`Added "${attrName}" attribute`);
-                        }
-                      }}
-                      disabled={isAdded}
-                      title={isAdded ? `"${attrName}" already added` : `Add "${attrName}"`}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow-2xs",
-                        isAdded
-                          ? "bg-slate-100 text-slate-400 dark:bg-white/[0.04] dark:text-slate-500 cursor-not-allowed border border-transparent"
-                          : "bg-white text-slate-700 border border-slate-200 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#0A0E1A] dark:bg-[#0B0F17] dark:text-slate-200 dark:border-white/[0.08] dark:hover:border-[#F5C451]/50 dark:hover:bg-[#F5C451]/10 dark:hover:text-[#F5C451] cursor-pointer active:scale-95"
-                      )}
+                    <div
+                      key={fieldItem.id}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_44px] items-end gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-[#0B0F17]/60 border border-slate-200/80 dark:border-white/[0.08]"
                     >
-                      {isAdded ? (
-                        <Check className="w-3 h-3 text-emerald-500" />
-                      ) : (
-                        <Plus className="w-3 h-3 text-[#B88728] dark:text-[#F5C451]" />
-                      )}
-                      <span>{attrName}</span>
-                    </button>
+                      {/* Attribute Name (Field) */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          Attribute Name
+                        </label>
+                        <Controller
+                          control={control}
+                          name={`attributes.${index}.attributeName`}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              value={field.value ?? ""}
+                              placeholder="e.g. Storage, RAM, Material, Weight..."
+                              className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
+                            />
+                          )}
+                        />
+                        {errors.attributes?.[index]?.attributeName && (
+                          <p className="text-[11px] text-rose-500">
+                            {errors.attributes[index]?.attributeName?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Attribute Value (Value) */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          Attribute Value
+                        </label>
+                        <Controller
+                          control={control}
+                          name={`attributes.${index}.attributeValue`}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              value={field.value ?? ""}
+                              placeholder={dynamicPlaceholder}
+                              className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
+                            />
+                          )}
+                        />
+                        {errors.attributes?.[index]?.attributeValue && (
+                          <p className="text-[11px] text-rose-500">
+                            {errors.attributes[index]?.attributeValue?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Delete Button */}
+                      <div className="flex items-center justify-end sm:justify-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentAttr = getValues(`attributes.${index}`);
+                            const name = currentAttr?.attributeName || fieldItem.attributeName || "Attribute";
+                            setDeleteAttrIndex(index);
+                            setDeleteAttrName(name);
+                          }}
+                          title="Remove attribute"
+                          className="h-11 sm:h-12 w-full sm:w-11 flex items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-slate-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50/60 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/10 active:scale-95 transition-all cursor-pointer shadow-xs"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sm:hidden text-xs font-semibold ml-1.5 text-rose-600 dark:text-rose-400">Remove Attribute</span>
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
-            )}
-          {/* Row 4: GST (%) | Brand Name */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {allSuggestedAttributes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 p-2.5 rounded-xl bg-slate-50/70 dark:bg-[#0B0F17]/50 border border-slate-200/60 dark:border-white/[0.05]">
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 mr-1 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#B88728] dark:text-[#F5C451]" />
+                    Add {watchedCategory || "Category"} Attributes:
+                  </span>
+                  {allSuggestedAttributes.map((attrName) => {
+                    const isAdded = fields.some(
+                      (f) => f.attributeName?.trim().toLowerCase() === attrName.toLowerCase()
+                    );
+                    return (
+                      <button
+                        key={attrName}
+                        type="button"
+                        onClick={() => {
+                          if (!isAdded) {
+                            append({
+                              attributeName: attrName,
+                              attributeValue: "",
+                            });
+                            toast.success(`Added "${attrName}" attribute`);
+                          }
+                        }}
+                        disabled={isAdded}
+                        title={isAdded ? `"${attrName}" already added` : `Add "${attrName}"`}
+                        className={cn(
+                          "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow-2xs",
+                          isAdded
+                            ? "bg-slate-100 text-slate-400 dark:bg-white/[0.04] dark:text-slate-500 cursor-not-allowed border border-transparent"
+                            : "bg-white text-slate-700 border border-slate-200 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#0A0E1A] dark:bg-[#0B0F17] dark:text-slate-200 dark:border-white/[0.08] dark:hover:border-[#F5C451]/50 dark:hover:bg-[#F5C451]/10 dark:hover:text-[#F5C451] cursor-pointer active:scale-95"
+                        )}
+                      >
+                        {isAdded ? (
+                          <Check className="w-3 h-3 text-emerald-500" />
+                        ) : (
+                          <Plus className="w-3 h-3 text-[#B88728] dark:text-[#F5C451]" />
+                        )}
+                        <span>{attrName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+          {/* Row 4: GST (%) | MRP | Brand Name */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Controller
               name="gstRate"
               control={control}
@@ -1859,6 +1894,27 @@ export default function ProductForm({
                   fieldKey="gstrate"
                   error={errors.gstRate?.message}
                 />
+              )}
+            />
+
+            <Controller
+              name="mrp"
+              control={control}
+              render={({ field }) => (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                    MRP <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder="0.00"
+                    className={`w-full min-h-[44px] sm:min-h-[48px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border ${
+                      errors.mrp ? "border-rose-500" : "border-slate-200 dark:border-white/[0.08]"
+                    } bg-white dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs`}
+                  />
+                  {errors.mrp && <p className="text-[11px] text-rose-500 font-medium">{errors.mrp.message}</p>}
+                </div>
               )}
             />
 
@@ -2086,49 +2142,10 @@ export default function ProductForm({
                   </div>
                 )}
               />
-
-              {/* Availability * */}
-              <Controller
-                name="availability"
-                control={control}
-                render={({ field }) => (
-                  <DropdownWithOther
-                    label="Availability"
-                    required
-                    value={field.value || "Public"}
-                    options={availabilityOptions}
-                    onChange={field.onChange}
-                    placeholder="Select Availability..."
-                    fieldKey="availability"
-                    error={errors.availability?.message}
-                  />
-                )}
-              />
             </div>
 
             {/* Column 2 */}
             <div className="space-y-4">
-              {/* MRP */}
-              <Controller
-                name="mrp"
-                control={control}
-                render={({ field }) => (
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                      MRP <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      {...field}
-                      value={field.value ?? ""}
-                      placeholder="0.00"
-                      className={`w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border ${
-                        errors.mrp ? "border-rose-500" : "border-slate-200 dark:border-white/[0.08]"
-                      } bg-white dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs`}
-                    />
-                    {errors.mrp && <p className="text-[11px] text-rose-500 font-medium">{errors.mrp.message}</p>}
-                  </div>
-                )}
-              />
 
               {/* Retail Rate */}
               <Controller
@@ -2216,6 +2233,24 @@ export default function ProductForm({
                     </div>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </div>
+                )}
+              />
+
+              {/* Availability * */}
+              <Controller
+                name="availability"
+                control={control}
+                render={({ field }) => (
+                  <DropdownWithOther
+                    label="Availability"
+                    required
+                    value={field.value || "Public"}
+                    options={availabilityOptions}
+                    onChange={field.onChange}
+                    placeholder="Select Availability..."
+                    fieldKey="availability"
+                    error={errors.availability?.message}
+                  />
                 )}
               />
             </div>

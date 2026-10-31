@@ -143,10 +143,10 @@ const ManageProducts = () => {
   const marketplaceOptions = useMemo(() => {
     const list = [
       { label: "All Marketplaces", value: "" },
-      ...defaultMarketplaceOptions,
+      ...defaultMarketplaceOptions.filter((o) => o.value.toLowerCase() !== "all" && o.label.toLowerCase() !== "all"),
     ];
     const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "marketplace")
+      .filter((o) => o.field.toLowerCase() === "marketplace" && o.value.toLowerCase() !== "all" && (o.label || "").toLowerCase() !== "all")
       .map((o) => ({ label: o.label || o.value, value: o.value }));
 
     const map = new Map<string, { label: string; value: string }>();
@@ -273,7 +273,7 @@ const ManageProducts = () => {
       return;
     }
 
-    exportProductsExcel(targetProducts, isSelectedOnly);
+    exportProductsExcel(targetProducts, isSelectedOnly, marketplace);
   };
 
   const handleVariantToggle = (product: Product) => {
@@ -285,9 +285,9 @@ const ManageProducts = () => {
   };
 
   const handleEdit = (product: Product) => {
-    setModalMode("edit");
-    setSelectedProduct(product);
-    setProductModalOpen(true);
+    router.push(`/dashboard/settings/manage-product/product-profile/edit-product-profile/${product.id}`);
+
+
   };
 
   const handleEditAsin = (item: AsinImportItem) => {
@@ -348,6 +348,7 @@ const ManageProducts = () => {
   };
 
   const handleDelete = (product: Product) => {
+
     setSelectedProduct(product);
     setDeleteModalOpen(true);
   };
@@ -510,7 +511,7 @@ const ManageProducts = () => {
         open={productModalOpen}
         onDeleteClick={() => {
           setProductModalOpen(false);
-          setDeleteModalOpen(true);
+    setDeleteModalOpen(true);
         }}
         mode={modalMode}
         product={selectedProduct ?? undefined}

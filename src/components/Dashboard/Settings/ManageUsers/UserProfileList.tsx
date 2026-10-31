@@ -9,9 +9,11 @@ import UserViewModal from "./components/UserViewModal";
 import ProductPagination from "@/components/Dashboard/Products/ManageProducts/components/ProductPagination";
 import { useUsers, useUpdateUserStatus, useDeleteUser } from "./hooks/useManageUsers";
 import type { ManagedUser } from "./types/userManagement.types";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 export default function UserProfileList() {
   const router = useRouter();
+  const { canCreate } = usePagePermissions("settings/manage-users");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("oldest");
   const [page, setPage] = useState(1);
@@ -83,14 +85,16 @@ export default function UserProfileList() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/settings/manage-users/user-profile/create-user")}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer self-start md:self-auto min-h-[40px] sm:min-h-[44px]"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Create</span>
-          </button>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/settings/manage-users/user-profile/create-user")}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer self-start md:self-auto min-h-[40px] sm:min-h-[44px]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create</span>
+            </button>
+          )}
         </div>
       </div>
 

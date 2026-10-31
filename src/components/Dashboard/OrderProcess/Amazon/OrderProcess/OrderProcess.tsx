@@ -38,9 +38,11 @@ import { setCachedAmazonDocs, getDocCacheKey, clearCachedAmazonDocs, startBackgr
 import AmazonProcessHistoryDropdown from "./components/AmazonProcessHistoryDropdown";
 import { amazonOrderService } from "./services/amazonOrder.service";
 import { parseZplLabels, compareOrdersLocally } from "./utils/clientMatcher";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 export default function OrderProcess() {
   const router = useRouter();
+  const { canCreate } = usePagePermissions("order-process/amazon/order-process");
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [zplFiles, setZplFiles] = useState<File[]>([]);
 
@@ -267,6 +269,11 @@ export default function OrderProcess() {
   // Submit & Real-Time Processing Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!canCreate) {
+      toast.error("Access denied. You do not have permission to process new batches.");
+      return;
+    }
 
     if (pdfFiles.length === 0 || zplFiles.length === 0) {
       toast.error("Please upload at least one PDF file and one ZPL file before submitting.");
@@ -1332,7 +1339,7 @@ export default function OrderProcess() {
             <div className="flex w-full items-center gap-3 sm:w-auto">
               <button
                 type="button"
-                disabled={!isReadyToSubmit || isProcessing}
+                disabled={!isReadyToSubmit || isProcessing || !canCreate}
                 onClick={handleSubmit}
                 className="w-full sm:w-auto inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-6 sm:px-8 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs hover:bg-[#d4af5a] transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >

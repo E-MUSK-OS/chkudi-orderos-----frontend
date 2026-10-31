@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import DashboardLayout from "../../layout/DashboardLayout";
 import ProductForm from "./components/ProductForm";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 interface Props {
   returnPath?: string;
@@ -21,6 +22,28 @@ export default function AddProduct({
     setLoading(false);
     router.push(returnPath);
   };
+
+  const { canCreate } = usePagePermissions("settings/manage-product");
+
+  if (!canCreate) {
+    return (
+      <DashboardLayout title="Add Product">
+        <div className="rounded-3xl border border-red-200 dark:border-red-500/20 bg-red-50/30 dark:bg-red-500/5 p-8 text-center space-y-3">
+          <h2 className="text-lg font-bold text-red-600 dark:text-red-400">Access Denied</h2>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            You do not have permission to create products.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push(returnPath)}
+            className="h-10 px-5 rounded-2xl text-xs font-bold bg-[#E8C16D] text-[#0A0E1A]"
+          >
+            Back to Product Profile
+          </button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Add Product">
@@ -48,12 +71,12 @@ export default function AddProduct({
           </div>
 
           {/* Top Actions */}
-          <div className="flex items-center gap-2.5 self-end sm:self-center">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end sm:justify-start">
             <button
               type="button"
               onClick={() => router.push(returnPath)}
               disabled={loading}
-              className="min-h-[42px] h-10 px-5 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#131926] dark:text-slate-200 disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98]"
+              className="flex-1 sm:flex-none min-h-[42px] h-10 px-5 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#131926] dark:text-slate-200 disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98] text-center"
             >
               Cancel
             </button>
@@ -62,7 +85,7 @@ export default function AddProduct({
               type="submit"
               form="product-form"
               disabled={loading}
-              className="min-h-[42px] h-10 px-6 rounded-xl text-xs sm:text-sm font-bold bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:text-black dark:hover:bg-[#e6b540] active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+              className="flex-1 sm:flex-none min-h-[42px] h-10 px-6 rounded-xl text-xs sm:text-sm font-bold bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:text-black dark:hover:bg-[#e6b540] active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
             >
               {loading ? (
                 <>
@@ -91,12 +114,12 @@ export default function AddProduct({
           />
 
           {/* Bottom Actions */}
-          <div className="mt-8 pt-6 border-t border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between">
+          <div className="mt-8 pt-6 border-t border-slate-200/80 dark:border-white/[0.08] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => router.push(returnPath)}
               disabled={loading}
-              className="min-h-[42px] h-11 px-6 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#131926] dark:text-slate-200 disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98]"
+              className="w-full sm:w-auto min-h-[42px] h-11 px-6 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#131926] dark:text-slate-200 disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98] text-center"
             >
               Cancel
             </button>
@@ -105,7 +128,7 @@ export default function AddProduct({
               type="submit"
               form="product-form"
               disabled={loading}
-              className="min-h-[42px] h-11 px-7 rounded-xl text-xs sm:text-sm font-bold bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:text-black dark:hover:bg-[#e6b540] active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+              className="w-full sm:w-auto min-h-[42px] h-11 px-7 rounded-xl text-xs sm:text-sm font-bold bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:text-black dark:hover:bg-[#e6b540] active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
             >
               {loading ? (
                 <>

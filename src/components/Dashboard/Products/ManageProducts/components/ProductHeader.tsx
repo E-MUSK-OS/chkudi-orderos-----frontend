@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Download } from "lucide-react";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 interface Props {
   onAddProduct: () => void;
@@ -15,11 +16,13 @@ export default function ProductHeader({
   onDownloadDemoSheet,
   demoSheetLabel = "Demo Sheet",
 }: Props) {
+  const { canCreate } = usePagePermissions("settings/manage-product");
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="space-y-1.5 min-w-0 max-w-2xl">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
             Product Profile
           </h1>
         </div>
@@ -43,14 +46,16 @@ export default function ProductHeader({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={onAddProduct}
-          className="inline-flex w-full sm:w-auto min-h-[42px] sm:min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] hover:bg-slate-900 px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm transition-all active:scale-[0.98] cursor-pointer dark:bg-[#F5C451] dark:hover:bg-[#e6b540] dark:text-black"
-        >
-          <Plus className="h-4 w-4 stroke-[2.5]" />
-          <span>{buttonLabel}</span>
-        </button>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={onAddProduct}
+            className="inline-flex w-full sm:w-auto min-h-[42px] sm:min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] hover:bg-slate-900 px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#E8C16D] shadow-sm transition-all active:scale-[0.98] cursor-pointer dark:bg-[#F5C451] dark:hover:bg-[#e6b540] dark:text-black"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            <span>{buttonLabel}</span>
+          </button>
+        )}
       </div>
     </div>
   );

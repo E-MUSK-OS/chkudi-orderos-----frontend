@@ -47,21 +47,50 @@ export async function validateImportSheetFormat(
       };
     }
 
-    // Extract headers from Row 1
-    const headerRow = worksheet.getRow(1);
-    const headers: string[] = [];
+    // Find the header row by scanning the first 10 rows
+    let headers: string[] = [];
+    const maxScanRows = Math.min(worksheet.rowCount || 10, 10);
 
-    headerRow.eachCell({ includeEmpty: false }, (cell) => {
-      let val = cell.value;
-      if (typeof val === "string") {
-        headers.push(val.trim());
-      } else if (val && typeof val === "object" && "richText" in val) {
-        const text = (val as any).richText?.map((t: any) => t.text).join("") || "";
-        headers.push(text.trim());
-      } else if (val !== null && val !== undefined) {
-        headers.push(String(val).trim());
+    for (let r = 1; r <= maxScanRows; r++) {
+      const row = worksheet.getRow(r);
+      const rowCells: string[] = [];
+      row.eachCell({ includeEmpty: false }, (cell) => {
+        let val = cell.value;
+        if (typeof val === "string") {
+          rowCells.push(val.trim());
+        } else if (val && typeof val === "object" && "richText" in val) {
+          const text = (val as any).richText?.map((t: any) => t.text).join("") || "";
+          rowCells.push(text.trim());
+        } else if (val !== null && val !== undefined) {
+          rowCells.push(String(val).trim());
+        }
+      });
+
+      const rowNorm = rowCells.map((s) => s.toLowerCase().replace(/[^a-z0-9]/g, ""));
+      const isHeader = rowNorm.some((h) =>
+        [
+          "variantsku",
+          "mastersku",
+          "sku",
+          "productname",
+          "asin",
+          "myntrasku",
+          "fsncode",
+          "rackaddress",
+          "color",
+          "colour",
+          "size",
+        ].includes(h)
+      );
+
+      if (isHeader) {
+        headers = rowCells;
+        break;
       }
-    });
+      if (headers.length === 0 && rowCells.length > 0) {
+        headers = rowCells;
+      }
+    }
 
     if (headers.length === 0) {
       return {
@@ -112,31 +141,38 @@ export async function validateImportSheetFormat(
         };
       }
     } else {
-      // product import: supports the exported/demo sheet format (Variant SKU, Asin, Rack Address, Color, Size, Gender)
-      // as well as the classic product sheet (Product Name, Master SKU)
-      const hasVariantSku =
-        normalizedHeaders.some((h) =>
-          ["variantsku", "mastersku", "productsku"].includes(h)
-        ) ||
-        (normalizedHeaders.includes("sku") &&
-          (normalizedHeaders.includes("color") ||
-            normalizedHeaders.includes("colour") ||
-            normalizedHeaders.includes("size") ||
-            normalizedHeaders.includes("gender") ||
-            normalizedHeaders.includes("productname")));
-
-      const hasMyntraSku = normalizedHeaders.some((h) =>
-        ["myntrasku", "myntraskucode", "platformsku"].includes(h)
+      // product import: supports the exported/demo sheet format (Variant SKU, Asin, Myntra SKU, FSN Code, Rack Address, attributes)
+      // as well as legacy product sheet format (Product Name, Master SKU)
+      const hasVariantSku = normalizedHeaders.some((h) =>
+        [
+          "variantsku",
+          "variant",
+          "productvariantsku",
+          "childsku",
+          "subsku",
+          "mastersku",
+          "productsku",
+          "sku",
+          "sellersku",
+          "productname",
+          "product",
+          "title",
+        ].includes(h) || (h.includes("variant") && h.includes("sku"))
       );
 
-      const isAsinSheet =
+      const isDedicatedMyntraSheet =
+        normalizedHeaders.includes("sellersku") &&
+        normalizedHeaders.includes("generatebarcode") &&
+        !normalizedHeaders.some((h) => h.includes("variant")) &&
+        !normalizedHeaders.includes("productname");
+
+      const isDedicatedAsinSheet =
         normalizedHeaders.includes("asin") &&
         normalizedHeaders.includes("generatebarcode") &&
-        !normalizedHeaders.includes("variantsku") &&
-        !normalizedHeaders.includes("color") &&
-        !normalizedHeaders.includes("size");
+        !normalizedHeaders.some((h) => h.includes("variant")) &&
+        !normalizedHeaders.includes("productname");
 
-      if (!hasVariantSku || hasMyntraSku || isAsinSheet) {
+      if (!hasVariantSku || isDedicatedMyntraSheet || isDedicatedAsinSheet) {
         return {
           valid: false,
           message:

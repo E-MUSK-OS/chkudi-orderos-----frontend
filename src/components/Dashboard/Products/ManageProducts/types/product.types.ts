@@ -42,6 +42,8 @@ export interface Product {
   availability?: string;
   description?: string;
   asin?: string;
+  myntraSku?: string;
+  fsnCode?: string;
   rackAddress?: string;
   generateBarcode?: string;
   mrp?: string;
@@ -82,6 +84,8 @@ export interface ProductPayload {
   attributes?: ProductAttributePayload[];
   description?: string;
   asin?: string;
+  myntraSku?: string;
+  fsnCode?: string;
   rackAddress?: string;
   generateBarcode?: string;
   mrp?: string;
@@ -135,6 +139,8 @@ export interface CreateProductPayload {
   attributes?: ProductAttributePayload[];
   description?: string;
   asin?: string;
+  myntraSku?: string;
+  fsnCode?: string;
   rackAddress?: string;
   generateBarcode?: string;
   mrp?: string;

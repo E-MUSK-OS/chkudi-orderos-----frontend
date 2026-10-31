@@ -169,7 +169,7 @@ export default function SizeMultiSelect({
         >
           {selectedSizes.length === 0 ? (
             <span className="text-slate-400 dark:text-slate-500">
-              Select sizes (S to 4XL, 28 to 48)...
+              Select sizes (XS to 4XL, 28 to 48)...
             </span>
           ) : (
             selectedSizes.map((size) => (
@@ -210,7 +210,7 @@ export default function SizeMultiSelect({
                   onClick={selectAllAlpha}
                   className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
                 >
-                  S–4XL
+                  XS–4XL
                 </button>
                 <span className="text-slate-300 dark:text-slate-600">|</span>
                 <button
@@ -236,12 +236,12 @@ export default function SizeMultiSelect({
             </div>
 
             <div className="max-h-64 overflow-y-auto custom-scrollbar p-3 space-y-3">
-              {/* Section 1: Standard Alpha Sizes (S to 4XL) */}
+              {/* Section 1: Standard Alpha Sizes (XS to 4XL) */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                  Standard Sizes (S to 4XL)
+                  Standard Sizes (XS to 4XL)
                 </p>
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
                   {defaultAlphaSizes.map((size) => {
                     const isSelected = selectedSizes.some(
                       (s) => s.toLowerCase() === size.toLowerCase()

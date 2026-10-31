@@ -18,6 +18,7 @@ import { saveAs } from "file-saver";
 import { toast } from "sonner";
 
 import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
+import { usePagePermissions } from "@/utils/pagePermissions";
 import { validateImportSheetFormat } from "../utils/validateImportSheet";
 import { downloadDemoSheet } from "../utils/downloadDemoSheet";
 import { exportProductsExcel } from "../utils/exportProductsExcel";
@@ -129,6 +130,7 @@ export default function ProductToolbar({
   onExportProducts,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { canCreate } = usePagePermissions("settings/manage-product");
   const selectedTypeRef = useRef<ImportType>(importType);
   selectedTypeRef.current = importType;
 
@@ -276,7 +278,7 @@ export default function ProductToolbar({
     <>
       <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
         {/* Left side: Searchbar matching OrderOS theme */}
-        <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
+        <div className="w-full xl:w-auto xl:max-w-md xl:flex-1 transition-all">
           <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451] dark:focus-within:ring-[#F5C451]/30 dark:focus-within:bg-[#0B0F17]">
             <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
               <Search className="h-3.5 w-3.5" />
@@ -308,7 +310,7 @@ export default function ProductToolbar({
         </div>
 
         {/* Right side: Filters & Actions */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full xl:w-auto">
           {/* Status Dropdown */}
           <ThemeSelectDropdown
             ariaLabel="Filter by Status"
@@ -376,6 +378,7 @@ export default function ProductToolbar({
           )}
 
           {/* Upload Button */}
+          {canCreate && (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -388,6 +391,8 @@ export default function ProductToolbar({
             </div>
             <span>{isImporting ? "Importing..." : "Import"}</span>
           </button>
+
+          )}
 
           {/* Export / Demo Button */}
           {hasData ? (

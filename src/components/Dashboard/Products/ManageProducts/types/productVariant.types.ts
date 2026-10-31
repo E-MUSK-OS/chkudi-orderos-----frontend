@@ -19,6 +19,8 @@ export interface ProductVariant {
   variantSku: string;
 
   asin?: string | null;
+  myntraSku?: string | null;
+  fsnCode?: string | null;
 
   rackAddress?: string | null;
   imageUrl?: string | null;
@@ -39,6 +41,8 @@ export interface CreateProductVariantPayload {
   variantSku: string;
 
   asin?: string;
+  myntraSku?: string;
+  fsnCode?: string;
 
   rackAddress?: string;
 

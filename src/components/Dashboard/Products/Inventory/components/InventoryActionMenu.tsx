@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import ActionMenu from "@/components/ui/ActionMenu";
+import { usePagePermissions } from "@/utils/pagePermissions";
 
 import type { Inventory } from "../types/inventory.types";
 
@@ -26,26 +27,33 @@ export default function InventoryActionMenu({
   onAdjust,
   onDelete,
 }: Props) {
-  return (
-    <ActionMenu
-      items={[
-        {
-          label: "Update Reorder Level",
-          icon: Pencil,
-          onClick: () => onEdit(inventory),
-        },
-        {
-          label: "Adjust Stock",
-          icon: Package,
-          onClick: () => onAdjust(inventory),
-        },
-        {
-          label: "Delete Inventory",
-          icon: Trash2,
-          variant: "danger",
-          onClick: () => onDelete(inventory),
-        },
-      ]}
-    />
-  );
+  const { canUpdate, canDelete } = usePagePermissions("products/inventory");
+
+  const items: any[] = [];
+
+  if (canUpdate) {
+    items.push({
+      label: "Update Reorder Level",
+      icon: Pencil,
+      onClick: () => onEdit(inventory),
+    });
+    items.push({
+      label: "Adjust Stock",
+      icon: Package,
+      onClick: () => onAdjust(inventory),
+    });
+  }
+
+  if (canDelete) {
+    items.push({
+      label: "Delete Inventory",
+      icon: Trash2,
+      variant: "danger",
+      onClick: () => onDelete(inventory),
+    });
+  }
+
+  if (items.length === 0) return null;
+
+  return <ActionMenu items={items} />;
 }
