@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -236,6 +236,16 @@ const navItems: NavItem[] = [
         ],
       },
       {
+        label: "Manage Material",
+        href: "/dashboard/settings/manage-material/material-profile",
+        children: [
+          {
+            label: "Material Profile",
+            href: "/dashboard/settings/manage-material/material-profile",
+          },
+        ],
+      },
+      {
         label: "Webstore",
         href: "/dashboard/settings/webstore",
       },
@@ -327,6 +337,8 @@ export default function Sidebar({
         (item.href === "/dashboard/purchase/finish-goods/challan" && path === "/dashboard/purchase-challan") ||
         ((item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
           path.startsWith("/dashboard/settings/manage-product")) ||
+        ((item.href === "/dashboard/settings/manage-material" || item.href === "/dashboard/settings/manage-material/material-profile") &&
+          path.startsWith("/dashboard/settings/manage-material")) ||
         (item.href === "/dashboard/settings/labels/label-config" &&
           (path === "/dashboard/settings/labels/label-config" || path.startsWith("/dashboard/settings/labels/label-config"))) ||
         (item.href === "/dashboard/settings/labels/label-print" &&
@@ -378,6 +390,12 @@ export default function Sidebar({
     if (
       (item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
       pathname.startsWith("/dashboard/settings/manage-product")
+    ) {
+      return true;
+    }
+    if (
+      (item.href === "/dashboard/settings/manage-material" || item.href === "/dashboard/settings/manage-material/material-profile") &&
+      pathname.startsWith("/dashboard/settings/manage-material")
     ) {
       return true;
     }
@@ -662,3 +680,4 @@ export default function Sidebar({
     </>
   );
 }
+

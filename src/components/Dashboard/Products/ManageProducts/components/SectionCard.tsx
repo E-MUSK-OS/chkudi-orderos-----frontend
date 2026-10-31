@@ -14,8 +14,8 @@ export default function SectionCard({
   children,
 }: Props) {
   return (
-    <section className="rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-hidden">
-      <div className="border-b border-slate-200 dark:border-white/[0.08] p-3.5 sm:p-5">
+    <section className="rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-visible">
+      <div className="rounded-t-xl sm:rounded-t-2xl border-b border-slate-200 dark:border-white/[0.08] p-3.5 sm:p-5">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 dark:bg-[#C89B3C]/10 text-[#C89B3C] dark:text-[#F5C451]">
             {icon}
