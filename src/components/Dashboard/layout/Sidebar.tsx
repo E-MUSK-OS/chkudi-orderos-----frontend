@@ -21,8 +21,10 @@ import {
   ShoppingBag,
   Settings,
   ArrowLeftRight,
+  Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { getCurrentUser, filterNavItemsForUser, type UserPermissions } from "@/utils/pagePermissions";
 import { AnimatePresence, motion } from "framer-motion";
 import { operatorLogout } from "@/services/operatorAuth.service";
 import { toast } from "sonner";
@@ -226,7 +228,18 @@ const navItems: NavItem[] = [
     icon: Settings,
     children: [
       {
+        label: "Manage Users",
+        icon: Users,
+        children: [
+          {
+            label: "User Profile",
+            href: "/dashboard/settings/manage-users/user-profile",
+          },
+        ],
+      },
+      {
         label: "Manage Product",
+        icon: Package,
         href: "/dashboard/settings/manage-product/product-profile",
         children: [
           {
@@ -234,10 +247,6 @@ const navItems: NavItem[] = [
             href: "/dashboard/settings/manage-product/product-profile",
           },
         ],
-      },
-      {
-        label: "Webstore",
-        href: "/dashboard/settings/webstore",
       },
       {
         label: "Barcode/Labels",
@@ -253,6 +262,10 @@ const navItems: NavItem[] = [
           },
         ],
       },
+      {
+        label: "Webstore",
+        href: "/dashboard/settings/webstore",
+      },
     ],
   },
 ];
@@ -266,6 +279,21 @@ export default function Sidebar({
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserPermissions | null>(null);
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+
+    const handleStorage = () => {
+      setCurrentUser(getCurrentUser());
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const visibleNavItems = useMemo(() => {
+    return filterNavItemsForUser(navItems, currentUser);
+  }, [currentUser]);
 
   // const handleOperatorLogout = () => {
   //   localStorage.removeItem("operator");
@@ -347,7 +375,7 @@ export default function Sidebar({
   };
 
   useEffect(() => {
-    const activeTrail = findActivePath(navItems, pathname);
+    const activeTrail = findActivePath(visibleNavItems, pathname);
     if (activeTrail && activeTrail.length > 0) {
       setOpenMenus((prev) => {
         const next = { ...prev };
@@ -390,6 +418,12 @@ export default function Sidebar({
     if (
       item.href === "/dashboard/settings/labels/label-print" &&
       pathname === "/dashboard/settings/labels/label-print"
+    ) {
+      return true;
+    }
+    if (
+      item.href?.startsWith("/dashboard/settings/manage-users") &&
+      pathname.startsWith("/dashboard/settings/manage-users")
     ) {
       return true;
     }
@@ -617,7 +651,13 @@ export default function Sidebar({
               scrollbarColor: "rgba(245, 196, 81, 0.35) transparent",
             }}
           >
-            {renderMenu(navItems)}
+            {visibleNavItems.length > 0 ? (
+              renderMenu(visibleNavItems)
+            ) : (
+              <div className="py-6 px-3 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                No accessible pages assigned.
+              </div>
+            )}
           </nav>
 
           <style jsx>{`

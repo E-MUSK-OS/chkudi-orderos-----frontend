@@ -25,6 +25,9 @@ export interface User {
   email: string;
   isEmailVerified: boolean;
   username?: string;
+  role?: string;
+  allowedPages?: string[];
+  avatar?: string;
 }
 
 export interface SignupRequest {
