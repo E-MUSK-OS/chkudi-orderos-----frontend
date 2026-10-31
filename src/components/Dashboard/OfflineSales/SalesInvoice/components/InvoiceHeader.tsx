@@ -44,7 +44,7 @@ export default function InvoiceHeader({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: Icon, Title & Breadcrumb */}
         <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-          <div className="grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-teal-500/10 text-teal-600 border border-teal-500/30 shrink-0 dark:bg-teal-500/15 dark:text-teal-400">
+          <div className="grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 shrink-0 dark:bg-[#1A160E] dark:text-[#E8C16D]">
             <FileText className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
 
@@ -54,14 +54,14 @@ export default function InvoiceHeader({
                 Sales Invoice
               </h1>
               {invoiceNo && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-amber-500/10 dark:text-[#F5C451] dark:border-amber-500/25">
                   #{invoiceNo}
                 </span>
               )}
             </div>
 
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Offline Sales • <span className="text-teal-600 dark:text-teal-400 font-medium">Sales Invoice</span>
+              Offline Sales • <span className="text-slate-700 dark:text-slate-300 font-medium">Sales Invoice</span>
             </p>
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function InvoiceHeader({
             onClick={onSave}
             disabled={saving}
             title="Save Invoice"
-            className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-sm cursor-pointer"
+            className="grid h-10 w-10 place-items-center rounded-2xl bg-[#0A0E1A] text-white hover:bg-[#161D2E] dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#E8B83D] active:scale-95 disabled:opacity-50 transition-all shadow-sm cursor-pointer"
           >
             <Save className="w-4 h-4" />
           </button>
@@ -122,7 +122,7 @@ export default function InvoiceHeader({
             <Button
               variant="outline"
               fullWidth={false}
-              className="h-10 px-3.5 sm:px-4 rounded-2xl text-xs font-semibold active:scale-[0.98] border-teal-600/30 text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:border-teal-500/30 dark:hover:bg-teal-950/30"
+              className="h-10 px-3.5 sm:px-4 rounded-2xl text-xs font-semibold active:scale-[0.98]"
               leftIcon={<Download size={14} />}
               onClick={onDownloadDetail}
             >
@@ -134,7 +134,7 @@ export default function InvoiceHeader({
             <Button
               variant="outline"
               fullWidth={false}
-              className="h-10 px-3.5 sm:px-4 rounded-2xl text-xs font-semibold active:scale-[0.98] border-teal-600/30 text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:border-teal-500/30 dark:hover:bg-teal-950/30"
+              className="h-10 px-3.5 sm:px-4 rounded-2xl text-xs font-semibold active:scale-[0.98]"
               leftIcon={<Download size={14} />}
               onClick={onDownloadSkuWise}
             >
@@ -146,7 +146,7 @@ export default function InvoiceHeader({
             <Button
               variant="outline"
               fullWidth={false}
-              className="h-10 px-3.5 sm:px-4 rounded-2xl text-xs font-semibold active:scale-[0.98] border-teal-600/30 text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:border-teal-500/30 dark:hover:bg-teal-950/30"
+              className="h-10 px-3.5 sm:px-4 rounded-2xl text-xs font-semibold active:scale-[0.98]"
               leftIcon={<Download size={14} />}
               onClick={onDownloadTally}
             >

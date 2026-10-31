@@ -272,6 +272,44 @@ export const navItems: NavItem[] = [
     icon: Settings,
     children: [
       {
+        label: "Manage Company",
+        icon: Store,
+        children: [
+          {
+            label: "Company Profile",
+            href: "/dashboard/setting/company-profile",
+            defaultTimeAgo: "1d ago",
+          },
+          {
+            label: "Ledger Book",
+            href: "/dashboard/setting/manage-company/ledger-book",
+            defaultTimeAgo: "1d ago",
+          },
+          {
+            label: "Employee Profile",
+            href: "/dashboard/setting/manage-company/employee-profile",
+            defaultTimeAgo: "1d ago",
+          },
+          {
+            label: "Salaried Employee",
+            href: "/dashboard/setting/manage-company/salaried-employee",
+            defaultTimeAgo: "1d ago",
+          },
+        ],
+      },
+      {
+        label: "Manage Material",
+        icon: Layers,
+        href: "/dashboard/settings/manage-material/material-profile",
+        children: [
+          {
+            label: "Material Profile",
+            href: "/dashboard/settings/manage-material/material-profile",
+            defaultTimeAgo: "1d ago",
+          },
+        ],
+      },
+      {
         label: "Manage Users",
         icon: Users,
         children: [

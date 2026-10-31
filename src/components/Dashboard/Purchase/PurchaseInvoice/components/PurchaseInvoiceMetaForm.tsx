@@ -103,7 +103,7 @@ export default function PurchaseInvoiceMetaForm({
               disabled={disabled}
               onChange={(e) => onChange({ challanNo: e.target.value })}
               placeholder="Challan No"
-              className="w-full h-9 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 focus:outline-none transition-all"
+              className="w-full h-9 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 focus:outline-none transition-all"
             />
           )}
         </div>
@@ -133,7 +133,7 @@ export default function PurchaseInvoiceMetaForm({
             onChange={(e) => handleGstinChange(e.target.value)}
             placeholder="24XXXXXXXXXXXXX"
             maxLength={15}
-            className="w-full h-9 px-2.5 text-xs font-mono uppercase text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 focus:outline-none transition-all"
+            className="w-full h-9 px-2.5 text-xs font-mono uppercase text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 focus:outline-none transition-all"
           />
         </div>
 
@@ -149,7 +149,7 @@ export default function PurchaseInvoiceMetaForm({
             onChange={(e) => onChange({ stateCode: e.target.value.slice(0, 2) })}
             placeholder="24"
             maxLength={2}
-            className="w-full h-9 px-2.5 text-xs font-mono text-center font-bold text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 focus:outline-none transition-all"
+            className="w-full h-9 px-2.5 text-xs font-mono text-center font-bold text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 focus:outline-none transition-all"
           />
         </div>
 
@@ -164,7 +164,7 @@ export default function PurchaseInvoiceMetaForm({
             disabled={disabled}
             onChange={(e) => onChange({ brokerName: e.target.value })}
             placeholder="Broker"
-            className="w-full h-9 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 focus:outline-none transition-all"
+            className="w-full h-9 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 focus:outline-none transition-all"
           />
         </div>
 
@@ -179,7 +179,7 @@ export default function PurchaseInvoiceMetaForm({
               onClick={() => onChange({ editOn: !formData.editOn })}
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${
                 formData.editOn
-                  ? "bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/30"
+                  ? "bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-amber-500/15 dark:text-[#F5C451] dark:border-amber-500/30"
                   : "bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400"
               }`}
             >
@@ -192,7 +192,7 @@ export default function PurchaseInvoiceMetaForm({
             disabled={disabled}
             onChange={(e) => onChange({ consigneeName: e.target.value })}
             placeholder="Consignee"
-            className="w-full h-9 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 focus:outline-none transition-all"
+            className="w-full h-9 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 focus:outline-none transition-all"
           />
         </div>
       </div>

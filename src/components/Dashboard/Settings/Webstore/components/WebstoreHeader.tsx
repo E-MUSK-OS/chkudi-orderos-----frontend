@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Plus, Upload, Download, ArrowLeft, Save, Store } from "lucide-react";
-import Button from "@/components/ui/Button";
 import { WebstoreViewMode } from "../types/webstore.types";
 
 interface WebstoreHeaderProps {
@@ -41,7 +40,7 @@ export default function WebstoreHeader({
           </h1>
         </div>
 
-        {/* Breadcrumb matching Screenshot: Setting / Webstore */}
+        {/* Breadcrumb: Settings / Webstore */}
         <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
           <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
             Settings
@@ -52,7 +51,7 @@ export default function WebstoreHeader({
             onClick={viewMode !== "list" ? onBack : undefined}
             className={`${
               viewMode !== "list"
-                ? "text-[#0284C7] dark:text-[#38BDF8] hover:underline cursor-pointer"
+                ? "text-[#B88728] dark:text-[#E8C16D] hover:underline cursor-pointer"
                 : "text-slate-700 dark:text-slate-200"
             }`}
           >
@@ -73,69 +72,69 @@ export default function WebstoreHeader({
         </div>
       </div>
 
-      {/* Top Right Action Buttons matching Challan header style */}
+      {/* Top Right Action Buttons */}
       <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
         {viewMode === "list" ? (
           <>
-            <Button
-              variant="outline"
-              fullWidth={false}
-              className="h-10 sm:h-11 px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-semibold active:scale-[0.98]"
-              leftIcon={<Upload size={16} />}
-              onClick={onUploadOrder}
-            >
-              Upload Order
-            </Button>
+            {onUploadOrder && (
+              <button
+                type="button"
+                onClick={onUploadOrder}
+                className="inline-flex items-center gap-2 h-10 sm:h-11 px-4 sm:px-5 rounded-2xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] hover:bg-slate-50 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-[0.98]"
+              >
+                <Upload size={16} />
+                <span>Upload Order</span>
+              </button>
+            )}
 
-            <Button
-              variant="outline"
-              fullWidth={false}
-              className="h-10 sm:h-11 px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-semibold active:scale-[0.98]"
-              leftIcon={<Download size={16} />}
-              onClick={onDownloadListings}
-            >
-              Download Existing Listing [All]
-            </Button>
+            {onDownloadListings && (
+              <button
+                type="button"
+                onClick={onDownloadListings}
+                className="inline-flex items-center gap-2 h-10 sm:h-11 px-4 sm:px-5 rounded-2xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] hover:bg-slate-50 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-[0.98]"
+              >
+                <Download size={16} />
+                <span>Download Existing Listing [All]</span>
+              </button>
+            )}
 
-            <Button
-              variant="primary"
-              fullWidth={false}
-              className="h-10 sm:h-11 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98] shrink-0"
-              leftIcon={<Plus size={18} />}
+            <button
+              type="button"
               onClick={onAddNew}
+              className="inline-flex items-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-2xl bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.97] text-slate-900 text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-md shadow-[#F5C451]/15 shrink-0 dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)] dark:hover:brightness-105"
             >
-              Create Webstore
-            </Button>
+              <Plus size={18} className="stroke-[2.5]" />
+              <span>Create Webstore</span>
+            </button>
           </>
         ) : (
           <>
-            <Button
-              variant="outline"
-              fullWidth={false}
-              className="h-10 sm:h-11 px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-semibold active:scale-[0.98]"
-              leftIcon={<ArrowLeft size={16} />}
+            <button
+              type="button"
               onClick={onBack}
               disabled={saving}
+              className="inline-flex items-center gap-2 h-10 sm:h-11 px-4 sm:px-5 rounded-2xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] hover:bg-slate-50 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50"
             >
-              Back to List
-            </Button>
+              <ArrowLeft size={16} />
+              <span>Back to List</span>
+            </button>
 
-            <Button
+            <button
               type="submit"
               form="webstore-form"
-              variant="primary"
-              fullWidth={false}
-              className="h-10 sm:h-11 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98] shrink-0"
-              leftIcon={<Save size={18} />}
               onClick={onSave}
               disabled={saving}
+              className="inline-flex items-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-2xl bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.97] text-slate-900 text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-md shadow-[#F5C451]/15 shrink-0 dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)] dark:hover:brightness-105 disabled:opacity-50"
             >
-              {saving
-                ? "Saving..."
-                : viewMode === "edit"
-                ? "Update Webstore"
-                : "Save Webstore"}
-            </Button>
+              <Save size={18} />
+              <span>
+                {saving
+                  ? "Saving..."
+                  : viewMode === "edit"
+                  ? "Update Webstore"
+                  : "Save Webstore"}
+              </span>
+            </button>
           </>
         )}
       </div>

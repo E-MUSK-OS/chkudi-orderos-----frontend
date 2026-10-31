@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Edit2, ArrowUpDown, Printer, FileText } from "lucide-react";
+import { Edit2, ArrowUpDown, Printer, FileText, Eye, Trash2 } from "lucide-react";
 import { PurchaseInvoice } from "../types/purchaseInvoice.types";
 import Pagination from "@/components/ui/Pagination";
 
@@ -9,6 +9,7 @@ interface PurchaseInvoiceTableProps {
   invoices: PurchaseInvoice[];
   loading: boolean;
   onEdit: (invoice: PurchaseInvoice) => void;
+  onView?: (invoice: PurchaseInvoice) => void;
   onDelete?: (invoice: PurchaseInvoice) => void;
   onCreditNote?: (invoice: PurchaseInvoice) => void;
   onPrint?: (invoice: PurchaseInvoice) => void;
@@ -86,6 +87,8 @@ export default function PurchaseInvoiceTable({
   invoices,
   loading,
   onEdit,
+  onView,
+  onDelete,
   onCreditNote,
   onPrint,
   onPrintMultiple,
@@ -188,146 +191,139 @@ export default function PurchaseInvoiceTable({
                     paginatedInvoices.every((inv) => selectedIds.includes(inv.id))
                   }
                   onChange={toggleSelectAll}
-                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
+                  style={{ accentColor: "#0A0E1A" }}
                 />
               </th>
 
-              <th className="px-3 py-3 text-center text-xs font-bold text-white dark:text-[#E8C16D] w-10">
+              <th className="px-3 py-3 text-center text-xs font-semibold text-[#E8C16D] w-10">
                 No.
               </th>
 
               <th
                 onClick={() => handleSort("billingPartyName")}
-                className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1">
                   <span>Party Name</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "billingPartyName" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("invoiceType")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1">
                   <span>Invoice Type</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "invoiceType" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("invoiceNo")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1">
                   <span>OC Invoice No</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "invoiceNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("invoiceDate")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1">
                   <span>Date</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "invoiceDate" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("challanNo")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1">
                   <span>OC Challan No</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "challanNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center gap-1">
                   <span>Challan Ref No</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("totalQuantity")}
-                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Qty</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "totalQuantity" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("netAmount")}
-                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Net Amount</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "netAmount" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>CN Amount</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>DCN Amount</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>Received</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>Pending</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("status")}
-                className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>Status</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "status" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] w-10 whitespace-nowrap">
-                Edit
-              </th>
-
-              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] w-10 whitespace-nowrap">
-                CN
-              </th>
-
-              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] w-10">
-                <button
-                  type="button"
-                  onClick={handlePrintSelected}
-                  className="w-7 h-7 rounded bg-[#495057] hover:bg-[#343A40] text-white flex items-center justify-center mx-auto transition-colors cursor-pointer shadow-2xs"
-                  title="Print Selected Invoices"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                </button>
+              <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span>Actions</span>
+                  {selectedIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handlePrintSelected}
+                      title={`Print ${selectedIds.length} Selected Invoices`}
+                      className="inline-flex items-center justify-center p-1 rounded-lg text-[#E8C16D] hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </th>
             </tr>
           </thead>
@@ -335,16 +331,16 @@ export default function PurchaseInvoiceTable({
           <tbody className="divide-y divide-slate-100 text-xs sm:text-sm dark:divide-white/[0.06]">
             {loading ? (
               <tr>
-                <td colSpan={18} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={16} className="py-12 text-center text-slate-500 dark:text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E8C16D] dark:border-[#F5C451] border-t-transparent" />
                     <span>Loading purchase invoices...</span>
                   </div>
                 </td>
               </tr>
             ) : paginatedInvoices.length === 0 ? (
               <tr>
-                <td colSpan={18} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={16} className="py-12 text-center text-slate-500 dark:text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <p className="font-semibold text-slate-700 dark:text-slate-300">
                       No purchase invoices found
@@ -380,7 +376,8 @@ export default function PurchaseInvoiceTable({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelectOne(inv.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
+                        className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
+                  style={{ accentColor: "#0A0E1A" }}
                       />
                     </td>
 
@@ -462,40 +459,54 @@ export default function PurchaseInvoiceTable({
                       </span>
                     </td>
 
-                    {/* Edit Button */}
-                    <td className="px-2 py-2.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() => onEdit(inv)}
-                        title="Edit Invoice"
-                        className="w-7 h-7 rounded bg-[#2B78E4] hover:bg-[#1E62C4] text-white inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-
-                    {/* CN Button */}
-                    <td className="px-2 py-2.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() => (onCreditNote ? onCreditNote(inv) : onEdit(inv))}
-                        title="Credit Note"
-                        className="w-7 h-7 rounded bg-[#17A2B8] hover:bg-[#138496] text-white inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-
-                    {/* Print Button */}
-                    <td className="px-2 py-2.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() => (onPrint ? onPrint(inv) : window.print())}
-                        title="Print Invoice"
-                        className="w-7 h-7 rounded bg-[#495057] hover:bg-[#343A40] text-white inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                      </button>
+                    {/* Actions */}
+                    <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1">
+                        {onView && (
+                          <button
+                            type="button"
+                            onClick={() => onView(inv)}
+                            title="View Invoice Details"
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onEdit(inv)}
+                          title="Edit Invoice"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => (onCreditNote ? onCreditNote(inv) : onEdit(inv))}
+                          title="Credit Note"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-[#B88728] hover:text-[#9A701E] hover:bg-[#FFF9EC] transition-all dark:text-[#F5C451] dark:hover:text-[#F5C451] dark:hover:bg-amber-500/10 cursor-pointer"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => (onPrint ? onPrint(inv) : window.print())}
+                          title="Print Invoice"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </button>
+                        {onDelete && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(inv)}
+                            title="Delete Invoice"
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/30 cursor-pointer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -506,27 +517,28 @@ export default function PurchaseInvoiceTable({
       </div>
 
       {/* Pagination Footer */}
-      {!loading && sortedInvoices.length > 0 && (
-        <div className="border-t border-slate-100 px-4 py-3 dark:border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{(page - 1) * limit + 1}</span> -{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.min(page * limit, total)}</span> of{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{total}</span> records
-          </p>
-
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            totalRecords={total}
-            limit={limit}
-            onPageChange={setPage}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit);
-              setPage(1);
-            }}
-            variant="gold"
-          />
-        </div>
+      {!loading && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalRecords={total}
+          total={total}
+          limit={limit}
+          pageSize={limit}
+          itemName="records"
+          variant="light"
+          options={[10, 20, 50, 100]}
+          className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          onPageSizeChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
     </div>
   );

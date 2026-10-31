@@ -68,6 +68,8 @@ export interface WebstoreFilterState {
   isActive: "All" | "Active" | "Inactive";
   sortBy: string;
   sortOrder: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
 }
 
 export type WebstoreViewMode = "list" | "create" | "edit";

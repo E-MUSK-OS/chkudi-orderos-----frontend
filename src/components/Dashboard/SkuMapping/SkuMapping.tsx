@@ -47,7 +47,7 @@ export default function SkuMappingPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-                Godown Inventory Sheet
+                Manege Label Printing and SKU Mappings
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
                 Manage SKU barcode mappings and generate godown inventory sheets for warehouse operations.

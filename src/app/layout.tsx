@@ -93,7 +93,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning className="min-h-full flex flex-col">
+      <body suppressHydrationWarning className="h-full overflow-hidden flex flex-col">
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

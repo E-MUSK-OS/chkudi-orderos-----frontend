@@ -755,7 +755,12 @@ export default function SalesInvoicePage() {
               loading={listLoading}
               selectedIds={selectedInvoiceIds}
               onSelectionChange={setSelectedInvoiceIds}
+              onView={(inv) => populateFromInvoice(inv)}
               onEdit={(inv) => populateFromInvoice(inv)}
+              onDelete={(inv) => {
+                setDeletingInvoice(inv);
+                setDeleteModalOpen(true);
+              }}
               onCreditNote={(inv) => {
                 populateFromInvoice(inv);
                 toast.info(`Editing invoice #${inv.invoiceNo}`);

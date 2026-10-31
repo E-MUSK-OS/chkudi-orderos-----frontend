@@ -24,71 +24,73 @@ export default function WebstoreStatsBanner({ stores }: WebstoreStatsBannerProps
       value: totalStores,
       subtext: "Connected Channels",
       icon: Store,
-      color: "text-[#0284C7] dark:text-[#38BDF8]",
-      bg: "bg-[#0284C7]/10 dark:bg-[#0284C7]/20",
+      iconBg:
+        "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       label: "Active Stores",
       value: activeStores,
       subtext: `${totalStores > 0 ? Math.round((activeStores / totalStores) * 100) : 0}% Active Rate`,
       icon: CheckCircle2,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-500/10 dark:bg-emerald-500/20",
+      iconBg:
+        "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       label: "Inactive Stores",
       value: inactiveStores,
       subtext: "Paused Integrations",
       icon: XCircle,
-      color: "text-slate-500 dark:text-slate-400",
-      bg: "bg-slate-500/10 dark:bg-slate-500/20",
+      iconBg:
+        "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       label: "Sub-SKUs Mapped",
       value: totalSkus.toLocaleString(),
       subtext: "Across All Stores",
       icon: PackageCheck,
-      color: "text-[#B88728] dark:text-[#E8C16D]",
-      bg: "bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30",
+      iconBg:
+        "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       label: "Channels",
       value: uniqueMarketplaces,
       subtext: "Marketplace Platforms",
       icon: Layers,
-      color: "text-purple-600 dark:text-purple-400",
-      bg: "bg-purple-500/10 dark:bg-purple-500/20",
+      iconBg:
+        "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+    <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
       {stats.map((stat, i) => {
         const Icon = stat.icon;
         return (
           <div
             key={i}
-            className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xs"
+            className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/50 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50"
           >
-            <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.bg} ${stat.color}`}
-            >
-              <Icon className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
-                {stat.label}
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D] truncate">
+                  {stat.label}
+                </p>
+                <h3 className="mt-2 text-2xl sm:text-3xl font-bold text-[#0A0E1A] dark:text-white truncate">
+                  {stat.value}
+                </h3>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {stat.subtext}
+                </p>
               </div>
-              <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-                {stat.value}
-              </div>
-              <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
-                {stat.subtext}
+              <div
+                className={`grid h-12 w-12 place-items-center rounded-2xl border shrink-0 ${stat.iconBg}`}
+              >
+                <Icon className="h-6 w-6" />
               </div>
             </div>
           </div>
         );
       })}
-    </div>
+    </section>
   );
 }

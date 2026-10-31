@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,7 +36,6 @@ interface SidebarProps {
 }
 
 import { navItems, type NavItem } from "@/constants/navigation";
-
 export default function Sidebar({
   sidebarOpen,
   sidebarCollapsed,
@@ -117,15 +116,19 @@ export default function Sidebar({
       const nextTrail = [...trail, item.label];
 
       if (
-        (item.href && path === item.href) ||
+        (item.href && (path === item.href || path.startsWith(item.href + "/"))) ||
         (item.href === "/dashboard/purchase/finish-goods/invoice" && path === "/dashboard/purchase-invoice") ||
         (item.href === "/dashboard/purchase/finish-goods/challan" && path === "/dashboard/purchase-challan") ||
         ((item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
           path.startsWith("/dashboard/settings/manage-product")) ||
+        ((item.href === "/dashboard/settings/manage-material" || item.href === "/dashboard/settings/manage-material/material-profile") &&
+          path.startsWith("/dashboard/settings/manage-material")) ||
         (item.href === "/dashboard/settings/labels/label-config" &&
           (path === "/dashboard/settings/labels/label-config" || path.startsWith("/dashboard/settings/labels/label-config"))) ||
         (item.href === "/dashboard/settings/labels/label-print" &&
-          path === "/dashboard/settings/labels/label-print")
+          path === "/dashboard/settings/labels/label-print") ||
+        (item.href === "/dashboard/setting/company-profile" &&
+          (path === "/dashboard/setting/manage-company/company-profile" || path.startsWith("/dashboard/setting/company-profile") || path.startsWith("/dashboard/setting/manage-company/company-profile")))
       ) {
         return trail;
       }
@@ -155,7 +158,13 @@ export default function Sidebar({
   }, [pathname]);
 
   const isMenuActive = (item: NavItem): boolean => {
-    if (item.href && pathname === item.href) {
+    if (item.href && (pathname === item.href || pathname.startsWith(item.href + "/"))) {
+      return true;
+    }
+    if (
+      item.href === "/dashboard/setting/company-profile" &&
+      pathname === "/dashboard/setting/manage-company/company-profile"
+    ) {
       return true;
     }
     if (
@@ -173,6 +182,12 @@ export default function Sidebar({
     if (
       (item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
       pathname.startsWith("/dashboard/settings/manage-product")
+    ) {
+      return true;
+    }
+    if (
+      (item.href === "/dashboard/settings/manage-material" || item.href === "/dashboard/settings/manage-material/material-profile") &&
+      pathname.startsWith("/dashboard/settings/manage-material")
     ) {
       return true;
     }
@@ -469,3 +484,4 @@ export default function Sidebar({
     </>
   );
 }
+

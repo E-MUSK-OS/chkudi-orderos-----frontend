@@ -82,22 +82,22 @@ export default function WebstoreForm({
     initialData?.marketplaceLogo || ""
   );
   const [storeName, setStoreName] = useState<string>(
-    initialData?.storeName || ""
+    initialData?.storeName ?? "Chakudee Fashion - DROPSHIP"
   );
   const [parentOrChild, setParentOrChild] = useState<string>(
     initialData?.parentOrChild || "Parent"
   );
   const [registeredEmail, setRegisteredEmail] = useState<string>(
-    initialData?.registeredEmail || ""
+    initialData?.registeredEmail ?? "seller@domain.com"
   );
   const [contactUsEmail, setContactUsEmail] = useState<string>(
-    initialData?.contactUsEmail || ""
+    initialData?.contactUsEmail ?? "support@domain.com"
   );
   const [registeredPhone, setRegisteredPhone] = useState<string>(
-    initialData?.registeredPhone || ""
+    initialData?.registeredPhone ?? "+91 9876543210"
   );
   const [contactUsPhone, setContactUsPhone] = useState<string>(
-    initialData?.contactUsPhone || ""
+    initialData?.contactUsPhone ?? "+91 9876543210"
   );
   const [registrationDate, setRegistrationDate] = useState<string>(
     initialData?.registrationDate
@@ -106,20 +106,32 @@ export default function WebstoreForm({
   );
 
   // 2. Address Fields
-  const [billTo, setBillTo] = useState<string>(initialData?.billTo || "");
-  const [address1, setAddress1] = useState<string>(initialData?.address1 || "");
-  const [address2, setAddress2] = useState<string>(initialData?.address2 || "");
-  const [city, setCity] = useState<string>(initialData?.city || "");
-  const [pincode, setPincode] = useState<string>(initialData?.pincode || "");
-  const [state, setState] = useState<string>(initialData?.state || "");
-  const [gstNo, setGstNo] = useState<string>(initialData?.gstNo || "");
+  const [billTo, setBillTo] = useState<string>(
+    initialData?.billTo ?? "Chakudee Fashion Pvt Ltd"
+  );
+  const [address1, setAddress1] = useState<string>(
+    initialData?.address1 ?? "101, Textile Market"
+  );
+  const [address2, setAddress2] = useState<string>(
+    initialData?.address2 ?? "Ring Road"
+  );
+  const [city, setCity] = useState<string>(initialData?.city ?? "Surat");
+  const [pincode, setPincode] = useState<string>(
+    initialData?.pincode ?? "395002"
+  );
+  const [state, setState] = useState<string>(
+    initialData?.state ?? "Gujarat"
+  );
+  const [gstNo, setGstNo] = useState<string>(
+    initialData?.gstNo ?? "24AAAAA0000A1Z5"
+  );
 
   // 3. Account Fields
   const [bankAccount, setBankAccount] = useState<string>(
     initialData?.bankAccount || "BOI Saving A/C 7199"
   );
   const [bankIfscCode, setBankIfscCode] = useState<string>(
-    initialData?.bankIfscCode || ""
+    initialData?.bankIfscCode ?? "BKID0002199"
   );
   const [lastPaymentDate, setLastPaymentDate] = useState<string>(
     initialData?.lastPaymentDate
@@ -145,7 +157,7 @@ export default function WebstoreForm({
   const [isManifestBasedSalesInvoice, setIsManifestBasedSalesInvoice] =
     useState<boolean>(initialData?.isManifestBasedSalesInvoice ?? false);
   const [warehouseCode, setWarehouseCode] = useState<string>(
-    initialData?.warehouseCode || ""
+    initialData?.warehouseCode ?? "WH-001"
   );
 
   // 5. Legacy API Configuration
@@ -186,13 +198,13 @@ export default function WebstoreForm({
     initialData?.spMarketplaceId || "A21TJRUUN4KGV"
   );
   const [spClientId, setSpClientId] = useState<string>(
-    initialData?.spClientId || ""
+    initialData?.spClientId ?? "amzn1.application-oa2-client.a1b2c3d4e5f6"
   );
   const [spClientSecret, setSpClientSecret] = useState<string>(
     initialData?.spClientSecret || ""
   );
   const [spAwsAccessKey, setSpAwsAccessKey] = useState<string>(
-    initialData?.spAwsAccessKey || ""
+    initialData?.spAwsAccessKey ?? "AKIA5HMFMRHKSOFGVNET"
   );
   const [spAwsSecretKey, setSpAwsSecretKey] = useState<string>(
     initialData?.spAwsSecretKey || ""
@@ -272,22 +284,22 @@ export default function WebstoreForm({
       setCode(nextCode);
       setMarketplaceName("Amazon");
       setMarketplaceLogo("");
-      setStoreName("");
+      setStoreName("Chakudee Fashion - DROPSHIP");
       setParentOrChild("Parent");
-      setRegisteredEmail("");
-      setContactUsEmail("");
-      setRegisteredPhone("");
-      setContactUsPhone("");
+      setRegisteredEmail("seller@domain.com");
+      setContactUsEmail("support@domain.com");
+      setRegisteredPhone("+91 9876543210");
+      setContactUsPhone("+91 9876543210");
       setRegistrationDate(new Date().toISOString().split("T")[0]);
-      setBillTo("");
-      setAddress1("");
-      setAddress2("");
-      setCity("");
-      setPincode("");
-      setState("");
-      setGstNo("");
+      setBillTo("Chakudee Fashion Pvt Ltd");
+      setAddress1("101, Textile Market");
+      setAddress2("Ring Road");
+      setCity("Surat");
+      setPincode("395002");
+      setState("Gujarat");
+      setGstNo("24AAAAA0000A1Z5");
       setBankAccount("BOI Saving A/C 7199");
-      setBankIfscCode("");
+      setBankIfscCode("BKID0002199");
       setLastPaymentDate("");
       setIsActive(true);
       setReturnActive(true);
@@ -295,7 +307,7 @@ export default function WebstoreForm({
       setIsOnResellerBased(false);
       setValidateStoreBeforeUploading(false);
       setIsManifestBasedSalesInvoice(false);
-      setWarehouseCode("");
+      setWarehouseCode("WH-001");
       setSellerId("");
       setSecretKey("");
       setMarketplaceId("");
@@ -308,7 +320,10 @@ export default function WebstoreForm({
       setRefreshToken("");
       setAccessToken("");
       setSpMarketplaceId("A21TJRUUN4KGV");
-      setSpClientId("");
+      setSpClientId("amzn1.application-oa2-client.a1b2c3d4e5f6");
+      setSpClientSecret("");
+      setSpAwsAccessKey("AKIA5HMFMRHKSOFGVNET");
+      setSpAwsSecretKey("");
     }
     setSpapiTestResult(null);
   }, [initialData, nextCode]);
@@ -396,6 +411,38 @@ export default function WebstoreForm({
   };
 
 
+  const handleFillDemoData = () => {
+    setMarketplaceName("Amazon");
+    setStoreName("Chakudee Fashion - DROPSHIP");
+    setParentOrChild("Parent");
+    setRegisteredEmail("seller@domain.com");
+    setContactUsEmail("support@domain.com");
+    setRegisteredPhone("+91 9876543210");
+    setContactUsPhone("+91 9876543210");
+    setRegistrationDate(new Date().toISOString().split("T")[0]);
+    setBillTo("Chakudee Fashion Pvt Ltd");
+    setAddress1("101, Textile Market");
+    setAddress2("Ring Road");
+    setCity("Surat");
+    setPincode("395002");
+    setState("Gujarat");
+    setGstNo("24AAAAA0000A1Z5");
+    setBankAccount("BOI Saving A/C 7199");
+    setBankIfscCode("BKID0002199");
+    setIsActive(true);
+    setReturnActive(true);
+    setIsOnTpBased(false);
+    setIsOnResellerBased(false);
+    setValidateStoreBeforeUploading(false);
+    setIsManifestBasedSalesInvoice(false);
+    setWarehouseCode("WH-001");
+    setEndPoints("https://mws.amazonservices.in");
+    setSpMarketplaceId("A21TJRUUN4KGV");
+    setSpClientId("amzn1.application-oa2-client.a1b2c3d4e5f6");
+    setSpAwsAccessKey("AKIA5HMFMRHKSOFGVNET");
+    toast.success("Sample webstore information populated.");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -476,6 +523,23 @@ export default function WebstoreForm({
 
   return (
     <form id="webstore-form" onSubmit={handleSubmit} className="space-y-4">
+      {/* Autofill Demo Data Helper Banner */}
+      {!isEdit && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FFF9EC]/80 dark:bg-[#1A160E]/50 text-xs">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+            <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">Quick Setup:</span>
+            <span>Pre-populate starter configuration and credentials matching your marketplace specifications.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleFillDemoData}
+            className="px-3.5 py-1.5 rounded-xl bg-[#F5C451] hover:bg-[#E8B83D] active:scale-95 text-[#0A0E1A] font-bold text-xs shadow-sm transition-all cursor-pointer shrink-0"
+          >
+            Auto-fill Sample Info
+          </button>
+        </div>
+      )}
+
       {/* 2-Column Top Layout matching Screenshot 3 & 4 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* ===================== LEFT COLUMN ===================== */}
