@@ -103,7 +103,7 @@ export default function ChallanTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1000px] text-left border-collapse">
           {/* Header styled with SaaS Dark Obsidian & Gold palette */}
-          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11]">
+          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11] select-none">
             <tr>
               <th className="px-4 py-3.5 text-center w-12">
                 <input
@@ -113,81 +113,82 @@ export default function ChallanTable({
                     paginatedChallans.every((c) => selectedIds.includes(c.id))
                   }
                   onChange={toggleSelectAll}
-                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
+                  style={{ accentColor: "#0A0E1A" }}
                 />
               </th>
 
               <th
                 onClick={() => handleSort("challanNo")}
-                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity"
+                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Challan No</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "challanNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("partyName")}
-                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity"
+                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Party Name</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "partyName" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("challanRefNo")}
-                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity"
+                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Ref No</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "challanRefNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort("challanDate")}
-                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity"
+                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Date</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "challanDate" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
                 Contact
               </th>
 
               <th
                 onClick={() => handleSort("totalQuantity")}
-                className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] cursor-pointer hover:opacity-80 transition-opacity"
+                className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center justify-center gap-1.5">
                   <span>Quantity</span>
-                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  <ArrowUpDown className={`h-3 w-3 ${sortField === "totalQuantity" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
                 Prepared By
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
                 Category
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
                 Stock Out
               </th>
 
-              <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
                 Status
               </th>
 
-              <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
                 Actions
               </th>
             </tr>
@@ -237,7 +238,8 @@ export default function ChallanTable({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelectOne(ch.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] dark:checked:bg-[#F5C451] cursor-pointer"
+                        className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
+                  style={{ accentColor: "#0A0E1A" }}
                       />
                     </td>
 
@@ -349,7 +351,7 @@ export default function ChallanTable({
                             }
                           }}
                           title="Generate / View Sales Invoice"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-teal-600 hover:text-teal-700 hover:bg-teal-50 transition-all dark:text-teal-400 dark:hover:text-teal-300 dark:hover:bg-teal-950/30 cursor-pointer"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-[#B88728] hover:text-[#9A701E] hover:bg-[#FFF9EC] transition-all dark:text-[#F5C451] dark:hover:text-[#F5C451] dark:hover:bg-amber-500/10 cursor-pointer"
                         >
                           <ReceiptText className="h-4 w-4" />
                         </button>
@@ -374,18 +376,22 @@ export default function ChallanTable({
       </div>
 
       {/* Pagination Footer */}
-      {total > 0 && (
-        <div className="border-t border-slate-100 px-4 py-3 dark:border-white/[0.06]">
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            totalRecords={total}
-            limit={limit}
-            onPageChange={setPage}
-            onLimitChange={setLimit}
-            variant="gold"
-          />
-        </div>
+      {!loading && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalRecords={total}
+          total={total}
+          limit={limit}
+          pageSize={limit}
+          itemName="records"
+          variant="light"
+          options={[10, 20, 50, 100]}
+          className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+          onPageSizeChange={setLimit}
+        />
       )}
     </div>
   );

@@ -65,15 +65,14 @@ export default function WebstoreCardGrid({
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm">
           You haven't registered any marketplace webstores yet or none match your filter criteria.
         </p>
-        <Button
-          variant="primary"
-          fullWidth={false}
+        <button
+          type="button"
           onClick={onAddNew}
-          leftIcon={<Plus size={18} />}
-          className="mt-5 h-10 px-6 text-xs sm:text-sm font-bold rounded-2xl active:scale-[0.98]"
+          className="mt-5 inline-flex items-center gap-2 h-10 px-6 text-xs sm:text-sm font-bold rounded-2xl bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.97] text-slate-900 shadow-md shadow-[#F5C451]/15 cursor-pointer transition-all dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)]"
         >
-          Create Webstore
-        </Button>
+          <Plus size={18} className="stroke-[2.5]" />
+          <span>Create Webstore</span>
+        </button>
       </div>
     );
   }

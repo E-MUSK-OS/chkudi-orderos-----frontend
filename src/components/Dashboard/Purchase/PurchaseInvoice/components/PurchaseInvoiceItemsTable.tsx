@@ -223,7 +223,7 @@ export default function PurchaseInvoiceItemsTable({
                       handleItemFieldChange(index, "particular", e.target.value)
                     }
                     placeholder="Particular / SKU"
-                    className="w-full h-8 px-2 text-xs font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-2 text-xs font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -237,7 +237,7 @@ export default function PurchaseInvoiceItemsTable({
                       handleItemFieldChange(index, "hsn", e.target.value)
                     }
                     placeholder="HSN"
-                    className="w-full h-8 px-1.5 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -253,7 +253,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "quantity", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -269,7 +269,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "rate", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -285,7 +285,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "amount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -302,7 +302,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "discountPercent", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-right text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-right text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -318,7 +318,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "discountAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -334,7 +334,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "taxableAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -350,7 +350,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "sgstRate", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -366,7 +366,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "sgstAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -382,7 +382,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "cgstRate", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -398,7 +398,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "cgstAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -414,7 +414,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "igstRate", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -430,7 +430,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "igstAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -446,7 +446,7 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "total", e.target.value)
                     }
-                    className="w-full h-8 px-2 text-xs text-right font-mono font-bold text-slate-900 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-2 text-xs text-right font-mono font-bold text-slate-900 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
               </tr>

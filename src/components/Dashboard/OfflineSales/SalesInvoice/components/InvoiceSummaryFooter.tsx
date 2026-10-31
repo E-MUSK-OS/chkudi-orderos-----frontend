@@ -158,7 +158,7 @@ export default function InvoiceSummaryFooter({
               disabled={disabled}
               onChange={(e) => onChange({ remarks: e.target.value })}
               placeholder="Add any remarks or delivery terms..."
-              className="w-full p-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:outline-none resize-none"
+              className="w-full p-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none resize-none"
             />
           </div>
 
@@ -173,7 +173,7 @@ export default function InvoiceSummaryFooter({
               disabled={disabled}
               onChange={(e) => onChange({ ewayBillNo: e.target.value })}
               placeholder="Enter E-Way Bill Number"
-              className="w-full h-9 px-2.5 text-xs font-mono text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:outline-none"
+              className="w-full h-9 px-2.5 text-xs font-mono text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
             />
           </div>
 
@@ -189,7 +189,7 @@ export default function InvoiceSummaryFooter({
                 className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-white/[0.08]"
               >
                 <span>Select (0)</span>
-                <Play className="w-3 h-3 fill-emerald-500 text-emerald-500" />
+                <Play className="w-3 h-3 fill-[#B88728] text-[#B88728] dark:fill-[#F5C451] dark:text-[#F5C451]" />
               </button>
             </div>
 
@@ -203,11 +203,11 @@ export default function InvoiceSummaryFooter({
                 disabled={disabled}
                 onClick={handleToggleReceipt}
                 className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.hasReceipt ? "bg-teal-600" : "bg-slate-300 dark:bg-slate-700"
+                  formData.hasReceipt ? "bg-[#0A0E1A] dark:bg-[#F5C451]" : "bg-slate-300 dark:bg-slate-700"
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 shadow ring-0 transition duration-200 ease-in-out ${
                     formData.hasReceipt ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
@@ -268,7 +268,7 @@ export default function InvoiceSummaryFooter({
                 value={cleanDisplay(computedTotals.sgstAmount)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-teal-600 dark:text-teal-400 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -278,7 +278,7 @@ export default function InvoiceSummaryFooter({
                 value={cleanDisplay(computedTotals.cgstAmount)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-teal-600 dark:text-teal-400 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -288,17 +288,17 @@ export default function InvoiceSummaryFooter({
                 value={cleanDisplay(computedTotals.igstAmount)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-teal-600 dark:text-teal-400 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-teal-600 dark:text-teal-400">Total GST</span>
+              <span className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451]">Total GST</span>
               <input
                 type="text"
                 value={cleanDisplay(computedTotals.totalGst)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono font-bold text-xs text-teal-700 dark:text-teal-300 bg-white dark:bg-[#080B11] border border-teal-500/30 rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-1.5 text-right font-mono font-bold text-xs text-[#B88728] dark:text-[#F5C451] bg-[#FFF9EC]/40 dark:bg-[#1A160E] border border-[#E8C16D]/40 dark:border-[#F5C451]/30 rounded-lg focus:outline-none placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function InvoiceSummaryFooter({
                 checked={formData.applyRoundOff !== false}
                 disabled={disabled}
                 onChange={(e) => onChange({ applyRoundOff: e.target.checked })}
-                className="rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+                className="rounded text-[#B88728] dark:text-[#F5C451] focus:ring-[#F5C451] cursor-pointer accent-[#B88728] dark:accent-[#F5C451]"
               />
               <span>Round Off(%)</span>
             </label>
@@ -341,18 +341,18 @@ export default function InvoiceSummaryFooter({
           </div>
 
           {/* Net Amount - Highlight Box with Input */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-teal-600/10 dark:bg-teal-500/15 border border-teal-600/30 dark:border-teal-500/30 shadow-sm mt-2">
-            <span className="text-sm font-black uppercase tracking-wider text-teal-800 dark:text-teal-200">
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 dark:border-[#F5C451]/30 shadow-sm mt-2">
+            <span className="text-sm font-black uppercase tracking-wider text-[#0A0E1A] dark:text-white">
               Net Amount
             </span>
             <div className="flex items-center gap-1">
-              <span className="font-mono text-lg font-bold text-teal-700 dark:text-teal-300">₹</span>
+              <span className="font-mono text-lg font-bold text-[#B88728] dark:text-[#F5C451]">₹</span>
               <input
                 type="text"
                 value={cleanDisplay(computedTotals.netAmount)}
                 placeholder="0.00"
                 readOnly
-                className="w-44 h-10 px-3 text-right font-mono text-lg font-black text-teal-900 dark:text-white bg-white dark:bg-[#0F1626] border border-teal-500/40 rounded-xl focus:outline-none shadow-sm placeholder:text-slate-400"
+                className="w-44 h-10 px-3 text-right font-mono text-lg font-black text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0F1626] border border-[#E8C16D]/40 dark:border-[#F5C451]/40 rounded-xl focus:outline-none shadow-sm placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function InvoiceSummaryFooter({
                         onChange({ receivedAmount: val === "" ? 0 : Number(val) });
                       }}
                       placeholder="0"
-                      className="w-full h-8 pl-6 pr-2.5 text-right font-mono text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-teal-500 focus:outline-none"
+                      className="w-full h-8 pl-6 pr-2.5 text-right font-mono text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -520,7 +520,7 @@ export default function InvoiceSummaryFooter({
                         disabled={disabled}
                         onChange={(e) => onChange({ chequeNo: e.target.value })}
                         placeholder={getTransactionRefLabel(formData.transactionType)}
-                        className="w-full h-8 px-2.5 text-xs font-mono text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-teal-500 focus:outline-none"
+                        className="w-full h-8 px-2.5 text-xs font-mono text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
                       />
                     </div>
 
@@ -535,7 +535,7 @@ export default function InvoiceSummaryFooter({
                         disabled={disabled}
                         onChange={(e) => onChange({ bankName: e.target.value })}
                         placeholder="Bank Name"
-                        className="w-full h-8 px-2.5 text-xs text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-teal-500 focus:outline-none"
+                        className="w-full h-8 px-2.5 text-xs text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
                       />
                     </div>
                   </div>

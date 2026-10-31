@@ -48,7 +48,7 @@ export default function Button({
 }: ButtonProps) {
   const variants = {
     primary:
-      "bg-[#0A0E1A] text-white hover:bg-[#161D2E] dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)] dark:hover:brightness-105",
+      "bg-[#F5C451] text-[#0A0E1A] hover:bg-[#E8B83D] shadow-md shadow-[#F5C451]/15 active:scale-[0.98] dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)] dark:hover:brightness-105",
 
     secondary:
       "bg-[#E8C16D] text-black hover:bg-[#ddb75d] dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#E8B83D]",

@@ -38,7 +38,7 @@ export default function ChallanStats({ challans }: ChallanStatsProps) {
       value: totalQuantity.toLocaleString("en-IN"),
       subtext: "Units out for delivery",
       icon: PackageCheck,
-      iconBg: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40",
+      iconBg: "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       title: "Total Dispatch Value",
@@ -52,7 +52,7 @@ export default function ChallanStats({ challans }: ChallanStatsProps) {
       value: pendingCount,
       subtext: "Challans awaiting tax invoice",
       icon: Clock,
-      iconBg: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/40",
+      iconBg: "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
   ];
 

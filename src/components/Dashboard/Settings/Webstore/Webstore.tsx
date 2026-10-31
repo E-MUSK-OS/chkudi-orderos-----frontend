@@ -7,6 +7,7 @@ import WebstoreStatsBanner from "./components/WebstoreStatsBanner";
 import WebstoreFilterSortBar from "./components/WebstoreFilterSortBar";
 import WebstoreCardGrid from "./components/WebstoreCardGrid";
 import WebstoreTableView from "./components/WebstoreTableView";
+import WebstorePagination from "./components/WebstorePagination";
 import WebstoreForm from "./components/WebstoreForm";
 import DeleteWebstoreModal from "./components/DeleteWebstoreModal";
 import UploadOrderModal from "./components/UploadOrderModal";
@@ -24,6 +25,7 @@ export default function Webstore() {
   const [layoutMode, setLayoutMode] = useState<"grid" | "table">("grid");
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [stores, setStores] = useState<IWebstore[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedStore, setSelectedStore] = useState<IWebstore | null>(null);
   const [deletingStore, setDeletingStore] = useState<IWebstore | null>(null);
@@ -32,13 +34,15 @@ export default function Webstore() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [nextCode, setNextCode] = useState<number>(1);
 
-  // Filters State matching Image 1
+  // Filters State
   const [filters, setFilters] = useState<WebstoreFilterState>({
     search: "",
     marketplaceName: "All",
     isActive: "All",
     sortBy: "createdAt",
     sortOrder: "desc",
+    page: 1,
+    pageSize: 20,
   });
 
   const filtersRef = useRef(filters);
@@ -51,6 +55,7 @@ export default function Webstore() {
         const activeFilters = customFilters || filtersRef.current;
         const res = await webstoreService.getWebstores(activeFilters);
         setStores(res.data || []);
+        setTotal(res.meta?.total ?? res.data?.length ?? 0);
       } catch (err: any) {
         console.error(err);
         toast.error(err.message || "Failed to load webstores.");
@@ -216,6 +221,8 @@ export default function Webstore() {
       isActive: "All",
       sortBy: "createdAt",
       sortOrder: "desc",
+      page: 1,
+      pageSize: 20,
     };
     setFilters(initialFilters);
     filtersRef.current = initialFilters;
@@ -273,6 +280,18 @@ export default function Webstore() {
                 togglingId={togglingId}
                 filters={filters}
                 onSortToggle={handleSortToggle}
+                pagination={
+                  <WebstorePagination
+                    total={total || stores.length}
+                    page={filters.page || 1}
+                    pageSize={filters.pageSize || 20}
+                    onPageChange={(page) => handleFilterChange("page", page)}
+                    onPageSizeChange={(pageSize) => {
+                      handleFilterChange("pageSize", pageSize);
+                      handleFilterChange("page", 1);
+                    }}
+                  />
+                }
               />
             )}
           </div>
