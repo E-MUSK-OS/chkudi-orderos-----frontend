@@ -2,6 +2,7 @@ export const productDefaultValues = {
   productName: "",
   masterSku: "",
   sku: "",
+  marketplace: ["All"] as string[],
   brand: "No Brand",
   category: "",
   subCategory: "",
@@ -41,6 +42,16 @@ export interface OptionItem {
   label: string;
   value: string;
 }
+
+export const defaultMarketplaceOptions: OptionItem[] = [
+  { label: "All", value: "All" },
+  { label: "Myntra", value: "Myntra" },
+  { label: "Amazon", value: "Amazon" },
+  { label: "Flipkart", value: "Flipkart" },
+  { label: "Meesho", value: "Meesho" },
+];
+
+export const marketplaceOptions = defaultMarketplaceOptions;
 
 export const brandOptions: OptionItem[] = [
   { label: "No Brand", value: "No Brand" },

@@ -24,6 +24,7 @@ export interface Product {
   brand: string;
   category: string;
   sku?: string;
+  marketplace?: string | string[];
   subCategory?: string;
   unit?: string;
   sizeList?: string;
@@ -62,6 +63,7 @@ export interface ProductPayload {
   brand?: string;
   category: string;
   sku?: string;
+  marketplace?: string | string[];
   subCategory?: string;
   unit?: string;
   sizeList?: string;
@@ -114,6 +116,7 @@ export interface CreateProductPayload {
   brand?: string;
   category: string;
   sku?: string;
+  marketplace?: string | string[];
   subCategory?: string;
   unit?: string;
   sizeList?: string;

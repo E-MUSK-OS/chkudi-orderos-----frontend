@@ -14,6 +14,17 @@ export const productSchema = z.object({
   productName: z.string().trim().min(1, "Product Name is required"),
   masterSku: z.string().trim().min(1, "Master SKU is required"),
   sku: z.string().trim().optional().default(""),
+  marketplace: z
+    .array(z.string().trim())
+    .or(
+      z
+        .string()
+        .transform((val) =>
+          val ? val.split(",").map((s) => s.trim()).filter(Boolean) : ["All"]
+        )
+    )
+    .optional()
+    .default(["All"]),
   brand: z.string().trim().optional().default(""),
   category: z
     .string()

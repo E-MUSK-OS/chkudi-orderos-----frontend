@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import { ChevronDown, ChevronUp, Package, Layers, Tag } from "lucide-react";
+import { ChevronDown, ChevronUp, Package, Layers, Tag, Store } from "lucide-react";
 
 import type { Product } from "../types/product.types";
 import ProductStatusBadge from "./ProductStatusBadge";
@@ -356,6 +356,25 @@ export default function ProductTable({
                           return (
                             <span className="inline-flex items-center gap-1 rounded bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 text-[10px] text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20 font-semibold">
                               Gender: {effGender}
+                            </span>
+                          );
+                        })()}
+                        {(() => {
+                          const rawMkt = (product as any)?.marketplace;
+                          let mkts: string[] = [];
+                          if (Array.isArray(rawMkt)) {
+                            mkts = rawMkt.map((m) => String(m).trim()).filter(Boolean);
+                          } else if (typeof rawMkt === "string" && rawMkt.trim()) {
+                            mkts = rawMkt.split(",").map((m) => m.trim()).filter(Boolean);
+                          }
+                          if (mkts.length === 0) return null;
+                          return (
+                            <span
+                              className="inline-flex items-center gap-1 rounded bg-[#FFF9EC] dark:bg-[#F5C451]/10 px-1.5 py-0.5 text-[10px] text-[#B88728] dark:text-[#F5C451] border border-[#E8C16D]/40 dark:border-[#F5C451]/20 font-semibold"
+                              title={`Marketplace: ${mkts.join(", ")}`}
+                            >
+                              <Store className="h-2.5 w-2.5" />
+                              <span>{mkts.join(", ")}</span>
                             </span>
                           );
                         })()}

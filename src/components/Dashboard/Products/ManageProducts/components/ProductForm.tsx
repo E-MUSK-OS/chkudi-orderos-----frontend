@@ -28,6 +28,7 @@ import {
 import type { Product } from "../types/product.types";
 import {
   productCategoryOptions,
+  defaultMarketplaceOptions,
   brandOptions as defaultBrandOptions,
   unitOptions as defaultUnitOptions,
   genderOptions as defaultGenderOptions,
@@ -54,6 +55,7 @@ import type { ProductVariant } from "../types/productVariant.types";
 import { useDropdownOptions, useSaveDropdownOption } from "../hooks/useDropdownOptions";
 
 import DropdownWithOther, { type DropdownOption } from "./DropdownWithOther";
+import MarketplaceMultiSelect from "./MarketplaceMultiSelect";
 import ColorMultiSelect from "./ColorMultiSelect";
 import SizeMultiSelect from "./SizeMultiSelect";
 import ProductTabsNav, { type ProductActiveTab } from "./ProductTabsNav";
@@ -106,6 +108,7 @@ const defaultValues: ProductFormValues = {
   productName: "",
   masterSku: "",
   sku: "",
+  marketplace: ["All"],
   brand: "No Brand",
   category: "",
   subCategory: "",
@@ -455,6 +458,22 @@ export default function ProductForm({
     return Array.from(map.values());
   }, [dropdownData]);
 
+  const marketplaceOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = [...defaultMarketplaceOptions];
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "marketplace")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((o) => {
+      const v = o.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: o.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
   const rackOptions: DropdownOption[] = useMemo(() => {
     const list: DropdownOption[] = [...defaultRackOptions];
     const dbSaved = (dropdownData?.savedOptions || [])
@@ -697,6 +716,25 @@ export default function ProductForm({
         }
       }
 
+      // 4.5 Extract Marketplace
+      let initialMarketplace: string[] = ["All"];
+      const rawMkt = (activeProduct as any)?.marketplace;
+      if (Array.isArray(rawMkt) && rawMkt.length > 0) {
+        initialMarketplace = rawMkt;
+      } else if (typeof rawMkt === "string" && rawMkt.trim()) {
+        initialMarketplace = rawMkt.split(",").map((s: string) => s.trim()).filter(Boolean);
+      } else {
+        const mktAttr = (activeProduct.attributes || []).find(
+          (a: any) => (a.attributeName || "").toLowerCase().trim() === "marketplace"
+        );
+        if (mktAttr?.attributeValue?.trim()) {
+          initialMarketplace = mktAttr.attributeValue.split(",").map((s: string) => s.trim()).filter(Boolean);
+        }
+      }
+      if (!initialMarketplace || initialMarketplace.length === 0) {
+        initialMarketplace = ["All"];
+      }
+
       // 5. Extract Reference Party
       let initialReferenceParty = (activeProduct.referenceParty || "").trim();
       if (!initialReferenceParty) {
@@ -773,7 +811,7 @@ export default function ProductForm({
       const customExistingAttrs = (activeProduct.attributes || [])
         .filter((a: any) => {
           const lower = (a.attributeName || "").toLowerCase().trim();
-          return !["colour", "color", "size", "gender"].includes(lower);
+          return !["colour", "color", "size", "gender", "marketplace"].includes(lower);
         })
         .map((a: any) => {
           const matchedValues = allVariantAttrs
@@ -802,7 +840,7 @@ export default function ProductForm({
       allVariantAttrs.forEach((va: any) => {
         const name = (va.productAttribute?.attributeName || "").trim();
         const lower = name.toLowerCase();
-        if (name && !["colour", "color", "size", "gender"].includes(lower) && !seenAttrNames.has(lower)) {
+        if (name && !["colour", "color", "size", "gender", "marketplace"].includes(lower) && !seenAttrNames.has(lower)) {
           seenAttrNames.add(lower);
           const val = (va.attributeValue || "").trim();
           customExistingAttrs.push({
@@ -817,7 +855,7 @@ export default function ProductForm({
         .map((ca: any) => `${ca.attributeName}:${ca.attributeValue}`)
         .join("|");
 
-      const syncKey = `${activeProduct.id}-${activeProduct.masterSku || ""}-${Boolean(singleProductResponse?.data)}-${'\n'}        uniqueVariants.length${'\n'}      }-${initialColors.join(",")}-${initialSizeList}-${initialGender}-${initialReferenceParty}-${initialProductCost}-${initialMrp}-${customAttrsKey}`;
+      const syncKey = `${activeProduct.id}-${activeProduct.masterSku || ""}-${Boolean(singleProductResponse?.data)}-${'\n'}        uniqueVariants.length${'\n'}      }-${initialColors.join(",")}-${initialSizeList}-${initialGender}-${initialMarketplace.join(",")}-${initialReferenceParty}-${initialProductCost}-${initialMrp}-${customAttrsKey}`;
 
       if (lastSyncedKeyRef.current === syncKey) return;
       lastSyncedKeyRef.current = syncKey;
@@ -826,6 +864,7 @@ export default function ProductForm({
         productName: activeProduct.productName || "",
         masterSku: activeProduct.masterSku || "",
         sku: initialSku,
+        marketplace: initialMarketplace,
         brand: activeProduct.brand || "No Brand",
         category: existingCategory,
         subCategory: activeProduct.subCategory || "",
@@ -948,6 +987,11 @@ export default function ProductForm({
 
       const sanitizedPayload = {
         ...values,
+        marketplace: Array.isArray(values.marketplace)
+          ? values.marketplace
+          : typeof (values.marketplace as any) === "string" && (values.marketplace as any).trim()
+          ? (values.marketplace as any).split(",").map((s: string) => s.trim()).filter(Boolean)
+          : ["All"],
         productName: values.productName.trim(),
         masterSku: values.masterSku.trim(),
         sku: values.sku ? values.sku.trim() : values.masterSku.trim(),
@@ -1402,13 +1446,32 @@ export default function ProductForm({
       {/* ============================================================ */}
       {activeTab === "general" && (
         <div className="space-y-5 animate-in fade-in-50 duration-200">
-          <div className="border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-              General Details
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Specify the primary product identification, classification, and tax details.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-white/[0.08] pb-3.5">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                General Details
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Specify the primary product identification, classification, and tax details.
+              </p>
+            </div>
+
+            <div className="w-full sm:w-72 md:w-80 lg:w-96 shrink-0">
+              <Controller
+                name="marketplace"
+                control={control}
+                render={({ field }) => (
+                  <MarketplaceMultiSelect
+                    label="Marketplace"
+                    value={field.value || ["All"]}
+                    options={marketplaceOptions}
+                    onChange={field.onChange}
+                    placeholder="Select Marketplace..."
+                    error={errors.marketplace?.message}
+                  />
+                )}
+              />
+            </div>
           </div>
 
           {/* Row 1: SKU * | Master SKU * | Name * */}
