@@ -4,6 +4,12 @@ import { z } from "zod";
 // Material Schema matching screenshot exactly
 // ======================================================
 
+export const materialAttributeSchema = z.object({
+  id: z.string().optional(),
+  attributeName: z.string().trim().optional(),
+  attributeValue: z.string().trim().optional(),
+});
+
 export const materialSchema = z.object({
   // General Details
   sku: z.string().trim().min(1, "SKU is required"),
@@ -11,10 +17,13 @@ export const materialSchema = z.object({
   materialName: z.string().trim().min(1, "Name is required"),
 
   category: z.string().trim().min(1, "Category is required"),
+  subCategory: z.string().optional().default("No Sub Category"),
   manufacturingGroup: z.string().trim().min(1, "Manufacturing Group is required"),
   unit: z.string().trim().min(1, "Unit is required"),
 
   colors: z.array(z.string()).default([]),
+  sizeList: z.string().optional().default(""),
+  attributes: z.array(materialAttributeSchema).optional().default([]),
   width: z.preprocess(
     (v) => (v === "" || v === undefined || v === null ? 0 : Number(v)),
     z.number().default(0)
@@ -47,6 +56,7 @@ export const materialSchema = z.object({
   ),
   hsnCode: z.string().trim().min(1, "HSN Code is required"),
   brand: z.string().trim().min(1, "Brand Name is required").default("No Brand"),
+  forUse: z.string().optional().default("No For Use"),
 
   less: z.preprocess(
     (v) => (v === "" || v === undefined || v === null ? 0 : Number(v)),

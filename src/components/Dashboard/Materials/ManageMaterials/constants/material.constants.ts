@@ -2,6 +2,10 @@ export const categoryOptions = [
   "No Category",
 ];
 
+export const subCategoryOptions = [
+  "No Sub Category",
+];
+
 export const manufacturingGroupOptions = [
   "No Manufacturing Group",
 ];
@@ -20,6 +24,10 @@ export const gstRateOptions = [
 
 export const brandOptions = [
   "No Brand",
+];
+
+export const forUseOptions = [
+  "No For Use",
 ];
 
 export const costApplyingModeOptions = [
@@ -64,9 +72,12 @@ export const materialDefaultValues = {
   masterSku: "",
   materialName: "",
   category: "No Category",
+  subCategory: "No Sub Category",
   manufacturingGroup: "No Manufacturing Group",
   unit: "No Unit",
   colors: [] as string[],
+  sizeList: "",
+  attributes: [] as Array<{ id?: string; attributeName: string; attributeValue: string }>,
   width: 0,
   widthRangeFrom: 0,
   widthRangeTo: 0,
@@ -76,6 +87,7 @@ export const materialDefaultValues = {
   gstRate: 5,
   hsnCode: "",
   brand: "No Brand",
+  forUse: "No For Use",
   less: 0,
   description: "",
 
@@ -94,7 +106,19 @@ export const materialDefaultValues = {
   isActive: true,
 };
 
-export const getDefaultAttributesForCategory = (cat?: string): string[] => [];
+export const defaultMaterialAttributes = [
+  "Size",
+  "Dimension",
+  "Thickness",
+  "Capacity",
+  "Composition",
+  "Count",
+  "Grade",
+  "Pattern",
+  "Finish",
+];
+
+export const getDefaultAttributesForCategory = (cat?: string): string[] => defaultMaterialAttributes;
 
 export const productCategoryOptions = categoryOptions.map((c) => ({
   label: c,

@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Package, SlidersHorizontal, Layers, CheckCircle2 } from "lucide-react";
+import {
+  Package,
+  SlidersHorizontal,
+  Layers,
+  CheckCircle2,
+  Tags,
+  Plus,
+  Trash2,
+  Sparkles,
+  Check,
+} from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -17,14 +27,17 @@ import {
 import {
   materialDefaultValues,
   categoryOptions,
+  subCategoryOptions,
   manufacturingGroupOptions,
   unitOptions,
   gstRateOptions,
   brandOptions,
+  forUseOptions,
   costApplyingModeOptions,
   purchaseTypeOptions,
   issueModeOptions,
   consumptionModeOptions,
+  defaultMaterialAttributes,
 } from "../constants/material.constants";
 import { useCreateMaterial, useUpdateMaterial } from "../hooks/useMaterials";
 
@@ -68,6 +81,15 @@ export default function MaterialForm({
     formState: { errors, isSubmitting },
   } = form;
 
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "attributes",
+  });
+
+  const watchedCategory = watch("category");
+  const watchedMasterSku = watch("masterSku") || watch("sku") || "";
+  const watchedAttributes = watch("attributes");
+
   // Sync loading state to parent
   useEffect(() => {
     onLoadingChange?.(
@@ -85,14 +107,76 @@ export default function MaterialForm({
   // Pre-fill form when editing
   useEffect(() => {
     if (mode === "edit" && material) {
+      const allVariantAttrs = (material.variants || []).flatMap(
+        (v: any) => v.attributes || []
+      );
+
+      const existingAttrs: Array<{ id?: string; attributeName: string; attributeValue: string }> =
+        (material.attributes || [])
+          .filter((a: any) => {
+            const lower = (a.attributeName || "").toLowerCase().trim();
+            return !["colour", "color"].includes(lower);
+          })
+          .map((a: any) => {
+            const matchedValues = allVariantAttrs
+              .filter((va: any) => {
+                if (va.materialAttributeId && a.id && va.materialAttributeId === a.id) return true;
+                const vaName = (va.materialAttribute?.attributeName || "").toLowerCase().trim();
+                const aName = (a.attributeName || "").toLowerCase().trim();
+                return vaName && aName && vaName === aName;
+              })
+              .map((va: any) => (va.attributeValue || "").trim())
+              .filter(Boolean);
+
+            const uniqueValues = Array.from(new Set(matchedValues));
+            const valString = uniqueValues.join(", ");
+
+            return {
+              id: a.id,
+              attributeName: a.attributeName || "",
+              attributeValue: valString || a.attributeValue || "",
+            };
+          });
+
+      const seenAttrNames = new Set(
+        existingAttrs.map((ca: any) => (ca.attributeName || "").toLowerCase().trim())
+      );
+      allVariantAttrs.forEach((va: any) => {
+        const name = (va.materialAttribute?.attributeName || "").trim();
+        const lower = name.toLowerCase();
+        if (name && !["colour", "color"].includes(lower) && !seenAttrNames.has(lower)) {
+          seenAttrNames.add(lower);
+          const val = (va.attributeValue || "").trim();
+          existingAttrs.push({
+            id: va.materialAttributeId || undefined,
+            attributeName: name,
+            attributeValue: val,
+          });
+        }
+      });
+
+      if (
+        material.sizeList &&
+        !seenAttrNames.has("size") &&
+        !seenAttrNames.has("dimension")
+      ) {
+        existingAttrs.unshift({
+          attributeName: "Size",
+          attributeValue: material.sizeList,
+        });
+      }
+
       reset({
         sku: material.sku || material.masterSku || "",
         masterSku: material.masterSku || "",
         materialName: material.materialName || "",
         category: material.category || "",
+        subCategory: material.subCategory || "No Sub Category",
         manufacturingGroup: material.manufacturingGroup || "",
         unit: material.unit || "Meters",
         colors: Array.isArray(material.colors) ? material.colors : [],
+        sizeList: material.sizeList || "",
+        attributes: existingAttrs,
         width: typeof material.width === "number" ? material.width : 0,
         widthRangeFrom:
           typeof material.widthRangeFrom === "number"
@@ -112,6 +196,7 @@ export default function MaterialForm({
         gstRate: typeof material.gstRate === "number" ? material.gstRate : 5,
         hsnCode: material.hsnCode || "",
         brand: material.brand || "No Brand",
+        forUse: material.forUse || "No For Use",
         less: typeof material.less === "number" ? material.less : 0,
         description: material.description || "",
 
@@ -142,15 +227,51 @@ export default function MaterialForm({
 
   const onSubmit = async (values: MaterialFormValues) => {
     try {
+      const attributesPayload: Array<{ id?: string; attributeName: string; attributeValue: string }> = [];
+
+      // Add custom dynamic attributes from values.attributes
+      if (Array.isArray(values.attributes)) {
+        values.attributes.forEach((attr) => {
+          if (attr.attributeName?.trim()) {
+            attributesPayload.push({
+              id: attr.id,
+              attributeName: attr.attributeName.trim(),
+              attributeValue: attr.attributeValue?.trim() || "",
+            });
+          }
+        });
+      }
+
+      // Add Color attribute if colors selected and not already in attributes
+      if (values.colors && values.colors.length > 0) {
+        const hasColor = attributesPayload.some(
+          (a) => ["color", "colour"].includes(a.attributeName.toLowerCase())
+        );
+        if (!hasColor) {
+          attributesPayload.push({
+            attributeName: "Color",
+            attributeValue: values.colors.join(", "),
+          });
+        }
+      }
+
+      const sizeAttr = attributesPayload.find((a) =>
+        ["size", "dimension"].includes(a.attributeName.toLowerCase())
+      );
+      const computedSizeList = sizeAttr?.attributeValue || values.sizeList || "";
+
       if (mode === "create") {
         await createMaterialMutation.mutateAsync({
           materialName: values.materialName.trim(),
           masterSku: values.masterSku.trim(),
           sku: values.sku.trim(),
           category: values.category.trim(),
+          subCategory: values.subCategory?.trim() || "No Sub Category",
           manufacturingGroup: values.manufacturingGroup.trim(),
           unit: values.unit.trim(),
           colors: values.colors,
+          sizeList: computedSizeList,
+          attributes: attributesPayload,
           width: Number(values.width) || 0,
           widthRangeFrom: Number(values.widthRangeFrom) || 0,
           widthRangeTo: Number(values.widthRangeTo) || 0,
@@ -160,6 +281,7 @@ export default function MaterialForm({
           gstRate: Number(values.gstRate) || 5,
           hsnCode: values.hsnCode.trim(),
           brand: values.brand.trim() || "No Brand",
+          forUse: values.forUse?.trim() || "No For Use",
           less: Number(values.less) || 0,
           description: values.description?.trim() || "",
 
@@ -185,9 +307,12 @@ export default function MaterialForm({
             masterSku: values.masterSku.trim(),
             sku: values.sku.trim(),
             category: values.category.trim(),
+            subCategory: values.subCategory?.trim() || "No Sub Category",
             manufacturingGroup: values.manufacturingGroup.trim(),
             unit: values.unit.trim(),
             colors: values.colors,
+            sizeList: computedSizeList,
+            attributes: attributesPayload,
             width: Number(values.width) || 0,
             widthRangeFrom: Number(values.widthRangeFrom) || 0,
             widthRangeTo: Number(values.widthRangeTo) || 0,
@@ -197,6 +322,7 @@ export default function MaterialForm({
             gstRate: Number(values.gstRate) || 5,
             hsnCode: values.hsnCode.trim(),
             brand: values.brand.trim() || "No Brand",
+            forUse: values.forUse?.trim() || "No For Use",
             less: Number(values.less) || 0,
             description: values.description?.trim() || "",
 
@@ -333,8 +459,8 @@ export default function MaterialForm({
             />
           </div>
 
-          {/* Row 2: Category * | Manufacturing Group * | Unit * */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Row 2: Category * | Sub Category | Manufacturing Group * | Unit * */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Controller
               name="category"
               control={control}
@@ -351,6 +477,25 @@ export default function MaterialForm({
                   placeholder="Select Category..."
                   required
                   error={errors.category?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="subCategory"
+              control={control}
+              render={({ field }) => (
+                <DropdownWithOther
+                  label="Sub Category"
+                  fieldKey="subCategory"
+                  value={field.value || "No Sub Category"}
+                  onChange={field.onChange}
+                  options={subCategoryOptions.map((s) => ({
+                    label: s,
+                    value: s,
+                  }))}
+                  placeholder="Select Sub Category..."
+                  error={errors.subCategory?.message}
                 />
               )}
             />
@@ -535,6 +680,170 @@ export default function MaterialForm({
             </div>
           </div>
 
+          {/* ============================================================ */}
+          {/* MATERIAL ATTRIBUTES SECTION (Dynamic according to Category)  */}
+          {/* ============================================================ */}
+          <div className="pt-3 border-t border-slate-200/80 dark:border-white/[0.08] space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-200/60 dark:border-white/[0.05]">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/20 shadow-2xs">
+                  <Tags className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
+                      Material Attributes
+                    </h4>
+                    {watchedCategory && watchedCategory !== "No Category" && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-[#F5C451]/10 dark:text-[#F5C451] dark:border-[#F5C451]/20">
+                        {watchedCategory}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Attribute options tailored for this category to keep complete material records.
+                  </p>
+                </div>
+              </div>
+
+              {/* Add Attribute Button */}
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    append({
+                      attributeName: "",
+                      attributeValue: "",
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold bg-[#FFF9EC] text-[#0A0E1A] border border-[#E8C16D] hover:bg-[#FFF3D6] ring-1 ring-[#E8C16D]/30 active:scale-[0.98] transition-all cursor-pointer dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/40 dark:hover:bg-[#F5C451]/25 shrink-0 shadow-xs"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Attribute</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Added Custom Attributes (Field & Value option with delete button) */}
+            {fields.map((fieldItem, index) => {
+              return (
+                <div
+                  key={fieldItem.id}
+                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_44px] items-end gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-[#0B0F17]/60 border border-slate-200/80 dark:border-white/[0.08]"
+                >
+                  {/* Attribute Name (Field) */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                      Attribute Name
+                    </label>
+                    <Controller
+                      control={control}
+                      name={`attributes.${index}.attributeName`}
+                      render={({ field }) => (
+                        <input
+                          {...field}
+                          value={field.value ?? ""}
+                          placeholder="e.g. Storage, RAM, Material, Weight..."
+                          className={inputClass}
+                        />
+                      )}
+                    />
+                    {errors.attributes?.[index]?.attributeName && (
+                      <p className="text-[11px] text-rose-500 font-medium">
+                        {errors.attributes[index]?.attributeName?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Attribute Value (Value) */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                      Attribute Value
+                    </label>
+                    <Controller
+                      control={control}
+                      name={`attributes.${index}.attributeValue`}
+                      render={({ field }) => (
+                        <input
+                          {...field}
+                          value={field.value ?? ""}
+                          placeholder="Enter value(s), e.g. Cotton, Silk, 128GB..."
+                          className={inputClass}
+                        />
+                      )}
+                    />
+                    {errors.attributes?.[index]?.attributeValue && (
+                      <p className="text-[11px] text-rose-500 font-medium">
+                        {errors.attributes[index]?.attributeValue?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Delete Button */}
+                  <div className="flex items-center justify-end sm:justify-center">
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      title="Remove attribute"
+                      className="h-11 sm:h-12 w-full sm:w-11 flex items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-slate-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50/60 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/10 active:scale-95 transition-all cursor-pointer shadow-xs"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Quick-Add Attribute Options for Category */}
+            <div className="flex flex-wrap items-center gap-1.5 p-2.5 rounded-xl bg-slate-50/70 dark:bg-[#0B0F17]/50 border border-slate-200/60 dark:border-white/[0.05]">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 mr-1 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-[#B88728] dark:text-[#F5C451]" />
+                Add Category Attributes:
+              </span>
+              {defaultMaterialAttributes.map((attrName) => {
+                const isAdded = fields.some(
+                  (f) =>
+                    f.attributeName?.trim().toLowerCase() ===
+                    attrName.toLowerCase()
+                );
+                return (
+                  <button
+                    key={attrName}
+                    type="button"
+                    onClick={() => {
+                      if (!isAdded) {
+                        append({
+                          attributeName: attrName,
+                          attributeValue: "",
+                        });
+                        toast.success(`Added "${attrName}" attribute`);
+                      }
+                    }}
+                    disabled={isAdded}
+                    title={
+                      isAdded
+                        ? `"${attrName}" already added`
+                        : `Add "${attrName}"`
+                    }
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow-2xs",
+                      isAdded
+                        ? "bg-slate-100 text-slate-400 dark:bg-white/[0.04] dark:text-slate-500 cursor-not-allowed border border-transparent"
+                        : "bg-white text-slate-700 border border-slate-200 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#0A0E1A] dark:bg-[#0B0F17] dark:text-slate-200 dark:border-white/[0.08] dark:hover:border-[#F5C451]/50 dark:hover:bg-[#F5C451]/10 dark:hover:text-[#F5C451] cursor-pointer active:scale-95"
+                    )}
+                  >
+                    {isAdded ? (
+                      <Check className="w-3 h-3 text-emerald-500" />
+                    ) : (
+                      <Plus className="w-3 h-3 text-[#B88728] dark:text-[#F5C451]" />
+                    )}
+                    <span>{attrName}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Row 4: Less (%). | GST (%) | HSN Code * */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Controller
@@ -609,7 +918,7 @@ export default function MaterialForm({
             />
           </div>
 
-          {/* Row 5: Brand Name * */}
+          {/* Row 5: Brand Name * | For Use */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Controller
               name="brand"
@@ -627,6 +936,25 @@ export default function MaterialForm({
                   placeholder="Select Brand..."
                   required
                   error={errors.brand?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="forUse"
+              control={control}
+              render={({ field }) => (
+                <DropdownWithOther
+                  label="For Use"
+                  fieldKey="forUse"
+                  value={field.value || "No For Use"}
+                  onChange={field.onChange}
+                  options={forUseOptions.map((f) => ({
+                    label: f,
+                    value: f,
+                  }))}
+                  placeholder="Select For Use..."
+                  error={errors.forUse?.message}
                 />
               )}
             />

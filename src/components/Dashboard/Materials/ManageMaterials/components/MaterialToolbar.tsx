@@ -43,7 +43,7 @@ interface Props {
   importType: ImportType;
   onImportTypeChange: (value: ImportType) => void;
 
-  categoryOptions: Option[];
+  categoryOptions?: Option[];
   brandOptions: Option[];
   marketplaceOptions?: Option[];
 
@@ -208,14 +208,29 @@ export default function MaterialToolbar({
             icon={<Boxes className="h-3.5 w-3.5" />}
           />
 
-          {/* Category Dropdown */}
-          <ThemeSelectDropdown
-            ariaLabel="Filter by Category"
-            value={category}
-            onChange={(val) => onCategoryChange(val)}
-            options={categoryOptions}
-            icon={<Layers className="h-3.5 w-3.5" />}
-          />
+          {/* Category Searchbox */}
+          <div className="relative flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 sm:px-3.5 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451] dark:focus-within:ring-[#F5C451]/30 w-40 sm:w-48">
+            <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 dark:bg-[#F5C451]/15 dark:text-[#F5C451]">
+              <Layers className="h-3.5 w-3.5" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search Category..."
+              value={category}
+              onChange={(e) => onCategoryChange(e.target.value)}
+              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none dark:text-white dark:placeholder:text-slate-500"
+            />
+            {category && (
+              <button
+                type="button"
+                onClick={() => onCategoryChange("")}
+                className="grid h-4 w-4 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0 dark:text-slate-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+                title="Clear category search"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
 
           {/* Reset filter button if active */}
           {isFilterActive && (

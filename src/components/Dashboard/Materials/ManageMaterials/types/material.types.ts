@@ -27,6 +27,7 @@ export interface Material {
   sku?: string;
   marketplace?: string | string[];
   subCategory?: string;
+  forUse?: string;
   unit?: string;
   sizeList?: string;
   colors?: string[];
@@ -82,6 +83,7 @@ export interface MaterialPayload {
   sku?: string;
   marketplace?: string | string[];
   subCategory?: string;
+  forUse?: string;
   unit?: string;
   sizeList?: string;
   colors?: string[];

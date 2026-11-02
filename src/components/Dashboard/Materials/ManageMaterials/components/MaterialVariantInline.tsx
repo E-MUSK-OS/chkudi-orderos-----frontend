@@ -182,7 +182,14 @@ export default function MaterialVariantInline({
         (a.materialAttribute?.attributeName || "").toLowerCase().trim()
       )
     );
-    return (sizeAttr?.attributeValue || "").trim();
+    if (sizeAttr?.attributeValue) return sizeAttr.attributeValue.trim();
+
+    const otherAttr = variant.attributes?.find((a) =>
+      !["colour", "color", "gender"].includes(
+        (a.materialAttribute?.attributeName || "").toLowerCase().trim()
+      )
+    );
+    return (otherAttr?.attributeValue || "").trim();
   };
 
   const getColorValue = (variant: MaterialVariant): string => {
@@ -311,10 +318,15 @@ export default function MaterialVariantInline({
 
   const resolvedSizeAttrId = useMemo(() => {
     if (sizeAttrProp?.id) return sizeAttrProp.id;
+    const nonColorProp = attributes.find((a) =>
+      !["colour", "color", "gender"].includes((a.attributeName || "").toLowerCase().trim())
+    );
+    if (nonColorProp?.id) return nonColorProp.id;
+
     for (const v of data?.data || []) {
       for (const a of v.attributes || []) {
         if (
-          ["size"].includes(
+          !["colour", "color", "gender"].includes(
             (a.materialAttribute?.attributeName || "").toLowerCase().trim()
           )
         ) {
@@ -323,17 +335,21 @@ export default function MaterialVariantInline({
       }
     }
     return undefined;
-  }, [sizeAttrProp, data]);
+  }, [sizeAttrProp, attributes, data]);
 
-  // Check if this Material actually has a Size attribute
+  // Check if this Material actually has a Size/Dimension attribute
   const hasSizeAttribute = useMemo(() => {
     const inAttrs = attributes.some((a) =>
-      ["size"].includes((a.attributeName || "").toLowerCase().trim())
+      !["colour", "color", "gender"].includes(
+        (a.attributeName || "").toLowerCase().trim()
+      )
     );
     if (inAttrs) return true;
 
     const inProdAttrs = (material?.attributes || []).some((a: any) =>
-      ["size"].includes((a.attributeName || "").toLowerCase().trim())
+      !["colour", "color", "gender"].includes(
+        (a.attributeName || "").toLowerCase().trim()
+      )
     );
     if (inProdAttrs) return true;
 
@@ -342,14 +358,23 @@ export default function MaterialVariantInline({
     const inVariants = (data?.data || []).some((v) =>
       (v.attributes || []).some(
         (a) =>
-          (a.materialAttribute?.attributeName || "").toLowerCase().trim() === "size" &&
-          Boolean(a.attributeValue && a.attributeValue.trim())
+          !["colour", "color", "gender"].includes(
+            (a.materialAttribute?.attributeName || "").toLowerCase().trim()
+          ) && Boolean(a.attributeValue && a.attributeValue.trim())
       )
     );
     if (inVariants) return true;
 
     return false;
   }, [attributes, material, data]);
+
+  const sizeAttributeDisplayName = useMemo(() => {
+    const attr = attributes.find(
+      (a) => !["colour", "color", "gender"].includes((a.attributeName || "").toLowerCase().trim())
+    );
+    if (attr?.attributeName) return attr.attributeName;
+    return "Size";
+  }, [attributes]);
 
   // Group variants by Color
   const colorGroups = useMemo<ColorGroup[]>(() => {
@@ -773,10 +798,10 @@ export default function MaterialVariantInline({
                 Colour
               </th>
 
-              {/* Size column */}
+              {/* Size / Dimension column */}
               {hasSizeAttribute && (
                 <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[110px]">
-                  Size
+                  {sizeAttributeDisplayName || "Size"}
                 </th>
               )}
 
@@ -794,11 +819,6 @@ export default function MaterialVariantInline({
                   {attr.attributeName}
                 </th>
               ))}
-
-              {/* ASIN */}
-              <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
-                ASIN
-              </th>
 
               {/* Rack Address */}
               <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
@@ -821,7 +841,7 @@ export default function MaterialVariantInline({
             {isLoading ? (
               <tr>
                 <td
-                  colSpan={extraAttributes.length + (hasSizeAttribute ? 8 : 7)}
+                  colSpan={extraAttributes.length + (hasSizeAttribute ? 7 : 6)}
                   className="py-8 text-center text-sm text-slate-500 dark:text-slate-400"
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -833,7 +853,7 @@ export default function MaterialVariantInline({
             ) : colorGroups.length === 0 ? (
               <tr>
                 <td
-                  colSpan={extraAttributes.length + (hasSizeAttribute ? 8 : 7)}
+                  colSpan={extraAttributes.length + (hasSizeAttribute ? 7 : 6)}
                   className="py-6 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400"
                 >
                   No variants found. Add colors and sizes below.
@@ -1193,34 +1213,7 @@ export default function MaterialVariantInline({
                       </td>
                     ))}
 
-                    {/* 4. ASIN Column */}
-                    <td className="px-3.5 py-3.5 align-top">
-                      <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
-                        {group.variants.map((variant) => {
-                          const isEditing = editingId === variant.id;
-
-                          return (
-                            <div
-                              key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
-                            >
-                              {isEditing ? (
-                                <input
-                                  value={editAsin}
-                                  onChange={(e) => setEditAsin(e.target.value)}
-                                  placeholder="ASIN"
-                                  className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
-                                />
-                              ) : (
-                                <span>{variant.asin || "--"}</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </td>
-
-                    {/* 5. Rack Address Column */}
+                    {/* Rack Address Column */}
                     <td className="px-3.5 py-3.5 align-top">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
@@ -1525,25 +1518,6 @@ export default function MaterialVariantInline({
                   </td>
                 );
               })}
-
-              {/* ASIN */}
-              <td className="px-3.5 py-3 align-top">
-                {isAdding ? (
-                  <input
-                    value={newAsin}
-                    onChange={(e) => setNewAsin(e.target.value)}
-                    placeholder="ASIN (optional)"
-                    className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
-                  />
-                ) : (
-                  <span
-                    onClick={() => setIsAdding(true)}
-                    className="cursor-pointer text-slate-400 text-xs"
-                  >
-                    --
-                  </span>
-                )}
-              </td>
 
               {/* Rack Address */}
               <td className="px-3.5 py-3 align-top">
