@@ -36,13 +36,25 @@ export default function DepartmentSelect({ value = [], onChange, error }: Props)
 
   // Combine default, DB-stored, and local departments
   const allDepartments = React.useMemo(() => {
+    const disabledDepts = new Set(
+      (dropdownData?.savedOptions || [])
+        .filter((o: any) => o.field?.toLowerCase() === "department" && o.isActive === false)
+        .map((o: any) => String(o.value).trim().toLowerCase())
+    );
+
     const set = new Set<string>();
-    DEPARTMENT_OPTIONS.forEach((d) => set.add(d));
-    (dropdownData?.departments || []).forEach((d) => set.add(d));
-    localCustomDepts.forEach((d) => set.add(d));
+    DEPARTMENT_OPTIONS.forEach((d) => {
+      if (!disabledDepts.has(d.trim().toLowerCase())) set.add(d);
+    });
+    (dropdownData?.departments || []).forEach((d: string) => {
+      if (!disabledDepts.has(d.trim().toLowerCase())) set.add(d);
+    });
+    localCustomDepts.forEach((d) => {
+      if (!disabledDepts.has(d.trim().toLowerCase())) set.add(d);
+    });
     value.forEach((d) => set.add(d));
     return Array.from(set);
-  }, [dropdownData?.departments, localCustomDepts, value]);
+  }, [dropdownData, localCustomDepts, value]);
 
   const filtered = allDepartments.filter((d) =>
     d.toLowerCase().includes(search.toLowerCase().trim())

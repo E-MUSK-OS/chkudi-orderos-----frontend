@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, ArrowUpDown, SlidersHorizontal, X } from "lucide-react";
+import { Search, ArrowUpDown, RotateCcw, X } from "lucide-react";
 import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   onSearchChange: (search: string) => void;
   sort: string;
   onSortChange: (sort: string) => void;
+  onReset?: () => void;
 }
 
 const SORT_OPTIONS = [
@@ -16,13 +17,28 @@ const SORT_OPTIONS = [
   { label: "Name (Z - A)", value: "name_desc" },
 ];
 
-export default function UserToolbar({ search, onSearchChange, sort, onSortChange }: Props) {
+export default function UserToolbar({
+  search,
+  onSearchChange,
+  sort,
+  onSortChange,
+  onReset,
+}: Props) {
   const handleSortChange = (newSort: string) => {
     // If the active sort is clicked again, reset to default oldest first
     if (newSort === sort) {
       onSortChange("oldest");
     } else {
       onSortChange(newSort);
+    }
+  };
+
+  const handleReset = () => {
+    if (onReset) {
+      onReset();
+    } else {
+      onSearchChange("");
+      onSortChange("oldest");
     }
   };
 
@@ -54,7 +70,7 @@ export default function UserToolbar({ search, onSearchChange, sort, onSortChange
         </div>
       </div>
 
-      {/* Right Controls: Sort & Filter */}
+      {/* Right Controls: Sort & Reset */}
       <div className="flex items-center gap-2 sm:gap-2.5 self-end sm:self-center">
         {/* Sort ThemeSelectDropdown (Default: oldest first, options: Name A-Z, Name Z-A) */}
         <ThemeSelectDropdown
@@ -66,13 +82,14 @@ export default function UserToolbar({ search, onSearchChange, sort, onSortChange
           ariaLabel="Sort Users"
         />
 
-        {/* Filter Trigger Button */}
+        {/* Reset Trigger Button */}
         <button
           type="button"
-          className="h-10 w-10 sm:h-11 sm:w-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer transition-all shadow-xs hover:border-[#E8C16D]"
-          title="Filter Settings"
+          onClick={handleReset}
+          className="h-10 w-10 sm:h-11 sm:w-11 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer transition-all shadow-xs hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] active:scale-95"
+          title="Reset Search and Sort"
         >
-          <SlidersHorizontal size={15} />
+          <RotateCcw size={15} />
         </button>
       </div>
     </div>

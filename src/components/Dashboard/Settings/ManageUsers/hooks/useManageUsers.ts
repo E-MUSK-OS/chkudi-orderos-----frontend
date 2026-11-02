@@ -10,7 +10,9 @@ export const useUsers = (params?: { search?: string; sort?: string; page?: numbe
   return useQuery({
     queryKey: ["managed-users", params?.search, params?.sort, params?.page, params?.limit],
     queryFn: () => userManagementService.getUsers(params, getToken()),
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: false, // Prevents sudden empty state on tab switch
+    retry: 2,
   });
 };
 
@@ -110,4 +112,3 @@ export const useSaveUserDropdownOption = () => {
     },
   });
 };
-

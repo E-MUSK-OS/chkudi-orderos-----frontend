@@ -62,20 +62,42 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
 
   // Merge default companies with DB-saved companies and locally created companies
   const allCompanies = React.useMemo(() => {
+    const disabledCompanies = new Set(
+      (dropdownData?.savedOptions || [])
+        .filter((o: any) => o.field?.toLowerCase() === "company" && o.isActive === false)
+        .map((o: any) => String(o.value).trim().toLowerCase())
+    );
+
     const set = new Set<string>();
-    COMPANY_OPTIONS.forEach((c) => set.add(c));
-    (dropdownData?.companies || []).forEach((c) => set.add(c));
-    localCustomCompanies.forEach((c) => set.add(c));
+    COMPANY_OPTIONS.forEach((c) => {
+      if (!disabledCompanies.has(c.trim().toLowerCase())) set.add(c);
+    });
+    (dropdownData?.companies || []).forEach((c) => {
+      if (!disabledCompanies.has(c.trim().toLowerCase())) set.add(c);
+    });
+    localCustomCompanies.forEach((c) => {
+      if (!disabledCompanies.has(c.trim().toLowerCase())) set.add(c);
+    });
     (values.companies || []).forEach((c) => set.add(c));
     return Array.from(set);
-  }, [dropdownData?.companies, localCustomCompanies, values.companies]);
+  }, [dropdownData, localCustomCompanies, values.companies]);
 
   // Merge gender options
   const allGenderOptions = React.useMemo(() => {
+    const disabledGenders = new Set(
+      (dropdownData?.savedOptions || [])
+        .filter((o: any) => o.field?.toLowerCase() === "gender" && o.isActive === false)
+        .map((o: any) => String(o.value).trim().toLowerCase())
+    );
+
     const map = new Map<string, { label: string; value: string }>();
-    DEFAULT_GENDER_OPTIONS.forEach((g) => map.set(g.value.toLowerCase(), g));
+    DEFAULT_GENDER_OPTIONS.forEach((g) => {
+      if (!disabledGenders.has(g.value.trim().toLowerCase())) {
+        map.set(g.value.toLowerCase(), g);
+      }
+    });
     (dropdownData?.genders || []).forEach((g) => {
-      if (g && !map.has(g.toLowerCase())) {
+      if (g && !disabledGenders.has(g.trim().toLowerCase()) && !map.has(g.toLowerCase())) {
         map.set(g.toLowerCase(), { label: g, value: g });
       }
     });
@@ -83,7 +105,7 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
       map.set(values.gender.toLowerCase(), { label: values.gender, value: values.gender });
     }
     return Array.from(map.values());
-  }, [dropdownData?.genders, values.gender]);
+  }, [dropdownData, values.gender]);
 
   const toggleCompany = (company: string) => {
     const current = values.companies || [];

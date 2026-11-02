@@ -48,8 +48,6 @@ export function verifyClientActionPermission(endpoint: string, method: string): 
   return true;
 }
 
-// const BASE_URL = "https://chkudi-orderos-backend.vercel.app/api/v1";
-// const BASE_URL = "http://localhost:5000/api/v1";
 const BASE_URL = API_BASE_URL;
 
 interface ApiOptions extends RequestInit {
@@ -57,22 +55,79 @@ interface ApiOptions extends RequestInit {
   signal?: AbortSignal;
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const refreshToken = localStorage.getItem("refreshToken");
+  if (!refreshToken) return null;
+
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/auth/refresh-token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Refresh token expired or invalid");
+      }
+
+      const json = await res.json();
+      const newAccessToken = json?.data?.accessToken;
+      if (newAccessToken) {
+        localStorage.setItem("accessToken", newAccessToken);
+        if (json?.data?.refreshToken) {
+          localStorage.setItem("refreshToken", json.data.refreshToken);
+        }
+        return newAccessToken;
+      }
+      return null;
+    } catch (err) {
+      console.warn("Session expired. Please log in again:", err);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 async function request<T>(
   endpoint: string,
   options: ApiOptions = {},
+  isRetry = false
 ): Promise<T> {
   const method = (options.method || "GET").toUpperCase();
   if (!verifyClientActionPermission(endpoint, method)) {
     throw new Error(`Access denied. You do not have '${method}' permission for this module.`);
   }
 
+  let effectiveToken = options.token;
+  if (!effectiveToken && typeof window !== "undefined") {
+    effectiveToken = localStorage.getItem("accessToken") || undefined;
+  }
+
   const { token, headers, body, ...rest } = options;
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  let response = await fetch(`${BASE_URL}${endpoint}`, {
     ...rest,
-
     body,
-
     headers: {
       ...(body instanceof FormData
         ? {
@@ -82,14 +137,20 @@ async function request<T>(
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
           }),
-
-      ...(token && {
-        Authorization: `Bearer ${token}`,
+      ...(effectiveToken && {
+        Authorization: `Bearer ${effectiveToken}`,
       }),
-
       ...headers,
     },
   });
+
+  // If unauthorized (401) and not already retrying, attempt silent token refresh
+  if (response.status === 401 && !isRetry && !endpoint.includes("/auth/")) {
+    const freshToken = await refreshAccessToken();
+    if (freshToken) {
+      return request<T>(endpoint, { ...options, token: freshToken }, true);
+    }
+  }
 
   const contentType = response.headers.get("content-type");
   let data: any;
@@ -121,27 +182,21 @@ export const api = {
   post: <T>(url: string, body?: unknown, token?: string) =>
     request<T>(url, {
       method: "POST",
-
       body: body instanceof FormData ? body : JSON.stringify(body),
-
       token,
     }),
 
   put: <T>(url: string, body?: unknown, token?: string) =>
     request<T>(url, {
       method: "PUT",
-
       body: body instanceof FormData ? body : JSON.stringify(body),
-
       token,
     }),
 
   patch: <T>(url: string, body?: unknown, token?: string) =>
     request<T>(url, {
       method: "PATCH",
-
       body: body instanceof FormData ? body : JSON.stringify(body),
-
       token,
     }),
 
@@ -152,13 +207,17 @@ export const api = {
     }),
 
   download: async (url: string, token?: string) => {
+    let effectiveToken = token;
+    if (!effectiveToken && typeof window !== "undefined") {
+      effectiveToken = localStorage.getItem("accessToken") || undefined;
+    }
+
     const response = await fetch(`${BASE_URL}${url}`, {
       method: "GET",
-
       headers: {
         "ngrok-skip-browser-warning": "true",
-        ...(token && {
-          Authorization: `Bearer ${token}`,
+        ...(effectiveToken && {
+          Authorization: `Bearer ${effectiveToken}`,
         }),
       },
     });

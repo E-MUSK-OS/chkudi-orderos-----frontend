@@ -53,6 +53,7 @@ import { useProductVariants } from "../hooks/useProductVariants";
 import { productVariantService } from "../services/productVariant.service";
 import type { ProductVariant } from "../types/productVariant.types";
 import { useDropdownOptions, useSaveDropdownOption } from "../hooks/useDropdownOptions";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 
 import DropdownWithOther, { type DropdownOption } from "./DropdownWithOther";
 import MarketplaceMultiSelect from "./MarketplaceMultiSelect";
@@ -311,87 +312,39 @@ export default function ProductForm({
 
   // Dynamic Options merged with DB saved options and distinct options
   const categoryOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = productCategoryOptions
-      .filter((opt) => opt.value !== "other")
-      .map((opt) => ({ label: opt.label, value: opt.value }));
-
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "category")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const distinct = (dropdownData?.distinctFromProducts?.categories || []).map((cat) => ({
-      label: cat,
-      value: cat,
-    }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved, ...distinct].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "category",
+      productCategoryOptions.filter((opt) => opt.value !== "other"),
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.categories
+    );
   }, [dropdownData]);
 
   const brandOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [...defaultBrandOptions];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "brand")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-    const distinct = (dropdownData?.distinctFromProducts?.brands || []).map((b) => ({
-      label: b,
-      value: b,
-    }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved, ...distinct].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "brand",
+      defaultBrandOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.brands
+    );
   }, [dropdownData]);
 
   const unitOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [...defaultUnitOptions];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "unit")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-    const distinct = (dropdownData?.distinctFromProducts?.units || []).map((u) => ({
-      label: u,
-      value: u,
-    }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved, ...distinct].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "unit",
+      defaultUnitOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.units
+    );
   }, [dropdownData]);
 
   const genderOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [...defaultGenderOptions];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "gender")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-    const distinct = (dropdownData?.distinctFromProducts?.genders || []).map((g) => ({
-      label: g,
-      value: g,
-    }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved, ...distinct].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "gender",
+      defaultGenderOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.genders
+    );
   }, [dropdownData]);
 
   const referencePartyOptions: DropdownOption[] = useMemo(() => {
@@ -399,109 +352,50 @@ export default function ProductForm({
       { label: "Select Reference Party", value: "" },
       { label: "Direct Customer / Cash", value: "Direct Customer / Cash" },
     ];
-    const partiesFromDb = (dropdownData?.parties || []).map((p) => ({
-      label: p,
-      value: p,
-    }));
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "referenceparty")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-    const distinct = (dropdownData?.distinctFromProducts?.referenceParties || []).map((rp) => ({
-      label: rp,
-      value: rp,
-    }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...partiesFromDb, ...dbSaved, ...distinct].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "referenceparty",
+      list,
+      dropdownData?.savedOptions,
+      [...(dropdownData?.parties || []), ...(dropdownData?.distinctFromProducts?.referenceParties || [])]
+    );
   }, [dropdownData]);
 
   const gstRateOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [...defaultGstOptions];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => ["gstrate", "gst"].includes(o.field.toLowerCase()))
-      .map((o) => ({
-        label: `${o.label || o.value}%`,
-        value: String(o.value),
-      }));
-    const distinct = ((dropdownData?.distinctFromProducts as any)?.gstRates || []).map((g: any) => ({
-      label: `${g}%`,
-      value: String(g),
-    }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved, ...distinct].forEach((o) => {
-      const v = String(o.value)?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || `${v}%`, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      ["gstrate", "gst"],
+      defaultGstOptions,
+      dropdownData?.savedOptions,
+      (dropdownData?.distinctFromProducts as any)?.gstRates
+    );
   }, [dropdownData]);
 
   const availabilityOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [...defaultAvailabilityOptions];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "availability")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "availability",
+      defaultAvailabilityOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.availabilities
+    );
   }, [dropdownData]);
 
   const marketplaceOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [...defaultMarketplaceOptions];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "marketplace")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "marketplace",
+      defaultMarketplaceOptions,
+      dropdownData?.savedOptions
+    );
   }, [dropdownData]);
 
   const rackOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [...defaultRackOptions];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "rackaddress")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-    const distinct = (dropdownData?.distinctFromProducts?.rackAddresses || []).map((r) => ({
-      label: r,
-      value: r,
-    }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved, ...distinct].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "rackaddress",
+      defaultRackOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.rackAddresses
+    );
   }, [dropdownData]);
 
   const dynamicColors = useMemo(() => {
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => ["color", "colors"].includes(o.field.toLowerCase()))
-      .map((o) => o.value);
-    const distinct = dropdownData?.distinctFromProducts?.colors || [];
-
     let localSaved: string[] = [];
     if (typeof window !== "undefined") {
       try {
@@ -510,7 +404,13 @@ export default function ProductForm({
       } catch {}
     }
 
-    return Array.from(new Set([...dbSaved, ...distinct, ...localSaved]));
+    const merged = buildMergedOptions(
+      ["color", "colors"],
+      [],
+      dropdownData?.savedOptions,
+      [...(dropdownData?.distinctFromProducts?.colors || []), ...localSaved]
+    );
+    return merged.map((o) => o.value);
   }, [dropdownData]);
 
   // Sync initial values in Edit mode

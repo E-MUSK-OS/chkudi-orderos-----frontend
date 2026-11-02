@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -54,7 +54,11 @@ export default function Sidebar({
       setCurrentUser(getCurrentUser());
     };
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener("client_configuration_updated", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("client_configuration_updated", handleStorage);
+    };
   }, []);
 
   const visibleNavItems = useMemo(() => {

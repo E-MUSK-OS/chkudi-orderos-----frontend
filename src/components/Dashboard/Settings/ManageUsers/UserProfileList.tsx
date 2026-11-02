@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, X, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, X, AlertTriangle, RotateCcw } from "lucide-react";
 import UserCard from "./components/UserCard";
 import UserToolbar from "./components/UserToolbar";
 import UserViewModal from "./components/UserViewModal";
@@ -25,7 +25,7 @@ export default function UserProfileList() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { data, isLoading } = useUsers({ search, sort, page, limit: pageSize });
+  const { data, isLoading, isError, error, refetch } = useUsers({ search, sort, page, limit: pageSize });
   const updateStatusMutation = useUpdateUserStatus();
   const deleteUserMutation = useDeleteUser();
 
@@ -110,6 +110,11 @@ export default function UserProfileList() {
           setSort(st);
           setPage(1);
         }}
+        onReset={() => {
+          setSearch("");
+          setSort("oldest");
+          setPage(1);
+        }}
       />
 
       {/* Cards Grid Container matching OrderOS layout */}
@@ -122,6 +127,26 @@ export default function UserProfileList() {
                 className="h-48 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.06] bg-slate-50 dark:bg-[#080B11] p-5 animate-pulse"
               />
             ))}
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-3">
+              <AlertTriangle className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
+              Unable to load user accounts
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mb-4">
+              {(error as any)?.message || "A network or server timeout occurred. Please retry."}
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0E1A] dark:bg-white text-white dark:text-[#0A0E1A] text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Retry</span>
+            </button>
           </div>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">

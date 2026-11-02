@@ -153,21 +153,28 @@ export interface DropdownOptionItem {
   id?: string;
   field: string;
   value: string;
-  label: string;
+  label?: string;
+  isActive?: boolean;
 }
 
 export interface DropdownOptionsData {
   savedOptions: DropdownOptionItem[];
   parties: string[];
   distinctFromProducts: {
-    categories: string[];
-    brands: string[];
-    units: string[];
-    genders: string[];
-    referenceParties: string[];
-    rackAddresses: string[];
-    availabilities: string[];
-    colors: string[];
+    categories?: string[];
+    brands?: string[];
+    units?: string[];
+    genders?: string[];
+    referenceParties?: string[];
+    rackAddresses?: string[];
+    availabilities?: string[];
+    colors?: string[];
+    manufacturingGroups?: string[];
+    costApplyingModes?: string[];
+    purchaseTypes?: string[];
+    issueModes?: string[];
+    consumptionModes?: string[];
+    gstRates?: (number | string)[];
   };
 }
 

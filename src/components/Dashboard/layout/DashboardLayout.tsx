@@ -10,6 +10,7 @@ import Header from "./Header";
 import LogoutModal from "./LogoutModal";
 import DynamicActionShield from "./DynamicActionShield";
 import { authService } from "@/services/auth/auth.service";
+import { clientConfigurationService } from "@/components/Dashboard/Settings/Configuration/services/clientConfiguration.service";
 import {
   getCurrentUser,
   isRouteAllowed,
@@ -56,13 +57,20 @@ export default function DashboardLayout({
         .catch((err) => {
           console.debug("Background user permissions refresh:", err);
         });
+
+      // Silently refresh workspace client configuration
+      clientConfigurationService.getClientConfig().catch(() => {});
     }
 
     const handleStorage = () => {
       setCurrentUser(getCurrentUser());
     };
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener("client_configuration_updated", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("client_configuration_updated", handleStorage);
+    };
   }, []);
 
   const allowed = isRouteAllowed(pathname, currentUser);

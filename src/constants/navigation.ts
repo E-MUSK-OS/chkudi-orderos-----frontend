@@ -28,6 +28,8 @@ import {
   UserPlus,
   ClipboardList,
   CheckCircle,
+  Sliders,
+  SlidersHorizontal,
 } from "lucide-react";
 import { isRouteAllowed, type UserPermissions } from "@/utils/pagePermissions";
 
@@ -349,6 +351,24 @@ export const navItems: NavItem[] = [
             defaultTimeAgo: "2d ago",
           },
         ],
+      },
+      {
+        label: "Configuration",
+        icon: Sliders,
+        children: [
+          {
+            label: "Client",
+            href: "/dashboard/settings/configuration/client",
+            defaultTimeAgo: "Just now",
+            isCore: true,
+          },
+        ],
+      },
+      {
+        label: "Setting Masters",
+        icon: SlidersHorizontal,
+        href: "/dashboard/settings/setting-masters",
+        defaultTimeAgo: "Just now",
       },
       {
         label: "Webstore",

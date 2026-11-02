@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -27,6 +27,8 @@ import {
   consumptionModeOptions,
 } from "../constants/material.constants";
 import { useCreateMaterial, useUpdateMaterial } from "../hooks/useMaterials";
+import { useDropdownOptions } from "../hooks/useDropdownOptions";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 
 import ProductTabsNav, { type ProductActiveTab } from "./ProductTabsNav";
 import SectionCard from "./SectionCard";
@@ -81,6 +83,91 @@ export default function MaterialForm({
     updateMaterialMutation.isPending,
     onLoadingChange,
   ]);
+
+  // Fetch dynamic dropdown options from DB (synced with Setting Masters)
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
+
+  const dynamicCategoryOptions = useMemo(() => {
+    return buildMergedOptions(
+      "category",
+      categoryOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.categories
+    );
+  }, [dropdownData]);
+
+  const dynamicManufacturingGroupOptions = useMemo(() => {
+    return buildMergedOptions(
+      "manufacturinggroup",
+      manufacturingGroupOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.manufacturingGroups
+    );
+  }, [dropdownData]);
+
+  const dynamicUnitOptions = useMemo(() => {
+    return buildMergedOptions(
+      "unit",
+      unitOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.units
+    );
+  }, [dropdownData]);
+
+  const dynamicBrandOptions = useMemo(() => {
+    return buildMergedOptions(
+      "brand",
+      brandOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.brands
+    );
+  }, [dropdownData]);
+
+  const dynamicCostApplyingModeOptions = useMemo(() => {
+    return buildMergedOptions(
+      "costapplyingmode",
+      costApplyingModeOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.costApplyingModes
+    );
+  }, [dropdownData]);
+
+  const dynamicPurchaseTypeOptions = useMemo(() => {
+    return buildMergedOptions(
+      "purchasetype",
+      purchaseTypeOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.purchaseTypes
+    );
+  }, [dropdownData]);
+
+  const dynamicIssueModeOptions = useMemo(() => {
+    return buildMergedOptions(
+      "issuemode",
+      issueModeOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.issueModes
+    );
+  }, [dropdownData]);
+
+  const dynamicConsumptionModeOptions = useMemo(() => {
+    return buildMergedOptions(
+      "consumptionmode",
+      consumptionModeOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.consumptionModes
+    );
+  }, [dropdownData]);
+
+  const dynamicGstRateOptions = useMemo(() => {
+    return buildMergedOptions(
+      ["gstrate", "gst"],
+      gstRateOptions.map((g) => ({ label: g.label, value: String(g.value) })),
+      dropdownData?.savedOptions,
+      (dropdownData?.distinctFromProducts as any)?.gstRates
+    );
+  }, [dropdownData]);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -344,10 +431,7 @@ export default function MaterialForm({
                   fieldKey="category"
                   value={field.value}
                   onChange={field.onChange}
-                  options={categoryOptions.map((c) => ({
-                    label: c,
-                    value: c,
-                  }))}
+                  options={dynamicCategoryOptions}
                   placeholder="Select Category..."
                   required
                   error={errors.category?.message}
@@ -364,10 +448,7 @@ export default function MaterialForm({
                   fieldKey="manufacturingGroup"
                   value={field.value}
                   onChange={field.onChange}
-                  options={manufacturingGroupOptions.map((m) => ({
-                    label: m,
-                    value: m,
-                  }))}
+                  options={dynamicManufacturingGroupOptions}
                   placeholder="Select Manufacturing Group..."
                   required
                   error={errors.manufacturingGroup?.message}
@@ -384,10 +465,7 @@ export default function MaterialForm({
                   fieldKey="unit"
                   value={field.value}
                   onChange={field.onChange}
-                  options={unitOptions.map((u) => ({
-                    label: u,
-                    value: u,
-                  }))}
+                  options={dynamicUnitOptions}
                   placeholder="Select Unit..."
                   required
                   error={errors.unit?.message}
@@ -574,10 +652,7 @@ export default function MaterialForm({
                   fieldKey="gstRate"
                   value={String(field.value ?? 5)}
                   onChange={(v) => field.onChange(Number(v))}
-                  options={gstRateOptions.map((g) => ({
-                    label: g.label,
-                    value: String(g.value),
-                  }))}
+                  options={dynamicGstRateOptions}
                   placeholder="Select GST..."
                 />
               )}
@@ -620,10 +695,7 @@ export default function MaterialForm({
                   fieldKey="brand"
                   value={field.value || "No Brand"}
                   onChange={field.onChange}
-                  options={brandOptions.map((b) => ({
-                    label: b,
-                    value: b,
-                  }))}
+                  options={dynamicBrandOptions}
                   placeholder="Select Brand..."
                   required
                   error={errors.brand?.message}
@@ -673,10 +745,7 @@ export default function MaterialForm({
                   fieldKey="costApplyingMode"
                   value={field.value}
                   onChange={field.onChange}
-                  options={costApplyingModeOptions.map((c) => ({
-                    label: c,
-                    value: c,
-                  }))}
+                  options={dynamicCostApplyingModeOptions}
                   placeholder="Select Cost Applying Mode..."
                   required
                   error={errors.costApplyingMode?.message}
@@ -801,10 +870,7 @@ export default function MaterialForm({
                     fieldKey="purchaseType"
                     value={field.value || ""}
                     onChange={field.onChange}
-                    options={purchaseTypeOptions.map((p) => ({
-                      label: p,
-                      value: p,
-                    }))}
+                    options={dynamicPurchaseTypeOptions}
                     placeholder="Select..."
                   />
                 )}
@@ -845,10 +911,7 @@ export default function MaterialForm({
                   fieldKey="issueMode"
                   value={field.value}
                   onChange={field.onChange}
-                  options={issueModeOptions.map((i) => ({
-                    label: i,
-                    value: i,
-                  }))}
+                  options={dynamicIssueModeOptions}
                   placeholder="Select..."
                   required
                   error={errors.issueMode?.message}
@@ -865,10 +928,7 @@ export default function MaterialForm({
                   fieldKey="consumptionMode"
                   value={field.value}
                   onChange={field.onChange}
-                  options={consumptionModeOptions.map((c) => ({
-                    label: c,
-                    value: c,
-                  }))}
+                  options={dynamicConsumptionModeOptions}
                   placeholder="Select..."
                   required
                   error={errors.consumptionMode?.message}

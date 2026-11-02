@@ -60,6 +60,55 @@ export function isRouteAllowed(
     subPath = cleanPath.slice(1);
   }
 
+  // 0. Workspace-level Client Configuration enforcement (SuperAdmin is exempt)
+  if (typeof window !== "undefined") {
+    try {
+      const rawConfig = localStorage.getItem("client_configuration");
+      if (rawConfig) {
+        const clientConfig = JSON.parse(rawConfig);
+        const configData: Record<string, boolean> | null = clientConfig.configurationData || null;
+        const enabledSections: string[] = clientConfig.enabledSections || [];
+
+        // Never lock SuperAdmin or Admin out of Client Configuration page
+        const isClientConfigRoute =
+          subPath === "settings/configuration" ||
+          subPath.startsWith("settings/configuration/");
+
+        if (!isClientConfigRoute) {
+          // Check root section suppression
+          if (Array.isArray(enabledSections) && enabledSections.length > 0) {
+            const lowerSections = enabledSections.map((s: string) =>
+              s.toLowerCase().replace(/_/g, "-")
+            );
+            const firstSegment = subPath.split("/")[0].toLowerCase().replace(/_/g, "-");
+
+            let mappedSegment = firstSegment;
+            if (firstSegment === "setting") mappedSegment = "settings";
+
+            if (mappedSegment && !lowerSections.includes(mappedSegment)) {
+              return false;
+            }
+          }
+
+          // Check granular route suppression if configurationData map exists
+          if (configData && typeof configData === "object") {
+            const routeNodeId = cleanPath
+              .replace(/^\/dashboard\/?/, "")
+              .replace(/[^a-zA-Z0-9]+/g, "_")
+              .replace(/_+$/, "")
+              .toLowerCase() || "dashboard";
+
+            if (configData[routeNodeId] === false) {
+              return false;
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   // Manage users protection (strictly Admin / SuperAdmin only)
   if (subPath.startsWith("settings/manage-users") && user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
     return false;
@@ -164,6 +213,10 @@ export function isRouteAllowed(
   }
 
   if (subPath.startsWith("settings")) {
+    if (subPath.startsWith("settings/configuration")) {
+      if (user.role === "ADMIN" || user.role === "SUPERADMIN") return true;
+      return allowed.includes("settings/configuration") || allowed.includes("configuration") || allowed.includes("settings");
+    }
     if (subPath.startsWith("settings/manage-users")) {
       return allowed.includes("manage-users") || allowed.includes("settings/manage-users") || allowed.includes("settings");
     }
@@ -223,6 +276,10 @@ export function isNavItemAllowed(
     return allowed.some((p) => p.includes("manage-users") || p === "settings");
   }
   if (label.includes("barcode") || label.includes("labels")) return allowed.some((p) => p.includes("labels") || p === "settings");
+  if (label.includes("configuration")) {
+    if (user.role === "ADMIN" || user.role === "SUPERADMIN") return true;
+    return allowed.some((p) => p.includes("configuration") || p === "settings");
+  }
   if (label.includes("settings")) return allowed.some((p) => p.startsWith("settings") || p.includes("labels") || p.includes("manage-users"));
 
   return false;
@@ -234,7 +291,8 @@ export function isNavItemAllowed(
  */
 export function filterNavItemsForUser(
   items: NavItem[],
-  user?: UserPermissions | null
+  user?: UserPermissions | null,
+  isRoot = true
 ): NavItem[] {
   if (!user) return items;
   if (user.role === "SUPERADMIN") return items;
@@ -245,11 +303,56 @@ export function filterNavItemsForUser(
     if (user.role === "ADMIN" && allowed.length === 0) return items;
   }
 
+  // Workspace-level Client Configuration check for non-SuperAdmins
+  let clientEnabledSections: string[] | null = null;
+  let clientConfigData: Record<string, boolean> | null = null;
+
+  if (typeof window !== "undefined") {
+    try {
+      const rawConfig = localStorage.getItem("client_configuration");
+      if (rawConfig) {
+        const parsed = JSON.parse(rawConfig);
+        if (Array.isArray(parsed.enabledSections)) {
+          clientEnabledSections = parsed.enabledSections.map((s: string) =>
+            s.toLowerCase().replace(/_/g, "-")
+          );
+        }
+        if (parsed.configurationData && typeof parsed.configurationData === "object") {
+          clientConfigData = parsed.configurationData;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return items
     .map((item) => {
-      // If item has children, recursively filter them
+      const isClientConfigItem =
+        item.label.toLowerCase().includes("configuration") ||
+        (item.href && item.href.includes("settings/configuration"));
+
+      const labelKey = item.label.toLowerCase().replace(/\s+/g, "-");
+      const nodeId = item.href
+        ? item.href
+            .replace(/^\/dashboard\/?/, "")
+            .replace(/[^a-zA-Z0-9]+/g, "_")
+            .replace(/_+$/, "")
+            .toLowerCase() || "dashboard"
+        : labelKey.replace(/-/g, "_");
+
+      if (!isClientConfigItem) {
+        // Top-level section suppression applies ONLY to root navigation items
+        if (isRoot && clientEnabledSections && clientEnabledSections.length > 0) {
+          if (!clientEnabledSections.includes(labelKey) && !clientEnabledSections.includes(nodeId.replace(/_/g, "-"))) {
+            return null;
+          }
+        }
+      }
+
+      // If item has children, recursively filter them first
       if (item.children && item.children.length > 0) {
-        const filteredChildren = filterNavItemsForUser(item.children, user);
+        const filteredChildren = filterNavItemsForUser(item.children, user, false);
         if (filteredChildren.length > 0) {
           return {
             ...item,
@@ -264,7 +367,12 @@ export function filterNavItemsForUser(
         return null;
       }
 
-      // Leaf item
+      // Leaf item suppression check: only check clientConfigData for leaf items!
+      if (!isClientConfigItem && clientConfigData && clientConfigData[nodeId] === false) {
+        return null;
+      }
+
+      // Leaf item permission check
       if (isNavItemAllowed(item, user)) {
         return item;
       }
@@ -276,26 +384,37 @@ export function filterNavItemsForUser(
 
 /**
  * Returns the first accessible route for this user.
- * Used for automatic redirect if user lands on an unauthorized route or root.
+ * Dynamically resolves candidate routes in priority order against isRouteAllowed,
+ * ensuring users and admins are never redirected to a route blocked by client configuration.
  */
 export function getFirstAllowedRoute(user?: UserPermissions | null): string {
   if (!user || user.role === "SUPERADMIN") return "/dashboard";
-  const allowed = user.allowedPages || [];
-  if (allowed.includes("ALL")) return "/dashboard";
-  if (user.role === "ADMIN" && allowed.length === 0) return "/dashboard";
 
-  if (allowed.includes("dashboard")) return "/dashboard";
-  if (allowed.includes("vms")) return "/dashboard/vms";
-  if (allowed.includes("orderprocess")) return "/dashboard/order-process";
-  if (allowed.includes("products") || allowed.includes("inventory")) return "/dashboard/products/inventory";
-  if (allowed.includes("products-analytics")) return "/dashboard/products-analytics/amazon";
-  if (allowed.includes("transaction")) return "/dashboard/transaction/sales/po-based/upload-requested-po";
-  if (allowed.includes("offline-sales") || allowed.includes("challan")) return "/dashboard/offline-sales/sales-challan";
-  if (allowed.includes("purchase") || allowed.includes("purchase-challan")) return "/dashboard/purchase/finish-goods/challan";
-  if (allowed.includes("purchase-invoice")) return "/dashboard/purchase/finish-goods/invoice";
-  if (allowed.includes("labels")) return "/dashboard/settings/labels/label-config";
-  if (allowed.includes("manage-users") && (user.role === "ADMIN" || user.role === "SUPERADMIN")) return "/dashboard/settings/manage-users/user-profile";
-  if (allowed.includes("settings")) return "/dashboard/settings/manage-product/product-profile";
+  const candidateRoutes = [
+    "/dashboard",
+    "/dashboard/vms",
+    "/dashboard/products/inventory",
+    "/dashboard/order-process",
+    "/dashboard/products-analytics/amazon",
+    "/dashboard/transaction/sales/po-based/upload-requested-po",
+    "/dashboard/offline-sales/sales-challan",
+    "/dashboard/purchase/finish-goods/challan",
+    "/dashboard/settings/configuration/client",
+    "/dashboard/settings/manage-users/user-profile",
+    "/dashboard/settings/manage-product/product-profile",
+    "/dashboard/settings/webstore",
+  ];
+
+  for (const route of candidateRoutes) {
+    if (isRouteAllowed(route, user)) {
+      return route;
+    }
+  }
+
+  // Safe fallback for Admin and SuperAdmin is the Configuration page
+  if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
+    return "/dashboard/settings/configuration/client";
+  }
 
   return "/dashboard";
 }
