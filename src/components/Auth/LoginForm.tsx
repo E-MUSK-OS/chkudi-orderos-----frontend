@@ -140,7 +140,7 @@ export default function LoginForm() {
           <Button
             type="submit"
             loading={isSubmitting}
-            rightIcon={<span className="text-[#E8C16D] dark:text-[#080B11]">→</span>}
+            rightIcon={<span className="text-[#0A0E1A] dark:text-[#080B11]">→</span>}
           >
             Sign In
           </Button>

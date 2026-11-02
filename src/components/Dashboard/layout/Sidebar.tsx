@@ -226,6 +226,27 @@ const navItems: NavItem[] = [
     icon: Settings,
     children: [
       {
+        label: "Manage Company",
+        children: [
+          {
+            label: "Company Profile",
+            href: "/dashboard/setting/company-profile",
+          },
+          {
+            label: "Ledger Book",
+            href: "/dashboard/setting/manage-company/ledger-book",
+          },
+          {
+            label: "Employee Profile",
+            href: "/dashboard/setting/manage-company/employee-profile",
+          },
+          {
+            label: "Salaried Employee",
+            href: "/dashboard/setting/manage-company/salaried-employee",
+          },
+        ],
+      },
+      {
         label: "Manage Product",
         href: "/dashboard/settings/manage-product/product-profile",
         children: [
@@ -332,7 +353,7 @@ export default function Sidebar({
       const nextTrail = [...trail, item.label];
 
       if (
-        (item.href && path === item.href) ||
+        (item.href && (path === item.href || path.startsWith(item.href + "/"))) ||
         (item.href === "/dashboard/purchase/finish-goods/invoice" && path === "/dashboard/purchase-invoice") ||
         (item.href === "/dashboard/purchase/finish-goods/challan" && path === "/dashboard/purchase-challan") ||
         ((item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
@@ -342,7 +363,9 @@ export default function Sidebar({
         (item.href === "/dashboard/settings/labels/label-config" &&
           (path === "/dashboard/settings/labels/label-config" || path.startsWith("/dashboard/settings/labels/label-config"))) ||
         (item.href === "/dashboard/settings/labels/label-print" &&
-          path === "/dashboard/settings/labels/label-print")
+          path === "/dashboard/settings/labels/label-print") ||
+        (item.href === "/dashboard/setting/company-profile" &&
+          (path === "/dashboard/setting/manage-company/company-profile" || path.startsWith("/dashboard/setting/company-profile") || path.startsWith("/dashboard/setting/manage-company/company-profile")))
       ) {
         return trail;
       }
@@ -372,7 +395,13 @@ export default function Sidebar({
   }, [pathname]);
 
   const isMenuActive = (item: NavItem): boolean => {
-    if (item.href && pathname === item.href) {
+    if (item.href && (pathname === item.href || pathname.startsWith(item.href + "/"))) {
+      return true;
+    }
+    if (
+      item.href === "/dashboard/setting/company-profile" &&
+      pathname === "/dashboard/setting/manage-company/company-profile"
+    ) {
       return true;
     }
     if (

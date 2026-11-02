@@ -115,7 +115,7 @@ export default function PurchaseInvoicePartyDetails({
               setDropdownOpen(true);
             }}
             placeholder="Search Party..."
-            className="w-full h-9 pl-9 pr-8 text-xs text-slate-800 dark:text-white placeholder-slate-400 bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:outline-none transition-all"
+            className="w-full h-9 pl-9 pr-8 text-xs text-slate-800 dark:text-white placeholder-slate-400 bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all"
           />
           {searchTerm && (
             <button
@@ -147,7 +147,7 @@ export default function PurchaseInvoicePartyDetails({
                   onClick={() => handleSelectParty(p)}
                   className="w-full text-left p-2.5 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors flex items-start gap-2.5 text-xs"
                 >
-                  <Building className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                  <Building className="w-4 h-4 text-[#B88728] dark:text-[#F5C451] shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-slate-900 dark:text-white truncate">
                       {p.partyName}
@@ -235,7 +235,7 @@ export default function PurchaseInvoicePartyDetails({
               disabled={disabled}
               onChange={(e) => onChange({ shippingPartyName: e.target.value })}
               placeholder="Party Name"
-              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors"
+              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors"
             />
           </div>
 
@@ -250,7 +250,7 @@ export default function PurchaseInvoicePartyDetails({
               disabled={disabled}
               onChange={(e) => onChange({ shippingAddress: e.target.value })}
               placeholder="-,-"
-              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors"
+              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors"
             />
           </div>
 
@@ -263,7 +263,7 @@ export default function PurchaseInvoicePartyDetails({
               disabled={disabled}
               onChange={(e) => onChange({ shippingAddress2: e.target.value })}
               placeholder="Shipping Address 2"
-              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors placeholder:text-slate-400"
+              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors placeholder:text-slate-400"
             />
           </div>
 
@@ -279,7 +279,7 @@ export default function PurchaseInvoicePartyDetails({
                 disabled={disabled}
                 onChange={(e) => onChange({ shippingCity: e.target.value })}
                 placeholder="City"
-                className="h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors"
+                className="h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors"
               />
               <input
                 type="text"
@@ -287,7 +287,7 @@ export default function PurchaseInvoicePartyDetails({
                 disabled={disabled}
                 onChange={(e) => onChange({ shippingState: e.target.value })}
                 placeholder="State"
-                className="h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors"
+                className="h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -303,7 +303,7 @@ export default function PurchaseInvoicePartyDetails({
               disabled={disabled}
               onChange={(e) => onChange({ shippingPincode: e.target.value })}
               placeholder="-"
-              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors"
+              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors"
             />
           </div>
 
@@ -318,7 +318,7 @@ export default function PurchaseInvoicePartyDetails({
               disabled={disabled}
               onChange={(e) => onChange({ shippingContact: e.target.value })}
               placeholder="-"
-              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors"
+              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors"
             />
           </div>
 
@@ -333,7 +333,7 @@ export default function PurchaseInvoicePartyDetails({
               disabled={disabled}
               onChange={(e) => onChange({ courierPartner: e.target.value })}
               placeholder="Courier Partner"
-              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors placeholder:text-slate-400"
+              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors placeholder:text-slate-400"
             />
           </div>
 
@@ -348,7 +348,7 @@ export default function PurchaseInvoicePartyDetails({
               disabled={disabled}
               onChange={(e) => onChange({ trackingNo: e.target.value })}
               placeholder="Tracking No"
-              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-teal-500 focus:outline-none transition-colors placeholder:text-slate-400"
+              className="flex-1 h-7.5 px-2.5 text-xs text-slate-800 dark:text-white bg-slate-50/50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-md focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-colors placeholder:text-slate-400"
             />
           </div>
         </div>

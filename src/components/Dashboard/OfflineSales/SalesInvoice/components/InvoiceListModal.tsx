@@ -52,7 +52,7 @@ export default function InvoiceListModal({
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-white/[0.06]">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-teal-500/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 shrink-0 dark:bg-[#1A160E] dark:text-[#E8C16D]">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function InvoiceListModal({
                 onClose();
                 onAddNew();
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-[#0A0E1A] hover:bg-black dark:bg-[#F5C451] dark:text-slate-900 dark:hover:bg-[#e8b83e] transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>New Invoice</span>
@@ -99,7 +99,7 @@ export default function InvoiceListModal({
                 loadInvoices(e.target.value);
               }}
               placeholder="Search by Invoice No, Challan No, or Party Name..."
-              className="w-full h-10 pl-10 pr-4 text-xs bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-teal-500 focus:outline-none"
+              className="w-full h-10 pl-10 pr-4 text-xs bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
             />
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function InvoiceListModal({
                       key={inv.id}
                       className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors"
                     >
-                      <td className="py-3 px-3 font-bold font-mono text-teal-600 dark:text-teal-400">
+                      <td className="py-3 px-3 font-bold font-mono text-[#B88728] dark:text-[#F5C451]">
                         {inv.invoiceNo}
                       </td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">
@@ -159,7 +159,7 @@ export default function InvoiceListModal({
                             onSelectInvoice(inv);
                             onClose();
                           }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-950/30 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#B88728] hover:text-[#9A701E] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-amber-500/10 transition-all cursor-pointer"
                         >
                           <span>Open</span>
                           <ArrowRight className="w-3.5 h-3.5" />

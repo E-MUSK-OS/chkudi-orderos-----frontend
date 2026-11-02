@@ -70,7 +70,7 @@ export default function ThemeSelectDropdown({
   );
 
   return (
-    <div className={cn("relative inline-block", className)} ref={containerRef}>
+    <div className={cn("relative inline-block", isOpen ? "z-40" : "z-0", className)} ref={containerRef}>
       <button
         type="button"
         disabled={disabled}
@@ -78,14 +78,12 @@ export default function ThemeSelectDropdown({
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         className={cn(
           "inline-flex items-center gap-2 rounded-2xl border px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs outline-none select-none",
-          "bg-white dark:bg-[#0B0F17] dark:text-white",
-          isOpen
-            ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 dark:border-[#F5C451] dark:ring-[#F5C451]/30"
-            : "border-slate-200 dark:border-white/[0.08]",
+          "bg-white dark:bg-[#131622] dark:text-white border-[#E7E0D2] dark:border-white/[0.08]",
           disabled
             ? "opacity-50 cursor-not-allowed pointer-events-none"
             : "cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04] dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/30",
-          buttonClassName
+          buttonClassName,
+          isOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 dark:border-[#F5C451] dark:ring-[#F5C451]/30"
         )}
       >
         {icon && (
@@ -142,14 +140,14 @@ export default function ThemeSelectDropdown({
                     text-left
                     ${
                       isSelected
-                        ? "bg-[#0A0E1A] text-[#E8C16D] shadow-xs dark:bg-[#F5C451] dark:text-black"
+                        ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
                         : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                     }
                   `}
                 >
                   <span className="truncate">{opt.label}</span>
                   {isSelected && (
-                    <Check className="h-3.5 w-3.5 text-[#E8C16D] dark:text-black shrink-0 stroke-[2.5]" />
+                    <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 stroke-[2.5]" />
                   )}
                 </button>
               );

@@ -1,0 +1,428 @@
+"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
+import { User, Loader2, Check } from "lucide-react";
+import { toast } from "sonner";
+import {
+  SalariedEmployee,
+  SalaryDetailsFormData,
+} from "../types/salariedEmployee.types";
+import { salariedEmployeeService } from "../services/salariedEmployee.service";
+import { getMediaUrl } from "@/lib/utils";
+import ThemeSelectDropdown, {
+  ThemeSelectOption,
+} from "@/components/ui/ThemeSelectDropdown";
+
+const WORKING_DAY_MODE_OPTIONS: ThemeSelectOption[] = [
+  { value: "Monthly", label: "Monthly" },
+  { value: "Daily", label: "Daily" },
+];
+
+interface SalaryDetailsCardProps {
+  employee: SalariedEmployee;
+  onUpdateSuccess: (updated: SalariedEmployee) => void;
+}
+
+function formatDate(val?: string | null): string {
+  if (!val) return "—";
+  if (/^\d{2}-\d{2}-\d{4}$/.test(val)) return val;
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return val;
+  }
+}
+
+export default function SalaryDetailsCard({
+  employee,
+  onUpdateSuccess,
+}: SalaryDetailsCardProps) {
+  const [formData, setFormData] = useState<SalaryDetailsFormData>({
+    basicSalary: Number(employee.basicSalary || 0),
+    workingDayMode: employee.workingDayMode || "Monthly",
+    workingDays: Number(employee.workingDays || 31),
+    workingHoursPerDay: Number(employee.workingHoursPerDay || 8),
+    totalHours: Number(employee.totalHours || 248),
+    wageRate: Number(employee.wageRate || 0),
+    otRatePercent: Number(employee.otRatePercent || 0),
+    otRatePerHour: Number(employee.otRatePerHour || 0),
+    transportAllowance: Number(employee.transportAllowance || 0),
+    medicalAllowance: Number(employee.medicalAllowance || 0),
+  });
+
+  const [saving, setSaving] = useState(false);
+
+  // Sync state if employee prop updates
+  useEffect(() => {
+    setFormData({
+      basicSalary: Number(employee.basicSalary || 0),
+      workingDayMode: employee.workingDayMode || "Monthly",
+      workingDays: Number(employee.workingDays || 31),
+      workingHoursPerDay: Number(employee.workingHoursPerDay || 8),
+      totalHours: Number(employee.totalHours || 248),
+      wageRate: Number(employee.wageRate || 0),
+      otRatePercent: Number(employee.otRatePercent || 0),
+      otRatePerHour: Number(employee.otRatePerHour || 0),
+      transportAllowance: Number(employee.transportAllowance || 0),
+      medicalAllowance: Number(employee.medicalAllowance || 0),
+    });
+  }, [employee]);
+
+  // Dynamic automatic calculations matching Image 2
+  const calculatedTotalHours = useMemo(() => {
+    return Number((formData.workingDays * formData.workingHoursPerDay).toFixed(0));
+  }, [formData.workingDays, formData.workingHoursPerDay]);
+
+  const calculatedWageRate = useMemo(() => {
+    if (calculatedTotalHours <= 0 || formData.basicSalary <= 0) return 0;
+    return Number((formData.basicSalary / calculatedTotalHours).toFixed(2));
+  }, [formData.basicSalary, calculatedTotalHours]);
+
+  const calculatedOtRatePerHour = useMemo(() => {
+    if (calculatedWageRate <= 0 || formData.otRatePercent <= 0) return 0;
+    return Number(((calculatedWageRate * formData.otRatePercent) / 100).toFixed(2));
+  }, [calculatedWageRate, formData.otRatePercent]);
+
+  const handleChange = (field: keyof SalaryDetailsFormData, val: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: val,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const payload: Partial<SalaryDetailsFormData> = {
+        ...formData,
+        totalHours: calculatedTotalHours,
+        wageRate: calculatedWageRate,
+        otRatePerHour: calculatedOtRatePerHour,
+      };
+
+      const updated = await salariedEmployeeService.updateSalaryDetails(
+        employee.id,
+        payload
+      );
+      toast.success("Salary & working details saved successfully.");
+      onUpdateSuccess(updated);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update salary details.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="w-full rounded-2xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:shadow-xl flex flex-col font-sans">
+      {/* Card Header Title */}
+      <h2 className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white mb-4">
+        Basic Salary and Working Details
+      </h2>
+
+      {/* Profile Summary Box matching Image 2 */}
+      <div className="w-full rounded-2xl bg-slate-50 border border-slate-200 p-4 sm:p-5 mb-5 shadow-xs dark:bg-[#141923] dark:border-white/[0.08]">
+        <div className="flex items-start gap-4">
+          {/* Avatar */}
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border border-slate-200 dark:bg-[#1C2230] dark:border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+            {employee.photoUrl ? (
+              <img
+                src={getMediaUrl(employee.photoUrl)}
+                alt={employee.fullName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={30} className="text-slate-400" />
+            )}
+          </div>
+
+          {/* Employee Details Grid */}
+          <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            {/* Name */}
+            <div className="col-span-2">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Name</span>
+              <span className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
+                {employee.fullName}
+              </span>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Contact</span>
+              <span className="font-mono text-slate-800 dark:text-slate-200">
+                {employee.contactNo || "—"}
+              </span>
+            </div>
+
+            {/* Joined */}
+            <div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Joined</span>
+              <span className="font-mono text-slate-800 dark:text-slate-200">
+                {formatDate(employee.joiningDate)}
+              </span>
+            </div>
+
+            {/* Designation */}
+            <div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Designation</span>
+              <span className="text-slate-800 dark:text-slate-200 font-medium">
+                {employee.designation || "—"}
+              </span>
+            </div>
+
+            {/* Department */}
+            <div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Department</span>
+              <span className="text-slate-800 dark:text-slate-200 font-medium">
+                {employee.department || "—"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bank Sub-row matching Image 2 */}
+        <div className="mt-4 pt-3 border-t border-slate-200 dark:border-white/[0.06] grid grid-cols-3 gap-2 text-xs">
+          <div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Bank</span>
+            <span className="text-slate-800 dark:text-slate-300 font-medium truncate block">
+              {employee.bankName || "—"}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Account No.</span>
+            <span className="font-mono text-slate-800 dark:text-slate-300 truncate block">
+              {employee.accountNumber || "—"}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">IFSC Code.</span>
+            <span className="font-mono text-slate-800 dark:text-slate-300 truncate block">
+              {employee.ifscCode || "—"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Salary & Working Details Form matching Image 2 */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Row 1: Basic Salary, Working Day Mode, Working Days */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Basic Salary */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Basic Salary
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                ₹
+              </span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.basicSalary || ""}
+                onChange={(e) =>
+                  handleChange("basicSalary", parseFloat(e.target.value) || 0)
+                }
+                placeholder="0"
+                className="w-full h-9 pl-7 pr-3 text-xs rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Working Day Mode */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Working Day Mode
+            </label>
+            <ThemeSelectDropdown
+              ariaLabel="Working Day Mode"
+              value={formData.workingDayMode || "Monthly"}
+              onChange={(val) => handleChange("workingDayMode", val)}
+              options={WORKING_DAY_MODE_OPTIONS}
+              className="w-full block"
+              buttonClassName="w-full h-9 px-3 text-xs font-semibold rounded-xl justify-between border border-[#E7E0D2] bg-white text-[#0A0E1A] hover:bg-slate-50 dark:bg-[#161B24] dark:border-white/[0.08] dark:text-white dark:hover:bg-white/[0.04]"
+              menuClassName="w-full min-w-full max-w-none"
+            />
+          </div>
+
+          {/* Working Days */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Working Days
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="366"
+              value={formData.workingDays}
+              onChange={(e) =>
+                handleChange("workingDays", parseInt(e.target.value, 10) || 0)
+              }
+              className="w-full h-9 px-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+            />
+          </div>
+        </div>
+
+        {/* Row 2: Working Hour / Day, Total Hours, Wage Rate */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Working Hour / Day */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Working Hour / Day
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="24"
+              value={formData.workingHoursPerDay}
+              onChange={(e) =>
+                handleChange(
+                  "workingHoursPerDay",
+                  parseFloat(e.target.value) || 0
+                )
+              }
+              className="w-full h-9 px-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+            />
+          </div>
+
+          {/* Total Hours (Calculated) */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Total Hours
+            </label>
+            <div className="w-full h-9 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-100 border border-slate-200 text-slate-800 dark:bg-[#161B24]/60 dark:border-white/[0.06] dark:text-slate-200 font-mono select-none">
+              {calculatedTotalHours || 0}
+            </div>
+          </div>
+
+          {/* Wage Rate (Calculated) */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Wage Rate
+            </label>
+            <div className="w-full h-9 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-100 border border-slate-200 text-slate-800 dark:bg-[#161B24]/60 dark:border-white/[0.06] dark:text-slate-200 font-mono select-none">
+              {calculatedWageRate > 0 ? calculatedWageRate.toFixed(2) : "—"}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: OT Rate %, OT Rate / Hour */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* OT Rate % */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              OT Rate %
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                %
+              </span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.otRatePercent || ""}
+                onChange={(e) =>
+                  handleChange("otRatePercent", parseFloat(e.target.value) || 0)
+                }
+                placeholder="0.00"
+                className="w-full h-9 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+              />
+            </div>
+          </div>
+
+          {/* OT Rate / Hour (Calculated) */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              OT Rate / Hour
+            </label>
+            <div className="w-full h-9 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-100 border border-slate-200 text-slate-800 dark:bg-[#161B24]/60 dark:border-white/[0.06] dark:text-slate-200 font-mono select-none">
+              {calculatedOtRatePerHour > 0
+                ? calculatedOtRatePerHour.toFixed(2)
+                : "—"}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 4: Transport Allowance / Month, Medical Allowance / Month */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Transport Allowance / Month */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Transport Allowance / Month
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                ₹
+              </span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.transportAllowance || ""}
+                onChange={(e) =>
+                  handleChange(
+                    "transportAllowance",
+                    parseFloat(e.target.value) || 0
+                  )
+                }
+                placeholder="0"
+                className="w-full h-9 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Medical Allowance / Month */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Medical Allowance / Month
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                ₹
+              </span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.medicalAllowance || ""}
+                onChange={(e) =>
+                  handleChange(
+                    "medicalAllowance",
+                    parseFloat(e.target.value) || 0
+                  )
+                }
+                placeholder="0"
+                className="w-full h-9 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Submit Button matching Image 2 */}
+        <div className="pt-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full h-10 rounded-xl bg-[#F5C451] hover:bg-[#E8B83D] text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+          >
+            {saving ? (
+              <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
+            ) : (
+              <Check size={16} className="text-[#0A0E1A] stroke-[2.5]" />
+            )}
+            <span>{saving ? "Saving..." : "Submit"}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+

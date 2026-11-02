@@ -330,3 +330,14 @@ input[type="number"] {
   appearance: textfield !important;
 }
 
+
+
+/* OrderOS Global Checkbox Accent: Black in light mode, Gold in dark mode */
+input[type="checkbox"] {
+  accent-color: #0A0E1A !important;
+}
+
+html.dark input[type="checkbox"],
+.dark input[type="checkbox"] {
+  accent-color: #F5C451 !important;
+}

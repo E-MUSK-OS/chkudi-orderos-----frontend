@@ -61,7 +61,7 @@ export default function WebstoreFilterSortBar({
             placeholder="Search by store name, company or marketplace..."
             value={filters.search}
             onChange={(e) => onFilterChange("search", e.target.value)}
-            className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 dark:border-white/[0.1] dark:bg-[#080B11] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0284C7] dark:focus:ring-[#E8C16D]"
+            className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 dark:border-white/[0.1] dark:bg-[#080B11] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#F5C451] focus:border-[#F5C451] dark:focus:ring-[#E8C16D]"
           />
           {filters.search && (
             <button
@@ -116,7 +116,7 @@ export default function WebstoreFilterSortBar({
               title="Card Grid View"
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 layoutMode === "grid"
-                  ? "bg-white dark:bg-slate-800 text-[#0284C7] dark:text-[#38BDF8] shadow-xs"
+                  ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               }`}
             >
@@ -128,7 +128,7 @@ export default function WebstoreFilterSortBar({
               title="Table View"
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 layoutMode === "table"
-                  ? "bg-white dark:bg-slate-800 text-[#0284C7] dark:text-[#38BDF8] shadow-xs"
+                  ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               }`}
             >
@@ -138,10 +138,10 @@ export default function WebstoreFilterSortBar({
         </div>
       </div>
 
-      {/* Styled Columns Bar matching Screenshot (Header bar with sort arrows) - Shown in Grid view */}
+      {/* Styled Columns Bar matching system standard (Header bar with sort arrows) - Shown in Grid view */}
       {layoutMode === "grid" && (
-        <div className="overflow-x-auto rounded-xl bg-[#4A5568] dark:bg-[#1E293B] border border-slate-300 dark:border-white/[0.08] shadow-sm">
-          <div className="grid grid-cols-6 min-w-[700px] text-white text-xs font-bold py-2.5 px-4 select-none">
+        <div className="overflow-x-auto rounded-xl bg-[#0A0E1A] dark:bg-[#080B11] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm">
+          <div className="grid grid-cols-6 min-w-[700px] text-[#E8C16D] text-xs font-semibold py-2.5 px-4 select-none">
             {sortColumns.map((col) => {
               const isSorted = filters.sortBy === col.key;
               return (
@@ -149,14 +149,14 @@ export default function WebstoreFilterSortBar({
                   key={col.key}
                   type="button"
                   onClick={() => onSortToggle(col.key)}
-                  className={`flex items-center gap-1.5 text-left hover:text-[#E8C16D] transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 text-left text-[#E8C16D] hover:text-white transition-colors cursor-pointer ${
                     col.key === "isActive" ? "justify-center" : ""
                   }`}
                 >
                   <span>{col.label}</span>
                   <ArrowUpDown
                     className={`h-3 w-3 transition-opacity ${
-                      isSorted ? "opacity-100 text-[#E8C16D]" : "opacity-60"
+                      isSorted ? "opacity-100 text-[#F5C451]" : "opacity-40"
                     }`}
                   />
                 </button>

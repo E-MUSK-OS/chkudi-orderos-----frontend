@@ -28,7 +28,7 @@ export default function PurchaseInvoiceListHeader({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         {/* Title & Badge */}
         <div className="flex items-center gap-3 sm:gap-3.5 shrink-0 min-w-0">
-          <div className="grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-2xl bg-teal-50 text-teal-600 border border-teal-200/50 shrink-0 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-500/20">
+          <div className="grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 shrink-0 dark:bg-[#1A160E] dark:text-[#E8C16D]">
             <ReceiptText className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
 
@@ -38,7 +38,7 @@ export default function PurchaseInvoiceListHeader({
             </h1>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-              Purchase / Finish Goods / <span className="text-teal-600 dark:text-teal-400 font-semibold">Purchase Invoice</span>
+              Purchase / Finish Goods / <span className="text-slate-700 dark:text-slate-300 font-semibold">Purchase Invoice</span>
             </p>
           </div>
         </div>

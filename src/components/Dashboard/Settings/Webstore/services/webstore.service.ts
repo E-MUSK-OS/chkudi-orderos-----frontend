@@ -32,6 +32,8 @@ export const webstoreService = {
       }
       if (filters.sortBy) params.append("sortBy", filters.sortBy);
       if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
+      if (filters.page) params.append("page", String(filters.page));
+      if (filters.pageSize) params.append("limit", String(filters.pageSize));
     }
 
     const res = await fetchWithAuth(

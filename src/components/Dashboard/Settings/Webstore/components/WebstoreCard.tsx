@@ -107,11 +107,11 @@ export default function WebstoreCard({
             </button>
           )}
 
-          {/* Modify Button matching Screenshot */}
+          {/* Modify Button matching second image golden theme */}
           <button
             type="button"
             onClick={() => onModify(store)}
-            className="px-3 py-1 text-xs font-semibold rounded-lg text-[#0284C7] border border-[#0284C7]/40 hover:bg-[#0284C7]/10 dark:text-[#38BDF8] dark:border-[#38BDF8]/40 dark:hover:bg-[#38BDF8]/10 transition-all cursor-pointer active:scale-95"
+            className="px-3.5 py-1 text-xs font-bold rounded-xl bg-[#F5C451] hover:bg-[#e8b83e] active:scale-95 text-[#0A0E1A] shadow-xs transition-all cursor-pointer dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11]"
           >
             Modify
           </button>
