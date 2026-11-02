@@ -163,13 +163,39 @@ export interface DropdownOptionsData {
   parties: string[];
   distinctFromProducts: {
     categories: string[];
+    subCategories?: string[];
+    forUses?: string[];
+    manufacturingGroups?: string[];
     brands: string[];
     units: string[];
+    costApplyingModes?: string[];
+    purchaseTypes?: string[];
+    issueModes?: string[];
+    consumptionModes?: string[];
     genders: string[];
     referenceParties: string[];
     rackAddresses: string[];
     availabilities: string[];
     colors: string[];
+    gstRates?: number[];
+  };
+  distinctFromMaterials?: {
+    categories: string[];
+    subCategories: string[];
+    forUses: string[];
+    manufacturingGroups: string[];
+    brands: string[];
+    units: string[];
+    costApplyingModes: string[];
+    purchaseTypes: string[];
+    issueModes: string[];
+    consumptionModes: string[];
+    genders: string[];
+    referenceParties: string[];
+    rackAddresses: string[];
+    availabilities: string[];
+    colors: string[];
+    gstRates: number[];
   };
 }
 

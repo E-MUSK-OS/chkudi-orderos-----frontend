@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Controller, useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ import {
   defaultMaterialAttributes,
 } from "../constants/material.constants";
 import { useCreateMaterial, useUpdateMaterial } from "../hooks/useMaterials";
+import { useDropdownOptions } from "../hooks/useDropdownOptions";
 
 import ProductTabsNav, { type ProductActiveTab } from "./ProductTabsNav";
 import SectionCard from "./SectionCard";
@@ -66,6 +67,56 @@ export default function MaterialForm({
   const queryClient = useQueryClient();
   const createMaterialMutation = useCreateMaterial();
   const updateMaterialMutation = useUpdateMaterial();
+
+  // Fetch dynamic dropdown options from backend DB
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
+
+  const buildOptions = useMemo(() => {
+    const makeOptions = (
+      defaultList: string[],
+      fieldName: string,
+      distinctList?: string[]
+    ): DropdownOption[] => {
+      const fieldLower = fieldName.toLowerCase();
+      const dbSaved = (dropdownData?.savedOptions || [])
+        .filter((o) => o.field.toLowerCase() === fieldLower)
+        .map((o) => o.value);
+
+      const distinct = distinctList || [];
+      const map = new Map<string, DropdownOption>();
+
+      [...defaultList, ...dbSaved, ...distinct].forEach((val) => {
+        const v = String(val || "").trim();
+        if (v && !map.has(v.toLowerCase())) {
+          map.set(v.toLowerCase(), { label: v, value: v });
+        }
+      });
+
+      return Array.from(map.values());
+    };
+
+    const distMat = dropdownData?.distinctFromMaterials || dropdownData?.distinctFromProducts;
+
+    return {
+      categories: makeOptions(categoryOptions, "category", distMat?.categories),
+      subCategories: makeOptions(subCategoryOptions, "subcategory", distMat?.subCategories),
+      manufacturingGroups: makeOptions(manufacturingGroupOptions, "manufacturinggroup", distMat?.manufacturingGroups),
+      units: makeOptions(unitOptions, "unit", distMat?.units),
+      brands: makeOptions(brandOptions, "brand", distMat?.brands),
+      forUses: makeOptions(forUseOptions, "foruse", distMat?.forUses),
+      costApplyingModes: makeOptions(costApplyingModeOptions, "costapplyingmode", distMat?.costApplyingModes),
+      purchaseTypes: makeOptions(purchaseTypeOptions, "purchasetype", distMat?.purchaseTypes),
+      issueModes: makeOptions(issueModeOptions, "issuemode", distMat?.issueModes),
+      consumptionModes: makeOptions(consumptionModeOptions, "consumptionmode", distMat?.consumptionModes),
+      colors: Array.from(
+        new Set([
+          ...(dropdownData?.savedOptions || []).filter((o) => o.field.toLowerCase() === "color").map((o) => o.value),
+          ...(distMat?.colors || []),
+        ])
+      ),
+    };
+  }, [dropdownData]);
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema) as never,
@@ -344,6 +395,7 @@ export default function MaterialForm({
       }
 
       queryClient.invalidateQueries({ queryKey: ["materials"] });
+      queryClient.invalidateQueries({ queryKey: ["material-dropdown-options"] });
       onSuccess();
     } catch (err: any) {
       console.error("Form submit error:", err);
@@ -470,10 +522,7 @@ export default function MaterialForm({
                   fieldKey="category"
                   value={field.value}
                   onChange={field.onChange}
-                  options={categoryOptions.map((c) => ({
-                    label: c,
-                    value: c,
-                  }))}
+                  options={buildOptions.categories}
                   placeholder="Select Category..."
                   required
                   error={errors.category?.message}
@@ -490,10 +539,7 @@ export default function MaterialForm({
                   fieldKey="subCategory"
                   value={field.value || "No Sub Category"}
                   onChange={field.onChange}
-                  options={subCategoryOptions.map((s) => ({
-                    label: s,
-                    value: s,
-                  }))}
+                  options={buildOptions.subCategories}
                   placeholder="Select Sub Category..."
                   error={errors.subCategory?.message}
                 />
@@ -509,10 +555,7 @@ export default function MaterialForm({
                   fieldKey="manufacturingGroup"
                   value={field.value}
                   onChange={field.onChange}
-                  options={manufacturingGroupOptions.map((m) => ({
-                    label: m,
-                    value: m,
-                  }))}
+                  options={buildOptions.manufacturingGroups}
                   placeholder="Select Manufacturing Group..."
                   required
                   error={errors.manufacturingGroup?.message}
@@ -529,10 +572,7 @@ export default function MaterialForm({
                   fieldKey="unit"
                   value={field.value}
                   onChange={field.onChange}
-                  options={unitOptions.map((u) => ({
-                    label: u,
-                    value: u,
-                  }))}
+                  options={buildOptions.units}
                   placeholder="Select Unit..."
                   required
                   error={errors.unit?.message}
@@ -552,6 +592,7 @@ export default function MaterialForm({
                   label="Colors"
                   value={field.value || []}
                   onChange={field.onChange}
+                  additionalColors={buildOptions.colors}
                   error={errors.colors?.message}
                 />
               )}
@@ -929,10 +970,7 @@ export default function MaterialForm({
                   fieldKey="brand"
                   value={field.value || "No Brand"}
                   onChange={field.onChange}
-                  options={brandOptions.map((b) => ({
-                    label: b,
-                    value: b,
-                  }))}
+                  options={buildOptions.brands}
                   placeholder="Select Brand..."
                   required
                   error={errors.brand?.message}
@@ -949,10 +987,7 @@ export default function MaterialForm({
                   fieldKey="forUse"
                   value={field.value || "No For Use"}
                   onChange={field.onChange}
-                  options={forUseOptions.map((f) => ({
-                    label: f,
-                    value: f,
-                  }))}
+                  options={buildOptions.forUses}
                   placeholder="Select For Use..."
                   error={errors.forUse?.message}
                 />
@@ -1001,10 +1036,7 @@ export default function MaterialForm({
                   fieldKey="costApplyingMode"
                   value={field.value}
                   onChange={field.onChange}
-                  options={costApplyingModeOptions.map((c) => ({
-                    label: c,
-                    value: c,
-                  }))}
+                  options={buildOptions.costApplyingModes}
                   placeholder="Select Cost Applying Mode..."
                   required
                   error={errors.costApplyingMode?.message}
@@ -1129,10 +1161,7 @@ export default function MaterialForm({
                     fieldKey="purchaseType"
                     value={field.value || ""}
                     onChange={field.onChange}
-                    options={purchaseTypeOptions.map((p) => ({
-                      label: p,
-                      value: p,
-                    }))}
+                    options={buildOptions.purchaseTypes}
                     placeholder="Select..."
                   />
                 )}
@@ -1173,10 +1202,7 @@ export default function MaterialForm({
                   fieldKey="issueMode"
                   value={field.value}
                   onChange={field.onChange}
-                  options={issueModeOptions.map((i) => ({
-                    label: i,
-                    value: i,
-                  }))}
+                  options={buildOptions.issueModes}
                   placeholder="Select..."
                   required
                   error={errors.issueMode?.message}
@@ -1193,10 +1219,7 @@ export default function MaterialForm({
                   fieldKey="consumptionMode"
                   value={field.value}
                   onChange={field.onChange}
-                  options={consumptionModeOptions.map((c) => ({
-                    label: c,
-                    value: c,
-                  }))}
+                  options={buildOptions.consumptionModes}
                   placeholder="Select..."
                   required
                   error={errors.consumptionMode?.message}

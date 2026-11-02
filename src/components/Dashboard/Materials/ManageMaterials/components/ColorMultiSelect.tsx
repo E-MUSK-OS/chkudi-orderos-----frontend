@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChevronsUpDown, Plus, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { defaultColorPresets } from "../constants/material.constants";
+import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
 
 export interface ColorPreset {
   name: string;
@@ -118,6 +119,7 @@ export default function ColorMultiSelect({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
+  const saveOptionMutation = useSaveDropdownOption();
 
   const getColorHex = (name: string): string => {
     const clean = (name || "").toLowerCase().trim();
@@ -266,6 +268,16 @@ export default function ColorMultiSelect({
           localStorage.setItem("orderos_custom_colors", JSON.stringify(updated));
         } catch {}
       }
+    }
+
+    try {
+      saveOptionMutation.mutate({
+        field: "color",
+        value: trimmed,
+        label: trimmed,
+      });
+    } catch (e) {
+      console.error("Failed to save custom color to database:", e);
     }
 
     setNewColorName("");
