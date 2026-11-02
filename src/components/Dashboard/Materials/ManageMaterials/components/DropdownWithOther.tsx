@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronsUpDown, Check, Plus, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
 
 export interface DropdownOption {
   label: string;
@@ -54,6 +56,8 @@ export default function DropdownWithOther({
   const containerRef = useRef<HTMLDivElement>(null);
   const customInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const saveOptionMutation = useSaveDropdownOption();
 
   // Deduplicate and merge options
   const mergedOptions: DropdownOption[] = useMemo(() => {
@@ -183,6 +187,19 @@ export default function DropdownWithOther({
       } catch {}
     }
     onChange(trimmed);
+
+    // Persist option to backend Database
+    try {
+      saveOptionMutation.mutate({
+        field: fieldKey,
+        value: trimmed,
+        label: trimmed,
+      });
+      toast.success(`Added "${trimmed}" to ${label.replace(/\.+$/, "")}`);
+    } catch (e) {
+      console.error("Failed to save custom option to database:", e);
+    }
+
     setIsOtherActive(false);
     setCustomValue("");
     setSearchTerm("");

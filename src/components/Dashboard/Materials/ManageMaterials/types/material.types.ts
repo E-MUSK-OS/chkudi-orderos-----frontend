@@ -27,6 +27,7 @@ export interface Material {
   sku?: string;
   marketplace?: string | string[];
   subCategory?: string;
+  forUse?: string;
   unit?: string;
   sizeList?: string;
   colors?: string[];
@@ -82,6 +83,7 @@ export interface MaterialPayload {
   sku?: string;
   marketplace?: string | string[];
   subCategory?: string;
+  forUse?: string;
   unit?: string;
   sizeList?: string;
   colors?: string[];
@@ -162,18 +164,38 @@ export interface DropdownOptionsData {
   parties: string[];
   distinctFromProducts: {
     categories?: string[];
+    subCategories?: string[];
+    forUses?: string[];
+    manufacturingGroups?: string[];
     brands?: string[];
     units?: string[];
+    costApplyingModes?: string[];
+    purchaseTypes?: string[];
+    issueModes?: string[];
+    consumptionModes?: string[];
     genders?: string[];
     referenceParties?: string[];
     rackAddresses?: string[];
     availabilities?: string[];
     colors?: string[];
+    gstRates?: (number | string)[];
+  };
+  distinctFromMaterials?: {
+    categories?: string[];
+    subCategories?: string[];
+    forUses?: string[];
     manufacturingGroups?: string[];
+    brands?: string[];
+    units?: string[];
     costApplyingModes?: string[];
     purchaseTypes?: string[];
     issueModes?: string[];
     consumptionModes?: string[];
+    genders?: string[];
+    referenceParties?: string[];
+    rackAddresses?: string[];
+    availabilities?: string[];
+    colors?: string[];
     gstRates?: (number | string)[];
   };
 }

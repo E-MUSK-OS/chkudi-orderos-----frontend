@@ -1,81 +1,32 @@
 "use client";
 
-import { Package } from "lucide-react";
+import { Fragment } from "react";
+import { Package, ChevronDown, ChevronUp } from "lucide-react";
 
 import type { Material } from "../types/material.types";
 import MaterialStatusBadge from "./MaterialStatusBadge";
 import MaterialActionMenu from "./MaterialActionMenu";
+import MaterialVariantInline from "./MaterialVariantInline";
 
 interface Props {
   materials: Material[];
   onEdit: (material: Material) => void;
   onDelete: (material: Material) => void;
   onStatusChange: (material: Material) => void;
+  expandedMaterialId?: string | null;
+  onVariantToggle?: (material: Material) => void;
   selectedMaterialIds?: string[];
   onToggleSelect?: (materialId: string) => void;
   onToggleSelectAll?: () => void;
 }
-
-const getMaterialAttributeItems = (material: Material) => {
-  const items: { name: string; values: string[] }[] = [];
-
-  // 1. Colors
-  let colors: string[] = [];
-  if (Array.isArray(material.colors) && material.colors.length > 0) {
-    colors = material.colors.filter((c: any): c is string => typeof c === "string" && Boolean(c.trim()));
-  } else if (typeof material.colors === "string" && (material.colors as string).trim()) {
-    colors = (material.colors as string).split(",").map((s: string) => s.trim()).filter(Boolean);
-  }
-  if (colors.length > 0) {
-    items.push({ name: "Colors", values: colors });
-  }
-
-  // 2. Width
-  if (material.width || material.widthRangeFrom || material.widthRangeTo) {
-    const range =
-      material.widthRangeFrom || material.widthRangeTo
-        ? ` (${material.widthRangeFrom || 0}-${material.widthRangeTo || 0})`
-        : "";
-    items.push({ name: "Width", values: [`${material.width ?? 0}${range}`] });
-  }
-
-  // 3. GSM
-  if (material.gsm || material.gsmRangeFrom || material.gsmRangeTo) {
-    const range =
-      material.gsmRangeFrom || material.gsmRangeTo
-        ? ` (${material.gsmRangeFrom || 0}-${material.gsmRangeTo || 0})`
-        : "";
-    items.push({ name: "GSM", values: [`${material.gsm ?? 0}${range}`] });
-  }
-
-  // 4. Manufacturing Group
-  if (material.manufacturingGroup) {
-    items.push({ name: "Mfg", values: [material.manufacturingGroup] });
-  }
-
-  // 5. GST
-  if (material.gstRate !== undefined && material.gstRate !== null) {
-    items.push({ name: "GST", values: [`${material.gstRate}%`] });
-  }
-
-  // 6. Less (%)
-  if (material.less) {
-    items.push({ name: "Less", values: [`${material.less}%`] });
-  }
-
-  // 7. Cost Mode
-  if (material.costApplyingMode) {
-    items.push({ name: "Cost Mode", values: [material.costApplyingMode] });
-  }
-
-  return items;
-};
 
 export default function MaterialTable({
   materials,
   onEdit,
   onDelete,
   onStatusChange,
+  expandedMaterialId,
+  onVariantToggle,
   selectedMaterialIds = [],
   onToggleSelect,
   onToggleSelectAll,
@@ -151,6 +102,10 @@ export default function MaterialTable({
             <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
               Actions
             </th>
+
+            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
+              Variants
+            </th>
           </tr>
         </thead>
 
@@ -158,14 +113,14 @@ export default function MaterialTable({
           {materials.map((material) => {
             const isSelected = selectedMaterialIds.includes(material.id);
             return (
-              <tr
-                key={material.id}
-                className={`transition-colors ${
-                  isSelected
-                    ? "bg-[#FFF9EC]/80 dark:bg-[#F5C451]/10 hover:bg-[#FFF9EC] dark:hover:bg-[#F5C451]/15"
-                    : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
-                }`}
-              >
+              <Fragment key={material.id}>
+                <tr
+                  className={`transition-colors ${
+                    isSelected
+                      ? "bg-[#FFF9EC]/80 dark:bg-[#F5C451]/10 hover:bg-[#FFF9EC] dark:hover:bg-[#F5C451]/15"
+                      : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
+                  }`}
+                >
                 <td className="px-3 sm:px-4 py-3.5 text-center w-12 align-middle">
                   <div className="flex items-center justify-center">
                     <input
@@ -236,34 +191,22 @@ export default function MaterialTable({
                   </div>
                 </td>
 
-                {/* Category & Attributes */}
+                {/* Category & Sub Category */}
                 <td className="px-3 sm:px-4 py-3.5 align-middle">
                   <div>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                       {material.category}
                     </span>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      {getMaterialAttributeItems(material).map((attr, idx) => {
-                        const hasValues = attr.values.length > 0;
-                        return (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-[#F5C451]/10 px-1.5 py-0.5 text-[10px] sm:text-[11px] font-mono border border-amber-200/60 dark:border-[#F5C451]/20 shadow-2xs"
-                          >
-                            <span className="text-slate-600 dark:text-slate-400 font-medium">
-                              {attr.name}
-                            </span>
-                            {hasValues && (
-                              <>
-                                <span className="text-slate-400 dark:text-slate-500 font-normal">:</span>
-                                <span className="font-bold text-[#B88728] dark:text-[#F5C451]">
-                                  {attr.values.join(", ")}
-                                </span>
-                              </>
-                            )}
-                          </span>
-                        );
-                      })}
+                    <div className="mt-1">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-[#F5C451]/10 px-1.5 py-0.5 text-[10px] sm:text-[11px] font-mono border border-amber-200/60 dark:border-[#F5C451]/20 shadow-2xs">
+                        <span className="text-slate-600 dark:text-slate-400 font-medium">
+                          Sub Category
+                        </span>
+                        <span className="text-slate-400 dark:text-slate-500 font-normal">:</span>
+                        <span className="font-bold text-[#B88728] dark:text-[#F5C451]">
+                          {material.subCategory || "No Sub Category"}
+                        </span>
+                      </span>
                     </div>
                   </div>
                 </td>
@@ -312,9 +255,48 @@ export default function MaterialTable({
                     />
                   </div>
                 </td>
+
+                {/* Variants */}
+                <td className="px-3 sm:px-4 py-3.5 align-middle text-center">
+                  <div className="flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => onVariantToggle?.(material)}
+                      className="grid h-8 w-8 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] transition-all shadow-2xs active:scale-95 cursor-pointer dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#F5C451]/10 dark:hover:text-[#F5C451]"
+                      title={expandedMaterialId === material.id ? "Collapse variants" : "Expand variants"}
+                    >
+                      {expandedMaterialId === material.id ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </td>
               </tr>
-            );
-          })}
+
+              {expandedMaterialId === material.id && (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="border-t border-[#E7E0D2] bg-slate-50/60 p-3 sm:p-5 dark:border-white/[0.08] dark:bg-[#080B11]/50"
+                  >
+                    <MaterialVariantInline
+                      materialId={material.id}
+                      attributes={
+                        material.attributes && material.attributes.length > 0
+                          ? material.attributes
+                          : [{ attributeName: "Size" }]
+                      }
+                      masterSku={material.masterSku}
+                      material={material}
+                    />
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          );
+        })}
         </tbody>
       </table>
     </div>

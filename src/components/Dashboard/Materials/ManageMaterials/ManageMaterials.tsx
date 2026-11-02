@@ -173,7 +173,13 @@ const ManageMaterials = () => {
       material.masterSku.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = status === "" || String(material.isActive) === status;
-    const matchesCategory = category === "" || material.category === category;
+    const matchesCategory =
+      !category ||
+      category.trim() === "" ||
+      (material.category &&
+        material.category.toLowerCase().includes(category.toLowerCase().trim())) ||
+      (material.subCategory &&
+        material.subCategory.toLowerCase().includes(category.toLowerCase().trim()));
     const matchesBrand = brand === "" || material.brand === brand;
 
     const matchesMarketplace = (() => {
@@ -233,6 +239,15 @@ const ManageMaterials = () => {
   );
 
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
+  const [expandedMaterialId, setExpandedMaterialId] = useState<string | null>(null);
+
+  const handleVariantToggle = (material: Material) => {
+    if (expandedMaterialId === material.id) {
+      setExpandedMaterialId(null);
+    } else {
+      setExpandedMaterialId(material.id);
+    }
+  };
 
   const handleToggleSelect = (productId: string) => {
     setSelectedMaterialIds((prev) =>
@@ -445,6 +460,8 @@ const ManageMaterials = () => {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onStatusChange={handleStatus}
+              expandedMaterialId={expandedMaterialId}
+              onVariantToggle={handleVariantToggle}
               selectedMaterialIds={selectedMaterialIds}
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
