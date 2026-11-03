@@ -471,7 +471,7 @@ export const standalonePages: SearchPageItem[] = [
   {
     id: "warehouse",
     title: "Warehouse",
-    path: "Warehouse",
+    path: "Account > Warehouse",
     href: "/dashboard/warehouse",
     icon: Warehouse,
     defaultTimeAgo: "1d ago",

@@ -104,13 +104,54 @@ export function buildDynamicClientConfigTree(
     convertNavItemToTreeNode(item, "", true)
   );
 
+  // Dedicated Account section containing Profile, Warehouse, Wallet, Notification
+  const accountSection: ClientConfigTreeNode = {
+    id: "account",
+    label: "Account",
+    checked: true,
+    indeterminate: false,
+    isSection: true,
+    children: [
+      {
+        id: "profile",
+        label: "Profile",
+        path: "/dashboard/profile",
+        checked: true,
+        indeterminate: false,
+      },
+      {
+        id: "warehouse",
+        label: "Warehouse",
+        path: "/dashboard/warehouse",
+        checked: true,
+        indeterminate: false,
+      },
+      {
+        id: "wallet",
+        label: "Wallet",
+        path: "/dashboard/wallet",
+        checked: true,
+        indeterminate: false,
+      },
+      {
+        id: "notification",
+        label: "Notification",
+        path: "/dashboard/notification",
+        checked: true,
+        indeterminate: false,
+      },
+    ],
+  };
+
+  rootSections.push(accountSection);
+
   // Apply saved state if present
   if (savedStateMap) {
     rootSections.forEach((section) => applySavedStateToNode(section, savedStateMap));
   }
 
   // Canonical distribution of existing sections across 3 columns:
-  // Column 1: Dashboard, VMS, Products
+  // Column 1: Dashboard, VMS, Products, Account
   // Column 2: Order Process, Products Analytics, Transaction
   // Column 3: Offline Sales, Purchase, Settings
   const sectionMap: Record<string, ClientConfigTreeNode> = {};
@@ -127,6 +168,7 @@ export function buildDynamicClientConfigTree(
     sectionMap["dashboard"],
     sectionMap["vms"],
     sectionMap["products"],
+    sectionMap["account"],
   ].filter(Boolean);
 
   const column2: ClientConfigTreeNode[] = [
@@ -146,6 +188,7 @@ export function buildDynamicClientConfigTree(
     "dashboard",
     "vms",
     "products",
+    "account",
     "order-process",
     "products-analytics",
     "transaction",

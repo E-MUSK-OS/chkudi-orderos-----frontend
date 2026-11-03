@@ -10,6 +10,7 @@ import ProductPagination from "@/components/Dashboard/Products/ManageProducts/co
 import { useUsers, useUpdateUserStatus, useDeleteUser } from "./hooks/useManageUsers";
 import type { ManagedUser } from "./types/userManagement.types";
 import { usePagePermissions } from "@/utils/pagePermissions";
+import { toast } from "sonner";
 
 export default function UserProfileList() {
   const router = useRouter();
@@ -53,12 +54,22 @@ export default function UserProfileList() {
   };
 
   const handleDeleteClick = (user: ManagedUser) => {
+    if (user.role === "SUPERADMIN") {
+      toast.error("Super Admin accounts cannot be deleted.");
+      return;
+    }
     setUserToDelete(user);
     setDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
+    if (userToDelete.role === "SUPERADMIN") {
+      toast.error("Super Admin accounts cannot be deleted.");
+      setDeleteModalOpen(false);
+      setUserToDelete(null);
+      return;
+    }
     try {
       setIsDeleting(true);
       await deleteUserMutation.mutateAsync(userToDelete.id);

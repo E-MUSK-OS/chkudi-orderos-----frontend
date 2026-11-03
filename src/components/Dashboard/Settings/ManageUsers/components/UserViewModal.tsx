@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { X, Mail, Phone, Calendar, Shield, UserCheck } from "lucide-react";
 import type { ManagedUser } from "../types/userManagement.types";
 import { getAvatarUrl } from "../utils/avatarUrl";
 import { getCurrentUser } from "@/utils/pagePermissions";
+import { getInitials } from "@/components/Dashboard/profile/ProfileForm";
 
 interface Props {
   user: ManagedUser | null;
@@ -18,17 +19,15 @@ export default function UserViewModal({ user, open, onClose, onEdit }: Props) {
   const currentUser = React.useMemo(() => getCurrentUser(), []);
   if (!open || !user) return null;
 
+  const [imgError, setImgError] = useState(false);
   const isSuperAdminCard = user.role === "SUPERADMIN";
   const canEdit = !(currentUser?.role === "ADMIN" && isSuperAdminCard);
 
-  const initials = user.fullName
-    ? user.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "U";
+  useEffect(() => {
+    setImgError(false);
+  }, [user.avatar]);
+
+  const initials = getInitials(user.fullName, user.email);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
@@ -62,9 +61,16 @@ export default function UserViewModal({ user, open, onClose, onEdit }: Props) {
         <div className="p-5 sm:p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           {/* User Bio Card */}
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#080B11] border border-slate-200/80 dark:border-white/[0.06]">
-            {user.avatar ? (
+            {user.avatar && !imgError ? (
               <div className="relative w-16 h-16 rounded-2xl overflow-hidden shrink-0 border-2 border-[#E8C16D]">
-                <Image src={getAvatarUrl(user.avatar)} alt={user.fullName} fill className="object-cover" unoptimized />
+                <Image
+                  src={getAvatarUrl(user.avatar)}
+                  alt={user.fullName}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                  onError={() => setImgError(true)}
+                />
               </div>
             ) : (
               <div className="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center font-black text-lg bg-[#FFF9EC] text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] border border-[#E8C16D]/30">

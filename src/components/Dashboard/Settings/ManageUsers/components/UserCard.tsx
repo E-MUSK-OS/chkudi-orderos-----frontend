@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Mail, Phone, Eye, Edit2, Trash2 } from "lucide-react";
 import type { ManagedUser } from "../types/userManagement.types";
 import { getAvatarUrl } from "../utils/avatarUrl";
 import { getCurrentUser, usePagePermissions } from "@/utils/pagePermissions";
+import { getInitials } from "@/components/Dashboard/profile/ProfileForm";
 
 interface Props {
   user: ManagedUser;
@@ -17,18 +18,12 @@ interface Props {
 
 export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelete }: Props) {
   const currentUser = React.useMemo(() => getCurrentUser(), []);
+  const [imgError, setImgError] = useState(false);
   const { canUpdate, canDelete } = usePagePermissions("settings/manage-users");
   const isSuperAdminCard = user.role === "SUPERADMIN";
-  const canModify = !(currentUser?.role === "ADMIN" && isSuperAdminCard);
-  // Initials fallback
-  const initials = user.fullName
-    ? user.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "U";
+  const canModify = isSuperAdminCard ? currentUser?.role === "SUPERADMIN" : (currentUser?.role === "ADMIN" || currentUser?.role === "SUPERADMIN");
+  // Initials fallback (e.g. Elon Musk -> EM)
+  const initials = getInitials(user.fullName, user.email);
 
   // Role badge colors
   const roleBadge = {
@@ -63,7 +58,7 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
         {/* Top Header: Avatar + Name + Role Badge */}
         <div className="flex items-start justify-between gap-3 mb-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            {user.avatar ? (
+            {user.avatar && !imgError ? (
               <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.1] bg-slate-100 dark:bg-white/[0.04]">
                 <Image
                   src={getAvatarUrl(user.avatar)}
@@ -71,6 +66,7 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
                   fill
                   className="object-cover"
                   unoptimized
+                  onError={() => setImgError(true)}
                 />
               </div>
             ) : (
@@ -202,7 +198,7 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
             </button>
           )}
 
-          {canModify && canDelete && onDelete && (
+          {!isSuperAdminCard && canModify && canDelete && onDelete && (
             <button
               type="button"
               onClick={() => onDelete(user)}

@@ -47,9 +47,40 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<UserFormValues> }) =>
       userManagementService.update(id, data, getToken()),
-    onSuccess: (_, variables) => {
+    onSuccess: (res, variables) => {
       queryClient.invalidateQueries({ queryKey: ["managed-users"] });
       queryClient.invalidateQueries({ queryKey: ["managed-user", variables.id] });
+
+      // If the updated user is the currently logged-in user, immediately sync localStorage and trigger real-time updates!
+      if (typeof window !== "undefined") {
+        const currentUserStr = localStorage.getItem("user");
+        if (currentUserStr) {
+          try {
+            const currentUser = JSON.parse(currentUserStr);
+            if (currentUser.id === variables.id || (res?.data && res.data.id === currentUser.id)) {
+              const updatedData = res?.data || {};
+              const merged = {
+                ...currentUser,
+                ...updatedData,
+                fullName: updatedData.fullName || currentUser.fullName,
+                email: updatedData.email || currentUser.email,
+                avatar: updatedData.avatar !== undefined ? updatedData.avatar : currentUser.avatar,
+                phone: updatedData.phone !== undefined ? updatedData.phone : currentUser.phone,
+                dob: updatedData.dob !== undefined ? updatedData.dob : currentUser.dob,
+                gender: updatedData.gender !== undefined ? updatedData.gender : currentUser.gender,
+                departments: updatedData.departments || currentUser.departments,
+                companies: updatedData.companies || currentUser.companies,
+              };
+              localStorage.setItem("user", JSON.stringify(merged));
+              window.dispatchEvent(new Event("storage"));
+              window.dispatchEvent(new Event("user_profile_updated"));
+            }
+          } catch (e) {
+            console.error("Failed to sync updated user in localStorage:", e);
+          }
+        }
+      }
+
       toast.success("User updated successfully.");
     },
     onError: (err: any) => {

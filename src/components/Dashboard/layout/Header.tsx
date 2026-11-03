@@ -23,6 +23,11 @@ import { useNotificationSocket } from "@/components/Dashboard/Notification/hooks
 
 import ThemeToggle from "./ThemeToggle";
 import GlobalSearchModal from "./GlobalSearchModal";
+import {
+  getCurrentUser,
+  isRouteAllowed,
+  type UserPermissions,
+} from "@/utils/pagePermissions";
 
 interface HeaderProps {
   title: string;
@@ -43,6 +48,25 @@ export default function Header({
   const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserPermissions | null>(null);
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+    const handleStorage = () => {
+      setCurrentUser(getCurrentUser());
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("client_configuration_updated", handleStorage);
+    window.addEventListener("user_profile_updated", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("client_configuration_updated", handleStorage);
+      window.removeEventListener("user_profile_updated", handleStorage);
+    };
+  }, []);
+
+  const isWarehouseAllowed = isRouteAllowed("/dashboard/warehouse", currentUser);
+  const isNotificationAllowed = isRouteAllowed("/dashboard/notification", currentUser);
   const notificationRef = useRef<HTMLDivElement>(null);
 
   useNotificationSocket();
@@ -212,38 +236,42 @@ export default function Header({
               <div className="flex items-center gap-2">
                 <ThemeToggle />
 
-                <button
-                  type="button"
-                  onClick={() => router.push("/dashboard/warehouse")}
-                  className="group relative grid h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-slate-600 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#131B2E] dark:hover:text-[#F5C451] cursor-pointer shrink-0"
-                >
-                  <Warehouse size={18} />
+                {isWarehouseAllowed && (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/dashboard/warehouse")}
+                    className="group relative grid h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-slate-600 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#131B2E] dark:hover:text-[#F5C451] cursor-pointer shrink-0"
+                  >
+                    <Warehouse size={18} />
 
-                  <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.1] dark:bg-[#0F1626] px-2.5 py-1 text-xs font-medium text-white dark:text-slate-200 shadow-xl opacity-0 transition-all duration-150 group-hover:opacity-100 z-50">
-                    Warehouse
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setNotificationOpen((prev) => !prev)}
-                  className="group relative grid h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-slate-600 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#131B2E] dark:hover:text-[#F5C451] cursor-pointer shrink-0"
-                >
-                  <Bell size={18} />
-
-                  {unreadCount > 0 && (
-                    <span className="absolute right-2 top-2 flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#B88728] dark:bg-[#F5C451]" />
+                    <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.1] dark:bg-[#0F1626] px-2.5 py-1 text-xs font-medium text-white dark:text-slate-200 shadow-xl opacity-0 transition-all duration-150 group-hover:opacity-100 z-50">
+                      Warehouse
                     </span>
-                  )}
-                  <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.1] dark:bg-[#0F1626] px-2.5 py-1 text-xs font-medium text-white dark:text-slate-200 shadow-xl opacity-0 transition-all duration-150 group-hover:opacity-100 z-50">
-                    Notification
-                  </span>
-                </button>
+                  </button>
+                )}
+
+                {isNotificationAllowed && (
+                  <button
+                    type="button"
+                    onClick={() => setNotificationOpen((prev) => !prev)}
+                    className="group relative grid h-11 w-11 place-items-center rounded-xl border border-[#E7E0D2] bg-white text-slate-600 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-[#FFF8E7] hover:text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#131B2E] dark:hover:text-[#F5C451] cursor-pointer shrink-0"
+                  >
+                    <Bell size={18} />
+
+                    {unreadCount > 0 && (
+                      <span className="absolute right-2 top-2 flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-[#B88728] dark:bg-[#F5C451]" />
+                      </span>
+                    )}
+                    <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.1] dark:bg-[#0F1626] px-2.5 py-1 text-xs font-medium text-white dark:text-slate-200 shadow-xl opacity-0 transition-all duration-150 group-hover:opacity-100 z-50">
+                      Notification
+                    </span>
+                  </button>
+                )}
               </div>
 
-              {notificationOpen && (
+              {isNotificationAllowed && notificationOpen && (
                 <div ref={notificationRef}>
                   <NotificationDropdown
                     onClose={() => setNotificationOpen(false)}

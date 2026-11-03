@@ -16,6 +16,7 @@ import {
   Settings,
   BarChart3,
   Sliders,
+  User,
 } from "lucide-react";
 import type { ClientConfigTreeNode as TreeNodeType } from "../types/clientConfiguration.types";
 import ClientConfigTreeNode from "./ClientConfigTreeNode";
@@ -52,6 +53,7 @@ export default function ClientConfigSectionCard({
     if (l.includes("offline sales")) return <FileSpreadsheet className="w-4 h-4 text-purple-500" />;
     if (l.includes("purchase")) return <ShoppingBag className="w-4 h-4 text-rose-500" />;
     if (l.includes("settings")) return <Settings className="w-4 h-4 text-slate-500" />;
+    if (l.includes("account")) return <User className="w-4 h-4 text-teal-500" />;
     return <Sliders className="w-4 h-4 text-[#B88728] dark:text-[#E8C16D]" />;
   };
 

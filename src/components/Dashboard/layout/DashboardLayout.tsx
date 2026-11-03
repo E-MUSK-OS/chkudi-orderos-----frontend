@@ -11,6 +11,7 @@ import LogoutModal from "./LogoutModal";
 import DynamicActionShield from "./DynamicActionShield";
 import { authService } from "@/services/auth/auth.service";
 import { clientConfigurationService } from "@/components/Dashboard/Settings/Configuration/services/clientConfiguration.service";
+import { handleAuthFailure } from "@/utils/auth";
 import {
   getCurrentUser,
   isRouteAllowed,
@@ -34,33 +35,39 @@ export default function DashboardLayout({
   const [currentUser, setCurrentUser] = useState<UserPermissions | null>(null);
 
   useEffect(() => {
+    // Direct check: If neither accessToken nor refreshToken exists, redirect immediately to login
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
+
+    if (!token && !refreshToken) {
+      handleAuthFailure();
+      return;
+    }
+
     setCurrentUser(getCurrentUser());
 
     // Fetch fresh profile from server so permissions are always up-to-date
-    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-    if (token) {
-      authService
-        .getMe(token)
-        .then((res) => {
-          if (res?.success && res?.data) {
-            const existing = getCurrentUser() || {};
-            const updated: UserPermissions = {
-              ...existing,
-              ...res.data,
-              allowedPages: res.data.allowedPages || [],
-            };
-            localStorage.setItem("user", JSON.stringify(updated));
-            setCurrentUser(updated);
-            window.dispatchEvent(new Event("storage"));
-          }
-        })
-        .catch((err) => {
-          console.debug("Background user permissions refresh:", err);
-        });
+    authService
+      .getMe(token || "")
+      .then((res) => {
+        if (res?.success && res?.data) {
+          const existing = getCurrentUser() || {};
+          const updated: UserPermissions = {
+            ...existing,
+            ...res.data,
+            allowedPages: res.data.allowedPages || [],
+          };
+          localStorage.setItem("user", JSON.stringify(updated));
+          setCurrentUser(updated);
+          window.dispatchEvent(new Event("storage"));
+        }
+      })
+      .catch((err) => {
+        console.debug("Background user permissions refresh:", err);
+      });
 
-      // Silently refresh workspace client configuration
-      clientConfigurationService.getClientConfig().catch(() => {});
-    }
+    // Silently refresh workspace client configuration
+    clientConfigurationService.getClientConfig().catch(() => {});
 
     const handleStorage = () => {
       setCurrentUser(getCurrentUser());

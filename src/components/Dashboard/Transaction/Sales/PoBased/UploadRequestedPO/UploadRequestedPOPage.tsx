@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { Store, Upload, FileSpreadsheet, ArrowUpRight } from "lucide-react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import RequestedPOHeader from "./components/RequestedPOHeader";
 import StoreCarousel from "./components/StoreCarousel";
@@ -35,8 +34,6 @@ export default function UploadRequestedPOPage() {
       const storeList: Webstore[] = res.data || [];
       setStores(storeList);
 
-      // Do not auto-select if user wants to see clean carousel first (matching Screenshot 1)
-      // But if user has previously selected one, keep it
       if (selectedStore) {
         const found = storeList.find((s: Webstore) => s.id === selectedStore.id);
         if (found) setSelectedStore(found);
@@ -100,53 +97,51 @@ export default function UploadRequestedPOPage() {
 
   return (
     <DashboardLayout title="Upload Requested PO">
-      <div className="flex-1 overflow-y-auto bg-slate-50/60 dark:bg-[#080B11] pb-12">
-        {/* Top Header with Breadcrumbs */}
+      <div className="space-y-4 sm:space-y-6">
+        {/* Top Header with Breadcrumbs matching Amazon Analytics */}
         <RequestedPOHeader />
 
-        <div className="max-w-[1600px] mx-auto p-3 sm:p-5 space-y-3">
-          {/* Webstore Carousel & Upload Panel (Screenshots 1 & 2) */}
-          <StoreCarousel
-            key={carouselVersion}
-            stores={stores}
-            selectedStore={selectedStore}
-            onSelectStore={handleSelectStore}
-            loading={loadingStores}
-          >
-            {selectedStore && (
-              <POUploadPanel
-                selectedStore={selectedStore}
-                onPoUploaded={handlePoUploaded}
-                parsedItems={parsedItems}
-                setParsedItems={setParsedItems}
-                poNumber={poNumber}
-                setPoNumber={setPoNumber}
-                poDate={poDate}
-                setPoDate={setPoDate}
-              />
-            )}
-          </StoreCarousel>
-
-          {/* If a store is selected, render Line Items Table and History List */}
+        {/* Webstore Carousel & Upload Panel */}
+        <StoreCarousel
+          key={carouselVersion}
+          stores={stores}
+          selectedStore={selectedStore}
+          onSelectStore={handleSelectStore}
+          loading={loadingStores}
+        >
           {selectedStore && (
-            <>
-              {/* Parsed Line Items Table */}
-              <POItemsTable
-                items={parsedItems}
-                onRemoveItem={handleRemoveItem}
-              />
-
-              {/* History of Uploaded POs for this store */}
-              <POHistoryList
-                storeId={selectedStore.id}
-                storeName={selectedStore.storeName}
-                poList={historyList}
-                onRefresh={handleRefreshHistory}
-                onViewPO={handleViewPO}
-              />
-            </>
+            <POUploadPanel
+              selectedStore={selectedStore}
+              onPoUploaded={handlePoUploaded}
+              parsedItems={parsedItems}
+              setParsedItems={setParsedItems}
+              poNumber={poNumber}
+              setPoNumber={setPoNumber}
+              poDate={poDate}
+              setPoDate={setPoDate}
+            />
           )}
-        </div>
+        </StoreCarousel>
+
+        {/* If a store is selected, render Line Items Table and History List */}
+        {selectedStore && (
+          <>
+            {/* Parsed Line Items Table */}
+            <POItemsTable
+              items={parsedItems}
+              onRemoveItem={handleRemoveItem}
+            />
+
+            {/* History of Uploaded POs for this store */}
+            <POHistoryList
+              storeId={selectedStore.id}
+              storeName={selectedStore.storeName}
+              poList={historyList}
+              onRefresh={handleRefreshHistory}
+              onViewPO={handleViewPO}
+            />
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

@@ -138,6 +138,18 @@ export default function Sidebar({
         return trail;
       }
       if (
+        (itemNorm === "/offline-sales/sales-invoice" || itemNorm === "/sales-invoice") &&
+        (currentNorm === "/offline-sales/sales-invoice" || currentNorm === "/sales-invoice")
+      ) {
+        return trail;
+      }
+      if (
+        (itemNorm === "/offline-sales/sales-challan" || itemNorm === "/sales-challan") &&
+        (currentNorm === "/offline-sales/sales-challan" || currentNorm === "/sales-challan")
+      ) {
+        return trail;
+      }
+      if (
         (itemNorm === "/settings/manage-product" || itemNorm === "/settings/manage-product/product-profile") &&
         currentNorm.startsWith("/settings/manage-product")
       ) {
@@ -228,6 +240,18 @@ export default function Sidebar({
       if (
         itemNorm === "/purchase/finish-goods/challan" &&
         currentNorm === "/purchase-challan"
+      ) {
+        return true;
+      }
+      if (
+        (itemNorm === "/offline-sales/sales-invoice" || itemNorm === "/sales-invoice") &&
+        (currentNorm === "/offline-sales/sales-invoice" || currentNorm === "/sales-invoice")
+      ) {
+        return true;
+      }
+      if (
+        (itemNorm === "/offline-sales/sales-challan" || itemNorm === "/sales-challan") &&
+        (currentNorm === "/offline-sales/sales-challan" || currentNorm === "/sales-challan")
       ) {
         return true;
       }

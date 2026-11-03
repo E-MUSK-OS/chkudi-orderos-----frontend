@@ -2,21 +2,55 @@
 
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 
-import { getToken, logout } from "@/utils/auth";
+import { getToken, logout, handleAuthFailure } from "@/utils/auth";
 import { authService } from "@/services/auth/auth.service";
 
-export default function AccountLockChecker() {
-  useEffect(() => {
-    const checkAccount = async () => {
-      const token = getToken();
+const AUTH_PAGES = [
+  "/login",
+  "/forgot-password",
+  "/reset-password",
+  "/signup",
+  "/verify-email",
+  "/offline",
+  "/printbridge",
+];
 
-      if (!token) {
+function isPublicAuthPage(pathname: string): boolean {
+  return AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
+export default function AccountLockChecker() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const checkTokensExist = () => {
+      if (typeof window === "undefined") return;
+      if (isPublicAuthPage(window.location.pathname)) return;
+
+      const token = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!token && !refreshToken) {
+        handleAuthFailure();
+      }
+    };
+
+    const checkAccountServer = async () => {
+      if (typeof window === "undefined") return;
+      if (isPublicAuthPage(window.location.pathname)) return;
+
+      const token = getToken();
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!token && !refreshToken) {
+        handleAuthFailure();
         return;
       }
 
       try {
-        const response = await authService.getMe(token);
+        const response = await authService.getMe(token || "");
         if (response?.data) {
           const currentRaw = localStorage.getItem("user");
           const newRaw = JSON.stringify(response.data);
@@ -31,7 +65,6 @@ export default function AccountLockChecker() {
 
         if (message === "Your account has been locked by administrator.") {
           toast.error(message);
-
           setTimeout(() => {
             logout();
           }, 1000);
@@ -39,14 +72,32 @@ export default function AccountLockChecker() {
       }
     };
 
-    // First check
-    checkAccount();
+    // Check immediately on mount and route change
+    checkTokensExist();
 
-    // Polling check every 30 seconds
-    const interval = setInterval(checkAccount, 30 * 1000);
+    // Fast check (every 500ms) for local storage changes
+    const tokenInterval = setInterval(checkTokensExist, 500);
 
-    return () => clearInterval(interval);
-  }, []);
+    // Periodic server-side check (every 30s)
+    const serverInterval = setInterval(checkAccountServer, 30 * 1000);
+
+    // Immediate check on tab focus or visibility change (e.g. clicking back from DevTools)
+    const handleFocus = () => {
+      checkTokensExist();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      clearInterval(tokenInterval);
+      clearInterval(serverInterval);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [pathname]);
 
   return null;
 }

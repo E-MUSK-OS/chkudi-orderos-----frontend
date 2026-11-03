@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "@/lib/config";
 import { getCurrentUser, getPagePermission, getSlugFromPathname } from "@/utils/pagePermissions";
+import { handleAuthFailure } from "@/utils/auth";
 import { toast } from "sonner";
 
 export function verifyClientActionPermission(endpoint: string, method: string): boolean {
@@ -24,7 +25,9 @@ export function verifyClientActionPermission(endpoint: string, method: string): 
     cleanEndpoint.startsWith("/setting-masters") ||
     cleanEndpoint.startsWith("/client-configuration") ||
     cleanEndpoint.includes("/dropdown-options") ||
-    cleanEndpoint.includes("/me");
+    cleanEndpoint.includes("/me") ||
+    cleanEndpoint.startsWith("/profile") ||
+    cleanEndpoint.includes("/upload-photo");
 
   if (isSafeEndpoint) return true;
 
@@ -64,7 +67,10 @@ let refreshPromise: Promise<string | null> | null = null;
 async function refreshAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   const refreshToken = localStorage.getItem("refreshToken");
-  if (!refreshToken) return null;
+  if (!refreshToken) {
+    handleAuthFailure();
+    return null;
+  }
 
   if (isRefreshing && refreshPromise) {
     return refreshPromise;
@@ -95,12 +101,10 @@ async function refreshAccessToken(): Promise<string | null> {
         }
         return newAccessToken;
       }
-      return null;
+      throw new Error("No access token returned from refresh");
     } catch (err) {
       console.warn("Session expired. Please log in again:", err);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+      handleAuthFailure();
       return null;
     } finally {
       isRefreshing = false;
@@ -134,7 +138,7 @@ async function request<T>(
     headers: {
       ...(body instanceof FormData
         ? {
-            "ngrok-skip-browser-warning": "true"
+            "ngrok-skip-browser-warning": "true",
           }
         : {
             "Content-Type": "application/json",
@@ -147,12 +151,31 @@ async function request<T>(
     },
   });
 
-  // If unauthorized (401) and not already retrying, attempt silent token refresh
-  if (response.status === 401 && !isRetry && !endpoint.includes("/auth/")) {
-    const freshToken = await refreshAccessToken();
-    if (freshToken) {
-      return request<T>(endpoint, { ...options, token: freshToken }, true);
+  // Handle 401 Unauthorized
+  if (response.status === 401) {
+    // 1. If login endpoint itself gave 401, user typed incorrect credentials: do NOT redirect, let form handle error
+    if (endpoint === "/auth/login" || endpoint.startsWith("/auth/login")) {
+      const errData = await response.json().catch(() => null);
+      throw new Error(errData?.message || "Invalid credentials");
     }
+
+    // 2. If refresh-token endpoint itself gave 401, refresh token is expired/invalid: direct redirect to /login
+    if (endpoint.includes("/auth/refresh-token")) {
+      handleAuthFailure();
+      throw new Error("Session expired. Please log in again.");
+    }
+
+    // 3. For any other protected endpoint: try refresh if not already retrying
+    if (!isRetry) {
+      const freshToken = await refreshAccessToken();
+      if (freshToken) {
+        return request<T>(endpoint, { ...options, token: freshToken }, true);
+      }
+    }
+
+    // 4. Refresh token not found, refresh failed, or retrying with new token still gave 401:
+    handleAuthFailure();
+    throw new Error("Session expired. Please log in again.");
   }
 
   const contentType = response.headers.get("content-type");
@@ -209,13 +232,13 @@ export const api = {
       token,
     }),
 
-  download: async (url: string, token?: string) => {
+  download: async (url: string, token?: string): Promise<Blob> => {
     let effectiveToken = token;
     if (!effectiveToken && typeof window !== "undefined") {
       effectiveToken = localStorage.getItem("accessToken") || undefined;
     }
 
-    const response = await fetch(`${BASE_URL}${url}`, {
+    let response = await fetch(`${BASE_URL}${url}`, {
       method: "GET",
       headers: {
         "ngrok-skip-browser-warning": "true",
@@ -224,6 +247,15 @@ export const api = {
         }),
       },
     });
+
+    if (response.status === 401) {
+      const freshToken = await refreshAccessToken();
+      if (freshToken) {
+        return api.download(url, freshToken);
+      }
+      handleAuthFailure();
+      throw new Error("Session expired. Please log in again.");
+    }
 
     if (!response.ok) {
       let errorDetail = `Failed to download file (${response.status} ${response.statusText})`;

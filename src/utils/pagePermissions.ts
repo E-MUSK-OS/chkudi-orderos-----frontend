@@ -85,6 +85,14 @@ export function isRouteAllowed(
             let mappedSegment = firstSegment;
             if (firstSegment === "setting") mappedSegment = "settings";
 
+            if (["profile", "warehouse", "wallet", "notification"].includes(firstSegment)) {
+              mappedSegment = "account";
+              // If "account" is not in enabledSections because this configuration was saved before Account was introduced, pass unless explicitly disabled
+              if (!lowerSections.includes("account") && (!configData || configData["account"] === undefined)) {
+                mappedSegment = "";
+              }
+            }
+
             if (mappedSegment && !lowerSections.includes(mappedSegment)) {
               return false;
             }
@@ -99,6 +107,9 @@ export function isRouteAllowed(
               .toLowerCase() || "dashboard";
 
             if (configData[routeNodeId] === false) {
+              return false;
+            }
+            if (configData[`account_${routeNodeId}`] === false) {
               return false;
             }
           }
@@ -201,8 +212,9 @@ export function isRouteAllowed(
     if (allowed.includes("transaction")) return true;
   }
 
-  if (subPath.startsWith("offline-sales")) {
-    if (subPath.includes("challan") && (allowed.includes("challan") || allowed.includes("offline-sales/sales-challan"))) return true;
+  if (subPath.startsWith("offline-sales") || subPath.startsWith("sales-")) {
+    if (subPath.includes("challan") && (allowed.includes("challan") || allowed.includes("offline-sales/sales-challan") || allowed.includes("sales-challan"))) return true;
+    if (subPath.includes("invoice") && (allowed.includes("invoice") || allowed.includes("offline-sales/sales-invoice") || allowed.includes("sales-invoice"))) return true;
     if (allowed.includes("offline-sales")) return true;
   }
 
@@ -230,6 +242,28 @@ export function isRouteAllowed(
       return allowed.includes("webstore") || allowed.includes("settings/webstore") || allowed.includes("settings");
     }
     return allowed.includes("settings");
+  }
+
+  // Account section routes
+  if (subPath.startsWith("profile")) {
+    if (allowed.includes("profile") || allowed.includes("account") || allowed.includes("account/profile")) return true;
+    if (user.role === "USER" && (!user.allowedPages || user.allowedPages.length === 0)) return false;
+    return true;
+  }
+
+  if (subPath.startsWith("warehouse")) {
+    if (allowed.includes("warehouse") || allowed.includes("account") || allowed.includes("account/warehouse")) return true;
+    return false;
+  }
+
+  if (subPath.startsWith("wallet")) {
+    if (allowed.includes("wallet") || allowed.includes("account") || allowed.includes("account/wallet")) return true;
+    return false;
+  }
+
+  if (subPath.startsWith("notification")) {
+    if (allowed.includes("notification") || allowed.includes("account") || allowed.includes("account/notification")) return true;
+    return true;
   }
 
   return false;
@@ -280,6 +314,11 @@ export function isNavItemAllowed(
     if (user.role === "ADMIN" || user.role === "SUPERADMIN") return true;
     return allowed.some((p) => p.includes("configuration") || p === "settings");
   }
+  if (label.includes("account")) return allowed.some((p) => p.startsWith("account") || p === "profile" || p === "warehouse" || p === "wallet" || p === "notification");
+  if (label.includes("profile")) return allowed.some((p) => p.includes("profile") || p.startsWith("account"));
+  if (label.includes("warehouse")) return allowed.some((p) => p.includes("warehouse") || p.startsWith("account"));
+  if (label.includes("wallet")) return allowed.some((p) => p.includes("wallet") || p.startsWith("account"));
+  if (label.includes("notification")) return allowed.some((p) => p.includes("notification") || p.startsWith("account"));
   if (label.includes("settings")) return allowed.some((p) => p.startsWith("settings") || p.includes("labels") || p.includes("manage-users"));
 
   return false;
@@ -461,6 +500,14 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "settings/labels/label-config": "settings/labels/label-config",
   "settings/labels/label-print": "settings/labels/label-print",
   "settings/manage-users": "settings/manage-users",
+  profile: "profile",
+  warehouse: "warehouse",
+  wallet: "wallet",
+  notification: "notification",
+  "account/profile": "profile",
+  "account/warehouse": "warehouse",
+  "account/wallet": "wallet",
+  "account/notification": "notification",
   vms_tracking: "vms/scans/trackingid-scan",
   products_profile: "settings/manage-product",
   order_process_amazon: "order-process/amazon/order-process",

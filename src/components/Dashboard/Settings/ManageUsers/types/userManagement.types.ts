@@ -117,6 +117,10 @@ export const COMPANY_OPTIONS = [
 export const PAGE_ACCESS_OPTIONS = [
   { id: "ALL", label: "ALL (Full Access)" },
   { id: "dashboard", label: "Dashboard (Home)" },
+  { id: "profile", label: "Account - Profile" },
+  { id: "warehouse", label: "Account - Warehouse" },
+  { id: "wallet", label: "Account - Wallet" },
+  { id: "notification", label: "Account - Notification" },
   { id: "vms", label: "VMS - Dashboard" },
   { id: "vms/scans", label: "VMS - Scans (VMS Scan)" },
   { id: "vms/scans/trackingid-scan", label: "VMS - Tracking ID Scan" },

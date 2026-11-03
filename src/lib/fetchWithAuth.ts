@@ -1,5 +1,6 @@
 import { authService } from "@/services/auth/auth.service";
 import { verifyClientActionPermission } from "@/services/api";
+import { handleAuthFailure } from "@/utils/auth";
 
 export const fetchWithAuth = async (
   url: string,
@@ -12,14 +13,14 @@ export const fetchWithAuth = async (
 
   let accessToken = localStorage.getItem("accessToken");
 
-  const makeRequest = (token: string |null) =>
+  const makeRequest = (token: string | null) =>
     fetch(url, {
       ...options,
       headers: {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "true",
         ...(options.headers || {}),
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
 
@@ -29,6 +30,7 @@ export const fetchWithAuth = async (
     const refreshToken = localStorage.getItem("refreshToken");
 
     if (!refreshToken) {
+      handleAuthFailure();
       throw new Error("Refresh token not found");
     }
 
@@ -49,11 +51,11 @@ export const fetchWithAuth = async (
       }
 
       response = await makeRequest(newAccessToken);
+      if (response.status === 401) {
+        handleAuthFailure();
+      }
     } catch (error) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-
-      window.location.href = "/login";
+      handleAuthFailure();
       throw error;
     }
   }

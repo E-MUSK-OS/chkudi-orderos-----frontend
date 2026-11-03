@@ -28,6 +28,13 @@ export interface User {
   role?: string;
   allowedPages?: string[];
   avatar?: string;
+  phone?: string;
+  gender?: string;
+  dob?: string;
+  departments?: string[];
+  companies?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SignupRequest {

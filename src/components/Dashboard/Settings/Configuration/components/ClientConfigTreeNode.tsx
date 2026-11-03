@@ -17,6 +17,10 @@ import {
   Layers,
   Users,
   ScanBarcode,
+  UserRound,
+  Warehouse,
+  Wallet,
+  Bell,
 } from "lucide-react";
 import type { ClientConfigTreeNode as TreeNodeType } from "../types/clientConfiguration.types";
 
@@ -55,6 +59,10 @@ export default function ClientConfigTreeNode({
     if (l.includes("company") || l.includes("store"))
       return <Store className="w-3.5 h-3.5 text-amber-600 shrink-0" />;
     if (l.includes("user")) return <Users className="w-3.5 h-3.5 text-cyan-500 shrink-0" />;
+    if (l.includes("profile")) return <UserRound className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+    if (l.includes("warehouse")) return <Warehouse className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
+    if (l.includes("wallet")) return <Wallet className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+    if (l.includes("notification")) return <Bell className="w-3.5 h-3.5 text-rose-500 shrink-0" />;
     if (hasChildren) return <Folder className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D] shrink-0" />;
     return <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
   };

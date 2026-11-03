@@ -147,7 +147,7 @@ export default function POUploadPanel({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11]/60 p-2.5 sm:p-3 shadow-2xs">
+    <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5]/80 dark:bg-[#080B11]/60 p-3 sm:p-5 shadow-xs">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -157,12 +157,12 @@ export default function POUploadPanel({
         className="hidden"
       />
 
-      {/* Main Upload Input Row matching Screenshot 2 */}
-      <div className="flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      {/* Main Upload Input Row */}
+      <div className="flex flex-wrap items-center justify-between gap-y-3.5 gap-x-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3.5">
           {/* Enter PO No. */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+          <div className="flex items-center gap-2.5">
+            <label className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-200 whitespace-nowrap">
               Enter PO No.
             </label>
             <input
@@ -170,29 +170,29 @@ export default function POUploadPanel({
               value={poNumber}
               onChange={(e) => setPoNumber(e.target.value)}
               placeholder="e.g. PO-2026-908"
-              className="h-8 w-36 sm:w-44 px-2.5 rounded border border-slate-300 dark:border-white/[0.15] bg-white dark:bg-[#080B11] text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-slate-400 dark:focus:border-white/30 transition-all"
+              className="h-9 sm:h-10 w-36 sm:w-48 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 transition-all shadow-2xs"
             />
           </div>
 
           {/* Date. */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+          <div className="flex items-center gap-2.5">
+            <label className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-200 whitespace-nowrap">
               Date.
             </label>
-            <div className="w-36 sm:w-40">
+            <div className="w-36 sm:w-44">
               <DatePicker
                 value={poDate}
                 onChange={(_, dateStr) => setPoDate(dateStr || "")}
                 placeholder="DD-MM-YYYY"
                 dateFormat="dd-MM-yyyy"
-                buttonClassName="h-8 px-2.5 rounded border border-slate-300 dark:border-white/[0.15] bg-white dark:bg-[#080B11] text-xs sm:text-sm text-slate-800 dark:text-slate-100"
+                buttonClassName="h-9 sm:h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white shadow-2xs hover:border-[#E8C16D] transition-colors"
               />
             </div>
           </div>
 
           {/* Select PO Excel File. */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+          <div className="flex items-center gap-2.5">
+            <label className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-200 whitespace-nowrap">
               Select PO Excel File.
             </label>
             <input
@@ -201,13 +201,13 @@ export default function POUploadPanel({
               value={selectedFileName}
               placeholder="No file chosen"
               onClick={handleBrowseClick}
-              className="h-8 w-44 sm:w-60 px-2.5 rounded border border-slate-300 dark:border-white/[0.15] bg-[#ECECEC] dark:bg-white/[0.08] text-xs text-slate-700 dark:text-slate-200 cursor-pointer outline-none truncate transition-colors"
+              className="h-9 sm:h-10 w-44 sm:w-60 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-100/90 dark:bg-white/[0.06] text-xs font-semibold text-[#0A0E1A] dark:text-slate-200 cursor-pointer outline-none truncate transition-colors"
             />
             <button
               type="button"
               onClick={handleBrowseClick}
               disabled={isParsing}
-              className="h-8 px-5 rounded bg-[#DE5353] hover:bg-[#cf4040] active:bg-[#b83333] text-white font-medium text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs shrink-0"
+              className="h-9 sm:h-10 px-5 rounded-xl border border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_15px_rgba(245,196,81,0.25)] font-bold text-xs sm:text-sm transition-all duration-200 active:scale-95 shadow-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             >
               {isParsing ? (
                 <>
@@ -222,14 +222,14 @@ export default function POUploadPanel({
         </div>
 
         {/* Action Controls: Template & Save */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2.5 ml-auto">
           <button
             type="button"
             onClick={handleDownloadTemplate}
             title="Download Sample PO Excel Template"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] rounded-lg transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#252014] text-[#B88728] dark:text-[#E8C16D] font-bold text-xs sm:text-sm transition-all shadow-xs active:scale-95 cursor-pointer ring-1 ring-[#E8C16D]/30"
           >
-            <Download className="h-3.5 w-3.5 text-sky-500" />
+            <Download className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
             <span className="hidden sm:inline">Sample Template</span>
           </button>
 
@@ -238,7 +238,7 @@ export default function POUploadPanel({
               type="button"
               onClick={handleSavePO}
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-60"
             >
               {isSaving ? (
                 <>
@@ -247,7 +247,7 @@ export default function POUploadPanel({
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <CheckCircle2 className="h-4 w-4" />
                   <span>Save PO</span>
                 </>
               )}

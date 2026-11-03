@@ -49,6 +49,7 @@ export const clientConfigurationService = {
         "offline-sales",
         "purchase",
         "settings",
+        "account",
       ],
       enabledRoutes: [],
       configurationData: null,

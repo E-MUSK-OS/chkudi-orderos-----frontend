@@ -16,7 +16,6 @@ import {
   Scan,
   ZoomIn,
   Barcode,
-  Timer,
 } from "lucide-react";
 import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 import { BarcodeFormat, DecodeHintType } from "@zxing/library";
@@ -841,6 +840,53 @@ export default function MobileCameraScanner({
     };
   }, [isOpen, checkInitialPermission, stopCamera]);
 
+  // Mobile Back Button / Gesture Navigation & ESC Handler:
+  // When camera opens on mobile, push a dummy history state so pressing "Back" or swiping back
+  // closes the camera modal and keeps the user on the Tracking ID Scan page instead of navigating away.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let historyPushed = false;
+    let isBackNav = false;
+
+    try {
+      window.history.pushState({ vmsCameraScannerModal: true }, "", window.location.href);
+      historyPushed = true;
+    } catch (err) {
+      console.warn("Could not push history state for camera modal:", err);
+    }
+
+    const handlePopState = () => {
+      isBackNav = true;
+      onClose();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+
+      // If closed via UI (e.g. close 'X' button) instead of the browser back button,
+      // cleanly revert the pushed state to keep history stack clean.
+      if (historyPushed && !isBackNav) {
+        try {
+          window.history.back();
+        } catch (err) {
+          console.warn("Could not revert history state:", err);
+        }
+      }
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const isSuccess =
@@ -1220,28 +1266,6 @@ export default function MobileCameraScanner({
               ) : (
                 /* Instant "Barcode Caught" Flash Line */
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_30px_#10b981] animate-in fade-in zoom-in-95 duration-150" />
-              )}
-
-              {/* Aiming & Hold Confirmation Progress Overlay */}
-              {targetingProgress > 0 && !isReading && (
-                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center p-3 rounded-2xl bg-black/85 backdrop-blur-md border border-[#E8C16D]/80 shadow-[0_0_30px_rgba(232,193,109,0.4)] animate-in zoom-in-95 duration-100">
-                  <div className="flex items-center gap-2 mb-2 text-white">
-                    <Barcode className="h-4 w-4 text-[#E8C16D] animate-pulse" />
-                    <span className="text-xs font-mono font-bold tracking-wider truncate max-w-[200px]">
-                      {targetedCode}
-                    </span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-white/20 overflow-hidden relative">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#E8C16D] to-emerald-400 transition-all duration-75 rounded-full"
-                      style={{ width: `${targetingProgress}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-[#E8C16D] font-semibold mt-1.5 flex items-center gap-1">
-                    <Timer className="h-2.5 w-2.5" />
-                    <span>Hold steady to capture ({targetingProgress}%)</span>
-                  </span>
-                </div>
               )}
 
               {/* Center Barcode Detected / Caught HUD Overlay */}

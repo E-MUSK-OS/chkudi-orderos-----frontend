@@ -43,8 +43,16 @@ const nextConfig: NextConfig = {
         destination: `${backendBase}/uploads/:path*`,
       },
       {
+        source: "/sales-challan",
+        destination: "/dashboard/offline-sales/sales-challan",
+      },
+      {
+        source: "/sales-invoice",
+        destination: "/dashboard/offline-sales/sales-invoice",
+      },
+      {
         source:
-          "/:first((?!dashboard|login|forgot-password|reset-password|signup|verify-email|api|_next|static|favicon\\.ico|offline|printbridge)[^/]+)/:rest*",
+          "/:first((?!(?:dashboard|login|forgot-password|reset-password|signup|verify-email|api|_next|static|favicon\\.ico|offline|printbridge)(?:[/#?]|$))[^/]+)/:rest*",
         destination: "/dashboard/:first/:rest*",
       },
     ];
