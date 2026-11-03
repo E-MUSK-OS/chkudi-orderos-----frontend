@@ -131,7 +131,7 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
 
               <div className="mt-1.5 space-y-0.5">
                 <Link
-                  href="/dashboard/profile"
+                  href="/profile"
                   onClick={() => setProfileOpen(false)}
                   className="flex h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-xs font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-[#F5C451]"
                 >
@@ -140,7 +140,7 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
                 </Link>
 
                 <Link
-                  href="/dashboard/warehouse"
+                  href="/warehouse"
                   onClick={() => setProfileOpen(false)}
                   className="flex h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-xs font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-[#F5C451]"
                 >
@@ -149,7 +149,7 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
                 </Link>
 
                 <Link
-                  href="/dashboard/wallet"
+                  href="/wallet"
                   onClick={() => setProfileOpen(false)}
                   className="flex h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-xs font-semibold text-[#0A0E1A] transition-colors hover:bg-[#F7F5F0] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-[#F5C451]"
                 >

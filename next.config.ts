@@ -26,12 +26,26 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/:path+",
+        destination: "/:path+",
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     const backendBase = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
     return [
       {
         source: "/uploads/:path*",
         destination: `${backendBase}/uploads/:path*`,
+      },
+      {
+        source:
+          "/:first((?!dashboard|login|forgot-password|reset-password|signup|verify-email|api|_next|static|favicon\\.ico|offline|printbridge)[^/]+)/:rest*",
+        destination: "/dashboard/:first/:rest*",
       },
     ];
   },

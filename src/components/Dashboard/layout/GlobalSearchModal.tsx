@@ -8,6 +8,7 @@ import {
   type SearchPageItem,
 } from "@/constants/navigation";
 import { getCurrentUser } from "@/utils/pagePermissions";
+import { normalizeRoute } from "./Sidebar";
 
 export type { SearchPageItem };
 export const getAllSearchablePages = getDynamicSearchablePages;
@@ -202,7 +203,7 @@ export default function GlobalSearchModal({ isOpen, onClose }: Props) {
     });
 
     onClose();
-    router.push(item.href);
+    router.push(normalizeRoute(item.href));
   };
 
   // Keyboard navigation

@@ -36,6 +36,16 @@ interface SidebarProps {
 }
 
 import { navItems, type NavItem } from "@/constants/navigation";
+
+// Strips /dashboard prefix for uniform comparison with base URL routes
+export const normalizeRoute = (p?: string): string => {
+  if (!p) return "";
+  const clean = p.split("?")[0].replace(/\/+$/, "") || "/";
+  if (clean === "/dashboard" || clean === "/dashboard/") return "/dashboard";
+  if (clean.startsWith("/dashboard/")) return clean.slice("/dashboard".length);
+  return clean;
+};
+
 export default function Sidebar({
   sidebarOpen,
   sidebarCollapsed,
@@ -65,31 +75,6 @@ export default function Sidebar({
     return filterNavItemsForUser(navItems, currentUser);
   }, [currentUser]);
 
-  // const handleOperatorLogout = () => {
-  //   localStorage.removeItem("operator");
-  //   localStorage.removeItem("operatorAccessToken");
-
-  //   router.replace("/dashboard/vms/");
-  // };
-
-  // const handleOperatorLogout = async () => {
-  //   try {
-  //     const response = await operatorLogout();
-
-  //     toast.success(response.message);
-  //   } catch (error) {
-  //     toast.error(error instanceof Error ? error.message : "Logout failed.");
-  //   } finally {
-  //     sessionStorage.removeItem("operatorAccessToken");
-  //     sessionStorage.removeItem("operator");
-  //     sessionStorage.removeItem("selectedAccount");
-
-  //     setIsAuthenticated(false);
-
-  //     router.replace("/dashboard/vms/operator");
-  //   }
-  // };
-
   const handleNavigation = async (href: string) => {
     const token = localStorage.getItem("operatorAccessToken");
 
@@ -108,7 +93,7 @@ export default function Sidebar({
 
     setSidebarOpen(false);
 
-    router.push(href);
+    router.push(normalizeRoute(href));
   };
 
   const findActivePath = (
@@ -116,33 +101,83 @@ export default function Sidebar({
     path: string,
     trail: string[] = [],
   ): string[] | null => {
+    const currentNorm = normalizeRoute(path);
+
     for (const item of items) {
       const nextTrail = [...trail, item.label];
+      const itemNorm = normalizeRoute(item.href);
 
+      // 1. Traverse children first to locate deepest exact match
+      if (item.children && item.children.length > 0) {
+        const found = findActivePath(item.children, path, nextTrail);
+        if (found) return found;
+      }
+
+      // 2. Exact match for this node
+      if (itemNorm && itemNorm === currentNorm) {
+        return trail;
+      }
+
+      // 3. Special aliases
       if (
-        (item.href && (path === item.href || path.startsWith(item.href + "/"))) ||
-        (item.href === "/dashboard/purchase/finish-goods/invoice" && path === "/dashboard/purchase-invoice") ||
-        (item.href === "/dashboard/purchase/finish-goods/challan" && path === "/dashboard/purchase-challan") ||
-        ((item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
-          path.startsWith("/dashboard/settings/manage-product")) ||
-        ((item.href === "/dashboard/settings/manage-material" || item.href === "/dashboard/settings/manage-material/material-profile") &&
-          path.startsWith("/dashboard/settings/manage-material")) ||
-        (item.href === "/dashboard/settings/labels/label-config" &&
-          (path === "/dashboard/settings/labels/label-config" || path.startsWith("/dashboard/settings/labels/label-config"))) ||
-        (item.href === "/dashboard/settings/labels/label-print" &&
-          path === "/dashboard/settings/labels/label-print") ||
-        (item.href === "/dashboard/setting/company-profile" &&
-          (path === "/dashboard/setting/manage-company/company-profile" || path.startsWith("/dashboard/setting/company-profile") || path.startsWith("/dashboard/setting/manage-company/company-profile")))
+        (itemNorm === "/setting/company-profile" || itemNorm === "/setting/manage-company/company-profile") &&
+        (currentNorm === "/setting/company-profile" || currentNorm === "/setting/manage-company/company-profile")
+      ) {
+        return trail;
+      }
+      if (
+        itemNorm === "/purchase/finish-goods/invoice" &&
+        currentNorm === "/purchase-invoice"
+      ) {
+        return trail;
+      }
+      if (
+        itemNorm === "/purchase/finish-goods/challan" &&
+        currentNorm === "/purchase-challan"
+      ) {
+        return trail;
+      }
+      if (
+        (itemNorm === "/settings/manage-product" || itemNorm === "/settings/manage-product/product-profile") &&
+        currentNorm.startsWith("/settings/manage-product")
+      ) {
+        return trail;
+      }
+      if (
+        (itemNorm === "/settings/manage-material" || itemNorm === "/settings/manage-material/material-profile") &&
+        currentNorm.startsWith("/settings/manage-material")
+      ) {
+        return trail;
+      }
+      if (
+        itemNorm === "/settings/labels/label-config" &&
+        currentNorm.startsWith("/settings/labels/label-config")
+      ) {
+        return trail;
+      }
+      if (
+        itemNorm === "/settings/labels/label-print" &&
+        currentNorm === "/settings/labels/label-print"
+      ) {
+        return trail;
+      }
+      if (
+        itemNorm &&
+        itemNorm.startsWith("/settings/manage-users") &&
+        currentNorm.startsWith("/settings/manage-users")
       ) {
         return trail;
       }
 
-      if (item.children) {
-        const found = findActivePath(item.children, path, nextTrail);
-        if (found) return found;
-        if (item.href && path.startsWith(item.href)) {
-          return nextTrail;
-        }
+      // 4. Prefix match only if item has children and is not root dashboard
+      if (
+        itemNorm &&
+        itemNorm !== "/dashboard" &&
+        item.children &&
+        item.children.length > 0 &&
+        currentNorm.startsWith(itemNorm + "/")
+      ) {
+        return trail;
       }
     }
     return null;
@@ -159,62 +194,84 @@ export default function Sidebar({
         return next;
       });
     }
-  }, [pathname]);
+  }, [pathname, visibleNavItems]);
 
   const isMenuActive = (item: NavItem): boolean => {
-    if (item.href && (pathname === item.href || pathname.startsWith(item.href + "/"))) {
-      return true;
-    }
-    if (
-      item.href === "/dashboard/setting/company-profile" &&
-      pathname === "/dashboard/setting/manage-company/company-profile"
-    ) {
-      return true;
-    }
-    if (
-      item.href === "/dashboard/purchase/finish-goods/invoice" &&
-      pathname === "/dashboard/purchase-invoice"
-    ) {
-      return true;
-    }
-    if (
-      item.href === "/dashboard/purchase/finish-goods/challan" &&
-      pathname === "/dashboard/purchase-challan"
-    ) {
-      return true;
-    }
-    if (
-      (item.href === "/dashboard/settings/manage-product" || item.href === "/dashboard/settings/manage-product/product-profile") &&
-      pathname.startsWith("/dashboard/settings/manage-product")
-    ) {
-      return true;
-    }
-    if (
-      (item.href === "/dashboard/settings/manage-material" || item.href === "/dashboard/settings/manage-material/material-profile") &&
-      pathname.startsWith("/dashboard/settings/manage-material")
-    ) {
-      return true;
-    }
-    if (
-      item.href === "/dashboard/settings/labels/label-config" &&
-      (pathname === "/dashboard/settings/labels/label-config" || pathname.startsWith("/dashboard/settings/labels/label-config"))
-    ) {
-      return true;
-    }
-    if (
-      item.href === "/dashboard/settings/labels/label-print" &&
-      pathname === "/dashboard/settings/labels/label-print"
-    ) {
-      return true;
-    }
-    if (
-      item.href?.startsWith("/dashboard/settings/manage-users") &&
-      pathname.startsWith("/dashboard/settings/manage-users")
-    ) {
-      return true;
+    const currentNorm = normalizeRoute(pathname);
+
+    if (item.href) {
+      const itemNorm = normalizeRoute(item.href);
+
+      // 1. Root Dashboard item: ONLY active if current path is /dashboard or root /
+      if (itemNorm === "/dashboard") {
+        return currentNorm === "/dashboard" || currentNorm === "/";
+      }
+
+      // 2. Exact match
+      if (currentNorm === itemNorm) {
+        return true;
+      }
+
+      // 3. Special aliases
+      if (
+        (itemNorm === "/setting/company-profile" || itemNorm === "/setting/manage-company/company-profile") &&
+        (currentNorm === "/setting/company-profile" || currentNorm === "/setting/manage-company/company-profile")
+      ) {
+        return true;
+      }
+      if (
+        itemNorm === "/purchase/finish-goods/invoice" &&
+        currentNorm === "/purchase-invoice"
+      ) {
+        return true;
+      }
+      if (
+        itemNorm === "/purchase/finish-goods/challan" &&
+        currentNorm === "/purchase-challan"
+      ) {
+        return true;
+      }
+      if (
+        (itemNorm === "/settings/manage-product" || itemNorm === "/settings/manage-product/product-profile") &&
+        currentNorm.startsWith("/settings/manage-product")
+      ) {
+        return true;
+      }
+      if (
+        (itemNorm === "/settings/manage-material" || itemNorm === "/settings/manage-material/material-profile") &&
+        currentNorm.startsWith("/settings/manage-material")
+      ) {
+        return true;
+      }
+      if (
+        itemNorm === "/settings/labels/label-config" &&
+        currentNorm.startsWith("/settings/labels/label-config")
+      ) {
+        return true;
+      }
+      if (
+        itemNorm === "/settings/labels/label-print" &&
+        currentNorm === "/settings/labels/label-print"
+      ) {
+        return true;
+      }
+      if (
+        itemNorm &&
+        itemNorm.startsWith("/settings/manage-users") &&
+        currentNorm.startsWith("/settings/manage-users")
+      ) {
+        return true;
+      }
+
+      // 4. Sub-path match: ONLY if item has children!
+      // Leaf items (like "Order Process -> Dashboard") must NOT match sub-routes!
+      if (item.children && item.children.length > 0 && currentNorm.startsWith(itemNorm + "/")) {
+        return true;
+      }
     }
 
-    if (item.children) {
+    // 5. If item has children, check if any child is active
+    if (item.children && item.children.length > 0) {
       return item.children.some(isMenuActive);
     }
 
@@ -235,7 +292,7 @@ export default function Sidebar({
   const renderMenu = (items: NavItem[], level = 0) => {
     const isLevel0 = level === 0;
     const itemHeight = "h-10";
-    const itemFontSize = "text-[13px]";
+    const itemFontSize = "text-[14px]";
     const iconSize = isLevel0 ? 18 : 16;
 
     return items.map((item) => {
@@ -245,17 +302,13 @@ export default function Sidebar({
       if (hasChildren) {
         const isSelfActive = sidebarCollapsed
           ? isMenuActive(item)
-          : !!item.href && pathname === item.href && !isOpen;
+          : !!item.href && normalizeRoute(pathname) === normalizeRoute(item.href) && !isOpen;
 
         return (
           <div key={item.label}>
             <button
               type="button"
               onClick={() => {
-                // if (sidebarCollapsed && item.href) {
-                //   router.push(item.href);
-                //   setSidebarOpen(false);
-                // }
                 if (sidebarCollapsed && item.href) {
                   void handleNavigation(item.href);
                 } else {
@@ -493,4 +546,3 @@ export default function Sidebar({
     </>
   );
 }
-
