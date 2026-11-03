@@ -79,3 +79,14 @@ export const clientConfigurationService = {
   },
 };
 
+export function getLocalDropdownManagementMode(): "SETTING_MASTERS" | "FORM_OTHER" {
+  const cached = clientConfigurationService.getLocalCachedConfig();
+  if (cached?.dropdownManagementMode) return cached.dropdownManagementMode;
+  if (cached?.configurationData && typeof cached.configurationData === "object") {
+    if (cached.configurationData.dropdownManagementMode) {
+      return cached.configurationData.dropdownManagementMode;
+    }
+  }
+  return "FORM_OTHER";
+}
+

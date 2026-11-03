@@ -3,7 +3,7 @@ export const productDefaultValues = {
   masterSku: "",
   sku: "",
   marketplace: ["All"] as string[],
-  brand: "No Brand",
+  brand: "",
   category: "",
   subCategory: "",
   unit: "Pcs",
@@ -43,66 +43,21 @@ export interface OptionItem {
   value: string;
 }
 
-export const defaultMarketplaceOptions: OptionItem[] = [
-  { label: "All", value: "All" },
-  { label: "Myntra", value: "Myntra" },
-  { label: "Amazon", value: "Amazon" },
-  { label: "Flipkart", value: "Flipkart" },
-
-];
+export const defaultMarketplaceOptions: OptionItem[] = [];
 
 export const marketplaceOptions = defaultMarketplaceOptions;
 
-export const brandOptions: OptionItem[] = [
-  { label: "No Brand", value: "No Brand" },
-  { label: "R.Code", value: "R.Code" },
-  { label: "TOPLOT", value: "TOPLOT" },
-  { label: "TAGDO", value: "TAGDO" },
-];
+export const brandOptions: OptionItem[] = [];
 
-export const unitOptions: OptionItem[] = [
-  { label: "Pcs", value: "Pcs" },
-  { label: "Set", value: "Set" },
-  { label: "Box", value: "Box" },
-  { label: "Dozen", value: "Dozen" },
-  { label: "Meter", value: "Meter" },
-  { label: "Pair", value: "Pair" },
-  { label: "Kg", value: "Kg" },
-];
+export const unitOptions: OptionItem[] = [];
 
-export const genderOptions: OptionItem[] = [
-  { label: "Men", value: "Men" },
-  { label: "Women", value: "Women" },
-  { label: "Boys", value: "Boys" },
-  { label: "Girls", value: "Girls" },
-  { label: "Kids", value: "Kids" },
-  { label: "Unisex", value: "Unisex" },
-];
+export const genderOptions: OptionItem[] = [];
 
-export const gstOptions: OptionItem[] = [
-  { label: "0%", value: "0" },
-  { label: "5%", value: "5" },
-  { label: "12%", value: "12" },
-  { label: "18%", value: "18" },
-  { label: "28%", value: "28" },
-  { label: "40%", value: "40" },
-];
+export const gstOptions: OptionItem[] = [];
 
-export const availabilityOptions: OptionItem[] = [
-  { label: "Public", value: "Public" },
-  { label: "Private", value: "Private" },
-  { label: "Wholesale", value: "Wholesale" },
-];
+export const availabilityOptions: OptionItem[] = [];
 
-export const rackAddressOptions: OptionItem[] = [
-  { label: "Select Racks", value: "" },
-  { label: "Rack A1", value: "Rack A1" },
-  { label: "Rack A2", value: "Rack A2" },
-  { label: "Rack B1", value: "Rack B1" },
-  { label: "Rack B2", value: "Rack B2" },
-  { label: "Rack C1", value: "Rack C1" },
-  { label: "Floor Store", value: "Floor Store" },
-];
+export const rackAddressOptions: OptionItem[] = [];
 
 export interface ColorPreset {
   name: string;
@@ -110,24 +65,29 @@ export interface ColorPreset {
 }
 
 export const defaultColorPresets: ColorPreset[] = [
-  { name: "Black", hex: "#111827" },
   { name: "White", hex: "#FFFFFF" },
+  { name: "Black", hex: "#000000" },
+  { name: "Green", hex: "#10B981" },
   { name: "Red", hex: "#EF4444" },
+  { name: "Sky-blue", hex: "#38BDF8" },
+  { name: "Cream", hex: "#FFFDD0" },
+  { name: "Pink", hex: "#EC4899" },
+  { name: "Maroon", hex: "#800000" },
   { name: "Blue", hex: "#3B82F6" },
-  { name: "Navy", hex: "#1E3A8A" },
+  { name: "Navy blue", hex: "#1E3A8A" },
+  { name: "Gold", hex: "#EAB308" },
+  { name: "Clear", hex: "#E5E7EB" },
+  { name: "Silver", hex: "#9CA3AF" },
+  { name: "Brown", hex: "#78350F" },
+  { name: "Teal", hex: "#0D9488" },
   { name: "Magenta", hex: "#D946EF" },
-  { name: "Green", hex: "#22C55E" },
-  { name: "Yellow", hex: "#EAB308" },
+  { name: "Yellow", hex: "#FBBF24" },
   { name: "Grey", hex: "#6B7280" },
   { name: "Charcoal", hex: "#374151" },
-  { name: "Beige", hex: "#D4C5B9" },
-  { name: "Olive", hex: "#6B8E23" },
-  { name: "Maroon", hex: "#800000" },
-  { name: "Pink", hex: "#EC4899" },
+  { name: "Beige", hex: "#D2B48C" },
+  { name: "Olive", hex: "#556B2F" },
   { name: "Orange", hex: "#F97316" },
-  { name: "Purple", hex: "#A855F7" },
-  { name: "Brown", hex: "#78350F" },
-  { name: "Teal", hex: "#14B8A6" },
+  { name: "Purple", hex: "#8B5CF6" },
 ];
 
 export const defaultAlphaSizes: string[] = [
@@ -152,7 +112,7 @@ export const defaultNumericSizes: string[] = [
   "42",
   "44",
   "46",
-  "48",
+  "48"
 ];
 
 export const defaultShoeSizes: string[] = [
@@ -172,25 +132,26 @@ export interface CategoryOption {
 }
 
 export const productCategoryOptions: CategoryOption[] = [
-  { label: "Clothing & Apparel", value: "Clothing" },
-  { label: "Footwear & Shoes", value: "Footwear" },
-  { label: "Electronics & Gadgets", value: "Electronics" },
-  { label: "Bags, Wallets & Luggage", value: "Bags & Luggage" },
-  { label: "Jewellery & Watches", value: "Jewelry & Watches" },
+  { label: "Clothing & Apparel", value: "Clothing & Apparel" },
+  { label: "Footwear & Shoes", value: "Footwear & Shoes" },
+  { label: "Electronics & Gadgets", value: "Electronics & Gadgets" },
+  { label: "Bags, Wallets & Luggage", value: "Bags, Wallets & Luggage" },
+  { label: "Jewellery & Watches", value: "Jewellery & Watches" },
   { label: "Beauty & Personal Care", value: "Beauty & Personal Care" },
   { label: "Home & Kitchen", value: "Home & Kitchen" },
-  { label: "Sports, Fitness & Outdoors", value: "Sports & Fitness" },
-  { label: "Baby & Kids Care", value: "Baby & Kids" },
+  { label: "Sports & Fitness", value: "Sports & Fitness" },
+  { label: "Baby & Kids Care", value: "Baby & Kids Care" },
   { label: "Toys & Games", value: "Toys & Games" },
   { label: "Health & Wellness", value: "Health & Wellness" },
-  { label: "Grocery & Gourmet Foods", value: "Grocery & Gourmet" },
   { label: "Books & Stationery", value: "Books & Stationery" },
-  { label: "Automotive & Accessories", value: "Automotive & Tools" },
+  { label: "Automotive", value: "Automotive" },
   { label: "Pet Supplies", value: "Pet Supplies" },
-  { label: "Office Products & Supplies", value: "Office Products" },
+  { label: "Office Products", value: "Office Products" },
 ];
 
-export const categoryOptions = productCategoryOptions.filter(
+export const subCategoryOptions: OptionItem[] = [];
+
+export const categoryOptions: CategoryOption[] = productCategoryOptions.filter(
   (opt) => opt.value !== "other"
 );
 

@@ -46,11 +46,21 @@ interface ColorGroup {
 
 const getColorHex = (name: string): string => {
   if (!name) return "#64748B";
+  const clean = name.toLowerCase().trim();
   const found = defaultColorPresets.find(
     (p) => p.name.toLowerCase() === name.toLowerCase().trim()
   );
   if (found) return found.hex;
   if (/^#([0-9A-F]{3}){1,2}$/i.test(name.trim())) return name.trim();
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("orderos_custom_color_hexes");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed[clean]) return parsed[clean];
+      }
+    } catch {}
+  }
   return "#64748B";
 };
 
@@ -599,7 +609,7 @@ export default function ProductVariantInline({
 
     const colVal = newColor.trim();
     if (!colVal && !hasSizeAttribute) {
-      toast.error("Please enter a colour or variant name");
+      toast.error("Please enter a color or variant name");
       return;
     }
 
@@ -815,7 +825,7 @@ export default function ProductVariantInline({
 
               {/* Colour column */}
               <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
-                Colour
+                Color
               </th>
 
               {/* Size column */}

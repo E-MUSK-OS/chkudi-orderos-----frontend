@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { productCategoryOptions, defaultMarketplaceOptions } from "./constants/product.constants";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -38,6 +37,7 @@ import {
 } from "./hooks/useMyntraImports";
 import MyntraTable from "./components/MyntraTable";
 import { useDropdownOptions } from "./hooks/useDropdownOptions";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadDemoSheet } from "./utils/downloadDemoSheet";
 import { exportProductsExcel } from "./utils/exportProductsExcel";
@@ -122,43 +122,30 @@ const ManageProducts = () => {
   const productStats = statsResponse?.data;
   const deleteProductMutation = useDeleteProduct();
 
-  // Category Options
-  const categoryOptions = [
-    { label: "All Categories", value: "" },
-    ...productCategoryOptions.filter((o) => o.value !== "other"),
-
-  ];
-
-  // Brand Options
-  const brandOptions = [
-    { label: "All Brands", value: "" },
-    { label: "R.Code", value: "R.Code" },
-    { label: "TOPLOT", value: "TOPLOT" },
-  ];
-
-  // Marketplace Options
+  // Fetch dynamic dropdown options from DB / Setting Masters
   const { data: dropdownResponse } = useDropdownOptions();
   const dropdownData = dropdownResponse?.data;
 
-  const marketplaceOptions = useMemo(() => {
-    const list = [
-      { label: "All Marketplaces", value: "" },
-      ...defaultMarketplaceOptions.filter((o) => o.value.toLowerCase() !== "all" && o.label.toLowerCase() !== "all"),
-    ];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "marketplace" && o.value.toLowerCase() !== "all" && (o.label || "").toLowerCase() !== "all")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
+  // Category Options dynamically from Setting Masters / DB
+  const categoryOptions = useMemo(() => [
+    { label: "All Categories", value: "" },
+    ...buildMergedOptions("category", [], dropdownData?.savedOptions, dropdownData?.distinctFromProducts?.categories),
+  ], [dropdownData]);
 
-    const map = new Map<string, { label: string; value: string }>();
-    [...list, ...dbSaved].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      } else if (v === "" && !map.has("")) {
-        map.set("", { label: o.label, value: "" });
-      }
-    });
-    return Array.from(map.values());
+  // Brand Options dynamically from Setting Masters / DB
+  const brandOptions = useMemo(() => [
+    { label: "All Brands", value: "" },
+    ...buildMergedOptions("brand", [], dropdownData?.savedOptions, dropdownData?.distinctFromProducts?.brands),
+  ], [dropdownData]);
+
+  // Marketplace Options dynamically from Setting Masters / DB
+  const marketplaceOptions = useMemo(() => {
+    const activeMarketplaces = buildMergedOptions("marketplace", [], dropdownData?.savedOptions)
+      .filter((o) => o.value.toLowerCase() !== "all" && o.label.toLowerCase() !== "all");
+    return [
+      { label: "All Marketplaces", value: "" },
+      ...activeMarketplaces,
+    ];
   }, [dropdownData]);
 
   const products = productsResponse?.data ?? [];
@@ -286,8 +273,6 @@ const ManageProducts = () => {
 
   const handleEdit = (product: Product) => {
     router.push(`/dashboard/settings/manage-product/product-profile/edit-product-profile/${product.id}`);
-
-
   };
 
   const handleEditAsin = (item: AsinImportItem) => {
@@ -348,7 +333,6 @@ const ManageProducts = () => {
   };
 
   const handleDelete = (product: Product) => {
-
     setSelectedProduct(product);
     setDeleteModalOpen(true);
   };
@@ -385,9 +369,6 @@ const ManageProducts = () => {
                 setMyntraModalOpen(true);
               } else if (importType === "product") {
                 router.push("/dashboard/settings/manage-product/product-profile/add-product");
-
-
-
               }
             }}
           />
@@ -511,7 +492,7 @@ const ManageProducts = () => {
         open={productModalOpen}
         onDeleteClick={() => {
           setProductModalOpen(false);
-    setDeleteModalOpen(true);
+          setDeleteModalOpen(true);
         }}
         mode={modalMode}
         product={selectedProduct ?? undefined}

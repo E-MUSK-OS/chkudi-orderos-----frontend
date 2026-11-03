@@ -164,6 +164,7 @@ export interface DropdownOptionItem {
   field: string;
   value: string;
   label: string;
+  isActive?: boolean;
 }
 
 export interface DropdownOptionsData {

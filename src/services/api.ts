@@ -21,6 +21,9 @@ export function verifyClientActionPermission(endpoint: string, method: string): 
     cleanEndpoint.includes("/export") ||
     cleanEndpoint.includes("/summary") ||
     cleanEndpoint.includes("/stats") ||
+    cleanEndpoint.startsWith("/setting-masters") ||
+    cleanEndpoint.startsWith("/client-configuration") ||
+    cleanEndpoint.includes("/dropdown-options") ||
     cleanEndpoint.includes("/me");
 
   if (isSafeEndpoint) return true;

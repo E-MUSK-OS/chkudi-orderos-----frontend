@@ -15,6 +15,8 @@ import {
   ShieldAlert,
   Scan,
   ZoomIn,
+  Barcode,
+  Timer,
 } from "lucide-react";
 import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 import { BarcodeFormat, DecodeHintType } from "@zxing/library";
@@ -28,36 +30,89 @@ interface MobileCameraScannerProps {
 
 type PermissionStatus = "checking" | "prompt" | "granted" | "denied" | "unsupported";
 
-// Logistics and courier barcode formats prioritized for instant matching
-const FAST_BARCODE_FORMATS: BarcodeFormat[] = [
-  BarcodeFormat.CODE_128, // Flipkart, Delhivery, Amazon, Ekart, Bluedart, Myntra, etc.
-  BarcodeFormat.CODE_39, // Industrial & warehouse inventory
-  BarcodeFormat.QR_CODE, // 2D QR tracking labels
-  BarcodeFormat.EAN_13, // Standard retail packages
-  BarcodeFormat.DATA_MATRIX, // 2D courier & pharmaceutical tags
-  BarcodeFormat.ITF, // Interleaved 2 of 5 / shipping master cartons
-  BarcodeFormat.UPC_A, // Retail standard
-  BarcodeFormat.PDF_417, // Airway bills & postal barcodes
+// Default "normal" pacing hold time (350ms hold to confirm)
+const NORMAL_HOLD_MS = 350;
+
+// ALL Barcode Formats (1D Linear Barcodes + 2D/Stacked Barcodes like PDF417, Data Matrix, Aztec)
+// QR CODES ARE STRICTLY EXCLUDED & BLOCKED
+const ALL_BARCODE_FORMATS: BarcodeFormat[] = [
+  BarcodeFormat.CODE_128, // Courier & tracking standard (Flipkart, Delhivery, Amazon, Ekart, Bluedart, etc.)
+  BarcodeFormat.CODE_39, // Industrial & warehouse tracking
   BarcodeFormat.CODE_93, // High density alphanumeric
-  BarcodeFormat.CODABAR, // Courier airway bills
-  BarcodeFormat.EAN_8, // Small retail items
+  BarcodeFormat.CODABAR, // Airway bills & postal
+  BarcodeFormat.EAN_13, // Standard retail packages
+  BarcodeFormat.EAN_8, // Small packages
+  BarcodeFormat.ITF, // Interleaved 2 of 5 / master shipping cartons
+  BarcodeFormat.UPC_A, // Retail standard
   BarcodeFormat.UPC_E, // Compact UPC
+  BarcodeFormat.PDF_417, // 2D stacked shipping & logistics barcode
+  BarcodeFormat.DATA_MATRIX, // 2D matrix inventory barcode
+  BarcodeFormat.AZTEC, // 2D logistics barcode
+  BarcodeFormat.MAXICODE, // Logistics parcel barcode
+  BarcodeFormat.RSS_14, // GS1 DataBar
+  BarcodeFormat.RSS_EXPANDED,
+  BarcodeFormat.UPC_EAN_EXTENSION,
 ];
 
-const NATIVE_FORMATS = [
+const NATIVE_BARCODE_FORMATS = [
   "code_128",
   "code_39",
-  "qr_code",
-  "ean_13",
-  "data_matrix",
-  "itf",
-  "upc_a",
-  "pdf417",
   "code_93",
   "codabar",
+  "ean_13",
   "ean_8",
+  "itf",
+  "upc_a",
   "upc_e",
+  "pdf417",
+  "data_matrix",
+  "aztec",
 ];
+
+/**
+ * Validates that detected code is a barcode and NOT a QR code.
+ * Strictly blocks all QR code types, QR variants, and URL/UPI QR payloads.
+ */
+function isValidBarcode(rawText: string, format?: any): boolean {
+  if (!rawText) return false;
+  const text = rawText.trim();
+  if (text.length < 3) return false;
+
+  // 1. Strictly block ANY and ALL QR code formats reported by barcode engines
+  if (format !== undefined && format !== null) {
+    if (format === BarcodeFormat.QR_CODE) {
+      return false;
+    }
+    const formatStr = (
+      typeof format === "number" && BarcodeFormat[format]
+        ? BarcodeFormat[format]
+        : String(format)
+    ).toLowerCase();
+
+    if (formatStr.includes("qr")) {
+      return false;
+    }
+  }
+
+  // 2. Reject payloads characteristic of QR codes (URLs, UPI payment links, Wi-Fi, vCard, JSON, etc.)
+  if (
+    /^https?:\/\//i.test(text) ||
+    /^upi:\/\//i.test(text) ||
+    /^wifi:/i.test(text) ||
+    /^matmsg:/i.test(text) ||
+    /^begin:vcard/i.test(text) ||
+    /^tel:/i.test(text) ||
+    /^mailto:/i.test(text) ||
+    (text.startsWith("{") && text.endsWith("}")) ||
+    (text.startsWith("[") && text.endsWith("]")) ||
+    text.includes("\n") ||
+    text.includes("\r")
+  ) {
+    return false;
+  }
+
+  return true;
+}
 
 interface ScanZoneCoords {
   x1: number;
@@ -229,11 +284,20 @@ export default function MobileCameraScanner({
   const [isLoading, setIsLoading] = useState(false);
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null);
 
+  // Aim & Hold Confirmation State (Fixed accurate 350ms hold)
+  const targetingRef = useRef<{
+    code: string;
+    firstSeenAt: number;
+    lastSeenAt: number;
+  } | null>(null);
+  const [targetingProgress, setTargetingProgress] = useState(0); // 0 to 100%
+  const [targetedCode, setTargetedCode] = useState<string | null>(null);
+
   // Active reading / catching feedback animation state
   const [isReading, setIsReading] = useState(false);
   const [readingCode, setReadingCode] = useState<string | null>(null);
 
-  // Anti-duplicate debounce ref: 1200ms cooldown for identical barcode, 0ms for new barcode
+  // Anti-duplicate debounce ref: 2000ms cooldown for identical barcode
   const lastScannedTimeRef = useRef<{ code: string; time: number }>({ code: "", time: 0 });
 
   // Native Web Audio API scanner beep for instant acoustic confirmation (1800Hz, 80ms)
@@ -294,6 +358,9 @@ export default function MobileCameraScanner({
       videoRef.current.srcObject = null;
     }
 
+    targetingRef.current = null;
+    setTargetingProgress(0);
+    setTargetedCode(null);
     setIsTorchOn(false);
     setHasTorch(false);
     setHasHardwareZoom(false);
@@ -309,8 +376,8 @@ export default function MobileCameraScanner({
       if (!code) return;
 
       const now = Date.now();
-      // Ignore duplicate reads of identical barcode within 1200ms
-      if (lastScannedTimeRef.current.code === code && now - lastScannedTimeRef.current.time < 1200) {
+      // Ignore duplicate reads of identical barcode within 2000ms
+      if (lastScannedTimeRef.current.code === code && now - lastScannedTimeRef.current.time < 2000) {
         return;
       }
 
@@ -318,7 +385,7 @@ export default function MobileCameraScanner({
       setLastScannedCode(code);
       setReadingCode(code);
 
-      // Instant 0ms acoustic & tactile feedback
+      // Acoustic & tactile confirmation on successful capture
       playBeepSound();
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         try {
@@ -335,9 +402,72 @@ export default function MobileCameraScanner({
 
       setTimeout(() => {
         setIsReading(false);
-      }, 450);
+      }, 500);
     },
     [onScan, playBeepSound]
+  );
+
+  const handleNoBarcodeInFrame = useCallback(() => {
+    if (targetingRef.current) {
+      // Drop target if no barcode was seen for > 160ms (avoids flicker on minor hand tremor)
+      if (Date.now() - targetingRef.current.lastSeenAt > 160) {
+        targetingRef.current = null;
+        setTargetingProgress(0);
+        setTargetedCode(null);
+      }
+    }
+  }, []);
+
+  const processCandidateBarcode = useCallback(
+    (rawCode: string, format?: any) => {
+      // 1. Strict validation: only barcodes, completely block QR codes & URLs
+      if (!isValidBarcode(rawCode, format)) {
+        handleNoBarcodeInFrame();
+        return;
+      }
+
+      const code = rawCode.replace(/[\x00-\x1F\x7F]/g, "").trim();
+      if (!code) return;
+
+      const now = Date.now();
+      // Anti-duplicate cooldown: ignore identical barcode if scanned recently (< 2000ms)
+      if (
+        lastScannedTimeRef.current.code === code &&
+        now - lastScannedTimeRef.current.time < 2000
+      ) {
+        handleNoBarcodeInFrame();
+        return;
+      }
+
+      const requiredHoldMs = NORMAL_HOLD_MS; // Default normal hold: 350ms
+
+      // Check if this matches candidate currently being aimed at
+      if (!targetingRef.current || targetingRef.current.code !== code) {
+        // Start fresh steady aiming window
+        targetingRef.current = {
+          code,
+          firstSeenAt: now,
+          lastSeenAt: now,
+        };
+        setTargetedCode(code);
+        setTargetingProgress(15);
+      } else {
+        // Continue aiming lock
+        targetingRef.current.lastSeenAt = now;
+        const elapsed = now - targetingRef.current.firstSeenAt;
+        const progress = Math.min(100, Math.round((elapsed / requiredHoldMs) * 100));
+        setTargetingProgress(progress);
+
+        if (elapsed >= requiredHoldMs) {
+          // Steady hold threshold achieved! Confirm and capture barcode!
+          targetingRef.current = null;
+          setTargetingProgress(0);
+          setTargetedCode(null);
+          handleBarcodeFound(code);
+        }
+      }
+    },
+    [handleBarcodeFound, handleNoBarcodeInFrame]
   );
 
   const applyZoom = useCallback(async (newZoom: number) => {
@@ -440,38 +570,43 @@ export default function MobileCameraScanner({
         }
       }
 
-      // 1. ENGINE: Native BarcodeDetector if available (Runs on GPU/NPU at 60 FPS)
+      // 1. ENGINE: Native BarcodeDetector if available (Runs on GPU/NPU)
       let nativeDetectorStarted = false;
       if (typeof window !== "undefined" && "BarcodeDetector" in window) {
         try {
           const BarcodeDetectorClass = (window as any).BarcodeDetector;
           const supported: string[] =
             (await BarcodeDetectorClass.getSupportedFormats?.()) || [];
-          const activeFormats = NATIVE_FORMATS.filter(
+          const activeFormats = NATIVE_BARCODE_FORMATS.filter(
             (f) => supported.length === 0 || supported.includes(f)
           );
 
           if (activeFormats.length > 0) {
             const nativeDetector = new BarcodeDetectorClass({ formats: activeFormats });
             let isDetecting = false;
+            let lastScanTime = 0;
+            const NATIVE_SCAN_INTERVAL = 50; // High precision sampling for exact 350ms hold confirmation
 
-            const scanNativeLoop = async () => {
+            const scanNativeLoop = async (nowTimestamp?: number) => {
               if (isStoppingRef.current) return;
               if (!videoEl || videoEl.readyState < 2 || videoEl.videoWidth === 0) {
                 rafIdRef.current = requestAnimationFrame(scanNativeLoop);
                 return;
               }
 
-              if (!isDetecting) {
+              const now = typeof nowTimestamp === "number" ? nowTimestamp : performance.now();
+              if (!isDetecting && now - lastScanTime >= NATIVE_SCAN_INTERVAL) {
+                lastScanTime = now;
                 isDetecting = true;
                 try {
                   const barcodes = await nativeDetector.detect(videoEl);
                   if (barcodes && barcodes.length > 0) {
                     const zone = getScanZoneInVideoCoords(videoEl, scanZoneRef.current);
                     if (zone) {
-                      // Filter: strictly keep only barcodes whose position is inside the reticle scanning area
-                      const validBarcodes = barcodes.filter((b: any) =>
-                        isBarcodeInsideZone(b, zone)
+                      // Filter: strictly keep only genuine barcodes inside the reticle (QR codes blocked)
+                      const validBarcodes = barcodes.filter(
+                        (b: any) =>
+                          isBarcodeInsideZone(b, zone) && isValidBarcode(b.rawValue, b.format)
                       );
 
                       if (validBarcodes.length > 0) {
@@ -483,13 +618,20 @@ export default function MobileCameraScanner({
 
                         const primary = validBarcodes[0];
                         if (primary && primary.rawValue) {
-                          handleBarcodeFound(primary.rawValue);
+                          processCandidateBarcode(primary.rawValue, primary.format);
                         }
+                      } else {
+                        handleNoBarcodeInFrame();
                       }
+                    } else {
+                      handleNoBarcodeInFrame();
                     }
+                  } else {
+                    handleNoBarcodeInFrame();
                   }
                 } catch {
                   // Ignore transient frame read error
+                  handleNoBarcodeInFrame();
                 } finally {
                   isDetecting = false;
                 }
@@ -508,15 +650,15 @@ export default function MobileCameraScanner({
         }
       }
 
-      // 2. FALLBACK ENGINE: Lightweight ZXing cropped strictly to the viewfinder reticle
+      // 2. FALLBACK ENGINE: Lightweight ZXing cropped strictly to the viewfinder reticle (All Barcodes, QR Blocked)
       if (!nativeDetectorStarted) {
         try {
           const hints = new Map<DecodeHintType, any>();
-          hints.set(DecodeHintType.POSSIBLE_FORMATS, FAST_BARCODE_FORMATS);
+          hints.set(DecodeHintType.POSSIBLE_FORMATS, ALL_BARCODE_FORMATS);
 
           const codeReader = new BrowserMultiFormatReader(hints, {
-            delayBetweenScanAttempts: 60,
-            delayBetweenScanSuccess: 450,
+            delayBetweenScanAttempts: 50,
+            delayBetweenScanSuccess: 600,
           });
 
           // Offscreen cropped canvas: only captures pixels inside the reticle
@@ -527,7 +669,7 @@ export default function MobileCameraScanner({
           const scanZxingLoop = () => {
             if (isStoppingRef.current) return;
             if (!videoEl || videoEl.readyState < 2 || videoEl.videoWidth === 0) {
-              zxingTimeoutRef.current = setTimeout(scanZxingLoop, 80);
+              zxingTimeoutRef.current = setTimeout(scanZxingLoop, 50);
               return;
             }
 
@@ -560,19 +702,28 @@ export default function MobileCameraScanner({
 
                     const result = codeReader.decodeFromCanvas(cropCanvas);
                     if (result && result.getText()) {
-                      handleBarcodeFound(result.getText());
+                      const raw = result.getText();
+                      const fmt = result.getBarcodeFormat();
+                      if (isValidBarcode(raw, fmt)) {
+                        processCandidateBarcode(raw, fmt);
+                      } else {
+                        handleNoBarcodeInFrame();
+                      }
+                    } else {
+                      handleNoBarcodeInFrame();
                     }
                   }
                 }
               } catch {
-                // NotFoundException is thrown every frame when no barcode is inside reticle
+                // NotFoundException is thrown when no barcode is in reticle
+                handleNoBarcodeInFrame();
               } finally {
                 isZxingDecoding = false;
               }
             }
 
             if (!isStoppingRef.current) {
-              zxingTimeoutRef.current = setTimeout(scanZxingLoop, 70);
+              zxingTimeoutRef.current = setTimeout(scanZxingLoop, 50);
             }
           };
 
@@ -593,7 +744,7 @@ export default function MobileCameraScanner({
 
       setIsLoading(false);
     },
-    [handleBarcodeFound]
+    [processCandidateBarcode, handleNoBarcodeInFrame]
   );
 
   const requestPermissionAndStart = useCallback(async () => {
@@ -732,48 +883,102 @@ export default function MobileCameraScanner({
       `}</style>
 
       {/* Top Header Bar */}
-      <div className="relative z-30 flex items-center justify-between px-4 py-3 bg-black/75 backdrop-blur-md border-b border-white/10 text-white">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-8.5 w-8.5 place-items-center rounded-xl bg-[#E8C16D] text-[#0A0E1A] shadow-md shadow-[#E8C16D]/20">
-            <Scan className="h-4.5 w-4.5" />
+      <div className="relative z-30 flex items-center justify-between px-3 sm:px-4 py-3 bg-black/80 backdrop-blur-md border-b border-white/10 text-white">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="grid h-8.5 w-8.5 place-items-center rounded-xl bg-[#E8C16D] text-[#0A0E1A] shadow-md shadow-[#E8C16D]/20 shrink-0">
+            <Barcode className="h-4.5 w-4.5" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="text-sm font-bold leading-tight">Ultra Barcode Scanner</h3>
+              <h3 className="text-xs sm:text-sm font-bold leading-tight">Barcode Scanner</h3>
               <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Live
+                Barcodes Only
               </span>
             </div>
-            <p className="text-[10px] text-slate-300">All Barcodes & QR Codes Active</p>
+            <p className="text-[10px] text-emerald-400/90 flex items-center gap-1">
+              <ShieldCheck size={11} />
+              <span>• All Barcodes Supported</span>
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {hasTorch && permissionStatus === "granted" && (
             <button
               type="button"
               onClick={toggleTorch}
-              className={`p-2.5 rounded-xl border transition active:scale-95 cursor-pointer ${
+              className={`p-2 rounded-xl border transition active:scale-95 cursor-pointer ${
                 isTorchOn
                   ? "bg-[#E8C16D] text-[#0A0E1A] border-[#E8C16D]"
                   : "bg-white/10 text-white border-white/20 hover:bg-white/20"
               }`}
               title={isTorchOn ? "Turn Flash Off" : "Turn Flash On"}
             >
-              {isTorchOn ? <Zap size={18} /> : <ZapOff size={18} />}
+              {isTorchOn ? <Zap size={16} /> : <ZapOff size={16} />}
             </button>
           )}
 
           <button
             type="button"
             onClick={onClose}
-            className="p-2.5 rounded-xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition active:scale-95 cursor-pointer"
+            className="p-2 rounded-xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition active:scale-95 cursor-pointer"
             title="Close Camera"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
       </div>
+
+      {/* TOP Scan Result Banner (Success / Not Found / Already Scanned / Error) */}
+      {message && (
+        <div className="relative z-30 px-3 sm:px-4 py-2.5 bg-black/90 backdrop-blur-md border-b border-white/15 animate-in slide-in-from-top-3 duration-200">
+          <div
+            className={`rounded-2xl border p-2.5 sm:p-3 text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-xl ${
+              isSuccess
+                ? "border-emerald-500/60 bg-emerald-950/90 text-emerald-200 shadow-emerald-950/40"
+                : isWarning
+                ? "border-amber-500/60 bg-amber-950/90 text-amber-200 shadow-amber-950/40"
+                : "border-red-500/60 bg-red-950/90 text-red-200 shadow-red-950/40"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              {isSuccess ? (
+                <div className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+              ) : isWarning ? (
+                <div className="grid h-6 w-6 place-items-center rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
+              ) : (
+                <div className="grid h-6 w-6 place-items-center rounded-lg bg-red-500/20 text-red-400 shrink-0">
+                  <AlertCircle className="h-4 w-4" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="font-bold text-xs sm:text-sm truncate leading-snug">{message}</p>
+                {lastScannedCode && (
+                  <p className="text-[10px] font-mono text-slate-300 opacity-90 truncate">
+                    Code: {lastScannedCode}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <span
+              className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0 ${
+                isSuccess
+                  ? "bg-emerald-500/30 text-emerald-300 border-emerald-500/40"
+                  : isWarning
+                  ? "bg-amber-500/30 text-amber-300 border-amber-500/40"
+                  : "bg-red-500/30 text-red-300 border-red-500/40"
+              }`}
+            >
+              {isSuccess ? "Verified" : isWarning ? "Duplicate" : "Not Found"}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Viewport Area */}
       <div className="relative flex-1 min-h-0 w-full h-full flex items-center justify-center overflow-hidden bg-black">
@@ -954,6 +1159,8 @@ export default function MobileCameraScanner({
               className={`relative w-[88%] max-w-[360px] h-52 sm:h-56 rounded-2xl overflow-hidden transition-all duration-200 ${
                 isReading
                   ? "border-2 border-emerald-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.65),0_0_35px_#10b981,inset_0_0_25px_rgba(16,185,129,0.35)]"
+                  : targetingProgress > 0
+                  ? "border-2 border-[#E8C16D] shadow-[0_0_0_9999px_rgba(0,0,0,0.65),0_0_30px_rgba(232,193,109,0.5),inset_0_0_20px_rgba(232,193,109,0.2)]"
                   : "border-2 border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"
               }`}
             >
@@ -962,6 +1169,8 @@ export default function MobileCameraScanner({
                 className={`absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 rounded-tl-lg transition-colors duration-150 ${
                   isReading
                     ? "border-emerald-400 shadow-[0_0_15px_#10b981]"
+                    : targetingProgress > 0
+                    ? "border-amber-400 shadow-[0_0_15px_#fbbf24]"
                     : "border-[#E8C16D] shadow-[0_0_10px_#E8C16D]"
                 }`}
               />
@@ -969,6 +1178,8 @@ export default function MobileCameraScanner({
                 className={`absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 rounded-tr-lg transition-colors duration-150 ${
                   isReading
                     ? "border-emerald-400 shadow-[0_0_15px_#10b981]"
+                    : targetingProgress > 0
+                    ? "border-amber-400 shadow-[0_0_15px_#fbbf24]"
                     : "border-[#E8C16D] shadow-[0_0_10px_#E8C16D]"
                 }`}
               />
@@ -976,6 +1187,8 @@ export default function MobileCameraScanner({
                 className={`absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 rounded-bl-lg transition-colors duration-150 ${
                   isReading
                     ? "border-emerald-400 shadow-[0_0_15px_#10b981]"
+                    : targetingProgress > 0
+                    ? "border-amber-400 shadow-[0_0_15px_#fbbf24]"
                     : "border-[#E8C16D] shadow-[0_0_10px_#E8C16D]"
                 }`}
               />
@@ -983,6 +1196,8 @@ export default function MobileCameraScanner({
                 className={`absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 rounded-br-lg transition-colors duration-150 ${
                   isReading
                     ? "border-emerald-400 shadow-[0_0_15px_#10b981]"
+                    : targetingProgress > 0
+                    ? "border-amber-400 shadow-[0_0_15px_#fbbf24]"
                     : "border-[#E8C16D] shadow-[0_0_10px_#E8C16D]"
                 }`}
               />
@@ -1005,6 +1220,28 @@ export default function MobileCameraScanner({
               ) : (
                 /* Instant "Barcode Caught" Flash Line */
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_30px_#10b981] animate-in fade-in zoom-in-95 duration-150" />
+              )}
+
+              {/* Aiming & Hold Confirmation Progress Overlay */}
+              {targetingProgress > 0 && !isReading && (
+                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center p-3 rounded-2xl bg-black/85 backdrop-blur-md border border-[#E8C16D]/80 shadow-[0_0_30px_rgba(232,193,109,0.4)] animate-in zoom-in-95 duration-100">
+                  <div className="flex items-center gap-2 mb-2 text-white">
+                    <Barcode className="h-4 w-4 text-[#E8C16D] animate-pulse" />
+                    <span className="text-xs font-mono font-bold tracking-wider truncate max-w-[200px]">
+                      {targetedCode}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-white/20 overflow-hidden relative">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#E8C16D] to-emerald-400 transition-all duration-75 rounded-full"
+                      style={{ width: `${targetingProgress}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-[#E8C16D] font-semibold mt-1.5 flex items-center gap-1">
+                    <Timer className="h-2.5 w-2.5" />
+                    <span>Hold steady to capture ({targetingProgress}%)</span>
+                  </span>
+                </div>
               )}
 
               {/* Center Barcode Detected / Caught HUD Overlay */}
@@ -1041,13 +1278,13 @@ export default function MobileCameraScanner({
               </div>
             </div>
 
-            {/* High-Speed Multi-Format Status Pill */}
+            {/* Barcodes Only Status Pill */}
             <div className="mt-2.5 flex items-center gap-2 px-3 py-1 rounded-full bg-black/75 border border-white/15 text-[10px] font-semibold text-white/90 backdrop-blur-md shadow-lg">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span>Ultra-Fast 0ms Detection • All Devices Compatible</span>
+              <span>All Barcodes Supported • QR Codes Blocked</span>
             </div>
           </div>
         )}
@@ -1061,40 +1298,17 @@ export default function MobileCameraScanner({
         )}
       </div>
 
-      {/* Bottom Live Feedback Bar */}
-      <div className="relative z-30 p-4 bg-black/75 backdrop-blur-md border-t border-white/10 space-y-2">
+      {/* Bottom Status Bar */}
+      <div className="relative z-30 px-4 py-3 bg-black/75 backdrop-blur-md border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
+        <span className="text-slate-400">
+          {permissionStatus === "granted"
+            ? "Point camera at barcode to scan"
+            : "Allow camera permission to begin scanning"}
+        </span>
         {lastScannedCode && (
-          <div className="flex items-center justify-between text-xs font-mono text-slate-300 px-1">
-            <span>Last Scanned:</span>
-            <span className="font-bold text-[#E8C16D] text-sm break-all">{lastScannedCode}</span>
-          </div>
-        )}
-
-        {message ? (
-          <div
-            className={`rounded-xl border p-2.5 text-xs font-semibold flex items-center gap-2 ${
-              isSuccess
-                ? "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
-                : isWarning
-                ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
-                : "border-red-500/40 bg-red-950/60 text-red-300"
-            }`}
-          >
-            {isSuccess ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-            ) : isWarning ? (
-              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
-            ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-            )}
-            <span className="truncate">{message}</span>
-          </div>
-        ) : (
-          <p className="text-center text-[11px] text-slate-400">
-            {permissionStatus === "granted"
-              ? "Scanning active. Point at barcode to scan."
-              : "Allow camera permission to begin scanning."}
-          </p>
+          <span className="font-mono text-xs text-[#E8C16D] font-bold truncate max-w-[170px]">
+            {lastScannedCode}
+          </span>
         )}
       </div>
     </div>

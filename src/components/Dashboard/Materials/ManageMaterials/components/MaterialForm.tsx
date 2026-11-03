@@ -26,17 +26,6 @@ import {
 } from "../validations/material.validation";
 import {
   materialDefaultValues,
-  categoryOptions,
-  subCategoryOptions,
-  manufacturingGroupOptions,
-  unitOptions,
-  gstRateOptions,
-  brandOptions,
-  forUseOptions,
-  costApplyingModeOptions,
-  purchaseTypeOptions,
-  issueModeOptions,
-  consumptionModeOptions,
   defaultMaterialAttributes,
 } from "../constants/material.constants";
 import { useCreateMaterial, useUpdateMaterial } from "../hooks/useMaterials";
@@ -73,47 +62,97 @@ export default function MaterialForm({
   const { data: dropdownResponse } = useDropdownOptions();
   const dropdownData = dropdownResponse?.data;
 
+  const dynamicColors = useMemo(() => {
+    let localSaved: string[] = [];
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("orderos_custom_colors");
+        localSaved = stored ? JSON.parse(stored) : [];
+      } catch {}
+    }
+
+    const distMat = dropdownData?.distinctFromMaterials || dropdownData?.distinctFromProducts;
+    const merged = buildMergedOptions(
+      ["color", "colors"],
+      [],
+      dropdownData?.savedOptions,
+      [...(distMat?.colors || []), ...localSaved]
+    );
+
+    const getDisplayName = (o: { label?: string; value: string }) => {
+      const lbl = String(o.label || "").trim();
+      const val = String(o.value || "").trim();
+      if (val.startsWith("#") && lbl && !lbl.startsWith("#")) return lbl;
+      if (lbl.startsWith("#") && val && !val.startsWith("#")) return val;
+      return lbl || val;
+    };
+
+    return merged.map(getDisplayName);
+  }, [dropdownData]);
+
   const buildOptions = useMemo(() => {
     const distMat = dropdownData?.distinctFromMaterials || dropdownData?.distinctFromProducts;
 
     const makeOptions = (
-      defaultList: Array<DropdownOption | string>,
-      fieldName: string,
+      fieldName: string | string[],
       distinctList?: string[]
     ): DropdownOption[] => {
       return buildMergedOptions(
         fieldName,
-        defaultList,
+        [],
         dropdownData?.savedOptions,
         distinctList
       );
     };
 
     return {
-      categories: makeOptions(categoryOptions, "category", distMat?.categories),
-      subCategories: makeOptions(subCategoryOptions, "subcategory", distMat?.subCategories),
-      manufacturingGroups: makeOptions(manufacturingGroupOptions, "manufacturinggroup", distMat?.manufacturingGroups),
-      units: makeOptions(unitOptions, "unit", distMat?.units),
-      brands: makeOptions(brandOptions, "brand", distMat?.brands),
-      forUses: makeOptions(forUseOptions, "foruse", distMat?.forUses),
-      costApplyingModes: makeOptions(costApplyingModeOptions, "costapplyingmode", distMat?.costApplyingModes),
-      purchaseTypes: makeOptions(purchaseTypeOptions, "purchasetype", distMat?.purchaseTypes),
-      issueModes: makeOptions(issueModeOptions, "issuemode", distMat?.issueModes),
-      consumptionModes: makeOptions(consumptionModeOptions, "consumptionmode", distMat?.consumptionModes),
+      categories: makeOptions("materialcategory", distMat?.categories),
+      subCategories: makeOptions("materialsubcategory", distMat?.subCategories),
+      manufacturingGroups: makeOptions("manufacturinggroup", distMat?.manufacturingGroups),
+      units: makeOptions("unit", distMat?.units),
+      brands: makeOptions("brand", distMat?.brands),
+      forUses: makeOptions("foruse", distMat?.forUses),
+      costApplyingModes: makeOptions("costapplyingmode", distMat?.costApplyingModes),
+      purchaseTypes: makeOptions("purchasetype", distMat?.purchaseTypes),
+      issueModes: makeOptions("issuemode", distMat?.issueModes),
+      consumptionModes: makeOptions("consumptionmode", distMat?.consumptionModes),
       gstRates: makeOptions(
-        gstRateOptions.map((g) => ({ label: g.label, value: String(g.value) })),
-        "gstrate",
+        ["gstrate", "gst"],
         (distMat as any)?.gstRates
       ),
-      colors: Array.from(
-        new Set([
-          ...(dropdownData?.savedOptions || [])
-            .filter((o) => o.field.toLowerCase() === "color" && o.isActive !== false)
-            .map((o) => o.value),
-          ...(distMat?.colors || []),
-        ])
-      ),
+      colors: dynamicColors,
     };
+  }, [dropdownData, dynamicColors]);
+
+  const disabledColors = useMemo(() => {
+    const disabled: string[] = [];
+    (dropdownData?.savedOptions || [])
+      .filter(
+        (o) =>
+          ["color", "colors"].includes(o.field?.toLowerCase()) &&
+          (o.isActive === false || o.label === "__DELETED__")
+      )
+      .forEach((o) => {
+        if (o.value) disabled.push(o.value);
+        if (o.label && o.label !== "__DELETED__") disabled.push(o.label);
+      });
+    return disabled;
+  }, [dropdownData]);
+
+  const serverColorHexMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (dropdownData?.savedOptions || [])
+      .filter((o: any) => ["color", "colors"].includes(o.field?.toLowerCase()) && o.isActive !== false)
+      .forEach((o: any) => {
+        const val = String(o.value || "").trim();
+        const lbl = String(o.label || "").trim();
+        if (val.startsWith("#") && lbl) {
+          map[lbl.toLowerCase()] = val.toUpperCase();
+        } else if (lbl.startsWith("#") && val) {
+          map[val.toLowerCase()] = lbl.toUpperCase();
+        }
+      });
+    return map;
   }, [dropdownData]);
 
   const form = useForm<MaterialFormValues>({
@@ -517,7 +556,7 @@ export default function MaterialForm({
               render={({ field }) => (
                 <DropdownWithOther
                   label="Category"
-                  fieldKey="category"
+                  fieldKey="materialCategory"
                   value={field.value}
                   onChange={field.onChange}
                   options={buildOptions.categories}
@@ -534,7 +573,7 @@ export default function MaterialForm({
               render={({ field }) => (
                 <DropdownWithOther
                   label="Sub Category"
-                  fieldKey="subCategory"
+                  fieldKey="materialSubCategory"
                   value={field.value || "No Sub Category"}
                   onChange={field.onChange}
                   options={buildOptions.subCategories}
@@ -591,6 +630,8 @@ export default function MaterialForm({
                   value={field.value || []}
                   onChange={field.onChange}
                   additionalColors={buildOptions.colors}
+                  disabledColors={disabledColors}
+                  colorHexMap={serverColorHexMap}
                   error={errors.colors?.message}
                 />
               )}

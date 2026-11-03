@@ -15,7 +15,16 @@ export interface SavedDropdownOption {
  * Normalizes field key to lowercase alphanumeric for reliable matching
  */
 export function normalizeKey(key: string): string {
-  return String(key || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const clean = String(key || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (clean === "productcategory") return "category";
+  if (clean === "productsubcategory") return "subcategory";
+  if (clean === "colour" || clean === "colours") return "color";
+  if (clean === "brandname") return "brand";
+  if (clean === "companyname") return "company";
+  if (clean === "userdepartment") return "department";
+  if (clean === "sizes" || clean === "sizelist") return "size";
+  if (clean === "gst") return "gstrate";
+  return clean;
 }
 
 /**
@@ -38,29 +47,49 @@ export function buildMergedOptions(
   distinctValues: Array<string | number> = []
 ): DropdownOptionItem[] {
   const targetKeys = (Array.isArray(fieldKeys) ? fieldKeys : [fieldKeys]).map(normalizeKey);
+  const isGst = targetKeys.includes("gstrate") || targetKeys.includes("gst");
 
   // 1. Matching DB options
   const matchingDb = (savedOptions || []).filter((o) =>
     targetKeys.includes(normalizeKey(o.field))
   );
 
-  // 2. Disabled set (isActive === false)
-  const disabledSet = new Set(
-    matchingDb
-      .filter((o) => o.isActive === false)
-      .map((o) => String(o.value).trim().toLowerCase())
-  );
+  // 2. Disabled set (isActive === false or label === "__DELETED__")
+  const disabledSet = new Set<string>();
+  matchingDb
+    .filter((o) => o.isActive === false || o.label === "__DELETED__")
+    .forEach((o) => {
+      const v = String(o.value).trim().toLowerCase();
+      disabledSet.add(v);
+      if (o.label && o.label !== "__DELETED__") {
+        disabledSet.add(String(o.label).trim().toLowerCase());
+      }
+      if (isGst) {
+        disabledSet.add(v.replace("%", "").trim());
+        disabledSet.add(`${v.replace("%", "").trim()}%`);
+      }
+    });
 
   // 3. Active DB map: value.toLowerCase() -> DropdownOptionItem
   const activeDbMap = new Map<string, DropdownOptionItem>();
   matchingDb
-    .filter((o) => o.isActive !== false)
+    .filter((o) => o.isActive !== false && o.label !== "__DELETED__")
     .forEach((o) => {
-      const v = String(o.value).trim();
-      if (v) {
-        activeDbMap.set(v.toLowerCase(), {
-          label: o.label?.trim() || v,
-          value: v,
+      const rawV = String(o.value).trim();
+      if (!rawV) return;
+      if (disabledSet.has(rawV.toLowerCase())) return;
+      if (o.label && disabledSet.has(String(o.label).trim().toLowerCase())) return;
+
+      if (isGst) {
+        const numStr = rawV.replace("%", "").trim();
+        const displayLabel = o.label?.trim() || (rawV.endsWith("%") ? rawV : `${rawV}%`);
+        const item = { label: displayLabel, value: numStr };
+        activeDbMap.set(numStr.toLowerCase(), item);
+        activeDbMap.set(`${numStr}%`.toLowerCase(), item);
+      } else {
+        activeDbMap.set(rawV.toLowerCase(), {
+          label: o.label?.trim() || rawV,
+          value: rawV,
         });
       }
     });
@@ -74,17 +103,29 @@ export function buildMergedOptions(
     const v = String(rawVal ?? "").trim();
     if (!v || disabledSet.has(v.toLowerCase())) return;
 
-    const dbOverride = activeDbMap.get(v.toLowerCase());
-    resultMap.set(v.toLowerCase(), {
-      label: dbOverride?.label || rawLabel || v,
-      value: v,
-    });
+    if (isGst) {
+      const numStr = v.replace("%", "").trim();
+      if (disabledSet.has(numStr.toLowerCase())) return;
+      const dbOverride = activeDbMap.get(numStr.toLowerCase()) || activeDbMap.get(`${numStr}%`.toLowerCase());
+      resultMap.set(numStr.toLowerCase(), {
+        label: dbOverride?.label || (rawLabel ? String(rawLabel).trim() : `${numStr}%`),
+        value: numStr,
+      });
+    } else {
+      const dbOverride = activeDbMap.get(v.toLowerCase());
+      resultMap.set(v.toLowerCase(), {
+        label: dbOverride?.label || rawLabel || v,
+        value: v,
+      });
+    }
   });
 
   // 5. Append newly added active options from DB (not in defaults)
   activeDbMap.forEach((dbItem, lowerKey) => {
-    if (!resultMap.has(lowerKey)) {
-      resultMap.set(lowerKey, dbItem);
+    if (disabledSet.has(lowerKey) || (dbItem.label && disabledSet.has(dbItem.label.toLowerCase()))) return;
+    const keyToUse = isGst ? dbItem.value.toLowerCase() : lowerKey;
+    if (!resultMap.has(keyToUse)) {
+      resultMap.set(keyToUse, dbItem);
     }
   });
 
@@ -93,11 +134,22 @@ export function buildMergedOptions(
     if (item === null || item === undefined) return;
     const v = String(item).trim();
     if (!v || disabledSet.has(v.toLowerCase())) return;
-    if (!resultMap.has(v.toLowerCase())) {
-      resultMap.set(v.toLowerCase(), {
-        label: v,
-        value: v,
-      });
+
+    if (isGst) {
+      const numStr = v.replace("%", "").trim();
+      if (!disabledSet.has(numStr.toLowerCase()) && !resultMap.has(numStr.toLowerCase())) {
+        resultMap.set(numStr.toLowerCase(), {
+          label: `${numStr}%`,
+          value: numStr,
+        });
+      }
+    } else {
+      if (!resultMap.has(v.toLowerCase())) {
+        resultMap.set(v.toLowerCase(), {
+          label: v,
+          value: v,
+        });
+      }
     }
   });
 

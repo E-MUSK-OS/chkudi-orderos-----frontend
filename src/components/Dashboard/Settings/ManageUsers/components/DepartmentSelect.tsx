@@ -2,9 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Search, ChevronDown, Check, FolderGit2, Plus } from "lucide-react";
-import { DEPARTMENT_OPTIONS } from "../types/userManagement.types";
 import { useUserDropdownOptions, useSaveUserDropdownOption } from "../hooks/useManageUsers";
 import { toast } from "sonner";
+import { useDropdownManagementMode } from "@/components/Dashboard/Settings/Configuration/hooks/useDropdownManagementMode";
 
 interface Props {
   value: string[];
@@ -23,6 +23,7 @@ export default function DepartmentSelect({ value = [], onChange, error }: Props)
 
   const { data: dropdownData } = useUserDropdownOptions();
   const saveOptionMutation = useSaveUserDropdownOption();
+  const { isSettingMastersOnly } = useDropdownManagementMode();
 
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
@@ -34,21 +35,35 @@ export default function DepartmentSelect({ value = [], onChange, error }: Props)
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [open]);
 
-  // Combine default, DB-stored, and local departments
+  // Synchronize when dropdown options are updated externally
+  useEffect(() => {
+    const handleSync = () => {
+      setLocalCustomDepts([]);
+    };
+    window.addEventListener("dropdown_options_updated", handleSync);
+    return () => window.removeEventListener("dropdown_options_updated", handleSync);
+  }, []);
+
+  // Combine DB-stored and local departments
   const allDepartments = React.useMemo(() => {
-    const disabledDepts = new Set(
-      (dropdownData?.savedOptions || [])
-        .filter((o: any) => o.field?.toLowerCase() === "department" && o.isActive === false)
-        .map((o: any) => String(o.value).trim().toLowerCase())
-    );
+    const disabledDepts = new Set<string>();
+    (dropdownData?.savedOptions || [])
+      .filter((o: any) => o.field?.toLowerCase() === "department" && (o.isActive === false || o.label === "__DELETED__"))
+      .forEach((o: any) => {
+        if (o.value) disabledDepts.add(String(o.value).trim().toLowerCase());
+        if (o.label && o.label !== "__DELETED__") disabledDepts.add(String(o.label).trim().toLowerCase());
+      });
 
     const set = new Set<string>();
-    DEPARTMENT_OPTIONS.forEach((d) => {
-      if (!disabledDepts.has(d.trim().toLowerCase())) set.add(d);
-    });
     (dropdownData?.departments || []).forEach((d: string) => {
       if (!disabledDepts.has(d.trim().toLowerCase())) set.add(d);
     });
+    (dropdownData?.savedOptions || [])
+      .filter((o: any) => o.field?.toLowerCase() === "department" && o.isActive !== false && o.label !== "__DELETED__")
+      .forEach((o: any) => {
+        const val = (o.label || o.value || "").trim();
+        if (val && !disabledDepts.has(val.toLowerCase())) set.add(val);
+      });
     localCustomDepts.forEach((d) => {
       if (!disabledDepts.has(d.trim().toLowerCase())) set.add(d);
     });
@@ -174,7 +189,8 @@ export default function DepartmentSelect({ value = [], onChange, error }: Props)
           </div>
 
           {/* "Other" Option button / Inline Adder */}
-          <div className="pt-2 mt-1 border-t border-slate-100 dark:border-white/[0.06]">
+          {!isSettingMastersOnly && (
+            <div className="pt-2 mt-1 border-t border-slate-100 dark:border-white/[0.06]">
             {!isOtherActive ? (
               <button
                 type="button"
@@ -223,6 +239,7 @@ export default function DepartmentSelect({ value = [], onChange, error }: Props)
               </div>
             )}
           </div>
+          )}
         </div>
       )}
 

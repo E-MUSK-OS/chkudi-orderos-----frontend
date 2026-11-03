@@ -1,129 +1,49 @@
-export const categoryOptions = [
-  "Fabric",
-  "Packaging",
-  "Office Use",
-  "DTF Logo",
-  "Paper",
-  "Bags",
-  "Sample Fabric",
-  "Trims",
-  "Accessories",
-];
+export const categoryOptions: string[] = [];
 
-export const subCategoryOptions = [
-  "No Sub Category",
-  "A4 Paper",
-  "Amazon Bags",
-  "Box",
-  "Polybag",
-  "Label",
-  "Tag",
-  "Thread",
-  "Zipper",
-  "Button",
-];
+export const subCategoryOptions: string[] = [];
 
-export const manufacturingGroupOptions = [
-  "Fabric",
-  "Trim",
-  "Packaging",
-  "Accessory",
-  "Stationery",
-  "Service",
-  "Consumables",
-  "No Manufacturing Group",
-];
+export const manufacturingGroupOptions: string[] = [];
 
-export const unitOptions = [
-  "Mtr",
-  "Pcs",
-  "Pics",
-  "Kg",
-  "Gsm",
-  "Yards",
-  "Roll",
-  "Box",
-  "Set",
-  "Packet",
-  "No Unit",
-];
+export const unitOptions: string[] = [];
 
-export const gstRateOptions = [
-  { label: "0%", value: 0 },
-  { label: "5%", value: 5 },
-  { label: "12%", value: 12 },
-  { label: "18%", value: 18 },
-  { label: "28%", value: 28 },
-];
+export const gstRateOptions: Array<{ label: string; value: number }> = [];
 
-export const brandOptions = [
-  "No Brand",
-];
+export const brandOptions: string[] = [];
 
-export const forUseOptions = [
-  "No For Use",
-  "Amazon Packing Office",
-  "Factory Production",
-  "Sample Development",
-  "Office Administration",
-  "Retail Store",
-  "Warehouse",
-];
+export const forUseOptions: string[] = [];
 
-export const costApplyingModeOptions = [
-  "Weighted Average",
-  "Last Purchase Rate",
-  "Standard Cost",
-  "FIFO",
-  "LIFO",
-  "No Cost Applying Mode",
-];
+export const costApplyingModeOptions: string[] = [];
 
-export const purchaseTypeOptions = [
-  "Regular Purchase",
-  "Job Work",
-  "Import",
-  "Sample",
-  "Direct",
-  "No Purchase Type",
-];
+export const purchaseTypeOptions: string[] = [];
 
-export const issueModeOptions = [
-  "FIFO",
-  "LIFO",
-  "Batch Wise",
-  "Direct",
-  "Manual",
-  "No Issue Mode",
-];
+export const issueModeOptions: string[] = [];
 
-export const consumptionModeOptions = [
-  "Direct",
-  "Job Work",
-  "BOM Based",
-  "Manual",
-  "No Consumption Mode",
-];
+export const consumptionModeOptions: string[] = [];
 
 export const defaultColorPresets = [
-  { name: "Black", hex: "#000000" },
   { name: "White", hex: "#FFFFFF" },
-  { name: "Red", hex: "#EF4444" },
-  { name: "Blue", hex: "#3B82F6" },
-  { name: "Navy", hex: "#1E3A8A" },
+  { name: "Black", hex: "#000000" },
   { name: "Green", hex: "#10B981" },
+  { name: "Red", hex: "#EF4444" },
+  { name: "Sky-blue", hex: "#38BDF8" },
+  { name: "Cream", hex: "#FFFDD0" },
+  { name: "Pink", hex: "#EC4899" },
+  { name: "Maroon", hex: "#800000" },
+  { name: "Blue", hex: "#3B82F6" },
+  { name: "Navy blue", hex: "#1E3A8A" },
+  { name: "Gold", hex: "#EAB308" },
+  { name: "Clear", hex: "#E5E7EB" },
+  { name: "Silver", hex: "#9CA3AF" },
+  { name: "Brown", hex: "#78350F" },
+  { name: "Teal", hex: "#0D9488" },
+  { name: "Magenta", hex: "#D946EF" },
   { name: "Yellow", hex: "#FBBF24" },
+  { name: "Grey", hex: "#6B7280" },
+  { name: "Charcoal", hex: "#374151" },
+  { name: "Beige", hex: "#D2B48C" },
+  { name: "Olive", hex: "#556B2F" },
   { name: "Orange", hex: "#F97316" },
   { name: "Purple", hex: "#8B5CF6" },
-  { name: "Pink", hex: "#EC4899" },
-  { name: "Grey", hex: "#6B7280" },
-  { name: "Beige", hex: "#D2B48C" },
-  { name: "Brown", hex: "#78350F" },
-  { name: "Maroon", hex: "#800000" },
-  { name: "Olive", hex: "#556B2F" },
-  { name: "Teal", hex: "#0D9488" },
-  { name: "Sky Blue", hex: "#38BDF8" },
-  { name: "Cream", hex: "#FFFDD0" },
 ];
 
 export const materialDefaultValues = {
@@ -131,8 +51,8 @@ export const materialDefaultValues = {
   masterSku: "",
   materialName: "",
   category: "",
-  subCategory: "No Sub Category",
-  manufacturingGroup: "No Manufacturing Group",
+  subCategory: "",
+  manufacturingGroup: "Fabric",
   unit: "Pcs",
   colors: [] as string[],
   sizeList: "",
@@ -146,7 +66,7 @@ export const materialDefaultValues = {
   gstRate: 5,
   hsnCode: "",
   brand: "No Brand",
-  forUse: "No For Use",
+  forUse: "",
   less: 0,
   description: "",
 
@@ -159,7 +79,6 @@ export const materialDefaultValues = {
   isStockDetailsCompulsory: false,
   issueMode: "Direct",
   consumptionMode: "Direct",
-  isIssuable: false,
   isSellable: false,
 
   isActive: true,
@@ -184,6 +103,4 @@ export const productCategoryOptions = categoryOptions.map((c) => ({
   value: c,
 }));
 
-export const defaultMarketplaceOptions = [
-  { label: "All", value: "All" },
-];
+export const defaultMarketplaceOptions: Array<{ label: string; value: string }> = [];

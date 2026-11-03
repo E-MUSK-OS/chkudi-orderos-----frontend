@@ -32,6 +32,17 @@ export const settingMastersService = {
   },
 
   /**
+   * Seed all Setting Master default values in database
+   */
+  async seedDefaults(force = false): Promise<void> {
+    try {
+      await api.post(`${BASE_URL}/seed-defaults`, { force });
+    } catch (err) {
+      console.warn("Could not seed defaults:", err);
+    }
+  },
+
+  /**
    * Fetch all options for a specific field group
    */
   async getFieldOptions(field: string): Promise<SettingOptionItem[]> {
@@ -83,12 +94,14 @@ export const settingMastersService = {
    */
   async deleteOption(
     id: string,
-    payload: { field: string; value: string }
+    payload: { field: string; value: string; label?: string }
   ): Promise<void> {
-    const query = new URLSearchParams({
+    const params: Record<string, string> = {
       field: payload.field,
       value: payload.value,
-    }).toString();
+    };
+    if (payload.label) params.label = payload.label;
+    const query = new URLSearchParams(params).toString();
     await api.delete(`${BASE_URL}/${id}?${query}`);
   },
 };

@@ -9,15 +9,18 @@ export interface ClientConfigTreeNode {
   children?: ClientConfigTreeNode[];
 }
 
+export type DropdownManagementMode = "SETTING_MASTERS" | "FORM_OTHER";
+
 export interface ClientConfigurationData {
   id?: string | null;
   workspaceSuperAdminId?: string;
   clientName: string;
   subscriptionPlan: string;
   hasSeparateInventoryDept: boolean;
+  dropdownManagementMode?: DropdownManagementMode;
   enabledSections: string[];
   enabledRoutes: string[];
-  configurationData?: Record<string, boolean> | null;
+  configurationData?: any;
   updatedAt?: string;
   isDefault?: boolean;
 }

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import DepartmentSelect from "./DepartmentSelect";
 import DropdownWithOther from "./DropdownWithOther";
-import { COMPANY_OPTIONS, type UserFormValues } from "../types/userManagement.types";
+import { type UserFormValues } from "../types/userManagement.types";
 import { ChevronDown, Calendar as CalendarIcon, Check, Building2, Eye, EyeOff, Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,6 +11,8 @@ import { format, parseISO, isValid } from "date-fns";
 import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 import { useUserDropdownOptions, useSaveUserDropdownOption } from "../hooks/useManageUsers";
 import { toast } from "sonner";
+import { useDropdownManagementMode } from "@/components/Dashboard/Settings/Configuration/hooks/useDropdownManagementMode";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 
 interface Props {
   values: UserFormValues;
@@ -18,11 +20,6 @@ interface Props {
   errors: Partial<Record<keyof UserFormValues, string>>;
   mode: "create" | "edit";
 }
-
-const DEFAULT_GENDER_OPTIONS = [
-  { value: "Male", label: "Male" },
-  { value: "Female", label: "Female" },
-];
 
 const ROLE_OPTIONS = [
   { value: "USER", label: "USER (Standard User)" },
@@ -44,6 +41,7 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
 
   const { data: dropdownData } = useUserDropdownOptions();
   const saveOptionMutation = useSaveUserDropdownOption();
+  const { isSettingMastersOnly } = useDropdownManagementMode();
 
   // Sync external dob changes to local input state
   useEffect(() => {
@@ -60,21 +58,35 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [companyDropdownOpen]);
 
-  // Merge default companies with DB-saved companies and locally created companies
+  // Synchronize when dropdown options are updated externally
+  useEffect(() => {
+    const handleSync = () => {
+      setLocalCustomCompanies([]);
+    };
+    window.addEventListener("dropdown_options_updated", handleSync);
+    return () => window.removeEventListener("dropdown_options_updated", handleSync);
+  }, []);
+
+  // Merge DB-saved companies and locally created companies
   const allCompanies = React.useMemo(() => {
-    const disabledCompanies = new Set(
-      (dropdownData?.savedOptions || [])
-        .filter((o: any) => o.field?.toLowerCase() === "company" && o.isActive === false)
-        .map((o: any) => String(o.value).trim().toLowerCase())
-    );
+    const disabledCompanies = new Set<string>();
+    (dropdownData?.savedOptions || [])
+      .filter((o: any) => o.field?.toLowerCase() === "company" && (o.isActive === false || o.label === "__DELETED__"))
+      .forEach((o: any) => {
+        if (o.value) disabledCompanies.add(String(o.value).trim().toLowerCase());
+        if (o.label && o.label !== "__DELETED__") disabledCompanies.add(String(o.label).trim().toLowerCase());
+      });
 
     const set = new Set<string>();
-    COMPANY_OPTIONS.forEach((c) => {
-      if (!disabledCompanies.has(c.trim().toLowerCase())) set.add(c);
-    });
     (dropdownData?.companies || []).forEach((c) => {
       if (!disabledCompanies.has(c.trim().toLowerCase())) set.add(c);
     });
+    (dropdownData?.savedOptions || [])
+      .filter((o: any) => o.field?.toLowerCase() === "company" && o.isActive !== false && o.label !== "__DELETED__")
+      .forEach((o: any) => {
+        const val = (o.label || o.value || "").trim();
+        if (val && !disabledCompanies.has(val.toLowerCase())) set.add(val);
+      });
     localCustomCompanies.forEach((c) => {
       if (!disabledCompanies.has(c.trim().toLowerCase())) set.add(c);
     });
@@ -82,29 +94,14 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
     return Array.from(set);
   }, [dropdownData, localCustomCompanies, values.companies]);
 
-  // Merge gender options
+  // Merge gender options dynamically from Setting Masters
   const allGenderOptions = React.useMemo(() => {
-    const disabledGenders = new Set(
-      (dropdownData?.savedOptions || [])
-        .filter((o: any) => o.field?.toLowerCase() === "gender" && o.isActive === false)
-        .map((o: any) => String(o.value).trim().toLowerCase())
+    return buildMergedOptions(
+      "gender",
+      [],
+      dropdownData?.savedOptions,
+      [...(dropdownData?.genders || []), ...(values.gender ? [values.gender] : [])]
     );
-
-    const map = new Map<string, { label: string; value: string }>();
-    DEFAULT_GENDER_OPTIONS.forEach((g) => {
-      if (!disabledGenders.has(g.value.trim().toLowerCase())) {
-        map.set(g.value.toLowerCase(), g);
-      }
-    });
-    (dropdownData?.genders || []).forEach((g) => {
-      if (g && !disabledGenders.has(g.trim().toLowerCase()) && !map.has(g.toLowerCase())) {
-        map.set(g.toLowerCase(), { label: g, value: g });
-      }
-    });
-    if (values.gender && !map.has(values.gender.toLowerCase())) {
-      map.set(values.gender.toLowerCase(), { label: values.gender, value: values.gender });
-    }
-    return Array.from(map.values());
   }, [dropdownData, values.gender]);
 
   const toggleCompany = (company: string) => {
@@ -503,7 +500,12 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
               {companyDropdownOpen && (
                 <div className="absolute z-50 left-0 top-[calc(100%+8px)] w-full rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-100">
                   <div className="max-h-56 overflow-y-auto flex flex-col gap-0.5">
-                    {allCompanies.map((c) => {
+                    {allCompanies.length === 0 ? (
+                      <div className="py-2.5 px-3 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                        No companies yet. Click &quot;Other&quot; below to add one.
+                      </div>
+                    ) : (
+                      allCompanies.map((c) => {
                       const checked = values.companies.includes(c);
                       return (
                         <button
@@ -520,11 +522,12 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
                           {checked && <Check className="h-3.5 w-3.5 text-[#E8C16D] dark:text-black shrink-0 stroke-[2.5]" />}
                         </button>
                       );
-                    })}
+                    }))}
                   </div>
 
                   {/* "Other" Option button / Inline Adder for Company */}
-                  <div className="pt-2 mt-1 border-t border-slate-100 dark:border-white/[0.06]">
+                  {!isSettingMastersOnly && (
+                    <div className="pt-2 mt-1 border-t border-slate-100 dark:border-white/[0.06]">
                     {!isOtherCompanyActive ? (
                       <button
                         type="button"
@@ -573,6 +576,7 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               )}
             </div>

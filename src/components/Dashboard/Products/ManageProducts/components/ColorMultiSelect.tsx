@@ -56,6 +56,8 @@ interface ColorMultiSelectProps {
   value: string[];
   onChange: (colors: string[]) => void;
   additionalColors?: string[];
+  disabledColors?: string[];
+  colorHexMap?: Record<string, string>;
   error?: string;
   className?: string;
 }
@@ -65,6 +67,8 @@ export default function ColorMultiSelect({
   value = [],
   onChange,
   additionalColors = [],
+  disabledColors = [],
+  colorHexMap = {},
   error,
   className,
 }: ColorMultiSelectProps) {
@@ -118,6 +122,7 @@ export default function ColorMultiSelect({
 
   const getColorHex = (name: string): string => {
     const clean = (name || "").toLowerCase().trim();
+    if (colorHexMap && colorHexMap[clean]) return colorHexMap[clean];
     if (customColorHexMap[clean]) return customColorHexMap[clean];
     const preset = defaultColorPresets.find((c) => c.name.toLowerCase() === clean);
     if (preset) return preset.hex;
@@ -127,33 +132,43 @@ export default function ColorMultiSelect({
 
   // Merge default presets + additional custom colors + locally added custom colors
   const allColors: ColorPreset[] = React.useMemo(() => {
-    const list: ColorPreset[] = [...defaultColorPresets];
-    const seen = new Set(defaultColorPresets.map((c) => c.name.toLowerCase()));
+    const list: ColorPreset[] = [];
+    const seen = new Set<string>();
 
-    [...additionalColors, ...localCustomColors].forEach((colorName) => {
-      const trimmed = colorName?.trim();
-      if (trimmed && !seen.has(trimmed.toLowerCase())) {
-        seen.add(trimmed.toLowerCase());
-        list.push({
-          name: trimmed,
-          hex: getColorHex(trimmed),
-        });
-      }
-    });
+    const addUnique = (name: string, defaultHex = "#6B7280") => {
+      const clean = name?.trim();
+      if (!clean) return;
+      const lower = clean.toLowerCase();
+      if (seen.has(lower)) return;
+      if (disabledColors?.some((d) => d.toLowerCase().trim() === lower)) return;
 
-    (value || []).forEach((v) => {
-      const trimmed = v?.trim();
-      if (trimmed && !seen.has(trimmed.toLowerCase())) {
-        seen.add(trimmed.toLowerCase());
-        list.push({
-          name: trimmed,
-          hex: getColorHex(trimmed),
-        });
-      }
-    });
+      seen.add(lower);
+      list.push({
+        name: clean,
+        hex: getColorHex(clean) || defaultHex,
+      });
+    };
+
+    if (additionalColors && additionalColors.length > 0) {
+      additionalColors.forEach((c) => addUnique(c));
+    } else {
+      defaultColorPresets.forEach((c) => addUnique(c.name, c.hex));
+    }
+
+    localCustomColors.forEach((c) => addUnique(c));
+    (value || []).forEach((v) => addUnique(v));
 
     return list;
-  }, [additionalColors, localCustomColors, value, customColorHexMap]);
+  }, [additionalColors, localCustomColors, value, customColorHexMap, disabledColors, colorHexMap]);
+
+  // Sync with external Setting Masters updates
+  useEffect(() => {
+    const handleSync = () => {
+      setLocalCustomColors([]);
+    };
+    window.addEventListener("dropdown_options_updated", handleSync);
+    return () => window.removeEventListener("dropdown_options_updated", handleSync);
+  }, []);
 
   // Click outside listener
   useEffect(() => {
@@ -221,7 +236,7 @@ export default function ColorMultiSelect({
     try {
       saveOptionMutation.mutate({
         field: "color",
-        value: trimmed,
+        value: finalHex,
         label: trimmed,
       });
     } catch (e) {

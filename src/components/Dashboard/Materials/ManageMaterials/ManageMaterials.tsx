@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { productCategoryOptions, defaultMarketplaceOptions } from "./constants/material.constants";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -38,6 +37,7 @@ import {
 } from "./hooks/useMyntraImports";
 import MyntraTable from "./components/MyntraTable";
 import { useDropdownOptions } from "./hooks/useDropdownOptions";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadDemoSheet } from "./utils/downloadDemoSheet";
 import { exportMaterialsExcel } from "./utils/exportMaterialsExcel";
@@ -122,43 +122,30 @@ const ManageMaterials = () => {
   const materialStats = statsResponse?.data;
   const deleteMaterialMutation = useDeleteMaterial();
 
-  // Category Options
-  const categoryOptions = [
-    { label: "All Categories", value: "" },
-    ...productCategoryOptions.filter((o: any) => o.value !== "other"),
-
-  ];
-
-  // Brand Options
-  const brandOptions = [
-    { label: "All Brands", value: "" },
-    { label: "R.Code", value: "R.Code" },
-    { label: "TOPLOT", value: "TOPLOT" },
-  ];
-
-  // Marketplace Options
+  // Fetch dynamic dropdown options from DB / Setting Masters
   const { data: dropdownResponse } = useDropdownOptions();
   const dropdownData = dropdownResponse?.data;
 
-  const marketplaceOptions = useMemo(() => {
-    const list = [
-      { label: "All Marketplaces", value: "" },
-      ...defaultMarketplaceOptions,
-    ];
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "marketplace")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
+  // Category Options dynamically from Setting Masters / DB
+  const categoryOptions = useMemo(() => [
+    { label: "All Categories", value: "" },
+    ...buildMergedOptions("materialcategory", [], dropdownData?.savedOptions, dropdownData?.distinctFromMaterials?.categories),
+  ], [dropdownData]);
 
-    const map = new Map<string, { label: string; value: string }>();
-    [...list, ...dbSaved].forEach((o) => {
-      const v = o.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: o.label || v, value: v });
-      } else if (v === "" && !map.has("")) {
-        map.set("", { label: o.label, value: "" });
-      }
-    });
-    return Array.from(map.values());
+  // Brand Options dynamically from Setting Masters / DB
+  const brandOptions = useMemo(() => [
+    { label: "All Brands", value: "" },
+    ...buildMergedOptions("brand", [], dropdownData?.savedOptions, dropdownData?.distinctFromMaterials?.brands),
+  ], [dropdownData]);
+
+  // Marketplace Options dynamically from Setting Masters / DB
+  const marketplaceOptions = useMemo(() => {
+    const activeMarketplaces = buildMergedOptions("marketplace", [], dropdownData?.savedOptions)
+      .filter((o) => o.value.toLowerCase() !== "all" && o.label.toLowerCase() !== "all");
+    return [
+      { label: "All Marketplaces", value: "" },
+      ...activeMarketplaces,
+    ];
   }, [dropdownData]);
 
   const materials = materialsResponse?.data ?? [];
@@ -390,9 +377,6 @@ const ManageMaterials = () => {
                 setMyntraModalOpen(true);
               } else if (importType === "material") {
                 router.push("/dashboard/settings/manage-material/material-profile/add-material");
-
-
-
               }
             }}
           />
@@ -565,5 +549,3 @@ const ManageMaterials = () => {
 };
 
 export default ManageMaterials;
-
-

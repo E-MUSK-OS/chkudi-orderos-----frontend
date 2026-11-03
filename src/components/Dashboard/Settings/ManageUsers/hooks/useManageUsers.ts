@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { userManagementService } from "../services/userManagement.service";
 import type { UserFormValues } from "../types/userManagement.types";
@@ -91,13 +92,34 @@ export const useDeleteUser = () => {
 const DROPDOWN_QUERY_KEY = ["user-dropdown-options"];
 
 export const useUserDropdownOptions = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleSync = () => {
+      queryClient.invalidateQueries({ queryKey: DROPDOWN_QUERY_KEY, refetchType: "all" });
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "orderos_dropdown_sync") {
+        queryClient.invalidateQueries({ queryKey: DROPDOWN_QUERY_KEY, refetchType: "all" });
+      }
+    };
+    window.addEventListener("dropdown_options_updated", handleSync);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("dropdown_options_updated", handleSync);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: DROPDOWN_QUERY_KEY,
     queryFn: async () => {
       const res = await userManagementService.getDropdownOptions(getToken());
       return res.data;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -108,7 +130,17 @@ export const useSaveUserDropdownOption = () => {
     mutationFn: (data: { field: string; value: string; label?: string }) =>
       userManagementService.saveDropdownOption(data, getToken()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: DROPDOWN_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: DROPDOWN_QUERY_KEY, refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["product-dropdown-options"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["material-dropdown-options"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["setting-masters-groups"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["setting-masters-options"], refetchType: "all" });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("dropdown_options_updated"));
+        try {
+          localStorage.setItem("orderos_dropdown_sync", String(Date.now()));
+        } catch {}
+      }
     },
   });
 };

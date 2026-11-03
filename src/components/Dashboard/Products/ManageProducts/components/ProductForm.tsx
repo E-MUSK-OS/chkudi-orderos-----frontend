@@ -28,14 +28,6 @@ import {
 import type { Product } from "../types/product.types";
 import {
   productCategoryOptions,
-  defaultMarketplaceOptions,
-  brandOptions as defaultBrandOptions,
-  unitOptions as defaultUnitOptions,
-  genderOptions as defaultGenderOptions,
-  gstOptions as defaultGstOptions,
-  availabilityOptions as defaultAvailabilityOptions,
-  rackAddressOptions as defaultRackOptions,
-  defaultColorPresets,
   getCategoryAttributeConfig,
   getAttributePlaceholder,
   defaultShoeSizes,
@@ -323,7 +315,7 @@ export default function ProductForm({
   const brandOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "brand",
-      defaultBrandOptions,
+      [],
       dropdownData?.savedOptions,
       dropdownData?.distinctFromProducts?.brands
     );
@@ -332,7 +324,7 @@ export default function ProductForm({
   const unitOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "unit",
-      defaultUnitOptions,
+      [],
       dropdownData?.savedOptions,
       dropdownData?.distinctFromProducts?.units
     );
@@ -341,20 +333,16 @@ export default function ProductForm({
   const genderOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "gender",
-      defaultGenderOptions,
+      [],
       dropdownData?.savedOptions,
       dropdownData?.distinctFromProducts?.genders
     );
   }, [dropdownData]);
 
   const referencePartyOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = [
-      { label: "Select Reference Party", value: "" },
-      { label: "Direct Customer / Cash", value: "Direct Customer / Cash" },
-    ];
     return buildMergedOptions(
       "referenceparty",
-      list,
+      [],
       dropdownData?.savedOptions,
       [...(dropdownData?.parties || []), ...(dropdownData?.distinctFromProducts?.referenceParties || [])]
     );
@@ -363,7 +351,7 @@ export default function ProductForm({
   const gstRateOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       ["gstrate", "gst"],
-      defaultGstOptions,
+      [],
       dropdownData?.savedOptions,
       (dropdownData?.distinctFromProducts as any)?.gstRates
     );
@@ -372,7 +360,7 @@ export default function ProductForm({
   const availabilityOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "availability",
-      defaultAvailabilityOptions,
+      [],
       dropdownData?.savedOptions,
       dropdownData?.distinctFromProducts?.availabilities
     );
@@ -381,7 +369,7 @@ export default function ProductForm({
   const marketplaceOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "marketplace",
-      defaultMarketplaceOptions,
+      [],
       dropdownData?.savedOptions
     );
   }, [dropdownData]);
@@ -389,7 +377,7 @@ export default function ProductForm({
   const rackOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "rackaddress",
-      defaultRackOptions,
+      [],
       dropdownData?.savedOptions,
       dropdownData?.distinctFromProducts?.rackAddresses
     );
@@ -404,16 +392,90 @@ export default function ProductForm({
       } catch {}
     }
 
+    const distProd = dropdownData?.distinctFromProducts;
     const merged = buildMergedOptions(
       ["color", "colors"],
       [],
       dropdownData?.savedOptions,
-      [...(dropdownData?.distinctFromProducts?.colors || []), ...localSaved]
+      [...(distProd?.colors || []), ...localSaved]
     );
-    return merged.map((o) => o.value);
+
+    const getDisplayName = (o: { label?: string; value: string }) => {
+      const lbl = String(o.label || "").trim();
+      const val = String(o.value || "").trim();
+      if (val.startsWith("#") && lbl && !lbl.startsWith("#")) return lbl;
+      if (lbl.startsWith("#") && val && !val.startsWith("#")) return val;
+      return lbl || val;
+    };
+
+    return merged.map(getDisplayName);
+  }, [dropdownData]);
+
+  const serverColorHexMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (dropdownData?.savedOptions || [])
+      .filter((o) => ["color", "colors"].includes(o.field?.toLowerCase()) && o.isActive !== false)
+      .forEach((o) => {
+        const val = String(o.value || "").trim();
+        const lbl = String(o.label || "").trim();
+        if (val.startsWith("#") && lbl) {
+          map[lbl.toLowerCase()] = val.toUpperCase();
+        } else if (lbl.startsWith("#") && val) {
+          map[val.toLowerCase()] = lbl.toUpperCase();
+        }
+      });
+    return map;
+  }, [dropdownData]);
+
+  const dynamicSizes = useMemo(() => {
+    let localSaved: string[] = [];
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("orderos_custom_sizes");
+        localSaved = stored ? JSON.parse(stored) : [];
+      } catch {}
+    }
+
+    const merged = buildMergedOptions(
+      ["size", "sizes", "sizelist"],
+      [],
+      dropdownData?.savedOptions,
+      localSaved
+    );
+    return merged.map((o) => o.label || o.value);
   }, [dropdownData]);
 
   // Sync initial values in Edit mode
+  const disabledColors = useMemo(() => {
+    const disabled: string[] = [];
+    (dropdownData?.savedOptions || [])
+      .filter(
+        (o) =>
+          ["color", "colors"].includes(o.field?.toLowerCase()) &&
+          (o.isActive === false || o.label === "__DELETED__")
+      )
+      .forEach((o) => {
+        if (o.value) disabled.push(o.value);
+        if (o.label && o.label !== "__DELETED__") disabled.push(o.label);
+      });
+    return disabled;
+  }, [dropdownData]);
+
+  const disabledSizes = useMemo(() => {
+    const disabled: string[] = [];
+    (dropdownData?.savedOptions || [])
+      .filter(
+        (o) =>
+          ["size", "sizes", "sizelist"].includes(o.field?.toLowerCase()) &&
+          (o.isActive === false || o.label === "__DELETED__")
+      )
+      .forEach((o) => {
+        if (o.value) disabled.push(o.value);
+        if (o.label && o.label !== "__DELETED__") disabled.push(o.label);
+      });
+    return disabled;
+  }, [dropdownData]);
+
   const lastSyncedKeyRef = useRef<string>("");
 
   useEffect(() => {
@@ -488,7 +550,6 @@ export default function ProductForm({
       if (initialColors.length === 0) {
         const allKnownColors = Array.from(
           new Set([
-            ...defaultColorPresets.map((c) => c.name),
             ...dynamicColors,
             "Magenta",
             "Black",
@@ -1606,6 +1667,8 @@ export default function ProductForm({
                             value={field.value || []}
                             onChange={field.onChange}
                             additionalColors={dynamicColors}
+                            disabledColors={disabledColors}
+                            colorHexMap={serverColorHexMap}
                             error={errors.colors?.message}
                           />
                         )}
@@ -1642,11 +1705,13 @@ export default function ProductForm({
                             required={false}
                             value={field.value || ""}
                             onChange={field.onChange}
-                            additionalSizes={
-                              categoryConfig.sizeLabel.toLowerCase().includes("shoe")
+                            additionalSizes={[
+                              ...(categoryConfig.sizeLabel.toLowerCase().includes("shoe")
                                 ? defaultShoeSizes
-                                : defaultNumericSizes
-                            }
+                                : defaultNumericSizes),
+                              ...dynamicSizes,
+                            ]}
+                            disabledSizes={disabledSizes}
                             error={errors.sizeList?.message}
                           />
                         )}

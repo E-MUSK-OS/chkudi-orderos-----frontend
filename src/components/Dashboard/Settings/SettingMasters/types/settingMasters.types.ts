@@ -30,4 +30,5 @@ export interface UpdateOptionPayload {
   label?: string;
   isActive?: boolean;
   oldValue?: string;
+  oldLabel?: string;
 }

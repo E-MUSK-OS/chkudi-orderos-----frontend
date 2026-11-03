@@ -15,14 +15,27 @@ import {
   useUpdateOption,
   useToggleOptionActive,
   useDeleteOption,
+  useSettingMastersSync,
 } from "./hooks/useSettingMasters";
 import { FieldGroup, SettingOptionItem } from "./types/settingMasters.types";
 import { INITIAL_FIELD_GROUPS, humanizeFieldKey } from "./constants/settingMasters.constants";
 import { toast } from "sonner";
 
 export default function SettingMasters() {
+  useSettingMastersSync();
   const { data: groupsData, isLoading: isLoadingGroups } = useFieldGroups();
-  const groups = groupsData || INITIAL_FIELD_GROUPS;
+  const rawGroups = groupsData || INITIAL_FIELD_GROUPS;
+  const groups = React.useMemo(() => {
+    return rawGroups
+      .filter(
+        (g) =>
+          g.field.toLowerCase() !== "subcategory" &&
+          g.field.toLowerCase() !== "productsubcategory"
+      )
+      .slice()
+      .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }))
+      .map((g, idx) => ({ ...g, no: idx + 1 }));
+  }, [rawGroups]);
 
   // Selected Group state (defaults to "color" matching reference screenshot)
   const [selectedGroup, setSelectedGroup] = useState<FieldGroup>(() => {
@@ -47,6 +60,36 @@ export default function SettingMasters() {
     selectedGroup?.field || "color"
   );
   const options = optionsData || [];
+
+  // Real-time map of option counts per field key, so field group count always matches values count
+  const [liveOptionCounts, setLiveOptionCounts] = useState<Record<string, { total: number; active: number }>>({});
+
+  useEffect(() => {
+    if (selectedGroup?.field && optionsData !== undefined) {
+      const key = selectedGroup.field.toLowerCase();
+      const total = optionsData.length;
+      const active = optionsData.filter((o) => o.isActive !== false).length;
+      setLiveOptionCounts((prev) => {
+        if (prev[key]?.total === total && prev[key]?.active === active) return prev;
+        return { ...prev, [key]: { total, active } };
+      });
+    }
+  }, [selectedGroup?.field, optionsData]);
+
+  const liveGroups = React.useMemo(() => {
+    return groups.map((g) => {
+      const key = g.field.toLowerCase();
+      const live = liveOptionCounts[key];
+      if (live !== undefined) {
+        return {
+          ...g,
+          totalCount: live.total,
+          activeCount: live.active,
+        };
+      }
+      return g;
+    });
+  }, [groups, liveOptionCounts]);
 
   // Mutations
   const createOptionMutation = useCreateOption();
@@ -95,6 +138,7 @@ export default function SettingMasters() {
           label: data.label,
           isActive: data.isActive,
           oldValue: editingOption.value,
+          oldLabel: editingOption.label,
         },
       });
     } else {
@@ -124,6 +168,7 @@ export default function SettingMasters() {
       id: deletingOption.id,
       field: selectedGroup.field,
       value: deletingOption.value,
+      label: deletingOption.label,
     });
     setIsDeleteModalOpen(false);
     setDeletingOption(null);
@@ -135,22 +180,24 @@ export default function SettingMasters() {
       .replace(/[^a-zA-Z0-9]+(.)/g, (_, chr) => chr.toUpperCase())
       .replace(/^./, (chr) => chr.toLowerCase());
 
+    const groupLabel = humanizeFieldKey(groupName.trim());
+    const effectiveInitialValue = initialValue?.trim() || groupLabel;
+
     const newGroup: FieldGroup = {
       id: rawKey,
       no: groups.length + 1,
       field: rawKey,
-      label: humanizeFieldKey(groupName.trim()),
-      totalCount: initialValue ? 1 : 0,
-      activeCount: initialValue ? 1 : 0,
+      label: groupLabel,
+      totalCount: 1,
+      activeCount: 1,
     };
 
-    if (initialValue) {
-      await createOptionMutation.mutateAsync({
-        field: rawKey,
-        value: initialValue,
-        label: initialValue,
-      });
-    }
+    // Always persist first option so the group is recorded in DB and visible on reload
+    await createOptionMutation.mutateAsync({
+      field: rawKey,
+      value: effectiveInitialValue,
+      label: effectiveInitialValue,
+    });
 
     setSelectedGroup(newGroup);
     setIsAddGroupModalOpen(false);
@@ -168,9 +215,9 @@ export default function SettingMasters() {
         />
 
         {/* Two-Panel Layout matching user reference image */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
-          {/* Left Panel: Values for selected group (Columns: No, Value, Active, Actions, + Add) */}
-          <div className="lg:col-span-7 h-[680px]">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 items-start w-full">
+          {/* Left Panel: Values for selected group - expanded width */}
+          <div className="flex-1 w-full min-w-0 h-[680px]">
             <GroupValuesPanel
               selectedGroup={selectedGroup}
               options={options}
@@ -183,10 +230,10 @@ export default function SettingMasters() {
             />
           </div>
 
-          {/* Right Panel: Field Groups (Columns: No, Field Groups, Search, + Group) */}
-          <div className="lg:col-span-5 h-[680px]">
+          {/* Right Panel: Field Groups - compact width */}
+          <div className="w-full lg:w-[320px] xl:w-[350px] shrink-0 h-[680px]">
             <FieldGroupsPanel
-              groups={groups}
+              groups={liveGroups}
               selectedGroup={selectedGroup}
               onSelectGroup={(g) => setSelectedGroup(g)}
               onOpenAddGroupModal={() => setIsAddGroupModalOpen(true)}

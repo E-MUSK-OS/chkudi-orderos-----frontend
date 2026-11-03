@@ -43,7 +43,7 @@ const PRESET_GROUPS = [
   },
   {
     title: "Apparel (Alpha)",
-    items: ["XS", "S", "M", "L", "XL", "2XL"],
+    items: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"],
   },
   {
     title: "Apparel (Numeric)",

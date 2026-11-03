@@ -211,8 +211,8 @@ export function PropertiesPanel({
       (settings.backgroundOpacity ?? 1) < 1 || allElements.some(el => (el.opacity ?? 1) < 1);
 
     return (
-      <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
-        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between font-semibold text-white">
+      <div className={cn("w-full lg:w-72 xl:w-80 flex flex-col bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between font-semibold text-white shrink-0 sticky top-0 bg-[#111827] dark:bg-[#0F1626] z-10">
           <span>Canvas Properties</span>
           {onCloseMobile && (
             <button
@@ -574,8 +574,8 @@ export function PropertiesPanel({
     const btnClass = "flex-1 h-9 flex items-center justify-center rounded-sm border border-stone-700 text-gray-300 hover:border-[#E8C16D] hover:text-[#E8C16D] transition-colors disabled:opacity-30 disabled:hover:border-stone-700 disabled:hover:text-gray-300";
 
     return (
-      <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
-        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between">
+      <div className={cn("w-full lg:w-72 xl:w-80 flex flex-col bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+        <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between shrink-0 sticky top-0 bg-[#111827] dark:bg-[#0F1626] z-10">
           <span className="font-semibold text-white">{selectedIds.length} elements selected</span>
           <div className="flex items-center gap-1.5">
             {onCloseMobile && (
@@ -625,8 +625,8 @@ export function PropertiesPanel({
 
   // Common properties
   return (
-    <div className={cn("w-full lg:w-72 xl:w-80 bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
-      <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between">
+    <div className={cn("w-full lg:w-72 xl:w-80 flex flex-col bg-[#111827] dark:bg-[#0F1626] border-l border-stone-800 dark:border-white/[0.08] overflow-y-auto shrink-0 font-sans text-sm", className)}>
+      <div className="p-4 border-b border-stone-800 dark:border-white/[0.08] flex items-center justify-between shrink-0 sticky top-0 bg-[#111827] dark:bg-[#0F1626] z-10">
         <span className="font-semibold text-white capitalize">{selectedElement.type} Properties</span>
         <div className="flex items-center gap-1">
           {onCloseMobile && (

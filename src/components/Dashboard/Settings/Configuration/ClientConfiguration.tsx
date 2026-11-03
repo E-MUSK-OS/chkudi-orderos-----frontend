@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import ClientConfigHeader from "./components/ClientConfigHeader";
 import ClientConfigStatsBanner from "./components/ClientConfigStatsBanner";
 import InventoryDepartmentSwitch from "./components/InventoryDepartmentSwitch";
+import DropdownModeCard from "./components/DropdownModeCard";
 import ClientConfigSectionCard from "./components/ClientConfigSectionCard";
 import {
   buildDynamicClientConfigTree,
@@ -13,7 +14,7 @@ import {
   extractConfigPayload,
 } from "./utils/dynamicTreeBuilder";
 import { clientConfigurationService } from "./services/clientConfiguration.service";
-import type { ClientConfigTreeNode } from "./types/clientConfiguration.types";
+import type { ClientConfigTreeNode, DropdownManagementMode } from "./types/clientConfiguration.types";
 import { toast } from "sonner";
 
 export default function ClientConfiguration() {
@@ -24,6 +25,7 @@ export default function ClientConfiguration() {
   }>(() => buildDynamicClientConfigTree());
 
   const [hasSeparateInventoryDept, setHasSeparateInventoryDept] = useState(false);
+  const [dropdownManagementMode, setDropdownManagementMode] = useState<DropdownManagementMode>("SETTING_MASTERS");
   const [planName, setPlanName] = useState("Enterprise Plus");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,6 +40,11 @@ export default function ClientConfiguration() {
         if (isMounted && data) {
           setHasSeparateInventoryDept(Boolean(data.hasSeparateInventoryDept));
           setPlanName(data.subscriptionPlan || "Enterprise Plus");
+          setDropdownManagementMode(
+            data.dropdownManagementMode ||
+            data.configurationData?.dropdownManagementMode ||
+            "SETTING_MASTERS"
+          );
           setColumns(buildDynamicClientConfigTree(data.configurationData));
         }
       } catch (err: any) {
@@ -77,6 +84,7 @@ export default function ClientConfiguration() {
   const handleResetDefaults = useCallback(() => {
     setColumns(buildDynamicClientConfigTree(null));
     setHasSeparateInventoryDept(false);
+    setDropdownManagementMode("SETTING_MASTERS");
     toast.info("Permissions reset to defaults. Click 'Save Permissions' to apply.");
   }, []);
 
@@ -95,9 +103,13 @@ export default function ClientConfiguration() {
         clientName: planName,
         subscriptionPlan: planName,
         hasSeparateInventoryDept,
+        dropdownManagementMode,
         enabledSections: payload.enabledSections,
         enabledRoutes: payload.enabledRoutes,
-        configurationData: payload.configurationData,
+        configurationData: {
+          ...payload.configurationData,
+          dropdownManagementMode,
+        },
       });
 
       toast.success("Client configuration saved successfully!");
@@ -120,6 +132,12 @@ export default function ClientConfiguration() {
 
         {/* 3 Top Stat Banner Cards */}
         <ClientConfigStatsBanner stats={stats} />
+
+        {/* Dropdown Options Governance Policy Card (Directly below Stat Banner) */}
+        <DropdownModeCard
+          mode={dropdownManagementMode}
+          onChange={setDropdownManagementMode}
+        />
 
         {/* 3 Columns Layout */}
         {isLoading ? (

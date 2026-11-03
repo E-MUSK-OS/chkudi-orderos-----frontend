@@ -137,6 +137,30 @@ export default function TrackingScanner({
   return (
     <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-sm mb-6">
       <div className="space-y-4">
+        {/* Live Feedback Banner - Displayed on TOP */}
+        {message && (
+          <div
+            className={`rounded-2xl border p-3.5 sm:p-4 text-xs sm:text-sm font-semibold transition-all animate-in slide-in-from-top-2 duration-150 ${
+              isSuccess
+                ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300"
+                : isWarning
+                ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300"
+                : "border-red-200 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/40 text-red-900 dark:text-red-300"
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              {isSuccess ? (
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
+              ) : isWarning ? (
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
+              )}
+              <div className="leading-snug">{message}</div>
+            </div>
+          </div>
+        )}
+
         <div>
           <div className="flex items-center justify-between mb-2.5">
             <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white">
@@ -241,30 +265,6 @@ export default function TrackingScanner({
             </button>
           </div>
         </div>
-
-        {/* Live Feedback Banner */}
-        {message && (
-          <div
-            className={`rounded-2xl border p-3.5 sm:p-4 text-xs sm:text-sm font-semibold transition-all ${
-              isSuccess
-                ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300"
-                : isWarning
-                ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300"
-                : "border-red-200 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/40 text-red-900 dark:text-red-300"
-            }`}
-          >
-            <div className="flex items-start gap-2.5">
-              {isSuccess ? (
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
-              ) : isWarning ? (
-                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
-              ) : (
-                <AlertCircle className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
-              )}
-              <div className="leading-snug">{message}</div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Mobile-Only: Camera Barcode Viewfinder Modal */}

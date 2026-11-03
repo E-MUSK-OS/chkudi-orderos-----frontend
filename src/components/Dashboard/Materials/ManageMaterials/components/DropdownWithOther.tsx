@@ -5,6 +5,7 @@ import { ChevronsUpDown, Check, Plus, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
+import { useDropdownManagementMode } from "@/components/Dashboard/Settings/Configuration/hooks/useDropdownManagementMode";
 
 export interface DropdownOption {
   label: string;
@@ -58,6 +59,8 @@ export default function DropdownWithOther({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const saveOptionMutation = useSaveDropdownOption();
+  const { isSettingMastersOnly } = useDropdownManagementMode();
+  const effectiveAllowOther = isSettingMastersOnly ? false : allowOther;
 
   // Deduplicate and merge options
   const mergedOptions: DropdownOption[] = useMemo(() => {
@@ -132,6 +135,18 @@ export default function DropdownWithOther({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
+
+
+  // Safely prune local temporary options once server options include them
+  useEffect(() => {
+    if (localCustomOptions.length > 0) {
+      const serverVals = new Set(options.map((o) => o.value.toLowerCase()));
+      setLocalCustomOptions((prev) =>
+        prev.filter((item) => !serverVals.has(item.value.toLowerCase()))
+      );
+    }
+  }, [options]);
+
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -161,6 +176,7 @@ export default function DropdownWithOther({
 
   const handleSelect = (val: string) => {
     if (val === "__other__") {
+      if (!effectiveAllowOther) return;
       setIsOtherActive(true);
       setIsOpen(false);
       setTimeout(() => customInputRef.current?.focus(), 50);
@@ -189,16 +205,21 @@ export default function DropdownWithOther({
     onChange(trimmed);
 
     // Persist option to backend Database
-    try {
-      saveOptionMutation.mutate({
+    saveOptionMutation.mutate(
+      {
         field: fieldKey,
         value: trimmed,
         label: trimmed,
-      });
-      toast.success(`Added "${trimmed}" to ${label.replace(/\.+$/, "")}`);
-    } catch (e) {
-      console.error("Failed to save custom option to database:", e);
-    }
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Added "${trimmed}" to ${label.replace(/\.+$/, "")}`);
+        },
+        onError: (err: any) => {
+          toast.error(err?.message || `Failed to save option "${trimmed}" to database`);
+        },
+      }
+    );
 
     setIsOtherActive(false);
     setCustomValue("");
@@ -222,7 +243,7 @@ export default function DropdownWithOther({
       </label>
 
       {/* Main Trigger / Other Input */}
-      {isOtherActive ? (
+      {isOtherActive && effectiveAllowOther ? (
         <div className="flex items-center gap-2">
           <input
             ref={customInputRef}
@@ -352,7 +373,7 @@ export default function DropdownWithOther({
                   })
                 )}
 
-                {allowOther && (
+                {effectiveAllowOther && (
                   <div className="pt-1 mt-1 border-t border-slate-100 dark:border-white/[0.08]">
                     <button
                       type="button"

@@ -14,6 +14,7 @@ interface SizeMultiSelectProps {
   error?: string;
   className?: string;
   additionalSizes?: string[];
+  disabledSizes?: string[];
 }
 
 export default function SizeMultiSelect({
@@ -24,6 +25,7 @@ export default function SizeMultiSelect({
   error,
   className,
   additionalSizes = [],
+  disabledSizes = [],
 }: SizeMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [newSizeName, setNewSizeName] = useState("");
@@ -55,6 +57,15 @@ export default function SizeMultiSelect({
       .filter(Boolean);
   }, [value]);
 
+  // Sync with external Setting Masters updates
+  useEffect(() => {
+    const handleSync = () => {
+      setLocalCustomSizes([]);
+    };
+    window.addEventListener("dropdown_options_updated", handleSync);
+    return () => window.removeEventListener("dropdown_options_updated", handleSync);
+  }, []);
+
   // Click outside listener
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -84,13 +95,25 @@ export default function SizeMultiSelect({
     onChange(next.join(", "));
   };
 
+  const disabledSet = React.useMemo(() => {
+    return new Set((disabledSizes || []).map((s) => s.toLowerCase().trim()));
+  }, [disabledSizes]);
+
+  const activeAlphaSizes = React.useMemo(() => {
+    return defaultAlphaSizes.filter((s) => !disabledSet.has(s.toLowerCase().trim()));
+  }, [disabledSet]);
+
+  const activeNumericSizes = React.useMemo(() => {
+    return defaultNumericSizes.filter((s) => !disabledSet.has(s.toLowerCase().trim()));
+  }, [disabledSet]);
+
   const selectAllAlpha = () => {
-    const combined = Array.from(new Set([...selectedSizes, ...defaultAlphaSizes]));
+    const combined = Array.from(new Set([...selectedSizes, ...activeAlphaSizes]));
     onChange(combined.join(", "));
   };
 
   const selectAllNumeric = () => {
-    const combined = Array.from(new Set([...selectedSizes, ...defaultNumericSizes]));
+    const combined = Array.from(new Set([...selectedSizes, ...activeNumericSizes]));
     onChange(combined.join(", "));
   };
 
@@ -140,13 +163,13 @@ export default function SizeMultiSelect({
 
     extras.forEach((s) => {
       const trimmed = s?.trim();
-      if (trimmed && !standardSet.has(trimmed.toLowerCase())) {
+      if (trimmed && !standardSet.has(trimmed.toLowerCase()) && !disabledSet.has(trimmed.toLowerCase())) {
         unique.add(trimmed);
       }
     });
 
     return Array.from(unique);
-  }, [additionalSizes, localCustomSizes, selectedSizes]);
+  }, [additionalSizes, localCustomSizes, selectedSizes, disabledSet]);
 
   return (
     <div ref={containerRef} className={cn("space-y-1.5 w-full", className)}>
@@ -169,7 +192,7 @@ export default function SizeMultiSelect({
         >
           {selectedSizes.length === 0 ? (
             <span className="text-slate-400 dark:text-slate-500">
-              Select sizes (XS to 4XL, 28 to 48)...
+              Select sizes (XS to 4XL, 28 to 38)...
             </span>
           ) : (
             selectedSizes.map((size) => (
@@ -218,7 +241,7 @@ export default function SizeMultiSelect({
                   onClick={selectAllNumeric}
                   className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
                 >
-                  28–48
+                  28–38
                 </button>
                 {selectedSizes.length > 0 && (
                   <>
@@ -242,7 +265,7 @@ export default function SizeMultiSelect({
                   Standard Sizes (XS to 4XL)
                 </p>
                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
-                  {defaultAlphaSizes.map((size) => {
+                  {activeAlphaSizes.map((size) => {
                     const isSelected = selectedSizes.some(
                       (s) => s.toLowerCase() === size.toLowerCase()
                     );
@@ -266,13 +289,13 @@ export default function SizeMultiSelect({
                 </div>
               </div>
 
-              {/* Section 2: Numeric Sizes (28 to 48) */}
+              {/* Section 2: Numeric Sizes (28 to 38) */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                  Numeric Sizes (28 to 48)
+                  Numeric Sizes (28 to 38)
                 </p>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-                  {defaultNumericSizes.map((size) => {
+                  {activeNumericSizes.map((size) => {
                     const isSelected = selectedSizes.some(
                       (s) => s.toLowerCase() === size.toLowerCase()
                     );

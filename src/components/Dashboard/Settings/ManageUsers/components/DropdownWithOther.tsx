@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown, Plus, Check } from "lucide-react";
 import { useSaveUserDropdownOption } from "../hooks/useManageUsers";
 import { toast } from "sonner";
+import { useDropdownManagementMode } from "@/components/Dashboard/Settings/Configuration/hooks/useDropdownManagementMode";
 
 export interface DropdownOption {
   label: string;
@@ -43,6 +44,8 @@ export default function DropdownWithOther({
   const customInputRef = useRef<HTMLInputElement>(null);
 
   const saveOptionMutation = useSaveUserDropdownOption();
+  const { isSettingMastersOnly } = useDropdownManagementMode();
+  const effectiveAllowOther = isSettingMastersOnly ? false : allowOther;
 
   // Deduplicate and merge options
   const mergedOptions: DropdownOption[] = React.useMemo(() => {
@@ -75,8 +78,19 @@ export default function DropdownWithOther({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Safely prune local temporary options once server options include them
+  useEffect(() => {
+    if (localCustomOptions.length > 0) {
+      const serverVals = new Set(options.map((o) => o.value.toLowerCase()));
+      setLocalCustomOptions((prev) =>
+        prev.filter((item) => !serverVals.has(item.value.toLowerCase()))
+      );
+    }
+  }, [options]);
+
   const handleSelect = (val: string) => {
     if (val === "__other__") {
+      if (!effectiveAllowOther) return;
       setIsOtherActive(true);
       setIsOpen(false);
       setTimeout(() => customInputRef.current?.focus(), 50);
@@ -171,7 +185,7 @@ export default function DropdownWithOther({
               )}
 
               {/* "Other" option */}
-              {allowOther && (
+              {effectiveAllowOther && (
                 <div className="pt-1.5 mt-1 border-t border-slate-100 dark:border-white/[0.06]">
                   <button
                     type="button"
@@ -189,7 +203,7 @@ export default function DropdownWithOther({
       </div>
 
       {/* Inline Custom Input when 'Other' is selected */}
-      {isOtherActive && (
+      {isOtherActive && effectiveAllowOther && (
         <div className="p-2 sm:p-2.5 rounded-2xl border border-[#E8C16D] dark:border-[#F5C451]/40 bg-[#FFFDF9] dark:bg-[#131B2E] shadow-sm animate-in fade-in-50 slide-in-from-top-1 duration-150">
           <div className="flex items-center gap-2">
             <input

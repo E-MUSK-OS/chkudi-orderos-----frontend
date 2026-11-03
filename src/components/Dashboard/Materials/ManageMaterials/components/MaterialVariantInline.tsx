@@ -45,11 +45,21 @@ interface ColorGroup {
 
 const getColorHex = (name: string): string => {
   if (!name) return "#64748B";
+  const clean = name.toLowerCase().trim();
   const found = defaultColorPresets.find(
     (p) => p.name.toLowerCase() === name.toLowerCase().trim()
   );
   if (found) return found.hex;
   if (/^#([0-9A-F]{3}){1,2}$/i.test(name.trim())) return name.trim();
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("orderos_custom_color_hexes");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed[clean]) return parsed[clean];
+      }
+    } catch {}
+  }
   return "#64748B";
 };
 
@@ -585,7 +595,7 @@ export default function MaterialVariantInline({
 
     const colVal = newColor.trim();
     if (!colVal && !hasSizeAttribute) {
-      toast.error("Please enter a colour or variant name");
+      toast.error("Please enter a color or variant name");
       return;
     }
 
@@ -795,7 +805,7 @@ export default function MaterialVariantInline({
 
               {/* Colour column */}
               <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
-                Colour
+                Color
               </th>
 
               {/* Size / Dimension column */}
@@ -1354,7 +1364,7 @@ export default function MaterialVariantInline({
                       autoFocus
                       value={newColor}
                       onChange={(e) => setNewColor(e.target.value)}
-                      placeholder="Colour (e.g. Black)"
+                      placeholder="Color (e.g. Black)"
                       className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs sm:text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
                     />
                     {Array.isArray(material?.colors) && material.colors && material.colors.length > 0 && (
