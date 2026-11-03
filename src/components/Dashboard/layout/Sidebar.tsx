@@ -460,6 +460,11 @@ export default function Sidebar({
   };
 
   const renderMenu = (items: NavItem[], level = 0) => {
+    const isLevel0 = level === 0;
+    const itemHeight = "h-10";
+    const itemFontSize = "text-[13px]";
+    const iconSize = isLevel0 ? 18 : 16;
+
     return items.map((item) => {
       const active = isMenuActive(item);
       const isOpen = isMenuOpen(item);
@@ -484,23 +489,23 @@ export default function Sidebar({
                   toggleMenu(item);
                 }
               }}
-              className={`group flex h-12 w-full items-center justify-between cursor-pointer transition-all duration-300 ease-out
+              className={`group flex ${itemHeight} w-full items-center justify-between cursor-pointer transition-all duration-300 ease-out ${itemFontSize}
               ${
                 isSelfActive
-                  ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
+                  ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
                   : active
-                  ? "text-white bg-white/[0.06]"
-                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+                  ? "text-white bg-white/[0.06] font-medium"
+                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
               }`}
               style={{
-                paddingLeft: `${16 + level * 20}px`,
-                paddingRight: "16px",
+                paddingLeft: `${sidebarCollapsed ? 16 : 14 + level * 16}px`,
+                paddingRight: "14px",
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 {item.icon && (
                   <item.icon
-                    size={20}
+                    size={iconSize}
                     className={`shrink-0 transition-colors ${
                       isSelfActive || active
                         ? "text-[#F5C451]"
@@ -510,14 +515,14 @@ export default function Sidebar({
                 )}
 
                 {!sidebarCollapsed && (
-                  <span className="truncate">{item.label}</span>
+                  <span className={`truncate ${itemFontSize}`}>{item.label}</span>
                 )}
               </div>
 
               {!sidebarCollapsed &&
                 (isOpen ? (
                   <ChevronUp
-                    size={18}
+                    size={15}
                     className={
                       isSelfActive || active
                         ? "text-[#F5C451]"
@@ -526,7 +531,7 @@ export default function Sidebar({
                   />
                 ) : (
                   <ChevronDown
-                    size={18}
+                    size={15}
                     className={
                       isSelfActive || active
                         ? "text-[#F5C451]"
@@ -573,21 +578,21 @@ export default function Sidebar({
           key={item.label}
           type="button"
           onClick={() => handleNavigation(item.href!)}
-          className={`group flex h-12 w-full items-center cursor-pointer transition-all duration-300 ease-out
+          className={`group flex ${itemHeight} w-full items-center cursor-pointer transition-all duration-300 ease-out ${itemFontSize}
   ${
     active
-      ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
-      : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+      ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
+      : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
   }`}
           style={{
-            paddingLeft: `${16 + level * 20}px`,
-            paddingRight: "16px",
+            paddingLeft: `${sidebarCollapsed ? 16 : 14 + level * 16}px`,
+            paddingRight: "14px",
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {item.icon && (
               <item.icon
-                size={20}
+                size={iconSize}
                 className={`shrink-0 transition-colors ${
                   active
                     ? "text-[#F5C451]"
@@ -597,7 +602,7 @@ export default function Sidebar({
             )}
 
             {!sidebarCollapsed && (
-              <span className="truncate">{item.label}</span>
+              <span className={`truncate ${itemFontSize}`}>{item.label}</span>
             )}
           </div>
         </button>
@@ -656,7 +661,7 @@ export default function Sidebar({
           </div>
 
           <nav
-            className="custom-scroll mt-10 flex-1 space-y-2 overflow-y-auto"
+            className="custom-scroll mt-6 flex-1 space-y-1 overflow-y-auto"
             style={{
               marginRight: "-19px",
               paddingRight: "10px",

@@ -110,7 +110,7 @@ export const purchaseChallanService = {
   // Party / Supplier API
   // ======================================================
 
-  async getSuppliers(search = "", accountHead = "Sundry Creditors"): Promise<Party[]> {
+  async getSuppliers(search = "", accountHead = ""): Promise<Party[]> {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (accountHead && accountHead !== "All") params.append("accountHead", accountHead);
@@ -119,6 +119,19 @@ export const purchaseChallanService = {
     if (!res.ok) return [];
     const data = await res.json();
     return data?.data || [];
+  },
+
+  async updateSupplier(id: string, payload: Partial<Party>): Promise<Party> {
+    const res = await fetchWithAuth(`${API_BASE_URL}/parties/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(extractErrorMessage(err, "Failed to update supplier"));
+    }
+    const data = await res.json();
+    return data.data;
   },
 
   async createSupplier(payload: Partial<Party>): Promise<Party> {

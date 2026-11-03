@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, UserPlus, X, Building, Phone, Mail, MapPin } from "lucide-react";
+import { Search, UserPlus, X, Check, Building, Phone, Mail, MapPin } from "lucide-react";
 import { Party } from "../types/purchaseChallan.types";
 import { purchaseChallanService } from "../services/purchaseChallan.service";
 
@@ -22,13 +22,13 @@ export default function SupplierDetailsSection({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Search parties on input change (defaults to Sundry Creditors)
+  // Search parties on input change (same database & logic as Sales Challan)
   useEffect(() => {
     let active = true;
     const fetchSuppliers = async () => {
       try {
         setLoading(true);
-        const data = await purchaseChallanService.getSuppliers(searchTerm, "Sundry Creditors");
+        const data = await purchaseChallanService.getSuppliers(searchTerm);
         if (active) setSupplierList(data);
       } catch (err) {
         console.error("Failed to load suppliers", err);
@@ -94,12 +94,12 @@ export default function SupplierDetailsSection({
             )}
           </div>
 
-          {/* Add Creditor Button (Gold button with UserPlus) */}
+          {/* Add Creditor Button */}
           <button
             type="button"
             onClick={onOpenLedgerModal}
-            title="Add New Sundry Creditor"
-            className="h-9 w-9 bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 hover:bg-[#F5C451] hover:text-[#0A0E1A] dark:bg-[#1A160E] dark:text-[#E8C16D] dark:hover:bg-[#F5C451] dark:hover:text-[#0A0E1A] rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+            title="Create New Supplier (Ledger Book)"
+            className="h-9 w-9 bg-[#0A0E1A] hover:bg-[#161D2E] text-white dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#E8B83D] rounded-xl flex items-center justify-center shrink-0 shadow-xs transition-colors cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
           </button>
@@ -107,89 +107,149 @@ export default function SupplierDetailsSection({
 
         {/* Dropdown Suggestions */}
         {dropdownOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] rounded-xl shadow-lg z-50 divide-y divide-slate-100 dark:divide-white/[0.04]">
+          <div className="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] rounded-xl shadow-xl max-h-56 overflow-y-auto text-xs p-1">
             {loading ? (
-              <div className="p-3 text-center text-xs text-slate-400 dark:text-slate-500">
-                Searching creditors...
+              <div className="py-3 px-4 text-center text-slate-500 dark:text-slate-400">
+                Searching suppliers...
               </div>
             ) : supplierList.length === 0 ? (
-              <div className="p-3 text-center text-xs text-slate-400 dark:text-slate-500">
-                No sundry creditors found.
-              </div>
-            ) : (
-              supplierList.map((p) => (
+              <div className="py-3 px-4 text-center text-slate-500 dark:text-slate-400">
+                <p>No supplier party found.</p>
                 <button
-                  key={p.id}
                   type="button"
                   onClick={() => {
-                    onSelectSupplier(p);
                     setDropdownOpen(false);
-                    setSearchTerm("");
+                    onOpenLedgerModal();
                   }}
-                  className="w-full text-left p-2.5 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors flex flex-col gap-0.5 cursor-pointer"
+                  className="mt-1 text-[#B88728] dark:text-[#E8C16D] hover:underline font-semibold"
                 >
-                  <span className="text-xs font-bold text-slate-800 dark:text-white">
-                    {p.partyName}
-                  </span>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
-                    <span>{p.city || "Unknown City"}</span>
-                    {p.phone && <span>• {p.phone}</span>}
-                    {p.gstin && <span>• GST: {p.gstin}</span>}
-                  </div>
+                  + Add New Supplier
                 </button>
-              ))
+              </div>
+            ) : (
+              supplierList.map((party) => {
+                const isSelected = selectedSupplier?.id === party.id;
+                return (
+                  <button
+                    key={party.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectSupplier(party);
+                      setDropdownOpen(false);
+                      setSearchTerm("");
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg border-b border-slate-100 dark:border-white/[0.04] last:border-none flex items-center justify-between hover:bg-[#FFF9EC]/60 dark:hover:bg-white/[0.04] transition-colors cursor-pointer ${
+                      isSelected ? "bg-[#FFF9EC] dark:bg-white/[0.08]" : ""
+                    }`}
+                  >
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-white">
+                        {party.partyName}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+                        {party.accountCode && <span>Code: {party.accountCode}</span>}
+                        {party.phone && <span>Ph: {party.phone}</span>}
+                        {party.city && <span>City: {party.city}</span>}
+                      </div>
+                    </div>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />}
+                  </button>
+                );
+              })
             )}
           </div>
         )}
       </div>
 
-      {/* Selected Supplier Card */}
+      {/* Selected Supplier Summary Card */}
       {selectedSupplier ? (
-        <div className="flex-1 bg-slate-50 dark:bg-[#080B11]/60 rounded-xl p-3 border border-slate-200 dark:border-white/[0.06] text-xs relative flex flex-col justify-between">
-          <button
-            type="button"
-            onClick={() => onSelectSupplier(null)}
-            className="absolute top-2 right-2 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
-            title="Deselect Supplier"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+        <div className="border border-[#E8C16D]/40 bg-[#FFF9EC]/50 dark:border-[#E8C16D]/20 dark:bg-[#E8C16D]/5 rounded-2xl p-4 text-xs space-y-2.5 flex-1">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="font-bold text-slate-900 dark:text-white text-sm">
+                {selectedSupplier.partyName}
+              </div>
+              <div className="text-[11px] text-[#B88728] dark:text-[#E8C16D] font-semibold mt-0.5">
+                {selectedSupplier.accountHead || "Sundry Creditors"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onSelectSupplier(null)}
+              title="Remove supplier selection"
+              className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-          <div className="space-y-1.5 pr-5">
-            <p className="font-bold text-slate-800 dark:text-white text-xs truncate">
-              {selectedSupplier.partyName}
-            </p>
+          <div className="space-y-1.5 text-slate-600 dark:text-slate-300 pt-2 border-t border-[#E8C16D]/20">
             {selectedSupplier.contactPerson && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Attn: {selectedSupplier.contactPerson}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-slate-500 dark:text-slate-400">Contact:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedSupplier.contactPerson}</span>
+              </div>
             )}
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
-              {selectedSupplier.addressLine1 && (
-                <p className="truncate">
-                  {selectedSupplier.addressLine1}
-                  {selectedSupplier.city ? `, ${selectedSupplier.city}` : ""}
-                </p>
-              )}
-              {selectedSupplier.phone && (
-                <p className="flex items-center gap-1">
-                  <Phone className="w-2.5 h-2.5 text-slate-400" />
-                  <span>{selectedSupplier.phone}</span>
-                </p>
-              )}
-              {selectedSupplier.gstin && (
-                <p className="font-mono text-[10px] text-[#B88728] dark:text-[#E8C16D]">
-                  GST: {selectedSupplier.gstin}
-                </p>
-              )}
+            {selectedSupplier.phone && (
+              <div className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                <span>{selectedSupplier.phone}</span>
+              </div>
+            )}
+            {selectedSupplier.email && (
+              <div className="flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span>{selectedSupplier.email}</span>
+              </div>
+            )}
+            {(selectedSupplier.addressLine1 || selectedSupplier.city || selectedSupplier.area) && (
+              <div className="flex items-start gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                <span>
+                  {[
+                    selectedSupplier.addressLine1,
+                    selectedSupplier.addressLine2,
+                    selectedSupplier.addressLine3,
+                    selectedSupplier.area,
+                    selectedSupplier.city,
+                    selectedSupplier.state,
+                    selectedSupplier.pincode,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                </span>
+              </div>
+            )}
+            {selectedSupplier.gstin && (
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-slate-500 dark:text-slate-400">GSTIN:</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200">{selectedSupplier.gstin}</span>
+              </div>
+            )}
+            {selectedSupplier.pan && (
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-slate-500 dark:text-slate-400">PAN:</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200">{selectedSupplier.pan}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 pt-2 border-t border-[#E8C16D]/20">
+              <span className="font-medium text-slate-500 dark:text-slate-400">Balance:</span>
+              <span className="font-bold text-slate-900 dark:text-white">
+                ₹{selectedSupplier.openingBalance?.toFixed(2) || "0.00"}{" "}
+                <span className="text-[10px] text-slate-500 font-normal">
+                  ({selectedSupplier.balanceType || "Credit"})
+                </span>
+              </span>
             </div>
           </div>
         </div>
       ) : (
-        <div className="flex-1 border border-dashed border-slate-200 dark:border-white/[0.06] rounded-xl p-4 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-500">
-          <Building className="w-6 h-6 mb-1 opacity-40 text-[#E8C16D]" />
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">No supplier selected</span>
-          <span className="text-[11px] text-slate-400 mt-0.5">Search above or click + to create new creditor</span>
+        <div className="border border-dashed border-slate-200 dark:border-white/[0.1] rounded-2xl p-6 text-center text-xs text-slate-400 dark:text-slate-500 flex-1 flex flex-col items-center justify-center">
+          <Building className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+          <p className="font-semibold text-slate-700 dark:text-slate-300">No supplier selected.</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+            Search from existing suppliers or click the <span className="font-bold text-slate-800 dark:text-white">+ button</span> above to add.
+          </p>
         </div>
       )}
     </div>
