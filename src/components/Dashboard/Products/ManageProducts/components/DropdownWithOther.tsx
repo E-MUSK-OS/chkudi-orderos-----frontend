@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronsUpDown, Check, Plus, X, Search } from "lucide-react";
+import { ChevronDown, Check, Plus, X, Search } from "lucide-react";
 import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
@@ -251,12 +251,18 @@ export default function DropdownWithOther({
               }
             }}
             placeholder={`Enter custom ${label.replace(/[\.\*]/g, "").trim()}...`}
-            className="flex-1 h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#F5C451] bg-white dark:bg-[#131926] text-[#0A0E1A] dark:text-white outline-none focus:ring-2 focus:ring-[#E8C16D]/20 shadow-xs"
+            className={cn(
+              "flex-1 h-11 sm:h-12 px-4 text-xs sm:text-sm font-medium border border-[#E8C16D] dark:border-[#F5C451] bg-white dark:bg-[#131926] text-[#0A0E1A] dark:text-white outline-none focus:ring-2 focus:ring-[#E8C16D]/20 shadow-xs",
+              buttonClassName?.includes("rounded-full") ? "rounded-full px-5" : "rounded-xl sm:rounded-2xl"
+            )}
           />
           <button
             type="button"
             onClick={handleCustomSubmit}
-            className="h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center shrink-0"
+            className={cn(
+              "h-11 sm:h-12 px-5 bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-xs",
+              buttonClassName?.includes("rounded-full") ? "rounded-full" : "rounded-xl sm:rounded-2xl"
+            )}
           >
             Add
           </button>
@@ -266,7 +272,10 @@ export default function DropdownWithOther({
               setIsOtherActive(false);
               setCustomValue("");
             }}
-            className="h-11 sm:h-12 px-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
+            className={cn(
+              "h-11 sm:h-12 px-3.5 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#131926] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-xs",
+              buttonClassName?.includes("rounded-full") ? "rounded-full" : "rounded-xl sm:rounded-2xl"
+            )}
           >
             <X size={15} />
           </button>
@@ -278,7 +287,7 @@ export default function DropdownWithOther({
             onClick={handleToggle}
             className={cn(
               "w-full h-11 sm:h-12 px-3.5 flex items-center justify-between text-left text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 outline-none cursor-pointer",
-              "border border-slate-200 bg-white hover:border-[#E8C16D] hover:bg-slate-50/50 shadow-xs",
+              "border border-[#E7E0D2] bg-white hover:border-[#E8C16D] hover:bg-slate-50/50 shadow-xs",
               "dark:border-white/[0.08] dark:bg-[#131926] dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]",
               isOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/25 dark:border-[#F5C451] dark:ring-[#F5C451]/20",
               error && "border-rose-500 dark:border-rose-500",
@@ -289,11 +298,11 @@ export default function DropdownWithOther({
             <span className="truncate">
               {selectedOption ? selectedOption.label : value ? value : placeholder}
             </span>
-            <ChevronsUpDown
+            <ChevronDown
               size={15}
               className={cn(
-                "shrink-0 text-slate-400 dark:text-slate-400 ml-2 transition-transform duration-200",
-                isOpen && "text-[#B88728] dark:text-[#F5C451]"
+                "shrink-0 text-[#B88728] dark:text-[#F5C451] ml-2 transition-transform duration-200",
+                isOpen && "rotate-180"
               )}
             />
           </button>
@@ -302,7 +311,7 @@ export default function DropdownWithOther({
           {isOpen && (
             <div
               className={cn(
-                "absolute z-50 left-0 right-0 min-w-[200px] rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in-50 duration-150",
+                "absolute z-50 left-0 right-0 min-w-[200px] rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden p-1.5 animate-in fade-in-50 duration-150",
                 openDirection === "up"
                   ? "bottom-full mb-1.5 origin-bottom zoom-in-95"
                   : "top-full mt-1.5 origin-top zoom-in-95",
@@ -311,9 +320,9 @@ export default function DropdownWithOther({
             >
               {/* Optional Search Filter when > 6 options */}
               {mergedOptions.length > 6 && (
-                <div className="p-2 border-b border-slate-100 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02]">
-                  <div className="flex items-center gap-1.5 px-2.5 h-8 bg-white dark:bg-[#131926] rounded-xl border border-slate-200 dark:border-white/[0.08]">
-                    <Search size={13} className="text-slate-400 shrink-0" />
+                <div className="p-1 mb-1 border-b border-[#E7E0D2]/60 dark:border-white/[0.06]">
+                  <div className="flex items-center gap-1.5 px-2.5 h-8 bg-white dark:bg-[#131926] rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] focus-within:border-[#E8C16D]">
+                    <Search size={13} className="text-[#B88728] dark:text-[#F5C451] shrink-0" />
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -337,7 +346,7 @@ export default function DropdownWithOther({
               )}
 
               {/* Options List */}
-              <div className="max-h-56 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+              <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-0.5">
                 {filteredOptions.length === 0 ? (
                   <div className="px-3 py-3 text-xs text-slate-400 text-center">
                     No matching options
@@ -352,17 +361,16 @@ export default function DropdownWithOther({
                         type="button"
                         onClick={() => handleSelect(opt.value)}
                         className={cn(
-                          "w-full px-3 py-2 flex items-center justify-between text-xs sm:text-sm font-medium rounded-xl transition-colors text-left cursor-pointer",
+                          "w-full px-3 py-2 flex items-center justify-between text-xs sm:text-sm font-bold rounded-xl transition-all text-left cursor-pointer",
                           isSelected
-                            ? "bg-[#FFF9EC] text-[#B88728] font-bold border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30"
-                            : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/[0.04]"
+                            ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
+                            : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                         )}
                       >
                         <span className="truncate">{opt.label}</span>
                         {isSelected && (
                           <Check
-                            size={14}
-                            className="shrink-0 text-[#B88728] dark:text-[#F5C451] ml-2"
+                            className="h-3.5 w-3.5 text-slate-900 shrink-0 stroke-[2.5] ml-2"
                           />
                         )}
                       </button>
@@ -371,11 +379,11 @@ export default function DropdownWithOther({
                 )}
 
                 {effectiveAllowOther && (
-                  <div className="pt-1 mt-1 border-t border-slate-100 dark:border-white/[0.08]">
+                  <div className="pt-1 mt-1 border-t border-[#E7E0D2]/60 dark:border-white/[0.06]">
                     <button
                       type="button"
                       onClick={() => handleSelect("__other__")}
-                      className="w-full px-3 py-2 flex items-center gap-2 text-xs font-bold text-[#B88728] dark:text-[#F5C451] hover:bg-[#FFF9EC] dark:hover:bg-[#F5C451]/10 rounded-xl transition-colors text-left cursor-pointer"
+                      className="w-full px-3 py-2 flex items-center gap-2 text-xs font-bold text-[#B88728] dark:text-[#F5C451] hover:bg-[#FFF9EC] dark:hover:bg-white/10 rounded-xl transition-colors text-left cursor-pointer"
                     >
                       <Plus size={14} className="shrink-0" />
                       <span>+ Other (Enter custom value)</span>

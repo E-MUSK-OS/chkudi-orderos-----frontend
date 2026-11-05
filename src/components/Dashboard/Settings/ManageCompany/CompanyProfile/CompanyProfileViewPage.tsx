@@ -578,14 +578,14 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
         {/* ========================================================================= */}
         {/* TOP HEADER BAR matching Company Profile Page Header                       */}
         {/* ========================================================================= */}
-        <div className="rounded-3xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
                   title="Back to Company Profiles"
                 >
                   <ArrowLeft size={18} />
@@ -595,12 +595,10 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 </h1>
               </div>
 
-              {/* Breadcrumb & details matching Company Profile style */}
-              <div className="mt-1 flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1 flex-wrap">
-                <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-                  View Company Profile 
-                </span>
-              </div>
+              {/* One line page description */}
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+                View comprehensive registration, banking, and contact details of the company.
+              </p>
             </div>
 
             {/* Action buttons */}

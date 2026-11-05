@@ -18,28 +18,15 @@ export default function SalariedEmployeeHeader({
         {/* Title & Breadcrumbs matching Employee Profile & Ledger Book theme */}
         <div className="space-y-1.5 min-w-0 max-w-2xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
-              <Users className="h-6 w-6" />
-            </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Salaried Employee
             </h1>
           </div>
 
-          {/* Breadcrumb matching system style */}
-          <div className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
-            <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-              Setting
-            </span>
-            <span>/</span>
-            <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-              Manage Company
-            </span>
-            <span>/</span>
-            <span className="text-[#B88728] dark:text-[#E8C16D] font-bold">
-              Salaried Employee
-            </span>
-          </div>
+          {/* One line page description */}
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+            Manage salaried staff records, monthly attendance tracking, and wage structures.
+          </p>
         </div>
 
         {/* Action Buttons matching theme */}

@@ -120,14 +120,14 @@ export default function SalaryDetailsCard({
   };
 
   return (
-    <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-7 shadow-sm flex flex-col font-sans">
+    <div className="w-full h-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-7 shadow-sm flex flex-col font-sans">
       {/* Card Header Title */}
-      <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white mb-4">
+      <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white mb-4 shrink-0">
         Basic Salary and Working Details
       </h2>
 
       {/* Profile Summary Box matching theme */}
-      <div className="w-full rounded-2xl bg-[#FFFDF8] dark:bg-[#080B11] border border-[#EAE4D8] dark:border-white/[0.08] p-4 sm:p-5 mb-5 shadow-xs">
+      <div className="w-full rounded-2xl bg-[#FFFDF8] dark:bg-[#080B11] border border-[#EAE4D8] dark:border-white/[0.08] p-4 sm:p-5 mb-5 shadow-xs shrink-0">
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border border-[#EAE4D8] dark:bg-[#161B24] dark:border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
@@ -210,8 +210,9 @@ export default function SalaryDetailsCard({
       </div>
 
       {/* Salary & Working Details Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Row 1: Basic Salary, Working Day Mode, Working Days */}
+      <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between">
+        <div className="space-y-4">
+          {/* Row 1: Basic Salary, Working Day Mode, Working Days */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Basic Salary */}
           <div>
@@ -406,8 +407,10 @@ export default function SalaryDetailsCard({
           </div>
         </div>
 
+        </div>
+
         {/* Submit Button */}
-        <div className="pt-2">
+        <div className="pt-4 mt-auto">
           <button
             type="submit"
             disabled={saving}

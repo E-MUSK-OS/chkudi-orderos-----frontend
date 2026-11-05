@@ -56,34 +56,14 @@ export default function SalariedEmployeeDetailPage({
             >
               <ArrowLeft size={22} />
             </button>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
-              <Users className="h-6 w-6" />
-            </div>
             <div>
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Salaried Employee
               </h1>
-              <div className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-0.5">
-                <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-                  Setting
-                </span>
-                <span>/</span>
-                <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-                  Manage Company
-                </span>
-                <span>/</span>
-                <span className="text-[#B88728] dark:text-[#E8C16D] font-bold">
-                  Salaried Employee
-                </span>
-                {employee && (
-                  <>
-                    <span>•</span>
-                    <span className="text-slate-700 dark:text-slate-300 font-semibold">
-                      {employee.fullName}
-                    </span>
-                  </>
-                )}
-              </div>
+              {/* One line page description */}
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-0.5 mt-1">
+                View detailed monthly attendance logs, salary slips, and payment histories for {employee?.fullName || "employee"}.
+              </p>
             </div>
           </div>
         </div>
@@ -115,10 +95,10 @@ export default function SalariedEmployeeDetailPage({
             </button>
           </div>
         ) : (
-          /* Two Column Layout matching visual design */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          /* Two Column Layout matching visual design - equal height on both cards */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             {/* Left Card: Basic Salary and Working Details (approx 5 cols on lg) */}
-            <div className="lg:col-span-5 w-full">
+            <div className="lg:col-span-5 w-full flex flex-col">
               <SalaryDetailsCard
                 employee={employee}
                 onUpdateSuccess={(updated) => {
@@ -128,7 +108,7 @@ export default function SalariedEmployeeDetailPage({
             </div>
 
             {/* Right Card: Absent Hour Records (2026-2027) (approx 7 cols on lg) */}
-            <div className="lg:col-span-7 w-full">
+            <div className="lg:col-span-7 w-full flex flex-col">
               <AbsentHourRecordsCard
                 employee={employee}
                 financialYear="2026-2027"

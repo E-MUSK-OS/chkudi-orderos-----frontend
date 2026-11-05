@@ -148,7 +148,7 @@ export default function GroupValuesPanel({
   return (
     <div className="flex flex-col h-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
       {/* Top Search & Filter Bar */}
-      <div className="p-3 sm:p-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-between gap-3">
+      <div className="px-4 sm:px-7 py-3 sm:py-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs sm:text-sm font-extrabold text-[#0A0E1A] dark:text-white">
             {selectedGroup ? selectedGroup.label : "Values"}
@@ -365,7 +365,7 @@ export default function GroupValuesPanel({
 
       {/* Bottom Footer with Add Button */}
       {!isReadOnly && (
-        <div className="p-3 sm:p-3.5 border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-start">
+        <div className="px-4 sm:px-7 py-3 sm:py-3.5 border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-start">
           <button
             type="button"
             onClick={onOpenAddModal}

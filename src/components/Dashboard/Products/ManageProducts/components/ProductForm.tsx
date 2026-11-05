@@ -625,7 +625,7 @@ export default function ProductForm({
 
       // Try extracting size from variant SKUs
       if (!initialSizeList && uniqueVariants.length > 0) {
-        const sizeRegex = /[-_](XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|28|30|32|34|36|38|40|42|44)$/i;
+        const sizeRegex = /[-_](XS|S|M|L|XL|XXL|XXXL|2XL|4XL|28|30|32|34|36|38|40|42|44|46|48)$/i;
         const skuSizes = uniqueVariants
           .map((v) => {
             const m = (v.variantSku || "").match(sizeRegex);

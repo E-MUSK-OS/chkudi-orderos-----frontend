@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, Database } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Database } from "lucide-react";
 
 interface SettingMastersHeaderProps {
   activeGroupName?: string;
@@ -15,36 +14,23 @@ export default function SettingMastersHeader({
   totalGroupsCount = 0,
   totalOptionsCount = 0,
 }: SettingMastersHeaderProps) {
-  const router = useRouter();
-
   return (
     <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        {/* Left side: Back Button, Title & Subtitle */}
-        <div className="flex items-center gap-3.5">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
-            title="Go back"
-          >
-            <ArrowLeft size={22} />
-          </button>
-
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-                Setting Masters
-              </h1>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] px-2.5 py-0.5 text-xs font-bold text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
-                <Database className="h-3.5 w-3.5" />
-                {activeGroupName}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-              Manage setting masters
-            </p>
+        {/* Left side: Title & Subtitle */}
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              Setting Masters
+            </h1>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] px-2.5 py-0.5 text-xs font-bold text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
+              <Database className="h-3.5 w-3.5" />
+              {activeGroupName}
+            </span>
           </div>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
+            Manage setting masters
+          </p>
         </div>
 
         {/* Right side: Dynamic Group Info Pill matching Client Config action controls theme */}

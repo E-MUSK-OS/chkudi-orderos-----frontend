@@ -239,18 +239,18 @@ export default function AbsentHourRecordsCard({
   };
 
   return (
-    <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-7 shadow-sm flex flex-col font-sans">
+    <div className="w-full h-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-7 shadow-sm flex flex-col font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#EAE4D8] dark:border-white/[0.06]">
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#EAE4D8] dark:border-white/[0.06] shrink-0">
         <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white">
           Absent Hour Records ({financialYear})
         </h2>
       </div>
 
       {/* Table of Months */}
-      <div className="overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="overflow-x-auto flex-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <table className="w-full text-left border-collapse text-xs">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="border-b border-[#EAE4D8] bg-[#FAF8F5] dark:border-white/[0.08] dark:bg-[#080B11] text-[11px] font-semibold text-slate-700 dark:text-slate-300 select-none">
               <th className="py-2.5 px-3 min-w-[120px]">Month</th>
               <th className="py-2.5 px-3 min-w-[200px]">Period</th>

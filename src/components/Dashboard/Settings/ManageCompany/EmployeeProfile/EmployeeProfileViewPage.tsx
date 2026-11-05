@@ -108,57 +108,59 @@ export default function EmployeeProfileViewPage({
     <DashboardLayout title="Employee Profile">
       <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4 max-w-[1600px] mx-auto">
         {/* ========================================================================= */}
-        {/* Top Header Bar matching Ledger Book header font size & style              */}
+        {/* Top Header Bar matching Ledger Book / Company Profile header UI            */}
         {/* ========================================================================= */}
-        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 sm:px-7 py-4 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
-            <button
-              type="button"
-              onClick={() =>
-                router.push("/dashboard/setting/manage-company/employee-profile")
-              }
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
-              title="Back to Employee Profile"
-            >
-              <ArrowLeft size={22} />
-            </button>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
-              <Users className="h-6 w-6" />
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5 min-w-0 max-w-2xl">
+              <div className="flex items-center gap-3.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/dashboard/setting/manage-company/employee-profile")
+                  }
+                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  title="Back to Employee Profile"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                  Employee Profile
+                </h1>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+                Comprehensive view of employee personal details, addresses, banking, and company documents.
+              </p>
             </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-                Employee Profile
-              </h1>
+
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+              {/* Create User pill */}
+              <Link
+                href="/dashboard/settings/manage-users/user-profile/create-user"
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-[#0A0E1A] text-[#E8C16D] border border-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.15] hover:bg-[#E8C16D] hover:text-[#0A0E1A] shadow-xs transition-all cursor-pointer active:scale-95"
+              >
+                <span>Create User</span>
+              </Link>
+
+              {/* Edit Button pill */}
+              <Link
+                href={`/dashboard/setting/manage-company/employee-profile/edit/${employee.id}`}
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] shadow-sm transition-all cursor-pointer"
+              >
+                <Edit2 size={15} />
+                <span>Edit</span>
+              </Link>
+
+              {/* Print ID Card Button pill */}
+              <button
+                type="button"
+                onClick={() => setIsPrintModalOpen(true)}
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-white dark:bg-[#080B11] text-slate-800 dark:text-white border border-[#E7E0D2] dark:border-white/[0.1] hover:bg-slate-50 dark:hover:bg-white/[0.04] shadow-xs transition-all cursor-pointer active:scale-95"
+              >
+                <Printer size={15} />
+                <span>Print ID Card</span>
+              </button>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
-            {/* Create User pill */}
-            <Link
-              href="/dashboard/setting/manage-company/employee-profile/new"
-              className="inline-flex items-center gap-1.5 px-5 sm:px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold bg-[#0A0E1A] text-[#E8C16D] border border-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.1] hover:bg-[#E8C16D] hover:text-[#0A0E1A] shadow-xs transition-all cursor-pointer active:scale-95"
-            >
-              <span>Create User</span>
-            </Link>
-
-            {/* Edit Button pill */}
-            <Link
-              href={`/dashboard/setting/manage-company/employee-profile/edit/${employee.id}`}
-              className="inline-flex items-center gap-1.5 px-5 sm:px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold bg-white dark:bg-[#080B11] text-slate-800 dark:text-white border border-[#EAE4D8] dark:border-white/[0.1] hover:bg-slate-50 dark:hover:bg-white/[0.04] shadow-xs transition-all cursor-pointer active:scale-95"
-            >
-              <Edit2 size={15} />
-              <span>Edit</span>
-            </Link>
-
-            {/* Print ID Card Button pill */}
-            <button
-              type="button"
-              onClick={() => setIsPrintModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-5 sm:px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold bg-white dark:bg-[#080B11] text-slate-800 dark:text-white border border-[#EAE4D8] dark:border-white/[0.1] hover:bg-slate-50 dark:hover:bg-white/[0.04] shadow-xs transition-all cursor-pointer active:scale-95"
-            >
-              <Printer size={15} />
-              <span>Print ID Card</span>
-            </button>
           </div>
         </div>
 
@@ -458,7 +460,6 @@ export default function EmployeeProfileViewPage({
                     {employee.bankName || "—"}
                   </p>
                 </div>
-
                 <div>
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Branch Name.
@@ -476,7 +477,6 @@ export default function EmployeeProfileViewPage({
                     {employee.accountType || "—"}
                   </p>
                 </div>
-
                 <div>
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     IFSC Code.

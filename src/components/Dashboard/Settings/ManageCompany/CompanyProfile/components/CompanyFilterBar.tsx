@@ -13,7 +13,7 @@ import {
   RotateCcw,
   Check,
 } from "lucide-react";
-import { getAvailableVerticalSpace } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 import { CompanyFilterState } from "../types/company.types";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
@@ -33,6 +33,13 @@ const statusFilterOptions: ThemeSelectOption[] = [
   { value: "All", label: "All Status" },
   { value: "ACTIVE", label: "Active" },
   { value: "DRAFT", label: "Draft" },
+];
+
+const sortFilterOptions: ThemeSelectOption[] = [
+  { value: "name_asc", label: "Name (A - Z)" },
+  { value: "name_desc", label: "Name (Z - A)" },
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
 ];
 
 /** Reusable hook: close dropdown when clicking outside or pressing Escape */
@@ -68,109 +75,6 @@ function useDropdown() {
   return { open, setOpen, ref, openUpward, toggle };
 }
 
-/** Dropdown panel shared style */
-const getPanelClass = (openUpward?: boolean) =>
-  `absolute right-0 z-50 min-w-[200px] rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${
-    openUpward ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
-  }`;
-
-/** Sort dropdown matching Theme UI for both light & dark mode */
-function SortDropdown({
-  sortBy,
-  sortOrder,
-  onSort,
-  onClear,
-}: {
-  sortBy: string;
-  sortOrder: string;
-  onSort: (field: string, order: "asc" | "desc") => void;
-  onClear: () => void;
-}) {
-  const { open, setOpen, ref, openUpward, toggle } = useDropdown();
-
-  const isAsc = sortBy === "companyName" && sortOrder === "asc";
-  const isDesc = sortBy === "companyName" && sortOrder === "desc";
-  const isActive = isAsc || isDesc;
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={toggle}
-        className={`inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none
-          ${
-            isActive
-              ? "border-[#E8C16D] bg-[#FFF9EC] text-[#B88728] dark:border-[#E8C16D] dark:bg-[#1A160E] dark:text-[#E8C16D]"
-              : "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]"
-          }`}
-      >
-        <div className="grid h-4 w-4 place-items-center text-[#B88728] dark:text-[#E8C16D] shrink-0">
-          <ArrowUpDown className="h-3.5 w-3.5" />
-        </div>
-        <span>Sort</span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] transition-transform duration-200 ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {open && (
-        <div className={getPanelClass(openUpward)}>
-          <div className="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            Sort By
-          </div>
-          <div className="flex flex-col gap-0.5 py-1">
-            <button
-              type="button"
-              className={`flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer text-left ${
-                isAsc
-                  ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
-                  : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-              }`}
-              onClick={() => {
-                onSort("companyName", "asc");
-                setOpen(false);
-              }}
-            >
-              <span>Name (A-Z)</span>
-              {isAsc && <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 stroke-[2.5]" />}
-            </button>
-            <button
-              type="button"
-              className={`flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer text-left ${
-                isDesc
-                  ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
-                  : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-              }`}
-              onClick={() => {
-                onSort("companyName", "desc");
-                setOpen(false);
-              }}
-            >
-              <span>Name (Z-A)</span>
-              {isDesc && <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 stroke-[2.5]" />}
-            </button>
-          </div>
-          <div className="border-t border-slate-100 dark:border-white/[0.06]" />
-          <div className="pt-1">
-            <button
-              type="button"
-              className="w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 transition-all cursor-pointer text-left"
-              onClick={() => {
-                onClear();
-                setOpen(false);
-              }}
-            >
-              <span>Clear All Sorting</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /** Settings/filter icon dropdown matching Theme UI for both light & dark mode */
 function SettingsDropdown({
   onClearSorting,
@@ -187,44 +91,58 @@ function SettingsDropdown({
         type="button"
         onClick={toggle}
         title="Table Settings"
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]"
+        className={cn(
+          "inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none",
+          "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]",
+          open && "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 dark:border-[#F5C451] dark:ring-[#F5C451]/30"
+        )}
       >
-        <div className="grid h-4 w-4 place-items-center text-[#B88728] dark:text-[#E8C16D] shrink-0">
+        <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] dark:bg-[#F5C451]/15 dark:text-[#F5C451] shrink-0">
           <SlidersHorizontal className="h-3.5 w-3.5" />
         </div>
         <span>Settings</span>
         <ChevronDown
-          className={`h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] transition-transform duration-200 ${
+          className={`h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451] transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {open && (
-        <div className={getPanelClass(openUpward)}>
-          <div className="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            Table Settings
-          </div>
-          <div className="flex flex-col gap-0.5 py-1">
+        <div
+          className={cn(
+            "absolute right-0 z-50 w-52 rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl duration-100 dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
+            openUpward
+              ? "bottom-full mb-2 origin-bottom animate-in fade-in zoom-in-95"
+              : "top-full mt-2 origin-top animate-in fade-in zoom-in-95"
+          )}
+        >
+          <div className="flex flex-col gap-0.5">
             <button
               type="button"
-              className="w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer text-left text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer text-left text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               onClick={() => {
                 onClearSorting();
                 setOpen(false);
               }}
             >
-              <span>Clear All Sorting</span>
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] dark:bg-[#F5C451]/15 dark:text-[#F5C451] shrink-0">
+                <RotateCcw className="h-3.5 w-3.5" />
+              </div>
+              <span className="truncate flex-1">Reset Sorting</span>
             </button>
             <button
               type="button"
-              className="w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer text-left text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer text-left text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               onClick={() => {
                 onClearFilters();
                 setOpen(false);
               }}
             >
-              <span>Clear All Filters</span>
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 shrink-0">
+                <X className="h-3.5 w-3.5" />
+              </div>
+              <span className="truncate flex-1">Reset All Filters</span>
             </button>
           </div>
         </div>
@@ -245,9 +163,28 @@ export default function CompanyFilterBar({
   const hasActiveFilters =
     Boolean(filters.search) || filters.status !== "All";
 
-  const handleSort = (field: string, order: "asc" | "desc") => {
-    onFilterChange("sortBy", field);
-    onFilterChange("sortOrder", order);
+  const currentSortValue = React.useMemo(() => {
+    if (filters.sortBy === "companyName" && filters.sortOrder === "asc") return "name_asc";
+    if (filters.sortBy === "companyName" && filters.sortOrder === "desc") return "name_desc";
+    if (filters.sortBy === "createdAt" && filters.sortOrder === "asc") return "oldest";
+    if (filters.sortBy === "createdAt" && filters.sortOrder === "desc") return "newest";
+    return "";
+  }, [filters.sortBy, filters.sortOrder]);
+
+  const handleSortChange = (val: string) => {
+    if (val === "name_asc") {
+      onFilterChange("sortBy", "companyName");
+      onFilterChange("sortOrder", "asc");
+    } else if (val === "name_desc") {
+      onFilterChange("sortBy", "companyName");
+      onFilterChange("sortOrder", "desc");
+    } else if (val === "newest") {
+      onFilterChange("sortBy", "createdAt");
+      onFilterChange("sortOrder", "desc");
+    } else if (val === "oldest") {
+      onFilterChange("sortBy", "createdAt");
+      onFilterChange("sortOrder", "asc");
+    }
   };
 
   const handleClearSorting = () => {
@@ -297,12 +234,16 @@ export default function CompanyFilterBar({
             menuClassName="w-44 rounded-2xl"
           />
 
-          {/* Sort dropdown Pill */}
-          <SortDropdown
-            sortBy={filters.sortBy}
-            sortOrder={filters.sortOrder}
-            onSort={handleSort}
-            onClear={handleClearSorting}
+          {/* Sort Filter Pill with Golden ArrowUpDown Icon */}
+          <ThemeSelectDropdown
+            ariaLabel="Sort Companies"
+            value={currentSortValue}
+            onChange={handleSortChange}
+            options={sortFilterOptions}
+            icon={<ArrowUpDown className="h-3.5 w-3.5" />}
+            placeholder="Sort"
+            buttonClassName="rounded-full h-10 px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+            menuClassName="w-44 rounded-2xl"
           />
 
           {/* Table Settings dropdown Pill */}
