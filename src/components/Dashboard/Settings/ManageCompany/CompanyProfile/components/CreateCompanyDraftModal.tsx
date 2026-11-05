@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Building2, X, Plus, Loader2 } from "lucide-react";
+import { Building2, X, Plus, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { companyService } from "../services/company.service";
 import { Company } from "../types/company.types";
@@ -37,43 +37,53 @@ export default function CreateCompanyDraftModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = companyName.trim();
-    const cleanGst = gstNumber.trim().toUpperCase();
 
-    if (!cleanName) {
-      setError("Please enter the company name.");
+    const trimmedName = companyName.trim();
+    if (!trimmedName) {
+      setError("Company Name is required.");
       return;
     }
 
-    if (!cleanGst) {
-      setError("Please enter a valid GST number.");
+    const trimmedGst = gstNumber.trim().toUpperCase();
+    if (!trimmedGst) {
+      setError("GST Number is required.");
       return;
     }
 
-    if (cleanGst.length !== 15) {
-      setError("GST number must be exactly 15 characters long.");
+    if (trimmedGst.length !== 15) {
+      setError("GST Number must be exactly 15 characters.");
       return;
     }
+
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(trimmedGst)) {
+      setError("Invalid GST format. Example: 24ABCDE1234F1Z5");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-
-      const res = await companyService.createDraft({
-        companyName: cleanName,
-        gstNumber: cleanGst,
+      const response = await companyService.createDraft({
+        companyName: trimmedName,
+        gstNumber: trimmedGst,
       });
 
-      toast.success(res.message || "Company draft created successfully!");
-      setCompanyName("");
-      setGstNumber("");
-      onClose();
-      onSuccess(res.data);
+      if (response && response.data) {
+        toast.success("Company draft created successfully.");
+        setCompanyName("");
+        setGstNumber("");
+        onSuccess(response.data);
+      } else {
+        setError(response?.message || "Failed to create draft.");
+      }
     } catch (err: any) {
-      console.error(err);
-      const message = err.message || "Failed to create company draft.";
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "An unexpected error occurred while creating the draft.";
       setError(message);
-      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -83,10 +93,8 @@ export default function CreateCompanyDraftModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
-        onClick={() => {
-          if (!loading) onClose();
-        }}
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={() => !loading && onClose()}
       />
 
       {/* Modal Card */}
@@ -95,7 +103,7 @@ export default function CreateCompanyDraftModal({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-              <Building2 size={18} />
+              <Building2 size={20} className="text-[#B88728] dark:text-[#E8C16D]" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-wide">
@@ -111,7 +119,7 @@ export default function CreateCompanyDraftModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:hover:bg-white/[0.08] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:hover:bg-white/[0.08] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-50"
           >
             <X size={18} />
           </button>
@@ -175,7 +183,10 @@ export default function CreateCompanyDraftModal({
             </div>
 
             {error && (
-              <p className="text-xs text-rose-500 mt-1.5 font-medium">{error}</p>
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 dark:bg-rose-950/30 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs mt-2 font-medium">
+                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
             )}
           </div>
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronsUpDown, Check, Plus, X, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
 import { useDropdownManagementMode } from "@/components/Dashboard/Settings/Configuration/hooks/useDropdownManagementMode";
@@ -23,6 +23,10 @@ interface DropdownWithOtherProps {
   fieldKey: string;
   allowOther?: boolean;
   className?: string;
+  hideLabel?: boolean;
+  labelClassName?: string;
+  buttonClassName?: string;
+  menuClassName?: string;
 }
 
 export default function DropdownWithOther({
@@ -36,6 +40,10 @@ export default function DropdownWithOther({
   fieldKey,
   allowOther = true,
   className,
+  hideLabel = false,
+  labelClassName,
+  buttonClassName,
+  menuClassName,
 }: DropdownWithOtherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openDirection, setOpenDirection] = useState<"down" | "up">("down");
@@ -93,15 +101,11 @@ export default function DropdownWithOther({
     );
   }, [mergedOptions, searchTerm]);
 
-  // Determine whether to open upward or downward
+  // Determine whether to open upward or downward using vertical space
   const determineDirection = () => {
     if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(containerRef.current);
 
-    // A typical dropdown menu height is ~240px
     if (spaceBelow < 250 && spaceAbove > spaceBelow) {
       setOpenDirection("up");
     } else {
@@ -154,33 +158,6 @@ export default function DropdownWithOther({
     }
   }, [options]);
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
-
-  // Recalculate direction on scroll or resize when open
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleScrollOrResize = () => {
-      determineDirection();
-    };
-    window.addEventListener("scroll", handleScrollOrResize, true);
-    window.addEventListener("resize", handleScrollOrResize);
-    return () => {
-      window.removeEventListener("scroll", handleScrollOrResize, true);
-      window.removeEventListener("resize", handleScrollOrResize);
-    };
-  }, [isOpen]);
-
   const handleSelect = (val: string) => {
     if (val === "__other__") {
       if (!effectiveAllowOther) return;
@@ -191,7 +168,6 @@ export default function DropdownWithOther({
       setIsOtherActive(false);
       onChange(val);
       setIsOpen(false);
-      setSearchTerm("");
     }
   };
 
@@ -201,6 +177,7 @@ export default function DropdownWithOther({
       setIsOtherActive(false);
       return;
     }
+
     const newOpt: DropdownOption = { label: trimmed, value: trimmed };
     const updated = [...localCustomOptions, newOpt];
     setLocalCustomOptions(updated);
@@ -242,12 +219,19 @@ export default function DropdownWithOther({
       ref={containerRef}
       className={cn("space-y-1.5 w-full", isOpen && "relative z-40", className)}
     >
-      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-        {label.replace(/\.+$/, "")}
-        {required && !label.includes("*") && (
-          <span className="text-rose-500 ml-0.5">*</span>
-        )}
-      </label>
+      {!hideLabel && (
+        <label
+          className={cn(
+            "block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight",
+            labelClassName
+          )}
+        >
+          {label.replace(/\.+$/, "")}
+          {required && !label.includes("*") && (
+            <span className="text-rose-500 ml-0.5">*</span>
+          )}
+        </label>
+      )}
 
       {/* Main Trigger / Other Input */}
       {isOtherActive && effectiveAllowOther ? (
@@ -263,6 +247,7 @@ export default function DropdownWithOther({
                 handleCustomSubmit();
               } else if (e.key === "Escape") {
                 setIsOtherActive(false);
+                setCustomValue("");
               }
             }}
             placeholder={`Enter custom ${label.replace(/[\.\*]/g, "").trim()}...`}
@@ -277,7 +262,10 @@ export default function DropdownWithOther({
           </button>
           <button
             type="button"
-            onClick={() => setIsOtherActive(false)}
+            onClick={() => {
+              setIsOtherActive(false);
+              setCustomValue("");
+            }}
             className="h-11 sm:h-12 px-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
           >
             <X size={15} />
@@ -294,7 +282,8 @@ export default function DropdownWithOther({
               "dark:border-white/[0.08] dark:bg-[#131926] dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]",
               isOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/25 dark:border-[#F5C451] dark:ring-[#F5C451]/20",
               error && "border-rose-500 dark:border-rose-500",
-              value ? "text-[#0A0E1A] dark:text-white" : "text-slate-400 dark:text-slate-500"
+              value ? "text-[#0A0E1A] dark:text-white" : "text-slate-400 dark:text-slate-500",
+              buttonClassName
             )}
           >
             <span className="truncate">
@@ -316,7 +305,8 @@ export default function DropdownWithOther({
                 "absolute z-50 left-0 right-0 min-w-[200px] rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in-50 duration-150",
                 openDirection === "up"
                   ? "bottom-full mb-1.5 origin-bottom zoom-in-95"
-                  : "top-full mt-1.5 origin-top zoom-in-95"
+                  : "top-full mt-1.5 origin-top zoom-in-95",
+                menuClassName
               )}
             >
               {/* Optional Search Filter when > 6 options */}

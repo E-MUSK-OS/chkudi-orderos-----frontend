@@ -169,10 +169,10 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
   const billingPhone = ledger.phone || "6352416405";
   const shippingPhone = ledger.shippingPhone || ledger.phone || "6352416405";
 
-  const creationDateFormatted = formatDate(ledger.joinDate || ledger.createdAt, "03-11-2026");
-  const lastUpdatedFormatted = formatDate(ledger.updatedAt || ledger.createdAt, "04-11-2026");
-  const createdBy = ledger.createdByName || "Elon Musk";
-  const updatedBy = ledger.updatedByName || ledger.createdByName || "Elon Musk";
+  const creationDateFormatted = formatDate(ledger.joinDate || ledger.createdAt, "01-09-2026");
+  const lastUpdatedFormatted = formatDate(ledger.updatedAt || ledger.createdAt, "04-09-2026");
+  const createdBy = ledger.createdByName || "Admin";
+  const updatedBy = ledger.updatedByName || ledger.createdByName || "Admin";
 
   return (
     <DashboardLayout title="Ledger Book">

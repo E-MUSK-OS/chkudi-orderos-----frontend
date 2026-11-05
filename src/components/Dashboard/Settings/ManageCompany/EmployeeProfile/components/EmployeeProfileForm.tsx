@@ -21,22 +21,23 @@ import {
   Eye,
   Download,
   X,
-  Users,
-  SlidersHorizontal,
-  Landmark,
-  Phone,
-  Mail,
-  HeartPulse,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Employee, EmployeeFormData, EmployeeDocumentItem } from "../types/employee.types";
 import { employeeService } from "../services/employee.service";
+import { companyService } from "../../CompanyProfile/services/company.service";
+import { CompanyBranchItem, Company } from "../../CompanyProfile/types/company.types";
 import PrintIdCardModal from "./PrintIdCardModal";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
 } from "@/components/ui/ThemeSelectDropdown";
+import DropdownWithOther, {
+  type DropdownOption,
+} from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
+import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
 import DatePicker from "@/components/ui/DatePicker";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { getMediaUrl, cn } from "@/lib/utils";
 
 interface EmployeeProfileFormProps {
   initialData?: Employee | null;
@@ -69,11 +70,7 @@ const DESIGNATIONS = [
   "Other",
 ];
 
-const BRANCHES = [
-  "JAY BHAVANI FASHION - Sachin",
-  "JAY BHAVANI FASHION - Head Office",
-  "Main Branch",
-];
+
 
 const SALARY_TYPES = ["Salaried", "Daily Wage", "Piece Rate", "Hourly"];
 
@@ -112,6 +109,7 @@ export default function EmployeeProfileForm({
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // File upload state
   const [uploadingField, setUploadingField] = useState<string | null>(null);
@@ -123,18 +121,50 @@ export default function EmployeeProfileForm({
   const bankDocInputRef = useRef<HTMLInputElement>(null);
   const identityDocInputRef = useRef<HTMLInputElement>(null);
 
-  // "Other" custom option state for Department & Designation
-  const [isOtherDeptActive, setIsOtherDeptActive] = useState(false);
-  const [customDept, setCustomDept] = useState("");
-  const [localCustomDepts, setLocalCustomDepts] = useState<string[]>([]);
-  const customDeptInputRef = useRef<HTMLInputElement>(null);
-
-  const [isOtherDesignationActive, setIsOtherDesignationActive] = useState(false);
-  const [customDesignation, setCustomDesignation] = useState("");
-  const [localCustomDesignations, setLocalCustomDesignations] = useState<string[]>([]);
-  const customDesignationInputRef = useRef<HTMLInputElement>(null);
-
   const isEditMode = mode === "edit" || Boolean(initialData?.id);
+
+  // Fetch dynamic dropdown options from DB
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
+
+  // Dynamic Companies & Branches loaded from backend
+  const [companyList, setCompanyList] = useState<Company[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState<boolean>(true);
+  const [branchList, setBranchList] = useState<CompanyBranchItem[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        setLoadingCompanies(true);
+        setLoadingBranches(true);
+        const [compRes, branchRes] = await Promise.all([
+          companyService.getCompanies({ pageSize: 100 }).catch(() => ({ data: [] })),
+          companyService.getBranches().catch(() => ({ data: [] })),
+        ]);
+        if (isMounted) {
+          if (compRes?.data) {
+            setCompanyList(compRes.data);
+          }
+          if (branchRes?.data) {
+            setBranchList(branchRes.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load companies or branches for employee form:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingCompanies(false);
+          setLoadingBranches(false);
+        }
+      }
+    };
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState<EmployeeFormData>({
@@ -149,12 +179,14 @@ export default function EmployeeProfileForm({
     aadhaarNo: "",
     dob: "25-08-1982",
     bloodGroup: "B+",
-    branch: "JAY BHAVANI FASHION - Sachin",
+    company: initialData?.company || "",
+    branch: initialData?.branch || "",
     department: "Admin",
     designation: "Admin",
     salaryType: "Salaried",
     joiningDate: "01-09-2026",
     workerProcess: "Select Process",
+    basicSalary: initialData?.basicSalary !== undefined && initialData?.basicSalary !== null ? String(initialData.basicSalary) : "",
     isActive: true,
 
     addressLine1: "",
@@ -162,7 +194,7 @@ export default function EmployeeProfileForm({
     city: "Surat",
     state: "Gujarat",
     country: "India",
-    pincode: "394230",
+    pincode: "",
 
     accountNumber: "",
     accountHolderName: "",
@@ -207,12 +239,14 @@ export default function EmployeeProfileForm({
         aadhaarNo: initialData.aadhaarNo || "",
         dob: formatToDisplayDate(initialData.dob) || "25-08-1982",
         bloodGroup: initialData.bloodGroup || "B+",
-        branch: initialData.branch || "JAY BHAVANI FASHION - Sachin",
+        company: initialData.company || "",
+        branch: initialData.branch || "",
         department: initialData.department || "Admin",
         designation: initialData.designation || "Admin",
         salaryType: initialData.salaryType || "Salaried",
         joiningDate: formatToDisplayDate(initialData.joiningDate) || "01-09-2026",
         workerProcess: initialData.workerProcess || "Select Process",
+        basicSalary: initialData.basicSalary !== undefined && initialData.basicSalary !== null ? String(initialData.basicSalary) : "",
         isActive: initialData.isActive !== undefined ? initialData.isActive : true,
 
         addressLine1: initialData.addressLine1 || "",
@@ -220,7 +254,7 @@ export default function EmployeeProfileForm({
         city: initialData.city || "Surat",
         state: initialData.state || "Gujarat",
         country: initialData.country || "India",
-        pincode: initialData.pincode || "394230",
+        pincode: initialData.pincode || "",
 
         accountNumber: initialData.accountNumber || "",
         accountHolderName: initialData.accountHolderName || initialData.fullName || "",
@@ -237,7 +271,33 @@ export default function EmployeeProfileForm({
     }
   }, [initialData]);
 
+  // Auto-resolve company from branch if branch is already known but company is blank (e.g. legacy records)
+  useEffect(() => {
+    if (branchList.length > 0 && !formData.company && formData.branch) {
+      const foundBranch = branchList.find(
+        (b) =>
+          b.displayName === formData.branch ||
+          b.branchName === formData.branch ||
+          `${b.companyName} - ${b.branchName}` === formData.branch
+      );
+      if (foundBranch && foundBranch.companyName) {
+        setFormData((prev) => ({
+          ...prev,
+          company: foundBranch.companyName,
+        }));
+      }
+    }
+  }, [branchList, formData.branch, formData.company]);
+
   const handleChange = (field: keyof EmployeeFormData, value: any) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -250,94 +310,279 @@ export default function EmployeeProfileForm({
     []
   );
 
-  const branchOptions: ThemeSelectOption[] = useMemo(
-    () => BRANCHES.map((b) => ({ value: b, label: b })),
-    []
-  );
+  const companyOptions: ThemeSelectOption[] = useMemo(() => {
+    return companyList.map((c) => ({
+      value: c.companyName || c.legalName || c.id,
+      label: c.companyName || c.legalName || "Unnamed Company",
+    }));
+  }, [companyList]);
 
-  const departmentOptions: ThemeSelectOption[] = useMemo(() => {
-    const list = [...DEPARTMENTS.filter((d) => d !== "Other"), ...localCustomDepts];
-    if (formData.department && !list.includes(formData.department) && formData.department !== "Other") {
-      list.push(formData.department);
-    }
-    return [
-      ...list.map((dept) => ({ value: dept, label: dept })),
-      { value: "Other", label: "+ Other (Enter custom value)" },
-    ];
-  }, [localCustomDepts, formData.department]);
+  const selectedCompanyObj = useMemo(() => {
+    if (!formData.company) return null;
+    return companyList.find(
+      (c) =>
+        c.companyName?.trim().toLowerCase() === formData.company.trim().toLowerCase() ||
+        c.id === formData.company ||
+        c.legalName?.trim().toLowerCase() === formData.company.trim().toLowerCase()
+    );
+  }, [companyList, formData.company]);
 
-  const designationOptions: ThemeSelectOption[] = useMemo(() => {
-    const list = [...DESIGNATIONS.filter((d) => d !== "Other"), ...localCustomDesignations];
-    if (formData.designation && !list.includes(formData.designation) && formData.designation !== "Other") {
-      list.push(formData.designation);
+  const filteredBranchList = useMemo(() => {
+    if (!formData.company) {
+      return [];
     }
-    return [
-      ...list.map((desig) => ({ value: desig, label: desig })),
-      { value: "Other", label: "+ Other (Enter custom value)" },
-    ];
-  }, [localCustomDesignations, formData.designation]);
+    return branchList.filter((b) => {
+      if (selectedCompanyObj && b.companyId && b.companyId === selectedCompanyObj.id) {
+        return true;
+      }
+      if (
+        b.companyName &&
+        b.companyName.trim().toLowerCase() === formData.company.trim().toLowerCase()
+      ) {
+        return true;
+      }
+      return false;
+    });
+  }, [branchList, formData.company, selectedCompanyObj]);
 
-  const handleCustomDeptSubmit = () => {
-    const trimmed = customDept.trim();
-    if (!trimmed) {
-      setIsOtherDeptActive(false);
-      return;
+  const branchOptions: ThemeSelectOption[] = useMemo(() => {
+    return filteredBranchList.map((b) => {
+      const val = b.displayName || `${b.companyName} - ${b.branchName}` || b.branchName;
+      return {
+        value: val,
+        label: val,
+      };
+    });
+  }, [filteredBranchList]);
+
+  const handleCompanyChange = (companyName: string) => {
+    handleChange("company", companyName);
+
+    // If current selected branch does not belong to new company, reset branch
+    const compObj = companyList.find(
+      (c) =>
+        c.companyName?.trim().toLowerCase() === companyName.trim().toLowerCase() ||
+        c.id === companyName ||
+        c.legalName?.trim().toLowerCase() === companyName.trim().toLowerCase()
+    );
+    const matchingBranches = branchList.filter((b) => {
+      if (compObj && b.companyId && b.companyId === compObj.id) return true;
+      if (b.companyName && b.companyName.trim().toLowerCase() === companyName.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    const isCurrentBranchValid = matchingBranches.some((b) => {
+      const val = b.displayName || `${b.companyName} - ${b.branchName}` || b.branchName;
+      return val === formData.branch || b.branchName === formData.branch;
+    });
+
+    if (!isCurrentBranchValid) {
+      handleChange("branch", "");
     }
-    if (!localCustomDepts.includes(trimmed)) {
-      setLocalCustomDepts((prev) => [...prev, trimmed]);
-    }
-    handleChange("department", trimmed);
-    toast.success(`Added "${trimmed}" to Department`);
-    setCustomDept("");
-    setIsOtherDeptActive(false);
   };
 
-  const handleCustomDesignationSubmit = () => {
-    const trimmed = customDesignation.trim();
-    if (!trimmed) {
-      setIsOtherDesignationActive(false);
-      return;
-    }
-    if (!localCustomDesignations.includes(trimmed)) {
-      setLocalCustomDesignations((prev) => [...prev, trimmed]);
-    }
-    handleChange("designation", trimmed);
-    toast.success(`Added "${trimmed}" to Designation`);
-    setCustomDesignation("");
-    setIsOtherDesignationActive(false);
-  };
+  // Dynamic departmentOptions merging static DEPARTMENTS and DB saved options
+  const departmentOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = DEPARTMENTS.map((dept) => ({ value: dept, label: dept }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "department")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
 
-  const salaryTypeOptions: ThemeSelectOption[] = useMemo(
-    () => SALARY_TYPES.map((st) => ({ value: st, label: st })),
-    []
-  );
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
 
-  const workerProcessOptions: ThemeSelectOption[] = useMemo(
-    () => WORKER_PROCESSES.map((wp) => ({ value: wp, label: wp })),
-    []
-  );
+  // Dynamic designationOptions merging static DESIGNATIONS and DB saved options
+  const designationOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = DESIGNATIONS.map((desig) => ({ value: desig, label: desig }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "designation")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
+  // Dynamic salaryTypeOptions merging static SALARY_TYPES and DB saved options
+  const salaryTypeOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = SALARY_TYPES.map((st) => ({ value: st, label: st }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "salarytype")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
+  // Dynamic workerProcessOptions merging static WORKER_PROCESSES and DB saved options
+  const workerProcessOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = WORKER_PROCESSES
+      .filter((wp) => wp !== "Select Process")
+      .map((wp) => ({ value: wp, label: wp }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "workerprocess")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
 
   const accountTypeOptions: ThemeSelectOption[] = useMemo(
     () => ACCOUNT_TYPES.map((at) => ({ value: at, label: at })),
     []
   );
 
-  const commonInputClass =
-    "w-full h-11 px-4 text-xs sm:text-sm rounded-full bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:placeholder:text-slate-500 dark:focus:border-[#E8C16D] transition-all shadow-xs";
-
   const dropdownButtonClassName =
-    "w-full justify-between h-11 px-4 text-xs sm:text-sm font-normal rounded-full bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D] transition-all shadow-xs";
-
+    "w-full justify-between h-10 px-3.5 text-xs font-normal rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
   const dropdownMenuClassName =
-    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl";
-
+    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-xl shadow-2xl";
   const datePickerButtonClassName =
-    "h-11 px-4 text-xs sm:text-sm rounded-full bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D] transition-all shadow-xs";
+    "h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+
+  const getInputClassName = (fieldKey?: string, isMono = false) => {
+    const hasErr = Boolean(fieldKey && errors[fieldKey]);
+    return cn(
+      "w-full h-10 px-3.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all shadow-inner",
+      isMono && "font-mono",
+      hasErr
+        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
+        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+    );
+  };
+
+  const renderFieldError = (fieldKey: string) => {
+    if (!errors[fieldKey]) return null;
+    return (
+      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+        <AlertCircle size={11} className="shrink-0" />
+        <span>{errors[fieldKey]}</span>
+      </p>
+    );
+  };
+
+  const validateForm = (): { isValid: boolean; firstErrorTab?: TabType } => {
+    const newErrors: Record<string, string> = {};
+    let firstErrorTab: TabType | undefined;
+
+    // --- Tab 1: General Details ---
+    if (!formData.firstName?.trim()) {
+      newErrors.firstName = "First Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.middleName?.trim()) {
+      newErrors.middleName = "Middle Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.lastName?.trim()) {
+      newErrors.lastName = "Last Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.contactNo?.trim()) {
+      newErrors.contactNo = "Contact number is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else if (formData.contactNo.trim().length !== 10) {
+      newErrors.contactNo = "Contact number must be exactly 10 digits.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.aadhaarNo?.trim()) {
+      newErrors.aadhaarNo = "Aadhar number is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else if (formData.aadhaarNo.trim().length !== 12) {
+      newErrors.aadhaarNo = "Aadhar number must be exactly 12 digits.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.employeeId?.trim()) {
+      newErrors.employeeId = "Employee ID is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.dob?.trim()) {
+      newErrors.dob = "Date of Birth is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.department?.trim()) {
+      newErrors.department = "Department is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.designation?.trim()) {
+      newErrors.designation = "Designation is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.salaryType?.trim()) {
+      newErrors.salaryType = "Salary Type is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (formData.email?.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = "Please enter a valid email address.";
+        if (!firstErrorTab) firstErrorTab = "general";
+      }
+    }
+
+    // --- Tab 2: Bank Details ---
+    if (formData.ifscCode?.trim() && formData.ifscCode.trim().length !== 11) {
+      newErrors.ifscCode = "IFSC Code must be exactly 11 characters.";
+      if (!firstErrorTab) firstErrorTab = "bank";
+    }
+
+    setErrors(newErrors);
+    return {
+      isValid: Object.keys(newErrors).length === 0,
+      firstErrorTab,
+    };
+  };
+
+  const hasTabError = (tabKey: TabType): boolean => {
+    if (tabKey === "general") {
+      return Boolean(
+        errors.firstName ||
+        errors.middleName ||
+        errors.lastName ||
+        errors.contactNo ||
+        errors.aadhaarNo ||
+        errors.employeeId ||
+        errors.dob ||
+        errors.department ||
+        errors.designation ||
+        errors.salaryType ||
+        errors.email
+      );
+    }
+    if (tabKey === "bank") {
+      return Boolean(errors.ifscCode);
+    }
+    return false;
+  };
 
   // Completion percentage calculation
   const completionPercentage = useMemo(() => {
     const fields = [
       formData.firstName,
+      formData.middleName,
       formData.lastName,
       formData.contactNo,
       formData.employeeId,
@@ -355,7 +600,7 @@ export default function EmployeeProfileForm({
     return Math.min(100, Math.round((filled / fields.length) * 100));
   }, [formData]);
 
-  // File Upload Handlers: Writes directly to Storage/NAS via API
+  // File Upload Handlers: Writes directly to Storage/NAS via API (NEVER Base64 in Database!)
   const handleSingleFileUpload = async (
     file: File,
     targetField: "photoUrl" | "bankDocUrl"
@@ -378,7 +623,7 @@ export default function EmployeeProfileForm({
     }
   };
 
-  // Add Document to Multiple Documents list
+  // Add Document to Multiple Documents list (shifts newly added document next to the attach box)
   const handleAddDocument = async (file: File) => {
     if (file.size > 20 * 1024 * 1024) {
       toast.error("File size must be under 20MB.");
@@ -389,6 +634,7 @@ export default function EmployeeProfileForm({
       setUploadingDoc(true);
       const res = await employeeService.uploadMedia(file, "employees", "emp_doc");
 
+      // Derive friendly name
       const cleanFileName = file.name.replace(/\.[^/.]+$/, "");
       const friendlyName =
         cleanFileName.charAt(0).toUpperCase() + cleanFileName.slice(1);
@@ -405,6 +651,7 @@ export default function EmployeeProfileForm({
 
       setFormData((prev) => {
         const prevDocs = prev.documents || [];
+        // Put newest document right next to the attach box (index 0)
         const nextDocs = [newDoc, ...prevDocs];
         return {
           ...prev,
@@ -458,24 +705,12 @@ export default function EmployeeProfileForm({
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    if (!formData.firstName.trim()) {
-      toast.error("First Name is required.");
-      setActiveTab("general");
-      return;
-    }
-    if (!formData.lastName.trim()) {
-      toast.error("Last Name is required.");
-      setActiveTab("general");
-      return;
-    }
-    if (!formData.contactNo.trim()) {
-      toast.error("Contact Number is required.");
-      setActiveTab("general");
-      return;
-    }
-    if (!formData.employeeId.trim()) {
-      toast.error("Employee ID is required.");
-      setActiveTab("general");
+    const { isValid, firstErrorTab } = validateForm();
+    if (!isValid) {
+      if (firstErrorTab) {
+        setActiveTab(firstErrorTab);
+      }
+      toast.error("Please fill in all required fields before saving.");
       return;
     }
 
@@ -483,6 +718,10 @@ export default function EmployeeProfileForm({
       setSaving(true);
       const payload: Partial<EmployeeFormData> = {
         ...formData,
+        basicSalary:
+          formData.basicSalary !== "" && formData.basicSalary !== undefined
+            ? Number(formData.basicSalary)
+            : 0,
         identityDocUrl:
           formData.documents && formData.documents.length > 0
             ? formData.documents[0].url
@@ -515,9 +754,15 @@ export default function EmployeeProfileForm({
       label: "General",
       completed: Boolean(
         formData.firstName &&
+        formData.middleName &&
         formData.lastName &&
         formData.contactNo &&
-        formData.employeeId
+        formData.aadhaarNo &&
+        formData.employeeId &&
+        formData.dob &&
+        formData.department &&
+        formData.designation &&
+        formData.salaryType
       ),
     },
     {
@@ -542,110 +787,134 @@ export default function EmployeeProfileForm({
 
   return (
     <DashboardLayout title="Employee Profile">
-      <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4 max-w-[1600px] mx-auto">
-        {/* ========================================================================= */}
-        {/* 1. TOP HEADER BAR matching Ledger Book Page Header                        */}
-        {/* ========================================================================= */}
-        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 sm:px-7 py-4 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
+      <div className="flex flex-col min-h-[calc(100vh-140px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
+        {/* Top Header Bar */}
+        <div className="px-6 pt-5 pb-3 w-full flex items-center justify-between border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() =>
                 router.push("/dashboard/setting/manage-company/employee-profile")
               }
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+              className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-colors cursor-pointer"
               title="Back to Employee Profile"
             >
-              <ArrowLeft size={22} />
+              <ArrowLeft size={18} />
             </button>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
-              <Users className="h-6 w-6" />
-            </div>
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
                 Employee Profile
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">Employee Name</span>{" "}
+              <p className="text-xs text-slate-400 mt-0.5">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Employee Name</span>{" "}
                 <span className="text-slate-900 dark:text-white font-medium">{displayedFullName}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            {/* Active Status Badge matching Company Profile & Ledger Book */}
+          <div className="flex items-center gap-2.5">
+            {/* Active Status Badge matching Edit Ledger */}
             <button
               type="button"
               onClick={() => handleChange("isActive", !formData.isActive)}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-xs border",
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border shadow-xs transition-colors cursor-pointer ${
                 formData.isActive
-                  ? "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/50 dark:bg-[#1A160E] dark:text-[#E8C16D] dark:border-[#E8C16D]/30"
-                  : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50"
-              )}
-              title="Click to toggle status"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                  : "bg-red-500/10 text-red-500 border-red-500/20 dark:text-red-400"
+              }`}
+              title="Click to toggle active status"
             >
               <span>{formData.isActive ? "Active" : "Inactive"}</span>
-              {formData.isActive && <Check size={14} className="stroke-[3]" />}
+              {formData.isActive && <Check size={12} className="stroke-[3]" />}
             </button>
 
-            {/* Edit Mode / New Mode Pill matching Company Profile & Ledger Book */}
-            <div className="px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#0A0E1A] text-white border border-[#0A0E1A] dark:bg-[#080B11] dark:text-slate-300 dark:border-white/[0.1] shadow-xs select-none">
+            {/* Edit Mode / New Mode indicator */}
+            <div className="px-3.5 py-1 rounded-md border border-[#E7E0D2] bg-white text-slate-900 dark:border-white/[0.08] dark:bg-[#161B24] dark:text-white font-bold text-xs shadow-xs select-none">
               {isEditMode ? "Edit Mode" : "New Mode"}
             </div>
+
+            {/* Create User button */}
+            <button
+              type="button"
+              onClick={() =>
+                router.push("/dashboard/setting/manage-company/employee-profile/new")
+              }
+              className="inline-flex items-center justify-center px-4 py-1.5 rounded-xl bg-[#F5C451] hover:bg-[#E8B83D] active:scale-[0.98] text-[#0A0E1A] font-bold text-xs shadow-sm transition-all cursor-pointer"
+            >
+              Create User
+            </button>
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* 2. TABS FLOATING BAR matching Ledger Book Edit UI                         */}
-        {/* ========================================================================= */}
-        <div className="w-full rounded-2xl sm:rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-1.5 flex items-center justify-between gap-1 shadow-sm overflow-x-auto no-scrollbar">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
-                  isActive
-                    ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
-                )}
-              >
-                {isActive ? (
-                  <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
-                ) : tab.completed ? (
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                ) : (
-                  <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                )}
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        {/* 4 Tabs Segmented Bar */}
+        <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
+          <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-4 gap-1 select-none">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.key;
+              const isTabInvalid = hasTabError(tab.key);
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
+                      : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
+                  }`}
+                >
+                  {isTabInvalid ? (
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                    </span>
+                  ) : tab.completed ? (
+                    <CheckCircle2
+                      size={14}
+                      className={isActive ? "text-emerald-400 shrink-0" : "text-emerald-500/70 shrink-0"}
+                    />
+                  ) : (
+                    <Circle size={14} className="text-slate-500 shrink-0" />
+                  )}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* 3. MAIN FORM CARD matching Ledger Book UI theme                           */}
-        {/* ========================================================================= */}
-        <div className="w-full rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-8 shadow-sm">
+        {/* Tab Contents Area */}
+        <div className="px-6 sm:px-8 py-5 sm:py-6 flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* TAB 1: GENERAL */}
           {activeTab === "general" && (
-            <div className="space-y-6">
-              {/* Section Header with Badge */}
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E7E0D2] dark:border-white/[0.08]">
-                <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <SlidersHorizontal size={14} />
-                </div>
+            <div className="space-y-4">
+              {/* Section Header with Active Toggle */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E7E0D2] dark:border-white/[0.06]">
                 <div>
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                    General Details
-                  </h2>
-                  <p className="text-xs text-slate-400">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">General Details</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
                     Enter basic employee details
                   </p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Active</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formData.isActive}
+                    onClick={() => handleChange("isActive", !formData.isActive)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none cursor-pointer border ${
+                      formData.isActive
+                        ? "bg-emerald-500 border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500"
+                        : "bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-xs transition-transform ${
+                        formData.isActive ? "translate-x-[18px]" : "translate-x-[2px]"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
 
@@ -660,8 +929,9 @@ export default function EmployeeProfileForm({
                     value={formData.firstName}
                     onChange={(e) => handleChange("firstName", e.target.value)}
                     placeholder="Enter first name"
-                    className={commonInputClass}
+                    className={getInputClassName("firstName")}
                   />
+                  {renderFieldError("firstName")}
                 </div>
 
                 <div>
@@ -673,8 +943,9 @@ export default function EmployeeProfileForm({
                     value={formData.middleName}
                     onChange={(e) => handleChange("middleName", e.target.value)}
                     placeholder="Enter middle name"
-                    className={commonInputClass}
+                    className={getInputClassName("middleName")}
                   />
+                  {renderFieldError("middleName")}
                 </div>
 
                 <div>
@@ -686,8 +957,9 @@ export default function EmployeeProfileForm({
                     value={formData.lastName}
                     onChange={(e) => handleChange("lastName", e.target.value)}
                     placeholder="Enter last name"
-                    className={commonInputClass}
+                    className={getInputClassName("lastName")}
                   />
+                  {renderFieldError("lastName")}
                 </div>
               </div>
 
@@ -698,7 +970,7 @@ export default function EmployeeProfileForm({
                     <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
                       Contact No. <span className="text-red-500 font-bold">*</span>
                     </label>
-                    <span className="text-[10px] text-emerald-500 font-mono">
+                    <span className="text-[10px] text-emerald-400 font-mono">
                       {formData.contactNo.length}/10
                     </span>
                   </div>
@@ -710,8 +982,9 @@ export default function EmployeeProfileForm({
                       handleChange("contactNo", e.target.value.replace(/\D/g, ""))
                     }
                     placeholder="Enter 10-digit number"
-                    className={cn(commonInputClass, "font-mono")}
+                    className={getInputClassName("contactNo", true)}
                   />
+                  {renderFieldError("contactNo")}
                 </div>
 
                 <div>
@@ -719,7 +992,7 @@ export default function EmployeeProfileForm({
                     <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
                       Aadhar No. <span className="text-red-500 font-bold">*</span>
                     </label>
-                    <span className="text-[10px] text-emerald-500 font-mono">
+                    <span className="text-[10px] text-emerald-400 font-mono">
                       {formData.aadhaarNo.length}/12
                     </span>
                   </div>
@@ -727,10 +1000,11 @@ export default function EmployeeProfileForm({
                     type="text"
                     maxLength={12}
                     value={formData.aadhaarNo}
-                    onChange={(e) => handleChange("aadhaarNo", e.target.value)}
+                    onChange={(e) => handleChange("aadhaarNo", e.target.value.replace(/\D/g, ""))}
                     placeholder="Enter 12-digit Aadhaar"
-                    className={cn(commonInputClass, "font-mono")}
+                    className={getInputClassName("aadhaarNo", true)}
                   />
+                  {renderFieldError("aadhaarNo")}
                 </div>
 
                 <div>
@@ -742,12 +1016,13 @@ export default function EmployeeProfileForm({
                     value={formData.employeeId}
                     onChange={(e) => handleChange("employeeId", e.target.value)}
                     placeholder="e.g. AD-01"
-                    className={cn(commonInputClass, "font-mono font-medium")}
+                    className={getInputClassName("employeeId", true)}
                   />
+                  {renderFieldError("employeeId")}
                 </div>
               </div>
 
-              {/* Row 3: Date Of Birth, Blood Group, Branches, Department */}
+              {/* Row 3: Date Of Birth, Blood Group, Company, Branches */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
@@ -759,8 +1034,12 @@ export default function EmployeeProfileForm({
                     placeholder="DD-MM-YYYY"
                     dateFormat="dd-MM-yyyy"
                     className="w-full"
-                    buttonClassName={datePickerButtonClassName}
+                    buttonClassName={cn(
+                      datePickerButtonClassName,
+                      errors.dob && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
                   />
+                  {renderFieldError("dob")}
                 </div>
 
                 <div>
@@ -780,13 +1059,19 @@ export default function EmployeeProfileForm({
 
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Branches.
+                    Company.
                   </label>
                   <ThemeSelectDropdown
-                    value={formData.branch || BRANCHES[0]}
-                    onChange={(val) => handleChange("branch", val)}
-                    options={branchOptions}
-                    placeholder="Select Branch"
+                    value={formData.company}
+                    onChange={(val) => handleCompanyChange(val)}
+                    options={companyOptions}
+                    placeholder={
+                      loadingCompanies
+                        ? "Loading companies..."
+                        : companyList.length === 0
+                        ? "No companies available"
+                        : "Select Company"
+                    }
                     className="w-full"
                     buttonClassName={dropdownButtonClassName}
                     menuClassName={dropdownMenuClassName}
@@ -795,146 +1080,108 @@ export default function EmployeeProfileForm({
 
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Department. <span className="text-red-500 font-bold">*</span>
+                    Branches.
                   </label>
-                  {isOtherDeptActive ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        ref={customDeptInputRef}
-                        type="text"
-                        value={customDept}
-                        onChange={(e) => setCustomDept(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleCustomDeptSubmit();
-                          } else if (e.key === "Escape") {
-                            setIsOtherDeptActive(false);
-                            setCustomDept("");
-                          }
-                        }}
-                        placeholder="Enter custom department..."
-                        className="flex-1 h-10 px-3.5 text-xs sm:text-sm font-semibold rounded-2xl border border-[#E8C16D] dark:border-[#F5C451] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white outline-none focus:ring-2 focus:ring-[#E8C16D]/20 shadow-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCustomDeptSubmit}
-                        disabled={!customDept.trim()}
-                        className="h-10 px-4 rounded-2xl bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center shrink-0 disabled:opacity-50"
-                      >
-                        Add
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsOtherDeptActive(false);
-                          setCustomDept("");
-                        }}
-                        className="h-10 px-3 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
-                      >
-                        <X size={15} />
-                      </button>
-                    </div>
-                  ) : (
-                    <ThemeSelectDropdown
-                      value={formData.department || DEPARTMENTS[0]}
-                      onChange={(val) => {
-                        if (val === "Other") {
-                          setIsOtherDeptActive(true);
-                          setTimeout(() => customDeptInputRef.current?.focus(), 50);
-                        } else {
-                          handleChange("department", val);
-                        }
-                      }}
-                      options={departmentOptions}
-                      placeholder="Select Department"
-                      className="w-full"
-                      buttonClassName={dropdownButtonClassName}
-                      menuClassName={dropdownMenuClassName}
-                    />
-                  )}
+                  <ThemeSelectDropdown
+                    value={formData.branch}
+                    onChange={(val) => handleChange("branch", val)}
+                    options={branchOptions}
+                    placeholder={
+                      loadingBranches || loadingCompanies
+                        ? "Loading branches..."
+                        : !formData.company
+                        ? "Select Company first"
+                        : branchOptions.length === 0
+                        ? "No branch available"
+                        : "Select Branch"
+                    }
+                    disabled={
+                      loadingBranches ||
+                      loadingCompanies ||
+                      !formData.company ||
+                      branchOptions.length === 0
+                    }
+                    className="w-full"
+                    buttonClassName={dropdownButtonClassName}
+                    menuClassName={dropdownMenuClassName}
+                  />
                 </div>
               </div>
 
-              {/* Row 4: Designation, Salary Type, Joining Date, Worker Process */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
+              {/* Row 4: Department, Designation, Salary Type */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                <div>
+                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    Department. <span className="text-red-500 font-bold">*</span>
+                  </label>
+                  <DropdownWithOther
+                    hideLabel
+                    label="Department"
+                    required
+                    value={formData.department || DEPARTMENTS[0]}
+                    onChange={(val) => handleChange("department", val)}
+                    options={departmentOptions}
+                    placeholder="Select Department"
+                    fieldKey="department"
+                    className="w-full"
+                    buttonClassName={cn(
+                      dropdownButtonClassName,
+                      errors.department && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
+                    menuClassName={dropdownMenuClassName}
+                  />
+                  {renderFieldError("department")}
+                </div>
+
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Designation. <span className="text-red-500 font-bold">*</span>
                   </label>
-                  {isOtherDesignationActive ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        ref={customDesignationInputRef}
-                        type="text"
-                        value={customDesignation}
-                        onChange={(e) => setCustomDesignation(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleCustomDesignationSubmit();
-                          } else if (e.key === "Escape") {
-                            setIsOtherDesignationActive(false);
-                            setCustomDesignation("");
-                          }
-                        }}
-                        placeholder="Enter custom designation..."
-                        className="flex-1 h-10 px-3.5 text-xs sm:text-sm font-semibold rounded-2xl border border-[#E8C16D] dark:border-[#F5C451] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white outline-none focus:ring-2 focus:ring-[#E8C16D]/20 shadow-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCustomDesignationSubmit}
-                        disabled={!customDesignation.trim()}
-                        className="h-10 px-4 rounded-2xl bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center shrink-0 disabled:opacity-50"
-                      >
-                        Add
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsOtherDesignationActive(false);
-                          setCustomDesignation("");
-                        }}
-                        className="h-10 px-3 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
-                      >
-                        <X size={15} />
-                      </button>
-                    </div>
-                  ) : (
-                    <ThemeSelectDropdown
-                      value={formData.designation || DESIGNATIONS[0]}
-                      onChange={(val) => {
-                        if (val === "Other") {
-                          setIsOtherDesignationActive(true);
-                          setTimeout(() => customDesignationInputRef.current?.focus(), 50);
-                        } else {
-                          handleChange("designation", val);
-                        }
-                      }}
-                      options={designationOptions}
-                      placeholder="Select Designation"
-                      className="w-full"
-                      buttonClassName={dropdownButtonClassName}
-                      menuClassName={dropdownMenuClassName}
-                    />
-                  )}
+                  <DropdownWithOther
+                    hideLabel
+                    label="Designation"
+                    required
+                    value={formData.designation || DESIGNATIONS[0]}
+                    onChange={(val) => handleChange("designation", val)}
+                    options={designationOptions}
+                    placeholder="Select Designation"
+                    fieldKey="designation"
+                    className="w-full"
+                    buttonClassName={cn(
+                      dropdownButtonClassName,
+                      errors.designation && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
+                    menuClassName={dropdownMenuClassName}
+                  />
+                  {renderFieldError("designation")}
                 </div>
 
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Salary Type. <span className="text-red-500 font-bold">*</span>
                   </label>
-                  <ThemeSelectDropdown
+                  <DropdownWithOther
+                    hideLabel
+                    label="Salary Type"
+                    required
                     value={formData.salaryType || "Salaried"}
                     onChange={(val) => handleChange("salaryType", val)}
                     options={salaryTypeOptions}
                     placeholder="Select Salary Type"
+                    fieldKey="salarytype"
                     className="w-full"
-                    buttonClassName={dropdownButtonClassName}
+                    buttonClassName={cn(
+                      dropdownButtonClassName,
+                      errors.salaryType && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
                     menuClassName={dropdownMenuClassName}
                   />
+                  {renderFieldError("salaryType")}
                 </div>
+              </div>
 
+              {/* Row 5: Joining Date, Worker Process, Basic Salary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Joining Date.
@@ -953,15 +1200,38 @@ export default function EmployeeProfileForm({
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Worker Process
                   </label>
-                  <ThemeSelectDropdown
-                    value={formData.workerProcess || "Select Process"}
+                  <DropdownWithOther
+                    hideLabel
+                    label="Worker Process"
+                    value={formData.workerProcess && formData.workerProcess !== "Select Process" ? formData.workerProcess : ""}
                     onChange={(val) => handleChange("workerProcess", val)}
                     options={workerProcessOptions}
                     placeholder="Select Process"
+                    fieldKey="workerprocess"
                     className="w-full"
                     buttonClassName={dropdownButtonClassName}
                     menuClassName={dropdownMenuClassName}
                   />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    Basic Salary.
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium font-sans">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={formData.basicSalary ?? ""}
+                      onChange={(e) => handleChange("basicSalary", e.target.value)}
+                      placeholder="e.g. 50000"
+                      className={cn(getInputClassName("basicSalary", true), "pl-7 font-mono")}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -969,180 +1239,169 @@ export default function EmployeeProfileForm({
 
           {/* TAB 2: BANK DETAIL */}
           {activeTab === "bank" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E7E0D2] dark:border-white/[0.08]">
-                <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <Landmark size={14} />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Left Column: Bank Details Fields */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="mb-2">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bank Details</h3>
                 </div>
-                <div>
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                    Bank Details
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Enter bank account details & documents
-                  </p>
+
+                {/* Row 1: Bank Name, Account Holder Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Bank Name.
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.bankName}
+                      onChange={(e) => handleChange("bankName", e.target.value)}
+                      placeholder=""
+                      className={getInputClassName("bankName")}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Account Holder Name.
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.accountHolderName}
+                      onChange={(e) => handleChange("accountHolderName", e.target.value)}
+                      placeholder=""
+                      className={getInputClassName("accountHolderName")}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Account Number, IFSC Code */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Account Number.
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.accountNumber}
+                      onChange={(e) => handleChange("accountNumber", e.target.value)}
+                      placeholder=""
+                      className={getInputClassName("accountNumber", true)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      IFSC Code.
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={11}
+                      value={formData.ifscCode}
+                      onChange={(e) =>
+                        handleChange("ifscCode", e.target.value.toUpperCase())
+                      }
+                      placeholder=""
+                      className={getInputClassName("ifscCode", true)}
+                    />
+                    {renderFieldError("ifscCode")}
+                  </div>
+                </div>
+
+                {/* Row 3: Account Type, Branch Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Account Type.
+                    </label>
+                    <ThemeSelectDropdown
+                      value={formData.accountType || "Savings"}
+                      onChange={(val) => handleChange("accountType", val)}
+                      options={accountTypeOptions}
+                      placeholder="Select Account Type"
+                      className="w-full"
+                      buttonClassName={dropdownButtonClassName}
+                      menuClassName={dropdownMenuClassName}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Branch Name.
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.branchName}
+                      onChange={(e) => handleChange("branchName", e.target.value)}
+                      placeholder=""
+                      className={getInputClassName("branchName")}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Left Column: Bank Details Fields */}
-                <div className="lg:col-span-8 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                        Bank Name.
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.bankName}
-                        onChange={(e) => handleChange("bankName", e.target.value)}
-                        placeholder="Enter bank name"
-                        className={commonInputClass}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                        Account Holder Name.
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.accountHolderName}
-                        onChange={(e) => handleChange("accountHolderName", e.target.value)}
-                        placeholder="Enter account holder name"
-                        className={commonInputClass}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                        Account Number.
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.accountNumber}
-                        onChange={(e) => handleChange("accountNumber", e.target.value)}
-                        placeholder="Enter account number"
-                        className={cn(commonInputClass, "font-mono")}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                        IFSC Code.
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.ifscCode}
-                        onChange={(e) =>
-                          handleChange("ifscCode", e.target.value.toUpperCase())
-                        }
-                        placeholder="e.g. SBIN0001234"
-                        className={cn(commonInputClass, "font-mono uppercase")}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                        Account Type.
-                      </label>
-                      <ThemeSelectDropdown
-                        value={formData.accountType || "Savings"}
-                        onChange={(val) => handleChange("accountType", val)}
-                        options={accountTypeOptions}
-                        placeholder="Select Account Type"
-                        className="w-full"
-                        buttonClassName={dropdownButtonClassName}
-                        menuClassName={dropdownMenuClassName}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                        Branch Name.
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.branchName}
-                        onChange={(e) => handleChange("branchName", e.target.value)}
-                        placeholder="Enter branch name"
-                        className={commonInputClass}
-                      />
-                    </div>
-                  </div>
+              {/* Right Column: Bank Document Upload Box */}
+              <div className="lg:col-span-4 space-y-2">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bank Document</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Upload bank passbook & cancelled cheque.
+                  </p>
                 </div>
 
-                {/* Right Column: Bank Document Upload Box */}
-                <div className="lg:col-span-4 space-y-2">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bank Document</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Upload bank passbook & cancelled cheque.
-                    </p>
-                  </div>
+                <div
+                  onClick={() => !uploadingField && bankDocInputRef.current?.click()}
+                  className={`w-48 h-48 rounded-2xl bg-slate-50 border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#161B24] dark:border-white/[0.15] dark:hover:border-white/40 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-inner ${
+                    uploadingField === "bankDocUrl" ? "opacity-60 pointer-events-none" : ""
+                  }`}
+                >
+                  <input
+                    ref={bankDocInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleSingleFileUpload(e.target.files[0], "bankDocUrl");
+                      }
+                    }}
+                  />
 
-                  <div
-                    onClick={() => !uploadingField && bankDocInputRef.current?.click()}
-                    className={cn(
-                      "w-48 h-48 rounded-2xl bg-white border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.15] dark:hover:border-[#E8C16D] flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-xs",
-                      uploadingField === "bankDocUrl" && "opacity-60 pointer-events-none"
-                    )}
-                  >
-                    <input
-                      ref={bankDocInputRef}
-                      type="file"
-                      accept="image/*,.pdf"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          handleSingleFileUpload(e.target.files[0], "bankDocUrl");
-                        }
-                      }}
-                    />
-
-                    {uploadingField === "bankDocUrl" ? (
-                      <div className="flex flex-col items-center justify-center text-amber-500">
-                        <Loader2 size={24} className="animate-spin mb-1.5" />
-                        <span className="text-xs font-medium">Uploading to storage...</span>
-                      </div>
-                    ) : formData.bankDocUrl ? (
-                      <div className="w-full h-full p-2 relative flex items-center justify-center">
-                        {formData.bankDocUrl.startsWith("data:image/") ||
-                        formData.bankDocUrl.startsWith("http") ||
-                        formData.bankDocUrl.startsWith("/uploads/") ? (
-                          <img
-                            src={getMediaUrl(formData.bankDocUrl)}
-                            alt="Bank Document"
-                            className="w-full h-full object-cover rounded-xl"
-                          />
-                        ) : (
-                          <div className="text-center p-2">
-                            <FileText size={32} className="text-[#B88728] dark:text-[#E8C16D] mx-auto mb-1" />
-                            <span className="text-[10px] text-slate-700 dark:text-slate-300 break-all">
-                              Document Attached
-                            </span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-2xl">
-                          <span className="text-xs text-white font-medium">
-                            Click to change
+                  {uploadingField === "bankDocUrl" ? (
+                    <div className="flex flex-col items-center justify-center text-amber-500">
+                      <Loader2 size={24} className="animate-spin mb-1.5" />
+                      <span className="text-xs font-medium">Uploading to storage...</span>
+                    </div>
+                  ) : formData.bankDocUrl ? (
+                    <div className="w-full h-full p-2 relative flex items-center justify-center">
+                      {formData.bankDocUrl.startsWith("data:image/") ||
+                      formData.bankDocUrl.startsWith("http") ||
+                      formData.bankDocUrl.startsWith("/uploads/") ? (
+                        <img
+                          src={getMediaUrl(formData.bankDocUrl)}
+                          alt="Bank Document"
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                      ) : (
+                        <div className="text-center p-2">
+                          <FileText size={32} className="text-slate-700 dark:text-slate-300 mx-auto mb-1" />
+                          <span className="text-[10px] text-slate-700 dark:text-slate-300 break-all">
+                            Document Attached
                           </span>
                         </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-2xl">
+                        <span className="text-xs text-white font-medium">
+                          Click to change
+                        </span>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                          <Upload size={18} className="text-[#B88728] dark:text-[#E8C16D]" />
-                        </div>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Upload</span>
-                        <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, PDF up to 15MB</span>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-700 dark:text-slate-300 transition-colors">
+                      <Upload size={22} className="mb-1 text-slate-400" />
+                      <span className="text-xs text-slate-400">Upload</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1150,28 +1409,20 @@ export default function EmployeeProfileForm({
 
           {/* TAB 3: PHOTO */}
           {activeTab === "photo" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E7E0D2] dark:border-white/[0.08]">
-                <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <User size={14} />
-                </div>
-                <div>
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                    Employee Photo
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Upload employee image here.
-                  </p>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Employee Photo</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Upload employee image here.
+                </p>
               </div>
 
               {/* Photo Upload Box */}
               <div
                 onClick={() => !uploadingField && photoInputRef.current?.click()}
-                className={cn(
-                  "w-48 h-48 rounded-2xl bg-white border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.15] dark:hover:border-[#E8C16D] flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-xs",
-                  uploadingField === "photoUrl" && "opacity-60 pointer-events-none"
-                )}
+                className={`w-48 h-48 rounded-2xl bg-slate-50 border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#161B24] dark:border-white/[0.15] dark:hover:border-white/40 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-inner ${
+                  uploadingField === "photoUrl" ? "opacity-60 pointer-events-none" : ""
+                }`}
               >
                 <input
                   ref={photoInputRef}
@@ -1204,12 +1455,9 @@ export default function EmployeeProfileForm({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                      <Upload size={18} className="text-[#B88728] dark:text-[#E8C16D]" />
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Upload</span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG up to 15MB</span>
+                  <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-700 dark:text-slate-300 transition-colors">
+                    <Upload size={22} className="mb-1 text-slate-400" />
+                    <span className="text-xs text-slate-400">Upload</span>
                   </div>
                 )}
               </div>
@@ -1219,7 +1467,7 @@ export default function EmployeeProfileForm({
                 <button
                   type="button"
                   onClick={() => setIsPrintModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.98] text-[#0A0E1A] font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-sm"
+                  className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.98] text-slate-900 font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-md"
                 >
                   <Printer size={16} className="stroke-[2.5]" />
                   <span>Print I-Card</span>
@@ -1228,31 +1476,26 @@ export default function EmployeeProfileForm({
             </div>
           )}
 
-          {/* TAB 4: DOCUMENTS */}
+          {/* TAB 4: DOCUMENTS (Multi-Document Upload: Attach box stays first, documents shift next to it) */}
           {activeTab === "documents" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E7E0D2] dark:border-white/[0.08]">
-                <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <FileText size={14} />
-                </div>
-                <div>
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                    Employee Documents
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Upload identity document proof here (e.g. Bank Passbook, Aadhaar Card, PAN Card, etc.).
-                  </p>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Employee Documents
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Upload identity document proof here (e.g. Bank Passbook, Aadhaar Card, PAN Card, etc.).
+                </p>
               </div>
 
+              {/* Horizontal Row: [ Attach Section / Upload Box ] [ Doc 2 ] [ Doc 1 (Meesho) ] ... */}
               <div className="flex flex-wrap items-start gap-4 pt-1">
-                {/* 1. ATTACH / UPLOAD BOX */}
+                {/* 1. ATTACH / UPLOAD BOX (Always visible on left!) */}
                 <div
                   onClick={() => !uploadingDoc && identityDocInputRef.current?.click()}
-                  className={cn(
-                    "w-48 h-48 rounded-2xl bg-white border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.15] dark:hover:border-[#E8C16D] flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-xs shrink-0",
-                    uploadingDoc && "opacity-60 pointer-events-none"
-                  )}
+                  className={`w-48 h-48 rounded-2xl bg-slate-50 border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#161B24] dark:border-white/[0.15] dark:hover:border-white/40 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-inner shrink-0 ${
+                    uploadingDoc ? "opacity-60 pointer-events-none" : ""
+                  }`}
                 >
                   <input
                     ref={identityDocInputRef}
@@ -1278,7 +1521,7 @@ export default function EmployeeProfileForm({
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                        <Upload size={20} className="text-[#B88728] dark:text-[#E8C16D]" />
+                        <Upload size={20} className="text-slate-500 dark:text-slate-300" />
                       </div>
                       <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                         Upload
@@ -1290,7 +1533,7 @@ export default function EmployeeProfileForm({
                   )}
                 </div>
 
-                {/* 2. UPLOADED DOCUMENT CARDS */}
+                {/* 2. UPLOADED DOCUMENT CARDS (Shifted next to the attach section) */}
                 {(formData.documents || []).map((doc, idx) => {
                   const isPdf =
                     doc.url.toLowerCase().endsWith(".pdf") ||
@@ -1299,7 +1542,7 @@ export default function EmployeeProfileForm({
                   return (
                     <div
                       key={doc.id || idx}
-                      className="w-48 h-48 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#080B11] overflow-hidden group shadow-xs flex flex-col relative transition-all hover:shadow-md hover:border-[#E8C16D] shrink-0"
+                      className="w-48 h-48 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#161B24] overflow-hidden group shadow-sm flex flex-col relative transition-all hover:shadow-md hover:border-[#E8C16D] shrink-0"
                     >
                       {/* Top Bar with Type Badge & Action Icons */}
                       <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
@@ -1330,7 +1573,7 @@ export default function EmployeeProfileForm({
                       {/* Card Middle: Preview Area */}
                       <div
                         onClick={() => setPreviewDoc(doc)}
-                        className="w-full flex-1 flex items-center justify-center bg-slate-50/80 dark:bg-black/40 cursor-pointer overflow-hidden p-2"
+                        className="w-full flex-1 flex items-center justify-center bg-slate-50/80 dark:bg-[#121620] cursor-pointer overflow-hidden p-2"
                       >
                         {!isPdf ? (
                           <img
@@ -1340,7 +1583,7 @@ export default function EmployeeProfileForm({
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center p-2 text-center">
-                            <FileText size={38} className="text-[#B88728] dark:text-[#E8C16D] mb-1" />
+                            <FileText size={38} className="text-amber-500 mb-1" />
                             <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
                               {doc.fileName || doc.name}
                             </span>
@@ -1350,7 +1593,7 @@ export default function EmployeeProfileForm({
                       </div>
 
                       {/* Card Bottom: Document Title */}
-                      <div className="p-2 border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] flex items-center justify-between gap-1">
+                      <div className="p-2 border-t border-slate-100 dark:border-white/[0.08] bg-white dark:bg-[#161B24] flex items-center justify-between gap-1">
                         <input
                           type="text"
                           value={doc.name}
@@ -1370,52 +1613,52 @@ export default function EmployeeProfileForm({
           )}
         </div>
 
-        {/* ========================================================================= */}
-        {/* 4. BOTTOM BAR / FOOTER matching Ledger Book Form UI                       */}
-        {/* ========================================================================= */}
-        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 flex items-center justify-between shadow-sm">
-          {/* Left: Completion Percentage with gold progress bar */}
-          <div className="w-48 sm:w-64 space-y-1">
-            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-              Completion Percentage: {completionPercentage}%
-            </p>
-            <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-              <div
-                className="h-full bg-[#E8C16D] rounded-full transition-all duration-300"
-                style={{ width: `${completionPercentage}%` }}
-              />
+        {/* Bottom Fixed Action Bar matching Edit Ledger */}
+        <div className="p-4 sm:p-5 border-t border-[#E7E0D2] bg-slate-50 dark:border-white/[0.08] dark:bg-[#0E121A] w-full mt-auto">
+          <div className="w-full flex items-center justify-between">
+            {/* Left: Completion Percentage bar matching Edit Ledger */}
+            <div className="w-48 sm:w-64 space-y-1">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Completion Percentage: {completionPercentage}%
+              </p>
+              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/[0.1] overflow-hidden">
+                <div
+                  className="h-full bg-[#0A0E1A] dark:bg-[#F5C451] rounded-full transition-all duration-300"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Right: Golden Save Button */}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-8 py-2.5 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
-            ) : (
-              <Save size={16} className="text-[#0A0E1A]" />
-            )}
-            <span>{saving ? "Saving..." : "Save"}</span>
-          </button>
+            {/* Right: Save Button matching Edit Ledger */}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#F5C451] hover:bg-[#e8b83e] text-slate-900 font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+            >
+              {saving ? (
+                <Loader2 size={16} className="animate-spin text-slate-900" />
+              ) : (
+                <Save size={16} className="text-slate-900" />
+              )}
+              <span>{saving ? "Saving..." : "Save"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Document Full Preview Lightbox Modal */}
       {previewDoc && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
           onClick={() => setPreviewDoc(null)}
         >
           <div
-            className="relative max-w-3xl w-full max-h-[90vh] bg-white dark:bg-[#121622] rounded-2xl shadow-2xl border border-[#E7E0D2] dark:border-white/10 flex flex-col overflow-hidden"
+            className="relative max-w-3xl w-full max-h-[90vh] bg-white dark:bg-[#121622] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 py-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] flex items-center justify-between bg-slate-50 dark:bg-[#161B24]">
+            <div className="px-5 py-3.5 border-b border-slate-100 dark:border-white/[0.08] flex items-center justify-between bg-slate-50 dark:bg-[#161B24]">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                   {previewDoc.name}

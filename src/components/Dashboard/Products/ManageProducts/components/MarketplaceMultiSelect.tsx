@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronDown, Plus, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
 import { toast } from "sonner";
 
@@ -33,6 +33,25 @@ export default function MarketplaceMultiSelect({
   className,
 }: MarketplaceMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openDirection, setOpenDirection] = useState<"down" | "up">("down");
+
+  const determineDirection = () => {
+    if (!containerRef.current) return;
+    const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(containerRef.current);
+
+    if (spaceBelow < 260 && spaceAbove > spaceBelow) {
+      setOpenDirection("up");
+    } else {
+      setOpenDirection("down");
+    }
+  };
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      determineDirection();
+    }
+    setIsOpen((prev) => !prev);
+  };
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [customValue, setCustomValue] = useState("");
   const [localCustomOptions, setLocalCustomOptions] = useState<MarketplaceOption[]>([]);
@@ -207,7 +226,7 @@ export default function MarketplaceMultiSelect({
       ) : (
         <div className="relative">
           <div
-            onClick={() => setIsOpen((prev) => !prev)}
+            onClick={handleToggle}
             className={cn(
               "w-full min-h-[44px] sm:min-h-[48px] px-3 py-1.5 flex flex-wrap items-center gap-1.5 rounded-xl sm:rounded-2xl transition-all duration-200 cursor-pointer text-xs sm:text-sm font-semibold",
               "border border-slate-200 bg-white hover:border-[#E8C16D] hover:bg-slate-50/50 shadow-xs",
@@ -254,7 +273,14 @@ export default function MarketplaceMultiSelect({
 
           {/* Dropdown Menu */}
           {isOpen && (
-            <div className="absolute z-50 left-0 right-0 mt-1.5 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+            <div
+              className={cn(
+                "absolute z-50 left-0 right-0 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in-50 duration-150",
+                openDirection === "up"
+                  ? "bottom-full mb-1.5 origin-bottom zoom-in-95"
+                  : "top-full mt-1.5 origin-top zoom-in-95"
+              )}
+            >
               <div className="max-h-56 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
                 {mergedOptions.map((opt) => {
                   const isSelected =

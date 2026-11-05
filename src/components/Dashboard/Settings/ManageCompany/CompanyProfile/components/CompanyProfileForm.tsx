@@ -1,19 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
+  AlertCircle,
   Circle,
   Save,
   Check,
-  Building2,
   Loader2,
   FileText,
   Upload,
   Trash2,
-  MapPin,
-  Landmark,
 } from "lucide-react";
 import { Company, UpdateCompanyPayload } from "../types/company.types";
 import { companyService } from "../services/company.service";
@@ -21,6 +19,10 @@ import { toast } from "sonner";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
 } from "@/components/ui/ThemeSelectDropdown";
+import DropdownWithOther, {
+  type DropdownOption,
+} from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
+import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
 import { cn, getMediaUrl } from "@/lib/utils";
 
 interface CompanyProfileFormProps {
@@ -58,12 +60,17 @@ export default function CompanyProfileForm({
 }: CompanyProfileFormProps) {
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Hidden file inputs for Logo and Signature
-  const logoInputRef = React.useRef<HTMLInputElement | null>(null);
-  const signatureInputRef = React.useRef<HTMLInputElement | null>(null);
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const signatureInputRef = useRef<HTMLInputElement | null>(null);
   const [isLogoDragging, setIsLogoDragging] = useState(false);
   const [isSignatureDragging, setIsSignatureDragging] = useState(false);
+
+  // Fetch dynamic dropdown options from DB
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
 
   const processImageFile = (
     file: File,
@@ -122,34 +129,42 @@ export default function CompanyProfileForm({
     }
   };
 
-  // Dropdown options matching software ThemeSelectDropdown
-  const businessTypeOptions: ThemeSelectOption[] = useMemo(
-    () => [
-      { value: "Properiter", label: "Properiter" },
-      { value: "Partnership", label: "Partnership" },
-      { value: "Private Limited", label: "Private Limited" },
-      { value: "Public Limited", label: "Public Limited" },
-      { value: "LLP", label: "LLP" },
-      { value: "Individual", label: "Individual" },
-    ],
-    []
-  );
-
   const stateOptions: ThemeSelectOption[] = useMemo(
     () => INDIAN_STATES.map((st) => ({ value: st, label: st })),
     []
   );
 
-  const tradeCategoryOptions: ThemeSelectOption[] = useMemo(
-    () => [
-      { value: "Manufacturing", label: "Manufacturing" },
-      { value: "Wholesale", label: "Wholesale" },
-      { value: "Retail", label: "Retail" },
-      { value: "Service", label: "Service" },
-      { value: "E-Commerce", label: "E-Commerce" },
-    ],
-    []
-  );
+  // Dynamic businessTypeOptions purely loaded from database
+  const businessTypeOptions: DropdownOption[] = useMemo(() => {
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "businesstype")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    dbSaved.forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
+  // Dynamic tradeCategoryOptions purely loaded from database
+  const tradeCategoryOptions: DropdownOption[] = useMemo(() => {
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "tradecategory")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    dbSaved.forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
 
   const accountTypeOptions: ThemeSelectOption[] = useMemo(
     () => [
@@ -170,12 +185,13 @@ export default function CompanyProfileForm({
   );
 
   const dropdownButtonClassName =
-    "w-full justify-between h-11 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-slate-200 text-[#0A0E1A] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:bg-[#080B11] dark:border-white/[0.1] dark:text-white dark:hover:border-white/20 transition-all shadow-xs";
+    "w-full justify-between h-10 px-3.5 text-xs font-normal rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
   const dropdownMenuClassName =
-    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl";
+    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-xl shadow-2xl";
 
   // Form state holding all fields from database
   const [formData, setFormData] = useState<UpdateCompanyPayload>({
+    // General Details
     legalName: "",
     companyName: "",
     brandName: "",
@@ -186,6 +202,7 @@ export default function CompanyProfileForm({
     phone: "",
     website: "",
 
+    // Billing Details
     billingAddress1: "",
     billingAddress2: "",
     billingAddress3: "",
@@ -197,6 +214,7 @@ export default function CompanyProfileForm({
     billingContactName: "",
     billingContactNo: "",
 
+    // Shipping Details
     shippingSameAsBilling: true,
     shippingAddress1: "",
     shippingAddress2: "",
@@ -209,6 +227,7 @@ export default function CompanyProfileForm({
     shippingContactName: "",
     shippingContactNo: "",
 
+    // Accounting - Legal
     gstNumber: "",
     tanNumber: "",
     panNumber: "",
@@ -217,6 +236,7 @@ export default function CompanyProfileForm({
     tradeCategory: "Manufacturing",
     msmeNumber: "",
 
+    // Accounting - Bank
     bankName: "",
     accountHolderName: "",
     accountName: "",
@@ -228,12 +248,14 @@ export default function CompanyProfileForm({
     clientCode: "",
     productCode: "",
 
-    taxInvoicePrefix: "JBFT",
+    // Invoice Details
+    taxInvoicePrefix: "",
     taxInvoiceNext: "1",
-    retailInvoicePrefix: "JBFR",
+    retailInvoicePrefix: "",
     retailInvoiceNext: "1",
     considerInPnL: "Yes",
 
+    // Logo & Signature
     logoUrl: "",
     signatureUrl: "",
     status: "ACTIVE",
@@ -295,9 +317,9 @@ export default function CompanyProfileForm({
         clientCode: company.clientCode || "",
         productCode: company.productCode || "",
 
-        taxInvoicePrefix: company.taxInvoicePrefix || "JBFT",
+        taxInvoicePrefix: company.taxInvoicePrefix || "",
         taxInvoiceNext: company.taxInvoiceNext || "1",
-        retailInvoicePrefix: company.retailInvoicePrefix || "JBFR",
+        retailInvoicePrefix: company.retailInvoicePrefix || "",
         retailInvoiceNext: company.retailInvoiceNext || "1",
         considerInPnL: company.considerInPnL || "Yes",
 
@@ -308,12 +330,24 @@ export default function CompanyProfileForm({
     }
   }, [company]);
 
-  const handleChange = (field: keyof UpdateCompanyPayload, value: any) => {
+  const handleChange = (
+    field: keyof UpdateCompanyPayload,
+    value: UpdateCompanyPayload[keyof UpdateCompanyPayload]
+  ) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
 
+      // If shipping same as billing is checked, sync billing fields to shipping
       if (
         updated.shippingSameAsBilling &&
+        typeof value === "string" &&
         (field === "billingAddress1" ||
           field === "billingAddress2" ||
           field === "billingAddress3" ||
@@ -361,7 +395,7 @@ export default function CompanyProfileForm({
   };
 
   // Dynamic completion percentage calculation
-  const completionPercentage = React.useMemo(() => {
+  const completionPercentage = useMemo(() => {
     const requiredFields = [
       formData.legalName,
       formData.companyName,
@@ -388,197 +422,463 @@ export default function CompanyProfileForm({
     return Math.min(100, Math.round((filled / requiredFields.length) * 100));
   }, [formData]);
 
+  const getInputClassName = (fieldKey?: string, isMono = false, disabled = false) => {
+    const hasErr = Boolean(fieldKey && errors[fieldKey]);
+    if (disabled) {
+      return cn(
+        "w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+        isMono && "font-mono"
+      );
+    }
+    return cn(
+      "w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all",
+      isMono && "font-mono",
+      hasErr
+        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
+        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+    );
+  };
+
+  const renderFieldError = (fieldKey: string) => {
+    if (!errors[fieldKey]) return null;
+    return (
+      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+        <AlertCircle size={11} className="shrink-0" />
+        <span>{errors[fieldKey]}</span>
+      </p>
+    );
+  };
+
+  const validateForm = (): { isValid: boolean; firstErrorTab?: TabType } => {
+    const newErrors: Record<string, string> = {};
+    let firstErrorTab: TabType | undefined;
+
+    // --- Tab 1: General ---
+    if (!formData.legalName?.trim()) {
+      newErrors.legalName = "Legal Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.companyName?.trim()) {
+      newErrors.companyName = "Company Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.ownerName?.trim()) {
+      newErrors.ownerName = "Owner Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.abbreviation?.trim()) {
+      newErrors.abbreviation = "Abbreviation is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.businessType?.trim()) {
+      newErrors.businessType = "Business Type is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.email?.trim()) {
+      newErrors.email = "Email is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = "Please enter a valid email address.";
+        if (!firstErrorTab) firstErrorTab = "general";
+      }
+    }
+    if (!formData.phone?.trim()) {
+      newErrors.phone = "Contact number is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else if (formData.phone.trim().length !== 10) {
+      newErrors.phone = "Contact number must be exactly 10 digits.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+
+    // --- Tab 2: Contact ---
+    if (!formData.billingAddress1?.trim()) {
+      newErrors.billingAddress1 = "Billing Address 1 is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingPincode?.trim()) {
+      newErrors.billingPincode = "Billing Pincode is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    } else if (formData.billingPincode.trim().length !== 6) {
+      newErrors.billingPincode = "Pincode must be exactly 6 digits.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingArea?.trim()) {
+      newErrors.billingArea = "Billing Area is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingCity?.trim()) {
+      newErrors.billingCity = "Billing City is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingState?.trim()) {
+      newErrors.billingState = "Billing State is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingContactName?.trim()) {
+      newErrors.billingContactName = "Billing Contact Name is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingContactNo?.trim()) {
+      newErrors.billingContactNo = "Billing Contact No is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    } else if (formData.billingContactNo.trim().length !== 10) {
+      newErrors.billingContactNo = "Contact number must be exactly 10 digits.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+
+    // Shipping (if not same as billing)
+    if (!formData.shippingSameAsBilling) {
+      if (!formData.shippingAddress1?.trim()) {
+        newErrors.shippingAddress1 = "Shipping Address 1 is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingPincode?.trim()) {
+        newErrors.shippingPincode = "Shipping Pincode is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      } else if (formData.shippingPincode.trim().length !== 6) {
+        newErrors.shippingPincode = "Pincode must be exactly 6 digits.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingArea?.trim()) {
+        newErrors.shippingArea = "Shipping Area is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingCity?.trim()) {
+        newErrors.shippingCity = "Shipping City is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingState?.trim()) {
+        newErrors.shippingState = "Shipping State is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingContactName?.trim()) {
+        newErrors.shippingContactName = "Shipping Contact Name is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingContactNo?.trim()) {
+        newErrors.shippingContactNo = "Shipping Contact No is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      } else if (formData.shippingContactNo.trim().length !== 10) {
+        newErrors.shippingContactNo = "Contact number must be exactly 10 digits.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+    }
+
+    // --- Tab 3: Accounting ---
+    if (!formData.gstNumber?.trim()) {
+      newErrors.gstNumber = "GST Number is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    } else if (formData.gstNumber.trim().length !== 15) {
+      newErrors.gstNumber = "GST Number must be exactly 15 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+
+    if (!formData.panNumber?.trim()) {
+      newErrors.panNumber = "PAN Number is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    } else if (formData.panNumber.trim().length !== 10) {
+      newErrors.panNumber = "PAN Number must be exactly 10 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+
+    if (!formData.bankName?.trim()) {
+      newErrors.bankName = "Bank Name is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.accountHolderName?.trim()) {
+      newErrors.accountHolderName = "Account Holder Name is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.accountNumber?.trim()) {
+      newErrors.accountNumber = "Bank Account Number is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.ifscCode?.trim()) {
+      newErrors.ifscCode = "IFSC Code is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    } else if (formData.ifscCode.trim().length !== 11) {
+      newErrors.ifscCode = "IFSC Code must be exactly 11 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.accountType?.trim()) {
+      newErrors.accountType = "Account Type is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.branchName?.trim()) {
+      newErrors.branchName = "Branch Name is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.upiId?.trim()) {
+      newErrors.upiId = "UPI ID is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+
+    setErrors(newErrors);
+    return {
+      isValid: Object.keys(newErrors).length === 0,
+      firstErrorTab,
+    };
+  };
+
+  const hasTabError = (tabKey: TabType) => {
+    if (tabKey === "general") {
+      return Boolean(
+        errors.legalName ||
+        errors.companyName ||
+        errors.ownerName ||
+        errors.abbreviation ||
+        errors.businessType ||
+        errors.email ||
+        errors.phone
+      );
+    }
+    if (tabKey === "contact") {
+      return Boolean(
+        errors.billingAddress1 ||
+        errors.billingPincode ||
+        errors.billingArea ||
+        errors.billingCity ||
+        errors.billingState ||
+        errors.billingContactName ||
+        errors.billingContactNo ||
+        errors.shippingAddress1 ||
+        errors.shippingPincode ||
+        errors.shippingArea ||
+        errors.shippingCity ||
+        errors.shippingState ||
+        errors.shippingContactName ||
+        errors.shippingContactNo
+      );
+    }
+    if (tabKey === "accounting") {
+      return Boolean(
+        errors.gstNumber ||
+        errors.panNumber ||
+        errors.bankName ||
+        errors.accountHolderName ||
+        errors.accountNumber ||
+        errors.ifscCode ||
+        errors.accountType ||
+        errors.branchName ||
+        errors.upiId
+      );
+    }
+    return false;
+  };
+
   const handleSave = async () => {
     if (!company) return;
+
+    const { isValid, firstErrorTab } = validateForm();
+    if (!isValid) {
+      if (firstErrorTab) {
+        setActiveTab(firstErrorTab);
+      }
+      toast.error("Please fill in all required fields before saving.");
+      return;
+    }
+
     try {
       setSaving(true);
 
       const payload: UpdateCompanyPayload = {
         ...formData,
-        companyCode: formData.abbreviation || company.companyCode || "JBF",
+        companyCode: formData.abbreviation || company.companyCode || "ACM",
         completionPercentage,
       };
 
       const res = await companyService.updateCompany(company.id, payload);
       toast.success("Company profile updated successfully.");
       onSaved(res.data);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to update company profile.");
+    } catch (err: unknown) {
+      // Handled via toast notification
+      const msg = err instanceof Error ? err.message : "Failed to update company profile.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
   };
 
-  const tabs = [
+  const tabs: { key: TabType; label: string; completed: boolean }[] = [
     {
       key: "general",
       label: "General",
-      completed: Boolean(formData.companyName && formData.ownerName && formData.email),
+      completed: Boolean(
+        formData.legalName &&
+        formData.companyName &&
+        formData.ownerName &&
+        formData.abbreviation &&
+        formData.businessType &&
+        formData.email &&
+        formData.phone
+      ),
     },
     {
       key: "contact",
       label: "Contact",
-      completed: Boolean(formData.billingAddress1 && formData.billingPincode),
+      completed: Boolean(
+        formData.billingAddress1 &&
+        formData.billingPincode &&
+        formData.billingArea &&
+        formData.billingCity &&
+        formData.billingState &&
+        formData.billingContactName &&
+        formData.billingContactNo
+      ),
     },
     {
       key: "accounting",
       label: "Accounting",
-      completed: Boolean(formData.gstNumber && formData.bankName),
+      completed: Boolean(
+        formData.gstNumber &&
+        formData.panNumber &&
+        formData.bankName &&
+        formData.accountHolderName &&
+        formData.accountNumber &&
+        formData.ifscCode &&
+        formData.accountType &&
+        formData.branchName &&
+        formData.upiId
+      ),
     },
-    { key: "logo", label: "Logo", completed: Boolean(formData.logoUrl) },
-    { key: "signature", label: "Signature", completed: Boolean(formData.signatureUrl) },
+    {
+      key: "logo",
+      label: "Logo",
+      completed: Boolean(formData.logoUrl),
+    },
+    {
+      key: "signature",
+      label: "Signature",
+      completed: Boolean(formData.signatureUrl),
+    },
   ];
 
-  const commonInputClass =
-    "w-full h-11 px-5 text-xs sm:text-sm font-medium rounded-full border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 shadow-xs transition-all";
-
-  const commonDisabledInputClass =
-    "w-full h-11 px-5 text-xs sm:text-sm font-medium rounded-full border border-slate-200 dark:border-white/[0.06] bg-slate-100 dark:bg-[#161B26]/50 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none outline-none shadow-xs";
-
   return (
-    <div className="flex flex-col gap-4 w-full text-[#0A0E1A] dark:text-slate-100 font-sans">
-      {/* ========================================================================= */}
-      {/* 1. TOP HEADER BAR matching Company Profile Main Page                      */}
-      {/* ========================================================================= */}
-      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1.5 min-w-0 max-w-2xl">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onBack}
-                className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                title="Back to Company Profiles"
-              >
-                <ArrowLeft size={18} />
-              </button>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-                Company Profile
-              </h1>
-            </div>
+    <div className="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
+      {/* Top Header Bar matching Screenshot 2 */}
+      <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-4 bg-white dark:bg-[#0E121A]">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            title="Back to list"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <h1 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white leading-tight">
+              Company Profile
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Name.</span>{" "}
+              {formData.companyName || company?.companyName || "Company Name"}{" "}
+              <span className="ml-3 font-semibold text-slate-700 dark:text-slate-300">GSTN.</span>{" "}
+              <span className="font-mono">{formData.gstNumber || company?.gstNumber || "24ABCDE1234F1Z5"}</span>
+            </p>
+          </div>
+        </div>
 
-            {/* Metadata Name & GSTN (Breadcrumb path removed per request) */}
-            <div className="mt-1 flex items-center gap-x-4 gap-y-1 text-xs sm:text-sm font-medium ml-1 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">Name.</span>
-                <span className="text-slate-900 dark:text-slate-100 font-semibold">
-                  {formData.companyName || company?.companyName || "Company Name"}
-                </span>
-              </div>
-              <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">GSTN.</span>
-                <span className="text-slate-900 dark:text-slate-100 font-mono font-semibold">
-                  {formData.gstNumber || company?.gstNumber || "—"}
-                </span>
-              </div>
-            </div>
+        <div className="flex items-center gap-2.5">
+          {/* Active Status Badge matching screenshot */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#2A3444] dark:text-white dark:border-white/[0.1] shadow-xs">
+            <span>{formData.status === "ACTIVE" ? "Active" : "Draft"}</span>
+            <Check size={12} className="stroke-[3] text-[#B88728] dark:text-white" />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
-            {/* Active Status Badge */}
-            <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs">
-              <span>{formData.status === "ACTIVE" ? "Active" : formData.status === "DRAFT" ? "Draft" : "Inactive"}</span>
-              <Check size={14} className="stroke-[3] text-[#B88728] dark:text-[#E8C16D]" />
-            </div>
-
-            {/* Edit Mode badge */}
-            <div className="px-4 py-2 rounded-2xl bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] border border-[#0A0E1A] dark:border-white/[0.1] font-bold text-xs sm:text-sm shadow-xs select-none">
-              Edit Mode
-            </div>
+          {/* Edit Mode indicator */}
+          <div className="px-3.5 py-1 rounded-md bg-slate-100 text-slate-800 border border-slate-200 dark:bg-white dark:text-slate-900 dark:border-transparent font-bold text-xs shadow-xs select-none">
+            Edit Mode
           </div>
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. SEGMENTED TABS BAR matching img-1 (high-contrast active tab in dark mode) */}
-      {/* ========================================================================= */}
-      <div className="w-full rounded-2xl sm:rounded-full bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] p-1.5 flex items-center justify-between shadow-xs gap-1 sm:gap-2 select-none overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key as TabType)}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
-                isActive
-                  ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
-              )}
-            >
-              {isActive ? (
-                <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
-              ) : tab.completed ? (
-                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-              ) : (
-                <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
-              )}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* Full-Width Tabs Segmented Bar matching screenshot */}
+      <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
+        <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-5 gap-1 select-none">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            const hasErr = hasTabError(tab.key);
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  isActive
+                    ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
+                    : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
+                }`}
+              >
+                {hasErr ? (
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                  </span>
+                ) : tab.completed ? (
+                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+                ) : (
+                  <Circle size={14} className="text-slate-500 shrink-0 stroke-dashed" />
+                )}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 3. MAIN FORM CARD matching img-1 layout and aesthetics                     */}
-      {/* ========================================================================= */}
-      <div className="w-full rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-8 shadow-sm">
+      {/* Form Content Area - Full-width padding with 2-column balanced grid */}
+      <div className="flex-1 px-6 py-6 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* ========================================================================= */}
-        {/* TAB 1: GENERAL DETAILS matching img-1                                     */}
+        {/* TAB 1: GENERAL DETAILS                                                   */}
         {/* ========================================================================= */}
         {activeTab === "general" && (
           <div className="w-full">
-            {/* Section Header with Golden Building Icon Badge */}
-            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
-              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <Building2 size={20} />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
-                  General Details
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Enter basic information about company.
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                General Details
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Enter basic information about company.
+              </p>
             </div>
 
-            {/* 2-Column Balanced Form Grid matching img-1 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
               {/* Legal Name */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                  Legal Name. <span className="text-rose-500 font-bold">*</span>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Legal Name. <span className="text-red-500 font-bold">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.legalName || ""}
                   onChange={(e) => handleChange("legalName", e.target.value)}
                   placeholder="Enter Legal Name"
-                  className={commonInputClass}
+                  className={getInputClassName("legalName")}
                 />
+                {renderFieldError("legalName")}
               </div>
 
               {/* Company Name */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                  Company Name. <span className="text-rose-500 font-bold">*</span>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Company Name. <span className="text-red-500 font-bold">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.companyName || ""}
                   onChange={(e) => handleChange("companyName", e.target.value)}
                   placeholder="Enter Company Name"
-                  className={commonInputClass}
+                  className={getInputClassName("companyName")}
                 />
+                {renderFieldError("companyName")}
               </div>
 
               {/* Brand Name */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Brand Name.
                 </label>
                 <input
@@ -586,75 +886,86 @@ export default function CompanyProfileForm({
                   value={formData.brandName || ""}
                   onChange={(e) => handleChange("brandName", e.target.value)}
                   placeholder="Enter Brand Name"
-                  className={commonInputClass}
+                  className={getInputClassName()}
                 />
               </div>
 
               {/* Owner Name */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                  Owner Name. <span className="text-rose-500 font-bold">*</span>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Owner Name. <span className="text-red-500 font-bold">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.ownerName || ""}
                   onChange={(e) => handleChange("ownerName", e.target.value)}
                   placeholder="Enter Owner Name"
-                  className={commonInputClass}
+                  className={getInputClassName("ownerName")}
                 />
+                {renderFieldError("ownerName")}
               </div>
 
               {/* Abbreviation */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                  Abbreviation. <span className="text-rose-500 font-bold">*</span>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Abbreviation. <span className="text-red-500 font-bold">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.abbreviation || ""}
                   onChange={(e) => handleChange("abbreviation", e.target.value.toUpperCase())}
-                  placeholder="e.g. NETU"
-                  className={cn(commonInputClass, "uppercase")}
+                  placeholder="e.g. ACM"
+                  className={getInputClassName("abbreviation", true)}
                 />
+                {renderFieldError("abbreviation")}
               </div>
 
               {/* Type Dropdown */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                  Type. <span className="text-rose-500 font-bold">*</span>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Type. <span className="text-red-500 font-bold">*</span>
                 </label>
-                <ThemeSelectDropdown
+                <DropdownWithOther
+                  hideLabel
+                  label="Type"
+                  required
                   value={formData.businessType || "Properiter"}
                   onChange={(val) => handleChange("businessType", val)}
                   options={businessTypeOptions}
                   placeholder="Select Type"
+                  fieldKey="businesstype"
                   className="w-full"
-                  buttonClassName={dropdownButtonClassName}
+                  buttonClassName={cn(
+                    dropdownButtonClassName,
+                    errors.businessType && "border-rose-500 ring-1 ring-rose-500/30"
+                  )}
                   menuClassName={dropdownMenuClassName}
                 />
+                {renderFieldError("businessType")}
               </div>
 
               {/* Email */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                  Email. <span className="text-rose-500 font-bold">*</span>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Email. <span className="text-red-500 font-bold">*</span>
                 </label>
                 <input
                   type="email"
                   value={formData.email || ""}
                   onChange={(e) => handleChange("email", e.target.value)}
                   placeholder="Enter Email Address"
-                  className={commonInputClass}
+                  className={getInputClassName("email")}
                 />
+                {renderFieldError("email")}
               </div>
 
-              {/* Contact No with 10/10 counter on top-right matching img-1 */}
+              {/* Contact No with 10/10 counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                    Contact No. <span className="text-rose-500 font-bold">*</span>
+                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                    Contact No. <span className="text-red-500 font-bold">*</span>
                   </label>
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                  <span className="text-[10px] text-emerald-400 font-mono">
                     {formData.phone ? formData.phone.length : 0}/10
                   </span>
                 </div>
@@ -664,21 +975,22 @@ export default function CompanyProfileForm({
                   value={formData.phone || ""}
                   onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ""))}
                   placeholder="Enter 10-digit Contact No"
-                  className={cn(commonInputClass, "font-mono")}
+                  className={getInputClassName("phone", true)}
                 />
+                {renderFieldError("phone")}
               </div>
 
-              {/* Website - spans 1 column */}
+              {/* Website - spans 1 column only */}
               <div>
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Website.
                 </label>
                 <input
                   type="url"
                   value={formData.website || ""}
                   onChange={(e) => handleChange("website", e.target.value)}
-                  placeholder="https://netutechno.com/"
-                  className={commonInputClass}
+                  placeholder="https://example.com"
+                  className={getInputClassName()}
                 />
               </div>
               <div />
@@ -691,19 +1003,13 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "contact" && (
           <div className="w-full">
-            {/* Section Header with Golden MapPin Icon Badge */}
-            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
-              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <MapPin size={20} />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
-                  Contact Details
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Enter billing and shipping information
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                Contact Details
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Enter billing and shipping information
+              </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
@@ -715,87 +1021,91 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Address 1. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Address 1. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingAddress1 || ""}
                       onChange={(e) => handleChange("billingAddress1", e.target.value)}
-                      placeholder="Plot- No-D-9/13A"
-                      className={commonInputClass}
+                      placeholder="e.g. Plot No. 12, Main Street"
+                      className={getInputClassName("billingAddress1")}
                     />
+                    {renderFieldError("billingAddress1")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Address 2.
                     </label>
                     <input
                       type="text"
                       value={formData.billingAddress2 || ""}
                       onChange={(e) => handleChange("billingAddress2", e.target.value)}
-                      placeholder="Sachin Udhyognagar Sahakari Mandli"
-                      className={commonInputClass}
+                      placeholder="e.g. Industrial Area, Phase 1"
+                      className={getInputClassName()}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Address 3.
                     </label>
                     <input
                       type="text"
                       value={formData.billingAddress3 || ""}
                       onChange={(e) => handleChange("billingAddress3", e.target.value)}
-                      placeholder="Hojiwal Industrial Estata vanz Road No-2"
-                      className={commonInputClass}
+                      placeholder="e.g. Near City Center, Ring Road"
+                      className={getInputClassName()}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Pincode. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Pincode. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       maxLength={6}
                       value={formData.billingPincode || ""}
                       onChange={(e) => handleChange("billingPincode", e.target.value.replace(/\D/g, ""))}
-                      placeholder="394230"
-                      className={cn(commonInputClass, "font-mono")}
+                      placeholder="e.g. 395001"
+                      className={getInputClassName("billingPincode", true)}
                     />
+                    {renderFieldError("billingPincode")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Area. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Area. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingArea || ""}
                       onChange={(e) => handleChange("billingArea", e.target.value)}
-                      placeholder="Sachin"
-                      className={commonInputClass}
+                      placeholder="e.g. Central Zone"
+                      className={getInputClassName("billingArea")}
                     />
+                    {renderFieldError("billingArea")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      City. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      City. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingCity || ""}
                       onChange={(e) => handleChange("billingCity", e.target.value)}
-                      placeholder="Surat"
-                      className={commonInputClass}
+                      placeholder="e.g. Surat"
+                      className={getInputClassName("billingCity")}
                     />
+                    {renderFieldError("billingCity")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      State. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      State. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       value={formData.billingState || "Gujarat"}
@@ -803,42 +1113,47 @@ export default function CompanyProfileForm({
                       options={stateOptions}
                       placeholder="Select a state"
                       className="w-full"
-                      buttonClassName={dropdownButtonClassName}
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.billingState && "border-rose-500 ring-1 ring-rose-500/30"
+                      )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {renderFieldError("billingState")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Country.
                     </label>
                     <input
                       type="text"
                       disabled
                       value={formData.billingCountry || "India"}
-                      className={commonDisabledInputClass}
+                      className={getInputClassName(undefined, false, true)}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Contact Name. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Contact Name. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingContactName || ""}
                       onChange={(e) => handleChange("billingContactName", e.target.value)}
-                      placeholder="Shailesh Bhatiya"
-                      className={commonInputClass}
+                      placeholder="e.g. John Doe"
+                      className={getInputClassName("billingContactName")}
                     />
+                    {renderFieldError("billingContactName")}
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        Contact No. <span className="text-rose-500 font-bold">*</span>
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                        Contact No. <span className="text-red-500 font-bold">*</span>
                       </label>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                      <span className="text-[10px] text-emerald-400 font-mono">
                         {formData.billingContactNo ? formData.billingContactNo.length : 0}/10
                       </span>
                     </div>
@@ -849,9 +1164,10 @@ export default function CompanyProfileForm({
                       onChange={(e) =>
                         handleChange("billingContactNo", e.target.value.replace(/\D/g, ""))
                       }
-                      placeholder="9925377339"
-                      className={cn(commonInputClass, "font-mono")}
+                      placeholder="e.g. 9876543210"
+                      className={getInputClassName("billingContactNo", true)}
                     />
+                    {renderFieldError("billingContactNo")}
                   </div>
                 </div>
               </div>
@@ -865,7 +1181,7 @@ export default function CompanyProfileForm({
                       type="checkbox"
                       checked={Boolean(formData.shippingSameAsBilling)}
                       onChange={(e) => handleShippingSameToggle(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 text-[#B88728] focus:ring-[#E8C16D] cursor-pointer dark:border-white/[0.2] dark:bg-[#161B26]"
+                      className="w-3.5 h-3.5 rounded border-slate-300 bg-white text-[#B88728] focus:ring-[#F5C451] cursor-pointer dark:border-white/[0.2] dark:bg-[#161B26] dark:text-white"
                     />
                     <span>Shipping same as billing.</span>
                   </label>
@@ -873,21 +1189,22 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Address 1. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Address 1. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingAddress1 || ""}
                       onChange={(e) => handleChange("shippingAddress1", e.target.value)}
-                      placeholder="Plot- No-D-9/13A"
-                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
+                      placeholder="e.g. Plot No. 12, Main Street"
+                      className={getInputClassName("shippingAddress1", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingAddress1")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Address 2.
                     </label>
                     <input
@@ -895,13 +1212,13 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingAddress2 || ""}
                       onChange={(e) => handleChange("shippingAddress2", e.target.value)}
-                      placeholder="Sachin Udhyognagar Sahakari Mandli"
-                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
+                      placeholder="e.g. Industrial Area, Phase 1"
+                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Address 3.
                     </label>
                     <input
@@ -909,14 +1226,14 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingAddress3 || ""}
                       onChange={(e) => handleChange("shippingAddress3", e.target.value)}
-                      placeholder="Hojiwal Industrial Estata vanz Road No-2"
-                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
+                      placeholder="e.g. Near City Center, Ring Road"
+                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Pincode. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Pincode. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -924,42 +1241,45 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingPincode || ""}
                       onChange={(e) => handleChange("shippingPincode", e.target.value.replace(/\D/g, ""))}
-                      placeholder="394230"
-                      className={cn(formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass, "font-mono")}
+                      placeholder="e.g. 395001"
+                      className={getInputClassName("shippingPincode", true, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingPincode")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Area. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Area. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingArea || ""}
                       onChange={(e) => handleChange("shippingArea", e.target.value)}
-                      placeholder="Sachin"
-                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
+                      placeholder="e.g. Central Zone"
+                      className={getInputClassName("shippingArea", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingArea")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      City. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      City. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingCity || ""}
                       onChange={(e) => handleChange("shippingCity", e.target.value)}
-                      placeholder="Surat"
-                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
+                      placeholder="e.g. Surat"
+                      className={getInputClassName("shippingCity", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingCity")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      State. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      State. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       disabled={Boolean(formData.shippingSameAsBilling)}
@@ -971,44 +1291,49 @@ export default function CompanyProfileForm({
                       buttonClassName={cn(
                         dropdownButtonClassName,
                         formData.shippingSameAsBilling &&
-                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+                        !formData.shippingSameAsBilling &&
+                          errors.shippingState &&
+                          "border-rose-500 ring-1 ring-rose-500/30"
                       )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingState")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Country.
                     </label>
                     <input
                       type="text"
                       disabled
                       value={formData.shippingCountry || "India"}
-                      className={commonDisabledInputClass}
+                      className={getInputClassName(undefined, false, true)}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Contact Name. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Contact Name. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingContactName || ""}
                       onChange={(e) => handleChange("shippingContactName", e.target.value)}
-                      placeholder="Shailesh Bhatiya"
-                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
+                      placeholder="e.g. John Doe"
+                      className={getInputClassName("shippingContactName", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingContactName")}
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        Contact No. <span className="text-rose-500 font-bold">*</span>
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                        Contact No. <span className="text-red-500 font-bold">*</span>
                       </label>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                      <span className="text-[10px] text-emerald-400 font-mono">
                         {formData.shippingContactNo ? formData.shippingContactNo.length : 0}/10
                       </span>
                     </div>
@@ -1020,9 +1345,10 @@ export default function CompanyProfileForm({
                       onChange={(e) =>
                         handleChange("shippingContactNo", e.target.value.replace(/\D/g, ""))
                       }
-                      placeholder="9925377339"
-                      className={cn(formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass, "font-mono")}
+                      placeholder="e.g. 9876543210"
+                      className={getInputClassName("shippingContactNo", true, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingContactNo")}
                   </div>
                 </div>
               </div>
@@ -1031,23 +1357,17 @@ export default function CompanyProfileForm({
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: ACCOUNTING DETAILS (Legal, Bank, Invoice, Other)                   */}
+        {/* TAB 3: ACCOUNTING DETAILS                                                 */}
         {/* ========================================================================= */}
         {activeTab === "accounting" && (
           <div className="w-full">
-            {/* Section Header with Golden Landmark Icon Badge */}
-            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
-              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <Landmark size={20} />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
-                  Accounting Details
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Enter Legal, Invoicing and Banking Information
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                Accounting Details
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Enter Legal, Invoicing and Banking Information
+              </p>
             </div>
 
             {/* Top Grid: Legal vs Bank Details */}
@@ -1062,10 +1382,10 @@ export default function CompanyProfileForm({
                   {/* GST Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        GST Number. <span className="text-rose-500 font-bold">*</span>
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                        GST Number. <span className="text-red-500 font-bold">*</span>
                       </label>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                      <span className="text-[10px] text-emerald-400 font-mono">
                         {formData.gstNumber ? formData.gstNumber.length : 0}/15
                       </span>
                     </div>
@@ -1074,18 +1394,19 @@ export default function CompanyProfileForm({
                       maxLength={15}
                       value={formData.gstNumber || ""}
                       onChange={(e) => handleChange("gstNumber", e.target.value.toUpperCase())}
-                      placeholder="24CAGPB1419N1ZW"
-                      className={cn(commonInputClass, "font-mono uppercase")}
+                      placeholder="e.g. 24ABCDE1234F1Z5"
+                      className={getInputClassName("gstNumber", true)}
                     />
+                    {renderFieldError("gstNumber")}
                   </div>
 
                   {/* TAN Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
                         TAN Number.
                       </label>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                      <span className="text-[10px] text-emerald-400 font-mono">
                         {formData.tanNumber ? formData.tanNumber.length : 0}/10
                       </span>
                     </div>
@@ -1094,18 +1415,18 @@ export default function CompanyProfileForm({
                       maxLength={10}
                       value={formData.tanNumber || ""}
                       onChange={(e) => handleChange("tanNumber", e.target.value.toUpperCase())}
-                      placeholder="SRTD09780B"
-                      className={cn(commonInputClass, "font-mono uppercase")}
+                      placeholder="e.g. ABCD12345E"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
                   {/* PAN Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        PAN Number. <span className="text-rose-500 font-bold">*</span>
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                        PAN Number. <span className="text-red-500 font-bold">*</span>
                       </label>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                      <span className="text-[10px] text-emerald-400 font-mono">
                         {formData.panNumber ? formData.panNumber.length : 0}/10
                       </span>
                     </div>
@@ -1114,18 +1435,19 @@ export default function CompanyProfileForm({
                       maxLength={10}
                       value={formData.panNumber || ""}
                       onChange={(e) => handleChange("panNumber", e.target.value.toUpperCase())}
-                      placeholder="CAGPB1419N"
-                      className={cn(commonInputClass, "font-mono uppercase")}
+                      placeholder="e.g. ABCDE1234F"
+                      className={getInputClassName("panNumber", true)}
                     />
+                    {renderFieldError("panNumber")}
                   </div>
 
                   {/* Central Sale Tax Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
                         Central Sale Tax Number.
                       </label>
-                      <span className="text-xs text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-500 font-mono">
                         {formData.cstNumber ? formData.cstNumber.length : 0}/11
                       </span>
                     </div>
@@ -1134,18 +1456,18 @@ export default function CompanyProfileForm({
                       maxLength={11}
                       value={formData.cstNumber || ""}
                       onChange={(e) => handleChange("cstNumber", e.target.value)}
-                      placeholder=""
-                      className={cn(commonInputClass, "font-mono")}
+                      placeholder="e.g. CST12345678"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
                   {/* FSSAI Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
                         FSSAI Number.
                       </label>
-                      <span className="text-xs text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-500 font-mono">
                         {formData.fssaiNumber ? formData.fssaiNumber.length : 0}/14
                       </span>
                     </div>
@@ -1154,21 +1476,24 @@ export default function CompanyProfileForm({
                       maxLength={14}
                       value={formData.fssaiNumber || ""}
                       onChange={(e) => handleChange("fssaiNumber", e.target.value)}
-                      placeholder=""
-                      className={cn(commonInputClass, "font-mono")}
+                      placeholder="e.g. 12345678901234"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
                   {/* Trade Category */}
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Trade Category.
                     </label>
-                    <ThemeSelectDropdown
+                    <DropdownWithOther
+                      hideLabel
+                      label="Trade Category"
                       value={formData.tradeCategory || "Manufacturing"}
                       onChange={(val) => handleChange("tradeCategory", val)}
                       options={tradeCategoryOptions}
                       placeholder="Select Trade Category"
+                      fieldKey="tradecategory"
                       className="w-full"
                       buttonClassName={dropdownButtonClassName}
                       menuClassName={dropdownMenuClassName}
@@ -1178,10 +1503,10 @@ export default function CompanyProfileForm({
                   {/* MSME Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
                         MSME Number.
                       </label>
-                      <span className="text-xs text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-500 font-mono">
                         {formData.msmeNumber ? formData.msmeNumber.length : 0}/19
                       </span>
                     </div>
@@ -1190,11 +1515,12 @@ export default function CompanyProfileForm({
                       maxLength={19}
                       value={formData.msmeNumber || ""}
                       onChange={(e) => handleChange("msmeNumber", e.target.value)}
-                      placeholder=""
-                      className={cn(commonInputClass, "font-mono")}
+                      placeholder="e.g. UDYAM-GJ-01-0000000"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
+                  {/* Empty cell to balance MSME */}
                   <div />
                 </div>
               </div>
@@ -1207,74 +1533,78 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Bank Name. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Bank Name. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.bankName || ""}
                       onChange={(e) => handleChange("bankName", e.target.value)}
-                      placeholder="KOTAK MAHINDRA BANK"
-                      className={cn(commonInputClass, "uppercase")}
+                      placeholder="e.g. HDFC Bank"
+                      className={getInputClassName("bankName")}
                     />
+                    {renderFieldError("bankName")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Account Holder Name. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Account Holder Name. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.accountHolderName || ""}
                       onChange={(e) => handleChange("accountHolderName", e.target.value)}
-                      placeholder="DIPABEN RAMESHBHAI BHATIYA"
-                      className={cn(commonInputClass, "uppercase")}
+                      placeholder="e.g. John Doe"
+                      className={getInputClassName("accountHolderName")}
                     />
+                    {renderFieldError("accountHolderName")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Account Name.
                     </label>
                     <input
                       type="text"
                       value={formData.accountName || ""}
                       onChange={(e) => handleChange("accountName", e.target.value)}
-                      placeholder="JAY BHAVANI FASHION"
-                      className={cn(commonInputClass, "uppercase")}
+                      placeholder="e.g. Acme Corporation"
+                      className={getInputClassName()}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Bank Account Number. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Bank Account Number. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.accountNumber || ""}
                       onChange={(e) => handleChange("accountNumber", e.target.value)}
-                      placeholder="9925828382"
-                      className={cn(commonInputClass, "font-mono")}
+                      placeholder="e.g. 123456789012"
+                      className={getInputClassName("accountNumber", true)}
                     />
+                    {renderFieldError("accountNumber")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      IFSC Code. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      IFSC Code. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       maxLength={11}
                       value={formData.ifscCode || ""}
                       onChange={(e) => handleChange("ifscCode", e.target.value.toUpperCase())}
-                      placeholder="KKBK0002868"
-                      className={cn(commonInputClass, "font-mono uppercase")}
+                      placeholder="e.g. HDFC0001234"
+                      className={getInputClassName("ifscCode", true)}
                     />
+                    {renderFieldError("ifscCode")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Account Type. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Account Type. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       value={formData.accountType || "Current"}
@@ -1282,60 +1612,66 @@ export default function CompanyProfileForm({
                       options={accountTypeOptions}
                       placeholder="Select Account Type"
                       className="w-full"
-                      buttonClassName={dropdownButtonClassName}
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.accountType && "border-rose-500 ring-1 ring-rose-500/30"
+                      )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {renderFieldError("accountType")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      Branch Name. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Branch Name. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.branchName || ""}
                       onChange={(e) => handleChange("branchName", e.target.value)}
-                      placeholder="KATARGAM SURAT"
-                      className={cn(commonInputClass, "uppercase")}
+                      placeholder="e.g. Main Branch"
+                      className={getInputClassName("branchName")}
                     />
+                    {renderFieldError("branchName")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                      UPI ID. <span className="text-rose-500 font-bold">*</span>
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      UPI ID. <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.upiId || ""}
                       onChange={(e) => handleChange("upiId", e.target.value)}
-                      placeholder=""
-                      className={commonInputClass}
+                      placeholder="e.g. company@okhdfcbank"
+                      className={getInputClassName("upiId")}
                     />
+                    {renderFieldError("upiId")}
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Client Code.
                     </label>
                     <input
                       type="text"
                       value={formData.clientCode || ""}
                       onChange={(e) => handleChange("clientCode", e.target.value)}
-                      placeholder=""
-                      className={commonInputClass}
+                      placeholder="e.g. CLI12345"
+                      className={getInputClassName()}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Product Code.
                     </label>
                     <input
                       type="text"
                       value={formData.productCode || ""}
                       onChange={(e) => handleChange("productCode", e.target.value)}
-                      placeholder=""
-                      className={commonInputClass}
+                      placeholder="e.g. PRD12345"
+                      className={getInputClassName()}
                     />
                   </div>
                 </div>
@@ -1343,7 +1679,7 @@ export default function CompanyProfileForm({
             </div>
 
             {/* Bottom Grid: Invoice Details vs Other Details */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 pt-6 border-t border-slate-100 dark:border-white/[0.06]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 pt-6">
               {/* Invoice Details */}
               <div>
                 <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
@@ -1352,20 +1688,20 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       TAX Invoice Prefix.
                     </label>
                     <input
                       type="text"
-                      value={formData.taxInvoicePrefix || "JBFT"}
+                      value={formData.taxInvoicePrefix || ""}
                       onChange={(e) => handleChange("taxInvoicePrefix", e.target.value.toUpperCase())}
-                      placeholder="JBFT"
-                      className={cn(commonInputClass, "font-mono uppercase")}
+                      placeholder="e.g. INV"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       TAX Invoice Next.
                     </label>
                     <input
@@ -1373,25 +1709,25 @@ export default function CompanyProfileForm({
                       value={formData.taxInvoiceNext || "1"}
                       onChange={(e) => handleChange("taxInvoiceNext", e.target.value)}
                       placeholder="1"
-                      className={cn(commonInputClass, "font-mono")}
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Retail Invoice Prefix.
                     </label>
                     <input
                       type="text"
-                      value={formData.retailInvoicePrefix || "JBFR"}
+                      value={formData.retailInvoicePrefix || ""}
                       onChange={(e) => handleChange("retailInvoicePrefix", e.target.value.toUpperCase())}
-                      placeholder="JBFR"
-                      className={cn(commonInputClass, "font-mono uppercase")}
+                      placeholder="e.g. RET"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Retail Invoice Next.
                     </label>
                     <input
@@ -1399,7 +1735,7 @@ export default function CompanyProfileForm({
                       value={formData.retailInvoiceNext || "1"}
                       onChange={(e) => handleChange("retailInvoiceNext", e.target.value)}
                       placeholder="1"
-                      className={cn(commonInputClass, "font-mono")}
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
                 </div>
@@ -1413,7 +1749,7 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Consider in Profit & Loss.
                     </label>
                     <ThemeSelectDropdown
@@ -1438,18 +1774,13 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "logo" && (
           <div className="w-full">
-            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
-              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <Upload size={20} />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
-                  Company Logo <span className="text-rose-500 font-bold">*</span>
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Upload your company logo
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                Company Logo <span className="text-red-500 font-bold">*</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Upload your company logo
+              </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
@@ -1478,10 +1809,10 @@ export default function CompanyProfileForm({
                   }}
                   onDragLeave={() => setIsLogoDragging(false)}
                   onDrop={handleLogoDrop}
-                  className={`w-52 h-52 rounded-3xl bg-slate-50 border ${
+                  className={`w-48 h-48 rounded-2xl bg-slate-50 border ${
                     isLogoDragging
                       ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/60 dark:border-white/[0.1] dark:hover:border-[#E8C16D]/60"
+                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
                   } dark:bg-[#0B0F17] flex flex-col items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
                   title="Click to select and upload company logo"
                 >
@@ -1516,7 +1847,7 @@ export default function CompanyProfileForm({
                         />
                       </svg>
                       <span className="text-[11px] font-black uppercase tracking-tight text-slate-800 dark:text-white mt-3.5 leading-tight px-2">
-                        {formData.companyName || company?.companyName || "COMPANY LOGO"}
+                        {formData.companyName || company?.companyName || "Company Name"}
                       </span>
                     </div>
                   )}
@@ -1530,7 +1861,7 @@ export default function CompanyProfileForm({
                         handleChange("logoUrl", "");
                         toast.success("Logo removed.");
                       }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
                       title="Remove Logo"
                     >
                       <Trash2 size={13} />
@@ -1539,11 +1870,11 @@ export default function CompanyProfileForm({
 
                   {/* Hover Overlay indicating click to upload */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-[#E8C16D]" />
+                    <Upload size={22} className="text-white" />
                     <span className="text-xs font-semibold">
                       {formData.logoUrl ? "Change Logo" : "Upload Logo"}
                     </span>
-                    <span className="text-[10px] text-slate-300">Click or drag & drop</span>
+                    <span className="text-[10px] text-slate-700 dark:text-slate-300">Click or drag & drop</span>
                   </div>
                 </div>
               </div>
@@ -1557,18 +1888,13 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "signature" && (
           <div className="w-full">
-            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
-              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <FileText size={20} />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
-                  Company Signature <span className="text-rose-500 font-bold">*</span>
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Upload authorized signatory signature for invoices and tax documents
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                Company Signature <span className="text-red-500 font-bold">*</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Upload authorized signatory signature for invoices and tax documents
+              </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
@@ -1597,10 +1923,10 @@ export default function CompanyProfileForm({
                   }}
                   onDragLeave={() => setIsSignatureDragging(false)}
                   onDrop={handleSignatureDrop}
-                  className={`w-72 h-40 rounded-3xl bg-slate-50 border ${
+                  className={`w-64 h-36 rounded-2xl bg-slate-50 border ${
                     isSignatureDragging
                       ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/60 dark:border-white/[0.1] dark:hover:border-[#E8C16D]/60"
+                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
                   } dark:bg-[#0B0F17] flex items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
                   title="Click to select and upload company signature"
                 >
@@ -1613,9 +1939,7 @@ export default function CompanyProfileForm({
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-500 text-center select-none">
                       <FileText size={28} className="mb-1.5 text-slate-400 dark:text-slate-500" />
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        No Signature Uploaded
-                      </span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">No Signature Uploaded</span>
                     </div>
                   )}
 
@@ -1628,7 +1952,7 @@ export default function CompanyProfileForm({
                         handleChange("signatureUrl", "");
                         toast.success("Signature removed.");
                       }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
                       title="Remove Signature"
                     >
                       <Trash2 size={13} />
@@ -1637,11 +1961,11 @@ export default function CompanyProfileForm({
 
                   {/* Hover Overlay indicating click to upload */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-[#E8C16D]" />
+                    <Upload size={22} className="text-white" />
                     <span className="text-xs font-semibold">
                       {formData.signatureUrl ? "Change Signature" : "Upload Signature"}
                     </span>
-                    <span className="text-[10px] text-slate-300">Click or drag & drop</span>
+                    <span className="text-[10px] text-slate-700 dark:text-slate-300">Click or drag & drop</span>
                   </div>
                 </div>
               </div>
@@ -1651,37 +1975,37 @@ export default function CompanyProfileForm({
         )}
       </div>
 
-      {/* ========================================================================= */}
-      {/* 4. BOTTOM BAR / FOOTER matching img-1                                      */}
-      {/* ========================================================================= */}
-      <div className="w-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 flex items-center justify-between shadow-sm">
-        {/* Left: Completion Percentage with gold progress bar matching img-1 */}
-        <div className="w-48 sm:w-64 space-y-1">
-          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-            Completion Percentage: {completionPercentage}%
-          </p>
-          <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-            <div
-              className="h-full bg-[#E8C16D] rounded-full transition-all duration-300"
-              style={{ width: `${completionPercentage}%` }}
-            />
+      {/* Bottom Sticky Action Bar */}
+      <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 dark:border-white/[0.08] dark:bg-[#0E121A] w-full">
+        <div className="w-full flex items-center justify-between">
+          {/* Left: Completion Percentage bar */}
+          <div className="w-48 sm:w-64 space-y-1">
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Completion Percentage: {completionPercentage}%
+            </p>
+            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/[0.1] overflow-hidden">
+              <div
+                className="h-full bg-[#0A0E1A] dark:bg-[#F5C451] rounded-full transition-all duration-300"
+                style={{ width: `${completionPercentage}%` }}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Right: Golden Save Button matching img-1 */}
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-50"
-        >
-          {saving ? (
-            <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
-          ) : (
-            <Save size={16} className="text-[#0A0E1A]" />
-          )}
-          <span>{saving ? "Saving..." : "Save"}</span>
-        </button>
+          {/* Right: Save Button */}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0A0E1A] hover:bg-black text-white dark:bg-[#F5C451] dark:text-slate-900 dark:hover:bg-[#e8b83e] font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+          >
+            {saving ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Save size={16} />
+            )}
+            <span>{saving ? "Saving..." : "Save"}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

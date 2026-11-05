@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Check,
 } from "lucide-react";
+import { getAvailableVerticalSpace } from "@/lib/utils";
 import { CompanyFilterState } from "../types/company.types";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
@@ -37,7 +38,16 @@ const statusFilterOptions: ThemeSelectOption[] = [
 /** Reusable hook: close dropdown when clicking outside or pressing Escape */
 function useDropdown() {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const toggle = () => {
+    if (!open && ref.current) {
+      const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(ref.current);
+      setOpenUpward(spaceBelow < 250 && spaceAbove > spaceBelow);
+    }
+    setOpen((p) => !p);
+  };
 
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
@@ -55,8 +65,14 @@ function useDropdown() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  return { open, setOpen, ref };
+  return { open, setOpen, ref, openUpward, toggle };
 }
+
+/** Dropdown panel shared style */
+const getPanelClass = (openUpward?: boolean) =>
+  `absolute right-0 z-50 min-w-[200px] rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${
+    openUpward ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
+  }`;
 
 /** Sort dropdown matching Theme UI for both light & dark mode */
 function SortDropdown({
@@ -70,7 +86,7 @@ function SortDropdown({
   onSort: (field: string, order: "asc" | "desc") => void;
   onClear: () => void;
 }) {
-  const { open, setOpen, ref } = useDropdown();
+  const { open, setOpen, ref, openUpward, toggle } = useDropdown();
 
   const isAsc = sortBy === "companyName" && sortOrder === "asc";
   const isDesc = sortBy === "companyName" && sortOrder === "desc";
@@ -80,7 +96,7 @@ function SortDropdown({
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={toggle}
         className={`inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none
           ${
             isActive
@@ -100,7 +116,7 @@ function SortDropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 right-0 z-50 min-w-[200px] rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50 animate-in fade-in zoom-in-95 duration-100">
+        <div className={getPanelClass(openUpward)}>
           <div className="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Sort By
           </div>
@@ -163,13 +179,13 @@ function SettingsDropdown({
   onClearSorting: () => void;
   onClearFilters: () => void;
 }) {
-  const { open, setOpen, ref } = useDropdown();
+  const { open, setOpen, ref, openUpward, toggle } = useDropdown();
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={toggle}
         title="Table Settings"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]"
       >
@@ -185,7 +201,7 @@ function SettingsDropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 right-0 z-50 min-w-[200px] rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50 animate-in fade-in zoom-in-95 duration-100">
+        <div className={getPanelClass(openUpward)}>
           <div className="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Table Settings
           </div>

@@ -24,12 +24,14 @@ export interface Employee {
 
   dob?: string | null;
   bloodGroup?: string | null;
+  company?: string | null;
   branch?: string | null;
   department: string;
   designation: string;
   salaryType?: string | null;
   joiningDate?: string | null;
   workerProcess?: string | null;
+  basicSalary?: number | string | null;
 
   // Address
   addressLine1?: string | null;
@@ -74,12 +76,14 @@ export interface EmployeeFormData {
   aadhaarNo: string;
   dob: string;
   bloodGroup: string;
+  company: string;
   branch: string;
   department: string;
   designation: string;
   salaryType: string;
   joiningDate: string;
   workerProcess: string;
+  basicSalary?: string | number;
   isActive: boolean;
 
   // Address

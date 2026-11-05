@@ -14,7 +14,7 @@ import { LedgerFilterState } from "../types/ledger.types";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
 } from "@/components/ui/ThemeSelectDropdown";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 
 interface LedgerBookFilterBarProps {
   filters: LedgerFilterState;
@@ -69,6 +69,15 @@ export default function LedgerBookFilterBar({
   totalCount,
 }: LedgerBookFilterBarProps) {
   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  const [columnsOpenUpward, setColumnsOpenUpward] = useState(false);
+
+  const handleToggleColumns = () => {
+    if (!columnsDropdownOpen && dropdownRef.current) {
+      const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(dropdownRef.current);
+      setColumnsOpenUpward(spaceBelow < 320 && spaceAbove > spaceBelow);
+    }
+    setColumnsDropdownOpen((prev) => !prev);
+  };
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close columns dropdown on click outside
@@ -182,7 +191,7 @@ export default function LedgerBookFilterBar({
           <button
             type="button"
             aria-label="Toggle Columns"
-            onClick={() => setColumnsDropdownOpen((prev) => !prev)}
+            onClick={handleToggleColumns}
             className={cn(
               "inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none",
               "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]",
@@ -202,7 +211,10 @@ export default function LedgerBookFilterBar({
 
           {/* Columns Dropdown Menu - Theme UI style */}
           {columnsDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-2xl border border-[#E7E0D2] bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50">
+            <div className={cn(
+              "absolute right-0 z-50 w-56 rounded-2xl border border-[#E7E0D2] bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
+              columnsOpenUpward ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
+            )}>
               <div className="px-3 py-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-white/[0.06] mb-1">
                 Toggle Columns
               </div>

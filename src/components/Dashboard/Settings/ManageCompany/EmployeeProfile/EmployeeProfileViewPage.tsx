@@ -215,6 +215,8 @@ export default function EmployeeProfileViewPage({
                 </h2>
                 <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
                   <Building size={14} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                  {employee.company && <span className="font-semibold text-slate-700 dark:text-slate-300">{employee.company}</span>}
+                  {employee.company && employee.branch && <span>•</span>}
                   <span className="font-semibold text-slate-700 dark:text-slate-300">
                     {employee.branch || "Head Office"}
                   </span>
@@ -297,6 +299,20 @@ export default function EmployeeProfileViewPage({
                   <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5 font-mono">
                     {formatDate(employee.joiningDate)}
                   </p>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block mb-1">Salary Type.</span>
+                  <span className="text-slate-900 dark:text-slate-200 font-medium">
+                    {employee.salaryType || "Salaried"}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block mb-1">Basic Salary.</span>
+                  <span className="text-slate-900 dark:text-slate-200 font-medium font-mono">
+                    {employee.basicSalary ? `₹ ${Number(employee.basicSalary).toLocaleString("en-IN")}` : "₹ 0"}
+                  </span>
                 </div>
               </div>
 

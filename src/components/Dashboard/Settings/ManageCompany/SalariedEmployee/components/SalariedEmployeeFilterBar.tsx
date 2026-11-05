@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { SalariedEmployeeFilterState } from "../types/salariedEmployee.types";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 
 interface SalariedEmployeeFilterBarProps {
   filters: SalariedEmployeeFilterState;
@@ -31,6 +31,15 @@ export default function SalariedEmployeeFilterBar({
   availableColumns,
 }: SalariedEmployeeFilterBarProps) {
   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  const [columnsOpenUpward, setColumnsOpenUpward] = useState(false);
+
+  const handleToggleColumns = () => {
+    if (!columnsDropdownOpen && columnsDropdownRef.current) {
+      const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(columnsDropdownRef.current);
+      setColumnsOpenUpward(spaceBelow < 320 && spaceAbove > spaceBelow);
+    }
+    setColumnsDropdownOpen((prev) => !prev);
+  };
   const columnsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click or Escape key
@@ -133,7 +142,7 @@ export default function SalariedEmployeeFilterBar({
           <button
             type="button"
             aria-label="Toggle Columns"
-            onClick={() => setColumnsDropdownOpen((prev) => !prev)}
+            onClick={handleToggleColumns}
             className={cn(
               "inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none",
               "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]",
@@ -154,8 +163,11 @@ export default function SalariedEmployeeFilterBar({
 
           {/* Columns Dropdown Menu */}
           {columnsDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-2 shadow-2xl z-30 space-y-1">
-              <div className="px-3 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-[#E7E0D2] dark:border-white/[0.08]">
+            <div className={cn(
+              "absolute right-0 z-50 w-56 rounded-2xl border border-[#E7E0D2] bg-white p-2 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-2xl dark:shadow-black/50 animate-in fade-in zoom-in-95 duration-100",
+              columnsOpenUpward ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
+            )}>
+              <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-white/[0.06] mb-1">
                 Display Columns
               </div>
               <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 
 export interface ThemeSelectOption {
   value: string;
@@ -21,6 +21,7 @@ export interface ThemeSelectDropdownProps {
   align?: "left" | "right";
   ariaLabel?: string;
   disabled?: boolean;
+  dropDirection?: "auto" | "up" | "down";
 }
 
 export default function ThemeSelectDropdown({
@@ -35,9 +36,66 @@ export default function ThemeSelectDropdown({
   align = "left",
   ariaLabel,
   disabled = false,
+  dropDirection = "auto",
 }: ThemeSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
+  const [effectiveAlign, setEffectiveAlign] = useState<"left" | "right">(align);
+  const [maxMenuHeight, setMaxMenuHeight] = useState<number | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Determine whether to open upward or downward and alignment
+  const determineDirection = useCallback(() => {
+    if (!containerRef.current) return;
+    const { rect, viewportWidth, spaceBelow, spaceAbove } =
+      getAvailableVerticalSpace(containerRef.current);
+
+    // Estimate menu height: ~36px per option + ~14px padding + border, capped at 260px
+    const estimatedMenuHeight = Math.min(Math.max(options.length * 36 + 14, 48), 260);
+
+    let up = false;
+    if (dropDirection === "up") {
+      up = true;
+    } else if (dropDirection === "down") {
+      up = false;
+    } else {
+      up =
+        (spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow) ||
+        (spaceBelow < 220 && spaceAbove > spaceBelow) ||
+        (spaceBelow < 150 && spaceAbove >= 150);
+    }
+
+    setOpenUpward(up);
+
+    const availableSpace = (up ? spaceAbove : spaceBelow) - 16;
+    const maxH = Math.min(260, Math.max(availableSpace - 14, 110));
+    setMaxMenuHeight(maxH);
+
+    // Auto-adjust alignment if right edge would overflow
+    if (align === "right") {
+      setEffectiveAlign("right");
+    } else {
+      if (rect.left + 260 > viewportWidth && rect.right >= 200) {
+        setEffectiveAlign("right");
+      } else {
+        setEffectiveAlign("left");
+      }
+    }
+  }, [dropDirection, options.length, align]);
+
+  // Recalculate on scroll or resize while open
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = () => {
+      determineDirection();
+    };
+    window.addEventListener("resize", handleScrollOrResize, { passive: true });
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener("resize", handleScrollOrResize);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+    };
+  }, [isOpen, determineDirection]);
 
   // Close on outside click
   useEffect(() => {
@@ -69,13 +127,24 @@ export default function ThemeSelectDropdown({
     (opt) => opt.value.toLowerCase() === (value || "").toLowerCase()
   );
 
+  const handleToggle = () => {
+    if (disabled) return;
+    if (!isOpen) {
+      determineDirection();
+    }
+    setIsOpen((prev) => !prev);
+  };
+
   return (
-    <div className={cn("relative inline-block", isOpen ? "z-40" : "z-0", className)} ref={containerRef}>
+    <div
+      className={cn("relative inline-block", isOpen ? "z-50" : "z-0", className)}
+      ref={containerRef}
+    >
       <button
         type="button"
         disabled={disabled}
         aria-label={ariaLabel || placeholder}
-        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={cn(
           "inline-flex items-center gap-2 rounded-2xl border px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs outline-none select-none",
           "bg-white dark:bg-[#131622] dark:text-white border-[#E7E0D2] dark:border-white/[0.08]",
@@ -101,18 +170,26 @@ export default function ThemeSelectDropdown({
         />
       </button>
 
+      {/* Dropdown Options Popup */}
       {isOpen && (
         <div
           className={cn(
-            "absolute top-full mt-2 z-50 min-w-full w-max max-w-[280px] rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100",
+            "absolute z-50 rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl duration-100",
+            openUpward
+              ? "bottom-full mb-2 origin-bottom animate-in fade-in zoom-in-95"
+              : "top-full mt-2 origin-top animate-in fade-in zoom-in-95",
             "dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
-            align === "right" ? "right-0" : "left-0",
-            menuClassName
+            effectiveAlign === "right" ? "right-0" : "left-0",
+            menuClassName || "min-w-full w-max max-w-[280px]"
           )}
         >
           <div
-            className="max-h-60 overflow-y-auto flex flex-col gap-0.5 pr-0.5 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="overflow-y-auto flex flex-col gap-0.5 pr-0.5 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              maxHeight: `${maxMenuHeight || 240}px`,
+            }}
           >
             {options.map((opt) => {
               const isSelected = opt.value.toLowerCase() === (value || "").toLowerCase();

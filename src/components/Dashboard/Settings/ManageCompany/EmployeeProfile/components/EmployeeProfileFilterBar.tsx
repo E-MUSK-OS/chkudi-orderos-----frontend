@@ -13,7 +13,7 @@ import {
 import ThemeSelectDropdown, {
   ThemeSelectOption,
 } from "@/components/ui/ThemeSelectDropdown";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 import {
   EmployeeFilterState,
   EmployeeColumnConfig,
@@ -53,6 +53,15 @@ export default function EmployeeProfileFilterBar({
   onToggleColumn,
 }: EmployeeProfileFilterBarProps) {
   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  const [columnsOpenUpward, setColumnsOpenUpward] = useState(false);
+
+  const handleToggleColumns = () => {
+    if (!columnsDropdownOpen && dropdownRef.current) {
+      const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(dropdownRef.current);
+      setColumnsOpenUpward(spaceBelow < 320 && spaceAbove > spaceBelow);
+    }
+    setColumnsDropdownOpen((prev) => !prev);
+  };
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close columns dropdown on click outside
@@ -205,7 +214,7 @@ export default function EmployeeProfileFilterBar({
           <button
             type="button"
             aria-label="Toggle Columns"
-            onClick={() => setColumnsDropdownOpen((prev) => !prev)}
+            onClick={handleToggleColumns}
             className={cn(
               "inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none",
               "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]",
@@ -225,8 +234,11 @@ export default function EmployeeProfileFilterBar({
 
           {/* Columns Dropdown Menu */}
           {columnsDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-2 shadow-2xl z-30 space-y-1">
-              <div className="px-3 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-[#E7E0D2] dark:border-white/[0.08]">
+            <div className={cn(
+              "absolute right-0 z-50 w-56 rounded-2xl border border-[#E7E0D2] bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
+              columnsOpenUpward ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
+            )}>
+              <div className="px-3 py-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-white/[0.06] mb-1">
                 Display Columns
               </div>
               <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
