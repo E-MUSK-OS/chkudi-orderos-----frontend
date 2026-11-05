@@ -211,7 +211,7 @@ export default function SizeMultiSelect({
         >
           {selectedSizes.length === 0 ? (
             <span className="text-slate-400 dark:text-slate-500">
-              Select sizes (XS to 4XL, 28 to 38)...
+              Select sizes (XS to 4XL, 28 to 48)...
             </span>
           ) : (
             selectedSizes.map((size) => (
@@ -267,7 +267,7 @@ export default function SizeMultiSelect({
                   onClick={selectAllNumeric}
                   className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
                 >
-                  28–38
+                  28–48
                 </button>
                 {selectedSizes.length > 0 && (
                   <>
@@ -315,10 +315,10 @@ export default function SizeMultiSelect({
                 </div>
               </div>
 
-              {/* Section 2: Numeric Sizes (28 to 38) */}
+              {/* Section 2: Numeric Sizes (28 to 48) */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                  Numeric Sizes (28 to 38)
+                  Numeric Sizes (28 to 48)
                 </p>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                   {activeNumericSizes.map((size) => {
@@ -420,7 +420,7 @@ export default function SizeMultiSelect({
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold text-[#B88728] dark:text-[#F5C451] hover:bg-[#FFF9EC] dark:hover:bg-[#F5C451]/10 rounded-xl transition-colors cursor-pointer"
                 >
                   <Plus size={14} />
-                  <span>Other</span>
+                  <span>+ Other (Enter custom value)</span>
                 </button>
               )}
             </div>

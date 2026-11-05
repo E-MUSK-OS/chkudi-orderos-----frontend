@@ -14,15 +14,15 @@ export default function SectionCard({
   children,
 }: Props) {
   return (
-    <section className="rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-visible">
-      <div className="rounded-t-xl sm:rounded-t-2xl border-b border-slate-200 dark:border-white/[0.08] p-3.5 sm:p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 dark:bg-[#C89B3C]/10 text-[#C89B3C] dark:text-[#F5C451]">
+    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-visible shadow-sm">
+      <div className="rounded-t-2xl sm:rounded-t-3xl border-b border-[#E7E0D2] dark:border-white/[0.08] p-4 sm:p-6 bg-[#FAF8F5]/50 dark:bg-[#080B11]/50">
+        <div className="flex items-start gap-3.5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]">
             {icon}
           </div>
 
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white">
               {title}
             </h3>
 
@@ -35,7 +35,7 @@ export default function SectionCard({
         </div>
       </div>
 
-      <div className="space-y-4 sm:space-y-5 p-3.5 sm:p-5">
+      <div className="space-y-4 sm:space-y-5 p-4 sm:p-6">
         {children}
       </div>
     </section>

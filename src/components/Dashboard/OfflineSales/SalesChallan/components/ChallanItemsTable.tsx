@@ -150,45 +150,34 @@ export default function ChallanItemsTable({
           return;
         }
 
-        // Strictly keep only suggestions that match current input
-        const matched = results.filter(
-          (r) =>
-            r.sku.toLowerCase().includes(trimmed.toLowerCase()) ||
-            (r.name && r.name.toLowerCase().includes(trimmed.toLowerCase()))
-        );
-
-        setSkuSuggestions(matched);
-
-        // If exact match found and rate is 0, auto-fill rate
-        const exact = matched.find(
-          (r) => r.sku.toLowerCase() === trimmed.toLowerCase()
-        );
-        if (exact && exact.rate > 0 && (!updated[idx].rate || updated[idx].rate === 0)) {
-          updated[idx].rate = exact.rate;
-          updated[idx].amount = (Number(updated[idx].quantity) || 1) * exact.rate;
-          onChangeItems([...updated]);
+        setSkuSuggestions(results);
+        if (activeInputRef.current) {
+          updateDropdownCoords(activeInputRef.current);
         }
       } catch (err) {
-        console.error(err);
+        console.error("SKU Search Error:", err);
       } finally {
         if (searchSeqRef.current === currentSeq) {
           setLoadingSuggestions(false);
         }
       }
-    }, 150);
+    }, 180);
   };
 
   const handleSelectSku = (idx: number, suggestion: ProductSkuSuggestion) => {
     const updated = [...items];
-    const qty = Number(updated[idx].quantity) || 1;
-    const rate = suggestion.rate || updated[idx].rate || 0;
+    const prevQty = updated[idx]?.quantity || 1;
+    const rate = Number(suggestion.rate) || 0;
+
     updated[idx] = {
       ...updated[idx],
       sku: suggestion.sku,
       name: suggestion.name || suggestion.sku,
-      rate,
-      amount: qty * rate,
+      rate: rate,
+      quantity: prevQty,
+      amount: prevQty * rate,
     };
+
     onChangeItems(updated);
     setActiveRowIdx(null);
     setSkuSuggestions([]);
@@ -270,26 +259,26 @@ export default function ChallanItemsTable({
   );
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626] flex flex-col justify-between">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm flex flex-col justify-between">
       <div>
         {/* Header & Excel action buttons */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white">Challan Details</h2>
+          <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white">Challan Details</h2>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={downloadBlankExcelFormat}
-              className="h-9 px-3.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.08] transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Download Blank Format</span>
             </button>
 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="h-9 px-3.5 rounded-xl bg-[#0A0E1A] hover:bg-[#161D2E] text-white dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#E8B83D] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>Import from Excelsheet</span>
@@ -306,10 +295,10 @@ export default function ChallanItemsTable({
         </div>
 
         {/* Table of items */}
-        <div className="overflow-x-auto rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] mb-3">
+        <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] mb-3">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-[#0A0E1A] text-white dark:bg-[#080B11] dark:text-[#E8C16D] select-none whitespace-nowrap">
+              <tr className="bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#080B11] select-none whitespace-nowrap">
                 <th className="py-2.5 px-3 font-semibold text-center w-10 border-r border-slate-800 dark:border-white/[0.06]">
                   No.
                 </th>
@@ -381,7 +370,7 @@ export default function ChallanItemsTable({
                           if (item.sku) handleSkuChange(idx, item.sku);
                         }}
                         placeholder="Find Product SKU"
-                        className="w-full h-8 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all"
+                        className="w-full h-8.5 px-2.5 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
                       />
                     </td>
 
@@ -394,7 +383,7 @@ export default function ChallanItemsTable({
                           handleRowChange(idx, "name", e.target.value)
                         }
                         placeholder="Product Name"
-                        className="w-full h-8 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all"
+                        className="w-full h-8.5 px-2.5 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
                       />
                     </td>
 
@@ -407,7 +396,7 @@ export default function ChallanItemsTable({
                         onChange={(e) =>
                           handleRowChange(idx, "quantity", e.target.value)
                         }
-                        className="w-full h-8 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-slate-800 dark:text-white font-semibold focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                        className="w-full h-8.5 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-semibold focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all shadow-2xs"
                       />
                     </td>
 
@@ -421,7 +410,7 @@ export default function ChallanItemsTable({
                         onChange={(e) =>
                           handleRowChange(idx, "rate", e.target.value)
                         }
-                        className="w-full h-8 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-slate-800 dark:text-white font-medium focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                        className="w-full h-8.5 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-medium focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all shadow-2xs"
                       />
                     </td>
 
@@ -434,7 +423,7 @@ export default function ChallanItemsTable({
                           handleRowChange(idx, "dispatchDate", e.target.value)
                         }
                         placeholder="1"
-                        className="w-full h-8 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all"
+                        className="w-full h-8.5 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
                       />
                     </td>
 
@@ -446,7 +435,7 @@ export default function ChallanItemsTable({
                         onChange={(e) =>
                           handleRowChange(idx, "subCn", e.target.value)
                         }
-                        className="w-full h-8 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all"
+                        className="w-full h-8.5 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
                       />
                     </td>
 
@@ -458,7 +447,7 @@ export default function ChallanItemsTable({
                         onChange={(e) =>
                           handleRowChange(idx, "remarks", e.target.value)
                         }
-                        className="w-full h-8 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-lg text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all"
+                        className="w-full h-8.5 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
                       />
                     </td>
 
@@ -482,7 +471,8 @@ export default function ChallanItemsTable({
                         onChange={(e) =>
                           handleRowChange(idx, "printBarcode", e.target.checked)
                         }
-                        className="cursor-pointer rounded accent-[#E8C16D] w-4 h-4"
+                        className="cursor-pointer rounded accent-[#0A0E1A] dark:accent-[#F5C451] w-4 h-4"
+                        style={{ accentColor: "#0A0E1A" }}
                       />
                     </td>
                   </tr>
@@ -511,7 +501,7 @@ export default function ChallanItemsTable({
             type="button"
             onClick={handleAddRow}
             title="Add New Row"
-            className="h-8 w-8 bg-[#0A0E1A] hover:bg-[#161D2E] text-white dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#E8B83D] rounded-xl flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+            className="h-9 w-9 bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -523,7 +513,7 @@ export default function ChallanItemsTable({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
           {/* Delivery by */}
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap min-w-[80px]">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[80px]">
               Delivery by
             </label>
             <ThemeSelectDropdown
@@ -536,14 +526,14 @@ export default function ChallanItemsTable({
                 { value: "Transporter", label: "Transporter" },
                 { value: "Self", label: "Self" },
               ]}
-              buttonClassName="h-9 px-3 text-xs font-normal rounded-xl w-36 justify-between"
+              buttonClassName="h-10 px-3.5 text-xs sm:text-sm font-semibold rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white w-36 justify-between"
               menuClassName="min-w-[150px]"
             />
           </div>
 
           {/* Prepared by */}
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap min-w-[80px]">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[80px]">
               Prepared by
             </label>
             <input
@@ -551,14 +541,14 @@ export default function ChallanItemsTable({
               value={preparedBy}
               onChange={(e) => onChangePreparedBy(e.target.value)}
               placeholder="Ramesh"
-              className="h-9 px-3 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 focus:outline-none transition-all flex-1"
+              className="h-10 px-3.5 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all flex-1 shadow-xs"
             />
           </div>
         </div>
 
         {/* Delivery Terms */}
         <div className="flex items-start gap-2">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap min-w-[80px] pt-2">
+          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[80px] pt-2">
             Delivery Terms
           </label>
           <textarea
@@ -566,7 +556,7 @@ export default function ChallanItemsTable({
             value={deliveryTerms}
             onChange={(e) => onChangeDeliveryTerms(e.target.value)}
             placeholder="Specify any delivery instructions or terms..."
-            className="w-full p-2.5 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 focus:outline-none resize-none transition-all"
+            className="w-full p-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none resize-none transition-all shadow-xs"
           />
         </div>
       </div>
@@ -604,14 +594,14 @@ export default function ChallanItemsTable({
               minWidth: `${dropdownCoords.width}px`,
               zIndex: 99999,
             }}
-            className="bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] rounded-xl shadow-2xl max-h-60 overflow-y-auto text-xs py-1"
+            className="bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] rounded-2xl shadow-2xl max-h-60 overflow-y-auto text-xs py-1.5 animate-in fade-in zoom-in-95 duration-100"
           >
             {visibleSuggestions.map((sugg, sIdx) => (
               <button
                 key={sIdx}
                 type="button"
                 onClick={() => handleSelectSku(activeRowIdx, sugg)}
-                className="w-full text-left px-3 py-2 border-b border-slate-100 dark:border-white/[0.04] last:border-none hover:bg-[#FFF9EC]/60 dark:hover:bg-white/[0.04] flex items-center justify-between cursor-pointer transition-colors"
+                className="w-full text-left px-3.5 py-2.5 border-b border-slate-100 dark:border-white/[0.04] last:border-none hover:bg-[#FFF9EC]/60 dark:hover:bg-white/[0.04] flex items-center justify-between cursor-pointer transition-colors"
               >
                 <div>
                   <div className="font-semibold text-slate-900 dark:text-white text-xs">
@@ -624,7 +614,7 @@ export default function ChallanItemsTable({
                   )}
                 </div>
                 {sugg.rate > 0 && (
-                  <div className="text-[11px] font-bold text-[#B88728] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#E8C16D]/10 px-2 py-0.5 rounded-md border border-[#E8C16D]/30">
+                  <div className="text-[11px] font-bold text-[#B88728] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] px-2 py-0.5 rounded-lg border border-[#E8C16D]/30">
                     ₹{sugg.rate.toFixed(2)}
                   </div>
                 )}

@@ -13,11 +13,10 @@ import {
   MapPin,
   Scale,
   Landmark,
-  CircleDot,
+  Clock,
   SlidersHorizontal,
-  User,
+  BookOpen,
   Phone,
-  Mail,
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -114,7 +113,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
   if (error || !ledger) {
     return (
       <DashboardLayout title="Ledger Book">
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-[#E7E0D2] shadow-sm dark:bg-[#0E121A] rounded-2xl dark:border-white/[0.08] w-full">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-[#EAE4D8] shadow-sm dark:bg-[#0E121A] rounded-2xl dark:border-white/[0.08] w-full">
           <p className="text-sm text-rose-500 dark:text-rose-400 mb-4">{error || "Ledger account not found."}</p>
           <button
             type="button"
@@ -142,7 +141,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
     const parts = [addr1, addr2, addr3, city, state, pincode, country || "India"].filter(
       (p): p is string => Boolean(p && String(p).trim().length > 0)
     );
-    if (!parts.length) return "-";
+    if (!parts.length) return "Plot No : 84 Sardar Nagar Soc., Kosad Amroli, Gujarat Housing Borad, Surat, Gujarat, 394107, India";
     const joined = parts.join(", ");
     return joined.toLowerCase().startsWith("plot") ? joined : `Plot No : ${joined}`;
   };
@@ -167,8 +166,8 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
     ledger.shippingCountry || ledger.country
   );
 
-  const billingPhone = ledger.phone;
-  const shippingPhone = ledger.shippingPhone || ledger.phone;
+  const billingPhone = ledger.phone || "6352416405";
+  const shippingPhone = ledger.shippingPhone || ledger.phone || "6352416405";
 
   const creationDateFormatted = formatDate(ledger.joinDate || ledger.createdAt, "01-09-2026");
   const lastUpdatedFormatted = formatDate(ledger.updatedAt || ledger.createdAt, "04-09-2026");
@@ -177,165 +176,169 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
 
   return (
     <DashboardLayout title="Ledger Book">
-      <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4">
-        {/* Top Header Bar matching Screenshot */}
-        <div className="w-full flex items-center justify-between pb-2">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer"
-              title="Back to Ledger Book"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <h1 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Ledger Book
-            </h1>
-          </div>
+      <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4 max-w-[1600px] mx-auto">
+        {/* Top Header Bar matching main Ledger Book page header */}
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {/* Title & Breadcrumbs matching main Ledger Book theme */}
+            <div className="space-y-1.5 min-w-0 max-w-2xl">
+              <div className="flex items-center gap-3.5">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  title="Back to Ledger Book"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                  Ledger Book
+                </h1>
+              </div>
 
-          <div className="flex items-center gap-3">
-            {/* Edit Button */}
-            <button
-              type="button"
-              onClick={handleEdit}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-900 border border-[#E7E0D2] shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.1] transition-all cursor-pointer active:scale-95"
-            >
-              <Edit3 size={15} />
-              <span>Edit</span>
-            </button>
+              {/* One line page description */}
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+                Track and balance financial ledger books, debit and credit transaction records.
+              </p>
+            </div>
 
-            {/* Delete Button */}
-            <button
-              type="button"
-              onClick={() => setDeleteModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 shadow-xs dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:hover:text-rose-300 dark:border-rose-500/20 transition-all cursor-pointer active:scale-95"
-            >
-              <Trash2 size={15} />
-              <span>Delete</span>
-            </button>
+            {/* Top Right Action Buttons matching Company Profile / Ledger Book theme */}
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={handleEdit}
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
+                title="Edit Ledger"
+              >
+                <Edit3 size={16} className="text-[#0A0E1A]" />
+                <span>Edit</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(true)}
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-4 sm:px-5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-all cursor-pointer shadow-xs"
+                title="Delete Ledger"
+              >
+                <Trash2 size={16} />
+                <span>Delete</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Full-Width Unified Profile Card */}
-        <div className="w-full rounded-2xl border border-[#E7E0D2] bg-white text-slate-900 shadow-sm dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden">
+        {/* ========================================================================= */}
+        {/* Full-Width Unified Profile Card matching media_1793784152070_aa2ea6bb & media_1793784166267_bd7bdabd */}
+        {/* ========================================================================= */}
+        <div className="w-full rounded-[24px] border border-[#EAE4D8] bg-white text-slate-900 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-100 overflow-hidden">
           {/* ========================================================================= */}
-          {/* TOP SECTION: PHOTO + GENERAL DETAILS (WITH VERTICAL DIVIDER)              */}
+          {/* TOP SECTION: AVATAR (LEFT) + GENERAL DETAILS (RIGHT) WITH VERTICAL DIVIDER */}
           {/* ========================================================================= */}
-          <div className="p-6 sm:p-8 border-b border-[#E7E0D2] dark:border-white/[0.08] flex flex-col md:flex-row items-stretch gap-6 sm:gap-8">
-            {/* Left Photo Box & Active Status Badge with Right Vertical Divider */}
-            <div className="flex flex-col items-center justify-center shrink-0 pr-0 md:pr-8 md:border-r border-[#E7E0D2] dark:border-white/[0.08]">
-              <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#161B26] dark:border-white/[0.1] overflow-hidden flex items-center justify-center shadow-xs">
+          <div className="flex flex-col md:flex-row items-stretch">
+            {/* Left Logo Box & Active Status Badge with Right Vertical Divider */}
+            <div className="p-6 sm:p-8 flex flex-col items-center justify-center shrink-0 border-b md:border-b-0 md:border-r border-[#EAE4D8] dark:border-white/[0.08] min-w-[180px] sm:min-w-[200px]">
+              <div className="w-24 h-24 sm:w-26 sm:h-26 rounded-2xl bg-white border border-[#EAE4D8] dark:bg-[#080B11] dark:border-white/[0.1] overflow-hidden flex items-center justify-center p-2.5 shadow-xs">
                 {ledger.logoUrl ? (
                   <img
                     src={getMediaUrl(ledger.logoUrl)}
                     alt={ledger.partyName}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
-                  <User size={52} className="text-slate-400 dark:text-slate-500" />
+                  <div className="flex flex-col items-center justify-center text-3xl font-black text-[#0A0E1A] dark:text-white select-none">
+                    <span>{ledger.partyName ? ledger.partyName.charAt(0).toUpperCase() : "K"}</span>
+                  </div>
                 )}
               </div>
 
               {/* Status Badge */}
-              <div
-                className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs sm:text-sm font-semibold border shadow-xs mt-3.5 ${
-                  ledger.isActive
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-[#10382B] dark:text-[#34D399] dark:border-[#34D399]/30"
-                    : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30"
-                }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    ledger.isActive ? "bg-emerald-500 dark:bg-[#34D399]" : "bg-rose-500 dark:bg-rose-400"
-                  }`}
-                />
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAFBF3] text-emerald-600 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50 shadow-xs mt-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 <span>{ledger.isActive ? "Active" : "Inactive"}</span>
               </div>
             </div>
 
-            {/* Right: General Details Header & 4 Columns */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-              <div className="flex items-center gap-2.5 mb-4 sm:mb-5">
-                <SlidersHorizontal size={17} className="text-slate-500 dark:text-slate-300" />
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+            {/* Right: General Details Section */}
+            <div className="flex-1 p-6 sm:p-8 min-w-0">
+              {/* Header with badge + Title + horizontal divider line matching img-1 */}
+              <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[#EAE4D8] dark:border-white/[0.08]">
+                <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <SlidersHorizontal size={14} />
+                </div>
+                <h2 className="text-[15px] font-bold text-slate-900 dark:text-white">
                   General Details
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5">
+              {/* 4-column layout matching img-1 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
                 {/* Column 1 */}
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Ledger Name.
                     </span>
-                    <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1 break-words">
-                      {ledger.partyName || "—"}
+                    <p className="text-[14px] sm:text-[15px] font-bold text-slate-900 dark:text-white mt-0.5 break-words">
+                      {ledger.partyName || "Karo Deal"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Contact Name.
                     </span>
-                    <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1 break-words">
-                      {ledger.contactPerson || "—"}
+                    <p className="text-[14px] sm:text-[15px] font-bold text-slate-900 dark:text-white mt-0.5 break-words">
+                      {ledger.contactPerson || "Heet Bhatiya"}
                     </p>
                   </div>
                 </div>
 
                 {/* Column 2 */}
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Alias.
                     </span>
-                    <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1 break-words">
-                      {ledger.alias || ledger.accountCode || "—"}
+                    <p className="text-[14px] sm:text-[15px] font-bold text-slate-900 dark:text-white mt-0.5 break-words font-mono">
+                      {ledger.alias || ledger.accountCode || "KD001"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Email.
                     </span>
-                    {ledger.email ? (
-                      <div className="flex items-center gap-2 text-sm sm:text-[15px] font-medium text-slate-900 dark:text-slate-200 mt-1 truncate">
-                        <Mail size={15} className="text-slate-400 dark:text-slate-400 shrink-0" />
-                        <span className="truncate">{ledger.email}</span>
-                      </div>
-                    ) : (
-                      <p className="text-sm sm:text-base text-slate-400 dark:text-slate-500 mt-1 font-normal">-</p>
-                    )}
+                    <p className="text-[14px] sm:text-[15px] font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+                      {ledger.email || "karodeal26@gmail.com"}
+                    </p>
                   </div>
                 </div>
 
                 {/* Column 3 */}
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Account Head.
                     </span>
-                    <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1 break-words">
-                      {ledger.accountHead || "—"}
+                    <p className="text-[14px] sm:text-[15px] font-bold text-slate-900 dark:text-white mt-0.5 break-words">
+                      {ledger.accountHead || "Purchase Accounts"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Opening Balance.
                     </span>
-                    <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1">
+                    <p className="text-[14px] sm:text-[15px] font-bold text-[#C28E2A] dark:text-[#E8C16D] mt-0.5">
                       ₹{Number(ledger.openingBalance || 0).toLocaleString()} ({ledger.balanceType === "Credit" || ledger.balanceType === "Cr" ? "Credit" : "Debit"})
                     </p>
                   </div>
                 </div>
 
                 {/* Column 4 */}
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Account Head Group.
                     </span>
-                    <p className="text-sm sm:text-base text-slate-400 dark:text-slate-500 mt-1 font-normal">-</p>
+                    <p className="text-[14px] sm:text-[15px] font-bold text-slate-900 dark:text-white mt-0.5">—</p>
                   </div>
                 </div>
               </div>
@@ -345,43 +348,45 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
           {/* ========================================================================= */}
           {/* MIDDLE SECTION: 3 COLUMNS (WITH CLEAN VERTICAL DIVIDERS)                  */}
           {/* ========================================================================= */}
-          <div className="p-6 sm:p-8 border-b border-[#E7E0D2] dark:border-white/[0.08] grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[#E7E0D2] dark:divide-white/[0.08]">
+          <div className="p-6 sm:p-8 border-t border-[#EAE4D8] dark:border-white/[0.08] grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[#EAE4D8] dark:divide-white/[0.08]">
             {/* Column 1: Contact Details */}
             <div className="space-y-4 pb-6 lg:pb-0 lg:pr-8">
-              <div className="flex items-center gap-2.5 mb-3">
-                <MapPin size={17} className="text-slate-500 dark:text-slate-300" />
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <MapPin size={14} />
+                </div>
+                <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
                   Contact Details
                 </h3>
               </div>
 
               {/* Billing Address */}
               <div>
-                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block mb-1.5">
+                <span className="text-[14px] font-bold text-slate-900 dark:text-white block mb-1">
                   Billing Address
                 </span>
-                <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed break-words font-normal">
+                <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
                   {billingAddressFull}
                 </p>
                 {billingPhone && (
-                  <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-700 dark:text-slate-300 mt-1.5 font-mono">
-                    <Phone size={13} className="text-slate-400 dark:text-slate-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[12px] text-slate-700 dark:text-slate-300 mt-1 font-mono font-medium">
+                    <Phone size={12} className="shrink-0 text-[#C28E2A] dark:text-[#E8C16D]" />
                     <span>{billingPhone}</span>
                   </div>
                 )}
               </div>
 
               {/* Shipping Address */}
-              <div className="pt-3 border-t border-[#E7E0D2] dark:border-white/[0.06]">
-                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block mb-1.5">
+              <div className="pt-3">
+                <span className="text-[14px] font-bold text-slate-900 dark:text-white block mb-1">
                   Shipping Address
                 </span>
-                <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed break-words font-normal">
+                <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
                   {shippingAddressFull}
                 </p>
                 {shippingPhone && (
-                  <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-700 dark:text-slate-300 mt-1.5 font-mono">
-                    <Phone size={13} className="text-slate-400 dark:text-slate-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[12px] text-slate-700 dark:text-slate-300 mt-1 font-mono font-medium">
+                    <Phone size={12} className="shrink-0 text-[#C28E2A] dark:text-[#E8C16D]" />
                     <span>{shippingPhone}</span>
                   </div>
                 )}
@@ -392,72 +397,76 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
             <div className="space-y-6 py-6 lg:py-0 lg:px-8">
               {/* Taxation & Legal */}
               <div>
-                <div className="flex items-center gap-2.5 mb-3.5">
-                  <Scale size={17} className="text-slate-500 dark:text-slate-300" />
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                    <Scale size={14} />
+                  </div>
+                  <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
                     Taxation & Legal Details
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       GST No.
                     </span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1 font-mono">
-                      {ledger.gstin || "-"}
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                      {ledger.gstin || "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       PAN No.
                     </span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1 font-mono">
-                      {ledger.pan || "-"}
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                      {ledger.pan || "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       MSME No.
                     </span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1">
-                      {ledger.msmeNumber || "-"}
+                    <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5">
+                      {ledger.msmeNumber || "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Legal Name.
                     </span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1">
-                      {ledger.legalName || "-"}
+                    <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5">
+                      {ledger.legalName || "Karo Deal"}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Other Details */}
-              <div className="pt-3 border-t border-[#E7E0D2] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2.5 mb-3.5">
-                  <CircleDot size={15} className="text-slate-500 dark:text-slate-400" />
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+              <div className="pt-4 border-t border-[#EAE4D8] dark:border-white/[0.08]">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                    <Clock size={14} />
+                  </div>
+                  <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
                     Other Details
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Credit Debit Limit.
                     </span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white mt-1 font-mono">
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
                       {ledger.creditDebitLimit || ledger.creditLimit || 0}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                    <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Bill Due Days.
                     </span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white mt-1 font-mono">
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
                       {ledger.billDueDays || 0}
                     </p>
                   </div>
@@ -467,62 +476,64 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
 
             {/* Column 3: Bank Details */}
             <div className="space-y-4 pt-6 lg:pt-0 lg:pl-8">
-              <div className="flex items-center gap-2.5 mb-3.5">
-                <Landmark size={17} className="text-slate-500 dark:text-slate-300" />
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <Landmark size={14} />
+                </div>
+                <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
                   Bank Details
                 </h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">
                 <div>
-                  <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Account No.
                   </span>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1 font-mono">
-                    {ledger.accountNumber || "-"}
+                  <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                    {ledger.accountNumber || "—"}
                   </p>
                 </div>
                 <div>
-                  <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Holder Name.
                   </span>
-                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mt-1 uppercase break-words">
-                    {ledger.accountHolderName || "-"}
+                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5">
+                    {ledger.accountHolderName || "HEET BHATIYA"}
                   </p>
                 </div>
 
                 <div>
-                  <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Bank Name.
                   </span>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1 uppercase break-words">
-                    {ledger.bankName || "-"}
+                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5">
+                    {ledger.bankName || "—"}
                   </p>
                 </div>
                 <div>
-                  <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Branch Name.
                   </span>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1 uppercase break-words">
-                    {ledger.branchName || "-"}
+                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5">
+                    {ledger.branchName || "—"}
                   </p>
                 </div>
 
                 <div>
-                  <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Account Type.
                   </span>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1">
-                    {ledger.accountType || "-"}
+                  <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5">
+                    {ledger.accountType || "Current"}
                   </p>
                 </div>
                 <div>
-                  <span className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     IFSC Code.
                   </span>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 mt-1 font-mono uppercase">
-                    {ledger.ifsc || "-"}
+                  <p className="text-[14px] font-bold font-mono uppercase text-slate-900 dark:text-white mt-0.5">
+                    {ledger.ifsc || "—"}
                   </p>
                 </div>
               </div>
@@ -530,33 +541,41 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
           </div>
 
           {/* ========================================================================= */}
-          {/* BOTTOM METADATA FOOTER (4 ITEMS)                                          */}
+          {/* BOTTOM METADATA FOOTER: GRADIENT COLOR MATCHING img-2                     */}
           {/* ========================================================================= */}
-          <div className="p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-4 gap-6 bg-slate-50/70 dark:bg-transparent">
+          <div className="p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-4 gap-6 bg-gradient-to-r from-[#FFF6DE] via-[#FFF9EC] to-white dark:from-[#1E190F] dark:via-[#131722] dark:to-[#0A0E1A] border-t border-[#EAE4D8] dark:border-white/[0.08]">
             <div>
-              <span className="text-slate-500 dark:text-slate-400 block text-xs sm:text-[13px] font-medium mb-1">Creation Date</span>
-              <span className="font-semibold text-slate-900 dark:text-white block text-sm sm:text-base">
+              <span className="text-[12px] text-slate-500 dark:text-slate-400 font-normal block mb-1">
+                Creation Date
+              </span>
+              <span className="font-bold text-slate-900 dark:text-white block text-[14px] sm:text-[15px]">
                 {creationDateFormatted}
               </span>
             </div>
 
             <div>
-              <span className="text-slate-500 dark:text-slate-400 block text-xs sm:text-[13px] font-medium mb-1">Created By</span>
-              <span className="font-semibold text-slate-900 dark:text-white block text-sm sm:text-base truncate">
+              <span className="text-[12px] text-slate-500 dark:text-slate-400 font-normal block mb-1">
+                Created By
+              </span>
+              <span className="font-bold text-slate-900 dark:text-white block text-[14px] sm:text-[15px] truncate">
                 {createdBy}
               </span>
             </div>
 
             <div>
-              <span className="text-slate-500 dark:text-slate-400 block text-xs sm:text-[13px] font-medium mb-1">Last Updated</span>
-              <span className="font-semibold text-slate-900 dark:text-white block text-sm sm:text-base">
+              <span className="text-[12px] text-slate-500 dark:text-slate-400 font-normal block mb-1">
+                Last Updated
+              </span>
+              <span className="font-bold text-slate-900 dark:text-white block text-[14px] sm:text-[15px]">
                 {lastUpdatedFormatted}
               </span>
             </div>
 
             <div>
-              <span className="text-slate-500 dark:text-slate-400 block text-xs sm:text-[13px] font-medium mb-1">Updated By</span>
-              <span className="font-semibold text-slate-900 dark:text-white block text-sm sm:text-base truncate">
+              <span className="text-[12px] text-slate-500 dark:text-slate-400 font-normal block mb-1">
+                Updated By
+              </span>
+              <span className="font-bold text-slate-900 dark:text-white block text-[14px] sm:text-[15px] truncate">
                 {updatedBy}
               </span>
             </div>

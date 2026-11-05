@@ -57,6 +57,10 @@ export const companyService = {
     return await res.json();
   },
 
+  createCompanyDraft(payload: CreateCompanyDraftPayload): Promise<{ data: Company; message: string }> {
+    return this.createDraft(payload);
+  },
+
   async createDraft(payload: CreateCompanyDraftPayload): Promise<{ data: Company; message: string }> {
     const res = await fetchWithAuth(`${API_BASE_URL}/companies/draft`, {
       method: "POST",

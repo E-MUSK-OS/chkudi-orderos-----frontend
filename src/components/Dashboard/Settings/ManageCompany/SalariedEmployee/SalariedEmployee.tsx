@@ -173,14 +173,14 @@ export default function SalariedEmployee() {
 
   return (
     <DashboardLayout title="Salaried Employee">
-      <div className="w-full space-y-4 font-sans text-[#0A0E1A] dark:text-slate-100">
-        {/* Header matching Image 1 */}
+      <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8">
+        {/* Header matching Employee Profile style */}
         <SalariedEmployeeHeader
           onDownloadTemplate={handleDownloadTemplate}
           onUploadClick={() => setIsUploadModalOpen(true)}
         />
 
-        {/* Filter Bar matching Image 1 */}
+        {/* Filter Bar */}
         <SalariedEmployeeFilterBar
           filters={filters}
           onFilterChange={handleFilterChange}
@@ -190,7 +190,7 @@ export default function SalariedEmployee() {
           availableColumns={AVAILABLE_COLUMNS}
         />
 
-        {/* Salaried Employees Table matching Image 1 */}
+        {/* Salaried Employees Table */}
         <SalariedEmployeeTable
           employees={employees}
           loading={loading}
@@ -222,4 +222,3 @@ export default function SalariedEmployee() {
     </DashboardLayout>
   );
 }
-

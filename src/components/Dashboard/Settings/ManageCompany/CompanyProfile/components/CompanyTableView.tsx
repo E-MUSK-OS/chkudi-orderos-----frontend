@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trash2, ArrowUpDown, Eye, Building2, Edit3 } from "lucide-react";
+import { Trash2, ArrowUpDown, Eye, Edit3 } from "lucide-react";
 import { Company, CompanyFilterState } from "../types/company.types";
 
 interface CompanyTableViewProps {
@@ -56,8 +56,8 @@ export default function CompanyTableView({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
-      <div className="overflow-x-auto">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm relative">
+      <div className="overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
         <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
           <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
             <tr>
@@ -79,7 +79,7 @@ export default function CompanyTableView({
                         <span>{col.label}</span>
                         <ArrowUpDown
                           className={`h-3 w-3 ${
-                            isSorted ? "opacity-100 text-[#F5C451]" : "opacity-40"
+                            isSorted ? "opacity-100 text-[#E8C16D]" : "opacity-40"
                           }`}
                         />
                       </button>
@@ -189,7 +189,7 @@ export default function CompanyTableView({
                             type="button"
                             onClick={() => onView(company)}
                             title="View Company Profile"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#B88728] hover:bg-amber-50/60 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#B88728] hover:bg-[#FFF9EC] dark:hover:text-[#E8C16D] dark:hover:bg-[#1A160E] transition-colors cursor-pointer"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -199,7 +199,7 @@ export default function CompanyTableView({
                           type="button"
                           onClick={() => onModify(company)}
                           title="Edit Company"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50/60 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#B88728] hover:bg-[#FFF9EC] dark:hover:text-[#E8C16D] dark:hover:bg-[#1A160E] transition-colors cursor-pointer"
                         >
                           <Edit3 className="h-4 w-4" />
                         </button>

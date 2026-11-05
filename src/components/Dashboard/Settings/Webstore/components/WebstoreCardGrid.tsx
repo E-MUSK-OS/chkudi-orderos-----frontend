@@ -68,7 +68,7 @@ export default function WebstoreCardGrid({
         <button
           type="button"
           onClick={onAddNew}
-          className="mt-5 inline-flex items-center gap-2 h-10 px-6 text-xs sm:text-sm font-bold rounded-2xl bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.97] text-slate-900 shadow-md shadow-[#F5C451]/15 cursor-pointer transition-all dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_16px_rgba(245,196,81,0.25)]"
+          className="mt-5 inline-flex items-center gap-2 h-11 px-6 text-xs sm:text-sm font-bold rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] shadow-sm cursor-pointer transition-all"
         >
           <Plus size={18} className="stroke-[2.5]" />
           <span>Create Webstore</span>

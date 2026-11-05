@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Plus, X, ArrowDownAZ, ArrowUpZA, RotateCcw } from "lucide-react";
+import { Search, X, ArrowDownAZ, ArrowUpZA, RotateCcw } from "lucide-react";
 import { FieldGroup } from "../types/settingMasters.types";
 
 interface FieldGroupsPanelProps {
   groups: FieldGroup[];
   selectedGroup: FieldGroup | null;
   onSelectGroup: (group: FieldGroup) => void;
-  onOpenAddGroupModal: () => void;
+  onOpenAddGroupModal?: () => void;
   isLoading?: boolean;
   isReadOnly?: boolean;
 }
@@ -94,19 +94,6 @@ export default function FieldGroupsPanel({
         >
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
-
-        {/* + Group Button */}
-        {!isReadOnly && (
-          <button
-            type="button"
-            onClick={onOpenAddGroupModal}
-            className="inline-flex items-center gap-1.5 h-9.5 px-3 rounded-xl bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0 active:scale-[0.98]"
-            title="Add dynamic field group"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Group</span>
-          </button>
-        )}
       </div>
 
       {/* Field Groups Table */}

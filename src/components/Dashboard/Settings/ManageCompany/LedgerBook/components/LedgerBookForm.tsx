@@ -8,10 +8,12 @@ import {
   AlertCircle,
   Save,
   Upload,
-  Calendar,
   Trash2,
   Loader2,
   Check,
+  BookOpen,
+  MapPin,
+  Landmark,
 } from "lucide-react";
 import { Ledger, CreateLedgerPayload } from "../types/ledger.types";
 import { ledgerService } from "../services/ledger.service";
@@ -127,11 +129,11 @@ export default function LedgerBookForm({
   );
 
   const dropdownButtonClassName =
-    "w-full justify-between h-10 px-3.5 text-xs font-normal rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "w-full justify-between h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-[#E7E0D2] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D]/50 transition-all shadow-xs";
   const dropdownMenuClassName =
-    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-xl shadow-2xl";
+    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl p-1.5";
   const datePickerButtonClassName =
-    "h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-[#E7E0D2] hover:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white transition-all shadow-xs";
 
   const [formData, setFormData] = useState<CreateLedgerPayload>({
     // General
@@ -350,23 +352,23 @@ export default function LedgerBookForm({
     const hasErr = Boolean(fieldKey && errors[fieldKey]);
     if (disabled) {
       return cn(
-        "w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+        "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400 transition-all shadow-xs",
         isMono && "font-mono"
       );
     }
     return cn(
-      "w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all",
+      "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border text-[#0A0E1A] placeholder:text-slate-400 dark:bg-[#080B11] dark:text-white outline-none transition-all shadow-xs",
       isMono && "font-mono",
       hasErr
-        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
-        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+        ? "border-rose-500 focus:border-rose-500 ring-2 ring-rose-500/20 dark:border-rose-500"
+        : "border-[#E7E0D2] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50 dark:focus:border-[#E8C16D]"
     );
   };
 
   const renderFieldError = (fieldKey: string) => {
     if (!errors[fieldKey]) return null;
     return (
-      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+      <p className="text-[10px] text-rose-500 font-semibold mt-1 px-2 flex items-center gap-1 animate-in fade-in-50">
         <AlertCircle size={11} className="shrink-0" />
         <span>{errors[fieldKey]}</span>
       </p>
@@ -495,36 +497,38 @@ export default function LedgerBookForm({
     };
   };
 
-  const hasTabError = (tabKey: TabType) => {
-    if (tabKey === "general") {
-      return Boolean(errors.partyName || errors.alias || errors.accountHead || errors.email);
+  const hasTabError = (tabKey: TabType): boolean => {
+    switch (tabKey) {
+      case "general":
+        return Boolean(errors.partyName || errors.alias || errors.accountHead || errors.email);
+      case "contact":
+        return Boolean(
+          errors.addressLine1 ||
+            errors.pincode ||
+            errors.area ||
+            errors.city ||
+            errors.state ||
+            errors.phone ||
+            errors.shippingAddress1 ||
+            errors.shippingPincode ||
+            errors.shippingArea ||
+            errors.shippingCity ||
+            errors.shippingState ||
+            errors.shippingPhone
+        );
+      case "accounting":
+        return Boolean(
+          errors.gstin ||
+            errors.pan ||
+            errors.ifsc ||
+            errors.creditDebitLimit ||
+            errors.billDueDays
+        );
+      case "logo":
+        return Boolean(errors.logoUrl);
+      default:
+        return false;
     }
-    if (tabKey === "contact") {
-      return Boolean(
-        errors.addressLine1 ||
-        errors.pincode ||
-        errors.area ||
-        errors.city ||
-        errors.state ||
-        errors.phone ||
-        errors.shippingAddress1 ||
-        errors.shippingPincode ||
-        errors.shippingArea ||
-        errors.shippingCity ||
-        errors.shippingState ||
-        errors.shippingPhone
-      );
-    }
-    if (tabKey === "accounting") {
-      return Boolean(
-        errors.gstin ||
-        errors.pan ||
-        errors.ifsc ||
-        errors.creditDebitLimit ||
-        errors.billDueDays
-      );
-    }
-    return false;
   };
 
   // Handle Logo Upload
@@ -586,1006 +590,1105 @@ export default function LedgerBookForm({
   };
 
   // Tabs definition matching Company Profile
-  const tabs = [
+  const tabs: { key: TabType; label: string; completed: boolean }[] = [
     {
-      key: "general" as TabType,
+      key: "general",
       label: "General",
       completed: Boolean(formData.partyName && formData.alias && formData.accountHead),
     },
     {
-      key: "contact" as TabType,
+      key: "contact",
       label: "Contact",
       completed: Boolean(formData.addressLine1 && formData.city && formData.state),
     },
     {
-      key: "accounting" as TabType,
+      key: "accounting",
       label: "Accounting",
       completed: Boolean((formData.gstin || formData.pan) && formData.bankName),
     },
     {
-      key: "logo" as TabType,
+      key: "logo",
       label: "Logo",
       completed: Boolean(formData.logoUrl),
     },
   ];
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
-      {/* Top Header Bar matching Company Profile */}
-      <div className="px-6 pt-5 pb-3 w-full flex items-center justify-between border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-colors cursor-pointer"
-            title="Back to Ledger Book"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-              Ledger Book
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+    <div className="flex flex-col gap-4 w-full text-[#0A0E1A] dark:text-slate-100 font-sans animate-in fade-in-50 duration-200">
+      {/* ========================================================================= */}
+      {/* 1. TOP HEADER BAR matching Main Company Profile Header UI                  */}
+      {/* ========================================================================= */}
+      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1.5 min-w-0 max-w-2xl">
+            <div className="flex items-center gap-3.5">
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                title="Back to Ledger Book"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                Ledger Book
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
               <span className="font-semibold text-slate-700 dark:text-slate-300">Name.</span>{" "}
               <span className="text-slate-900 dark:text-white font-medium">{formData.partyName || initialLedger?.partyName || "---"}</span>{" "}
               <span className="ml-3 font-semibold text-slate-700 dark:text-slate-300">GSTN.</span>{" "}
               <span className="text-slate-900 dark:text-white font-medium">{formData.gstin || initialLedger?.gstin || "---"}</span>
             </p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Active Status Badge matching Company Profile */}
-          <button
-            type="button"
-            onClick={() => handleChange("isActive", !formData.isActive)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border shadow-xs transition-colors cursor-pointer ${
-              formData.isActive
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                : "bg-red-500/10 text-red-500 border-red-500/20 dark:text-red-400"
-            }`}
-            title="Click to toggle active status"
-          >
-            <span>{formData.isActive ? "Active" : "Inactive"}</span>
-            {formData.isActive && <Check size={12} className="stroke-[3]" />}
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+            {/* Active Status Badge matching Company Profile */}
+            <button
+              type="button"
+              onClick={() => handleChange("isActive", !formData.isActive)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs cursor-pointer hover:border-[#E8C16D] transition-colors"
+              title="Click to toggle active status"
+            >
+              <Check size={12} className={cn("stroke-[3]", formData.isActive ? "text-[#B88728] dark:text-[#E8C16D]" : "opacity-40")} />
+              <span>{formData.isActive ? "Active" : "Inactive"}</span>
+            </button>
 
-          {/* Edit Mode / New Mode indicator */}
-          <div className="px-3.5 py-1 rounded-md border border-[#E7E0D2] bg-white text-slate-900 dark:border-white/[0.08] dark:bg-[#161B24] dark:text-white font-bold text-xs shadow-xs select-none">
-            {isEditMode ? "Edit Mode" : "New Mode"}
+            {/* Edit Mode / New Mode indicator */}
+            <div className="px-4 py-1.5 rounded-full bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] font-bold text-xs shadow-xs select-none">
+              {isEditMode ? "Edit Mode" : "New Mode"}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs Segmented Bar matching Company Profile */}
-      <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-        <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-4 gap-1 select-none">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            const hasErr = hasTabError(tab.key);
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
-                    : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
-                }`}
-              >
-                {hasErr ? (
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                  </span>
-                ) : tab.completed ? (
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                ) : (
-                  <Circle size={14} className="text-slate-500 shrink-0 stroke-dashed" />
-                )}
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* ========================================================================= */}
+      {/* 2. TABS FLOATING BAR matching the Company Profile theme                    */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-full border border-slate-200/80 dark:border-white/[0.08] bg-[#F1F3F5] dark:bg-[#0D121F] p-1.5 flex items-center justify-between gap-1 shadow-xs overflow-x-auto no-scrollbar">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const hasErr = hasTabError(tab.key);
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
+                isActive
+                  ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.35)]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+              )}
+            >
+              {hasErr ? (
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                </span>
+              ) : isActive ? (
+                <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+              ) : tab.completed ? (
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+              ) : (
+                <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+              )}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Form Content Area (Scrollable with hidden scrollbar) */}
-      <div className="flex-1 px-6 py-6 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        {/* ========================================================================= */}
-        {/* TAB 1: GENERAL DETAILS                                                   */}
-        {/* ========================================================================= */}
-        {activeTab === "general" && (
-          <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                General Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter basic information about ledger.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
-              {/* Ledger Name. * */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Ledger Name. <span className="text-red-500 font-bold">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.partyName || ""}
-                  onChange={(e) => handleChange("partyName", e.target.value)}
-                  placeholder="Enter ledger name"
-                  className={getInputClassName("partyName")}
-                />
-                {renderFieldError("partyName")}
-              </div>
-
-              {/* Alias. * */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                    Alias. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <span
-                    className={`text-[10px] font-mono ${
-                      formData.alias?.length ? "text-emerald-400" : "text-red-500"
-                    }`}
-                  >
-                    {formData.alias ? formData.alias.length : 0}/10
-                  </span>
+      {/* ========================================================================= */}
+      {/* 3. MAIN SECTION CARD with Integrated Action Bar                            */}
+      {/* ========================================================================= */}
+      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden flex flex-col">
+        <div className="p-6 sm:p-8 flex-1">
+          {/* ========================================================================= */}
+          {/* TAB 1: GENERAL DETAILS                                                   */}
+          {/* ========================================================================= */}
+          {activeTab === "general" && (
+            <div className="w-full">
+              <div className="flex items-center gap-3.5 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                  <BookOpen size={18} />
                 </div>
-                <input
-                  type="text"
-                  maxLength={10}
-                  value={formData.alias || ""}
-                  onChange={(e) => {
-                    const val = e.target.value.toUpperCase();
-                    handleChange("alias", val);
-                    handleChange("accountCode", val);
-                  }}
-                  placeholder="SHORT CODE / ALIAS"
-                  className={getInputClassName("alias", true)}
-                />
-                {renderFieldError("alias")}
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    General Details
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Enter basic information about ledger.
+                  </p>
+                </div>
               </div>
 
-              {/* Account Head. * */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Account Head. <span className="text-red-500 font-bold">*</span>
-                </label>
-                <DropdownWithOther
-                  hideLabel
-                  label="Account Head"
-                  required
-                  value={formData.accountHead || "Sundry Debtors"}
-                  onChange={(val) => handleChange("accountHead", val)}
-                  options={accountHeadOptions}
-                  placeholder="Select Account Head"
-                  fieldKey="accounthead"
-                  className="w-full"
-                  buttonClassName={cn(
-                    dropdownButtonClassName,
-                    errors.accountHead && "border-rose-500 ring-1 ring-rose-500/30"
-                  )}
-                  menuClassName={dropdownMenuClassName}
-                />
-                {renderFieldError("accountHead")}
-              </div>
+              <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
 
-              {/* Email. */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Email.
-                </label>
-                <input
-                  type="email"
-                  value={formData.email || ""}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  placeholder="Enter email address"
-                  className={getInputClassName("email")}
-                />
-                {renderFieldError("email")}
-              </div>
-
-              {/* Contact Name. */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Contact Name.
-                </label>
-                <input
-                  type="text"
-                  value={formData.contactPerson || ""}
-                  onChange={(e) => handleChange("contactPerson", e.target.value)}
-                  placeholder="Contact person name"
-                  className={getInputClassName()}
-                />
-              </div>
-
-              {/* Creation Date. */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Creation Date.
-                </label>
-                <DatePicker
-                  value={formData.creationDate || todayFormatted}
-                  onChange={(_, str) => handleChange("creationDate", str || "")}
-                  placeholder="DD-MM-YYYY"
-                  dateFormat="dd-MM-yyyy"
-                  className="w-full"
-                  buttonClassName={datePickerButtonClassName}
-                />
-              </div>
-
-              {/* Opening Balance. + Dr / Cr */}
-              <div className="sm:col-span-2">
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Opening Balance.
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-md">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                {/* Ledger Name. * */}
+                <div>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                    Ledger Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                  </label>
                   <input
-                    type="number"
-                    value={formData.openingBalance ?? 0}
-                    onChange={(e) => handleChange("openingBalance", Number(e.target.value))}
-                    placeholder="0"
-                    className={cn(getInputClassName(undefined, true), "sm:col-span-2 h-10")}
+                    type="text"
+                    value={formData.partyName || ""}
+                    onChange={(e) => handleChange("partyName", e.target.value)}
+                    placeholder="Enter ledger name"
+                    className={getInputClassName("partyName")}
                   />
-                  <ThemeSelectDropdown
-                    value={formData.balanceType || "Dr"}
-                    onChange={(val) => handleChange("balanceType", val)}
-                    options={balanceTypeOptions}
-                    placeholder="Dr/Cr"
+                  {renderFieldError("partyName")}
+                </div>
+
+                {/* Alias. * */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                      Alias. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <span
+                      className={cn(
+                        "text-[11px] font-bold font-mono",
+                        formData.alias?.length ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"
+                      )}
+                    >
+                      {formData.alias ? formData.alias.length : 0}/10
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={formData.alias || ""}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      handleChange("alias", val);
+                      handleChange("accountCode", val);
+                    }}
+                    placeholder="SHORT CODE / ALIAS"
+                    className={getInputClassName("alias", true)}
+                  />
+                  {renderFieldError("alias")}
+                </div>
+
+                {/* Account Head. * */}
+                <div>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                    Account Head. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                  </label>
+                  <DropdownWithOther
+                    hideLabel
+                    label="Account Head"
+                    required
+                    value={formData.accountHead || "Sundry Debtors"}
+                    onChange={(val) => handleChange("accountHead", val)}
+                    options={accountHeadOptions}
+                    placeholder="Select Account Head"
+                    fieldKey="accounthead"
                     className="w-full"
-                    buttonClassName={dropdownButtonClassName}
+                    buttonClassName={cn(
+                      dropdownButtonClassName,
+                      errors.accountHead && "border-rose-500 ring-2 ring-rose-500/20"
+                    )}
                     menuClassName={dropdownMenuClassName}
                   />
+                  {renderFieldError("accountHead")}
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* TAB 2: CONTACT DETAILS                                                   */}
-        {/* ========================================================================= */}
-        {activeTab === "contact" && (
-          <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                Contact Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter billing and shipping information
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-              {/* Billing Column */}
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Billing</h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.addressLine1 || ""}
-                      onChange={(e) => handleChange("addressLine1", e.target.value)}
-                      placeholder="Plot / Building / Street address"
-                      className={getInputClassName("addressLine1")}
-                    />
-                    {renderFieldError("addressLine1")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 2.
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.addressLine2 || ""}
-                      onChange={(e) => handleChange("addressLine2", e.target.value)}
-                      placeholder="Suite / Floor / Landmark"
-                      className={getInputClassName()}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 3.
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.addressLine3 || ""}
-                      onChange={(e) => handleChange("addressLine3", e.target.value)}
-                      placeholder="Additional address details"
-                      className={getInputClassName()}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={formData.pincode || ""}
-                      onChange={(e) =>
-                        handleChange("pincode", e.target.value.replace(/\D/g, ""))
-                      }
-                      placeholder="e.g. 395001"
-                      className={getInputClassName("pincode", true)}
-                    />
-                    {renderFieldError("pincode")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.area || ""}
-                      onChange={(e) => handleChange("area", e.target.value)}
-                      placeholder="Area / Locality"
-                      className={getInputClassName("area")}
-                    />
-                    {renderFieldError("area")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.city || ""}
-                      onChange={(e) => handleChange("city", e.target.value)}
-                      placeholder="City"
-                      className={getInputClassName("city")}
-                    />
-                    {renderFieldError("city")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <ThemeSelectDropdown
-                      value={formData.state || "Gujarat"}
-                      onChange={(val) => handleChange("state", val)}
-                      options={stateOptions}
-                      placeholder="Select a state"
-                      className="w-full"
-                      buttonClassName={cn(
-                        dropdownButtonClassName,
-                        errors.state && "border-rose-500 ring-1 ring-rose-500/30"
-                      )}
-                      menuClassName={dropdownMenuClassName}
-                    />
-                    {renderFieldError("state")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Country.
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      value={formData.country || "India"}
-                      className={getInputClassName(undefined, false, true)}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        Contact No.
-                      </label>
-                      <span
-                        className={`text-[10px] font-mono ${
-                          formData.phone?.length === 10
-                            ? "text-emerald-400"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {formData.phone ? formData.phone.length : 0}/10
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={10}
-                      value={formData.phone || ""}
-                      onChange={(e) =>
-                        handleChange("phone", e.target.value.replace(/\D/g, ""))
-                      }
-                      placeholder="Enter 10-digit Contact No"
-                      className={getInputClassName("phone", true)}
-                    />
-                    {renderFieldError("phone")}
-                  </div>
-                </div>
-              </div>
-
-              {/* Shipping Column */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Shipping</h3>
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 dark:text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(formData.shippingSameAsBilling)}
-                      onChange={(e) => handleShippingSameToggle(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded border-slate-300 bg-white text-slate-900 accent-[#E8C16D] dark:border-white/[0.2] dark:bg-[#161B26] dark:accent-[#F5C451] focus:ring-0 cursor-pointer"
-                    />
-                    <span>Shipping same as billing.</span>
+                {/* Email. */}
+                <div>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                    Email.
                   </label>
+                  <input
+                    type="email"
+                    value={formData.email || ""}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    placeholder="Enter email address"
+                    className={getInputClassName("email")}
+                  />
+                  {renderFieldError("email")}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingAddress1 || ""}
-                      onChange={(e) => handleChange("shippingAddress1", e.target.value)}
-                      placeholder="Plot / Building / Street address"
-                      className={getInputClassName("shippingAddress1", false, Boolean(formData.shippingSameAsBilling))}
-                    />
-                    {!formData.shippingSameAsBilling && renderFieldError("shippingAddress1")}
-                  </div>
+                {/* Contact Name. */}
+                <div>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                    Contact Name.
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.contactPerson || ""}
+                    onChange={(e) => handleChange("contactPerson", e.target.value)}
+                    placeholder="Contact person name"
+                    className={getInputClassName()}
+                  />
+                </div>
 
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 2.
-                    </label>
-                    <input
-                      type="text"
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingAddress2 || ""}
-                      onChange={(e) => handleChange("shippingAddress2", e.target.value)}
-                      placeholder="Suite / Floor / Landmark"
-                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
-                    />
-                  </div>
+                {/* Creation Date. */}
+                <div>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                    Creation Date.
+                  </label>
+                  <DatePicker
+                    value={formData.creationDate || todayFormatted}
+                    onChange={(_, str) => handleChange("creationDate", str || "")}
+                    placeholder="DD-MM-YYYY"
+                    dateFormat="dd-MM-yyyy"
+                    className="w-full"
+                    buttonClassName={datePickerButtonClassName}
+                  />
+                </div>
 
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 3.
-                    </label>
+                {/* Opening Balance. + Dr / Cr */}
+                <div className="md:col-span-2">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                    Opening Balance.
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-md">
                     <input
-                      type="text"
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingAddress3 || ""}
-                      onChange={(e) => handleChange("shippingAddress3", e.target.value)}
-                      placeholder="Additional address details"
-                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
+                      type="number"
+                      value={formData.openingBalance ?? 0}
+                      onChange={(e) => handleChange("openingBalance", Number(e.target.value))}
+                      placeholder="0"
+                      className={cn(getInputClassName(undefined, true), "sm:col-span-2")}
                     />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingPincode || ""}
-                      onChange={(e) =>
-                        handleChange("shippingPincode", e.target.value.replace(/\D/g, ""))
-                      }
-                      placeholder="e.g. 395001"
-                      className={getInputClassName("shippingPincode", true, Boolean(formData.shippingSameAsBilling))}
-                    />
-                    {!formData.shippingSameAsBilling && renderFieldError("shippingPincode")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingArea || ""}
-                      onChange={(e) => handleChange("shippingArea", e.target.value)}
-                      placeholder="Area / Locality"
-                      className={getInputClassName("shippingArea", false, Boolean(formData.shippingSameAsBilling))}
-                    />
-                    {!formData.shippingSameAsBilling && renderFieldError("shippingArea")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingCity || ""}
-                      onChange={(e) => handleChange("shippingCity", e.target.value)}
-                      placeholder="City"
-                      className={getInputClassName("shippingCity", false, Boolean(formData.shippingSameAsBilling))}
-                    />
-                    {!formData.shippingSameAsBilling && renderFieldError("shippingCity")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
-                    </label>
                     <ThemeSelectDropdown
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingState || "Gujarat"}
-                      onChange={(val) => handleChange("shippingState", val)}
-                      options={stateOptions}
-                      placeholder="Select a state"
-                      className="w-full"
-                      buttonClassName={cn(
-                        dropdownButtonClassName,
-                        formData.shippingSameAsBilling &&
-                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
-                        !formData.shippingSameAsBilling &&
-                          errors.shippingState &&
-                          "border-rose-500 ring-1 ring-rose-500/30"
-                      )}
-                      menuClassName={dropdownMenuClassName}
-                    />
-                    {!formData.shippingSameAsBilling && renderFieldError("shippingState")}
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Country.
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      value={formData.shippingCountry || "India"}
-                      className={getInputClassName(undefined, false, true)}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        Contact No.
-                      </label>
-                      <span
-                        className={`text-[10px] font-mono ${
-                          formData.shippingPhone?.length === 10
-                            ? "text-emerald-400"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {formData.shippingPhone ? formData.shippingPhone.length : 0}/10
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={10}
-                      disabled={Boolean(formData.shippingSameAsBilling)}
-                      value={formData.shippingPhone || ""}
-                      onChange={(e) =>
-                        handleChange("shippingPhone", e.target.value.replace(/\D/g, ""))
-                      }
-                      placeholder="Enter 10-digit Contact No"
-                      className={getInputClassName("shippingPhone", true, Boolean(formData.shippingSameAsBilling))}
-                    />
-                    {!formData.shippingSameAsBilling && renderFieldError("shippingPhone")}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 3: LEGAL & ACCOUNTING DETAILS                                         */}
-        {/* ========================================================================= */}
-        {activeTab === "accounting" && (
-          <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                Legal & Accounting Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter Legal and Accounting Details
-              </p>
-            </div>
-
-            {/* Top Grid: Taxation & Legal vs Bank Details */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 mb-8">
-              {/* Taxation & Legal Details */}
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
-                  Taxation & Legal Details
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-                  {/* GST Number */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        GST Number.
-                      </label>
-                      <span
-                        className={`text-[10px] font-mono ${
-                          formData.gstin?.length === 15
-                            ? "text-emerald-400"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {formData.gstin ? formData.gstin.length : 0}/15
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={15}
-                      value={formData.gstin || ""}
-                      onChange={(e) => handleChange("gstin", e.target.value.toUpperCase())}
-                      placeholder="24ABCDE1234F1Z5"
-                      className={getInputClassName("gstin", true)}
-                    />
-                    {renderFieldError("gstin")}
-                  </div>
-
-                  {/* PAN Number */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        PAN Number.
-                      </label>
-                      <span
-                        className={`text-[10px] font-mono ${
-                          formData.pan?.length === 10
-                            ? "text-emerald-400"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {formData.pan ? formData.pan.length : 0}/10
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={10}
-                      value={formData.pan || ""}
-                      onChange={(e) => handleChange("pan", e.target.value.toUpperCase())}
-                      placeholder="ABCDE1234F"
-                      className={getInputClassName("pan", true)}
-                    />
-                    {renderFieldError("pan")}
-                  </div>
-
-                  {/* MSME Number */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        MSME Number.
-                      </label>
-                      <span
-                        className={`text-[10px] font-mono ${
-                          formData.msmeNumber?.length
-                            ? "text-emerald-400"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {formData.msmeNumber ? formData.msmeNumber.length : 0}/19
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={19}
-                      value={formData.msmeNumber || ""}
-                      onChange={(e) =>
-                        handleChange("msmeNumber", e.target.value.toUpperCase())
-                      }
-                      placeholder="UDYAM-XX-00-0000000"
-                      className={getInputClassName(undefined, true)}
-                    />
-                  </div>
-
-                  {/* Legal Name */}
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Legal Name.
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.legalName || ""}
-                      onChange={(e) => handleChange("legalName", e.target.value)}
-                      placeholder="Registered legal entity name"
-                      className={getInputClassName()}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bank Details */}
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Bank Details</h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account No.
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.accountNumber || ""}
-                      onChange={(e) => handleChange("accountNumber", e.target.value)}
-                      placeholder="Enter account number"
-                      className={getInputClassName(undefined, true)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Holder Name.
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.accountHolderName || ""}
-                      onChange={(e) => handleChange("accountHolderName", e.target.value)}
-                      placeholder="Account holder's full name"
-                      className={getInputClassName()}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Bank Name.
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.bankName || ""}
-                      onChange={(e) => handleChange("bankName", e.target.value)}
-                      placeholder="e.g. HDFC Bank"
-                      className={getInputClassName(undefined, false)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Branch Name.
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.branchName || ""}
-                      onChange={(e) => handleChange("branchName", e.target.value)}
-                      placeholder="Branch name or location"
-                      className={getInputClassName()}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Type.
-                    </label>
-                    <ThemeSelectDropdown
-                      value={formData.accountType || "Current"}
-                      onChange={(val) => handleChange("accountType", val)}
-                      options={accountTypeOptions}
-                      placeholder="Select account type"
+                      value={formData.balanceType || "Dr"}
+                      onChange={(val) => handleChange("balanceType", val)}
+                      options={balanceTypeOptions}
+                      placeholder="Dr/Cr"
                       className="w-full"
                       buttonClassName={dropdownButtonClassName}
                       menuClassName={dropdownMenuClassName}
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 2: CONTACT DETAILS                                                   */}
+          {/* ========================================================================= */}
+          {activeTab === "contact" && (
+            <div className="w-full">
+              <div className="flex items-center gap-3.5 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Contact Details
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Enter billing and shipping information
+                  </p>
+                </div>
+              </div>
+
+              <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8">
+                {/* Billing Column */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                    <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                      Billing
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Address 1. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.addressLine1 || ""}
+                        onChange={(e) => handleChange("addressLine1", e.target.value)}
+                        placeholder="Plot / Building / Street address"
+                        className={getInputClassName("addressLine1")}
+                      />
+                      {renderFieldError("addressLine1")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Address 2.
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.addressLine2 || ""}
+                        onChange={(e) => handleChange("addressLine2", e.target.value)}
+                        placeholder="Suite / Floor / Landmark"
+                        className={getInputClassName()}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Address 3.
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.addressLine3 || ""}
+                        onChange={(e) => handleChange("addressLine3", e.target.value)}
+                        placeholder="Additional address details"
+                        className={getInputClassName()}
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          Pincode. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.pincode?.length === 6
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.pincode ? formData.pincode.length : 0}/6
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={formData.pincode || ""}
+                        onChange={(e) =>
+                          handleChange("pincode", e.target.value.replace(/\D/g, ""))
+                        }
+                        placeholder="e.g. 395001"
+                        className={getInputClassName("pincode", true)}
+                      />
+                      {renderFieldError("pincode")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Area. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.area || ""}
+                        onChange={(e) => handleChange("area", e.target.value)}
+                        placeholder="Area / Locality"
+                        className={getInputClassName("area")}
+                      />
+                      {renderFieldError("area")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        City. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.city || ""}
+                        onChange={(e) => handleChange("city", e.target.value)}
+                        placeholder="City"
+                        className={getInputClassName("city")}
+                      />
+                      {renderFieldError("city")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        State. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <ThemeSelectDropdown
+                        value={formData.state || "Gujarat"}
+                        onChange={(val) => handleChange("state", val)}
+                        options={stateOptions}
+                        placeholder="Select a state"
+                        className="w-full"
+                        buttonClassName={cn(
+                          dropdownButtonClassName,
+                          errors.state && "border-rose-500 ring-2 ring-rose-500/20"
+                        )}
+                        menuClassName={dropdownMenuClassName}
+                      />
+                      {renderFieldError("state")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Country.
+                      </label>
+                      <input
+                        type="text"
+                        disabled
+                        value={formData.country || "India"}
+                        className={getInputClassName(undefined, false, true)}
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          Contact No.
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.phone?.length === 10
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.phone ? formData.phone.length : 0}/10
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        value={formData.phone || ""}
+                        onChange={(e) =>
+                          handleChange("phone", e.target.value.replace(/\D/g, ""))
+                        }
+                        placeholder="Enter 10-digit Contact No"
+                        className={getInputClassName("phone", true)}
+                      />
+                      {renderFieldError("phone")}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shipping Column */}
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                    <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                      Shipping
+                    </h3>
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formData.shippingSameAsBilling)}
+                        onChange={(e) => handleShippingSameToggle(e.target.checked)}
+                        className="w-4 h-4 rounded-md border-slate-300 bg-white text-[#B88728] focus:ring-[#F5C451] cursor-pointer dark:border-white/[0.2] dark:bg-[#161B26]"
+                      />
+                      <span>Shipping same as billing.</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Address 1. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingAddress1 || ""}
+                        onChange={(e) => handleChange("shippingAddress1", e.target.value)}
+                        placeholder="Plot / Building / Street address"
+                        className={getInputClassName("shippingAddress1", false, Boolean(formData.shippingSameAsBilling))}
+                      />
+                      {!formData.shippingSameAsBilling && renderFieldError("shippingAddress1")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Address 2.
+                      </label>
+                      <input
+                        type="text"
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingAddress2 || ""}
+                        onChange={(e) => handleChange("shippingAddress2", e.target.value)}
+                        placeholder="Suite / Floor / Landmark"
+                        className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Address 3.
+                      </label>
+                      <input
+                        type="text"
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingAddress3 || ""}
+                        onChange={(e) => handleChange("shippingAddress3", e.target.value)}
+                        placeholder="Additional address details"
+                        className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          Pincode. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.shippingPincode?.length === 6
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.shippingPincode ? formData.shippingPincode.length : 0}/6
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingPincode || ""}
+                        onChange={(e) =>
+                          handleChange("shippingPincode", e.target.value.replace(/\D/g, ""))
+                        }
+                        placeholder="e.g. 395001"
+                        className={getInputClassName("shippingPincode", true, Boolean(formData.shippingSameAsBilling))}
+                      />
+                      {!formData.shippingSameAsBilling && renderFieldError("shippingPincode")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Area. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingArea || ""}
+                        onChange={(e) => handleChange("shippingArea", e.target.value)}
+                        placeholder="Area / Locality"
+                        className={getInputClassName("shippingArea", false, Boolean(formData.shippingSameAsBilling))}
+                      />
+                      {!formData.shippingSameAsBilling && renderFieldError("shippingArea")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        City. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingCity || ""}
+                        onChange={(e) => handleChange("shippingCity", e.target.value)}
+                        placeholder="City"
+                        className={getInputClassName("shippingCity", false, Boolean(formData.shippingSameAsBilling))}
+                      />
+                      {!formData.shippingSameAsBilling && renderFieldError("shippingCity")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        State. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <ThemeSelectDropdown
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingState || "Gujarat"}
+                        onChange={(val) => handleChange("shippingState", val)}
+                        options={stateOptions}
+                        placeholder="Select a state"
+                        className="w-full"
+                        buttonClassName={cn(
+                          dropdownButtonClassName,
+                          formData.shippingSameAsBilling &&
+                            "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+                          !formData.shippingSameAsBilling &&
+                            errors.shippingState &&
+                            "border-rose-500 ring-2 ring-rose-500/20"
+                        )}
+                        menuClassName={dropdownMenuClassName}
+                      />
+                      {!formData.shippingSameAsBilling && renderFieldError("shippingState")}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Country.
+                      </label>
+                      <input
+                        type="text"
+                        disabled
+                        value={formData.shippingCountry || "India"}
+                        className={getInputClassName(undefined, false, true)}
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          Contact No.
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.shippingPhone?.length === 10
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.shippingPhone ? formData.shippingPhone.length : 0}/10
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        disabled={Boolean(formData.shippingSameAsBilling)}
+                        value={formData.shippingPhone || ""}
+                        onChange={(e) =>
+                          handleChange("shippingPhone", e.target.value.replace(/\D/g, ""))
+                        }
+                        placeholder="Enter 10-digit Contact No"
+                        className={getInputClassName("shippingPhone", true, Boolean(formData.shippingSameAsBilling))}
+                      />
+                      {!formData.shippingSameAsBilling && renderFieldError("shippingPhone")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 3: LEGAL & ACCOUNTING DETAILS                                         */}
+          {/* ========================================================================= */}
+          {activeTab === "accounting" && (
+            <div className="w-full">
+              <div className="flex items-center gap-3.5 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                  <Landmark size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Legal & Accounting Details
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Enter Legal and Accounting Details
+                  </p>
+                </div>
+              </div>
+
+              <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
+
+              {/* Top Grid: Taxation & Legal vs Bank Details */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mb-8">
+                {/* Taxation & Legal Details */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                    <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                      Taxation & Legal Details
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                    {/* GST Number */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          GST Number.
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.gstin?.length === 15
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.gstin ? formData.gstin.length : 0}/15
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={15}
+                        value={formData.gstin || ""}
+                        onChange={(e) => handleChange("gstin", e.target.value.toUpperCase())}
+                        placeholder="24ABCDE1234F1Z5"
+                        className={getInputClassName("gstin", true)}
+                      />
+                      {renderFieldError("gstin")}
+                    </div>
+
+                    {/* PAN Number */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          PAN Number.
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.pan?.length === 10
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.pan ? formData.pan.length : 0}/10
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        value={formData.pan || ""}
+                        onChange={(e) => handleChange("pan", e.target.value.toUpperCase())}
+                        placeholder="ABCDE1234F"
+                        className={getInputClassName("pan", true)}
+                      />
+                      {renderFieldError("pan")}
+                    </div>
+
+                    {/* MSME Number */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          MSME Number.
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.msmeNumber?.length
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.msmeNumber ? formData.msmeNumber.length : 0}/19
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={19}
+                        value={formData.msmeNumber || ""}
+                        onChange={(e) =>
+                          handleChange("msmeNumber", e.target.value.toUpperCase())
+                        }
+                        placeholder="UDYAM-XX-00-0000000"
+                        className={getInputClassName(undefined, true)}
+                      />
+                    </div>
+
+                    {/* Legal Name */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Legal Name.
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.legalName || ""}
+                        onChange={(e) => handleChange("legalName", e.target.value)}
+                        placeholder="Registered legal entity name"
+                        className={getInputClassName()}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bank Details */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                    <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                      Bank Details
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Account No.
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.accountNumber || ""}
+                        onChange={(e) => handleChange("accountNumber", e.target.value)}
+                        placeholder="Enter account number"
+                        className={getInputClassName(undefined, true)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Holder Name.
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.accountHolderName || ""}
+                        onChange={(e) => handleChange("accountHolderName", e.target.value)}
+                        placeholder="Account holder's full name"
+                        className={getInputClassName()}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Bank Name.
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.bankName || ""}
+                        onChange={(e) => handleChange("bankName", e.target.value)}
+                        placeholder="e.g. HDFC Bank"
+                        className={getInputClassName(undefined, false)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Branch Name.
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.branchName || ""}
+                        onChange={(e) => handleChange("branchName", e.target.value)}
+                        placeholder="Branch name or location"
+                        className={getInputClassName()}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                        Account Type.
+                      </label>
+                      <ThemeSelectDropdown
+                        value={formData.accountType || "Current"}
+                        onChange={(val) => handleChange("accountType", val)}
+                        options={accountTypeOptions}
+                        placeholder="Select account type"
+                        className="w-full"
+                        buttonClassName={dropdownButtonClassName}
+                        menuClassName={dropdownMenuClassName}
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          IFSC Code.
+                        </label>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold font-mono",
+                            formData.ifsc?.length === 11
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {formData.ifsc ? formData.ifsc.length : 0}/11
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={11}
+                        value={formData.ifsc || ""}
+                        onChange={(e) => handleChange("ifsc", e.target.value.toUpperCase())}
+                        placeholder="e.g. HDFC0001234"
+                        className={getInputClassName("ifsc", true)}
+                      />
+                      {renderFieldError("ifsc")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Row: Other Details */}
+              <div className="pt-6 border-t border-[#E7E0D2] dark:border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                    Other Details
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-5">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Credit Debit Limit. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.creditDebitLimit ?? 0}
+                      onChange={(e) =>
+                        handleChange("creditDebitLimit", Number(e.target.value))
+                      }
+                      className={getInputClassName("creditDebitLimit", true)}
+                    />
+                    {renderFieldError("creditDebitLimit")}
+                  </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      IFSC Code.
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Bill Due Days. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.billDueDays ?? 0}
+                      onChange={(e) => handleChange("billDueDays", Number(e.target.value))}
+                      className={getInputClassName("billDueDays", true)}
+                    />
+                    {renderFieldError("billDueDays")}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Ref. Contact Name.
                     </label>
                     <input
                       type="text"
-                      maxLength={11}
-                      value={formData.ifsc || ""}
-                      onChange={(e) => handleChange("ifsc", e.target.value.toUpperCase())}
-                      placeholder="e.g. HDFC0001234"
-                      className={getInputClassName("ifsc", true)}
+                      value={formData.refContactName || ""}
+                      onChange={(e) => handleChange("refContactName", e.target.value)}
+                      placeholder="select / type reference"
+                      className={getInputClassName()}
                     />
-                    {renderFieldError("ifsc")}
                   </div>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Bottom Row: Other Details */}
-            <div className="pt-6 border-t border-[#E7E0D2] dark:border-white/[0.06]">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Other Details</h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-4">
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Credit Debit Limit. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.creditDebitLimit ?? 0}
-                    onChange={(e) =>
-                      handleChange("creditDebitLimit", Number(e.target.value))
-                    }
-                    className={getInputClassName("creditDebitLimit", true)}
-                  />
-                  {renderFieldError("creditDebitLimit")}
+          {/* ========================================================================= */}
+          {/* TAB 4: LOGO                                                               */}
+          {/* ========================================================================= */}
+          {activeTab === "logo" && (
+            <div className="w-full">
+              <div className="flex items-center gap-3.5 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                  <Upload size={18} />
                 </div>
-
                 <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Bill Due Days. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.billDueDays ?? 0}
-                    onChange={(e) => handleChange("billDueDays", Number(e.target.value))}
-                    className={getInputClassName("billDueDays", true)}
-                  />
-                  {renderFieldError("billDueDays")}
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Ref. Contact Name.
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.refContactName || ""}
-                    onChange={(e) => handleChange("refContactName", e.target.value)}
-                    placeholder="select / type reference"
-                    className={getInputClassName()}
-                  />
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Ledger Logo
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Upload ledger image / logo from here.
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* TAB 4: LOGO                                                               */}
-        {/* ========================================================================= */}
-        {activeTab === "logo" && (
-          <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                Ledger Logo
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload ledger image / logo from here.
-              </p>
-            </div>
+              <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-              <div>
-                <input
-                  type="file"
-                  ref={logoInputRef}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleLogoFile(f);
-                    e.target.value = "";
-                  }}
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  className="hidden"
-                />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+                <div>
+                  <input
+                    type="file"
+                    ref={logoInputRef}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleLogoFile(f);
+                      e.target.value = "";
+                    }}
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                  />
 
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => logoInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => logoInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        logoInputRef.current?.click();
+                      }
+                    }}
+                    onDragOver={(e) => {
                       e.preventDefault();
-                      logoInputRef.current?.click();
-                    }
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsLogoDragging(true);
-                  }}
-                  onDragLeave={() => setIsLogoDragging(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsLogoDragging(false);
-                    const f = e.dataTransfer.files?.[0];
-                    if (f) handleLogoFile(f);
-                  }}
-                  className={`w-48 h-48 rounded-2xl bg-slate-50 border ${
-                    isLogoDragging
-                      ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
-                  } dark:bg-[#161B26] flex flex-col items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
-                  title="Click to select and upload ledger logo"
-                >
-                  {formData.logoUrl ? (
-                    <img
-                      src={getMediaUrl(formData.logoUrl)}
-                      alt="Ledger Logo"
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-center select-none">
-                      <Upload size={24} className="text-slate-400 mb-2" />
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                        Upload
+                      setIsLogoDragging(true);
+                    }}
+                    onDragLeave={() => setIsLogoDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsLogoDragging(false);
+                      const f = e.dataTransfer.files?.[0];
+                      if (f) handleLogoFile(f);
+                    }}
+                    className={cn(
+                      "w-48 h-48 rounded-3xl bg-[#FAF8F5] border text-[#0A0E1A] dark:bg-[#080B11] flex flex-col items-center justify-center p-4 shadow-sm overflow-hidden relative group cursor-pointer transition-all select-none",
+                      isLogoDragging
+                        ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
+                        : "border-[#E7E0D2] hover:border-[#E8C16D] dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50"
+                    )}
+                    title="Click to select and upload ledger logo"
+                  >
+                    {formData.logoUrl ? (
+                      <img
+                        src={getMediaUrl(formData.logoUrl)}
+                        alt="Ledger Logo"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center select-none">
+                        <div className="w-12 h-12 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 flex items-center justify-center mb-3">
+                          <Upload size={22} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Upload Logo
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-1">
+                          Click or drag & drop
+                        </span>
+                      </div>
+                    )}
+
+                    {formData.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleChange("logoUrl", "");
+                          toast.success("Logo removed.");
+                        }}
+                        className="absolute top-2.5 right-2.5 p-1.5 rounded-xl bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                        title="Remove Logo"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
+                      <Upload size={22} className="text-[#E8C16D]" />
+                      <span className="text-xs font-semibold">
+                        {formData.logoUrl ? "Change Logo" : "Upload Logo"}
                       </span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                      <span className="text-[10px] text-slate-300">
                         Click or drag & drop
                       </span>
                     </div>
-                  )}
-
-                  {formData.logoUrl && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleChange("logoUrl", "");
-                        toast.success("Logo removed.");
-                      }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
-                      title="Remove Logo"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-white" />
-                    <span className="text-xs font-semibold">
-                      {formData.logoUrl ? "Change Logo" : "Upload Logo"}
-                    </span>
-                    <span className="text-[10px] text-slate-700 dark:text-slate-300">
-                      Click or drag & drop
-                    </span>
                   </div>
                 </div>
+                <div />
               </div>
-              <div />
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Bottom Sticky Action Bar */}
-      <div className="p-4 sm:p-5 border-t border-[#E7E0D2] bg-slate-50 dark:border-white/[0.08] dark:bg-[#0E121A] w-full">
-        <div className="w-full flex items-center justify-between">
-          {/* Left: Completion Percentage bar */}
-          <div className="w-48 sm:w-64 space-y-1">
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Completion Percentage: {completionPercentage}%
-            </p>
-            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/[0.1] overflow-hidden">
+        {/* ========================================================================= */}
+        {/* BOTTOM ACTION BAR matching EmployeeProfileViewPage bottom gradient theme  */}
+        {/* ========================================================================= */}
+        <div className="border-t border-[#EAE4D8] dark:border-white/[0.08] bg-gradient-to-r from-[#FFF6DE] via-[#FFF9EC] to-white dark:from-[#1E190F] dark:via-[#131722] dark:to-[#0A0E1A] p-5 sm:p-7 w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="w-full sm:w-64 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Completion Percentage:
+              </span>
+              <span className="text-xs font-bold font-mono text-slate-900 dark:text-[#E8C16D]">
+                {completionPercentage}%
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-slate-200/80 dark:bg-white/[0.1] overflow-hidden">
               <div
-                className="h-full bg-[#0A0E1A] dark:bg-[#F5C451] rounded-full transition-all duration-300"
+                className="h-full bg-[#0A0E1A] dark:bg-[#E8C16D] rounded-full transition-all duration-300"
                 style={{ width: `${completionPercentage}%` }}
               />
             </div>
           </div>
 
-          {/* Right: Save Button */}
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#F5C451] hover:bg-[#e8b83e] text-slate-900 font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 px-7 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-50 shrink-0"
           >
             {saving ? (
-              <Loader2 size={16} className="animate-spin text-slate-900" />
+              <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
             ) : (
-              <Save size={16} className="text-slate-900" />
+              <Save size={16} className="text-[#0A0E1A]" />
             )}
             <span>{saving ? "Saving..." : "Save"}</span>
           </button>

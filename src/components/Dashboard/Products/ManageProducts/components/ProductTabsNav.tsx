@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
+import { CheckCircle2, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Package, SlidersHorizontal } from "lucide-react";
 
 export type ProductActiveTab = "general" | "kardex";
 
@@ -20,26 +20,22 @@ export default function ProductTabsNav({
   const tabs: {
     id: ProductActiveTab;
     label: string;
-    icon: typeof Package;
   }[] = [
     {
       id: "general",
       label: "General",
-      icon: Package,
     },
     {
       id: "kardex",
       label: "Kardex",
-      icon: SlidersHorizontal,
     },
   ];
 
   return (
     <div className={cn("w-full py-1", className)}>
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full p-1.5 sm:p-2 rounded-2xl bg-slate-100/90 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] shadow-inner">
+      <div className="w-full rounded-2xl sm:rounded-full bg-white dark:bg-[#080B11] border border-[#E7E0D2] dark:border-white/[0.08] p-1.5 flex items-center justify-between shadow-xs gap-1 sm:gap-2 select-none overflow-x-auto no-scrollbar">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
 
           return (
             <button
@@ -47,37 +43,18 @@ export default function ProductTabsNav({
               type="button"
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "w-full flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-3.5 px-4 rounded-xl text-xs sm:text-sm md:text-base font-bold transition-all duration-200 cursor-pointer select-none text-center",
+                "flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
                 isActive
-                  ? "bg-white text-[#0A0E1A] shadow-sm border border-slate-200/90 dark:bg-[#131926] dark:text-[#F5C451] dark:border-[#F5C451]/30 dark:shadow-md"
-                  : "text-slate-500 hover:text-[#0A0E1A] dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/[0.04]"
+                  ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
               )}
             >
-              {/* Radio / Circle indicator */}
-              <span
-                className={cn(
-                  "w-4 h-4 rounded-full border border-dashed flex items-center justify-center shrink-0 transition-colors",
-                  isActive
-                    ? "border-[#B88728] dark:border-[#F5C451]"
-                    : "border-slate-400 dark:border-slate-600"
-                )}
-              >
-                {isActive && (
-                  <span className="w-2 h-2 rounded-full bg-[#B88728] dark:bg-[#F5C451]" />
-                )}
-              </span>
-
-              <Icon
-                size={17}
-                className={cn(
-                  "shrink-0 transition-colors",
-                  isActive
-                    ? "text-[#B88728] dark:text-[#F5C451]"
-                    : "text-slate-400 dark:text-slate-500"
-                )}
-              />
-
-              <span className="truncate">{tab.label}</span>
+              {isActive ? (
+                <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+              ) : (
+                <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+              )}
+              <span>{tab.label}</span>
             </button>
           );
         })}

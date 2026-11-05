@@ -172,11 +172,11 @@ export default function InvoiceTable({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+    <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1400px] text-left border-collapse">
-          {/* Header matching legacy software columns */}
-          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11] select-none">
+          {/* Header matching theme */}
+          <thead className="border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] select-none text-white">
             <tr>
               <th className="px-4 py-3.5 text-center w-12">
                 <input
@@ -191,15 +191,15 @@ export default function InvoiceTable({
                 />
               </th>
 
-              <th className="px-3 py-3 text-center text-xs font-semibold text-[#E8C16D] w-10">
+              <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D] w-12">
                 No.
               </th>
 
               <th
                 onClick={() => handleSort("billingPartyName")}
-                className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>Party Name</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "billingPartyName" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
@@ -207,9 +207,9 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("invoiceType")}
-                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>Invoice Type</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "invoiceType" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
@@ -217,9 +217,9 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("invoiceNo")}
-                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>OC Invoice No</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "invoiceNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
@@ -227,9 +227,9 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("invoiceDate")}
-                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>Date</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "invoiceDate" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
@@ -237,15 +237,15 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("challanNo")}
-                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>OC Challan No</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "challanNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center gap-1">
                   <span>Challan Ref No</span>
                 </div>
@@ -253,9 +253,9 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("totalQuantity")}
-                className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center justify-end gap-1">
+                <div className="flex items-center justify-end gap-1.5">
                   <span>Qty</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "totalQuantity" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
@@ -263,33 +263,33 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("netAmount")}
-                className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center justify-end gap-1">
+                <div className="flex items-center justify-end gap-1.5">
                   <span>Net Amount</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "netAmount" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>CN Amount</span>
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>DCN Amount</span>
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>Received</span>
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>Pending</span>
                 </div>
@@ -297,15 +297,15 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("status")}
-                className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center justify-center gap-1">
+                <div className="flex items-center justify-center gap-1.5">
                   <span>Status</span>
                   <ArrowUpDown className={`h-3 w-3 ${sortField === "status" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
                 </div>
               </th>
 
-              <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-center gap-1.5">
                   <span>Actions</span>
                   {selectedIds.length > 0 && (
@@ -323,13 +323,13 @@ export default function InvoiceTable({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 text-xs sm:text-sm dark:divide-white/[0.06]">
+          <tbody className="divide-y divide-slate-100 text-xs sm:text-sm dark:divide-white/[0.04]">
             {loading ? (
               <tr>
                 <td colSpan={16} className="py-12 text-center text-slate-500 dark:text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E8C16D] dark:border-[#F5C451] border-t-transparent" />
-                    <span>Loading sales invoices...</span>
+                    <span className="font-medium text-xs">Loading sales invoices...</span>
                   </div>
                 </td>
               </tr>
@@ -362,17 +362,17 @@ export default function InvoiceTable({
                   <tr
                     key={inv.id}
                     className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.02] ${
-                      isSelected ? "bg-amber-50/40 dark:bg-amber-950/20" : ""
+                      isSelected ? "bg-[#FFF9EC]/50 dark:bg-[#1A160E]/50" : ""
                     }`}
                   >
-                    {/* Checkbox Column (First) */}
+                    {/* Checkbox Column */}
                     <td className="px-4 py-2.5 text-center">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelectOne(inv.id)}
                         className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
-                  style={{ accentColor: "#0A0E1A" }}
+                        style={{ accentColor: "#0A0E1A" }}
                       />
                     </td>
 
@@ -382,17 +382,17 @@ export default function InvoiceTable({
                     </td>
 
                     {/* Party Name */}
-                    <td className="px-3.5 py-2.5 font-medium text-slate-900 dark:text-white whitespace-nowrap">
+                    <td className="px-3.5 py-2.5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
                       {inv.billingPartyName || "-"}
                     </td>
 
                     {/* Invoice Type */}
-                    <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap">
+                    <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap font-medium">
                       {inv.invoiceType || "Tax Invoice"}
                     </td>
 
                     {/* OC Invoice No */}
-                    <td className="px-3 py-2.5 font-mono text-slate-800 dark:text-slate-200 text-xs whitespace-nowrap">
+                    <td className="px-3 py-2.5 font-mono font-bold text-[#B88728] dark:text-[#E8C16D] text-xs whitespace-nowrap">
                       {inv.invoiceNo}
                     </td>
 
@@ -412,7 +412,7 @@ export default function InvoiceTable({
                     </td>
 
                     {/* Qty */}
-                    <td className="px-3 py-2.5 text-right font-mono text-slate-800 dark:text-slate-200 text-xs whitespace-nowrap">
+                    <td className="px-3 py-2.5 text-right font-mono text-slate-800 dark:text-slate-200 text-xs whitespace-nowrap font-medium">
                       {formatQty(inv.totalQuantity)}
                     </td>
 
@@ -444,10 +444,10 @@ export default function InvoiceTable({
                     {/* Status */}
                     <td className="px-3 py-2.5 text-center whitespace-nowrap">
                       <span
-                        className={`text-xs font-semibold ${
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                           dueInfo.isDue
-                            ? "text-[#E53E3E] dark:text-[#F87171]"
-                            : "text-emerald-600 dark:text-emerald-400"
+                            ? "border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400"
+                            : "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
                         }`}
                       >
                         {dueInfo.text}
@@ -462,7 +462,7 @@ export default function InvoiceTable({
                             type="button"
                             onClick={() => onView(inv)}
                             title="View Invoice Details"
-                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] border border-transparent hover:border-[#E8C16D]/30 transition-all cursor-pointer"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -471,7 +471,7 @@ export default function InvoiceTable({
                           type="button"
                           onClick={() => onEdit(inv)}
                           title="Edit Invoice"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] border border-transparent hover:border-[#E8C16D]/30 transition-all cursor-pointer"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
@@ -479,7 +479,7 @@ export default function InvoiceTable({
                           type="button"
                           onClick={() => (onCreditNote ? onCreditNote(inv) : onEdit(inv))}
                           title="Credit Note"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-[#B88728] hover:text-[#9A701E] hover:bg-[#FFF9EC] transition-all dark:text-[#F5C451] dark:hover:text-[#F5C451] dark:hover:bg-amber-500/10 cursor-pointer"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] border border-transparent hover:border-[#E8C16D]/30 transition-all cursor-pointer"
                         >
                           <FileText className="h-4 w-4" />
                         </button>
@@ -487,7 +487,7 @@ export default function InvoiceTable({
                           type="button"
                           onClick={() => (onPrint ? onPrint(inv) : window.print())}
                           title="Print Invoice"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] border border-transparent hover:border-[#E8C16D]/30 transition-all cursor-pointer"
                         >
                           <Printer className="h-4 w-4" />
                         </button>
@@ -496,7 +496,7 @@ export default function InvoiceTable({
                             type="button"
                             onClick={() => onDelete(inv)}
                             title="Delete Invoice"
-                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/30 cursor-pointer"
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-transparent hover:border-rose-200 dark:hover:border-rose-800/40 transition-all cursor-pointer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -516,17 +516,17 @@ export default function InvoiceTable({
         <Pagination
           page={page}
           totalPages={totalPages}
-          totalRecords={total}
           total={total}
           limit={limit}
-          pageSize={limit}
-          itemName="records"
-          variant="light"
           options={[10, 20, 50, 100]}
-          className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+          itemName="invoices"
+          variant="dark"
+          className="border-t border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
           onPageChange={setPage}
-          onLimitChange={setLimit}
-          onPageSizeChange={setLimit}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
         />
       )}
     </div>

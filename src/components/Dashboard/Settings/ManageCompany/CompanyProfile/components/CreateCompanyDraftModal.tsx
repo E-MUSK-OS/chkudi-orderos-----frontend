@@ -37,43 +37,53 @@ export default function CreateCompanyDraftModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = companyName.trim();
-    const cleanGst = gstNumber.trim().toUpperCase();
 
-    if (!cleanName) {
-      setError("Please enter the company name.");
+    const trimmedName = companyName.trim();
+    if (!trimmedName) {
+      setError("Company Name is required.");
       return;
     }
 
-    if (!cleanGst) {
-      setError("Please enter a valid GST number.");
+    const trimmedGst = gstNumber.trim().toUpperCase();
+    if (!trimmedGst) {
+      setError("GST Number is required.");
       return;
     }
 
-    if (cleanGst.length !== 15) {
-      setError("GST number must be exactly 15 characters long.");
+    if (trimmedGst.length !== 15) {
+      setError("GST Number must be exactly 15 characters.");
       return;
     }
+
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(trimmedGst)) {
+      setError("Invalid GST format. Example: 24ABCDE1234F1Z5");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-
-      const res = await companyService.createDraft({
-        companyName: cleanName,
-        gstNumber: cleanGst,
+      const response = await companyService.createDraft({
+        companyName: trimmedName,
+        gstNumber: trimmedGst,
       });
 
-      toast.success(res.message || "Company draft created successfully!");
-      setCompanyName("");
-      setGstNumber("");
-      onClose();
-      onSuccess(res.data);
+      if (response && response.data) {
+        toast.success("Company draft created successfully.");
+        setCompanyName("");
+        setGstNumber("");
+        onSuccess(response.data);
+      } else {
+        setError(response?.message || "Failed to create draft.");
+      }
     } catch (err: any) {
-      // handled via inline error banner and toast
-      const message = err.message || "Failed to create company draft.";
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "An unexpected error occurred while creating the draft.";
       setError(message);
-      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -83,46 +93,44 @@ export default function CreateCompanyDraftModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
-        onClick={() => {
-          if (!loading) onClose();
-        }}
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={() => !loading && onClose()}
       />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-md bg-white border border-[#E7E0D2] dark:bg-[#13161F] dark:border-white/[0.1] rounded-2xl p-6 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white border border-[#E7E0D2] dark:bg-[#0F1626] dark:border-white/[0.1] rounded-3xl p-6 sm:p-7 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <Building2 size={20} className="text-[#B88728] dark:text-[#F5C451] shrink-0" />
-            <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-              Create Company Draft
-            </h2>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+              <Building2 size={20} className="text-[#B88728] dark:text-[#E8C16D]" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-wide">
+                Create Company Draft
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Start by creating a draft with your GST number.
+              </p>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:hover:bg-white/[0.08] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-50"
           >
             <X size={18} />
           </button>
         </div>
-
-        {/* Subtitle */}
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-          Start by creating a draft with your GST number.
-          <br />
-          You can complete the full registration later.
-        </p>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           {/* Company Name Field */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
-              Company Name <span className="text-red-500">*</span>
+              Company Name <span className="text-rose-500 font-bold">*</span>
             </label>
 
             <input
@@ -132,10 +140,10 @@ export default function CreateCompanyDraftModal({
               placeholder="ENTER COMPANY NAME"
               autoFocus
               disabled={loading}
-              className={`w-full rounded-xl px-3.5 py-2.5 text-sm uppercase tracking-wide outline-none transition-all bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#0E1017] dark:border-white/[0.1] dark:text-white dark:placeholder-slate-500 ${
+              className={`w-full h-11 px-4 text-xs sm:text-sm font-medium rounded-2xl border transition-all uppercase tracking-wide outline-none ${
                 error && !companyName.trim()
-                  ? "border-red-500/80 focus:ring-1 focus:ring-red-500"
-                  : "hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/50 dark:hover:border-amber-400/50 dark:focus:border-amber-400/80 dark:focus:ring-amber-400/50"
+                  ? "border-rose-500 bg-rose-500/5 focus:ring-2 focus:ring-rose-500/20"
+                  : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:bg-[#080B11] dark:border-white/[0.1] dark:text-white"
               }`}
             />
           </div>
@@ -143,7 +151,7 @@ export default function CreateCompanyDraftModal({
           {/* GST Number Field */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
-              GST Number <span className="text-red-500">*</span>
+              GST Number <span className="text-rose-500 font-bold">*</span>
             </label>
 
             <div className="relative">
@@ -154,20 +162,20 @@ export default function CreateCompanyDraftModal({
                 placeholder="ENTER YOUR GST NUMBER"
                 maxLength={15}
                 disabled={loading}
-                className={`w-full rounded-xl px-3.5 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-all pr-14 bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#0E1017] dark:border-white/[0.1] dark:text-white dark:placeholder-slate-500 ${
+                className={`w-full h-11 px-4 pr-16 text-xs sm:text-sm font-mono rounded-2xl border transition-all uppercase tracking-wider outline-none ${
                   error && (!gstNumber.trim() || gstNumber.length !== 15)
-                    ? "border-red-500/80 focus:ring-1 focus:ring-red-500"
-                    : "hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/50 dark:hover:border-amber-400/50 dark:focus:border-amber-400/80 dark:focus:ring-amber-400/50"
+                    ? "border-rose-500 bg-rose-500/5 focus:ring-2 focus:ring-rose-500/20"
+                    : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:bg-[#080B11] dark:border-white/[0.1] dark:text-white"
                 }`}
               />
 
               <div
-                className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono font-medium ${
+                className={`absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono font-medium ${
                   gstNumber.length === 15
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-emerald-500"
                     : gstNumber.length > 0
-                    ? "text-red-500 dark:text-red-400"
-                    : "text-slate-400 dark:text-slate-500"
+                    ? "text-rose-500"
+                    : "text-slate-400"
                 }`}
               >
                 {gstNumber.length}/15
@@ -175,7 +183,7 @@ export default function CreateCompanyDraftModal({
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs mt-2 font-medium">
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 dark:bg-rose-950/30 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs mt-2 font-medium">
                 <AlertCircle size={15} className="shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -183,31 +191,31 @@ export default function CreateCompanyDraftModal({
           </div>
 
           {/* Helper checklist */}
-          <div className="pt-2 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
+          <div className="rounded-2xl bg-slate-50 border border-slate-200/80 px-4 py-3.5 dark:bg-white/[0.03] dark:border-white/[0.06] text-xs text-slate-500 dark:text-slate-400 space-y-1.5">
             <p className="font-semibold text-slate-700 dark:text-slate-300 mb-2">
               After creating the draft, you&apos;ll be able to:
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-slate-400 dark:text-slate-500">•</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E8C16D]" />
               <span>Complete the registration form at your own pace</span>
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-slate-400 dark:text-slate-500">•</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E8C16D]" />
               <span>Save your progress automatically</span>
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-slate-400 dark:text-slate-500">•</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E8C16D]" />
               <span>Activate the company once all details are complete</span>
             </p>
           </div>
 
           {/* Modal Footer */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E7E0D2] dark:border-white/[0.08] mt-6">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-[#E7E0D2] dark:text-slate-300 dark:hover:text-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.1] shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 rounded-2xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 transition-colors cursor-pointer dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/[0.1]"
             >
               Cancel
             </button>
@@ -215,16 +223,16 @@ export default function CreateCompanyDraftModal({
             <button
               type="submit"
               disabled={loading || gstNumber.length === 0 || companyName.trim().length === 0}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#0A0E1A] hover:bg-black text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 border border-[#0A0E1A] dark:border-transparent shadow transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-2xl text-xs font-bold bg-[#E8C16D] hover:bg-[#d8b05c] text-[#0A0E1A] shadow transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
-                  <Loader2 size={15} className="animate-spin text-white dark:text-slate-900" />
+                  <Loader2 size={14} className="animate-spin text-[#0A0E1A]" />
                   <span>Creating...</span>
                 </>
               ) : (
                 <>
-                  <Plus size={16} className="text-white dark:text-slate-900" />
+                  <Plus size={15} className="stroke-[3] text-[#0A0E1A]" />
                   <span>Create Draft</span>
                 </>
               )}

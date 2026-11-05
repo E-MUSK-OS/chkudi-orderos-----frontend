@@ -40,11 +40,11 @@ export default function ViewCompanyModal({
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-xl bg-white border border-[#E7E0D2] dark:bg-[#13161F] dark:border-white/[0.1] rounded-2xl shadow-2xl z-10 max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-xl bg-white border border-[#E7E0D2] dark:bg-[#0F1626] dark:border-white/[0.1] rounded-3xl shadow-2xl z-10 max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 dark:bg-black dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0 select-none">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-black dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0 select-none">
               {company.logoUrl ? (
                 <img
                   src={getMediaUrl(company.logoUrl)}
@@ -75,18 +75,18 @@ export default function ViewCompanyModal({
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                     company.status === "ACTIVE"
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30"
+                      ? "bg-[#1A160E] text-[#E8C16D] border border-[#E8C16D]/30"
                       : company.status === "DRAFT"
-                      ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30"
-                      : "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-500/15 dark:text-slate-400 dark:border-slate-500/30"
+                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                      : "bg-slate-500/15 text-slate-400 border border-slate-500/30"
                   }`}
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
                       company.status === "ACTIVE"
-                        ? "bg-emerald-500 dark:bg-emerald-400"
+                        ? "bg-[#E8C16D]"
                         : company.status === "DRAFT"
-                        ? "bg-amber-500 dark:bg-amber-400"
+                        ? "bg-amber-400"
                         : "bg-slate-400"
                     }`}
                   />
@@ -102,7 +102,7 @@ export default function ViewCompanyModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -111,10 +111,10 @@ export default function ViewCompanyModal({
         {/* Details Grid */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar text-sm text-[#0A0E1A] dark:text-slate-200">
           {/* Key Identifiers */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-xl p-4">
+          <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-2xl p-4">
             <div>
               <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <User size={13} className="text-slate-400 dark:text-slate-400" />
+                <User size={13} className="text-[#E8C16D]" />
                 Owner Name
               </p>
               <p className="text-sm font-semibold text-[#0A0E1A] dark:text-slate-200 uppercase mt-1">
@@ -124,7 +124,7 @@ export default function ViewCompanyModal({
 
             <div>
               <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <FileText size={13} className="text-slate-400 dark:text-slate-400" />
+                <FileText size={13} className="text-[#E8C16D]" />
                 GST Number
               </p>
               <p className="text-sm font-mono font-semibold text-[#0A0E1A] dark:text-slate-200 mt-1 tracking-wider">
@@ -134,7 +134,7 @@ export default function ViewCompanyModal({
 
             <div>
               <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <FileText size={13} className="text-slate-400 dark:text-slate-400" />
+                <FileText size={13} className="text-[#E8C16D]" />
                 PAN Number
               </p>
               <p className="text-sm font-mono font-semibold text-[#0A0E1A] dark:text-slate-200 mt-1 tracking-wider">
@@ -144,7 +144,7 @@ export default function ViewCompanyModal({
 
             <div>
               <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <MapPin size={13} className="text-slate-400 dark:text-slate-400" />
+                <MapPin size={13} className="text-[#E8C16D]" />
                 State & Code
               </p>
               <p className="text-sm font-semibold text-[#0A0E1A] dark:text-slate-200 mt-1">
@@ -156,19 +156,19 @@ export default function ViewCompanyModal({
           {/* Contact Details */}
           {(company.email || company.phone) && (
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#F5C451]">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
                 Contact Information
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-xl p-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-2xl p-3.5">
                 {company.email && (
                   <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <Mail size={14} className="text-slate-400" />
+                    <Mail size={14} className="text-[#E8C16D]" />
                     <span className="truncate">{company.email}</span>
                   </div>
                 )}
                 {company.phone && (
                   <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <Phone size={14} className="text-slate-400" />
+                    <Phone size={14} className="text-[#E8C16D]" />
                     <span>{company.phone}</span>
                   </div>
                 )}
@@ -178,11 +178,11 @@ export default function ViewCompanyModal({
 
           {/* Registered Address */}
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#F5C451]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
               Registered Address
             </p>
-            <div className="bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-xl p-3.5 text-slate-700 dark:text-slate-300 flex items-start gap-2.5">
-              <MapPin size={16} className="text-slate-400 shrink-0 mt-0.5" />
+            <div className="bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-2xl p-3.5 text-slate-700 dark:text-slate-300 flex items-start gap-2.5">
+              <MapPin size={16} className="text-[#E8C16D] shrink-0 mt-0.5" />
               <div className="text-xs sm:text-sm leading-relaxed">
                 {company.addressLine1 && <p>{company.addressLine1}</p>}
                 {company.addressLine2 && <p>{company.addressLine2}</p>}
@@ -198,10 +198,10 @@ export default function ViewCompanyModal({
           {/* Bank Info */}
           {(company.bankName || company.accountNumber) && (
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#F5C451]">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
                 Banking Information
               </p>
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-xl p-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] rounded-2xl p-3.5 text-xs">
                 <div>
                   <span className="text-slate-500 dark:text-slate-400 font-medium">Bank Name:</span>
                   <p className="text-[#0A0E1A] dark:text-slate-200 font-semibold mt-0.5">
@@ -233,7 +233,7 @@ export default function ViewCompanyModal({
           {/* Audit Timestamp */}
           <div className="pt-2 text-[11px] text-slate-500 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
-              <Calendar size={12} />
+              <Calendar size={12} className="text-[#E8C16D]" />
               Created: {new Date(company.createdAt).toLocaleDateString()}
             </span>
             <span>
@@ -247,7 +247,7 @@ export default function ViewCompanyModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-[#E7E0D2] dark:text-slate-300 dark:hover:text-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.1] transition-colors cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-[#E7E0D2] dark:text-slate-300 dark:hover:text-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.1] transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -258,9 +258,9 @@ export default function ViewCompanyModal({
               onClose();
               onEditClick(company);
             }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#0A0E1A] hover:bg-black text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 shadow transition-all cursor-pointer active:scale-95"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-[#E8C16D] hover:bg-[#d8b05c] text-[#0A0E1A] shadow-sm transition-all cursor-pointer active:scale-95"
           >
-            <Edit3 size={15} />
+            <Edit3 size={15} className="text-[#0A0E1A]" />
             <span>Edit Profile</span>
           </button>
         </div>

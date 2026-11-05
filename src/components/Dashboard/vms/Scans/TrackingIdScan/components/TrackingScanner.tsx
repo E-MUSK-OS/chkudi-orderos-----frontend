@@ -126,6 +126,25 @@ export default function TrackingScanner({
     triggerScan();
   };
 
+  const handleCameraClose = useCallback(() => {
+    setIsCameraOpen(false);
+    if (!isMobileDevice()) {
+      setTimeout(() => focusAndSelectInput(), 50);
+    }
+  }, [focusAndSelectInput]);
+
+  const handleCameraScan = useCallback(
+    (code: string) => {
+      if (onCameraScan) {
+        onCameraScan(code);
+      } else {
+        onChange(code);
+        onScan();
+      }
+    },
+    [onCameraScan, onChange, onScan]
+  );
+
   const isSuccess =
     message &&
     (message.toLowerCase().includes("success") ||
@@ -270,20 +289,8 @@ export default function TrackingScanner({
       {/* Mobile-Only: Camera Barcode Viewfinder Modal */}
       <MobileCameraScanner
         isOpen={isCameraOpen}
-        onClose={() => {
-          setIsCameraOpen(false);
-          if (!isMobileDevice()) {
-            setTimeout(() => focusAndSelectInput(), 50);
-          }
-        }}
-        onScan={(code) => {
-          if (onCameraScan) {
-            onCameraScan(code);
-          } else {
-            onChange(code);
-            onScan();
-          }
-        }}
+        onClose={handleCameraClose}
+        onScan={handleCameraScan}
         message={message}
       />
     </div>

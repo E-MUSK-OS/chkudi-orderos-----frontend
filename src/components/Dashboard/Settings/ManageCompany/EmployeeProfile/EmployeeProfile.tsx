@@ -135,7 +135,7 @@ export default function EmployeeProfile() {
 
   return (
     <DashboardLayout title="Employee Profile">
-      <div className="space-y-4">
+      <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8">
         {/* Header */}
         <EmployeeProfileHeader />
 

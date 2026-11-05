@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Plus, Download, Save, ArrowLeft, FileSpreadsheet } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { Plus, Save, ArrowLeft, FileSpreadsheet, Download } from "lucide-react";
+import DownloadDropdown, { DownloadOption } from "@/components/ui/DownloadDropdown";
 
 interface PurchaseChallanHeaderProps {
   viewMode: "list" | "create" | "edit";
@@ -23,8 +23,29 @@ export default function PurchaseChallanHeader({
   onDownloadSkuWise,
   saving = false,
 }: PurchaseChallanHeaderProps) {
+  const downloadOptions: DownloadOption[] = [
+    ...(onDownloadAll
+      ? [
+          {
+            id: "all",
+            label: "Download",
+            onClick: onDownloadAll,
+          },
+        ]
+      : []),
+    ...(onDownloadSkuWise
+      ? [
+          {
+            id: "sku-wise",
+            label: "Download SKU Wise",
+            onClick: onDownloadSkuWise,
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <section className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+    <section className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         {/* Title & Badge */}
         <div className="flex items-center gap-3.5 sm:gap-4 min-w-0 max-w-2xl">
@@ -33,7 +54,7 @@ export default function PurchaseChallanHeader({
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
               {viewMode === "create"
                 ? "Create Purchase Challan"
                 : viewMode === "edit"
@@ -53,68 +74,53 @@ export default function PurchaseChallanHeader({
         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
           {viewMode === "list" ? (
             <>
-              <Button
-                variant="outline"
-                fullWidth={false}
-                className="h-10 sm:h-11 px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-semibold active:scale-[0.98]"
-                leftIcon={<Download size={16} />}
-                onClick={onDownloadAll}
-              >
-                Download
-              </Button>
+              {downloadOptions.length > 0 && (
+                <DownloadDropdown
+                  options={downloadOptions}
+                  label="Download"
+                />
+              )}
 
-              <Button
-                variant="outline"
-                fullWidth={false}
-                className="h-10 sm:h-11 px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-semibold active:scale-[0.98]"
-                leftIcon={<Download size={16} />}
-                onClick={onDownloadSkuWise}
-              >
-                SKU Wise
-              </Button>
-
-              <Button
-                variant="primary"
-                fullWidth={false}
-                className="h-10 sm:h-11 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98] shrink-0"
-                leftIcon={<Plus size={18} />}
+              <button
+                type="button"
                 onClick={onAddNew}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer min-h-[40px] sm:min-h-[44px] shrink-0"
               >
-                New Challan
-              </Button>
+                <Plus size={18} />
+                <span>New Challan</span>
+              </button>
             </>
           ) : (
             <>
-              <Button
-                variant="outline"
-                fullWidth={false}
-                className="h-10 sm:h-11 px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-semibold active:scale-[0.98]"
-                leftIcon={<ArrowLeft size={16} />}
+              <button
+                type="button"
                 onClick={onBack}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer min-h-[40px] sm:min-h-[44px]"
               >
-                Back to List
-              </Button>
+                <ArrowLeft size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
+                <span>Back to List</span>
+              </button>
 
-              <Button
-                variant="outline"
-                fullWidth={false}
-                className="h-10 sm:h-11 px-4 sm:px-5 rounded-2xl text-xs sm:text-sm font-semibold active:scale-[0.98]"
-                leftIcon={<Download size={16} />}
-                onClick={onDownloadAll}
-              >
-                Export
-              </Button>
+              {onDownloadAll && (
+                <button
+                  type="button"
+                  onClick={onDownloadAll}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                >
+                  <Download size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
+                  <span>Export</span>
+                </button>
+              )}
 
-              <Button
-                variant="primary"
-                fullWidth={false}
-                className="h-10 sm:h-11 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98] shrink-0"
-                leftIcon={<Save size={18} />}
+              <button
+                type="button"
                 onClick={onSave}
-                loading={saving}
+                disabled={saving}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-5 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer min-h-[40px] sm:min-h-[44px] shrink-0 disabled:opacity-50"
               >
-                Save Challan
-              </Button>
+                <Save size={18} />
+                <span>{saving ? "Saving..." : "Save Challan"}</span>
+              </button>
             </>
           )}
         </div>

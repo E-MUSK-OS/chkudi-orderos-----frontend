@@ -59,10 +59,10 @@ export default function EmployeeProfileTable({
   };
 
   return (
-    <div className="w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm overflow-hidden font-sans">
-      <div className="w-full overflow-x-auto">
+    <div className="w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm relative overflow-visible font-sans">
+      <div className="w-full overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
         <table className="w-full text-left border-collapse">
-          {/* Table Header matching OrderOS standard */}
+          {/* Table Header matching OrderOS standard & Ledger Book */}
           <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
             <tr>
               {isVisible("no") && (
@@ -96,7 +96,7 @@ export default function EmployeeProfileTable({
                 <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Added / Edited By</th>
               )}
               {isVisible("actions") && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#E8C16D] w-32">Actions</th>
+                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#E8C16D] w-36">Actions</th>
               )}
             </tr>
           </thead>
@@ -120,183 +120,185 @@ export default function EmployeeProfileTable({
               </tr>
             ) : (
               employees.map((emp, index) => {
-              const rowNumber = (page - 1) * pageSize + index + 1;
-              const creatorName = emp.updatedByName || emp.createdByName || null;
-              const dateFormatted = formatDate(emp.updatedAt || emp.createdAt);
-              const isEdited = Boolean(emp.updatedByName);
+                const rowNumber = (page - 1) * pageSize + index + 1;
+                const creatorName = emp.updatedByName || emp.createdByName || null;
+                const dateFormatted = formatDate(emp.updatedAt || emp.createdAt);
+                const isEdited = Boolean(emp.updatedByName);
 
-              return (
-                <tr
-                  key={emp.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-white/[0.025] transition-colors group"
-                >
-                  {/* Row Number */}
-                  {isVisible("no") && (
-                    <td className="py-3.5 px-4 text-center text-slate-500 dark:text-slate-400 text-xs font-mono font-medium">
-                      {rowNumber}
-                    </td>
-                  )}
+                return (
+                  <tr
+                    key={emp.id}
+                    className="hover:bg-[#FFFDF8] dark:hover:bg-white/[0.02] transition-colors group"
+                  >
+                    {/* Row Number */}
+                    {isVisible("no") && (
+                      <td className="py-3.5 px-4 text-center text-slate-500 dark:text-slate-400 text-xs font-mono font-medium">
+                        {rowNumber}
+                      </td>
+                    )}
 
-                  {/* Name + Logo Avatar */}
-                  {isVisible("name") && (
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-slate-100 border border-[#E7E0D2] dark:bg-slate-800/80 dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                          {emp.photoUrl ? (
-                            <img
-                              src={getMediaUrl(emp.photoUrl)}
-                              alt={emp.fullName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User size={16} className="text-slate-400" />
-                          )}
+                    {/* Name + Logo Avatar */}
+                    {isVisible("name") && (
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-slate-100 border border-[#E7E0D2] dark:bg-slate-800/80 dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                            {emp.photoUrl ? (
+                              <img
+                                src={getMediaUrl(emp.photoUrl)}
+                                alt={emp.fullName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User size={16} className="text-slate-400" />
+                            )}
+                          </div>
+                          <div>
+                            <Link
+                              href={`/dashboard/setting/manage-company/employee-profile/view/${emp.id}`}
+                              className="font-semibold text-slate-900 dark:text-white tracking-wide hover:text-[#B88728] dark:hover:text-[#F5C451] transition-colors cursor-pointer"
+                            >
+                              {emp.fullName}
+                            </Link>
+                          </div>
                         </div>
-                        <div>
+                      </td>
+                    )}
+
+                    {/* Employee ID */}
+                    {isVisible("employeeId") && (
+                      <td className="py-3.5 px-4 font-mono font-medium text-slate-800 dark:text-slate-200 text-[11px]">
+                        {emp.employeeId}
+                      </td>
+                    )}
+
+                    {/* Designation */}
+                    {isVisible("designation") && (
+                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
+                        {emp.designation}
+                      </td>
+                    )}
+
+                    {/* Department */}
+                    {isVisible("departments") && (
+                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
+                        {emp.department}
+                      </td>
+                    )}
+
+                    {/* Machine Code */}
+                    {isVisible("machineCode") && (
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                        {emp.machineCode || "—"}
+                      </td>
+                    )}
+
+                    {/* Contact No */}
+                    {isVisible("contactNo") && (
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                        {emp.contactNo}
+                      </td>
+                    )}
+
+                    {/* Aadhaar No */}
+                    {isVisible("aadhaarNo") && (
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                        {emp.aadhaarNo || "—"}
+                      </td>
+                    )}
+
+                    {/* Status */}
+                    {isVisible("status") && (
+                      <td className="py-3.5 px-4">
+                        {emp.isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#EAFBF3] text-emerald-600 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-400 dark:border-white/[0.08] shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Added / Edited By */}
+                    {isVisible("addedEditedBy") && (
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                        {creatorName || dateFormatted ? (
+                          <div className="space-y-1 text-[11px]">
+                            {creatorName && (
+                              <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 font-medium">
+                                {isEdited ? (
+                                  <PenTool size={11} className="text-slate-400 shrink-0" />
+                                ) : (
+                                  <User size={11} className="text-slate-400 shrink-0" />
+                                )}
+                                <span className="truncate max-w-[140px]">{creatorName}</span>
+                              </div>
+                            )}
+                            {dateFormatted && (
+                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-mono text-[10px]">
+                                <Calendar size={11} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                <span>{dateFormatted}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Actions (View, Edit, Print ID Card, Delete) matching Ledger Book */}
+                    {isVisible("actions") && (
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {/* View Button */}
                           <Link
                             href={`/dashboard/setting/manage-company/employee-profile/view/${emp.id}`}
-                            className="font-semibold text-slate-900 dark:text-white tracking-wide hover:text-[#B88728] dark:hover:text-[#F5C451] transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            title="View Employee Profile"
                           >
-                            {emp.fullName}
+                            <Eye size={14} />
                           </Link>
+
+                          {/* Edit Button */}
+                          <Link
+                            href={`/dashboard/setting/manage-company/employee-profile/edit/${emp.id}`}
+                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            title="Edit Employee"
+                          >
+                            <Edit3 size={14} />
+                          </Link>
+
+                          {/* Print ID Card Button */}
+                          <button
+                            type="button"
+                            onClick={() => onPrintIdCard(emp)}
+                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            title="Print ID Card"
+                          >
+                            <Printer size={14} />
+                          </button>
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            onClick={() => onDeleteEmployee(emp)}
+                            className="w-8 h-8 rounded-full border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 text-rose-500 hover:text-rose-600 dark:hover:bg-rose-950/30 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            title="Delete Employee"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                  )}
-
-                  {/* Employee ID */}
-                  {isVisible("employeeId") && (
-                    <td className="py-3.5 px-4 font-mono font-medium text-slate-800 dark:text-slate-200 text-[11px]">
-                      {emp.employeeId}
-                    </td>
-                  )}
-
-                  {/* Designation */}
-                  {isVisible("designation") && (
-                    <td className="py-3.5 px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
-                      {emp.designation}
-                    </td>
-                  )}
-
-                  {/* Department */}
-                  {isVisible("departments") && (
-                    <td className="py-3.5 px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
-                      {emp.department}
-                    </td>
-                  )}
-
-                  {/* Machine Code */}
-                  {isVisible("machineCode") && (
-                    <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-                      {emp.machineCode || "—"}
-                    </td>
-                  )}
-
-                  {/* Contact No */}
-                  {isVisible("contactNo") && (
-                    <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-                      {emp.contactNo}
-                    </td>
-                  )}
-
-                  {/* Aadhaar No */}
-                  {isVisible("aadhaarNo") && (
-                    <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-                      {emp.aadhaarNo || "—"}
-                    </td>
-                  )}
-
-                  {/* Status */}
-                  {isVisible("status") && (
-                    <td className="py-3.5 px-4">
-                      {emp.isActive ? (
-                        <span className="inline-flex items-center text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-2 py-0.5 rounded">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 dark:text-slate-400 dark:bg-white/[0.04] dark:border-white/[0.08] px-2 py-0.5 rounded">
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                  )}
-
-                  {/* Added / Edited By */}
-                  {isVisible("addedEditedBy") && (
-                    <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
-                      {creatorName || dateFormatted ? (
-                        <div className="space-y-1 text-[11px]">
-                          {creatorName && (
-                            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 font-medium">
-                              {isEdited ? (
-                                <PenTool size={11} className="text-slate-400 shrink-0" />
-                              ) : (
-                                <User size={11} className="text-slate-400 shrink-0" />
-                              )}
-                              <span className="truncate max-w-[140px]">{creatorName}</span>
-                            </div>
-                          )}
-                          {dateFormatted && (
-                            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-mono text-[10px]">
-                              <Calendar size={11} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                              <span>{dateFormatted}</span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-500">—</span>
-                      )}
-                    </td>
-                  )}
-
-                  {/* Actions (View, Edit, Print ID Card, Delete) matching Ledger Book */}
-                  {isVisible("actions") && (
-                    <td className="py-3.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* View Button */}
-                        <Link
-                          href={`/dashboard/setting/manage-company/employee-profile/view/${emp.id}`}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#B88728] hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
-                          title="View Employee Profile"
-                        >
-                          <Eye size={15} />
-                        </Link>
-
-                        {/* Edit Button */}
-                        <Link
-                          href={`/dashboard/setting/manage-company/employee-profile/edit/${emp.id}`}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50/60 dark:hover:text-amber-400 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
-                          title="Edit Employee"
-                        >
-                          <Edit3 size={15} />
-                        </Link>
-
-                        {/* Print ID Card Button */}
-                        <button
-                          type="button"
-                          onClick={() => onPrintIdCard(emp)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 dark:hover:text-sky-400 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
-                          title="Print ID Card"
-                        >
-                          <Printer size={15} />
-                        </button>
-
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => onDeleteEmployee(emp)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete Employee"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              );
-            })
-          )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

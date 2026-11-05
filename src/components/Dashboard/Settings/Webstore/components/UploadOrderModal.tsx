@@ -343,7 +343,7 @@ export default function UploadOrderModal({
               fullWidth={false}
               onClick={onClose}
               disabled={isUploading}
-              className="h-9 px-4 text-xs font-semibold rounded-xl"
+              className="h-10 px-5 text-xs font-bold rounded-full border border-[#E7E0D2]"
             >
               Cancel
             </Button>
@@ -354,7 +354,7 @@ export default function UploadOrderModal({
               fullWidth={false}
               onClick={handleUploadAndSync}
               disabled={isUploading || !orderFile}
-              className="h-9 px-5 text-xs font-bold rounded-xl flex items-center gap-1.5"
+              className="h-10 px-6 text-xs font-bold rounded-full flex items-center gap-1.5 bg-[#E8C16D] hover:bg-[#d8b05c] text-[#0A0E1A]"
             >
               {isUploading ? (
                 <>

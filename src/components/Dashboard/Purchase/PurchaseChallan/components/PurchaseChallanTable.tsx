@@ -121,11 +121,11 @@ export default function PurchaseChallanTable({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+    <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1000px] text-left border-collapse">
-          {/* Header styled with SaaS Dark Obsidian & Gold palette matching Image 2 */}
-          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11] select-none">
+          {/* Header styled with SaaS Dark Obsidian & Gold palette */}
+          <thead className="border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] select-none text-white">
             <tr>
               <th className="px-4 py-3.5 text-center w-12">
                 <input
@@ -142,7 +142,7 @@ export default function PurchaseChallanTable({
 
               <th
                 onClick={() => handleSort("challanNo")}
-                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Challan No</span>
@@ -152,7 +152,7 @@ export default function PurchaseChallanTable({
 
               <th
                 onClick={() => handleSort("supplierName")}
-                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Party Name</span>
@@ -162,7 +162,7 @@ export default function PurchaseChallanTable({
 
               <th
                 onClick={() => handleSort("partyChallanNo")}
-                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Party Challan No</span>
@@ -172,7 +172,7 @@ export default function PurchaseChallanTable({
 
               <th
                 onClick={() => handleSort("challanDate")}
-                className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Date</span>
@@ -180,13 +180,13 @@ export default function PurchaseChallanTable({
                 </div>
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D]">
                 Contact
               </th>
 
               <th
                 onClick={() => handleSort("totalReceivedQty")}
-                className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
               >
                 <div className="flex items-center justify-center gap-1.5">
                   <span>Quantity</span>
@@ -194,23 +194,23 @@ export default function PurchaseChallanTable({
                 </div>
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D]">
                 Prepared By
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D]">
                 Category
               </th>
 
-              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D]">
                 Stock In
               </th>
 
-              <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D]">
                 Status
               </th>
 
-              <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D]">
                 Actions
               </th>
             </tr>
@@ -261,7 +261,7 @@ export default function PurchaseChallanTable({
                         checked={isSelected}
                         onChange={() => toggleSelectOne(ch.id)}
                         className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
-                  style={{ accentColor: "#0A0E1A" }}
+                        style={{ accentColor: "#0A0E1A" }}
                       />
                     </td>
 
@@ -359,7 +359,7 @@ export default function PurchaseChallanTable({
                             type="button"
                             onClick={() => onView(ch)}
                             title="View Challan Details"
-                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] border border-transparent hover:border-[#E8C16D]/30 transition-all cursor-pointer"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -368,7 +368,7 @@ export default function PurchaseChallanTable({
                           type="button"
                           onClick={() => onEdit(ch)}
                           title="Edit Challan"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#F5C451] dark:hover:bg-white/[0.06] cursor-pointer"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] border border-transparent hover:border-[#E8C16D]/30 transition-all cursor-pointer"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
@@ -378,7 +378,7 @@ export default function PurchaseChallanTable({
                             router.push(`/dashboard/purchase/finish-goods/invoice?challanId=${ch.id}`);
                           }}
                           title="Generate / View Purchase Invoice"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-[#B88728] hover:text-[#9A701E] hover:bg-[#FFF9EC] transition-all dark:text-[#F5C451] dark:hover:text-[#F5C451] dark:hover:bg-amber-500/10 cursor-pointer"
+                          className="inline-flex items-center justify-center p-2 rounded-xl text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] border border-transparent hover:border-[#E8C16D]/30 transition-all cursor-pointer"
                         >
                           <ReceiptText className="h-4 w-4" />
                         </button>
@@ -387,7 +387,7 @@ export default function PurchaseChallanTable({
                             type="button"
                             onClick={() => onDelete(ch)}
                             title="Delete Challan"
-                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/30 cursor-pointer"
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-transparent hover:border-rose-200 dark:hover:border-rose-800/40 transition-all cursor-pointer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -402,22 +402,22 @@ export default function PurchaseChallanTable({
         </table>
       </div>
 
-      {/* Pagination Footer */}
+      {/* Pagination Footer matching ChallanTable */}
       {!loading && (
         <Pagination
           page={page}
           totalPages={totalPages}
-          totalRecords={total}
           total={total}
           limit={limit}
-          pageSize={limit}
-          itemName="records"
-          variant="light"
           options={[10, 20, 50, 100]}
-          className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+          itemName="challans"
+          variant="dark"
+          className="border-t border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
           onPageChange={setPage}
-          onLimitChange={setLimit}
-          onPageSizeChange={setLimit}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
         />
       )}
     </div>

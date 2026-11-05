@@ -247,7 +247,7 @@ export default function CompanyProfile() {
                 togglingId={togglingId}
               />
               {meta.total > 0 && (
-                <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm mt-4">
+                <div className="relative rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm mt-4">
                   <CompanyPagination
                     total={meta.total}
                     page={filters.page || 1}
@@ -255,6 +255,7 @@ export default function CompanyProfile() {
                     totalPages={meta.totalPages || 1}
                     onPageChange={(p) => handleFilterChange("page", p)}
                     onPageSizeChange={(sz) => handleFilterChange("pageSize", sz)}
+                    className="border-t border-[#E7E0D2] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
                   />
                 </div>
               )}
@@ -279,6 +280,7 @@ export default function CompanyProfile() {
                     totalPages={meta.totalPages || 1}
                     onPageChange={(p) => handleFilterChange("page", p)}
                     onPageSizeChange={(sz) => handleFilterChange("pageSize", sz)}
+                    className="border-t border-[#E7E0D2] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
                   />
                 ) : null
               }

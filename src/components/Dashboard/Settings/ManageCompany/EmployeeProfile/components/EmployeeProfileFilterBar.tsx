@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Check,
   RotateCcw,
+  X,
 } from "lucide-react";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
@@ -63,6 +64,7 @@ export default function EmployeeProfileFilterBar({
   };
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Close columns dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -80,6 +82,7 @@ export default function EmployeeProfileFilterBar({
     };
   }, [columnsDropdownOpen]);
 
+  // Close columns dropdown on Escape key
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -98,14 +101,12 @@ export default function EmployeeProfileFilterBar({
     (Boolean(filters.department) && filters.department !== "all");
 
   return (
-    <div className="w-full flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 py-2">
-      {/* Left side filters matching Ledger Book UI */}
-      <div className="flex items-center gap-3 flex-1 flex-wrap">
-        {/* Employee Name Search with Filter Icon */}
-        <div className="relative flex items-center min-w-[190px] sm:min-w-[220px]">
-          <div className="absolute left-3 text-slate-400 pointer-events-none">
-            <Filter size={14} />
-          </div>
+    <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm">
+      {/* Left side filters matching Ledger Book pill style */}
+      <div className="flex flex-1 flex-wrap items-center gap-2.5">
+        {/* Employee Name Pill Search */}
+        <div className="relative flex-1 min-w-[190px] max-w-xs">
+          <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
             value={filters.employeeName}
@@ -113,15 +114,22 @@ export default function EmployeeProfileFilterBar({
               onFilterChange({ employeeName: e.target.value, page: 1 })
             }
             placeholder="Employee Name"
-            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-white text-slate-900 placeholder-slate-400 border border-[#E7E0D2] focus:outline-none focus:border-[#E8C16D] dark:bg-[#131622] dark:text-white dark:placeholder-slate-500 dark:border-white/[0.08] dark:focus:border-white/20 transition-all shadow-inner"
+            className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
           />
+          {filters.employeeName && (
+            <button
+              type="button"
+              onClick={() => onFilterChange({ employeeName: "", page: 1 })}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Machine Code Filter */}
-        <div className="relative flex items-center min-w-[150px] sm:min-w-[170px]">
-          <div className="absolute left-3 text-slate-400 pointer-events-none">
-            <Search size={14} />
-          </div>
+        <div className="relative min-w-[150px] max-w-[180px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
             value={filters.machineCode}
@@ -129,55 +137,58 @@ export default function EmployeeProfileFilterBar({
               onFilterChange({ machineCode: e.target.value, page: 1 })
             }
             placeholder="Machine Code."
-            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-white text-slate-900 placeholder-slate-400 border border-[#E7E0D2] focus:outline-none focus:border-[#E8C16D] dark:bg-[#131622] dark:text-white dark:placeholder-slate-500 dark:border-white/[0.08] dark:focus:border-white/20 transition-all shadow-inner"
+            className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
           />
+          {filters.machineCode && (
+            <button
+              type="button"
+              onClick={() => onFilterChange({ machineCode: "", page: 1 })}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Status Dropdown - Clean dark style matching Account Head */}
-        <div className="relative">
-          <ThemeSelectDropdown
-            ariaLabel="Filter by Status"
-            value={filters.status || "all"}
-            onChange={(val) => onFilterChange({ status: val, page: 1 })}
-            options={STATUS_OPTIONS}
-            buttonClassName="h-9 px-3.5 text-xs font-semibold rounded-xl border border-[#E7E0D2] bg-white text-slate-700 hover:bg-slate-50 dark:bg-[#131622] dark:text-slate-200 dark:border-white/[0.08]"
-            menuClassName="w-44"
-          />
-        </div>
+        {/* Status Dropdown Pill */}
+        <ThemeSelectDropdown
+          ariaLabel="Filter by Status"
+          value={filters.status || "all"}
+          onChange={(val) => onFilterChange({ status: val, page: 1 })}
+          options={STATUS_OPTIONS}
+          buttonClassName="rounded-full h-10 px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+          menuClassName="w-44 rounded-2xl"
+        />
 
-        {/* Department Dropdown - Clean dark style matching Account Head */}
-        <div className="relative">
-          <ThemeSelectDropdown
-            ariaLabel="Filter by Department"
-            value={filters.department || "all"}
-            onChange={(val) => onFilterChange({ department: val, page: 1 })}
-            options={DEPARTMENT_OPTIONS}
-            buttonClassName="h-9 px-3.5 text-xs font-semibold rounded-xl border border-[#E7E0D2] bg-white text-slate-700 hover:bg-slate-50 dark:bg-[#131622] dark:text-slate-200 dark:border-white/[0.08]"
-            menuClassName="w-56"
-          />
-        </div>
+        {/* Department Dropdown Pill */}
+        <ThemeSelectDropdown
+          ariaLabel="Filter by Department"
+          value={filters.department || "all"}
+          onChange={(val) => onFilterChange({ department: val, page: 1 })}
+          options={DEPARTMENT_OPTIONS}
+          buttonClassName="rounded-full h-10 px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+          menuClassName="w-56 rounded-2xl"
+        />
 
-        {/* Clear Filters button matching Ledger Book */}
+        {/* Reset Filters Pill matching Ledger Book */}
         {hasActiveFilters && (
           <button
             type="button"
             onClick={onResetFilters}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-black bg-slate-100 hover:bg-slate-200/80 border border-slate-200 dark:text-slate-400 dark:hover:text-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.06] transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs"
             title="Reset filters"
           >
-            <RotateCcw size={12} />
+            <RotateCcw className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
             <span>Reset</span>
           </button>
         )}
       </div>
 
       {/* Right side search & column controls matching Ledger Book */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        {/* Global Search */}
-        <div className="relative flex items-center min-w-[180px] sm:min-w-[220px]">
-          <div className="absolute left-3 text-slate-400 pointer-events-none">
-            <Search size={14} />
-          </div>
+      <div className="flex flex-wrap items-center gap-2.5">
+        {/* Global Search Pill Input */}
+        <div className="relative flex-1 min-w-[180px] sm:min-w-[240px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
             value={filters.search}
@@ -185,34 +196,43 @@ export default function EmployeeProfileFilterBar({
               onFilterChange({ search: e.target.value, page: 1 })
             }
             placeholder="Global search..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-white text-slate-900 placeholder-slate-400 border border-[#E7E0D2] focus:outline-none focus:border-[#E8C16D] dark:bg-[#131622] dark:text-white dark:placeholder-slate-500 dark:border-white/[0.08] dark:focus:border-white/20 transition-all shadow-inner"
+            className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
           />
+          {filters.search && (
+            <button
+              type="button"
+              onClick={() => onFilterChange({ search: "", page: 1 })}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Columns Dropdown Button */}
+        {/* Columns Dropdown Pill Button */}
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             aria-label="Toggle Columns"
             onClick={handleToggleColumns}
             className={cn(
-              "inline-flex items-center gap-2 rounded-xl border px-3.5 h-9 text-xs font-bold transition-all shadow-xs outline-none select-none cursor-pointer",
-              "bg-white text-slate-700 dark:bg-[#131622] dark:text-slate-200",
-              columnsDropdownOpen
-                ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 text-[#0A0E1A] dark:border-[#F5C451] dark:ring-[#F5C451]/30 dark:text-white"
-                : "border-[#E7E0D2] hover:border-[#E8C16D]/50 hover:bg-slate-50 dark:border-white/[0.08] dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]"
+              "inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none",
+              "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]",
+              columnsDropdownOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 dark:border-[#E8C16D] dark:ring-[#E8C16D]/30"
             )}
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <div className="grid h-4 w-4 place-items-center text-[#B88728] dark:text-[#E8C16D] shrink-0">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </div>
             <span>Columns</span>
             <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 text-[#B88728] dark:text-[#F5C451] transition-transform duration-200 ${
+              className={`h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] transition-transform duration-200 ${
                 columnsDropdownOpen ? "rotate-180" : ""
               }`}
             />
           </button>
 
-          {/* Columns Dropdown Menu matching Ledger Book */}
+          {/* Columns Dropdown Menu - Theme UI matching Ledger Book */}
           {columnsDropdownOpen && (
             <div className={cn(
               "absolute right-0 z-50 w-56 rounded-2xl border border-[#E7E0D2] bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
@@ -226,12 +246,14 @@ export default function EmployeeProfileFilterBar({
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
                 {columns.map((col) => {
-                  if (col.key === "actions") return null;
+                  const isActions = col.key === "actions";
+                  const isVisible = col.visible;
                   return (
                     <button
                       key={col.key}
                       type="button"
-                      onClick={() => onToggleColumn(col.key)}
+                      disabled={isActions}
+                      onClick={() => !isActions && onToggleColumn(col.key)}
                       className={`
                         w-full
                         flex
@@ -242,20 +264,21 @@ export default function EmployeeProfileFilterBar({
                         px-3
                         py-2
                         text-xs
-                        font-semibold
+                        font-bold
                         transition-all
-                        cursor-pointer
                         text-left
                         ${
-                          col.visible
-                            ? "text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08]"
-                            : "text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.04] dark:hover:text-slate-200"
+                          isActions
+                            ? "opacity-50 cursor-not-allowed text-slate-400"
+                            : isVisible
+                            ? "bg-[#FFF9EC] text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] cursor-pointer"
+                            : "text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-white/[0.04] cursor-pointer"
                         }
                       `}
                     >
                       <span className="truncate">{col.label}</span>
-                      {col.visible && (
-                        <Check className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451] shrink-0 stroke-[2.5]" />
+                      {isVisible && (
+                        <Check className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] shrink-0 stroke-[2.5]" />
                       )}
                     </button>
                   );

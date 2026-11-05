@@ -22,6 +22,7 @@ import {
   Download,
   X,
   AlertCircle,
+  Landmark,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Employee, EmployeeFormData, EmployeeDocumentItem } from "../types/employee.types";
@@ -69,8 +70,6 @@ const DESIGNATIONS = [
   "Helper",
   "Other",
 ];
-
-
 
 const SALARY_TYPES = ["Salaried", "Daily Wage", "Piece Rate", "Hourly"];
 
@@ -457,27 +456,27 @@ export default function EmployeeProfileForm({
   );
 
   const dropdownButtonClassName =
-    "w-full justify-between h-10 px-3.5 text-xs font-normal rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "w-full justify-between h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-[#E7E0D2] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D]/50 transition-all shadow-xs";
   const dropdownMenuClassName =
-    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-xl shadow-2xl";
+    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl p-1.5";
   const datePickerButtonClassName =
-    "h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-[#E7E0D2] hover:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white transition-all shadow-xs";
 
   const getInputClassName = (fieldKey?: string, isMono = false) => {
     const hasErr = Boolean(fieldKey && errors[fieldKey]);
     return cn(
-      "w-full h-10 px-3.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all shadow-inner",
+      "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border text-[#0A0E1A] placeholder:text-slate-400 dark:bg-[#080B11] dark:text-white outline-none transition-all shadow-xs",
       isMono && "font-mono",
       hasErr
-        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
-        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+        ? "border-rose-500 focus:border-rose-500 ring-2 ring-rose-500/20 dark:border-rose-500"
+        : "border-[#E7E0D2] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50 dark:focus:border-[#E8C16D]"
     );
   };
 
   const renderFieldError = (fieldKey: string) => {
     if (!errors[fieldKey]) return null;
     return (
-      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+      <p className="text-[10px] text-rose-500 font-semibold mt-1 px-2 flex items-center gap-1 animate-in fade-in-50">
         <AlertCircle size={11} className="shrink-0" />
         <span>{errors[fieldKey]}</span>
       </p>
@@ -787,538 +786,298 @@ export default function EmployeeProfileForm({
 
   return (
     <DashboardLayout title="Employee Profile">
-      <div className="flex flex-col min-h-[calc(100vh-140px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
-        {/* Top Header Bar */}
-        <div className="px-6 pt-5 pb-3 w-full flex items-center justify-between border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                router.push("/dashboard/setting/manage-company/employee-profile")
-              }
-              className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-colors cursor-pointer"
-              title="Back to Employee Profile"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                Employee Profile
-              </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+      <div className="flex flex-col gap-4 w-full text-[#0A0E1A] dark:text-slate-100 font-sans animate-in fade-in-50 duration-200">
+        {/* ========================================================================= */}
+        {/* 1. TOP HEADER BAR matching Ledger Book / Company Profile Header UI         */}
+        {/* ========================================================================= */}
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5 min-w-0 max-w-2xl">
+              <div className="flex items-center gap-3.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/dashboard/setting/manage-company/employee-profile")
+                  }
+                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  title="Back to Employee Profile"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                  Employee Profile
+                </h1>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Employee Name</span>{" "}
                 <span className="text-slate-900 dark:text-white font-medium">{displayedFullName}</span>
               </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Active Status Badge matching Edit Ledger */}
-            <button
-              type="button"
-              onClick={() => handleChange("isActive", !formData.isActive)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border shadow-xs transition-colors cursor-pointer ${
-                formData.isActive
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                  : "bg-red-500/10 text-red-500 border-red-500/20 dark:text-red-400"
-              }`}
-              title="Click to toggle active status"
-            >
-              <span>{formData.isActive ? "Active" : "Inactive"}</span>
-              {formData.isActive && <Check size={12} className="stroke-[3]" />}
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+              {/* Active Status Badge matching Edit Ledger */}
+              <button
+                type="button"
+                onClick={() => handleChange("isActive", !formData.isActive)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs cursor-pointer hover:border-[#E8C16D] transition-colors"
+                title="Click to toggle active status"
+              >
+                <Check size={12} className={cn("stroke-[3]", formData.isActive ? "text-[#B88728] dark:text-[#E8C16D]" : "opacity-40")} />
+                <span>{formData.isActive ? "Active" : "Inactive"}</span>
+              </button>
 
-            {/* Edit Mode / New Mode indicator */}
-            <div className="px-3.5 py-1 rounded-md border border-[#E7E0D2] bg-white text-slate-900 dark:border-white/[0.08] dark:bg-[#161B24] dark:text-white font-bold text-xs shadow-xs select-none">
-              {isEditMode ? "Edit Mode" : "New Mode"}
+              {/* Edit Mode / New Mode indicator */}
+              <div className="px-4 py-1.5 rounded-full bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] font-bold text-xs shadow-xs select-none">
+                {isEditMode ? "Edit Mode" : "New Mode"}
+              </div>
+
+              {/* Create User button: routes directly to Create User page */}
+              <button
+                type="button"
+                onClick={() =>
+                  router.push("/dashboard/settings/manage-users/user-profile/create-user")
+                }
+                className="inline-flex h-11 sm:h-12 items-center justify-center px-5 sm:px-6 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.98] text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
+              >
+                Create User
+              </button>
             </div>
-
-            {/* Create User button */}
-            <button
-              type="button"
-              onClick={() =>
-                router.push("/dashboard/setting/manage-company/employee-profile/new")
-              }
-              className="inline-flex items-center justify-center px-4 py-1.5 rounded-xl bg-[#F5C451] hover:bg-[#E8B83D] active:scale-[0.98] text-[#0A0E1A] font-bold text-xs shadow-sm transition-all cursor-pointer"
-            >
-              Create User
-            </button>
           </div>
         </div>
 
-        {/* 4 Tabs Segmented Bar */}
-        <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-          <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-4 gap-1 select-none">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.key;
-              const isTabInvalid = hasTabError(tab.key);
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
-                      : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
-                  }`}
-                >
-                  {isTabInvalid ? (
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                    </span>
-                  ) : tab.completed ? (
-                    <CheckCircle2
-                      size={14}
-                      className={isActive ? "text-emerald-400 shrink-0" : "text-emerald-500/70 shrink-0"}
-                    />
-                  ) : (
-                    <Circle size={14} className="text-slate-500 shrink-0" />
-                  )}
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        {/* ========================================================================= */}
+        {/* 2. TABS FLOATING BAR matching Ledger Book / Company Profile theme          */}
+        {/* ========================================================================= */}
+        <div className="w-full rounded-full border border-slate-200/80 dark:border-white/[0.08] bg-[#F1F3F5] dark:bg-[#0D121F] p-1.5 flex items-center justify-between gap-1 shadow-xs overflow-x-auto no-scrollbar">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            const isTabInvalid = hasTabError(tab.key);
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
+                  isActive
+                    ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.35)]"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+                )}
+              >
+                {isTabInvalid ? (
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                  </span>
+                ) : isActive ? (
+                  <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+                ) : tab.completed ? (
+                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                ) : (
+                  <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                )}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Tab Contents Area */}
-        <div className="px-6 sm:px-8 py-5 sm:py-6 flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {/* TAB 1: GENERAL */}
-          {activeTab === "general" && (
-            <div className="space-y-4">
-              {/* Section Header with Active Toggle */}
-              <div className="flex items-center justify-between pb-3 border-b border-[#E7E0D2] dark:border-white/[0.06]">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">General Details</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Enter basic employee details
-                  </p>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Active</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={formData.isActive}
-                    onClick={() => handleChange("isActive", !formData.isActive)}
-                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none cursor-pointer border ${
-                      formData.isActive
-                        ? "bg-emerald-500 border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500"
-                        : "bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-xs transition-transform ${
-                        formData.isActive ? "translate-x-[18px]" : "translate-x-[2px]"
+        {/* ========================================================================= */}
+        {/* 3. MAIN SECTION CARD with Integrated Action Bar                            */}
+        {/* ========================================================================= */}
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 sm:p-8 flex-1">
+            {/* ========================================================================= */}
+            {/* TAB 1: GENERAL DETAILS                                                   */}
+            {/* ========================================================================= */}
+            {activeTab === "general" && (
+              <div className="w-full">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                      <User size={18} />
+                    </div>
+                    <div>
+                      <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                        General Details
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Enter basic employee details
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Active</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={formData.isActive}
+                      onClick={() => handleChange("isActive", !formData.isActive)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none cursor-pointer border ${
+                        formData.isActive
+                          ? "bg-emerald-500 border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500"
+                          : "bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600"
                       }`}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {/* Row 1: First Name, Middle Name, Last Name */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    First Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    placeholder="Enter first name"
-                    className={getInputClassName("firstName")}
-                  />
-                  {renderFieldError("firstName")}
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Middle Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.middleName}
-                    onChange={(e) => handleChange("middleName", e.target.value)}
-                    placeholder="Enter middle name"
-                    className={getInputClassName("middleName")}
-                  />
-                  {renderFieldError("middleName")}
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Last Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    placeholder="Enter last name"
-                    className={getInputClassName("lastName")}
-                  />
-                  {renderFieldError("lastName")}
-                </div>
-              </div>
-
-              {/* Row 2: Contact No, Aadhar No, Employee ID */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                      Contact No. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <span className="text-[10px] text-emerald-400 font-mono">
-                      {formData.contactNo.length}/10
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    value={formData.contactNo}
-                    onChange={(e) =>
-                      handleChange("contactNo", e.target.value.replace(/\D/g, ""))
-                    }
-                    placeholder="Enter 10-digit number"
-                    className={getInputClassName("contactNo", true)}
-                  />
-                  {renderFieldError("contactNo")}
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                      Aadhar No. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <span className="text-[10px] text-emerald-400 font-mono">
-                      {formData.aadhaarNo.length}/12
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={12}
-                    value={formData.aadhaarNo}
-                    onChange={(e) => handleChange("aadhaarNo", e.target.value.replace(/\D/g, ""))}
-                    placeholder="Enter 12-digit Aadhaar"
-                    className={getInputClassName("aadhaarNo", true)}
-                  />
-                  {renderFieldError("aadhaarNo")}
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Employee ID. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => handleChange("employeeId", e.target.value)}
-                    placeholder="e.g. AD-01"
-                    className={getInputClassName("employeeId", true)}
-                  />
-                  {renderFieldError("employeeId")}
-                </div>
-              </div>
-
-              {/* Row 3: Date Of Birth, Blood Group, Company, Branches */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Date Of Birth <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <DatePicker
-                    value={formData.dob}
-                    onChange={(_, str) => handleChange("dob", str || "")}
-                    placeholder="DD-MM-YYYY"
-                    dateFormat="dd-MM-yyyy"
-                    className="w-full"
-                    buttonClassName={cn(
-                      datePickerButtonClassName,
-                      errors.dob && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
-                    )}
-                  />
-                  {renderFieldError("dob")}
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Blood Group.
-                  </label>
-                  <ThemeSelectDropdown
-                    value={formData.bloodGroup || "B+"}
-                    onChange={(val) => handleChange("bloodGroup", val)}
-                    options={bloodGroupOptions}
-                    placeholder="Select Blood Group"
-                    className="w-full"
-                    buttonClassName={dropdownButtonClassName}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Company.
-                  </label>
-                  <ThemeSelectDropdown
-                    value={formData.company}
-                    onChange={(val) => handleCompanyChange(val)}
-                    options={companyOptions}
-                    placeholder={
-                      loadingCompanies
-                        ? "Loading companies..."
-                        : companyList.length === 0
-                        ? "No companies available"
-                        : "Select Company"
-                    }
-                    className="w-full"
-                    buttonClassName={dropdownButtonClassName}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Branches.
-                  </label>
-                  <ThemeSelectDropdown
-                    value={formData.branch}
-                    onChange={(val) => handleChange("branch", val)}
-                    options={branchOptions}
-                    placeholder={
-                      loadingBranches || loadingCompanies
-                        ? "Loading branches..."
-                        : !formData.company
-                        ? "Select Company first"
-                        : branchOptions.length === 0
-                        ? "No branch available"
-                        : "Select Branch"
-                    }
-                    disabled={
-                      loadingBranches ||
-                      loadingCompanies ||
-                      !formData.company ||
-                      branchOptions.length === 0
-                    }
-                    className="w-full"
-                    buttonClassName={dropdownButtonClassName}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                </div>
-              </div>
-
-              {/* Row 4: Department, Designation, Salary Type */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Department. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <DropdownWithOther
-                    hideLabel
-                    label="Department"
-                    required
-                    value={formData.department || DEPARTMENTS[0]}
-                    onChange={(val) => handleChange("department", val)}
-                    options={departmentOptions}
-                    placeholder="Select Department"
-                    fieldKey="department"
-                    className="w-full"
-                    buttonClassName={cn(
-                      dropdownButtonClassName,
-                      errors.department && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
-                    )}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                  {renderFieldError("department")}
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Designation. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <DropdownWithOther
-                    hideLabel
-                    label="Designation"
-                    required
-                    value={formData.designation || DESIGNATIONS[0]}
-                    onChange={(val) => handleChange("designation", val)}
-                    options={designationOptions}
-                    placeholder="Select Designation"
-                    fieldKey="designation"
-                    className="w-full"
-                    buttonClassName={cn(
-                      dropdownButtonClassName,
-                      errors.designation && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
-                    )}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                  {renderFieldError("designation")}
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Salary Type. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <DropdownWithOther
-                    hideLabel
-                    label="Salary Type"
-                    required
-                    value={formData.salaryType || "Salaried"}
-                    onChange={(val) => handleChange("salaryType", val)}
-                    options={salaryTypeOptions}
-                    placeholder="Select Salary Type"
-                    fieldKey="salarytype"
-                    className="w-full"
-                    buttonClassName={cn(
-                      dropdownButtonClassName,
-                      errors.salaryType && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
-                    )}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                  {renderFieldError("salaryType")}
-                </div>
-              </div>
-
-              {/* Row 5: Joining Date, Worker Process, Basic Salary */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Joining Date.
-                  </label>
-                  <DatePicker
-                    value={formData.joiningDate}
-                    onChange={(_, str) => handleChange("joiningDate", str || "")}
-                    placeholder="DD-MM-YYYY"
-                    dateFormat="dd-MM-yyyy"
-                    className="w-full"
-                    buttonClassName={datePickerButtonClassName}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Worker Process
-                  </label>
-                  <DropdownWithOther
-                    hideLabel
-                    label="Worker Process"
-                    value={formData.workerProcess && formData.workerProcess !== "Select Process" ? formData.workerProcess : ""}
-                    onChange={(val) => handleChange("workerProcess", val)}
-                    options={workerProcessOptions}
-                    placeholder="Select Process"
-                    fieldKey="workerprocess"
-                    className="w-full"
-                    buttonClassName={dropdownButtonClassName}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Basic Salary.
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium font-sans">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={formData.basicSalary ?? ""}
-                      onChange={(e) => handleChange("basicSalary", e.target.value)}
-                      placeholder="e.g. 50000"
-                      className={cn(getInputClassName("basicSalary", true), "pl-7 font-mono")}
-                    />
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 rounded-full bg-white shadow-xs transition-transform ${
+                          formData.isActive ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* TAB 2: BANK DETAIL */}
-          {activeTab === "bank" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left Column: Bank Details Fields */}
-              <div className="lg:col-span-8 space-y-4">
-                <div className="mb-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bank Details</h3>
-                </div>
+                <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
 
-                {/* Row 1: Bank Name, Account Holder Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Row 1: First Name, Middle Name, Last Name */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-5 mb-5">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Bank Name.
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      First Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.bankName}
-                      onChange={(e) => handleChange("bankName", e.target.value)}
-                      placeholder=""
-                      className={getInputClassName("bankName")}
+                      value={formData.firstName}
+                      onChange={(e) => handleChange("firstName", e.target.value)}
+                      placeholder="Enter first name"
+                      className={getInputClassName("firstName")}
                     />
+                    {renderFieldError("firstName")}
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Holder Name.
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Middle Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.accountHolderName}
-                      onChange={(e) => handleChange("accountHolderName", e.target.value)}
-                      placeholder=""
-                      className={getInputClassName("accountHolderName")}
+                      value={formData.middleName}
+                      onChange={(e) => handleChange("middleName", e.target.value)}
+                      placeholder="Enter middle name"
+                      className={getInputClassName("middleName")}
                     />
+                    {renderFieldError("middleName")}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Last Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => handleChange("lastName", e.target.value)}
+                      placeholder="Enter last name"
+                      className={getInputClassName("lastName")}
+                    />
+                    {renderFieldError("lastName")}
                   </div>
                 </div>
 
-                {/* Row 2: Account Number, IFSC Code */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Row 2: Contact No, Aadhar No, Employee ID */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-5 mb-5">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Number.
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        Contact No. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <span
+                        className={cn(
+                          "text-[11px] font-bold font-mono",
+                          formData.contactNo.length === 10
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400"
+                        )}
+                      >
+                        {formData.contactNo.length}/10
+                      </span>
+                    </div>
                     <input
                       type="text"
-                      value={formData.accountNumber}
-                      onChange={(e) => handleChange("accountNumber", e.target.value)}
-                      placeholder=""
-                      className={getInputClassName("accountNumber", true)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      IFSC Code.
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={11}
-                      value={formData.ifscCode}
+                      maxLength={10}
+                      value={formData.contactNo}
                       onChange={(e) =>
-                        handleChange("ifscCode", e.target.value.toUpperCase())
+                        handleChange("contactNo", e.target.value.replace(/\D/g, ""))
                       }
-                      placeholder=""
-                      className={getInputClassName("ifscCode", true)}
+                      placeholder="Enter 10-digit number"
+                      className={getInputClassName("contactNo", true)}
                     />
-                    {renderFieldError("ifscCode")}
+                    {renderFieldError("contactNo")}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        Aadhar No. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      </label>
+                      <span
+                        className={cn(
+                          "text-[11px] font-bold font-mono",
+                          formData.aadhaarNo.length === 12
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400"
+                        )}
+                      >
+                        {formData.aadhaarNo.length}/12
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={12}
+                      value={formData.aadhaarNo}
+                      onChange={(e) => handleChange("aadhaarNo", e.target.value.replace(/\D/g, ""))}
+                      placeholder="Enter 12-digit Aadhaar"
+                      className={getInputClassName("aadhaarNo", true)}
+                    />
+                    {renderFieldError("aadhaarNo")}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Employee ID. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.employeeId}
+                      onChange={(e) => handleChange("employeeId", e.target.value)}
+                      placeholder="e.g. AD-01"
+                      className={getInputClassName("employeeId", true)}
+                    />
+                    {renderFieldError("employeeId")}
                   </div>
                 </div>
 
-                {/* Row 3: Account Type, Branch Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Row 3: Date Of Birth, Blood Group, Company, Branches */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-5 mb-5">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Type.
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Date Of Birth <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <DatePicker
+                      value={formData.dob}
+                      onChange={(_, str) => handleChange("dob", str || "")}
+                      placeholder="DD-MM-YYYY"
+                      dateFormat="dd-MM-yyyy"
+                      className="w-full"
+                      buttonClassName={cn(
+                        datePickerButtonClassName,
+                        errors.dob && "border-rose-500 ring-2 ring-rose-500/20"
+                      )}
+                    />
+                    {renderFieldError("dob")}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Blood Group.
                     </label>
                     <ThemeSelectDropdown
-                      value={formData.accountType || "Savings"}
-                      onChange={(val) => handleChange("accountType", val)}
-                      options={accountTypeOptions}
-                      placeholder="Select Account Type"
+                      value={formData.bloodGroup || "B+"}
+                      onChange={(val) => handleChange("bloodGroup", val)}
+                      options={bloodGroupOptions}
+                      placeholder="Select Blood Group"
                       className="w-full"
                       buttonClassName={dropdownButtonClassName}
                       menuClassName={dropdownMenuClassName}
@@ -1326,320 +1085,689 @@ export default function EmployeeProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Branch Name.
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Company.
                     </label>
-                    <input
-                      type="text"
-                      value={formData.branchName}
-                      onChange={(e) => handleChange("branchName", e.target.value)}
-                      placeholder=""
-                      className={getInputClassName("branchName")}
+                    <ThemeSelectDropdown
+                      value={formData.company}
+                      onChange={(val) => handleCompanyChange(val)}
+                      options={companyOptions}
+                      placeholder={
+                        loadingCompanies
+                          ? "Loading companies..."
+                          : companyList.length === 0
+                          ? "No companies available"
+                          : "Select Company"
+                      }
+                      className="w-full"
+                      buttonClassName={dropdownButtonClassName}
+                      menuClassName={dropdownMenuClassName}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Branches.
+                    </label>
+                    <ThemeSelectDropdown
+                      value={formData.branch}
+                      onChange={(val) => handleChange("branch", val)}
+                      options={branchOptions}
+                      placeholder={
+                        loadingBranches || loadingCompanies
+                          ? "Loading branches..."
+                          : !formData.company
+                          ? "Select Company first"
+                          : branchOptions.length === 0
+                          ? "No branch available"
+                          : "Select Branch"
+                      }
+                      disabled={
+                        loadingBranches ||
+                        loadingCompanies ||
+                        !formData.company ||
+                        branchOptions.length === 0
+                      }
+                      className="w-full"
+                      buttonClassName={dropdownButtonClassName}
+                      menuClassName={dropdownMenuClassName}
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Right Column: Bank Document Upload Box */}
-              <div className="lg:col-span-4 space-y-2">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bank Document</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Upload bank passbook & cancelled cheque.
-                  </p>
+                {/* Row 4: Department, Designation, Salary Type */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-5 mb-5">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Department. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <DropdownWithOther
+                      hideLabel
+                      label="Department"
+                      required
+                      value={formData.department || DEPARTMENTS[0]}
+                      onChange={(val) => handleChange("department", val)}
+                      options={departmentOptions}
+                      placeholder="Select Department"
+                      fieldKey="department"
+                      className="w-full"
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.department && "border-rose-500 ring-2 ring-rose-500/20"
+                      )}
+                      menuClassName={dropdownMenuClassName}
+                    />
+                    {renderFieldError("department")}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Designation. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <DropdownWithOther
+                      hideLabel
+                      label="Designation"
+                      required
+                      value={formData.designation || DESIGNATIONS[0]}
+                      onChange={(val) => handleChange("designation", val)}
+                      options={designationOptions}
+                      placeholder="Select Designation"
+                      fieldKey="designation"
+                      className="w-full"
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.designation && "border-rose-500 ring-2 ring-rose-500/20"
+                      )}
+                      menuClassName={dropdownMenuClassName}
+                    />
+                    {renderFieldError("designation")}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Salary Type. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                    </label>
+                    <DropdownWithOther
+                      hideLabel
+                      label="Salary Type"
+                      required
+                      value={formData.salaryType || "Salaried"}
+                      onChange={(val) => handleChange("salaryType", val)}
+                      options={salaryTypeOptions}
+                      placeholder="Select Salary Type"
+                      fieldKey="salarytype"
+                      className="w-full"
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.salaryType && "border-rose-500 ring-2 ring-rose-500/20"
+                      )}
+                      menuClassName={dropdownMenuClassName}
+                    />
+                    {renderFieldError("salaryType")}
+                  </div>
                 </div>
 
-                <div
-                  onClick={() => !uploadingField && bankDocInputRef.current?.click()}
-                  className={`w-48 h-48 rounded-2xl bg-slate-50 border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#161B24] dark:border-white/[0.15] dark:hover:border-white/40 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-inner ${
-                    uploadingField === "bankDocUrl" ? "opacity-60 pointer-events-none" : ""
-                  }`}
-                >
-                  <input
-                    ref={bankDocInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        handleSingleFileUpload(e.target.files[0], "bankDocUrl");
-                      }
-                    }}
-                  />
+                {/* Row 5: Joining Date, Worker Process, Basic Salary */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-5">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Joining Date.
+                    </label>
+                    <DatePicker
+                      value={formData.joiningDate}
+                      onChange={(_, str) => handleChange("joiningDate", str || "")}
+                      placeholder="DD-MM-YYYY"
+                      dateFormat="dd-MM-yyyy"
+                      className="w-full"
+                      buttonClassName={datePickerButtonClassName}
+                    />
+                  </div>
 
-                  {uploadingField === "bankDocUrl" ? (
-                    <div className="flex flex-col items-center justify-center text-amber-500">
-                      <Loader2 size={24} className="animate-spin mb-1.5" />
-                      <span className="text-xs font-medium">Uploading to storage...</span>
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Worker Process
+                    </label>
+                    <DropdownWithOther
+                      hideLabel
+                      label="Worker Process"
+                      value={formData.workerProcess && formData.workerProcess !== "Select Process" ? formData.workerProcess : ""}
+                      onChange={(val) => handleChange("workerProcess", val)}
+                      options={workerProcessOptions}
+                      placeholder="Select Process"
+                      fieldKey="workerprocess"
+                      className="w-full"
+                      buttonClassName={dropdownButtonClassName}
+                      menuClassName={dropdownMenuClassName}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Basic Salary.
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium font-sans">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={formData.basicSalary ?? ""}
+                        onChange={(e) => handleChange("basicSalary", e.target.value)}
+                        placeholder="e.g. 50000"
+                        className={cn(getInputClassName("basicSalary", true), "pl-8 font-mono")}
+                      />
                     </div>
-                  ) : formData.bankDocUrl ? (
-                    <div className="w-full h-full p-2 relative flex items-center justify-center">
-                      {formData.bankDocUrl.startsWith("data:image/") ||
-                      formData.bankDocUrl.startsWith("http") ||
-                      formData.bankDocUrl.startsWith("/uploads/") ? (
-                        <img
-                          src={getMediaUrl(formData.bankDocUrl)}
-                          alt="Bank Document"
-                          className="w-full h-full object-cover rounded-xl"
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 2: BANK DETAIL                                                       */}
+            {/* ========================================================================= */}
+            {activeTab === "bank" && (
+              <div className="w-full">
+                <div className="flex items-center gap-3.5 mb-6">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                    <Landmark size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                      Bank Details
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Enter bank account and payment details
+                    </p>
+                  </div>
+                </div>
+
+                <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  {/* Left Column: Bank Details Fields */}
+                  <div className="lg:col-span-8 space-y-5">
+                    {/* Row 1: Bank Name, Account Holder Name */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                          Bank Name.
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.bankName}
+                          onChange={(e) => handleChange("bankName", e.target.value)}
+                          placeholder="e.g. HDFC Bank"
+                          className={getInputClassName("bankName")}
                         />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                          Account Holder Name.
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.accountHolderName}
+                          onChange={(e) => handleChange("accountHolderName", e.target.value)}
+                          placeholder="Account holder's full name"
+                          className={getInputClassName("accountHolderName")}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 2: Account Number, IFSC Code */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                          Account Number.
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.accountNumber}
+                          onChange={(e) => handleChange("accountNumber", e.target.value)}
+                          placeholder="Enter account number"
+                          className={getInputClassName("accountNumber", true)}
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                            IFSC Code.
+                          </label>
+                          <span
+                            className={cn(
+                              "text-[11px] font-bold font-mono",
+                              formData.ifscCode?.length === 11
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-slate-400"
+                            )}
+                          >
+                            {formData.ifscCode ? formData.ifscCode.length : 0}/11
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          maxLength={11}
+                          value={formData.ifscCode}
+                          onChange={(e) =>
+                            handleChange("ifscCode", e.target.value.toUpperCase())
+                          }
+                          placeholder="e.g. HDFC0001234"
+                          className={getInputClassName("ifscCode", true)}
+                        />
+                        {renderFieldError("ifscCode")}
+                      </div>
+                    </div>
+
+                    {/* Row 3: Account Type, Branch Name */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                          Account Type.
+                        </label>
+                        <ThemeSelectDropdown
+                          value={formData.accountType || "Savings"}
+                          onChange={(val) => handleChange("accountType", val)}
+                          options={accountTypeOptions}
+                          placeholder="Select Account Type"
+                          className="w-full"
+                          buttonClassName={dropdownButtonClassName}
+                          menuClassName={dropdownMenuClassName}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                          Branch Name.
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.branchName}
+                          onChange={(e) => handleChange("branchName", e.target.value)}
+                          placeholder="Branch name or location"
+                          className={getInputClassName("branchName")}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Bank Document Upload Box */}
+                  <div className="lg:col-span-4 space-y-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bank Document</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Upload bank passbook & cancelled cheque.
+                      </p>
+                    </div>
+
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => !uploadingField && bankDocInputRef.current?.click()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          !uploadingField && bankDocInputRef.current?.click();
+                        }
+                      }}
+                      className={cn(
+                        "w-48 h-48 rounded-3xl bg-[#FAF8F5] border text-[#0A0E1A] dark:bg-[#080B11] flex flex-col items-center justify-center p-4 shadow-sm overflow-hidden relative group cursor-pointer transition-all select-none",
+                        "border-[#E7E0D2] hover:border-[#E8C16D] dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50",
+                        uploadingField === "bankDocUrl" && "opacity-60 pointer-events-none"
+                      )}
+                      title="Upload Bank Document"
+                    >
+                      <input
+                        ref={bankDocInputRef}
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            handleSingleFileUpload(e.target.files[0], "bankDocUrl");
+                          }
+                        }}
+                      />
+
+                      {uploadingField === "bankDocUrl" ? (
+                        <div className="flex flex-col items-center justify-center text-amber-500">
+                          <Loader2 size={24} className="animate-spin mb-1.5" />
+                          <span className="text-xs font-medium">Uploading to storage...</span>
+                        </div>
+                      ) : formData.bankDocUrl ? (
+                        <div className="w-full h-full p-2 relative flex items-center justify-center">
+                          {formData.bankDocUrl.startsWith("data:image/") ||
+                          formData.bankDocUrl.startsWith("http") ||
+                          formData.bankDocUrl.startsWith("/uploads/") ? (
+                            <img
+                              src={getMediaUrl(formData.bankDocUrl)}
+                              alt="Bank Document"
+                              className="w-full h-full object-cover rounded-xl"
+                            />
+                          ) : (
+                            <div className="text-center p-2">
+                              <FileText size={32} className="text-slate-700 dark:text-slate-300 mx-auto mb-1" />
+                              <span className="text-[10px] text-slate-700 dark:text-slate-300 break-all font-medium">
+                                Document Attached
+                              </span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-3xl">
+                            <span className="text-xs text-white font-medium">
+                              Click to change
+                            </span>
+                          </div>
+                        </div>
                       ) : (
-                        <div className="text-center p-2">
-                          <FileText size={32} className="text-slate-700 dark:text-slate-300 mx-auto mb-1" />
-                          <span className="text-[10px] text-slate-700 dark:text-slate-300 break-all">
-                            Document Attached
+                        <div className="flex flex-col items-center justify-center text-center select-none">
+                          <div className="w-12 h-12 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 flex items-center justify-center mb-3">
+                            <Upload size={22} />
+                          </div>
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                            Upload Document
+                          </span>
+                          <span className="text-[10px] text-slate-400 mt-1">
+                            Click or drag & drop
                           </span>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-2xl">
-                        <span className="text-xs text-white font-medium">
-                          Click to change
-                        </span>
-                      </div>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-700 dark:text-slate-300 transition-colors">
-                      <Upload size={22} className="mb-1 text-slate-400" />
-                      <span className="text-xs text-slate-400">Upload</span>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* TAB 3: PHOTO */}
-          {activeTab === "photo" && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Employee Photo</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Upload employee image here.
-                </p>
-              </div>
-
-              {/* Photo Upload Box */}
-              <div
-                onClick={() => !uploadingField && photoInputRef.current?.click()}
-                className={`w-48 h-48 rounded-2xl bg-slate-50 border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#161B24] dark:border-white/[0.15] dark:hover:border-white/40 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-inner ${
-                  uploadingField === "photoUrl" ? "opacity-60 pointer-events-none" : ""
-                }`}
-              >
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleSingleFileUpload(e.target.files[0], "photoUrl");
-                    }
-                  }}
-                />
-
-                {uploadingField === "photoUrl" ? (
-                  <div className="flex flex-col items-center justify-center text-amber-500">
-                    <Loader2 size={24} className="animate-spin mb-1.5" />
-                    <span className="text-xs font-medium">Uploading to storage...</span>
+            {/* ========================================================================= */}
+            {/* TAB 3: PHOTO                                                             */}
+            {/* ========================================================================= */}
+            {activeTab === "photo" && (
+              <div className="w-full">
+                <div className="flex items-center gap-3.5 mb-6">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                    <Upload size={18} />
                   </div>
-                ) : formData.photoUrl ? (
-                  <div className="w-full h-full relative">
-                    <img
-                      src={getMediaUrl(formData.photoUrl)}
-                      alt="Employee"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <span className="text-xs text-white font-medium">
-                        Click to change
-                      </span>
-                    </div>
+                  <div>
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                      Employee Photo
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Upload employee image here.
+                    </p>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-700 dark:text-slate-300 transition-colors">
-                    <Upload size={22} className="mb-1 text-slate-400" />
-                    <span className="text-xs text-slate-400">Upload</span>
-                  </div>
-                )}
-              </div>
+                </div>
 
-              {/* Print I-Card Button */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setIsPrintModalOpen(true)}
-                  className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.98] text-slate-900 font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-md"
-                >
-                  <Printer size={16} className="stroke-[2.5]" />
-                  <span>Print I-Card</span>
-                </button>
-              </div>
-            </div>
-          )}
+                <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
 
-          {/* TAB 4: DOCUMENTS (Multi-Document Upload: Attach box stays first, documents shift next to it) */}
-          {activeTab === "documents" && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Employee Documents
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Upload identity document proof here (e.g. Bank Passbook, Aadhaar Card, PAN Card, etc.).
-                </p>
-              </div>
-
-              {/* Horizontal Row: [ Attach Section / Upload Box ] [ Doc 2 ] [ Doc 1 (Meesho) ] ... */}
-              <div className="flex flex-wrap items-start gap-4 pt-1">
-                {/* 1. ATTACH / UPLOAD BOX (Always visible on left!) */}
-                <div
-                  onClick={() => !uploadingDoc && identityDocInputRef.current?.click()}
-                  className={`w-48 h-48 rounded-2xl bg-slate-50 border border-dashed border-[#E7E0D2] hover:border-[#E8C16D] dark:bg-[#161B24] dark:border-white/[0.15] dark:hover:border-white/40 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group shadow-inner shrink-0 ${
-                    uploadingDoc ? "opacity-60 pointer-events-none" : ""
-                  }`}
-                >
-                  <input
-                    ref={identityDocInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    multiple
-                    className="hidden"
-                    onChange={async (e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        const files = Array.from(e.target.files);
-                        for (const file of files) {
-                          await handleAddDocument(file);
-                        }
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                  {/* Photo Upload Box */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => !uploadingField && photoInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        !uploadingField && photoInputRef.current?.click();
                       }
                     }}
-                  />
+                    className={cn(
+                      "w-48 h-48 rounded-3xl bg-[#FAF8F5] border text-[#0A0E1A] dark:bg-[#080B11] flex flex-col items-center justify-center p-4 shadow-sm overflow-hidden relative group cursor-pointer transition-all select-none",
+                      "border-[#E7E0D2] hover:border-[#E8C16D] dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50",
+                      uploadingField === "photoUrl" && "opacity-60 pointer-events-none"
+                    )}
+                    title="Upload Photo"
+                  >
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleSingleFileUpload(e.target.files[0], "photoUrl");
+                        }
+                      }}
+                    />
 
-                  {uploadingDoc ? (
-                    <div className="flex flex-col items-center justify-center text-amber-500">
-                      <Loader2 size={24} className="animate-spin mb-1.5" />
-                      <span className="text-xs font-medium">Uploading to storage...</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                        <Upload size={20} className="text-slate-500 dark:text-slate-300" />
+                    {uploadingField === "photoUrl" ? (
+                      <div className="flex flex-col items-center justify-center text-amber-500">
+                        <Loader2 size={24} className="animate-spin mb-1.5" />
+                        <span className="text-xs font-medium">Uploading to storage...</span>
                       </div>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                        Upload
-                      </span>
-                      <span className="text-[10px] text-slate-400 mt-0.5">
-                        PNG, JPG, PDF up to 20MB
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. UPLOADED DOCUMENT CARDS (Shifted next to the attach section) */}
-                {(formData.documents || []).map((doc, idx) => {
-                  const isPdf =
-                    doc.url.toLowerCase().endsWith(".pdf") ||
-                    doc.fileName?.toLowerCase().endsWith(".pdf");
-
-                  return (
-                    <div
-                      key={doc.id || idx}
-                      className="w-48 h-48 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#161B24] overflow-hidden group shadow-sm flex flex-col relative transition-all hover:shadow-md hover:border-[#E8C16D] shrink-0"
-                    >
-                      {/* Top Bar with Type Badge & Action Icons */}
-                      <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-black/65 backdrop-blur-xs text-white border border-white/10 shadow-xs pointer-events-auto truncate max-w-[100px]">
-                          {doc.type || "Document"}
-                        </span>
-
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewDoc(doc)}
-                            className="p-1 rounded-lg bg-black/65 hover:bg-black/90 text-white backdrop-blur-xs transition-colors cursor-pointer"
-                            title="View Full Preview"
-                          >
-                            <Eye size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDocument(doc.id)}
-                            className="p-1 rounded-lg bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-xs transition-colors cursor-pointer"
-                            title="Remove Document"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                    ) : formData.photoUrl ? (
+                      <div className="w-full h-full relative">
+                        <img
+                          src={getMediaUrl(formData.photoUrl)}
+                          alt="Employee"
+                          className="w-full h-full object-cover rounded-2xl"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-3xl">
+                          <span className="text-xs text-white font-medium">
+                            Click to change
+                          </span>
                         </div>
                       </div>
-
-                      {/* Card Middle: Preview Area */}
-                      <div
-                        onClick={() => setPreviewDoc(doc)}
-                        className="w-full flex-1 flex items-center justify-center bg-slate-50/80 dark:bg-[#121620] cursor-pointer overflow-hidden p-2"
-                      >
-                        {!isPdf ? (
-                          <img
-                            src={getMediaUrl(doc.url)}
-                            alt={doc.name}
-                            className="w-full h-full object-contain rounded-xl transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center p-2 text-center">
-                            <FileText size={38} className="text-amber-500 mb-1" />
-                            <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
-                              {doc.fileName || doc.name}
-                            </span>
-                            <span className="text-[10px] text-slate-400">PDF Document</span>
-                          </div>
-                        )}
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center select-none">
+                        <div className="w-12 h-12 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 flex items-center justify-center mb-3">
+                          <Upload size={22} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Upload Photo
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-1">
+                          Click or drag & drop
+                        </span>
                       </div>
+                    )}
+                  </div>
 
-                      {/* Card Bottom: Document Title */}
-                      <div className="p-2 border-t border-slate-100 dark:border-white/[0.08] bg-white dark:bg-[#161B24] flex items-center justify-between gap-1">
-                        <input
-                          type="text"
-                          value={doc.name}
-                          onChange={(e) =>
-                            handleUpdateDocument(doc.id, { name: e.target.value })
-                          }
-                          title="Click to rename document"
-                          className="w-full text-[11px] font-semibold text-slate-800 dark:text-white bg-transparent border-0 border-b border-transparent hover:border-slate-300 dark:hover:border-white/20 focus:border-[#E8C16D] outline-none px-1 py-0.5 truncate transition-all"
-                          placeholder="Document Name"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                  {/* Print I-Card Button */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setIsPrintModalOpen(true)}
+                      className="inline-flex items-center gap-2 h-11 sm:h-12 px-6 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.98] text-[#0A0E1A] font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-xs"
+                    >
+                      <Printer size={16} className="stroke-[2.5]" />
+                      <span>Print I-Card</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* Bottom Fixed Action Bar matching Edit Ledger */}
-        <div className="p-4 sm:p-5 border-t border-[#E7E0D2] bg-slate-50 dark:border-white/[0.08] dark:bg-[#0E121A] w-full mt-auto">
-          <div className="w-full flex items-center justify-between">
-            {/* Left: Completion Percentage bar matching Edit Ledger */}
-            <div className="w-48 sm:w-64 space-y-1">
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Completion Percentage: {completionPercentage}%
-              </p>
-              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/[0.1] overflow-hidden">
+            {/* ========================================================================= */}
+            {/* TAB 4: DOCUMENTS                                                         */}
+            {/* ========================================================================= */}
+            {activeTab === "documents" && (
+              <div className="w-full">
+                <div className="flex items-center gap-3.5 mb-6">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                      Employee Documents
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Upload identity document proof here (e.g. Bank Passbook, Aadhaar Card, PAN Card, etc.).
+                    </p>
+                  </div>
+                </div>
+
+                <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
+
+                {/* Horizontal Row: [ Attach Section / Upload Box ] [ Doc 2 ] [ Doc 1 ] ... */}
+                <div className="flex flex-wrap items-start gap-5 pt-1">
+                  {/* 1. ATTACH / UPLOAD BOX */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => !uploadingDoc && identityDocInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        !uploadingDoc && identityDocInputRef.current?.click();
+                      }
+                    }}
+                    className={cn(
+                      "w-48 h-48 rounded-3xl bg-[#FAF8F5] border border-dashed text-[#0A0E1A] dark:bg-[#080B11] flex flex-col items-center justify-center p-4 shadow-sm overflow-hidden relative group cursor-pointer transition-all select-none shrink-0",
+                      "border-[#E7E0D2] hover:border-[#E8C16D] dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50",
+                      uploadingDoc && "opacity-60 pointer-events-none"
+                    )}
+                    title="Upload Document"
+                  >
+                    <input
+                      ref={identityDocInputRef}
+                      type="file"
+                      accept="image/*,.pdf"
+                      multiple
+                      className="hidden"
+                      onChange={async (e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          const files = Array.from(e.target.files);
+                          for (const file of files) {
+                            await handleAddDocument(file);
+                          }
+                        }
+                      }}
+                    />
+
+                    {uploadingDoc ? (
+                      <div className="flex flex-col items-center justify-center text-amber-500">
+                        <Loader2 size={24} className="animate-spin mb-1.5" />
+                        <span className="text-xs font-medium">Uploading to storage...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center select-none">
+                        <div className="w-12 h-12 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                          <Upload size={22} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Upload Documents
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-1">
+                          PNG, JPG, PDF up to 20MB
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. UPLOADED DOCUMENT CARDS */}
+                  {(formData.documents || []).map((doc, idx) => {
+                    const isPdf =
+                      doc.url.toLowerCase().endsWith(".pdf") ||
+                      doc.fileName?.toLowerCase().endsWith(".pdf");
+
+                    return (
+                      <div
+                        key={doc.id || idx}
+                        className="w-48 h-48 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] overflow-hidden group shadow-sm flex flex-col relative transition-all hover:shadow-md hover:border-[#E8C16D] shrink-0"
+                      >
+                        {/* Top Bar with Type Badge & Action Icons */}
+                        <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between pointer-events-none">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-black/65 backdrop-blur-xs text-white border border-white/10 shadow-xs pointer-events-auto truncate max-w-[100px]">
+                            {doc.type || "Document"}
+                          </span>
+
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewDoc(doc)}
+                              className="p-1.5 rounded-xl bg-black/65 hover:bg-black/90 text-white backdrop-blur-xs transition-colors cursor-pointer"
+                              title="View Full Preview"
+                            >
+                              <Eye size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDocument(doc.id)}
+                              className="p-1.5 rounded-xl bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-xs transition-colors cursor-pointer"
+                              title="Remove Document"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Card Middle: Preview Area */}
+                        <div
+                          onClick={() => setPreviewDoc(doc)}
+                          className="w-full flex-1 flex items-center justify-center bg-slate-50/80 dark:bg-[#121620] cursor-pointer overflow-hidden p-2"
+                        >
+                          {!isPdf ? (
+                            <img
+                              src={getMediaUrl(doc.url)}
+                              alt={doc.name}
+                              className="w-full h-full object-contain rounded-xl transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center p-2 text-center">
+                              <FileText size={38} className="text-[#B88728] dark:text-[#E8C16D] mb-1" />
+                              <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
+                                {doc.fileName || doc.name}
+                              </span>
+                              <span className="text-[10px] text-slate-400">PDF Document</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Bottom: Document Title */}
+                        <div className="p-2.5 border-t border-slate-100 dark:border-white/[0.08] bg-white dark:bg-[#080B11] flex items-center justify-between gap-1">
+                          <input
+                            type="text"
+                            value={doc.name}
+                            onChange={(e) =>
+                              handleUpdateDocument(doc.id, { name: e.target.value })
+                            }
+                            title="Click to rename document"
+                            className="w-full text-[11px] font-semibold text-slate-800 dark:text-white bg-transparent border-0 border-b border-transparent hover:border-slate-300 dark:hover:border-white/20 focus:border-[#E8C16D] outline-none px-1 py-0.5 truncate transition-all"
+                            placeholder="Document Name"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================================= */}
+          {/* BOTTOM ACTION BAR matching EmployeeProfileViewPage bottom gradient theme  */}
+          {/* ========================================================================= */}
+          <div className="border-t border-[#EAE4D8] dark:border-white/[0.08] bg-gradient-to-r from-[#FFF6DE] via-[#FFF9EC] to-white dark:from-[#1E190F] dark:via-[#131722] dark:to-[#0A0E1A] p-5 sm:p-7 w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="w-full sm:w-64 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Completion Percentage:
+                </span>
+                <span className="text-xs font-bold font-mono text-slate-900 dark:text-[#E8C16D]">
+                  {completionPercentage}%
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-200/80 dark:bg-white/[0.1] overflow-hidden">
                 <div
-                  className="h-full bg-[#0A0E1A] dark:bg-[#F5C451] rounded-full transition-all duration-300"
+                  className="h-full bg-[#0A0E1A] dark:bg-[#E8C16D] rounded-full transition-all duration-300"
                   style={{ width: `${completionPercentage}%` }}
                 />
               </div>
             </div>
 
-            {/* Right: Save Button matching Edit Ledger */}
             <button
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#F5C451] hover:bg-[#e8b83e] text-slate-900 font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 px-7 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-50 shrink-0"
             >
               {saving ? (
-                <Loader2 size={16} className="animate-spin text-slate-900" />
+                <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
               ) : (
-                <Save size={16} className="text-slate-900" />
+                <Save size={16} className="text-[#0A0E1A]" />
               )}
               <span>{saving ? "Saving..." : "Save"}</span>
             </button>

@@ -137,7 +137,12 @@ export default function ThemeSelectDropdown({
 
   return (
     <div
-      className={cn("relative inline-block", isOpen ? "z-50" : "z-0", className)}
+      className={cn(
+        "relative",
+        className?.includes("w-full") ? "block w-full" : "inline-block",
+        isOpen ? "z-50" : "z-0",
+        className
+      )}
       ref={containerRef}
     >
       <button
@@ -179,7 +184,11 @@ export default function ThemeSelectDropdown({
               ? "bottom-full mb-2 origin-bottom animate-in fade-in zoom-in-95"
               : "top-full mt-2 origin-top animate-in fade-in zoom-in-95",
             "dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
-            effectiveAlign === "right" ? "right-0" : "left-0",
+            menuClassName?.includes("w-full")
+              ? "left-0 right-0 w-full"
+              : effectiveAlign === "right"
+              ? "right-0"
+              : "left-0",
             menuClassName || "min-w-full w-max max-w-[280px]"
           )}
         >

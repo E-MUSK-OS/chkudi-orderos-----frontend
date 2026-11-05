@@ -1,10 +1,7 @@
 "use client";
 
-import { Trash2, AlertTriangle } from "lucide-react";
-
-import Modal from "@/components/ui/Modal";
-import Button from "@/components/ui/Button";
-
+import React from "react";
+import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import type { Material } from "../types/material.types";
 
 interface Props {
@@ -22,75 +19,56 @@ export default function DeleteMaterialModal({
   onClose,
   onConfirm,
 }: Props) {
-  const footer = (
-    <div className="flex items-center justify-end gap-3">
-      <Button
-        variant="secondary"
-        fullWidth={false}
-        onClick={onClose}
-        disabled={loading}
-      >
-        Cancel
-      </Button>
-
-      <Button
-        variant="primary"
-        fullWidth={false}
-        onClick={onConfirm}
-        disabled={loading}
-      >
-        {loading ? "Deleting..." : "Delete Material"}
-      </Button>
-    </div>
-  );
+  if (!open || !material) return null;
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      size="md"
-      showHeader={false}
-      footer={footer}
-    >
-      <div className="p-8">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
-            <Trash2 className="h-8 w-8 text-red-600 dark:text-red-400" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 font-sans">
+      <div className="w-full max-w-md rounded-3xl bg-white border border-[#E7E0D2] p-6 shadow-2xl text-slate-900 dark:bg-[#0E121A] dark:border-white/[0.1] dark:text-slate-100 animate-in zoom-in-95 duration-150">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+            <AlertTriangle size={20} />
           </div>
-
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Delete Material</h2>
-
-          <p className="mt-3 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Are you sure you want to permanently delete
-          </p>
-
-          <p className="mt-2 rounded-lg bg-slate-100 dark:bg-[#131926] border border-transparent dark:border-white/[0.08] px-4 py-2 text-base font-semibold text-slate-900 dark:text-white">
-            {material?.materialName}
-          </p>
-
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            SKU :{" "}
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              {material?.masterSku}
-            </span>
-          </p>
-
-          <div className="mt-6 flex w-full items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4 text-left">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-
-            <div>
-              <p className="font-semibold text-amber-800 dark:text-amber-300">
-                This action cannot be undone.
-              </p>
-
-              <p className="mt-1 text-sm text-amber-700 dark:text-amber-400/90">
-                This material and all of its associated variants and specifications will be permanently deleted.
-              </p>
-            </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+              Delete Material Record?
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-slate-900 dark:text-white">"{material.materialName}"</span> (
+              <span className="text-[#B88728] dark:text-[#E8C16D] font-mono">{material.masterSku}</span>)? This action cannot be undone. All associated variants and specifications will be permanently deleted.
+            </p>
           </div>
         </div>
+
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E7E0D2] dark:border-white/[0.08]">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-all cursor-pointer shadow-md disabled:opacity-40"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={13} className="animate-spin" />
+                <span>Deleting...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 size={13} />
+                <span>Delete Material</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 }
-

@@ -59,7 +59,7 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
       setGstNumber("");
       onClose();
       if (res.data?.id) {
-        router.push(`/dashboard/settings/manage-company/company-profile/edit/${res.data.id}`);
+        router.push(`/dashboard/setting/manage-company/company-profile/edit/${res.data.id}`);
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to create branch. Please try again.");
@@ -82,43 +82,43 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
       onClick={handleClose}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
 
-      {/* Modal */}
+      {/* Modal with golden theme border */}
       <div
-        className="relative w-full max-w-md rounded-2xl bg-white border border-[#E7E0D2] shadow-2xl p-6 dark:bg-[#111827] dark:border-white/[0.1]"
+        className="relative w-full max-w-md rounded-3xl bg-white border border-[#E8C16D]/50 shadow-2xl p-6 sm:p-7 dark:bg-[#0F1626] dark:border-[#E8C16D]/40 z-10 animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 dark:bg-white/[0.06] dark:border-white/[0.1] flex items-center justify-center shrink-0">
-              <Building2 size={15} className="text-[#B88728] dark:text-slate-300" />
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+              <Building2 size={18} />
             </div>
-            <h2 className="text-base font-bold text-[#0A0E1A] dark:text-white">
-              Create a company branch
-            </h2>
+            <div>
+              <h2 className="text-base font-bold text-[#0A0E1A] dark:text-white">
+                Create a company branch
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Start by entering your GST number.
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:hover:bg-white/[0.08] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:hover:bg-white/[0.08] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-50"
           >
             <X size={16} />
           </button>
         </div>
 
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 ml-[42px]">
-          Start by entering your GST number.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5 mt-4">
           {/* GST Number Input */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
-              GST Number{" "}
-              <span className="text-rose-500 dark:text-rose-400">*</span>
+              GST Number <span className="text-rose-500 font-bold">*</span>
             </label>
             <div className="relative">
               <input
@@ -129,17 +129,17 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
                 }
                 placeholder="Enter your GST number"
                 disabled={loading}
-                className="w-full rounded-lg bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 text-sm px-3.5 py-2.5 pr-14 focus:outline-none focus:border-[#E8C16D] transition-colors disabled:opacity-60 dark:bg-[#0E121A] dark:border-white/[0.1] dark:text-white dark:placeholder-slate-500 dark:focus:border-white/30"
+                className="w-full h-11 px-4 pr-16 text-xs sm:text-sm font-mono rounded-2xl bg-white border border-slate-200 text-[#0A0E1A] placeholder-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 transition-all disabled:opacity-60 dark:bg-[#080B11] dark:border-white/[0.1] dark:text-white dark:placeholder-slate-500 shadow-xs uppercase"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono select-none">
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono select-none">
                 {gstNumber.length}/15
               </span>
             </div>
           </div>
 
           {/* Info list */}
-          <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 dark:bg-white/[0.03] dark:border-white/[0.06]">
-            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+          <div className="rounded-2xl bg-slate-50 border border-slate-200/80 px-4 py-3.5 dark:bg-white/[0.03] dark:border-white/[0.06]">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
               After creating the branch, you&apos;ll have to:
             </p>
             <ul className="space-y-1.5">
@@ -148,7 +148,7 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
                 "Activate the branch once all details are complete",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0" />
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#E8C16D] shrink-0" />
                   {item}
                 </li>
               ))}
@@ -156,24 +156,24 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-1">
+          <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-[#E7E0D2] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.1]"
+              className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.1]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || gstNumber.trim().length === 0}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A0E1A] hover:bg-black text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-xs font-bold transition-all cursor-pointer shadow disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <Loader2 size={13} className="animate-spin" />
+                <Loader2 size={13} className="animate-spin text-[#0A0E1A]" />
               ) : (
-                <Plus size={13} className="stroke-[3]" />
+                <Plus size={14} className="stroke-[3] text-[#0A0E1A]" />
               )}
               <span>{loading ? "Creating…" : "Create Draft"}</span>
             </button>
@@ -481,7 +481,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 </body>
 </html>`;
 
-    // Use a hidden iframe so the print dialog opens without a new tab
+    // Hidden iframe print
     const existing = document.getElementById("__company-report-frame__");
     if (existing) existing.remove();
 
@@ -505,7 +505,6 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
       setTimeout(() => {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
-        // Clean up after the print dialog closes
         setTimeout(() => iframe.remove(), 2000);
       }, 300);
     };
@@ -515,7 +514,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
     return (
       <DashboardLayout title="Company Profile">
         <div className="flex flex-col items-center justify-center min-h-[500px] text-slate-400">
-          <Loader2 size={36} className="animate-spin text-[#F5C451] mb-3" />
+          <Loader2 size={36} className="animate-spin text-[#E8C16D] mb-3" />
           <p className="text-sm font-medium">Loading company profile details...</p>
         </div>
       </DashboardLayout>
@@ -525,12 +524,12 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
   if (error || !company) {
     return (
       <DashboardLayout title="Company Profile">
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-[#E7E0D2] shadow-sm dark:bg-[#0E121A] rounded-2xl dark:border-white/[0.08]">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-[#E8C16D]/50 shadow-sm dark:bg-[#0E121A] rounded-3xl dark:border-[#E8C16D]/40">
           <p className="text-sm text-rose-500 dark:text-rose-400 mb-4">{error || "Company not found."}</p>
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0E1A] text-white hover:bg-black dark:bg-white dark:text-slate-900 font-semibold text-xs transition-all cursor-pointer dark:hover:bg-slate-100"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#0A0E1A] text-white hover:bg-black dark:bg-[#E8C16D] dark:text-[#0A0E1A] font-bold text-xs transition-all cursor-pointer shadow-sm"
           >
             <ArrowLeft size={16} />
             <span>Back to Company Profiles</span>
@@ -575,59 +574,67 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 
   return (
     <DashboardLayout title="Company Profile">
-      <div className="flex flex-col h-[calc(100vh-72px)] -my-4 sm:-my-6 lg:-my-8 w-full text-[#0A0E1A] dark:text-slate-100 font-sans overflow-hidden">
-        {/* Top Header Card matching footer card rounded style */}
-        <div className="w-full pt-4 sm:pt-6 pb-2 shrink-0 z-20">
-          <div className="w-full rounded-2xl bg-white border border-[#E7E0D2] px-5 py-3.5 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleBack}
-                className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer"
-                title="Back to Company Profiles"
-              >
-                <ArrowLeft size={18} />
-              </button>
-              <h1 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Company Profile
-              </h1>
+      <div className="flex flex-col gap-4 w-full text-[#0A0E1A] dark:text-slate-100 font-sans">
+        {/* ========================================================================= */}
+        {/* TOP HEADER BAR matching Company Profile Page Header                       */}
+        {/* ========================================================================= */}
+        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5 min-w-0 max-w-2xl">
+              <div className="flex items-center gap-3.5">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  title="Back to Company Profiles"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                  Company Profile
+                </h1>
+              </div>
+
+              {/* One line page description */}
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+                View comprehensive registration, banking, and contact details of the company.
+              </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            {/* Action buttons */}
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
               <button
                 type="button"
                 onClick={handleEdit}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-900 border border-[#E7E0D2] shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.1] transition-all cursor-pointer active:scale-95"
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
               >
-                <Edit3 size={13} />
-                <span>Edit</span>
+                <Edit3 size={16} className="text-[#0A0E1A]" />
+                <span>Edit Profile</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setDeleteModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 shadow-xs dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:hover:text-rose-300 dark:border-rose-500/20 transition-all cursor-pointer active:scale-95"
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-4 sm:px-5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-all cursor-pointer shadow-xs"
               >
-                <Trash2 size={13} />
+                <Trash2 size={16} />
                 <span>Delete</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Scrollable Middle Content Area matching Screenshot (Red Box) - scrollbar hidden */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {/* Main Content Grid: Left 8 cols, Right 4 cols */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
-          {/* ========================================================================= */}
-          {/* LEFT COLUMN: Main Company Card + 4 Detail Cards                           */}
-          {/* ========================================================================= */}
+        {/* ========================================================================= */}
+        {/* MAIN DETAIL GRID: Left 8 cols, Right 4 cols (Golden Theme Border Cards)   */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
+          {/* LEFT COLUMN: Main Company Card + 4 Detail Cards */}
           <div className="lg:col-span-8 flex flex-col gap-4">
-            {/* Main Company Card */}
-            <div className="rounded-2xl bg-white border border-[#E7E0D2] p-5 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative">
+            {/* Main Company Card with Golden Theme Border */}
+            <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative">
               <div className="flex items-start sm:items-center gap-4 flex-1">
-                {/* Logo Box */}
-                <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-black dark:border-white/[0.1] flex flex-col items-center justify-center p-2 shrink-0 relative overflow-hidden group select-none shadow-xs">
+                {/* Logo Box with subtle Golden Border */}
+                <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E8C16D]/40 dark:bg-black dark:border-[#E8C16D]/30 flex flex-col items-center justify-center p-2 shrink-0 relative overflow-hidden group select-none shadow-xs">
                   <ExternalLink size={12} className="text-slate-400 absolute top-2 right-2 pointer-events-none" />
                   {company.logoUrl ? (
                     <img
@@ -660,7 +667,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                         />
                       </svg>
                       <span className="text-[9px] font-black uppercase tracking-tight text-slate-800 dark:text-white mt-1.5 leading-tight px-1 text-center">
-                        {company.companyName || "JAY BHAVANI FASHION"}
+                        {company.companyName || "COMPANY"}
                       </span>
                     </div>
                   )}
@@ -673,24 +680,24 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       {company.companyName || "Untitled Company"}
                     </h2>
                     {company.status === "ACTIVE" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#1A160E] text-[#E8C16D] border border-[#E8C16D]/30 shadow-xs">
+                        <Check size={11} className="stroke-[3] text-[#E8C16D]" />
                         Active
                       </span>
                     )}
                     {company.status === "DRAFT" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                         Draft
                       </span>
                     )}
                     {company.status === "INACTIVE" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-500/15 dark:text-slate-400 dark:border-slate-500/30">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/15 text-slate-400 border border-slate-500/30">
                         <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                         Inactive
                       </span>
                     )}
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.08] dark:text-slate-300 dark:border-white/[0.08]">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.08] dark:text-slate-300 dark:border-white/[0.08]">
                       Completion: {company.completionPercentage ?? 60}%
                     </span>
                   </div>
@@ -701,38 +708,38 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 
                   <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap mt-3 text-xs">
                     <div className="flex items-center gap-1.5">
-                      <User size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px]">Owner.</span>
+                      <User size={13} className="text-[#E8C16D] shrink-0" />
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Owner.</span>
                       <span className="font-semibold text-[#0A0E1A] dark:text-white">
                         {company.ownerName || "—"}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <Mail size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px]">Email.</span>
+                      <Mail size={13} className="text-[#E8C16D] shrink-0" />
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Email.</span>
                       <span className="font-semibold text-[#0A0E1A] dark:text-white">
                         {company.email || "—"}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <Phone size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px]">Phone.</span>
+                      <Phone size={13} className="text-[#E8C16D] shrink-0" />
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Phone.</span>
                       <span className="font-semibold text-[#0A0E1A] dark:text-white">
                         {company.phone ? (company.phone.startsWith("+") ? company.phone : `+91 ${company.phone}`) : "—"}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <Globe size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px]">Website.</span>
+                      <Globe size={13} className="text-[#E8C16D] shrink-0" />
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Website.</span>
                       {company.website ? (
                         <a
                           href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-semibold text-sky-600 hover:underline flex items-center gap-1 dark:text-sky-400"
+                          className="font-semibold text-[#E8C16D] hover:underline flex items-center gap-1"
                         >
                           <span>{company.website}</span>
                           <ExternalLink size={10} />
@@ -745,9 +752,9 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 </div>
               </div>
 
-              {/* Authorized Signature Box */}
+              {/* Authorized Signature Box with Golden Border */}
               <div className="flex flex-col items-center shrink-0">
-                <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#0B0D13] dark:border-white/[0.08] flex items-center justify-center p-2 overflow-hidden shadow-xs">
+                <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E8C16D]/40 dark:bg-[#0B0D13] dark:border-[#E8C16D]/30 flex items-center justify-center p-2 overflow-hidden shadow-xs">
                   {company.signatureUrl ? (
                     <img
                       src={getMediaUrl(company.signatureUrl)}
@@ -766,13 +773,15 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
               </div>
             </div>
 
-            {/* 2x2 Grid of Detail Cards */}
+            {/* 2x2 Grid of Detail Cards with Golden Theme Border */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Card 1: Contact Details */}
-              <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin size={15} className="text-slate-500 dark:text-slate-400" />
+                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                      <MapPin size={15} />
+                    </div>
                     <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
                       Contact Details
                     </h3>
@@ -782,21 +791,21 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                     {/* Billing Address */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                           Billing Address.
                         </span>
                         <CopyButton text={billingAddressFull} />
                       </div>
-                      <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                      <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
                         {billingAddressFull || "No billing address provided."}
                       </p>
-                      <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium">
+                      <div className="flex items-center gap-3 mt-1.5 text-xs font-medium">
                         <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <User size={12} className="text-slate-400 dark:text-slate-500" />
+                          <User size={12} className="text-[#E8C16D]" />
                           {billingContactPerson}
                         </span>
                         <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <Phone size={12} className="text-slate-400 dark:text-slate-500" />
+                          <Phone size={12} className="text-[#E8C16D]" />
                           {billingPhone}
                         </span>
                       </div>
@@ -804,21 +813,21 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 
                     <div className="border-t border-slate-100 dark:border-white/[0.06] pt-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                           Shipping Address.
                         </span>
                         <CopyButton text={shippingAddressFull} />
                       </div>
-                      <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                      <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
                         {shippingAddressFull || "No shipping address provided."}
                       </p>
-                      <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium">
+                      <div className="flex items-center gap-3 mt-1.5 text-xs font-medium">
                         <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <User size={12} className="text-slate-400 dark:text-slate-500" />
+                          <User size={12} className="text-[#E8C16D]" />
                           {shippingContactPerson}
                         </span>
                         <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <Phone size={12} className="text-slate-400 dark:text-slate-500" />
+                          <Phone size={12} className="text-[#E8C16D]" />
                           {shippingPhone}
                         </span>
                       </div>
@@ -828,10 +837,12 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
               </div>
 
               {/* Card 2: Taxation & Legal Details */}
-              <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileCheck size={15} className="text-slate-500 dark:text-slate-400" />
+                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                      <FileCheck size={15} />
+                    </div>
                     <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
                       Taxation & Legal Details
                     </h3>
@@ -843,7 +854,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                         GST No.
                       </span>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                           {company.gstNumber || "—"}
                         </span>
                         {company.gstNumber && <CopyButton text={company.gstNumber} />}
@@ -855,7 +866,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                         PAN No.
                       </span>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                           {company.panNumber || "—"}
                         </span>
                         {company.panNumber && <CopyButton text={company.panNumber} />}
@@ -866,7 +877,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Trade Category.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.tradeCategory || "Manufacturing"}
                       </span>
                     </div>
@@ -875,7 +886,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         TAN No.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                         {company.tanNumber || "—"}
                       </span>
                     </div>
@@ -884,7 +895,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         FSSAI No.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.fssaiNumber || "-"}
                       </span>
                     </div>
@@ -893,7 +904,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Central Sales Tax No.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.cstNumber || "-"}
                       </span>
                     </div>
@@ -902,7 +913,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         MSME ID.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.msmeNumber || "-"}
                       </span>
                     </div>
@@ -911,10 +922,12 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
               </div>
 
               {/* Card 3: Bank Details */}
-              <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Landmark size={15} className="text-slate-500 dark:text-slate-400" />
+                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                      <Landmark size={15} />
+                    </div>
                     <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
                       Bank Details
                     </h3>
@@ -926,7 +939,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                         Account No.
                       </span>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                           {company.accountNumber || "—"}
                         </span>
                         {company.accountNumber && <CopyButton text={company.accountNumber} />}
@@ -937,7 +950,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Holder Name.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
                         {company.accountHolderName || company.ownerName || "—"}
                       </span>
                     </div>
@@ -946,7 +959,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Account Name.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
                         {company.accountName || company.companyName || "—"}
                       </span>
                     </div>
@@ -955,7 +968,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         UPI ID.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.upiId || "—"}
                       </span>
                     </div>
@@ -964,7 +977,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Bank Name.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
                         {company.bankName || "—"}
                       </span>
                     </div>
@@ -973,7 +986,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Branch Name.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
                         {company.branchName || "—"}
                       </span>
                     </div>
@@ -982,7 +995,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Account Type.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.accountType || "Current"}
                       </span>
                     </div>
@@ -991,7 +1004,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         IFSC Code.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                         {company.ifscCode || "—"}
                       </span>
                     </div>
@@ -1000,7 +1013,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Client Code.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.clientCode || "-"}
                       </span>
                     </div>
@@ -1009,7 +1022,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Product Code.
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
                         {company.productCode || "-"}
                       </span>
                     </div>
@@ -1018,10 +1031,12 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
               </div>
 
               {/* Card 4: Invoice Details */}
-              <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Receipt size={15} className="text-slate-500 dark:text-slate-400" />
+                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                      <Receipt size={15} />
+                    </div>
                     <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
                       Invoice Details
                     </h3>
@@ -1032,7 +1047,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Tax Invoice Prefix. [Offline]
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                         {company.taxInvoicePrefix || "—"}
                       </span>
                     </div>
@@ -1041,7 +1056,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Next Tax Invoice No. [Offline]
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                         {company.taxInvoiceNext || "1"}
                       </span>
                     </div>
@@ -1050,7 +1065,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Retail Invoice Prefix. [Offline]
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                         {company.retailInvoicePrefix || "—"}
                       </span>
                     </div>
@@ -1059,7 +1074,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
                         Next Retail Invoice No. [Offline]
                       </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
                         {company.retailInvoiceNext || "1"}
                       </span>
                     </div>
@@ -1069,41 +1084,38 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* RIGHT COLUMN: Branch(s) Card matching Screenshot                         */}
-          {/* ========================================================================= */}
+          {/* RIGHT COLUMN: Branch(s) Card with Golden Theme Border */}
           <div className="lg:col-span-4 flex flex-col">
-            <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col h-full min-h-[460px]">
+            <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col h-full min-h-[460px]">
               {/* Header with Title & + Create Button */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-white/[0.06]">
                 <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
                   Branch(s)
                 </h3>
                 <button
                   type="button"
                   onClick={() => setCreateBranchModalOpen(true)}
-                  className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.97] text-slate-900 font-bold text-[11px] transition-all cursor-pointer shadow-md"
+                  className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] font-bold text-[11px] transition-all cursor-pointer shadow-sm"
                 >
-                  <Plus size={12} className="stroke-[3]" />
+                  <Plus size={12} className="stroke-[3] text-[#0A0E1A]" />
                   <span>Create</span>
                 </button>
               </div>
 
               {/* Table Column Headers */}
-              <div className="grid grid-cols-12 text-[11px] font-semibold text-slate-500 dark:text-slate-400 py-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="grid grid-cols-12 text-[11px] font-semibold text-[#E8C16D] py-2.5 border-b border-slate-100 dark:border-white/[0.06]">
                 <span className="col-span-2">No.</span>
                 <span className="col-span-7">Company Name.</span>
                 <span className="col-span-3 text-right">Status.</span>
               </div>
 
-              {/* Empty State matching Screenshot with clipboard icon */}
+              {/* Empty State */}
               <div className="flex-1 flex flex-col items-center justify-center p-8 select-none">
-                {/* Custom SVG clipboard icon matching screenshot */}
                 <div className="mb-3">
                   <svg width="42" height="48" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="5" width="28" height="32" rx="4" fill="#C58349" />
                     <rect x="5" y="8" width="22" height="26" rx="2" fill="#FFFFFF" />
-                    <line x1="8" y1="14" x2="24" y2="14" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+                    <line x1="8" y1="14" x2="24" y2="14" stroke="#E8C16D" strokeWidth="1.5" strokeLinecap="round" />
                     <line x1="8" y1="18" x2="24" y2="18" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
                     <line x1="8" y1="22" x2="24" y2="22" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
                     <line x1="8" y1="26" x2="18" y2="26" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
@@ -1118,18 +1130,16 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ========================================================================= */}
-      {/* BOTTOM STATIC FOOTER BAR matching Screenshot (Red Box)                     */}
-      {/* ========================================================================= */}
-      <div className="w-full pt-3 pb-4 sm:pb-5 lg:pb-6 bg-transparent dark:bg-[#080B11] shrink-0 z-20">
-        <div className="w-full rounded-2xl bg-white border border-[#E7E0D2] px-5 py-3.5 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* ========================================================================= */}
+        {/* BOTTOM METADATA BAR with Golden Theme Border                              */}
+        {/* ========================================================================= */}
+        <div className="w-full rounded-2xl sm:rounded-3xl bg-white border border-[#E8C16D]/50 px-6 py-4 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Left Metadata items */}
           <div className="flex items-center gap-6 sm:gap-8 flex-wrap">
             {/* Creation Date */}
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
                 <Calendar size={14} />
               </div>
               <div>
@@ -1144,7 +1154,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 
             {/* Created By */}
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
                 <User size={14} />
               </div>
               <div>
@@ -1159,7 +1169,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 
             {/* Last Updated */}
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
                 <Calendar size={14} />
               </div>
               <div>
@@ -1174,7 +1184,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 
             {/* Last Updated By */}
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
                 <User size={14} />
               </div>
               <div>
@@ -1192,13 +1202,12 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
           <button
             type="button"
             onClick={handleGenerateReport}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-[#E7E0D2] shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-white dark:border-white/[0.1] text-xs font-semibold transition-all cursor-pointer active:scale-95 shrink-0"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-[#E8C16D]/40 shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-white dark:border-[#E8C16D]/40 text-xs font-bold transition-all cursor-pointer active:scale-95 shrink-0"
           >
             <FileText size={14} />
             <span>Generate Report</span>
           </button>
         </div>
-      </div>
       </div>
 
       {/* Delete Confirmation Modal */}

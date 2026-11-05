@@ -12,6 +12,9 @@ import {
   FileText,
   Upload,
   Trash2,
+  Building2,
+  MapPin,
+  Landmark,
 } from "lucide-react";
 import { Company, UpdateCompanyPayload } from "../types/company.types";
 import { companyService } from "../services/company.service";
@@ -51,6 +54,13 @@ const INDIAN_STATES = [
   "Odisha",
   "Goa",
   "Kerala",
+  "Assam",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Uttarakhand",
 ];
 
 export default function CompanyProfileForm({
@@ -185,9 +195,9 @@ export default function CompanyProfileForm({
   );
 
   const dropdownButtonClassName =
-    "w-full justify-between h-10 px-3.5 text-xs font-normal rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "w-full justify-between h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-[#E7E0D2] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D]/50 transition-all shadow-xs";
   const dropdownMenuClassName =
-    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-xl shadow-2xl";
+    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl p-1.5";
 
   // Form state holding all fields from database
   const [formData, setFormData] = useState<UpdateCompanyPayload>({
@@ -261,93 +271,90 @@ export default function CompanyProfileForm({
     status: "ACTIVE",
   });
 
-  // Populate form with real data from database
+  // Pre-fill form data from initial company
   useEffect(() => {
-    if (company) {
-      setFormData({
-        legalName: company.legalName || company.companyName || "",
-        companyName: company.companyName || "",
-        brandName: company.brandName || company.companyName || "",
-        ownerName: company.ownerName || "",
-        abbreviation: company.abbreviation || company.companyCode || "",
-        businessType: company.businessType || "Properiter",
-        email: company.email || "",
-        phone: company.phone || "",
-        website: company.website || "",
+    if (!company) return;
 
-        billingAddress1: company.billingAddress1 || company.addressLine1 || "",
-        billingAddress2: company.billingAddress2 || company.addressLine2 || "",
-        billingAddress3: company.billingAddress3 || "",
-        billingPincode: company.billingPincode || company.pincode || "",
-        billingArea: company.billingArea || "",
-        billingCity: company.billingCity || company.city || "Surat",
-        billingState: company.billingState || company.state || "Gujarat",
-        billingCountry: company.billingCountry || "India",
-        billingContactName: company.billingContactName || company.ownerName || "",
-        billingContactNo: company.billingContactNo || company.phone || "",
+    setFormData({
+      legalName: company.legalName || company.companyName || "",
+      companyName: company.companyName || "",
+      brandName: company.brandName || "",
+      ownerName: company.ownerName || "",
+      abbreviation: company.abbreviation || "",
+      businessType: company.businessType || "Properiter",
+      email: company.email || "",
+      phone: company.phone || "",
+      website: company.website || "",
 
-        shippingSameAsBilling: company.shippingSameAsBilling ?? true,
-        shippingAddress1: company.shippingAddress1 || company.addressLine1 || "",
-        shippingAddress2: company.shippingAddress2 || company.addressLine2 || "",
-        shippingAddress3: company.shippingAddress3 || "",
-        shippingPincode: company.shippingPincode || company.pincode || "",
-        shippingArea: company.shippingArea || "",
-        shippingCity: company.shippingCity || company.city || "Surat",
-        shippingState: company.shippingState || company.state || "Gujarat",
-        shippingCountry: company.shippingCountry || "India",
-        shippingContactName: company.shippingContactName || company.ownerName || "",
-        shippingContactNo: company.shippingContactNo || company.phone || "",
+      billingAddress1: company.billingAddress1 || company.addressLine1 || "",
+      billingAddress2: company.billingAddress2 || company.addressLine2 || "",
+      billingAddress3: company.billingAddress3 || "",
+      billingPincode: company.billingPincode || company.pincode || "",
+      billingArea: company.billingArea || "",
+      billingCity: company.billingCity || company.city || "Surat",
+      billingState: company.billingState || company.state || "Gujarat",
+      billingCountry: company.billingCountry || "India",
+      billingContactName: company.billingContactName || company.ownerName || "",
+      billingContactNo: company.billingContactNo || company.phone || "",
 
-        gstNumber: company.gstNumber || "",
-        tanNumber: company.tanNumber || "",
-        panNumber: company.panNumber || "",
-        cstNumber: company.cstNumber || "",
-        fssaiNumber: company.fssaiNumber || "",
-        tradeCategory: company.tradeCategory || "Manufacturing",
-        msmeNumber: company.msmeNumber || "",
+      shippingSameAsBilling: company.shippingSameAsBilling ?? true,
+      shippingAddress1: company.shippingAddress1 || company.billingAddress1 || company.addressLine1 || "",
+      shippingAddress2: company.shippingAddress2 || company.billingAddress2 || company.addressLine2 || "",
+      shippingAddress3: company.shippingAddress3 || company.billingAddress3 || "",
+      shippingPincode: company.shippingPincode || company.billingPincode || company.pincode || "",
+      shippingArea: company.shippingArea || company.billingArea || "",
+      shippingCity: company.shippingCity || company.billingCity || company.city || "Surat",
+      shippingState: company.shippingState || company.billingState || company.state || "Gujarat",
+      shippingCountry: company.shippingCountry || company.billingCountry || "India",
+      shippingContactName: company.shippingContactName || company.billingContactName || company.ownerName || "",
+      shippingContactNo: company.shippingContactNo || company.billingContactNo || company.phone || "",
 
-        bankName: company.bankName || "",
-        accountHolderName: company.accountHolderName || company.ownerName || "",
-        accountName: company.accountName || company.companyName || "",
-        accountNumber: company.accountNumber || "",
-        ifscCode: company.ifscCode || "",
-        accountType: company.accountType || "Current",
-        branchName: company.branchName || "",
-        upiId: company.upiId || "",
-        clientCode: company.clientCode || "",
-        productCode: company.productCode || "",
+      gstNumber: company.gstNumber || "",
+      tanNumber: company.tanNumber || "",
+      panNumber: company.panNumber || "",
+      cstNumber: company.cstNumber || "",
+      fssaiNumber: company.fssaiNumber || "",
+      tradeCategory: company.tradeCategory || "Manufacturing",
+      msmeNumber: company.msmeNumber || "",
 
-        taxInvoicePrefix: company.taxInvoicePrefix || "",
-        taxInvoiceNext: company.taxInvoiceNext || "1",
-        retailInvoicePrefix: company.retailInvoicePrefix || "",
-        retailInvoiceNext: company.retailInvoiceNext || "1",
-        considerInPnL: company.considerInPnL || "Yes",
+      bankName: company.bankName || "",
+      accountHolderName: company.accountHolderName || company.ownerName || "",
+      accountName: company.accountName || company.companyName || "",
+      accountNumber: company.accountNumber || "",
+      ifscCode: company.ifscCode || "",
+      accountType: company.accountType || "Current",
+      branchName: company.branchName || "",
+      upiId: company.upiId || "",
+      clientCode: company.clientCode || "",
+      productCode: company.productCode || "",
 
-        logoUrl: company.logoUrl || "",
-        signatureUrl: company.signatureUrl || "",
-        status: company.status || "ACTIVE",
-      });
-    }
+      taxInvoicePrefix: company.taxInvoicePrefix || "",
+      taxInvoiceNext: company.taxInvoiceNext || "1",
+      retailInvoicePrefix: company.retailInvoicePrefix || "",
+      retailInvoiceNext: company.retailInvoiceNext || "1",
+      considerInPnL: company.considerInPnL || "Yes",
+
+      logoUrl: company.logoUrl || "",
+      signatureUrl: company.signatureUrl || "",
+      status: company.status || "ACTIVE",
+    });
   }, [company]);
 
-  const handleChange = (
-    field: keyof UpdateCompanyPayload,
-    value: UpdateCompanyPayload[keyof UpdateCompanyPayload]
-  ) => {
+  const handleChange = (field: keyof UpdateCompanyPayload, value: any) => {
+    // Clear validation error when user types
     if (errors[field]) {
       setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
+        const copy = { ...prev };
+        delete copy[field];
+        return copy;
       });
     }
+
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
 
-      // If shipping same as billing is checked, sync billing fields to shipping
       if (
         updated.shippingSameAsBilling &&
-        typeof value === "string" &&
         (field === "billingAddress1" ||
           field === "billingAddress2" ||
           field === "billingAddress3" ||
@@ -359,16 +366,22 @@ export default function CompanyProfileForm({
           field === "billingContactName" ||
           field === "billingContactNo")
       ) {
-        if (field === "billingAddress1") updated.shippingAddress1 = value;
-        if (field === "billingAddress2") updated.shippingAddress2 = value;
-        if (field === "billingAddress3") updated.shippingAddress3 = value;
-        if (field === "billingPincode") updated.shippingPincode = value;
-        if (field === "billingArea") updated.shippingArea = value;
-        if (field === "billingCity") updated.shippingCity = value;
-        if (field === "billingState") updated.shippingState = value;
-        if (field === "billingCountry") updated.shippingCountry = value;
-        if (field === "billingContactName") updated.shippingContactName = value;
-        if (field === "billingContactNo") updated.shippingContactNo = value;
+        const map: Record<string, keyof UpdateCompanyPayload> = {
+          billingAddress1: "shippingAddress1",
+          billingAddress2: "shippingAddress2",
+          billingAddress3: "shippingAddress3",
+          billingPincode: "shippingPincode",
+          billingArea: "shippingArea",
+          billingCity: "shippingCity",
+          billingState: "shippingState",
+          billingCountry: "shippingCountry",
+          billingContactName: "shippingContactName",
+          billingContactNo: "shippingContactNo",
+        };
+        const target = map[field];
+        if (target) {
+          (updated as any)[target] = value;
+        }
       }
 
       return updated;
@@ -377,30 +390,31 @@ export default function CompanyProfileForm({
 
   const handleShippingSameToggle = (checked: boolean) => {
     setFormData((prev) => {
-      const next = { ...prev, shippingSameAsBilling: checked };
+      const updated = { ...prev, shippingSameAsBilling: checked };
       if (checked) {
-        next.shippingAddress1 = prev.billingAddress1;
-        next.shippingAddress2 = prev.billingAddress2;
-        next.shippingAddress3 = prev.billingAddress3;
-        next.shippingPincode = prev.billingPincode;
-        next.shippingArea = prev.billingArea;
-        next.shippingCity = prev.billingCity;
-        next.shippingState = prev.billingState;
-        next.shippingCountry = prev.billingCountry;
-        next.shippingContactName = prev.billingContactName;
-        next.shippingContactNo = prev.billingContactNo;
+        updated.shippingAddress1 = prev.billingAddress1;
+        updated.shippingAddress2 = prev.billingAddress2;
+        updated.shippingAddress3 = prev.billingAddress3;
+        updated.shippingPincode = prev.billingPincode;
+        updated.shippingArea = prev.billingArea;
+        updated.shippingCity = prev.billingCity;
+        updated.shippingState = prev.billingState;
+        updated.shippingCountry = prev.billingCountry;
+        updated.shippingContactName = prev.billingContactName;
+        updated.shippingContactNo = prev.billingContactNo;
       }
-      return next;
+      return updated;
     });
   };
 
-  // Dynamic completion percentage calculation
+  // Completion percentage calculation
   const completionPercentage = useMemo(() => {
     const requiredFields = [
       formData.legalName,
       formData.companyName,
       formData.ownerName,
       formData.abbreviation,
+      formData.businessType,
       formData.email,
       formData.phone,
       formData.billingAddress1,
@@ -426,23 +440,23 @@ export default function CompanyProfileForm({
     const hasErr = Boolean(fieldKey && errors[fieldKey]);
     if (disabled) {
       return cn(
-        "w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+        "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400 transition-all shadow-xs",
         isMono && "font-mono"
       );
     }
     return cn(
-      "w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all",
+      "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border text-[#0A0E1A] placeholder:text-slate-400 dark:bg-[#080B11] dark:text-white outline-none transition-all shadow-xs",
       isMono && "font-mono",
       hasErr
-        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
-        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+        ? "border-rose-500 focus:border-rose-500 ring-2 ring-rose-500/20 dark:border-rose-500"
+        : "border-[#E7E0D2] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50 dark:focus:border-[#E8C16D]"
     );
   };
 
   const renderFieldError = (fieldKey: string) => {
     if (!errors[fieldKey]) return null;
     return (
-      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+      <p className="text-[10px] text-rose-500 font-semibold mt-1 px-2 flex items-center gap-1 animate-in fade-in-50">
         <AlertCircle size={11} className="shrink-0" />
         <span>{errors[fieldKey]}</span>
       </p>
@@ -501,7 +515,7 @@ export default function CompanyProfileForm({
       newErrors.billingPincode = "Billing Pincode is required.";
       if (!firstErrorTab) firstErrorTab = "contact";
     } else if (formData.billingPincode.trim().length !== 6) {
-      newErrors.billingPincode = "Pincode must be exactly 6 digits.";
+      newErrors.billingPincode = "Pincode must be 6 digits.";
       if (!firstErrorTab) firstErrorTab = "contact";
     }
     if (!formData.billingArea?.trim()) {
@@ -524,11 +538,10 @@ export default function CompanyProfileForm({
       newErrors.billingContactNo = "Billing Contact No is required.";
       if (!firstErrorTab) firstErrorTab = "contact";
     } else if (formData.billingContactNo.trim().length !== 10) {
-      newErrors.billingContactNo = "Contact number must be exactly 10 digits.";
+      newErrors.billingContactNo = "Contact number must be 10 digits.";
       if (!firstErrorTab) firstErrorTab = "contact";
     }
 
-    // Shipping (if not same as billing)
     if (!formData.shippingSameAsBilling) {
       if (!formData.shippingAddress1?.trim()) {
         newErrors.shippingAddress1 = "Shipping Address 1 is required.";
@@ -538,7 +551,7 @@ export default function CompanyProfileForm({
         newErrors.shippingPincode = "Shipping Pincode is required.";
         if (!firstErrorTab) firstErrorTab = "contact";
       } else if (formData.shippingPincode.trim().length !== 6) {
-        newErrors.shippingPincode = "Pincode must be exactly 6 digits.";
+        newErrors.shippingPincode = "Pincode must be 6 digits.";
         if (!firstErrorTab) firstErrorTab = "contact";
       }
       if (!formData.shippingArea?.trim()) {
@@ -561,7 +574,7 @@ export default function CompanyProfileForm({
         newErrors.shippingContactNo = "Shipping Contact No is required.";
         if (!firstErrorTab) firstErrorTab = "contact";
       } else if (formData.shippingContactNo.trim().length !== 10) {
-        newErrors.shippingContactNo = "Contact number must be exactly 10 digits.";
+        newErrors.shippingContactNo = "Contact number must be 10 digits.";
         if (!firstErrorTab) firstErrorTab = "contact";
       }
     }
@@ -571,18 +584,16 @@ export default function CompanyProfileForm({
       newErrors.gstNumber = "GST Number is required.";
       if (!firstErrorTab) firstErrorTab = "accounting";
     } else if (formData.gstNumber.trim().length !== 15) {
-      newErrors.gstNumber = "GST Number must be exactly 15 characters.";
+      newErrors.gstNumber = "GST Number must be 15 characters.";
       if (!firstErrorTab) firstErrorTab = "accounting";
     }
-
     if (!formData.panNumber?.trim()) {
       newErrors.panNumber = "PAN Number is required.";
       if (!firstErrorTab) firstErrorTab = "accounting";
     } else if (formData.panNumber.trim().length !== 10) {
-      newErrors.panNumber = "PAN Number must be exactly 10 characters.";
+      newErrors.panNumber = "PAN Number must be 10 characters.";
       if (!firstErrorTab) firstErrorTab = "accounting";
     }
-
     if (!formData.bankName?.trim()) {
       newErrors.bankName = "Bank Name is required.";
       if (!firstErrorTab) firstErrorTab = "accounting";
@@ -592,18 +603,14 @@ export default function CompanyProfileForm({
       if (!firstErrorTab) firstErrorTab = "accounting";
     }
     if (!formData.accountNumber?.trim()) {
-      newErrors.accountNumber = "Bank Account Number is required.";
+      newErrors.accountNumber = "Account Number is required.";
       if (!firstErrorTab) firstErrorTab = "accounting";
     }
     if (!formData.ifscCode?.trim()) {
       newErrors.ifscCode = "IFSC Code is required.";
       if (!firstErrorTab) firstErrorTab = "accounting";
     } else if (formData.ifscCode.trim().length !== 11) {
-      newErrors.ifscCode = "IFSC Code must be exactly 11 characters.";
-      if (!firstErrorTab) firstErrorTab = "accounting";
-    }
-    if (!formData.accountType?.trim()) {
-      newErrors.accountType = "Account Type is required.";
+      newErrors.ifscCode = "IFSC Code must be 11 characters.";
       if (!firstErrorTab) firstErrorTab = "accounting";
     }
     if (!formData.branchName?.trim()) {
@@ -615,87 +622,101 @@ export default function CompanyProfileForm({
       if (!firstErrorTab) firstErrorTab = "accounting";
     }
 
+    // --- Tab 4: Logo ---
+    if (!formData.logoUrl?.trim()) {
+      newErrors.logoUrl = "Company Logo is required.";
+      if (!firstErrorTab) firstErrorTab = "logo";
+    }
+
+    // --- Tab 5: Signature ---
+    if (!formData.signatureUrl?.trim()) {
+      newErrors.signatureUrl = "Company Signature is required.";
+      if (!firstErrorTab) firstErrorTab = "signature";
+    }
+
     setErrors(newErrors);
-    return {
-      isValid: Object.keys(newErrors).length === 0,
-      firstErrorTab,
-    };
+    return { isValid: Object.keys(newErrors).length === 0, firstErrorTab };
   };
 
-  const hasTabError = (tabKey: TabType) => {
-    if (tabKey === "general") {
-      return Boolean(
-        errors.legalName ||
-        errors.companyName ||
-        errors.ownerName ||
-        errors.abbreviation ||
-        errors.businessType ||
-        errors.email ||
-        errors.phone
-      );
+  const hasTabError = (tabKey: TabType): boolean => {
+    switch (tabKey) {
+      case "general":
+        return Boolean(
+          errors.legalName ||
+            errors.companyName ||
+            errors.ownerName ||
+            errors.abbreviation ||
+            errors.businessType ||
+            errors.email ||
+            errors.phone
+        );
+      case "contact":
+        return Boolean(
+          errors.billingAddress1 ||
+            errors.billingPincode ||
+            errors.billingArea ||
+            errors.billingCity ||
+            errors.billingState ||
+            errors.billingContactName ||
+            errors.billingContactNo ||
+            errors.shippingAddress1 ||
+            errors.shippingPincode ||
+            errors.shippingArea ||
+            errors.shippingCity ||
+            errors.shippingState ||
+            errors.shippingContactName ||
+            errors.shippingContactNo
+        );
+      case "accounting":
+        return Boolean(
+          errors.gstNumber ||
+            errors.panNumber ||
+            errors.bankName ||
+            errors.accountHolderName ||
+            errors.accountNumber ||
+            errors.ifscCode ||
+            errors.branchName ||
+            errors.upiId
+        );
+      case "logo":
+        return Boolean(errors.logoUrl);
+      case "signature":
+        return Boolean(errors.signatureUrl);
+      default:
+        return false;
     }
-    if (tabKey === "contact") {
-      return Boolean(
-        errors.billingAddress1 ||
-        errors.billingPincode ||
-        errors.billingArea ||
-        errors.billingCity ||
-        errors.billingState ||
-        errors.billingContactName ||
-        errors.billingContactNo ||
-        errors.shippingAddress1 ||
-        errors.shippingPincode ||
-        errors.shippingArea ||
-        errors.shippingCity ||
-        errors.shippingState ||
-        errors.shippingContactName ||
-        errors.shippingContactNo
-      );
-    }
-    if (tabKey === "accounting") {
-      return Boolean(
-        errors.gstNumber ||
-        errors.panNumber ||
-        errors.bankName ||
-        errors.accountHolderName ||
-        errors.accountNumber ||
-        errors.ifscCode ||
-        errors.accountType ||
-        errors.branchName ||
-        errors.upiId
-      );
-    }
-    return false;
   };
 
   const handleSave = async () => {
-    if (!company) return;
-
     const { isValid, firstErrorTab } = validateForm();
+
     if (!isValid) {
       if (firstErrorTab) {
         setActiveTab(firstErrorTab);
       }
-      toast.error("Please fill in all required fields before saving.");
+      toast.error("Please fill in all required fields marked with an asterisk (*).");
       return;
     }
 
     try {
       setSaving(true);
+      const isCreate = !company?.id;
 
-      const payload: UpdateCompanyPayload = {
-        ...formData,
-        companyCode: formData.abbreviation || company.companyCode || "ACM",
-        completionPercentage,
-      };
+      let savedCompany: Company;
+      if (isCreate) {
+        const res = await companyService.createCompany(formData);
+        savedCompany = res.data;
+        toast.success(res.message || "Company created successfully.");
+      } else {
+        const res = await companyService.updateCompany(company.id, formData);
+        savedCompany = res.data;
+        toast.success(res.message || "Company updated successfully.");
+      }
 
-      const res = await companyService.updateCompany(company.id, payload);
-      toast.success("Company profile updated successfully.");
-      onSaved(res.data);
-    } catch (err: unknown) {
-      // Handled via toast notification
-      const msg = err instanceof Error ? err.message : "Failed to update company profile.";
-      toast.error(msg);
+      onSaved(savedCompany);
+    } catch (err: any) {
+      console.error("Save company error:", err);
+      toast.error(err?.message || "Failed to save company profile.");
     } finally {
       setSaving(false);
     }
@@ -707,12 +728,11 @@ export default function CompanyProfileForm({
       label: "General",
       completed: Boolean(
         formData.legalName &&
-        formData.companyName &&
-        formData.ownerName &&
-        formData.abbreviation &&
-        formData.businessType &&
-        formData.email &&
-        formData.phone
+          formData.companyName &&
+          formData.ownerName &&
+          formData.abbreviation &&
+          formData.email &&
+          formData.phone
       ),
     },
     {
@@ -720,12 +740,12 @@ export default function CompanyProfileForm({
       label: "Contact",
       completed: Boolean(
         formData.billingAddress1 &&
-        formData.billingPincode &&
-        formData.billingArea &&
-        formData.billingCity &&
-        formData.billingState &&
-        formData.billingContactName &&
-        formData.billingContactNo
+          formData.billingPincode &&
+          formData.billingArea &&
+          formData.billingCity &&
+          formData.billingState &&
+          formData.billingContactName &&
+          formData.billingContactNo
       ),
     },
     {
@@ -733,14 +753,13 @@ export default function CompanyProfileForm({
       label: "Accounting",
       completed: Boolean(
         formData.gstNumber &&
-        formData.panNumber &&
-        formData.bankName &&
-        formData.accountHolderName &&
-        formData.accountNumber &&
-        formData.ifscCode &&
-        formData.accountType &&
-        formData.branchName &&
-        formData.upiId
+          formData.panNumber &&
+          formData.bankName &&
+          formData.accountHolderName &&
+          formData.accountNumber &&
+          formData.ifscCode &&
+          formData.branchName &&
+          formData.upiId
       ),
     },
     {
@@ -756,100 +775,114 @@ export default function CompanyProfileForm({
   ];
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
-      {/* Top Header Bar matching Screenshot 2 */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-4 bg-white dark:bg-[#0E121A]">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
-            title="Back to list"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white leading-tight">
-              Company Profile
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Name.</span>{" "}
-              {formData.companyName || company?.companyName || "Company Name"}{" "}
-              <span className="ml-3 font-semibold text-slate-700 dark:text-slate-300">GSTN.</span>{" "}
-              <span className="font-mono">{formData.gstNumber || company?.gstNumber || "24ABCDE1234F1Z5"}</span>
+    <div className="flex flex-col gap-4 w-full text-[#0A0E1A] dark:text-slate-100 font-sans animate-in fade-in-50 duration-200">
+      {/* ========================================================================= */}
+      {/* 1. TOP HEADER BAR matching Main Company Profile Header UI                  */}
+      {/* ========================================================================= */}
+      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1.5 min-w-0 max-w-2xl">
+            <div className="flex items-center gap-3.5">
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                title="Back to Company Profiles"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                Company Profile
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+              Update company profile information, addresses, banking details, and authorized branding.
             </p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Active Status Badge matching screenshot */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#2A3444] dark:text-white dark:border-white/[0.1] shadow-xs">
-            <span>{formData.status === "ACTIVE" ? "Active" : "Draft"}</span>
-            <Check size={12} className="stroke-[3] text-[#B88728] dark:text-white" />
-          </div>
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs">
+              <Check size={12} className="stroke-[3] text-[#B88728] dark:text-[#E8C16D]" />
+              <span>{formData.status === "ACTIVE" ? "Active" : "Draft"}</span>
+            </div>
 
-          {/* Edit Mode indicator */}
-          <div className="px-3.5 py-1 rounded-md bg-slate-100 text-slate-800 border border-slate-200 dark:bg-white dark:text-slate-900 dark:border-transparent font-bold text-xs shadow-xs select-none">
-            Edit Mode
+            <div className="px-4 py-1.5 rounded-full bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] font-bold text-xs shadow-xs select-none">
+              Edit Mode
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Full-Width Tabs Segmented Bar matching screenshot */}
-      <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-        <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-5 gap-1 select-none">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            const hasErr = hasTabError(tab.key);
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
-                    : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
-                }`}
-              >
-                {hasErr ? (
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                  </span>
-                ) : tab.completed ? (
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                ) : (
-                  <Circle size={14} className="text-slate-500 shrink-0 stroke-dashed" />
-                )}
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* ========================================================================= */}
+      {/* 2. TABS FLOATING BAR matching the image                                    */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-full border border-slate-200/80 dark:border-white/[0.08] bg-[#F1F3F5] dark:bg-[#0D121F] p-1.5 flex items-center justify-between gap-1 shadow-xs overflow-x-auto no-scrollbar">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const hasErr = hasTabError(tab.key);
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
+                isActive
+                  ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.35)]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+              )}
+            >
+              {hasErr ? (
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                </span>
+              ) : isActive ? (
+                <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+              ) : tab.completed ? (
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+              ) : (
+                <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+              )}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Form Content Area - Full-width padding with 2-column balanced grid */}
-      <div className="flex-1 px-6 py-6 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* ========================================================================= */}
+      {/* 3. MAIN SECTION CARD with Integrated Action Bar matching our theme        */}
+      {/* ========================================================================= */}
+      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden flex flex-col">
+        <div className="p-6 sm:p-8 flex-1">
         {/* ========================================================================= */}
         {/* TAB 1: GENERAL DETAILS                                                   */}
         {/* ========================================================================= */}
         {activeTab === "general" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                General Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter basic information about company.
-              </p>
+            {/* Header matching image icon box */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                <Building2 size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  General Details
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Enter basic information about company.
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+            <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
+
+            {/* 2-Column Balanced Form Grid with pill inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               {/* Legal Name */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Legal Name. <span className="text-red-500 font-bold">*</span>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                  Legal Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
@@ -863,8 +896,8 @@ export default function CompanyProfileForm({
 
               {/* Company Name */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Company Name. <span className="text-red-500 font-bold">*</span>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                  Company Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
@@ -878,7 +911,7 @@ export default function CompanyProfileForm({
 
               {/* Brand Name */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                   Brand Name.
                 </label>
                 <input
@@ -892,8 +925,8 @@ export default function CompanyProfileForm({
 
               {/* Owner Name */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Owner Name. <span className="text-red-500 font-bold">*</span>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                  Owner Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
@@ -907,14 +940,14 @@ export default function CompanyProfileForm({
 
               {/* Abbreviation */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Abbreviation. <span className="text-red-500 font-bold">*</span>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                  Abbreviation. <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.abbreviation || ""}
                   onChange={(e) => handleChange("abbreviation", e.target.value.toUpperCase())}
-                  placeholder="e.g. ACM"
+                  placeholder="e.g. NETU"
                   className={getInputClassName("abbreviation", true)}
                 />
                 {renderFieldError("abbreviation")}
@@ -922,8 +955,8 @@ export default function CompanyProfileForm({
 
               {/* Type Dropdown */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Type. <span className="text-red-500 font-bold">*</span>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                  Type. <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <DropdownWithOther
                   hideLabel
@@ -937,7 +970,7 @@ export default function CompanyProfileForm({
                   className="w-full"
                   buttonClassName={cn(
                     dropdownButtonClassName,
-                    errors.businessType && "border-rose-500 ring-1 ring-rose-500/30"
+                    errors.businessType && "border-rose-500 ring-2 ring-rose-500/20"
                   )}
                   menuClassName={dropdownMenuClassName}
                 />
@@ -946,8 +979,8 @@ export default function CompanyProfileForm({
 
               {/* Email */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Email. <span className="text-red-500 font-bold">*</span>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                  Email. <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="email"
@@ -959,13 +992,20 @@ export default function CompanyProfileForm({
                 {renderFieldError("email")}
               </div>
 
-              {/* Contact No with 10/10 counter */}
+              {/* Contact No with 10/10 counter on top right */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                    Contact No. <span className="text-red-500 font-bold">*</span>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                    Contact No. <span className="text-rose-500 font-bold ml-0.5">*</span>
                   </label>
-                  <span className="text-[10px] text-emerald-400 font-mono">
+                  <span
+                    className={cn(
+                      "text-[11px] font-bold font-mono",
+                      formData.phone && formData.phone.length === 10
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-slate-400"
+                    )}
+                  >
                     {formData.phone ? formData.phone.length : 0}/10
                   </span>
                 </div>
@@ -980,9 +1020,9 @@ export default function CompanyProfileForm({
                 {renderFieldError("phone")}
               </div>
 
-              {/* Website - spans 1 column only */}
+              {/* Website */}
               <div>
-                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                   Website.
                 </label>
                 <input
@@ -993,6 +1033,7 @@ export default function CompanyProfileForm({
                   className={getInputClassName()}
                 />
               </div>
+
               <div />
             </div>
           </div>
@@ -1003,26 +1044,36 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "contact" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Contact Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter billing and shipping information
-              </p>
+            {/* Header */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                <MapPin size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  Contact Details
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Enter registered billing and shipping office addresses.
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+            <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8">
               {/* Billing Column */}
               <div>
-                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
-                  Billing
-                </h3>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                    Billing
+                  </h3>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Address 1. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1035,7 +1086,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Address 2.
                     </label>
                     <input
@@ -1048,7 +1099,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Address 3.
                     </label>
                     <input
@@ -1061,8 +1112,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Pincode. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1076,8 +1127,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Area. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1090,8 +1141,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      City. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1104,8 +1155,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      State. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <ThemeSelectDropdown
                       value={formData.billingState || "Gujarat"}
@@ -1115,7 +1166,7 @@ export default function CompanyProfileForm({
                       className="w-full"
                       buttonClassName={cn(
                         dropdownButtonClassName,
-                        errors.billingState && "border-rose-500 ring-1 ring-rose-500/30"
+                        errors.billingState && "border-rose-500 ring-2 ring-rose-500/20"
                       )}
                       menuClassName={dropdownMenuClassName}
                     />
@@ -1123,7 +1174,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Country.
                     </label>
                     <input
@@ -1135,8 +1186,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Contact Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Contact Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1150,10 +1201,17 @@ export default function CompanyProfileForm({
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        Contact No. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        Contact No. <span className="text-rose-500 font-bold ml-0.5">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span
+                        className={cn(
+                          "text-[11px] font-bold font-mono",
+                          formData.billingContactNo && formData.billingContactNo.length === 10
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400"
+                        )}
+                      >
                         {formData.billingContactNo ? formData.billingContactNo.length : 0}/10
                       </span>
                     </div>
@@ -1174,14 +1232,16 @@ export default function CompanyProfileForm({
 
               {/* Shipping Column */}
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">Shipping</h3>
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 dark:text-slate-300">
+                <div className="flex items-center justify-between gap-3 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                    Shipping
+                  </h3>
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-slate-700 dark:text-slate-300">
                     <input
                       type="checkbox"
                       checked={Boolean(formData.shippingSameAsBilling)}
                       onChange={(e) => handleShippingSameToggle(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded border-slate-300 bg-white text-[#B88728] focus:ring-[#F5C451] cursor-pointer dark:border-white/[0.2] dark:bg-[#161B26] dark:text-white"
+                      className="w-4 h-4 rounded-md border-slate-300 bg-white text-[#B88728] focus:ring-[#F5C451] cursor-pointer dark:border-white/[0.2] dark:bg-[#161B26]"
                     />
                     <span>Shipping same as billing.</span>
                   </label>
@@ -1189,8 +1249,8 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Address 1. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1204,7 +1264,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Address 2.
                     </label>
                     <input
@@ -1218,7 +1278,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Address 3.
                     </label>
                     <input
@@ -1232,8 +1292,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Pincode. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1248,8 +1308,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Area. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1263,8 +1323,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      City. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1278,8 +1338,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      State. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <ThemeSelectDropdown
                       disabled={Boolean(formData.shippingSameAsBilling)}
@@ -1294,7 +1354,7 @@ export default function CompanyProfileForm({
                           "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
                         !formData.shippingSameAsBilling &&
                           errors.shippingState &&
-                          "border-rose-500 ring-1 ring-rose-500/30"
+                          "border-rose-500 ring-2 ring-rose-500/20"
                       )}
                       menuClassName={dropdownMenuClassName}
                     />
@@ -1302,7 +1362,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Country.
                     </label>
                     <input
@@ -1314,8 +1374,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Contact Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Contact Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1330,10 +1390,17 @@ export default function CompanyProfileForm({
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        Contact No. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        Contact No. <span className="text-rose-500 font-bold ml-0.5">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span
+                        className={cn(
+                          "text-[11px] font-bold font-mono",
+                          formData.shippingContactNo && formData.shippingContactNo.length === 10
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400"
+                        )}
+                      >
                         {formData.shippingContactNo ? formData.shippingContactNo.length : 0}/10
                       </span>
                     </div>
@@ -1361,31 +1428,48 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "accounting" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Accounting Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter Legal, Invoicing and Banking Information
-              </p>
+            {/* Header */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                <Landmark size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  Accounting Details
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Enter Legal, Banking and Invoice Numbering Information.
+                </p>
+              </div>
             </div>
 
+            <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
+
             {/* Top Grid: Legal vs Bank Details */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mb-8">
               {/* Legal Details */}
               <div>
-                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
-                  Legal Details
-                </h3>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                    Legal Details
+                  </h3>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   {/* GST Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        GST Number. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        GST Number. <span className="text-rose-500 font-bold ml-0.5">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span
+                        className={cn(
+                          "text-[11px] font-bold font-mono",
+                          formData.gstNumber && formData.gstNumber.length === 15
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400"
+                        )}
+                      >
                         {formData.gstNumber ? formData.gstNumber.length : 0}/15
                       </span>
                     </div>
@@ -1403,10 +1487,10 @@ export default function CompanyProfileForm({
                   {/* TAN Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                         TAN Number.
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span className="text-[11px] font-bold font-mono text-slate-400">
                         {formData.tanNumber ? formData.tanNumber.length : 0}/10
                       </span>
                     </div>
@@ -1423,10 +1507,17 @@ export default function CompanyProfileForm({
                   {/* PAN Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        PAN Number. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        PAN Number. <span className="text-rose-500 font-bold ml-0.5">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span
+                        className={cn(
+                          "text-[11px] font-bold font-mono",
+                          formData.panNumber && formData.panNumber.length === 10
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400"
+                        )}
+                      >
                         {formData.panNumber ? formData.panNumber.length : 0}/10
                       </span>
                     </div>
@@ -1444,10 +1535,10 @@ export default function CompanyProfileForm({
                   {/* Central Sale Tax Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                         Central Sale Tax Number.
                       </label>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[11px] font-bold font-mono text-slate-400">
                         {formData.cstNumber ? formData.cstNumber.length : 0}/11
                       </span>
                     </div>
@@ -1464,10 +1555,10 @@ export default function CompanyProfileForm({
                   {/* FSSAI Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                         FSSAI Number.
                       </label>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[11px] font-bold font-mono text-slate-400">
                         {formData.fssaiNumber ? formData.fssaiNumber.length : 0}/14
                       </span>
                     </div>
@@ -1483,7 +1574,7 @@ export default function CompanyProfileForm({
 
                   {/* Trade Category */}
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Trade Category.
                     </label>
                     <DropdownWithOther
@@ -1503,10 +1594,10 @@ export default function CompanyProfileForm({
                   {/* MSME Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                         MSME Number.
                       </label>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[11px] font-bold font-mono text-slate-400">
                         {formData.msmeNumber ? formData.msmeNumber.length : 0}/19
                       </span>
                     </div>
@@ -1520,21 +1611,23 @@ export default function CompanyProfileForm({
                     />
                   </div>
 
-                  {/* Empty cell to balance MSME */}
+                  {/* Spacer */}
                   <div />
                 </div>
               </div>
 
               {/* Bank Details */}
               <div>
-                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
-                  Bank Details
-                </h3>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                    Bank Details
+                  </h3>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Bank Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Bank Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1547,8 +1640,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Holder Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Account Holder Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1561,7 +1654,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Account Name.
                     </label>
                     <input
@@ -1574,8 +1667,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Bank Account Number. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Bank Account Number. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1588,8 +1681,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      IFSC Code. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      IFSC Code. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1603,8 +1696,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Type. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Account Type. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <ThemeSelectDropdown
                       value={formData.accountType || "Current"}
@@ -1614,7 +1707,7 @@ export default function CompanyProfileForm({
                       className="w-full"
                       buttonClassName={cn(
                         dropdownButtonClassName,
-                        errors.accountType && "border-rose-500 ring-1 ring-rose-500/30"
+                        errors.accountType && "border-rose-500 ring-2 ring-rose-500/20"
                       )}
                       menuClassName={dropdownMenuClassName}
                     />
@@ -1622,8 +1715,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Branch Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      Branch Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1636,8 +1729,8 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      UPI ID. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                      UPI ID. <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
@@ -1650,7 +1743,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Client Code.
                     </label>
                     <input
@@ -1663,7 +1756,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Product Code.
                     </label>
                     <input
@@ -1679,16 +1772,18 @@ export default function CompanyProfileForm({
             </div>
 
             {/* Bottom Grid: Invoice Details vs Other Details */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 pt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 pt-6 border-t border-slate-100 dark:border-white/[0.06]">
               {/* Invoice Details */}
               <div>
-                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
-                  Invoice Details
-                </h3>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                    Invoice Details
+                  </h3>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       TAX Invoice Prefix.
                     </label>
                     <input
@@ -1701,7 +1796,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       TAX Invoice Next.
                     </label>
                     <input
@@ -1714,7 +1809,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Retail Invoice Prefix.
                     </label>
                     <input
@@ -1727,7 +1822,7 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Retail Invoice Next.
                     </label>
                     <input
@@ -1743,13 +1838,15 @@ export default function CompanyProfileForm({
 
               {/* Other Details */}
               <div>
-                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
-                  Other Details
-                </h3>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+                    Other Details
+                  </h3>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
                       Consider in Profit & Loss.
                     </label>
                     <ThemeSelectDropdown
@@ -1774,14 +1871,22 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "logo" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Company Logo <span className="text-red-500 font-bold">*</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload your company logo
-              </p>
+            {/* Header */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                <Upload size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  Company Logo <span className="text-rose-500 font-bold ml-0.5">*</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Upload your official company logo for invoices and portal branding.
+                </p>
+              </div>
             </div>
+
+            <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
               <div>
@@ -1809,11 +1914,12 @@ export default function CompanyProfileForm({
                   }}
                   onDragLeave={() => setIsLogoDragging(false)}
                   onDrop={handleLogoDrop}
-                  className={`w-48 h-48 rounded-2xl bg-slate-50 border ${
+                  className={cn(
+                    "w-56 h-56 rounded-3xl bg-slate-50 border-2 border-dashed flex flex-col items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none",
                     isLogoDragging
-                      ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
-                  } dark:bg-[#0B0F17] flex flex-col items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
+                      ? "border-[#E8C16D] ring-4 ring-[#E8C16D]/20 bg-[#FFF9EC]/40"
+                      : "border-[#E7E0D2] hover:border-[#E8C16D] dark:border-white/[0.1] dark:hover:border-[#E8C16D]/50 dark:bg-[#0B0F17]"
+                  )}
                   title="Click to select and upload company logo"
                 >
                   {formData.logoUrl ? (
@@ -1861,7 +1967,7 @@ export default function CompanyProfileForm({
                         handleChange("logoUrl", "");
                         toast.success("Logo removed.");
                       }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-xl bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
                       title="Remove Logo"
                     >
                       <Trash2 size={13} />
@@ -1870,13 +1976,14 @@ export default function CompanyProfileForm({
 
                   {/* Hover Overlay indicating click to upload */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-white" />
+                    <Upload size={22} className="text-[#E8C16D]" />
                     <span className="text-xs font-semibold">
                       {formData.logoUrl ? "Change Logo" : "Upload Logo"}
                     </span>
-                    <span className="text-[10px] text-slate-700 dark:text-slate-300">Click or drag & drop</span>
+                    <span className="text-[10px] text-slate-300">Click or drag & drop</span>
                   </div>
                 </div>
+                {renderFieldError("logoUrl")}
               </div>
               <div />
             </div>
@@ -1888,14 +1995,22 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "signature" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Company Signature <span className="text-red-500 font-bold">*</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload authorized signatory signature for invoices and tax documents
-              </p>
+            {/* Header */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0 shadow-2xs">
+                <FileText size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  Company Signature <span className="text-rose-500 font-bold ml-0.5">*</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Upload authorized signatory signature for invoices and tax documents.
+                </p>
+              </div>
             </div>
+
+            <hr className="border-t border-[#E7E0D2] dark:border-white/[0.08] mb-6 sm:mb-8" />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
               <div>
@@ -1923,11 +2038,12 @@ export default function CompanyProfileForm({
                   }}
                   onDragLeave={() => setIsSignatureDragging(false)}
                   onDrop={handleSignatureDrop}
-                  className={`w-64 h-36 rounded-2xl bg-slate-50 border ${
+                  className={cn(
+                    "w-72 h-44 rounded-3xl bg-slate-50 border-2 border-dashed flex items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none",
                     isSignatureDragging
-                      ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
-                  } dark:bg-[#0B0F17] flex items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
+                      ? "border-[#E8C16D] ring-4 ring-[#E8C16D]/20 bg-[#FFF9EC]/40"
+                      : "border-[#E7E0D2] hover:border-[#E8C16D] dark:border-white/[0.1] dark:hover:border-[#E8C16D]/50 dark:bg-[#0B0F17]"
+                  )}
                   title="Click to select and upload company signature"
                 >
                   {formData.signatureUrl ? (
@@ -1952,7 +2068,7 @@ export default function CompanyProfileForm({
                         handleChange("signatureUrl", "");
                         toast.success("Signature removed.");
                       }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-xl bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
                       title="Remove Signature"
                     >
                       <Trash2 size={13} />
@@ -1961,47 +2077,52 @@ export default function CompanyProfileForm({
 
                   {/* Hover Overlay indicating click to upload */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-white" />
+                    <Upload size={22} className="text-[#E8C16D]" />
                     <span className="text-xs font-semibold">
                       {formData.signatureUrl ? "Change Signature" : "Upload Signature"}
                     </span>
-                    <span className="text-[10px] text-slate-700 dark:text-slate-300">Click or drag & drop</span>
+                    <span className="text-[10px] text-slate-300">Click or drag & drop</span>
                   </div>
                 </div>
+                {renderFieldError("signatureUrl")}
               </div>
               <div />
             </div>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Bottom Sticky Action Bar */}
-      <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 dark:border-white/[0.08] dark:bg-[#0E121A] w-full">
-        <div className="w-full flex items-center justify-between">
-          {/* Left: Completion Percentage bar */}
-          <div className="w-48 sm:w-64 space-y-1">
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Completion Percentage: {completionPercentage}%
-            </p>
-            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/[0.1] overflow-hidden">
+        {/* ========================================================================= */}
+        {/* BOTTOM ACTION BAR matching EmployeeProfileViewPage bottom gradient theme  */}
+        {/* ========================================================================= */}
+        <div className="border-t border-[#EAE4D8] dark:border-white/[0.08] bg-gradient-to-r from-[#FFF6DE] via-[#FFF9EC] to-white dark:from-[#1E190F] dark:via-[#131722] dark:to-[#0A0E1A] p-5 sm:p-7 w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="w-full sm:w-64 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Completion Percentage:
+              </span>
+              <span className="text-xs font-bold font-mono text-slate-900 dark:text-[#E8C16D]">
+                {completionPercentage}%
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-slate-200/80 dark:bg-white/[0.1] overflow-hidden">
               <div
-                className="h-full bg-[#0A0E1A] dark:bg-[#F5C451] rounded-full transition-all duration-300"
+                className="h-full bg-[#0A0E1A] dark:bg-[#E8C16D] rounded-full transition-all duration-300"
                 style={{ width: `${completionPercentage}%` }}
               />
             </div>
           </div>
 
-          {/* Right: Save Button */}
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0A0E1A] hover:bg-black text-white dark:bg-[#F5C451] dark:text-slate-900 dark:hover:bg-[#e8b83e] font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 px-7 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-50 shrink-0"
           >
             {saving ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
             ) : (
-              <Save size={16} />
+              <Save size={16} className="text-[#0A0E1A]" />
             )}
             <span>{saving ? "Saving..." : "Save"}</span>
           </button>

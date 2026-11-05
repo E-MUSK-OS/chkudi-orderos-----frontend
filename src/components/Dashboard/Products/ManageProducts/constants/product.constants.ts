@@ -97,7 +97,6 @@ export const defaultAlphaSizes: string[] = [
   "L",
   "XL",
   "2XL",
-  "3XL",
   "4XL",
 ];
 

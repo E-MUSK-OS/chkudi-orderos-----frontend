@@ -59,9 +59,9 @@ export default function SupplierDetailsSection({
   }, []);
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 h-full flex flex-col shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 h-full flex flex-col shadow-sm">
       {/* Title */}
-      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">
+      <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-3">
         Supplier Details [Creditor]
       </h3>
 
@@ -69,7 +69,7 @@ export default function SupplierDetailsSection({
       <div className="relative mb-3" ref={containerRef}>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
               <Search className="w-3.5 h-3.5" />
             </span>
             <input
@@ -81,15 +81,15 @@ export default function SupplierDetailsSection({
                 setDropdownOpen(true);
               }}
               placeholder="Search Party [Sundry Creditor]"
-              className="w-full h-9 pl-8 pr-7 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 focus:outline-none transition-all"
+              className="w-full h-10 pl-9 pr-7 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
-                className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -99,7 +99,7 @@ export default function SupplierDetailsSection({
             type="button"
             onClick={onOpenLedgerModal}
             title="Create New Supplier (Ledger Book)"
-            className="h-9 w-9 bg-[#0A0E1A] hover:bg-[#161D2E] text-white dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#E8B83D] rounded-xl flex items-center justify-center shrink-0 shadow-xs transition-colors cursor-pointer"
+            className="h-10 w-10 bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
           </button>
@@ -107,7 +107,7 @@ export default function SupplierDetailsSection({
 
         {/* Dropdown Suggestions */}
         {dropdownOpen && (
-          <div className="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] rounded-xl shadow-xl max-h-56 overflow-y-auto text-xs p-1">
+          <div className="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] rounded-2xl shadow-xl max-h-56 overflow-y-auto text-xs p-1.5 animate-in fade-in zoom-in-95 duration-100">
             {loading ? (
               <div className="py-3 px-4 text-center text-slate-500 dark:text-slate-400">
                 Searching suppliers...
@@ -138,7 +138,7 @@ export default function SupplierDetailsSection({
                       setDropdownOpen(false);
                       setSearchTerm("");
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg border-b border-slate-100 dark:border-white/[0.04] last:border-none flex items-center justify-between hover:bg-[#FFF9EC]/60 dark:hover:bg-white/[0.04] transition-colors cursor-pointer ${
+                    className={`w-full text-left px-3 py-2 rounded-xl border-b border-slate-100 dark:border-white/[0.04] last:border-none flex items-center justify-between hover:bg-[#FFF9EC]/60 dark:hover:bg-white/[0.04] transition-colors cursor-pointer ${
                       isSelected ? "bg-[#FFF9EC] dark:bg-white/[0.08]" : ""
                     }`}
                   >
@@ -163,7 +163,7 @@ export default function SupplierDetailsSection({
 
       {/* Selected Supplier Summary Card */}
       {selectedSupplier ? (
-        <div className="border border-[#E8C16D]/40 bg-[#FFF9EC]/50 dark:border-[#E8C16D]/20 dark:bg-[#E8C16D]/5 rounded-2xl p-4 text-xs space-y-2.5 flex-1">
+        <div className="border border-[#E8C16D]/40 bg-[#FFF9EC]/50 dark:border-[#E8C16D]/20 dark:bg-[#1A160E]/50 rounded-2xl p-4 text-xs space-y-2.5 flex-1">
           <div className="flex items-start justify-between">
             <div>
               <div className="font-bold text-slate-900 dark:text-white text-sm">
@@ -244,11 +244,11 @@ export default function SupplierDetailsSection({
           </div>
         </div>
       ) : (
-        <div className="border border-dashed border-slate-200 dark:border-white/[0.1] rounded-2xl p-6 text-center text-xs text-slate-400 dark:text-slate-500 flex-1 flex flex-col items-center justify-center">
+        <div className="border border-dashed border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/40 dark:bg-white/[0.01] rounded-2xl p-6 text-center text-xs text-slate-400 dark:text-slate-500 flex-1 flex flex-col items-center justify-center">
           <Building className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
           <p className="font-semibold text-slate-700 dark:text-slate-300">No supplier selected.</p>
           <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-            Search from existing suppliers or click the <span className="font-bold text-slate-800 dark:text-white">+ button</span> above to add.
+            Search from existing suppliers or click the <span className="font-bold text-[#0A0E1A] dark:text-white">+ button</span> above to add.
           </p>
         </div>
       )}

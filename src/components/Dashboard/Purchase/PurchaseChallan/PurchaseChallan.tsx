@@ -36,8 +36,9 @@ export default function PurchaseChallan() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedChallanIds, setSelectedChallanIds] = useState<string[]>([]);
 
-  // Filters State matching Image 1
+  // Filters State matching Sales Challan
   const [filters, setFilters] = useState<PurchaseChallanFiltersState>({
+    search: "",
     challanNo: "",
     partyChallanNo: "",
     supplierName: "",
@@ -75,6 +76,13 @@ export default function PurchaseChallan() {
   useEffect(() => {
     fetchChallans();
   }, [fetchChallans]);
+
+  const handleDateRangeChange = (startDate: string, endDate: string) => {
+    const nextFilters = { ...filters, startDate, endDate };
+    setFilters(nextFilters);
+    filtersRef.current = nextFilters;
+    fetchChallans(nextFilters);
+  };
 
   const handleFilterChange = (
     field: keyof PurchaseChallanFiltersState,
@@ -114,6 +122,7 @@ export default function PurchaseChallan() {
       clearTimeout(debounceTimerRef.current);
     }
     const defaultFilters: PurchaseChallanFiltersState = {
+      search: "",
       challanNo: "",
       partyChallanNo: "",
       supplierName: "",
@@ -232,8 +241,8 @@ export default function PurchaseChallan() {
 
   return (
     <DashboardLayout title="Purchase Challan">
-      <div className="space-y-4 font-sans">
-        {/* Top Header matching Screenshots */}
+      <div className="space-y-4 sm:space-y-5 pb-12 max-w-[1700px] mx-auto font-sans">
+        {/* Top Header matching Sales Challan */}
         <PurchaseChallanHeader
           viewMode={viewMode}
           onAddNew={handleAddNew}
@@ -246,7 +255,7 @@ export default function PurchaseChallan() {
 
         {/* List View */}
         {viewMode === "list" && (
-          <div className="space-y-4">
+          <div className="space-y-4 sm:space-y-5">
             {/* Live Metrics */}
             <PurchaseChallanStats challans={challans} />
 
@@ -254,6 +263,7 @@ export default function PurchaseChallan() {
             <PurchaseChallanFilters
               filters={filters}
               onChange={handleFilterChange}
+              onDateRangeChange={handleDateRangeChange}
               onSearch={handleSearchClick}
               onReset={handleResetFilters}
             />

@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import DepartmentSelect from "./DepartmentSelect";
 import DropdownWithOther from "./DropdownWithOther";
 import { type UserFormValues } from "../types/userManagement.types";
-import { ChevronDown, Calendar as CalendarIcon, Check, Building2, Eye, EyeOff, Plus } from "lucide-react";
+import { ChevronDown, Calendar as CalendarIcon, Check, Building2, Eye, EyeOff, Plus, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO, isValid } from "date-fns";
@@ -472,114 +472,119 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               User Companies <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setCompanyDropdownOpen((prev) => !prev)}
-                className={`w-full min-h-[46px] px-3.5 py-2.5 rounded-2xl border text-left text-xs sm:text-sm font-semibold flex items-center justify-between transition-all bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white cursor-pointer shadow-xs ${
-                  errors.companies
-                    ? "border-red-500"
-                    : companyDropdownOpen
-                    ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 dark:border-[#F5C451] dark:ring-[#F5C451]/30"
-                    : "border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] focus:border-[#E8C16D]"
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
-                    <Building2 className="h-3 w-3" />
+            {isOtherCompanyActive && !isSettingMastersOnly ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={customCompanyInputRef}
+                  type="text"
+                  value={customCompany}
+                  onChange={(e) => setCustomCompany(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCustomCompany();
+                    } else if (e.key === "Escape") {
+                      setIsOtherCompanyActive(false);
+                      setCustomCompany("");
+                    }
+                  }}
+                  placeholder="Enter custom company..."
+                  className="flex-1 min-h-[46px] h-[46px] px-3.5 text-xs sm:text-sm font-semibold rounded-2xl border border-[#E8C16D] dark:border-[#F5C451] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white outline-none focus:ring-2 focus:ring-[#E8C16D]/20 shadow-xs"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomCompany}
+                  disabled={!customCompany.trim() || saveOptionMutation.isPending}
+                  className="min-h-[46px] h-[46px] px-4 rounded-2xl bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center shrink-0 disabled:opacity-50"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOtherCompanyActive(false);
+                    setCustomCompany("");
+                  }}
+                  className="min-h-[46px] h-[46px] px-3 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setCompanyDropdownOpen((prev) => !prev)}
+                  className={`w-full min-h-[46px] px-3.5 py-2.5 rounded-2xl border text-left text-xs sm:text-sm font-semibold flex items-center justify-between transition-all bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white cursor-pointer shadow-xs ${
+                    errors.companies
+                      ? "border-red-500"
+                      : companyDropdownOpen
+                      ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 dark:border-[#F5C451] dark:ring-[#F5C451]/30"
+                      : "border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] focus:border-[#E8C16D]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
+                      <Building2 className="h-3 w-3" />
+                    </div>
+                    <span className={values.companies.length === 0 ? "text-slate-400 dark:text-slate-500 font-normal" : "font-semibold truncate"}>
+                      {values.companies.length === 0
+                        ? "Select Companies"
+                        : values.companies.join(", ")}
+                    </span>
                   </div>
-                  <span className={values.companies.length === 0 ? "text-slate-400 dark:text-slate-500 font-normal" : "font-semibold truncate"}>
-                    {values.companies.length === 0
-                      ? "Select Companies"
-                      : values.companies.join(", ")}
-                  </span>
-                </div>
-                <ChevronDown size={14} className={`text-[#B88728] dark:text-[#E8C16D] transition-transform duration-200 ${companyDropdownOpen ? "rotate-180" : ""}`} />
-              </button>
+                  <ChevronDown size={14} className={`text-[#B88728] dark:text-[#E8C16D] transition-transform duration-200 ${companyDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
 
-              {companyDropdownOpen && (
-                <div className="absolute z-50 left-0 top-[calc(100%+8px)] w-full rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="max-h-56 overflow-y-auto flex flex-col gap-0.5">
-                    {allCompanies.length === 0 ? (
-                      <div className="py-2.5 px-3 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
-                        No companies yet. Click &quot;Other&quot; below to add one.
-                      </div>
-                    ) : (
-                      allCompanies.map((c) => {
-                      const checked = values.companies.includes(c);
-                      return (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => toggleCompany(c)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer text-left ${
-                            checked
-                              ? "bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black shadow-xs"
-                              : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-                          }`}
-                        >
-                          <span className="truncate">{c}</span>
-                          {checked && <Check className="h-3.5 w-3.5 text-[#E8C16D] dark:text-black shrink-0 stroke-[2.5]" />}
-                        </button>
-                      );
-                    }))}
-                  </div>
-
-                  {/* "Other" Option button / Inline Adder for Company */}
-                  {!isSettingMastersOnly && (
-                    <div className="pt-2 mt-1 border-t border-slate-100 dark:border-white/[0.06]">
-                    {!isOtherCompanyActive ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsOtherCompanyActive(true);
-                          setTimeout(() => customCompanyInputRef.current?.focus(), 50);
-                        }}
-                        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-bold text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D]/10 rounded-xl transition-colors text-left cursor-pointer"
-                      >
-                        <Plus size={14} />
-                        <span>Other (Add New Company)</span>
-                      </button>
-                    ) : (
-                      <div className="p-1.5 rounded-xl border border-[#E8C16D] dark:border-[#F5C451]/40 bg-[#FFFDF9] dark:bg-[#131B2E] space-y-1.5">
-                        <input
-                          ref={customCompanyInputRef}
-                          type="text"
-                          value={customCompany}
-                          onChange={(e) => setCustomCompany(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleAddCustomCompany();
-                            }
-                          }}
-                          placeholder="Enter other company..."
-                          className="w-full h-8 px-2.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-[#0A0E1A] placeholder:text-slate-400 outline-none focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-white"
-                        />
-                        <div className="flex items-center gap-1.5 justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setIsOtherCompanyActive(false)}
-                            className="h-7 px-2.5 text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded-lg cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleAddCustomCompany}
-                            disabled={!customCompany.trim() || saveOptionMutation.isPending}
-                            className="h-7 px-3 rounded-lg bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:text-black text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
-                          >
-                            {saveOptionMutation.isPending ? "Saving..." : "Add"}
-                          </button>
+                {companyDropdownOpen && (
+                  <div className="absolute z-50 left-0 top-[calc(100%+8px)] w-full rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="max-h-56 overflow-y-auto flex flex-col gap-0.5">
+                      {allCompanies.length === 0 ? (
+                        <div className="py-2.5 px-3 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                          No companies yet. Click &quot;Other&quot; below to add one.
                         </div>
+                      ) : (
+                        allCompanies.map((c) => {
+                        const checked = values.companies.includes(c);
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => toggleCompany(c)}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer text-left ${
+                              checked
+                                ? "bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black shadow-xs"
+                                : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                            }`}
+                          >
+                            <span className="truncate">{c}</span>
+                            {checked && <Check className="h-3.5 w-3.5 text-[#E8C16D] dark:text-black shrink-0 stroke-[2.5]" />}
+                          </button>
+                        );
+                      }))}
+                    </div>
+
+                    {/* "Other" Option button for Company */}
+                    {!isSettingMastersOnly && (
+                      <div className="pt-2 mt-1 border-t border-slate-100 dark:border-white/[0.06]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOtherCompanyActive(true);
+                            setCompanyDropdownOpen(false);
+                            setTimeout(() => customCompanyInputRef.current?.focus(), 50);
+                          }}
+                          className="w-full px-3 py-2 flex items-center gap-2 text-xs font-bold text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D]/10 rounded-xl transition-colors text-left cursor-pointer"
+                        >
+                          <Plus size={14} />
+                          <span>+ Other (Enter custom value)</span>
+                        </button>
                       </div>
                     )}
                   </div>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
             {errors.companies && <p className="mt-1 text-xs text-red-500 font-semibold">{errors.companies}</p>}
           </div>
 

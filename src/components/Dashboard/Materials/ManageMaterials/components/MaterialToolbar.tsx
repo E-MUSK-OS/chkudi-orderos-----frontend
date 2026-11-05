@@ -170,61 +170,56 @@ export default function MaterialToolbar({
 
   return (
     <>
-      <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
-        {/* Left side: Searchbar matching OrderOS theme */}
-        <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
-          <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451] dark:focus-within:ring-[#F5C451]/30 dark:focus-within:bg-[#0B0F17]">
-            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
-              <Search className="h-3.5 w-3.5" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search Material / SKU..."
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none dark:text-white dark:placeholder:text-slate-500"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => onSearchChange("")}
-                className="grid h-5 w-5 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0 dark:text-slate-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
-                title="Clear search"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
+        {/* Left side: Searchbar matching OrderOS pill theme */}
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
+          <input
+            type="text"
+            placeholder="Search Material / SKU..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              title="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Right side: Filters & Actions */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-          {/* Status Dropdown */}
+          {/* Status Dropdown Pill */}
           <ThemeSelectDropdown
             ariaLabel="Filter by Status"
             value={status}
             onChange={(val) => onStatusChange(val)}
             options={statusOptions}
-            icon={<Boxes className="h-3.5 w-3.5" />}
+            buttonClassName="rounded-full h-10 px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+            icon={<Boxes className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />}
           />
 
-          {/* Category Searchbox */}
-          <div className="relative flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 sm:px-3.5 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451] dark:focus-within:ring-[#F5C451]/30 w-40 sm:w-48">
-            <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 dark:bg-[#F5C451]/15 dark:text-[#F5C451]">
-              <Layers className="h-3.5 w-3.5" />
-            </div>
+          {/* Category Search Pill */}
+          <div className="relative min-w-[170px] max-w-[220px]">
+            <Layers className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
             <input
               type="text"
               placeholder="Search Category..."
               value={category}
               onChange={(e) => onCategoryChange(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#0A0E1A] placeholder:font-normal placeholder:text-slate-400 outline-none dark:text-white dark:placeholder:text-slate-500"
+              className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
             />
             {category && (
               <button
                 type="button"
                 onClick={() => onCategoryChange("")}
-                className="grid h-4 w-4 place-items-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0 dark:text-slate-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 title="Clear category search"
               >
                 <X className="h-3 w-3" />
@@ -232,50 +227,44 @@ export default function MaterialToolbar({
             )}
           </div>
 
-          {/* Reset filter button if active */}
+          {/* Reset filter pill button if active */}
           {isFilterActive && (
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-600 hover:text-red-700 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer dark:border-red-500/30 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
               title="Reset all filters"
             >
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-red-100 text-red-600 shrink-0 dark:bg-red-500/20 dark:text-red-400">
-                <X className="h-3.5 w-3.5" />
-              </div>
+              <X className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
               <span>Reset</span>
             </button>
           )}
 
-          {/* Upload Button */}
+          {/* Upload Button Pill */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] active:scale-[0.98] disabled:opacity-50 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-white dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]"
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] text-slate-800 dark:text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
             title="Import Excel file"
           >
-            <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0 dark:bg-white/[0.06] dark:text-slate-300">
-              <Upload className="h-3.5 w-3.5" />
-            </div>
+            <Upload className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
             <span>{isImporting ? "Importing..." : "Import"}</span>
           </button>
 
-          {/* Export / Demo Button */}
+          {/* Export / Demo Button Pill */}
           {hasData ? (
             <button
               type="button"
               onClick={handleDownloadData}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer dark:border-[#F5C451]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:ring-[#F5C451]/20 dark:hover:bg-[#F5C451]/25"
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs font-bold transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#252014] active:scale-[0.98] cursor-pointer"
               title={
                 importType === "material" && selectedCount > 0
                   ? `Export ${selectedCount} selected material(s)`
                   : "Export data"
               }
             >
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#F5C451]/20 dark:text-[#F5C451]">
-                <Download className="h-3.5 w-3.5" />
-              </div>
+              <Download className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>
                 {importType === "material" && selectedCount > 0
                   ? `Export (${selectedCount})`
@@ -286,24 +275,22 @@ export default function MaterialToolbar({
             <button
               type="button"
               onClick={handleDownloadDemoSheet}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 active:scale-[0.98] dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-white dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]"
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] text-slate-800 dark:text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
               title="Download demo Excel sheet"
             >
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0 dark:bg-white/[0.06] dark:text-slate-300">
-                <Download className="h-3.5 w-3.5" />
-              </div>
+              <Download className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Demo Sheet</span>
             </button>
           )}
 
-          {/* Refresh Button */}
+          {/* Refresh Button Pill */}
           <button
             type="button"
             onClick={onRefresh}
-            className="inline-flex items-center justify-center h-9 sm:h-10 w-9 sm:w-10 rounded-2xl border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-slate-700 transition-all shadow-xs active:scale-[0.98] cursor-pointer dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
+            className="h-10 w-10 flex items-center justify-center rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-300 hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
             title="Refresh"
           >
-            <RotateCw className="h-4 w-4" />
+            <RotateCw className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -318,4 +305,3 @@ export default function MaterialToolbar({
     </>
   );
 }
-

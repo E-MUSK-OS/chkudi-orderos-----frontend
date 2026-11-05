@@ -372,6 +372,7 @@ export const navItems: NavItem[] = [
       },
       {
         label: "Webstore",
+        icon: Store,
         href: "/dashboard/settings/webstore",
         defaultTimeAgo: "3d ago",
       },

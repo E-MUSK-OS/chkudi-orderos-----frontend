@@ -29,7 +29,7 @@ export default function DeleteWebstoreModal({
         fullWidth={false}
         onClick={onClose}
         disabled={loading}
-        className="rounded-2xl h-10 px-4 text-xs font-semibold"
+        className="rounded-full h-10 px-5 text-xs font-bold border border-[#E7E0D2]"
       >
         Cancel
       </Button>
@@ -39,7 +39,7 @@ export default function DeleteWebstoreModal({
         fullWidth={false}
         onClick={onConfirm}
         disabled={loading}
-        className="rounded-2xl h-10 px-5 text-xs font-bold"
+        className="rounded-full h-10 px-6 text-xs font-bold"
       >
         {loading ? "Deleting..." : "Delete Webstore"}
       </Button>

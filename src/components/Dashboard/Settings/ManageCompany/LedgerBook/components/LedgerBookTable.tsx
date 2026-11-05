@@ -51,8 +51,8 @@ export default function LedgerBookTable({
   const isColVisible = (colKey: string) => visibleColumns[colKey] !== false;
 
   return (
-    <div className="w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm overflow-hidden font-sans">
-      <div className="w-full overflow-x-auto">
+    <div className="w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm relative overflow-visible font-sans">
+      <div className="w-full overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
         <table className="w-full text-left border-collapse">
           {/* Table Header matching OrderOS standard */}
           <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
@@ -248,7 +248,7 @@ export default function LedgerBookTable({
                         <button
                           type="button"
                           onClick={() => onEdit(item)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50/60 dark:hover:text-amber-400 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#B88728] hover:bg-[#FFF9EC] dark:hover:text-[#E8C16D] dark:hover:bg-[#1A160E] transition-colors cursor-pointer"
                           title="Edit Ledger"
                         >
                           <Edit3 size={15} />

@@ -143,13 +143,13 @@ export default function InvoiceSummaryFooter({
   };
 
   return (
-    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+    <section className="rounded-2xl sm:rounded-3xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white p-4 sm:p-5 shadow-xs dark:bg-[#0F1626]">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Side: Remarks, Eway Bill, Expense On Sales, Receipt toggle */}
         <div className="lg:col-span-5 space-y-3.5">
           {/* Remarks */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Remarks
             </label>
             <textarea
@@ -158,13 +158,13 @@ export default function InvoiceSummaryFooter({
               disabled={disabled}
               onChange={(e) => onChange({ remarks: e.target.value })}
               placeholder="Add any remarks or delivery terms..."
-              className="w-full p-2.5 text-xs text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none resize-none"
+              className="w-full p-3 text-xs sm:text-sm text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 focus:outline-none resize-none transition-all placeholder:text-slate-400"
             />
           </div>
 
           {/* Eway Bill No */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Eway Bill No.
             </label>
             <input
@@ -173,46 +173,46 @@ export default function InvoiceSummaryFooter({
               disabled={disabled}
               onChange={(e) => onChange({ ewayBillNo: e.target.value })}
               placeholder="Enter E-Way Bill Number"
-              className="w-full h-9 px-2.5 text-xs font-mono text-slate-800 dark:text-white bg-slate-50 dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
+              className="w-full h-10 px-3.5 text-xs sm:text-sm font-mono font-semibold text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 focus:outline-none transition-all placeholder:text-slate-400"
             />
           </div>
 
           {/* Expense On Sales & Receipt Toggle */}
-          <div className="flex flex-wrap items-center gap-6 pt-1">
+          <div className="flex flex-wrap items-center gap-6 pt-2">
             {/* Expense on sales */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Expense On Sales
               </span>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-white/[0.08]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#FFF9EC] hover:bg-[#FFF3D6] dark:bg-[#1A160E] dark:hover:bg-[#262014] text-[#0A0E1A] dark:text-[#E8C16D] rounded-xl border border-[#E8C16D]/40 transition-all cursor-pointer"
               >
                 <span>Select (0)</span>
-                <Play className="w-3 h-3 fill-[#B88728] text-[#B88728] dark:fill-[#F5C451] dark:text-[#F5C451]" />
+                <Play className="w-3 h-3 fill-[#B88728] text-[#B88728] dark:fill-[#E8C16D] dark:text-[#E8C16D]" />
               </button>
             </div>
 
             {/* Receipt toggle */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Receipt
               </span>
               <button
                 type="button"
                 disabled={disabled}
                 onClick={handleToggleReceipt}
-                className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.hasReceipt ? "bg-[#0A0E1A] dark:bg-[#F5C451]" : "bg-slate-300 dark:bg-slate-700"
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  formData.hasReceipt ? "bg-[#E8C16D]" : "bg-slate-300 dark:bg-slate-700"
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 shadow ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-[#0A0E1A] shadow-md ring-0 transition duration-200 ease-in-out ${
                     formData.hasReceipt ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
               </button>
-              <span className="text-[11px] font-bold text-slate-500">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
                 {formData.hasReceipt ? "ON" : "OFF"}
               </span>
             </div>
@@ -220,34 +220,34 @@ export default function InvoiceSummaryFooter({
         </div>
 
         {/* Right Side: Statutory GST Calculations & Summary */}
-        <div className="lg:col-span-7 space-y-2.5 bg-slate-50/70 dark:bg-[#080B11]/50 p-4 rounded-2xl border border-slate-200/80 dark:border-white/[0.06]">
+        <div className="lg:col-span-7 space-y-2.5 bg-[#FFF9EC]/30 dark:bg-[#080B11]/50 p-4 sm:p-5 rounded-2xl border border-[#E8C16D]/30 dark:border-white/[0.06]">
           {/* Total Amount */}
           <div className="flex items-center justify-between text-xs gap-4">
-            <span className="font-semibold text-slate-600 dark:text-slate-400">Total Amount</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Total Amount</span>
             <input
               type="text"
               value={cleanDisplay(computedTotals.totalAmount)}
               placeholder="0.00"
               readOnly
-              className="w-36 h-8 px-2 text-right font-mono text-xs text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+              className="w-36 h-8 px-2.5 text-right font-mono text-xs font-semibold text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
             />
           </div>
 
           {/* Discount */}
           <div className="flex items-center justify-between text-xs gap-4">
-            <span className="font-semibold text-slate-600 dark:text-slate-400">Discount</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Discount</span>
             <input
               type="text"
               value={cleanDisplay(computedTotals.totalDiscount)}
               placeholder="0.00"
               readOnly
-              className="w-36 h-8 px-2 text-right font-mono text-xs text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+              className="w-36 h-8 px-2.5 text-right font-mono text-xs font-semibold text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
             />
           </div>
 
           {/* Total Amount Before Tax */}
           <div className="flex items-center justify-between text-xs border-t border-slate-200 dark:border-white/[0.06] pt-2 gap-4">
-            <span className="font-bold text-slate-700 dark:text-slate-200">
+            <span className="font-bold text-slate-900 dark:text-white">
               Total Amount Before Tax
             </span>
             <input
@@ -255,7 +255,7 @@ export default function InvoiceSummaryFooter({
               value={cleanDisplay(computedTotals.amountBeforeTax)}
               placeholder="0.00"
               readOnly
-              className="w-36 h-8 px-2 text-right font-mono font-bold text-xs text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+              className="w-36 h-8 px-2.5 text-right font-mono font-bold text-xs text-slate-900 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
             />
           </div>
 
@@ -268,7 +268,7 @@ export default function InvoiceSummaryFooter({
                 value={cleanDisplay(computedTotals.sgstAmount)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-2 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -278,7 +278,7 @@ export default function InvoiceSummaryFooter({
                 value={cleanDisplay(computedTotals.cgstAmount)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-2 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -288,17 +288,17 @@ export default function InvoiceSummaryFooter({
                 value={cleanDisplay(computedTotals.igstAmount)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-2 text-right font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451]">Total GST</span>
+              <span className="text-[11px] font-bold text-[#B88728] dark:text-[#E8C16D]">Total GST</span>
               <input
                 type="text"
                 value={cleanDisplay(computedTotals.totalGst)}
                 placeholder="0.00"
                 readOnly
-                className="w-24 h-8 px-1.5 text-right font-mono font-bold text-xs text-[#B88728] dark:text-[#F5C451] bg-[#FFF9EC]/40 dark:bg-[#1A160E] border border-[#E8C16D]/40 dark:border-[#F5C451]/30 rounded-lg focus:outline-none placeholder:text-slate-400"
+                className="w-24 h-8 px-2 text-right font-mono font-bold text-xs text-[#B88728] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/50 dark:border-[#E8C16D]/30 rounded-xl focus:outline-none"
               />
             </div>
           </div>
@@ -313,13 +313,13 @@ export default function InvoiceSummaryFooter({
               value={cleanDisplay(computedTotals.amountAfterTax)}
               placeholder="0.00"
               readOnly
-              className="w-36 h-8 px-2 text-right font-mono text-xs text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+              className="w-36 h-8 px-2.5 text-right font-mono text-xs text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
             />
           </div>
 
           {/* Round Off */}
           <div className="flex items-center justify-between text-xs gap-4">
-            <label className="flex items-center gap-1.5 cursor-pointer select-none font-semibold text-slate-600 dark:text-slate-400">
+            <label className="flex items-center gap-1.5 cursor-pointer select-none font-bold text-slate-700 dark:text-slate-300">
               <input
                 id="roundOffCheckbox"
                 name="applyRoundOff"
@@ -327,7 +327,7 @@ export default function InvoiceSummaryFooter({
                 checked={formData.applyRoundOff !== false}
                 disabled={disabled}
                 onChange={(e) => onChange({ applyRoundOff: e.target.checked })}
-                className="rounded text-[#B88728] dark:text-[#F5C451] focus:ring-[#F5C451] cursor-pointer accent-[#B88728] dark:accent-[#F5C451]"
+                className="rounded text-[#B88728] dark:text-[#E8C16D] focus:ring-[#E8C16D] cursor-pointer accent-[#B88728] dark:accent-[#E8C16D]"
               />
               <span>Round Off(%)</span>
             </label>
@@ -336,24 +336,19 @@ export default function InvoiceSummaryFooter({
               value={cleanDisplay(computedTotals.roundOff)}
               placeholder="0.00"
               readOnly
-              className="w-36 h-8 px-2 text-right font-mono text-xs text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:outline-none placeholder:text-slate-400"
+              className="w-36 h-8 px-2.5 text-right font-mono text-xs text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:outline-none"
             />
           </div>
 
-          {/* Net Amount - Highlight Box with Input */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 dark:border-[#F5C451]/30 shadow-sm mt-2">
+          {/* Net Amount - Highlight Box */}
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D] dark:border-[#E8C16D]/50 shadow-xs mt-3">
             <span className="text-sm font-black uppercase tracking-wider text-[#0A0E1A] dark:text-white">
               Net Amount
             </span>
-            <div className="flex items-center gap-1">
-              <span className="font-mono text-lg font-bold text-[#B88728] dark:text-[#F5C451]">₹</span>
-              <input
-                type="text"
-                value={cleanDisplay(computedTotals.netAmount)}
-                placeholder="0.00"
-                readOnly
-                className="w-44 h-10 px-3 text-right font-mono text-lg font-black text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0F1626] border border-[#E8C16D]/40 dark:border-[#F5C451]/40 rounded-xl focus:outline-none shadow-sm placeholder:text-slate-400"
-              />
+            <div className="flex items-center gap-2">
+              <span className="px-4 py-1.5 rounded-xl bg-[#E8C16D] text-[#0A0E1A] font-bold font-mono text-base sm:text-lg shadow-xs">
+                ₹{cleanDisplay(computedTotals.netAmount) || "0.00"}
+              </span>
             </div>
           </div>
         </div>
@@ -361,9 +356,9 @@ export default function InvoiceSummaryFooter({
 
       {/* Receipt Panel Section (Rendered when Receipt is ON) */}
       {formData.hasReceipt && (
-        <div className="mt-5 pt-4 border-t border-slate-200/80 dark:border-white/[0.08]">
+        <div className="mt-5 pt-4 border-t border-[#E8C16D]/30 dark:border-white/[0.08]">
           {/* Receipt Panel Details Box */}
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-[#080B11]/60 border border-slate-200/80 dark:border-white/[0.08]">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF8F5]/60 dark:bg-[#080B11]/60 border border-[#E8C16D]/40 dark:border-white/[0.08]">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* Left Column: Received Amount, Receipt Mode, Account */}
               <div
@@ -373,11 +368,11 @@ export default function InvoiceSummaryFooter({
               >
                 {/* Received Amount */}
                 <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] items-center gap-2">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Received Amount
                   </label>
                   <div className="relative max-w-xs sm:max-w-[240px]">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400">
                       ₹
                     </span>
                     <input
@@ -395,14 +390,14 @@ export default function InvoiceSummaryFooter({
                         onChange({ receivedAmount: val === "" ? 0 : Number(val) });
                       }}
                       placeholder="0"
-                      className="w-full h-8 pl-6 pr-2.5 text-right font-mono text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
+                      className="w-full h-9 pl-7 pr-3 text-right font-mono text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Receipt Mode */}
                 <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] items-center gap-2">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Receipt Mode
                   </label>
                   <div className="max-w-xs sm:max-w-[240px]">
@@ -430,7 +425,7 @@ export default function InvoiceSummaryFooter({
                       }}
                       placeholder="Select Mode"
                       className="w-full"
-                      buttonClassName="w-full h-8 px-2.5 text-xs font-semibold rounded-xl justify-between"
+                      buttonClassName="w-full h-9 px-3 text-xs font-semibold rounded-xl justify-between border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                       menuClassName="min-w-[200px]"
                     />
                   </div>
@@ -438,7 +433,7 @@ export default function InvoiceSummaryFooter({
 
                 {/* Account */}
                 <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] items-center gap-2">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Account
                   </label>
                   <div className="max-w-xs sm:max-w-[240px]">
@@ -458,7 +453,7 @@ export default function InvoiceSummaryFooter({
                       onChange={(val) => onChange({ receiptAccount: val })}
                       placeholder="Select Account"
                       className="w-full"
-                      buttonClassName="w-full h-8 px-2.5 text-xs font-semibold rounded-xl justify-between"
+                      buttonClassName="w-full h-9 px-3 text-xs font-semibold rounded-xl justify-between border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                       menuClassName="min-w-[220px]"
                     />
                   </div>
@@ -475,7 +470,7 @@ export default function InvoiceSummaryFooter({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                     {/* Type */}
                     <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
                         Type
                       </label>
                       <ThemeSelectDropdown
@@ -485,14 +480,14 @@ export default function InvoiceSummaryFooter({
                         onChange={(val) => onChange({ transactionType: val })}
                         placeholder="Select Type"
                         className="w-full"
-                        buttonClassName="w-full h-8 px-2.5 text-xs font-semibold rounded-xl justify-between"
+                        buttonClassName="w-full h-9 px-3 text-xs font-semibold rounded-xl justify-between border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                         menuClassName="min-w-[170px]"
                       />
                     </div>
 
                     {/* Date */}
                     <div className="grid grid-cols-[70px_1fr] items-center gap-2">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
                         Date
                       </label>
                       <DatePicker
@@ -501,15 +496,15 @@ export default function InvoiceSummaryFooter({
                         }
                         onChange={(_, dateStr) => onChange({ transactionDate: dateStr || "" })}
                         placeholder="DD-MM-YYYY"
-                        buttonClassName="h-8 text-xs w-full"
+                        buttonClassName="h-9 text-xs w-full rounded-xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                         disabled={disabled}
                       />
                     </div>
 
-                    {/* Dynamic Reference No (Cheque No / RTGS No / NEFT No / IMPS No etc.) */}
+                    {/* Dynamic Reference No */}
                     <div className="grid grid-cols-[80px_1fr] items-center gap-2">
                       <label
-                        className="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate"
+                        className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate"
                         title={getTransactionRefLabel(formData.transactionType)}
                       >
                         {getTransactionRefLabel(formData.transactionType)}
@@ -520,13 +515,13 @@ export default function InvoiceSummaryFooter({
                         disabled={disabled}
                         onChange={(e) => onChange({ chequeNo: e.target.value })}
                         placeholder={getTransactionRefLabel(formData.transactionType)}
-                        className="w-full h-8 px-2.5 text-xs font-mono text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
+                        className="w-full h-9 px-3 text-xs font-mono font-semibold text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 focus:outline-none"
                       />
                     </div>
 
                     {/* Bank Name */}
                     <div className="grid grid-cols-[70px_1fr] items-center gap-2">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
                         Bank Name
                       </label>
                       <input
@@ -535,7 +530,7 @@ export default function InvoiceSummaryFooter({
                         disabled={disabled}
                         onChange={(e) => onChange({ bankName: e.target.value })}
                         placeholder="Bank Name"
-                        className="w-full h-8 px-2.5 text-xs text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none"
+                        className="w-full h-9 px-3 text-xs font-semibold text-slate-800 dark:text-white bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] rounded-xl focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/20 focus:outline-none"
                       />
                     </div>
                   </div>
