@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Circle,
   CheckCircle2,
+  AlertCircle,
   Save,
   Upload,
   Calendar,
@@ -18,6 +19,10 @@ import { toast } from "sonner";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
 } from "@/components/ui/ThemeSelectDropdown";
+import DropdownWithOther, {
+  type DropdownOption,
+} from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
+import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
 import DatePicker from "@/components/ui/DatePicker";
 import { cn, getMediaUrl } from "@/lib/utils";
 
@@ -56,27 +61,6 @@ const INDIAN_STATES = [
   "Uttarakhand",
 ];
 
-const ACCOUNT_HEAD_OPTIONS = [
-  "Sundry Debtors",
-  "Sundry Creditors",
-  "Employee",
-  "Bank Accounts",
-  "Cash-in-hand",
-  "Direct Expenses",
-  "Indirect Expenses",
-  "Direct Incomes",
-  "Indirect Incomes",
-  "Capital Account",
-  "Duties & Taxes",
-  "Purchase Accounts",
-  "Sales Accounts",
-  "Loans & Advances",
-  "Current Assets",
-  "Current Liabilities",
-  "Fixed Assets",
-  "Investments",
-];
-
 export default function LedgerBookForm({
   initialLedger,
   onBack,
@@ -84,10 +68,15 @@ export default function LedgerBookForm({
 }: LedgerBookFormProps) {
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLogoDragging, setIsLogoDragging] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const isEditMode = Boolean(initialLedger?.id);
+
+  // Fetch dynamic dropdown options from DB
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
 
   // Today's formatted date: DD-MM-YYYY
   const todayFormatted = useMemo(() => {
@@ -98,11 +87,21 @@ export default function LedgerBookForm({
     return `${day}-${month}-${year}`;
   }, []);
 
-  // ThemeSelectDropdown options
-  const accountHeadOptions: ThemeSelectOption[] = useMemo(
-    () => ACCOUNT_HEAD_OPTIONS.map((opt) => ({ value: opt, label: opt })),
-    []
-  );
+  // Dynamic accountHeadOptions purely loaded from database
+  const accountHeadOptions: DropdownOption[] = useMemo(() => {
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "accounthead")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    dbSaved.forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
 
   const balanceTypeOptions: ThemeSelectOption[] = useMemo(
     () => [
@@ -255,6 +254,14 @@ export default function LedgerBookForm({
   }, [initialLedger, todayFormatted]);
 
   const handleChange = (field: keyof CreateLedgerPayload, value: any) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
 
@@ -339,6 +346,187 @@ export default function LedgerBookForm({
     return Math.min(100, Math.round((filled / requiredFields.length) * 100));
   }, [formData]);
 
+  const getInputClassName = (fieldKey?: string, isMono = false, disabled = false) => {
+    const hasErr = Boolean(fieldKey && errors[fieldKey]);
+    if (disabled) {
+      return cn(
+        "w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+        isMono && "font-mono"
+      );
+    }
+    return cn(
+      "w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all",
+      isMono && "font-mono",
+      hasErr
+        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
+        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+    );
+  };
+
+  const renderFieldError = (fieldKey: string) => {
+    if (!errors[fieldKey]) return null;
+    return (
+      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+        <AlertCircle size={11} className="shrink-0" />
+        <span>{errors[fieldKey]}</span>
+      </p>
+    );
+  };
+
+  const validateForm = (): { isValid: boolean; firstErrorTab?: TabType } => {
+    const newErrors: Record<string, string> = {};
+    let firstErrorTab: TabType | undefined;
+
+    // --- Tab 1: General Details ---
+    if (!formData.partyName?.trim()) {
+      newErrors.partyName = "Ledger Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.alias?.trim()) {
+      newErrors.alias = "Alias is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.accountHead?.trim()) {
+      newErrors.accountHead = "Account Head is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (formData.email?.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = "Please enter a valid email address.";
+        if (!firstErrorTab) firstErrorTab = "general";
+      }
+    }
+
+    // --- Tab 2: Contact Details ---
+    if (!formData.addressLine1?.trim()) {
+      newErrors.addressLine1 = "Address 1 is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.pincode?.trim()) {
+      newErrors.pincode = "Pincode is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    } else if (formData.pincode.trim().length !== 6) {
+      newErrors.pincode = "Pincode must be exactly 6 digits.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.area?.trim()) {
+      newErrors.area = "Area is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.city?.trim()) {
+      newErrors.city = "City is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.state?.trim()) {
+      newErrors.state = "State is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (formData.phone?.trim() && formData.phone.trim().length !== 10) {
+      newErrors.phone = "Contact number must be exactly 10 digits.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+
+    // Shipping (if not same as billing)
+    if (!formData.shippingSameAsBilling) {
+      if (!formData.shippingAddress1?.trim()) {
+        newErrors.shippingAddress1 = "Shipping Address 1 is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingPincode?.trim()) {
+        newErrors.shippingPincode = "Shipping Pincode is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      } else if (formData.shippingPincode.trim().length !== 6) {
+        newErrors.shippingPincode = "Pincode must be exactly 6 digits.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingArea?.trim()) {
+        newErrors.shippingArea = "Shipping Area is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingCity?.trim()) {
+        newErrors.shippingCity = "Shipping City is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingState?.trim()) {
+        newErrors.shippingState = "Shipping State is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (formData.shippingPhone?.trim() && formData.shippingPhone.trim().length !== 10) {
+        newErrors.shippingPhone = "Contact number must be exactly 10 digits.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+    }
+
+    // --- Tab 3: Accounting Details ---
+    if (formData.gstin?.trim() && formData.gstin.trim().length !== 15) {
+      newErrors.gstin = "GST Number must be exactly 15 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (formData.pan?.trim() && formData.pan.trim().length !== 10) {
+      newErrors.pan = "PAN Number must be exactly 10 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (formData.ifsc?.trim() && formData.ifsc.trim().length !== 11) {
+      newErrors.ifsc = "IFSC Code must be exactly 11 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (
+      formData.creditDebitLimit === undefined ||
+      formData.creditDebitLimit === null ||
+      isNaN(Number(formData.creditDebitLimit))
+    ) {
+      newErrors.creditDebitLimit = "Credit Debit Limit is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (
+      formData.billDueDays === undefined ||
+      formData.billDueDays === null ||
+      isNaN(Number(formData.billDueDays))
+    ) {
+      newErrors.billDueDays = "Bill Due Days is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+
+    setErrors(newErrors);
+    return {
+      isValid: Object.keys(newErrors).length === 0,
+      firstErrorTab,
+    };
+  };
+
+  const hasTabError = (tabKey: TabType) => {
+    if (tabKey === "general") {
+      return Boolean(errors.partyName || errors.alias || errors.accountHead || errors.email);
+    }
+    if (tabKey === "contact") {
+      return Boolean(
+        errors.addressLine1 ||
+        errors.pincode ||
+        errors.area ||
+        errors.city ||
+        errors.state ||
+        errors.phone ||
+        errors.shippingAddress1 ||
+        errors.shippingPincode ||
+        errors.shippingArea ||
+        errors.shippingCity ||
+        errors.shippingState ||
+        errors.shippingPhone
+      );
+    }
+    if (tabKey === "accounting") {
+      return Boolean(
+        errors.gstin ||
+        errors.pan ||
+        errors.ifsc ||
+        errors.creditDebitLimit ||
+        errors.billDueDays
+      );
+    }
+    return false;
+  };
+
   // Handle Logo Upload
   const handleLogoFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -361,21 +549,12 @@ export default function LedgerBookForm({
   };
 
   const handleSave = async () => {
-    if (!formData.partyName || formData.partyName.trim() === "") {
-      toast.error("Ledger Name is required.");
-      setActiveTab("general");
-      return;
-    }
-
-    if (!formData.alias || formData.alias.trim() === "") {
-      toast.error("Alias is required.");
-      setActiveTab("general");
-      return;
-    }
-
-    if (!formData.accountHead || formData.accountHead.trim() === "") {
-      toast.error("Account Head is required.");
-      setActiveTab("general");
+    const { isValid, firstErrorTab } = validateForm();
+    if (!isValid) {
+      if (firstErrorTab) {
+        setActiveTab(firstErrorTab);
+      }
+      toast.error("Please fill in all required fields before saving.");
       return;
     }
 
@@ -409,22 +588,22 @@ export default function LedgerBookForm({
   // Tabs definition matching Company Profile
   const tabs = [
     {
-      key: "general",
+      key: "general" as TabType,
       label: "General",
       completed: Boolean(formData.partyName && formData.alias && formData.accountHead),
     },
     {
-      key: "contact",
+      key: "contact" as TabType,
       label: "Contact",
       completed: Boolean(formData.addressLine1 && formData.city && formData.state),
     },
     {
-      key: "accounting",
+      key: "accounting" as TabType,
       label: "Accounting",
       completed: Boolean((formData.gstin || formData.pan) && formData.bankName),
     },
     {
-      key: "logo",
+      key: "logo" as TabType,
       label: "Logo",
       completed: Boolean(formData.logoUrl),
     },
@@ -484,18 +663,24 @@ export default function LedgerBookForm({
         <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-4 gap-1 select-none">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
+            const hasErr = hasTabError(tab.key);
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as TabType)}
+                onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
                     : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
                 }`}
               >
-                {tab.completed ? (
+                {hasErr ? (
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                  </span>
+                ) : tab.completed ? (
                   <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                 ) : (
                   <Circle size={14} className="text-slate-500 shrink-0 stroke-dashed" />
@@ -524,136 +709,145 @@ export default function LedgerBookForm({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
-                {/* Ledger Name. * */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Ledger Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.partyName || ""}
-                    onChange={(e) => handleChange("partyName", e.target.value)}
-                    placeholder="Enter ledger name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
+              {/* Ledger Name. * */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Ledger Name. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.partyName || ""}
+                  onChange={(e) => handleChange("partyName", e.target.value)}
+                  placeholder="Enter ledger name"
+                  className={getInputClassName("partyName")}
+                />
+                {renderFieldError("partyName")}
+              </div>
 
-                {/* Alias. * */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                      Alias. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <span
-                      className={`text-[10px] font-mono ${
-                        formData.alias?.length ? "text-emerald-400" : "text-red-500"
-                      }`}
-                    >
-                      {formData.alias ? formData.alias.length : 0}/10
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    required
-                    value={formData.alias || ""}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
-                      handleChange("alias", val);
-                      handleChange("accountCode", val);
-                    }}
-                    placeholder="SHORT CODE / ALIAS"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase font-mono transition-all"
-                  />
-                </div>
-
-                {/* Account Head. * */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Account Head. <span className="text-red-500 font-bold">*</span>
+              {/* Alias. * */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                    Alias. <span className="text-red-500 font-bold">*</span>
                   </label>
+                  <span
+                    className={`text-[10px] font-mono ${
+                      formData.alias?.length ? "text-emerald-400" : "text-red-500"
+                    }`}
+                  >
+                    {formData.alias ? formData.alias.length : 0}/10
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={formData.alias || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    handleChange("alias", val);
+                    handleChange("accountCode", val);
+                  }}
+                  placeholder="SHORT CODE / ALIAS"
+                  className={getInputClassName("alias", true)}
+                />
+                {renderFieldError("alias")}
+              </div>
+
+              {/* Account Head. * */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Account Head. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <DropdownWithOther
+                  hideLabel
+                  label="Account Head"
+                  required
+                  value={formData.accountHead || "Sundry Debtors"}
+                  onChange={(val) => handleChange("accountHead", val)}
+                  options={accountHeadOptions}
+                  placeholder="Select Account Head"
+                  fieldKey="accounthead"
+                  className="w-full"
+                  buttonClassName={cn(
+                    dropdownButtonClassName,
+                    errors.accountHead && "border-rose-500 ring-1 ring-rose-500/30"
+                  )}
+                  menuClassName={dropdownMenuClassName}
+                />
+                {renderFieldError("accountHead")}
+              </div>
+
+              {/* Email. */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Email.
+                </label>
+                <input
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  placeholder="Enter email address"
+                  className={getInputClassName("email")}
+                />
+                {renderFieldError("email")}
+              </div>
+
+              {/* Contact Name. */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Contact Name.
+                </label>
+                <input
+                  type="text"
+                  value={formData.contactPerson || ""}
+                  onChange={(e) => handleChange("contactPerson", e.target.value)}
+                  placeholder="Contact person name"
+                  className={getInputClassName()}
+                />
+              </div>
+
+              {/* Creation Date. */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Creation Date.
+                </label>
+                <DatePicker
+                  value={formData.creationDate || todayFormatted}
+                  onChange={(_, str) => handleChange("creationDate", str || "")}
+                  placeholder="DD-MM-YYYY"
+                  dateFormat="dd-MM-yyyy"
+                  className="w-full"
+                  buttonClassName={datePickerButtonClassName}
+                />
+              </div>
+
+              {/* Opening Balance. + Dr / Cr */}
+              <div className="sm:col-span-2">
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Opening Balance.
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-md">
+                  <input
+                    type="number"
+                    value={formData.openingBalance ?? 0}
+                    onChange={(e) => handleChange("openingBalance", Number(e.target.value))}
+                    placeholder="0"
+                    className={cn(getInputClassName(undefined, true), "sm:col-span-2 h-10")}
+                  />
                   <ThemeSelectDropdown
-                    value={formData.accountHead || "Sundry Debtors"}
-                    onChange={(val) => handleChange("accountHead", val)}
-                    options={accountHeadOptions}
-                    placeholder="Select Account Head"
+                    value={formData.balanceType || "Dr"}
+                    onChange={(val) => handleChange("balanceType", val)}
+                    options={balanceTypeOptions}
+                    placeholder="Dr/Cr"
                     className="w-full"
                     buttonClassName={dropdownButtonClassName}
                     menuClassName={dropdownMenuClassName}
                   />
                 </div>
-
-                {/* Email. */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Email.
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="Enter email address"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Contact Name. */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Contact Name.
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.contactPerson || ""}
-                    onChange={(e) => handleChange("contactPerson", e.target.value)}
-                    placeholder="Contact person name"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Creation Date. */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Creation Date.
-                  </label>
-                  <DatePicker
-                    value={formData.creationDate || todayFormatted}
-                    onChange={(_, str) => handleChange("creationDate", str || "")}
-                    placeholder="DD-MM-YYYY"
-                    dateFormat="dd-MM-yyyy"
-                    className="w-full"
-                    buttonClassName={datePickerButtonClassName}
-                  />
-                </div>
-
-                {/* Opening Balance. + Dr / Cr */}
-                <div className="sm:col-span-2">
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Opening Balance.
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-md">
-                    <input
-                      type="number"
-                      value={formData.openingBalance ?? 0}
-                      onChange={(e) => handleChange("openingBalance", Number(e.target.value))}
-                      placeholder="0"
-                      className="sm:col-span-2 w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono transition-all"
-                    />
-                    <ThemeSelectDropdown
-                      value={formData.balanceType || "Dr"}
-                      onChange={(val) => handleChange("balanceType", val)}
-                      options={balanceTypeOptions}
-                      placeholder="Dr/Cr"
-                      className="w-full"
-                      buttonClassName={dropdownButtonClassName}
-                      menuClassName={dropdownMenuClassName}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* TAB 2: CONTACT DETAILS                                                   */}
@@ -684,8 +878,9 @@ export default function LedgerBookForm({
                       value={formData.addressLine1 || ""}
                       onChange={(e) => handleChange("addressLine1", e.target.value)}
                       placeholder="Plot / Building / Street address"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName("addressLine1")}
                     />
+                    {renderFieldError("addressLine1")}
                   </div>
 
                   <div>
@@ -697,7 +892,7 @@ export default function LedgerBookForm({
                       value={formData.addressLine2 || ""}
                       onChange={(e) => handleChange("addressLine2", e.target.value)}
                       placeholder="Suite / Floor / Landmark"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -710,7 +905,7 @@ export default function LedgerBookForm({
                       value={formData.addressLine3 || ""}
                       onChange={(e) => handleChange("addressLine3", e.target.value)}
                       placeholder="Additional address details"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -725,9 +920,10 @@ export default function LedgerBookForm({
                       onChange={(e) =>
                         handleChange("pincode", e.target.value.replace(/\D/g, ""))
                       }
-                      placeholder="394230"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      placeholder="e.g. 395001"
+                      className={getInputClassName("pincode", true)}
                     />
+                    {renderFieldError("pincode")}
                   </div>
 
                   <div>
@@ -739,8 +935,9 @@ export default function LedgerBookForm({
                       value={formData.area || ""}
                       onChange={(e) => handleChange("area", e.target.value)}
                       placeholder="Area / Locality"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName("area")}
                     />
+                    {renderFieldError("area")}
                   </div>
 
                   <div>
@@ -752,8 +949,9 @@ export default function LedgerBookForm({
                       value={formData.city || ""}
                       onChange={(e) => handleChange("city", e.target.value)}
                       placeholder="City"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName("city")}
                     />
+                    {renderFieldError("city")}
                   </div>
 
                   <div>
@@ -766,9 +964,13 @@ export default function LedgerBookForm({
                       options={stateOptions}
                       placeholder="Select a state"
                       className="w-full"
-                      buttonClassName={dropdownButtonClassName}
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.state && "border-rose-500 ring-1 ring-rose-500/30"
+                      )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {renderFieldError("state")}
                   </div>
 
                   <div>
@@ -779,7 +981,7 @@ export default function LedgerBookForm({
                       type="text"
                       disabled
                       value={formData.country || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed"
+                      className={getInputClassName(undefined, false, true)}
                     />
                   </div>
 
@@ -806,8 +1008,9 @@ export default function LedgerBookForm({
                         handleChange("phone", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="Enter 10-digit Contact No"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={getInputClassName("phone", true)}
                     />
+                    {renderFieldError("phone")}
                   </div>
                 </div>
               </div>
@@ -838,12 +1041,9 @@ export default function LedgerBookForm({
                       value={formData.shippingAddress1 || ""}
                       onChange={(e) => handleChange("shippingAddress1", e.target.value)}
                       placeholder="Plot / Building / Street address"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={getInputClassName("shippingAddress1", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingAddress1")}
                   </div>
 
                   <div>
@@ -856,11 +1056,7 @@ export default function LedgerBookForm({
                       value={formData.shippingAddress2 || ""}
                       onChange={(e) => handleChange("shippingAddress2", e.target.value)}
                       placeholder="Suite / Floor / Landmark"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
                     />
                   </div>
 
@@ -874,11 +1070,7 @@ export default function LedgerBookForm({
                       value={formData.shippingAddress3 || ""}
                       onChange={(e) => handleChange("shippingAddress3", e.target.value)}
                       placeholder="Additional address details"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
                     />
                   </div>
 
@@ -894,13 +1086,10 @@ export default function LedgerBookForm({
                       onChange={(e) =>
                         handleChange("shippingPincode", e.target.value.replace(/\D/g, ""))
                       }
-                      placeholder="394230"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. 395001"
+                      className={getInputClassName("shippingPincode", true, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingPincode")}
                   </div>
 
                   <div>
@@ -913,12 +1102,9 @@ export default function LedgerBookForm({
                       value={formData.shippingArea || ""}
                       onChange={(e) => handleChange("shippingArea", e.target.value)}
                       placeholder="Area / Locality"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={getInputClassName("shippingArea", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingArea")}
                   </div>
 
                   <div>
@@ -931,12 +1117,9 @@ export default function LedgerBookForm({
                       value={formData.shippingCity || ""}
                       onChange={(e) => handleChange("shippingCity", e.target.value)}
                       placeholder="City"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={getInputClassName("shippingCity", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingCity")}
                   </div>
 
                   <div>
@@ -953,10 +1136,14 @@ export default function LedgerBookForm({
                       buttonClassName={cn(
                         dropdownButtonClassName,
                         formData.shippingSameAsBilling &&
-                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+                        !formData.shippingSameAsBilling &&
+                          errors.shippingState &&
+                          "border-rose-500 ring-1 ring-rose-500/30"
                       )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingState")}
                   </div>
 
                   <div>
@@ -967,7 +1154,7 @@ export default function LedgerBookForm({
                       type="text"
                       disabled
                       value={formData.shippingCountry || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed"
+                      className={getInputClassName(undefined, false, true)}
                     />
                   </div>
 
@@ -995,12 +1182,9 @@ export default function LedgerBookForm({
                         handleChange("shippingPhone", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="Enter 10-digit Contact No"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={getInputClassName("shippingPhone", true, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingPhone")}
                   </div>
                 </div>
               </div>
@@ -1053,8 +1237,9 @@ export default function LedgerBookForm({
                       value={formData.gstin || ""}
                       onChange={(e) => handleChange("gstin", e.target.value.toUpperCase())}
                       placeholder="24ABCDE1234F1Z5"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={getInputClassName("gstin", true)}
                     />
+                    {renderFieldError("gstin")}
                   </div>
 
                   {/* PAN Number */}
@@ -1079,8 +1264,9 @@ export default function LedgerBookForm({
                       value={formData.pan || ""}
                       onChange={(e) => handleChange("pan", e.target.value.toUpperCase())}
                       placeholder="ABCDE1234F"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={getInputClassName("pan", true)}
                     />
+                    {renderFieldError("pan")}
                   </div>
 
                   {/* MSME Number */}
@@ -1107,7 +1293,7 @@ export default function LedgerBookForm({
                         handleChange("msmeNumber", e.target.value.toUpperCase())
                       }
                       placeholder="UDYAM-XX-00-0000000"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1121,7 +1307,7 @@ export default function LedgerBookForm({
                       value={formData.legalName || ""}
                       onChange={(e) => handleChange("legalName", e.target.value)}
                       placeholder="Registered legal entity name"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName()}
                     />
                   </div>
                 </div>
@@ -1141,7 +1327,7 @@ export default function LedgerBookForm({
                       value={formData.accountNumber || ""}
                       onChange={(e) => handleChange("accountNumber", e.target.value)}
                       placeholder="Enter account number"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1154,7 +1340,7 @@ export default function LedgerBookForm({
                       value={formData.accountHolderName || ""}
                       onChange={(e) => handleChange("accountHolderName", e.target.value)}
                       placeholder="Account holder's full name"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -1166,8 +1352,8 @@ export default function LedgerBookForm({
                       type="text"
                       value={formData.bankName || ""}
                       onChange={(e) => handleChange("bankName", e.target.value)}
-                      placeholder="e.g. KOTAK MAHINDRA BANK"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      placeholder="e.g. HDFC Bank"
+                      className={getInputClassName(undefined, false)}
                     />
                   </div>
 
@@ -1180,7 +1366,7 @@ export default function LedgerBookForm({
                       value={formData.branchName || ""}
                       onChange={(e) => handleChange("branchName", e.target.value)}
                       placeholder="Branch name or location"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -1208,9 +1394,10 @@ export default function LedgerBookForm({
                       maxLength={11}
                       value={formData.ifsc || ""}
                       onChange={(e) => handleChange("ifsc", e.target.value.toUpperCase())}
-                      placeholder="KKBK0002868"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      placeholder="e.g. HDFC0001234"
+                      className={getInputClassName("ifsc", true)}
                     />
+                    {renderFieldError("ifsc")}
                   </div>
                 </div>
               </div>
@@ -1231,8 +1418,9 @@ export default function LedgerBookForm({
                     onChange={(e) =>
                       handleChange("creditDebitLimit", Number(e.target.value))
                     }
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                    className={getInputClassName("creditDebitLimit", true)}
                   />
+                  {renderFieldError("creditDebitLimit")}
                 </div>
 
                 <div>
@@ -1243,8 +1431,9 @@ export default function LedgerBookForm({
                     type="number"
                     value={formData.billDueDays ?? 0}
                     onChange={(e) => handleChange("billDueDays", Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                    className={getInputClassName("billDueDays", true)}
                   />
+                  {renderFieldError("billDueDays")}
                 </div>
 
                 <div>
@@ -1256,7 +1445,7 @@ export default function LedgerBookForm({
                     value={formData.refContactName || ""}
                     onChange={(e) => handleChange("refContactName", e.target.value)}
                     placeholder="select / type reference"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                    className={getInputClassName()}
                   />
                 </div>
               </div>

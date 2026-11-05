@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { User, FileText, Eye, Edit3, Trash2 } from "lucide-react";
 import { Company } from "../types/company.types";
-import { getMediaUrl } from "@/lib/utils";
+import { getMediaUrl, getCompanyInitials } from "@/lib/utils";
 
 interface CompanyCardProps {
   company: Company;
@@ -24,6 +24,7 @@ export default function CompanyCard({
 }: CompanyCardProps) {
   const isDraft = company.status === "DRAFT";
   const isActive = company.status === "ACTIVE";
+  const [imageError, setImageError] = useState(false);
 
   return (
     <div className="group relative bg-white border border-[#E7E0D2] hover:border-[#E8C16D] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 dark:bg-[#0F1626] dark:border-white/[0.08] dark:hover:border-white/[0.18] dark:shadow-lg dark:hover:shadow-2xl flex flex-col justify-between w-full">
@@ -31,42 +32,18 @@ export default function CompanyCard({
         {/* Top Header: Logo + Title + Status + Code matching Image 2 */}
         <div className="flex items-start gap-3.5">
           {/* Logo container matching Image 2 */}
-          <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 dark:bg-black dark:border-white/[0.1] flex flex-col items-center justify-center p-1.5 shrink-0 shadow-inner overflow-hidden">
-            {company.logoUrl ? (
+          <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200 dark:bg-[#161B26] dark:border-white/[0.1] flex items-center justify-center shrink-0 shadow-xs overflow-hidden select-none">
+            {company.logoUrl && !imageError ? (
               <img
                 src={getMediaUrl(company.logoUrl)}
                 alt={company.companyName}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain p-1"
+                onError={() => setImageError(true)}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center text-center">
-                {/* Fashion ribbon emblem matching Image 2 */}
-                <svg
-                  width="22"
-                  height="16"
-                  viewBox="0 0 32 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-white"
-                >
-                  <path
-                    d="M16 12C12 4 4 4 4 10C4 16 12 16 16 12ZM16 12C20 4 28 4 28 10C28 16 20 16 16 12Z"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M16 12C15 16 14 20 13 22M16 12C17 16 18 20 19 22"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="text-[6px] font-black uppercase tracking-tighter text-slate-300 mt-1 line-clamp-1 leading-none max-w-[48px]">
-                  {company.companyName || "COMPANY"}
-                </span>
-              </div>
+              <span className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 tracking-wider uppercase select-none font-sans">
+                {getCompanyInitials(company.companyName)}
+              </span>
             )}
           </div>
 

@@ -2,17 +2,9 @@
 
 import React, { useRef, useState } from "react";
 import { format } from "date-fns";
-import {
-  FileSpreadsheet,
-  Download,
-  Upload,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Calendar as CalendarIcon,
-} from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { Webstore } from "@/components/Dashboard/Settings/Webstore/types/webstore.types";
-import { RequestedPO, RequestedPOItem } from "../types/requestedPo.types";
+import { RequestedPO } from "../types/requestedPo.types";
 import { parsePoExcelFile, generateSamplePoExcel } from "../utils/excelParser";
 import { requestedPoService } from "../services/requestedPo.service";
 import { toast } from "sonner";
@@ -21,8 +13,6 @@ import DatePicker from "@/components/ui/DatePicker";
 interface POUploadPanelProps {
   selectedStore: Webstore;
   onPoUploaded: (po: RequestedPO) => void;
-  parsedItems: RequestedPOItem[];
-  setParsedItems: React.Dispatch<React.SetStateAction<RequestedPOItem[]>>;
   poNumber: string;
   setPoNumber: (val: string) => void;
   poDate: string;
@@ -32,8 +22,6 @@ interface POUploadPanelProps {
 export default function POUploadPanel({
   selectedStore,
   onPoUploaded,
-  parsedItems,
-  setParsedItems,
   poNumber,
   setPoNumber,
   poDate,
@@ -41,16 +29,14 @@ export default function POUploadPanel({
 }: POUploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFileName, setSelectedFileName] = useState<string>("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Trigger file selection dialog
   const handleBrowseClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Handle file chosen
+  // Handle file chosen -> parse and auto-save immediately
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -62,82 +48,77 @@ export default function POUploadPanel({
       return;
     }
 
-    setSelectedFile(file);
     setSelectedFileName(file.name);
     setIsParsing(true);
 
     try {
       const parsed = await parsePoExcelFile(file);
-      setParsedItems(parsed.items);
 
-      // Auto-fill PO number if detected and user hasn't typed one
-      if (parsed.detectedPoNumber && !poNumber.trim()) {
-        setPoNumber(parsed.detectedPoNumber);
+      if (!parsed.items || parsed.items.length === 0) {
+        toast.error("No valid line items found in the selected Excel file.");
+        setSelectedFileName("");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
       }
 
-      toast.success(
-        `Parsed ${parsed.items.length} items (${parsed.totalQuantity} units) from ${file.name}`
-      );
-    } catch (err: any) {
-      console.error("Error parsing PO file:", err);
-      toast.error(err?.message || "Failed to parse Excel file. Please check format.");
-      setParsedItems([]);
-    } finally {
-      setIsParsing(false);
-    }
-  };
+      // Determine final PO Number (Entered > Detected in file > Clean File Name > Generated ID)
+      const detectedPo = parsed.detectedPoNumber?.trim();
+      const enteredPo = poNumber?.trim();
+      const fileBaseName = file.name.replace(/\.[^/.]+$/, "").trim();
+      const finalPoNumber =
+        enteredPo ||
+        detectedPo ||
+        (fileBaseName && fileBaseName.length > 0 ? fileBaseName : `PO-${Date.now().toString().slice(-6)}`);
 
-  // Handle Save PO
-  const handleSavePO = () => {
-    if (!poNumber.trim()) {
-      toast.error("Please enter a PO Number.");
-      return;
-    }
-    if (!poDate.trim()) {
-      toast.error("Please enter a PO Date.");
-      return;
-    }
-    if (parsedItems.length === 0) {
-      toast.error("Please select and upload an Excel file containing PO items.");
-      return;
-    }
+      const finalPoDate = poDate?.trim() || format(new Date(), "dd-MM-yyyy");
 
-    setIsSaving(true);
-    try {
-      const totalQty = parsedItems.reduce((acc, it) => acc + (it.quantity || 0), 0);
-      const totalAmt = Math.round(
-        parsedItems.reduce((acc, it) => acc + (it.totalAmount || 0), 0) * 100
-      ) / 100;
+      const totalQty =
+        parsed.totalQuantity ||
+        parsed.items.reduce((acc, it) => acc + (it.quantity || 0), 0);
+      const totalAmt =
+        parsed.totalAmount ||
+        Math.round(
+          parsed.items.reduce((acc, it) => acc + (it.totalAmount || 0), 0) * 100
+        ) / 100;
 
+      // Create new PO
       const newPo: RequestedPO = {
         id: `po_${Date.now()}`,
         storeId: selectedStore.id,
         storeName: selectedStore.storeName,
         marketplaceName: selectedStore.marketplaceName,
-        poNumber: poNumber.trim(),
-        poDate: poDate.trim(),
-        fileName: selectedFileName || "po_items.xlsx",
-        itemsCount: parsedItems.length,
+        poNumber: finalPoNumber,
+        poDate: finalPoDate,
+        fileName: file.name,
+        itemsCount: parsed.items.length,
         totalQuantity: totalQty,
         totalAmount: totalAmt,
         status: "Uploaded",
         createdAt: new Date().toISOString(),
-        items: parsedItems,
+        items: parsed.items,
+        columns: parsed.columns,
       };
 
-      requestedPoService.save(newPo);
-      onPoUploaded(newPo);
-      toast.success(`PO #${newPo.poNumber} saved successfully for ${selectedStore.storeName}!`);
+      // Save directly to database
+      const savedPo = await requestedPoService.save(newPo);
+      onPoUploaded(savedPo);
 
-      // Reset file input
+      toast.success(
+        `PO #${finalPoNumber} with ${parsed.items.length} items (${totalQty} units) uploaded successfully!`
+      );
+
+      // Reset inputs for next upload
       setSelectedFileName("");
-      setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (err: any) {
-      console.error("Error saving PO:", err);
-      toast.error("Failed to save PO. Please try again.");
+      setPoNumber("");
+    } catch (err: unknown) {
+      console.error("Error parsing and saving PO file:", err);
+      const msg = err instanceof Error ? err.message : "Failed to parse and save Excel file. Please check format.";
+      toast.error(msg);
+      setSelectedFileName("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } finally {
-      setIsSaving(false);
+      setIsParsing(false);
     }
   };
 
@@ -170,7 +151,8 @@ export default function POUploadPanel({
               value={poNumber}
               onChange={(e) => setPoNumber(e.target.value)}
               placeholder="e.g. PO-2026-908"
-              className="h-9 sm:h-10 w-36 sm:w-48 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 transition-all shadow-2xs"
+              disabled={isParsing}
+              className="h-9 sm:h-10 w-36 sm:w-48 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 transition-all shadow-2xs disabled:opacity-50"
             />
           </div>
 
@@ -185,7 +167,8 @@ export default function POUploadPanel({
                 onChange={(_, dateStr) => setPoDate(dateStr || "")}
                 placeholder="DD-MM-YYYY"
                 dateFormat="dd-MM-yyyy"
-                buttonClassName="h-9 sm:h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white shadow-2xs hover:border-[#E8C16D] transition-colors"
+                disabled={isParsing}
+                buttonClassName="h-9 sm:h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white shadow-2xs hover:border-[#E8C16D] transition-colors disabled:opacity-50"
               />
             </div>
           </div>
@@ -212,7 +195,7 @@ export default function POUploadPanel({
               {isParsing ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Parsing...</span>
+                  <span>Processing...</span>
                 </>
               ) : (
                 <span>Browse</span>
@@ -221,7 +204,7 @@ export default function POUploadPanel({
           </div>
         </div>
 
-        {/* Action Controls: Template & Save */}
+        {/* Action Controls: Template Download */}
         <div className="flex items-center gap-2.5 ml-auto">
           <button
             type="button"
@@ -232,27 +215,6 @@ export default function POUploadPanel({
             <Download className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
             <span className="hidden sm:inline">Sample Template</span>
           </button>
-
-          {parsedItems.length > 0 && (
-            <button
-              type="button"
-              onClick={handleSavePO}
-              disabled={isSaving}
-              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-60"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>Save PO</span>
-                </>
-              )}
-            </button>
-          )}
         </div>
       </div>
     </div>

@@ -8,6 +8,60 @@ interface ParsedPoResult {
   items: RequestedPOItem[];
   totalQuantity: number;
   totalAmount: number;
+  columns?: string[];
+}
+
+/**
+ * Checks whether a column header should be excluded from display.
+ * Excluded columns requested by user: External Id Type, Title, INR, Window Type
+ */
+export function isExcludedHeader(header: string): boolean {
+  if (!header || !header.trim()) return true;
+  const norm = header.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!norm) return true;
+  return [
+    "externalidtype",
+    "title",
+    "producttitle",
+    "windowtype",
+    "inr",
+    "currency",
+  ].includes(norm);
+}
+
+export function getCellStringValue(cell: ExcelJS.Cell | undefined | null): string {
+  if (!cell) return "";
+  const val = cell.value;
+  if (val instanceof Date) {
+    const d = String(val.getDate()).padStart(2, "0");
+    const m = String(val.getMonth() + 1).padStart(2, "0");
+    const y = val.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  if (cell.text !== undefined && cell.text !== null && cell.text !== "") {
+    return String(cell.text).trim();
+  }
+  if (val === undefined || val === null) return "";
+  if (typeof val === "object") {
+    const obj = val as unknown as Record<string, unknown>;
+    if (obj.text) return String(obj.text).trim();
+    if (obj.result !== undefined && obj.result !== null) {
+      return String(obj.result).trim();
+    }
+    if (Array.isArray(obj.richText)) {
+      return (obj.richText as Array<{ text?: string }>).map((t) => t.text || "").join("").trim();
+    }
+    return "";
+  }
+  return String(val).trim();
+}
+
+function parseNumberSafe(val: unknown): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return isNaN(val) ? 0 : val;
+  const str = String(val).replace(/[^0-9.-]/g, "").trim();
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
 }
 
 export async function parsePoExcelFile(file: File): Promise<ParsedPoResult> {
@@ -15,7 +69,6 @@ export async function parsePoExcelFile(file: File): Promise<ParsedPoResult> {
   const workbook = new ExcelJS.Workbook();
 
   if (file.name.endsWith(".csv")) {
-    // Read CSV via text
     const text = new TextDecoder("utf-8").decode(arrayBuffer);
     return parseCsvContent(text);
   }
@@ -26,61 +79,95 @@ export async function parsePoExcelFile(file: File): Promise<ParsedPoResult> {
     throw new Error("No sheet found in the selected Excel file.");
   }
 
-  const items: RequestedPOItem[] = [];
   let headerRowIdx = -1;
-  const colMap: Record<string, number> = {};
+  const allHeaders: { colIdx: number; header: string; norm: string }[] = [];
 
-  // Scan first 15 rows to detect header
+  // Scan first 15 rows to detect header row
   for (let r = 1; r <= Math.min(15, worksheet.rowCount); r++) {
     const row = worksheet.getRow(r);
-    const cellValues = row.values as any[];
-    if (!Array.isArray(cellValues)) continue;
+    let hasSkuOrId = false;
+    let hasQtyOrCost = false;
 
-    const lower = cellValues.map((v) =>
-      typeof v === "string" ? v.toLowerCase().trim() : String(v || "").toLowerCase().trim()
-    );
+    row.eachCell({ includeEmpty: false }, (cell) => {
+      const s = getCellStringValue(cell).toLowerCase();
+      if (
+        s.includes("sku") ||
+        s.includes("item") ||
+        s.includes("asin") ||
+        s.includes("external id") ||
+        s.includes("model number")
+      ) {
+        hasSkuOrId = true;
+      }
+      if (
+        s.includes("qty") ||
+        s.includes("quantity") ||
+        s.includes("units") ||
+        s.includes("cost") ||
+        s.includes("price") ||
+        s.includes("total")
+      ) {
+        hasQtyOrCost = true;
+      }
+    });
 
-    const hasSku = lower.some(
-      (v) => v.includes("sku") || v.includes("item") || v.includes("product") || v.includes("code")
-    );
-    const hasQty = lower.some(
-      (v) => v.includes("qty") || v.includes("quantity") || v.includes("units") || v.includes("count")
-    );
-
-    if (hasSku && hasQty) {
+    if (hasSkuOrId && hasQtyOrCost) {
       headerRowIdx = r;
-      cellValues.forEach((val, idx) => {
-        if (!val) return;
-        const s = String(val).toLowerCase().trim();
-        if (s.includes("sku") || s.includes("item code") || s.includes("seller sku")) {
-          colMap.sku = idx;
-        } else if (s.includes("qty") || s.includes("quantity") || s.includes("units")) {
-          colMap.qty = idx;
-        } else if (s.includes("title") || s.includes("description") || s.includes("product name")) {
-          colMap.title = idx;
-        } else if (s.includes("price") || s.includes("rate") || s.includes("unit price")) {
-          colMap.price = idx;
-        } else if (s.includes("asin")) {
-          colMap.asin = idx;
-        } else if (s.includes("hsn")) {
-          colMap.hsn = idx;
-        } else if (s.includes("po") && (s.includes("no") || s.includes("num") || s.includes("id"))) {
-          colMap.poNo = idx;
+      row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+        const headerText = getCellStringValue(cell);
+        if (headerText) {
+          allHeaders.push({
+            colIdx: colNumber,
+            header: headerText,
+            norm: headerText.toLowerCase().replace(/[^a-z0-9]/g, ""),
+          });
         }
       });
       break;
     }
   }
 
-  if (headerRowIdx === -1 || !colMap.sku || !colMap.qty) {
-    // Fallback: assume Row 1 headers (Col 1: SKU, Col 2: Title, Col 3: Qty, Col 4: Price)
-    colMap.sku = 1;
-    colMap.title = 2;
-    colMap.qty = 3;
-    colMap.price = 4;
+  // Fallback to row 1 if header wasn't flagged
+  if (headerRowIdx === -1 || allHeaders.length === 0) {
     headerRowIdx = 1;
+    const row = worksheet.getRow(1);
+    row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+      const headerText = getCellStringValue(cell);
+      if (headerText) {
+        allHeaders.push({
+          colIdx: colNumber,
+          header: headerText,
+          norm: headerText.toLowerCase().replace(/[^a-z0-9]/g, ""),
+        });
+      }
+    });
   }
 
+  // Filter out excluded columns: External Id Type, Title, INR, Window Type
+  const visibleHeaders = allHeaders.filter((h) => !isExcludedHeader(h.header));
+  const visibleColumnNames = visibleHeaders.map((h) => h.header);
+
+  // Column helpers
+  const externalIdCol = allHeaders.find((h) => h.norm === "externalid");
+  const skuCol = allHeaders.find((h) => h.norm.includes("sku") && h.norm !== "externalidtype");
+  const asinCol = allHeaders.find((h) => h.norm.includes("asin"));
+  const hsnCol = allHeaders.find((h) => h.norm.includes("hsn"));
+  const poNoCol = allHeaders.find(
+    (h) => h.norm.includes("po") && (h.norm.includes("no") || h.norm.includes("num") || h.norm.includes("id"))
+  );
+
+  // Quantity column priority (Accepted quantity > Quantity requested > Quantity received > ASN quantity > generic qty)
+  const acceptedQtyCol = allHeaders.find((h) => h.norm.includes("acceptedquant") || h.norm.includes("acceptedqty"));
+  const requestedQtyCol = allHeaders.find((h) => h.norm.includes("quantityrequested") || h.norm.includes("qtyrequested") || h.norm.includes("requestedquant"));
+  const receivedQtyCol = allHeaders.find((h) => h.norm.includes("quantityreceived") || h.norm.includes("qtyreceived") || h.norm.includes("receivedquant"));
+  const asnQtyCol = allHeaders.find((h) => h.norm.includes("asnquant") || h.norm.includes("asnqty"));
+  const genericQtyCol = allHeaders.find((h) => h.norm.includes("qty") || h.norm.includes("quantity") || h.norm.includes("units"));
+
+  // Cost / Price columns
+  const unitCostCol = allHeaders.find((h) => h.norm.includes("unitcost") || h.norm.includes("unitprice") || h.norm === "rate" || h.norm === "price");
+  const totalCostCol = allHeaders.find((h) => h.norm.includes("totalcost") || h.norm.includes("totalamount") || h.norm === "amount");
+
+  const items: RequestedPOItem[] = [];
   let lineCounter = 1;
   let totalQuantity = 0;
   let totalAmount = 0;
@@ -88,33 +175,83 @@ export async function parsePoExcelFile(file: File): Promise<ParsedPoResult> {
 
   for (let r = headerRowIdx + 1; r <= worksheet.rowCount; r++) {
     const row = worksheet.getRow(r);
-    const skuVal = row.getCell(colMap.sku).text?.trim();
-    if (!skuVal) continue;
 
-    const qtyVal = Number(row.getCell(colMap.qty).value) || 1;
-    const priceVal = Number(row.getCell(colMap.price || 999).value) || 0;
-    const titleVal = colMap.title ? row.getCell(colMap.title).text?.trim() : `Item ${skuVal}`;
-    const asinVal = colMap.asin ? row.getCell(colMap.asin).text?.trim() : undefined;
-    const hsnVal = colMap.hsn ? row.getCell(colMap.hsn).text?.trim() : undefined;
+    const rawData: Record<string, unknown> = {};
+    let hasAnyData = false;
 
-    if (colMap.poNo && !detectedPoNumber) {
-      detectedPoNumber = row.getCell(colMap.poNo).text?.trim() || "";
+    visibleHeaders.forEach((col) => {
+      const cell = row.getCell(col.colIdx);
+      const cellText = getCellStringValue(cell);
+      if (cellText && cellText !== "-" && cellText !== "") {
+        hasAnyData = true;
+      }
+      rawData[col.header] = cellText || "-";
+    });
+
+    if (!hasAnyData) continue;
+
+    // Determine primary SKU
+    const externalIdVal = externalIdCol ? getCellStringValue(row.getCell(externalIdCol.colIdx)) : "";
+    const skuVal = skuCol ? getCellStringValue(row.getCell(skuCol.colIdx)) : "";
+    const asinVal = asinCol ? getCellStringValue(row.getCell(asinCol.colIdx)) : "";
+    const primarySku = externalIdVal || skuVal || asinVal || `SKU-${lineCounter}`;
+
+    if (!primarySku && !asinVal) continue;
+
+    // Detect PO number from row if available
+    if (poNoCol && !detectedPoNumber) {
+      detectedPoNumber = getCellStringValue(row.getCell(poNoCol.colIdx));
     }
 
-    const rowTotal = Math.round(qtyVal * priceVal * 100) / 100;
+    // Determine Quantity (priority: Accepted quantity > Quantity requested > Quantity received > ASN quantity > generic)
+    let qtyVal = 0;
+    if (acceptedQtyCol) {
+      qtyVal = parseNumberSafe(row.getCell(acceptedQtyCol.colIdx).value ?? row.getCell(acceptedQtyCol.colIdx).text);
+    }
+    if (!qtyVal && requestedQtyCol) {
+      qtyVal = parseNumberSafe(row.getCell(requestedQtyCol.colIdx).value ?? row.getCell(requestedQtyCol.colIdx).text);
+    }
+    if (!qtyVal && receivedQtyCol) {
+      qtyVal = parseNumberSafe(row.getCell(receivedQtyCol.colIdx).value ?? row.getCell(receivedQtyCol.colIdx).text);
+    }
+    if (!qtyVal && asnQtyCol) {
+      qtyVal = parseNumberSafe(row.getCell(asnQtyCol.colIdx).value ?? row.getCell(asnQtyCol.colIdx).text);
+    }
+    if (!qtyVal && genericQtyCol) {
+      qtyVal = parseNumberSafe(row.getCell(genericQtyCol.colIdx).value ?? row.getCell(genericQtyCol.colIdx).text);
+    }
+    if (!qtyVal) qtyVal = 1;
+
+    // Determine Unit Price
+    const priceVal = unitCostCol
+      ? parseNumberSafe(row.getCell(unitCostCol.colIdx).value ?? row.getCell(unitCostCol.colIdx).text)
+      : 0;
+
+    // Determine Total Cost
+    let rowTotal = totalCostCol
+      ? parseNumberSafe(row.getCell(totalCostCol.colIdx).value ?? row.getCell(totalCostCol.colIdx).text)
+      : 0;
+    if (!rowTotal && priceVal > 0) {
+      rowTotal = Math.round(qtyVal * priceVal * 100) / 100;
+    }
+
+    const hsnVal = hsnCol ? getCellStringValue(row.getCell(hsnCol.colIdx)) : undefined;
+
     totalQuantity += qtyVal;
     totalAmount += rowTotal;
 
     items.push({
       id: `po_item_${r}_${Date.now()}`,
       lineNo: lineCounter++,
-      sku: skuVal,
-      productTitle: titleVal || `Product ${skuVal}`,
-      asin: asinVal,
+      sku: primarySku,
+      asin: asinVal || undefined,
       quantity: qtyVal,
+      initialQuantity: qtyVal,
+      scannedQuantity: 0,
       unitPrice: priceVal,
-      totalAmount: rowTotal,
-      hsn: hsnVal,
+      totalAmount: Math.round(rowTotal * 100) / 100,
+      hsn: hsnVal || undefined,
+      rawData,
     });
   }
 
@@ -123,6 +260,7 @@ export async function parsePoExcelFile(file: File): Promise<ParsedPoResult> {
     items,
     totalQuantity,
     totalAmount: Math.round(totalAmount * 100) / 100,
+    columns: visibleColumnNames,
   };
 }
 
@@ -132,11 +270,26 @@ function parseCsvContent(csvText: string): ParsedPoResult {
     throw new Error("CSV file does not contain enough data rows.");
   }
 
-  const headers = lines[0].split(",").map((h) => h.replace(/^["']|["']$/g, "").trim().toLowerCase());
-  const skuIdx = headers.findIndex((h) => h.includes("sku") || h.includes("item") || h.includes("code"));
-  const qtyIdx = headers.findIndex((h) => h.includes("qty") || h.includes("quantity"));
-  const titleIdx = headers.findIndex((h) => h.includes("title") || h.includes("desc") || h.includes("name"));
-  const priceIdx = headers.findIndex((h) => h.includes("price") || h.includes("rate"));
+  const rawHeaders = lines[0].split(",").map((h) => h.replace(/^["']|["']$/g, "").trim());
+  const headerObjs = rawHeaders.map((h, idx) => ({
+    colIdx: idx,
+    header: h,
+    norm: h.toLowerCase().replace(/[^a-z0-9]/g, ""),
+  }));
+
+  const visibleHeaders = headerObjs.filter((h) => !isExcludedHeader(h.header));
+  const visibleColumnNames = visibleHeaders.map((h) => h.header);
+
+  const skuCol = headerObjs.find((h) => h.norm === "externalid") || headerObjs.find((h) => h.norm.includes("sku"));
+  const asinCol = headerObjs.find((h) => h.norm.includes("asin"));
+  const qtyCol =
+    headerObjs.find((h) => h.norm.includes("asnquant")) ||
+    headerObjs.find((h) => h.norm.includes("quantityreceived")) ||
+    headerObjs.find((h) => h.norm.includes("quantityrequested")) ||
+    headerObjs.find((h) => h.norm.includes("qty"));
+  const priceCol = headerObjs.find((h) => h.norm.includes("unitcost") || h.norm.includes("price"));
+  const totalCol = headerObjs.find((h) => h.norm.includes("totalcost") || h.norm.includes("total"));
+  const hsnCol = headerObjs.find((h) => h.norm.includes("hsn"));
 
   const items: RequestedPOItem[] = [];
   let totalQuantity = 0;
@@ -144,13 +297,18 @@ function parseCsvContent(csvText: string): ParsedPoResult {
 
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(",").map((c) => c.replace(/^["']|["']$/g, "").trim());
-    const sku = cols[skuIdx >= 0 ? skuIdx : 0];
-    if (!sku) continue;
+    if (cols.length === 0 || cols.every((c) => !c)) continue;
 
-    const qty = Number(cols[qtyIdx >= 0 ? qtyIdx : 1]) || 1;
-    const price = Number(cols[priceIdx >= 0 ? priceIdx : 2]) || 0;
-    const title = titleIdx >= 0 ? cols[titleIdx] : `Product ${sku}`;
-    const rowTotal = Math.round(qty * price * 100) / 100;
+    const rawData: Record<string, unknown> = {};
+    visibleHeaders.forEach((vh) => {
+      rawData[vh.header] = cols[vh.colIdx] || "-";
+    });
+
+    const sku = (skuCol ? cols[skuCol.colIdx] : cols[0]) || `SKU-${i}`;
+    const asin = asinCol ? cols[asinCol.colIdx] : undefined;
+    const qty = (qtyCol ? parseNumberSafe(cols[qtyCol.colIdx]) : 1) || 1;
+    const price = priceCol ? parseNumberSafe(cols[priceCol.colIdx]) : 0;
+    const rowTotal = totalCol ? parseNumberSafe(cols[totalCol.colIdx]) : Math.round(qty * price * 100) / 100;
 
     totalQuantity += qty;
     totalAmount += rowTotal;
@@ -159,10 +317,14 @@ function parseCsvContent(csvText: string): ParsedPoResult {
       id: `po_csv_${i}_${Date.now()}`,
       lineNo: i,
       sku,
-      productTitle: title,
+      asin,
       quantity: qty,
+      initialQuantity: qty,
+      scannedQuantity: 0,
       unitPrice: price,
       totalAmount: rowTotal,
+      hsn: hsnCol ? cols[hsnCol.colIdx] : undefined,
+      rawData,
     });
   }
 
@@ -170,6 +332,7 @@ function parseCsvContent(csvText: string): ParsedPoResult {
     items,
     totalQuantity,
     totalAmount: Math.round(totalAmount * 100) / 100,
+    columns: visibleColumnNames,
   };
 }
 
@@ -180,13 +343,13 @@ export async function generateSamplePoExcel(storeName?: string): Promise<void> {
   sheet.columns = [
     { header: "Line No", key: "lineNo", width: 10 },
     { header: "Product SKU", key: "sku", width: 22 },
-    { header: "Product Title", key: "title", width: 36 },
-    { header: "Quantity", key: "qty", width: 14 },
-    { header: "Unit Price (INR)", key: "price", width: 18 },
+    { header: "ASIN", key: "asin", width: 18 },
+    { header: "Quantity Requested", key: "qty", width: 20 },
+    { header: "Scanned Quantity", key: "scannedQty", width: 18 },
+    { header: "Unit Price", key: "price", width: 18 },
     { header: "HSN Code", key: "hsn", width: 14 },
   ];
 
-  // Header styling
   const headerRow = sheet.getRow(1);
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
   headerRow.fill = {
@@ -196,12 +359,11 @@ export async function generateSamplePoExcel(storeName?: string): Promise<void> {
   };
   headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
-  // Sample data rows
   const sampleItems = [
-    { lineNo: 1, sku: "CHK-KURTI-RED-M", title: "Embroidered Rayon Kurti - Red / M", qty: 25, price: 549, hsn: "6204" },
-    { lineNo: 2, sku: "CHK-KURTI-BLUE-L", title: "Anarkali Printed Kurti - Blue / L", qty: 40, price: 699, hsn: "6204" },
-    { lineNo: 3, sku: "CHK-SAREE-SILK-01", title: "Banarasi Silk Saree with Blouse", qty: 15, price: 1299, hsn: "5007" },
-    { lineNo: 4, sku: "CHK-DUPATTA-GOLD", title: "Chiffon Dupatta with Zari Work", qty: 50, price: 299, hsn: "6214" },
+    { lineNo: 1, sku: "CHK-KURTI-RED-M", asin: "B0FTG237SS", qty: 25, scannedQty: 0, price: 549, hsn: "6204" },
+    { lineNo: 2, sku: "CHK-KURTI-BLUE-L", asin: "B0FTFZBYK1", qty: 40, scannedQty: 0, price: 699, hsn: "6204" },
+    { lineNo: 3, sku: "CHK-SAREE-SILK-01", asin: "B0FJ2MLW2T", qty: 15, scannedQty: 0, price: 1299, hsn: "5007" },
+    { lineNo: 4, sku: "CHK-DUPATTA-GOLD", asin: "B0FJ2M7Y6V", qty: 50, scannedQty: 0, price: 299, hsn: "6214" },
   ];
 
   sampleItems.forEach((item) => sheet.addRow(item));

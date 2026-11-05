@@ -21,16 +21,23 @@ import {
   Eye,
   Download,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Employee, EmployeeFormData, EmployeeDocumentItem } from "../types/employee.types";
 import { employeeService } from "../services/employee.service";
+import { companyService } from "../../CompanyProfile/services/company.service";
+import { CompanyBranchItem, Company } from "../../CompanyProfile/types/company.types";
 import PrintIdCardModal from "./PrintIdCardModal";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
 } from "@/components/ui/ThemeSelectDropdown";
+import DropdownWithOther, {
+  type DropdownOption,
+} from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
+import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
 import DatePicker from "@/components/ui/DatePicker";
-import { getMediaUrl } from "@/lib/utils";
+import { getMediaUrl, cn } from "@/lib/utils";
 
 interface EmployeeProfileFormProps {
   initialData?: Employee | null;
@@ -63,11 +70,7 @@ const DESIGNATIONS = [
   "Other",
 ];
 
-const BRANCHES = [
-  "JAY BHAVANI FASHION - Sachin",
-  "JAY BHAVANI FASHION - Head Office",
-  "Main Branch",
-];
+
 
 const SALARY_TYPES = ["Salaried", "Daily Wage", "Piece Rate", "Hourly"];
 
@@ -106,6 +109,7 @@ export default function EmployeeProfileForm({
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // File upload state
   const [uploadingField, setUploadingField] = useState<string | null>(null);
@@ -118,6 +122,49 @@ export default function EmployeeProfileForm({
   const identityDocInputRef = useRef<HTMLInputElement>(null);
 
   const isEditMode = mode === "edit" || Boolean(initialData?.id);
+
+  // Fetch dynamic dropdown options from DB
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
+
+  // Dynamic Companies & Branches loaded from backend
+  const [companyList, setCompanyList] = useState<Company[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState<boolean>(true);
+  const [branchList, setBranchList] = useState<CompanyBranchItem[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        setLoadingCompanies(true);
+        setLoadingBranches(true);
+        const [compRes, branchRes] = await Promise.all([
+          companyService.getCompanies({ pageSize: 100 }).catch(() => ({ data: [] })),
+          companyService.getBranches().catch(() => ({ data: [] })),
+        ]);
+        if (isMounted) {
+          if (compRes?.data) {
+            setCompanyList(compRes.data);
+          }
+          if (branchRes?.data) {
+            setBranchList(branchRes.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load companies or branches for employee form:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingCompanies(false);
+          setLoadingBranches(false);
+        }
+      }
+    };
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState<EmployeeFormData>({
@@ -132,12 +179,14 @@ export default function EmployeeProfileForm({
     aadhaarNo: "",
     dob: "25-08-1982",
     bloodGroup: "B+",
-    branch: "JAY BHAVANI FASHION - Sachin",
+    company: initialData?.company || "",
+    branch: initialData?.branch || "",
     department: "Admin",
     designation: "Admin",
     salaryType: "Salaried",
     joiningDate: "01-09-2026",
     workerProcess: "Select Process",
+    basicSalary: initialData?.basicSalary !== undefined && initialData?.basicSalary !== null ? String(initialData.basicSalary) : "",
     isActive: true,
 
     addressLine1: "",
@@ -145,7 +194,7 @@ export default function EmployeeProfileForm({
     city: "Surat",
     state: "Gujarat",
     country: "India",
-    pincode: "394230",
+    pincode: "",
 
     accountNumber: "",
     accountHolderName: "",
@@ -190,12 +239,14 @@ export default function EmployeeProfileForm({
         aadhaarNo: initialData.aadhaarNo || "",
         dob: formatToDisplayDate(initialData.dob) || "25-08-1982",
         bloodGroup: initialData.bloodGroup || "B+",
-        branch: initialData.branch || "JAY BHAVANI FASHION - Sachin",
+        company: initialData.company || "",
+        branch: initialData.branch || "",
         department: initialData.department || "Admin",
         designation: initialData.designation || "Admin",
         salaryType: initialData.salaryType || "Salaried",
         joiningDate: formatToDisplayDate(initialData.joiningDate) || "01-09-2026",
         workerProcess: initialData.workerProcess || "Select Process",
+        basicSalary: initialData.basicSalary !== undefined && initialData.basicSalary !== null ? String(initialData.basicSalary) : "",
         isActive: initialData.isActive !== undefined ? initialData.isActive : true,
 
         addressLine1: initialData.addressLine1 || "",
@@ -203,7 +254,7 @@ export default function EmployeeProfileForm({
         city: initialData.city || "Surat",
         state: initialData.state || "Gujarat",
         country: initialData.country || "India",
-        pincode: initialData.pincode || "394230",
+        pincode: initialData.pincode || "",
 
         accountNumber: initialData.accountNumber || "",
         accountHolderName: initialData.accountHolderName || initialData.fullName || "",
@@ -220,7 +271,33 @@ export default function EmployeeProfileForm({
     }
   }, [initialData]);
 
+  // Auto-resolve company from branch if branch is already known but company is blank (e.g. legacy records)
+  useEffect(() => {
+    if (branchList.length > 0 && !formData.company && formData.branch) {
+      const foundBranch = branchList.find(
+        (b) =>
+          b.displayName === formData.branch ||
+          b.branchName === formData.branch ||
+          `${b.companyName} - ${b.branchName}` === formData.branch
+      );
+      if (foundBranch && foundBranch.companyName) {
+        setFormData((prev) => ({
+          ...prev,
+          company: foundBranch.companyName,
+        }));
+      }
+    }
+  }, [branchList, formData.branch, formData.company]);
+
   const handleChange = (field: keyof EmployeeFormData, value: any) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -233,30 +310,146 @@ export default function EmployeeProfileForm({
     []
   );
 
-  const branchOptions: ThemeSelectOption[] = useMemo(
-    () => BRANCHES.map((b) => ({ value: b, label: b })),
-    []
-  );
+  const companyOptions: ThemeSelectOption[] = useMemo(() => {
+    return companyList.map((c) => ({
+      value: c.companyName || c.legalName || c.id,
+      label: c.companyName || c.legalName || "Unnamed Company",
+    }));
+  }, [companyList]);
 
-  const departmentOptions: ThemeSelectOption[] = useMemo(
-    () => DEPARTMENTS.map((dept) => ({ value: dept, label: dept })),
-    []
-  );
+  const selectedCompanyObj = useMemo(() => {
+    if (!formData.company) return null;
+    return companyList.find(
+      (c) =>
+        c.companyName?.trim().toLowerCase() === formData.company.trim().toLowerCase() ||
+        c.id === formData.company ||
+        c.legalName?.trim().toLowerCase() === formData.company.trim().toLowerCase()
+    );
+  }, [companyList, formData.company]);
 
-  const designationOptions: ThemeSelectOption[] = useMemo(
-    () => DESIGNATIONS.map((desig) => ({ value: desig, label: desig })),
-    []
-  );
+  const filteredBranchList = useMemo(() => {
+    if (!formData.company) {
+      return [];
+    }
+    return branchList.filter((b) => {
+      if (selectedCompanyObj && b.companyId && b.companyId === selectedCompanyObj.id) {
+        return true;
+      }
+      if (
+        b.companyName &&
+        b.companyName.trim().toLowerCase() === formData.company.trim().toLowerCase()
+      ) {
+        return true;
+      }
+      return false;
+    });
+  }, [branchList, formData.company, selectedCompanyObj]);
 
-  const salaryTypeOptions: ThemeSelectOption[] = useMemo(
-    () => SALARY_TYPES.map((st) => ({ value: st, label: st })),
-    []
-  );
+  const branchOptions: ThemeSelectOption[] = useMemo(() => {
+    return filteredBranchList.map((b) => {
+      const val = b.displayName || `${b.companyName} - ${b.branchName}` || b.branchName;
+      return {
+        value: val,
+        label: val,
+      };
+    });
+  }, [filteredBranchList]);
 
-  const workerProcessOptions: ThemeSelectOption[] = useMemo(
-    () => WORKER_PROCESSES.map((wp) => ({ value: wp, label: wp })),
-    []
-  );
+  const handleCompanyChange = (companyName: string) => {
+    handleChange("company", companyName);
+
+    // If current selected branch does not belong to new company, reset branch
+    const compObj = companyList.find(
+      (c) =>
+        c.companyName?.trim().toLowerCase() === companyName.trim().toLowerCase() ||
+        c.id === companyName ||
+        c.legalName?.trim().toLowerCase() === companyName.trim().toLowerCase()
+    );
+    const matchingBranches = branchList.filter((b) => {
+      if (compObj && b.companyId && b.companyId === compObj.id) return true;
+      if (b.companyName && b.companyName.trim().toLowerCase() === companyName.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    const isCurrentBranchValid = matchingBranches.some((b) => {
+      const val = b.displayName || `${b.companyName} - ${b.branchName}` || b.branchName;
+      return val === formData.branch || b.branchName === formData.branch;
+    });
+
+    if (!isCurrentBranchValid) {
+      handleChange("branch", "");
+    }
+  };
+
+  // Dynamic departmentOptions merging static DEPARTMENTS and DB saved options
+  const departmentOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = DEPARTMENTS.map((dept) => ({ value: dept, label: dept }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "department")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
+  // Dynamic designationOptions merging static DESIGNATIONS and DB saved options
+  const designationOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = DESIGNATIONS.map((desig) => ({ value: desig, label: desig }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "designation")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
+  // Dynamic salaryTypeOptions merging static SALARY_TYPES and DB saved options
+  const salaryTypeOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = SALARY_TYPES.map((st) => ({ value: st, label: st }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "salarytype")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
+  // Dynamic workerProcessOptions merging static WORKER_PROCESSES and DB saved options
+  const workerProcessOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = WORKER_PROCESSES
+      .filter((wp) => wp !== "Select Process")
+      .map((wp) => ({ value: wp, label: wp }));
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "workerprocess")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    [...list, ...dbSaved].forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
 
   const accountTypeOptions: ThemeSelectOption[] = useMemo(
     () => ACCOUNT_TYPES.map((at) => ({ value: at, label: at })),
@@ -270,10 +463,126 @@ export default function EmployeeProfileForm({
   const datePickerButtonClassName =
     "h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
 
+  const getInputClassName = (fieldKey?: string, isMono = false) => {
+    const hasErr = Boolean(fieldKey && errors[fieldKey]);
+    return cn(
+      "w-full h-10 px-3.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all shadow-inner",
+      isMono && "font-mono",
+      hasErr
+        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
+        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+    );
+  };
+
+  const renderFieldError = (fieldKey: string) => {
+    if (!errors[fieldKey]) return null;
+    return (
+      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+        <AlertCircle size={11} className="shrink-0" />
+        <span>{errors[fieldKey]}</span>
+      </p>
+    );
+  };
+
+  const validateForm = (): { isValid: boolean; firstErrorTab?: TabType } => {
+    const newErrors: Record<string, string> = {};
+    let firstErrorTab: TabType | undefined;
+
+    // --- Tab 1: General Details ---
+    if (!formData.firstName?.trim()) {
+      newErrors.firstName = "First Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.middleName?.trim()) {
+      newErrors.middleName = "Middle Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.lastName?.trim()) {
+      newErrors.lastName = "Last Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.contactNo?.trim()) {
+      newErrors.contactNo = "Contact number is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else if (formData.contactNo.trim().length !== 10) {
+      newErrors.contactNo = "Contact number must be exactly 10 digits.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.aadhaarNo?.trim()) {
+      newErrors.aadhaarNo = "Aadhar number is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else if (formData.aadhaarNo.trim().length !== 12) {
+      newErrors.aadhaarNo = "Aadhar number must be exactly 12 digits.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.employeeId?.trim()) {
+      newErrors.employeeId = "Employee ID is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.dob?.trim()) {
+      newErrors.dob = "Date of Birth is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.department?.trim()) {
+      newErrors.department = "Department is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.designation?.trim()) {
+      newErrors.designation = "Designation is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.salaryType?.trim()) {
+      newErrors.salaryType = "Salary Type is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (formData.email?.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = "Please enter a valid email address.";
+        if (!firstErrorTab) firstErrorTab = "general";
+      }
+    }
+
+    // --- Tab 2: Bank Details ---
+    if (formData.ifscCode?.trim() && formData.ifscCode.trim().length !== 11) {
+      newErrors.ifscCode = "IFSC Code must be exactly 11 characters.";
+      if (!firstErrorTab) firstErrorTab = "bank";
+    }
+
+    setErrors(newErrors);
+    return {
+      isValid: Object.keys(newErrors).length === 0,
+      firstErrorTab,
+    };
+  };
+
+  const hasTabError = (tabKey: TabType): boolean => {
+    if (tabKey === "general") {
+      return Boolean(
+        errors.firstName ||
+        errors.middleName ||
+        errors.lastName ||
+        errors.contactNo ||
+        errors.aadhaarNo ||
+        errors.employeeId ||
+        errors.dob ||
+        errors.department ||
+        errors.designation ||
+        errors.salaryType ||
+        errors.email
+      );
+    }
+    if (tabKey === "bank") {
+      return Boolean(errors.ifscCode);
+    }
+    return false;
+  };
+
   // Completion percentage calculation
   const completionPercentage = useMemo(() => {
     const fields = [
       formData.firstName,
+      formData.middleName,
       formData.lastName,
       formData.contactNo,
       formData.employeeId,
@@ -396,24 +705,12 @@ export default function EmployeeProfileForm({
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    if (!formData.firstName.trim()) {
-      toast.error("First Name is required.");
-      setActiveTab("general");
-      return;
-    }
-    if (!formData.lastName.trim()) {
-      toast.error("Last Name is required.");
-      setActiveTab("general");
-      return;
-    }
-    if (!formData.contactNo.trim()) {
-      toast.error("Contact Number is required.");
-      setActiveTab("general");
-      return;
-    }
-    if (!formData.employeeId.trim()) {
-      toast.error("Employee ID is required.");
-      setActiveTab("general");
+    const { isValid, firstErrorTab } = validateForm();
+    if (!isValid) {
+      if (firstErrorTab) {
+        setActiveTab(firstErrorTab);
+      }
+      toast.error("Please fill in all required fields before saving.");
       return;
     }
 
@@ -421,6 +718,10 @@ export default function EmployeeProfileForm({
       setSaving(true);
       const payload: Partial<EmployeeFormData> = {
         ...formData,
+        basicSalary:
+          formData.basicSalary !== "" && formData.basicSalary !== undefined
+            ? Number(formData.basicSalary)
+            : 0,
         identityDocUrl:
           formData.documents && formData.documents.length > 0
             ? formData.documents[0].url
@@ -453,9 +754,15 @@ export default function EmployeeProfileForm({
       label: "General",
       completed: Boolean(
         formData.firstName &&
+        formData.middleName &&
         formData.lastName &&
         formData.contactNo &&
-        formData.employeeId
+        formData.aadhaarNo &&
+        formData.employeeId &&
+        formData.dob &&
+        formData.department &&
+        formData.designation &&
+        formData.salaryType
       ),
     },
     {
@@ -544,6 +851,7 @@ export default function EmployeeProfileForm({
           <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-4 gap-1 select-none">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.key;
+              const isTabInvalid = hasTabError(tab.key);
               return (
                 <button
                   key={tab.key}
@@ -555,13 +863,18 @@ export default function EmployeeProfileForm({
                       : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
                   }`}
                 >
-                  {tab.completed ? (
+                  {isTabInvalid ? (
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                    </span>
+                  ) : tab.completed ? (
                     <CheckCircle2
                       size={14}
-                      className={isActive ? "text-emerald-400" : "text-emerald-500/70"}
+                      className={isActive ? "text-emerald-400 shrink-0" : "text-emerald-500/70 shrink-0"}
                     />
                   ) : (
-                    <Circle size={14} className="text-slate-500" />
+                    <Circle size={14} className="text-slate-500 shrink-0" />
                   )}
                   <span>{tab.label}</span>
                 </button>
@@ -616,8 +929,9 @@ export default function EmployeeProfileForm({
                     value={formData.firstName}
                     onChange={(e) => handleChange("firstName", e.target.value)}
                     placeholder="Enter first name"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner"
+                    className={getInputClassName("firstName")}
                   />
+                  {renderFieldError("firstName")}
                 </div>
 
                 <div>
@@ -629,8 +943,9 @@ export default function EmployeeProfileForm({
                     value={formData.middleName}
                     onChange={(e) => handleChange("middleName", e.target.value)}
                     placeholder="Enter middle name"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner"
+                    className={getInputClassName("middleName")}
                   />
+                  {renderFieldError("middleName")}
                 </div>
 
                 <div>
@@ -642,8 +957,9 @@ export default function EmployeeProfileForm({
                     value={formData.lastName}
                     onChange={(e) => handleChange("lastName", e.target.value)}
                     placeholder="Enter last name"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner"
+                    className={getInputClassName("lastName")}
                   />
+                  {renderFieldError("lastName")}
                 </div>
               </div>
 
@@ -666,8 +982,9 @@ export default function EmployeeProfileForm({
                       handleChange("contactNo", e.target.value.replace(/\D/g, ""))
                     }
                     placeholder="Enter 10-digit number"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner font-mono"
+                    className={getInputClassName("contactNo", true)}
                   />
+                  {renderFieldError("contactNo")}
                 </div>
 
                 <div>
@@ -683,10 +1000,11 @@ export default function EmployeeProfileForm({
                     type="text"
                     maxLength={12}
                     value={formData.aadhaarNo}
-                    onChange={(e) => handleChange("aadhaarNo", e.target.value)}
+                    onChange={(e) => handleChange("aadhaarNo", e.target.value.replace(/\D/g, ""))}
                     placeholder="Enter 12-digit Aadhaar"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner font-mono"
+                    className={getInputClassName("aadhaarNo", true)}
                   />
+                  {renderFieldError("aadhaarNo")}
                 </div>
 
                 <div>
@@ -698,12 +1016,13 @@ export default function EmployeeProfileForm({
                     value={formData.employeeId}
                     onChange={(e) => handleChange("employeeId", e.target.value)}
                     placeholder="e.g. AD-01"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner font-mono font-medium"
+                    className={getInputClassName("employeeId", true)}
                   />
+                  {renderFieldError("employeeId")}
                 </div>
               </div>
 
-              {/* Row 3: Date Of Birth, Blood Group, Branches, Department */}
+              {/* Row 3: Date Of Birth, Blood Group, Company, Branches */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
@@ -715,8 +1034,12 @@ export default function EmployeeProfileForm({
                     placeholder="DD-MM-YYYY"
                     dateFormat="dd-MM-yyyy"
                     className="w-full"
-                    buttonClassName={datePickerButtonClassName}
+                    buttonClassName={cn(
+                      datePickerButtonClassName,
+                      errors.dob && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
                   />
+                  {renderFieldError("dob")}
                 </div>
 
                 <div>
@@ -736,13 +1059,19 @@ export default function EmployeeProfileForm({
 
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Branches.
+                    Company.
                   </label>
                   <ThemeSelectDropdown
-                    value={formData.branch || BRANCHES[0]}
-                    onChange={(val) => handleChange("branch", val)}
-                    options={branchOptions}
-                    placeholder="Select Branch"
+                    value={formData.company}
+                    onChange={(val) => handleCompanyChange(val)}
+                    options={companyOptions}
+                    placeholder={
+                      loadingCompanies
+                        ? "Loading companies..."
+                        : companyList.length === 0
+                        ? "No companies available"
+                        : "Select Company"
+                    }
                     className="w-full"
                     buttonClassName={dropdownButtonClassName}
                     menuClassName={dropdownMenuClassName}
@@ -751,13 +1080,27 @@ export default function EmployeeProfileForm({
 
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Department. <span className="text-red-500 font-bold">*</span>
+                    Branches.
                   </label>
                   <ThemeSelectDropdown
-                    value={formData.department || DEPARTMENTS[0]}
-                    onChange={(val) => handleChange("department", val)}
-                    options={departmentOptions}
-                    placeholder="Select Department"
+                    value={formData.branch}
+                    onChange={(val) => handleChange("branch", val)}
+                    options={branchOptions}
+                    placeholder={
+                      loadingBranches || loadingCompanies
+                        ? "Loading branches..."
+                        : !formData.company
+                        ? "Select Company first"
+                        : branchOptions.length === 0
+                        ? "No branch available"
+                        : "Select Branch"
+                    }
+                    disabled={
+                      loadingBranches ||
+                      loadingCompanies ||
+                      !formData.company ||
+                      branchOptions.length === 0
+                    }
                     className="w-full"
                     buttonClassName={dropdownButtonClassName}
                     menuClassName={dropdownMenuClassName}
@@ -765,38 +1108,80 @@ export default function EmployeeProfileForm({
                 </div>
               </div>
 
-              {/* Row 4: Designation, Salary Type, Joining Date */}
+              {/* Row 4: Department, Designation, Salary Type */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                <div>
+                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    Department. <span className="text-red-500 font-bold">*</span>
+                  </label>
+                  <DropdownWithOther
+                    hideLabel
+                    label="Department"
+                    required
+                    value={formData.department || DEPARTMENTS[0]}
+                    onChange={(val) => handleChange("department", val)}
+                    options={departmentOptions}
+                    placeholder="Select Department"
+                    fieldKey="department"
+                    className="w-full"
+                    buttonClassName={cn(
+                      dropdownButtonClassName,
+                      errors.department && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
+                    menuClassName={dropdownMenuClassName}
+                  />
+                  {renderFieldError("department")}
+                </div>
+
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Designation. <span className="text-red-500 font-bold">*</span>
                   </label>
-                  <ThemeSelectDropdown
+                  <DropdownWithOther
+                    hideLabel
+                    label="Designation"
+                    required
                     value={formData.designation || DESIGNATIONS[0]}
                     onChange={(val) => handleChange("designation", val)}
                     options={designationOptions}
                     placeholder="Select Designation"
+                    fieldKey="designation"
                     className="w-full"
-                    buttonClassName={dropdownButtonClassName}
+                    buttonClassName={cn(
+                      dropdownButtonClassName,
+                      errors.designation && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
                     menuClassName={dropdownMenuClassName}
                   />
+                  {renderFieldError("designation")}
                 </div>
 
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Salary Type. <span className="text-red-500 font-bold">*</span>
                   </label>
-                  <ThemeSelectDropdown
+                  <DropdownWithOther
+                    hideLabel
+                    label="Salary Type"
+                    required
                     value={formData.salaryType || "Salaried"}
                     onChange={(val) => handleChange("salaryType", val)}
                     options={salaryTypeOptions}
                     placeholder="Select Salary Type"
+                    fieldKey="salarytype"
                     className="w-full"
-                    buttonClassName={dropdownButtonClassName}
+                    buttonClassName={cn(
+                      dropdownButtonClassName,
+                      errors.salaryType && "border-rose-500 hover:border-rose-500 ring-1 ring-rose-500/30"
+                    )}
                     menuClassName={dropdownMenuClassName}
                   />
+                  {renderFieldError("salaryType")}
                 </div>
+              </div>
 
+              {/* Row 5: Joining Date, Worker Process, Basic Salary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Joining Date.
@@ -810,23 +1195,43 @@ export default function EmployeeProfileForm({
                     buttonClassName={datePickerButtonClassName}
                   />
                 </div>
-              </div>
 
-              {/* Row 5: Worker Process */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                 <div>
                   <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Worker Process
                   </label>
-                  <ThemeSelectDropdown
-                    value={formData.workerProcess || "Select Process"}
+                  <DropdownWithOther
+                    hideLabel
+                    label="Worker Process"
+                    value={formData.workerProcess && formData.workerProcess !== "Select Process" ? formData.workerProcess : ""}
                     onChange={(val) => handleChange("workerProcess", val)}
                     options={workerProcessOptions}
                     placeholder="Select Process"
+                    fieldKey="workerprocess"
                     className="w-full"
                     buttonClassName={dropdownButtonClassName}
                     menuClassName={dropdownMenuClassName}
                   />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    Basic Salary.
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-medium font-sans">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={formData.basicSalary ?? ""}
+                      onChange={(e) => handleChange("basicSalary", e.target.value)}
+                      placeholder="e.g. 50000"
+                      className={cn(getInputClassName("basicSalary", true), "pl-7 font-mono")}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -852,7 +1257,7 @@ export default function EmployeeProfileForm({
                       value={formData.bankName}
                       onChange={(e) => handleChange("bankName", e.target.value)}
                       placeholder=""
-                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner"
+                      className={getInputClassName("bankName")}
                     />
                   </div>
 
@@ -865,7 +1270,7 @@ export default function EmployeeProfileForm({
                       value={formData.accountHolderName}
                       onChange={(e) => handleChange("accountHolderName", e.target.value)}
                       placeholder=""
-                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner"
+                      className={getInputClassName("accountHolderName")}
                     />
                   </div>
                 </div>
@@ -881,7 +1286,7 @@ export default function EmployeeProfileForm({
                       value={formData.accountNumber}
                       onChange={(e) => handleChange("accountNumber", e.target.value)}
                       placeholder=""
-                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner font-mono"
+                      className={getInputClassName("accountNumber", true)}
                     />
                   </div>
 
@@ -891,13 +1296,15 @@ export default function EmployeeProfileForm({
                     </label>
                     <input
                       type="text"
+                      maxLength={11}
                       value={formData.ifscCode}
                       onChange={(e) =>
                         handleChange("ifscCode", e.target.value.toUpperCase())
                       }
                       placeholder=""
-                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner font-mono uppercase"
+                      className={getInputClassName("ifscCode", true)}
                     />
+                    {renderFieldError("ifscCode")}
                   </div>
                 </div>
 
@@ -927,7 +1334,7 @@ export default function EmployeeProfileForm({
                       value={formData.branchName}
                       onChange={(e) => handleChange("branchName", e.target.value)}
                       placeholder=""
-                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-inner"
+                      className={getInputClassName("branchName")}
                     />
                   </div>
                 </div>

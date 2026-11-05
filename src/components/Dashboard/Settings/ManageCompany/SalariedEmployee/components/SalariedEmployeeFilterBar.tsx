@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Filter, SlidersHorizontal, ChevronDown, RotateCcw, Check } from "lucide-react";
 import { SalariedEmployeeFilterState } from "../types/salariedEmployee.types";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 
 interface SalariedEmployeeFilterBarProps {
   filters: SalariedEmployeeFilterState;
@@ -23,6 +23,15 @@ export default function SalariedEmployeeFilterBar({
   availableColumns,
 }: SalariedEmployeeFilterBarProps) {
   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  const [columnsOpenUpward, setColumnsOpenUpward] = useState(false);
+
+  const handleToggleColumns = () => {
+    if (!columnsDropdownOpen && columnsDropdownRef.current) {
+      const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(columnsDropdownRef.current);
+      setColumnsOpenUpward(spaceBelow < 320 && spaceAbove > spaceBelow);
+    }
+    setColumnsDropdownOpen((prev) => !prev);
+  };
   const columnsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click or Escape key
@@ -102,7 +111,7 @@ export default function SalariedEmployeeFilterBar({
           <button
             type="button"
             aria-label="Toggle Columns"
-            onClick={() => setColumnsDropdownOpen((prev) => !prev)}
+            onClick={handleToggleColumns}
             className={cn(
               "inline-flex items-center gap-2 rounded-2xl border px-3.5 h-10 text-xs font-bold transition-all shadow-xs outline-none select-none cursor-pointer",
               "bg-white text-slate-700 dark:bg-[#131622] dark:text-slate-200",
@@ -122,7 +131,10 @@ export default function SalariedEmployeeFilterBar({
           </button>
 
           {columnsDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-2xl border border-[#E7E0D2] bg-white p-2 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-2xl dark:shadow-black/50 animate-in fade-in zoom-in-95 duration-100">
+            <div className={cn(
+              "absolute right-0 z-50 w-56 rounded-2xl border border-[#E7E0D2] bg-white p-2 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-2xl dark:shadow-black/50 animate-in fade-in zoom-in-95 duration-100",
+              columnsOpenUpward ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
+            )}>
               <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-white/[0.06] mb-1">
                 TOGGLE COLUMNS
               </div>

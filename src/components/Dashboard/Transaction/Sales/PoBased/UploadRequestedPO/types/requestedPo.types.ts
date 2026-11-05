@@ -5,10 +5,14 @@ export interface RequestedPOItem {
   productTitle?: string;
   asin?: string;
   quantity: number;
+  initialQuantity?: number;
+  scannedQuantity?: number;
   unitPrice?: number;
   taxRate?: number;
   totalAmount?: number;
   hsn?: string;
+  rawData?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface RequestedPO {
@@ -25,6 +29,7 @@ export interface RequestedPO {
   status: "Uploaded" | "Processed" | "Pending";
   createdAt: string;
   items: RequestedPOItem[];
+  columns?: string[];
 }
 
 export interface UploadPOFormState {

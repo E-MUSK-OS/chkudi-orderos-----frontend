@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Search, X, ChevronDown, SlidersHorizontal, LayoutGrid, Table } from "lucide-react";
+import { getAvailableVerticalSpace } from '@/lib/utils';
 import { CompanyFilterState } from "../types/company.types";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
@@ -26,7 +27,16 @@ const statusFilterOptions: ThemeSelectOption[] = [
 /** Reusable hook: close dropdown when clicking outside or pressing Escape */
 function useDropdown() {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const toggle = () => {
+    if (!open && ref.current) {
+      const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(ref.current);
+      setOpenUpward(spaceBelow < 250 && spaceAbove > spaceBelow);
+    }
+    setOpen((p) => !p);
+  };
 
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
@@ -42,11 +52,14 @@ function useDropdown() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  return { open, setOpen, ref };
+  return { open, setOpen, ref, openUpward, toggle };
 }
 
 /** Dropdown panel shared style */
-const PANEL = "absolute top-full mt-1.5 right-0 z-50 min-w-[180px] rounded-xl border border-slate-200 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#1C2333]";
+const getPanelClass = (openUpward?: boolean) =>
+  `absolute right-0 z-50 min-w-[180px] rounded-xl border border-slate-200 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#1C2333] ${
+    openUpward ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top"
+  }`;
 const ITEM  = "w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer";
 const HDR   = "px-4 py-2 border-b border-slate-100 dark:border-white/[0.06] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider";
 
@@ -62,7 +75,7 @@ function SortDropdown({
   onSort: (field: string, order: "asc" | "desc") => void;
   onClear: () => void;
 }) {
-  const { open, setOpen, ref } = useDropdown();
+  const { open, setOpen, ref, openUpward, toggle } = useDropdown();
 
   const isActive = sortBy === "companyName";
 
@@ -70,7 +83,7 @@ function SortDropdown({
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={toggle}
         className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer
           ${isActive
             ? "border-slate-500 bg-slate-800 text-white dark:border-white/30 dark:bg-[#1E293B] dark:text-white"
@@ -83,7 +96,7 @@ function SortDropdown({
       </button>
 
       {open && (
-        <div className={PANEL}>
+        <div className={getPanelClass(openUpward)}>
           <div className={HDR}>Sort By</div>
           <div className="py-1">
             <button
@@ -125,13 +138,13 @@ function SettingsDropdown({
   onClearSorting: () => void;
   onClearFilters: () => void;
 }) {
-  const { open, setOpen, ref } = useDropdown();
+  const { open, setOpen, ref, openUpward, toggle } = useDropdown();
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={toggle}
         title="Table Settings"
         className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-slate-200 bg-white text-slate-600 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/20 transition-colors cursor-pointer"
       >
@@ -139,7 +152,7 @@ function SettingsDropdown({
       </button>
 
       {open && (
-        <div className={PANEL}>
+        <div className={getPanelClass(openUpward)}>
           <div className={HDR}>Table Settings</div>
           <div className="py-1">
             <button

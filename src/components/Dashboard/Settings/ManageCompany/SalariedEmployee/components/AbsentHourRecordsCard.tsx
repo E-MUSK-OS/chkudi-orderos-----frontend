@@ -109,6 +109,52 @@ export default function AbsentHourRecordsCard({
 
   // Handle clicking "+ Add" for a month
   const handleAddNewPeriod = (monthItem: MonthDefinition) => {
+    const existingForMonth = records.filter(
+      (r) =>
+        r.monthName === monthItem.name ||
+        r.monthIndex === monthItem.index ||
+        r.monthName?.toLowerCase().startsWith(monthItem.name.toLowerCase().split(" ")[0])
+    );
+
+    // Only allow maximum 2 periods per month (01-15 and 16-30/31)
+    if (existingForMonth.length >= 2) {
+      toast.error("Both periods for this month have already been added.");
+      return;
+    }
+
+    const mm = String(monthItem.calendarMonth + 1).padStart(2, "0");
+    const yyyy = monthItem.year;
+    // Calculate exact last day of this calendar month (30, 31, 28, or 29)
+    const lastDay = new Date(yyyy, monthItem.calendarMonth + 1, 0).getDate();
+    const lastDayStr = String(lastDay).padStart(2, "0");
+
+    const firstHalf = `01-${mm}-${yyyy} – 15-${mm}-${yyyy}`;
+    const secondHalf = `16-${mm}-${yyyy} – ${lastDayStr}-${mm}-${yyyy}`;
+
+    // Check if first-half or second-half is already present
+    const hasFirstHalf = existingForMonth.some((r) => {
+      const p = (r.periodString || "").trim();
+      return p.includes(`01-${mm}`) || p.startsWith("01");
+    });
+
+    const hasSecondHalf = existingForMonth.some((r) => {
+      const p = (r.periodString || "").trim();
+      return p.includes(`16-${mm}`) || p.startsWith("16");
+    });
+
+    let periodString = firstHalf;
+    if (existingForMonth.length === 0) {
+      periodString = firstHalf;
+    } else if (hasFirstHalf && !hasSecondHalf) {
+      periodString = secondHalf;
+    } else if (!hasFirstHalf && hasSecondHalf) {
+      periodString = firstHalf;
+    } else if (existingForMonth.length % 2 === 1) {
+      periodString = secondHalf;
+    } else {
+      periodString = firstHalf;
+    }
+
     const tempId = `temp-${Date.now()}-${Math.random()}`;
     const newRecord: AbsentRecord = {
       id: tempId,
@@ -116,7 +162,7 @@ export default function AbsentHourRecordsCard({
       financialYear,
       monthName: monthItem.name,
       monthIndex: monthItem.index,
-      periodString: `${monthItem.defaultStart} – ${monthItem.defaultEnd}`,
+      periodString,
       absentHours: 0,
       overtimeHours: 0,
       isNew: true,
@@ -224,12 +270,14 @@ export default function AbsentHourRecordsCard({
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
             {visibleMonths.map((month) => {
-              const monthRecords = records.filter(
-                (r) =>
-                  r.monthName === month.name ||
-                  r.monthIndex === month.index ||
-                  r.monthName?.toLowerCase().startsWith(month.name.toLowerCase().split(" ")[0])
-              );
+              const monthRecords = records
+                .filter(
+                  (r) =>
+                    r.monthName === month.name ||
+                    r.monthIndex === month.index ||
+                    r.monthName?.toLowerCase().startsWith(month.name.toLowerCase().split(" ")[0])
+                )
+                .sort((a, b) => (a.periodString || "").localeCompare(b.periodString || ""));
 
               return (
                 <React.Fragment key={month.index}>
@@ -291,8 +339,8 @@ export default function AbsentHourRecordsCard({
                                 />
                               </div>
 
-                              {/* If last row of this month, show + Add button below */}
-                              {rIdx === monthRecords.length - 1 && (
+                              {/* If last row of this month and less than 2 periods exist, show + Add button below */}
+                              {rIdx === monthRecords.length - 1 && monthRecords.length < 2 && (
                                 <button
                                   type="button"
                                   onClick={() => handleAddNewPeriod(month)}

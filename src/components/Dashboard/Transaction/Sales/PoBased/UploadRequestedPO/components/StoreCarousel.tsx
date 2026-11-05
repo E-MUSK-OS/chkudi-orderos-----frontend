@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Store as StoreIcon, Loader2 } from "lucide-react";
 import { Webstore } from "@/components/Dashboard/Settings/Webstore/types/webstore.types";
 import { MarketplaceLogo } from "@/components/Dashboard/Settings/Webstore/utils/marketplaceLogos";
-import { requestedPoService } from "../services/requestedPo.service";
 
 interface StoreCarouselProps {
   stores: Webstore[];
   selectedStore: Webstore | null;
   onSelectStore: (store: Webstore) => void;
   loading: boolean;
+  latestDates?: Record<string, string>;
   children?: React.ReactNode;
 }
 
@@ -19,9 +19,21 @@ export default function StoreCarousel({
   selectedStore,
   onSelectStore,
   loading,
+  latestDates = {},
   children,
 }: StoreCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll selected card into view smoothly
+  useEffect(() => {
+    if (!selectedStore || !scrollRef.current) return;
+    const selectedCard = scrollRef.current.querySelector<HTMLElement>(
+      `[data-store-id="${selectedStore.id}"]`
+    );
+    if (selectedCard) {
+      selectedCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [selectedStore]);
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -67,7 +79,7 @@ export default function StoreCarousel({
             stores.map((store) => {
               const isSelected = selectedStore?.id === store.id;
               const lastPoDate =
-                requestedPoService.getLatestDateByStoreId(store.id) ||
+                latestDates[store.id] ||
                 (store.lastPaymentDate
                   ? new Date(store.lastPaymentDate).toISOString().split("T")[0]
                   : null);
@@ -75,6 +87,7 @@ export default function StoreCarousel({
               return (
                 <div
                   key={store.id}
+                  data-store-id={store.id}
                   onClick={() => onSelectStore(store)}
                   className={`
                     w-36
@@ -92,10 +105,9 @@ export default function StoreCarousel({
                     transition-all
                     duration-200
                     active:scale-[0.98]
-                    ${
-                      isSelected
-                        ? "border-2 border-[#E8C16D] bg-gradient-to-b from-[#FFF9EC] to-white dark:from-[#F5C451]/15 dark:to-[#0F1626] shadow-[0_0_20px_rgba(232,193,109,0.25)] ring-2 ring-[#E8C16D]/30"
-                        : "border border-slate-200/80 dark:border-white/[0.08] bg-[#FAF8F5]/80 dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-white/[0.04] hover:shadow-xs"
+                    ${isSelected
+                      ? "border-2 border-[#E8C16D] bg-gradient-to-b from-[#FFF9EC] to-white dark:from-[#F5C451]/15 dark:to-[#0F1626] shadow-[0_0_20px_rgba(232,193,109,0.25)] ring-2 ring-[#E8C16D]/30"
+                      : "border border-slate-200/80 dark:border-white/[0.08] bg-[#FAF8F5]/80 dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-white/[0.04] hover:shadow-xs"
                     }
                   `}
                 >
@@ -119,11 +131,10 @@ export default function StoreCarousel({
                   {/* Bottom Pill Badge */}
                   <div className="w-full mt-auto pt-1 flex justify-center">
                     <span
-                      className={`w-full text-center px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-tight truncate shadow-2xs ${
-                        lastPoDate
+                      className={`w-full text-center px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-tight truncate shadow-2xs ${lastPoDate
                           ? "bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451]/20 dark:text-[#F5C451] dark:border dark:border-[#F5C451]/30"
                           : "bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400"
-                      }`}
+                        }`}
                     >
                       {lastPoDate ? `Last Date : ${lastPoDate}` : "No Records Found"}
                     </span>
@@ -145,7 +156,7 @@ export default function StoreCarousel({
         </button>
       </div>
 
-      {/* Upload Row / Sub-panel */}
+      {/* Upload Panel (Child) */}
       {children && (
         <div className="mt-4 pt-4 border-t border-[#E7E0D2] dark:border-white/[0.08]">
           {children}

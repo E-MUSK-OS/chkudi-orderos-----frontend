@@ -10,63 +10,123 @@ export interface ClientConfigApiResponse {
   data: ClientConfigurationData;
 }
 
+export const DEFAULT_CLIENT_CONFIG: ClientConfigurationData = {
+  clientName: "Enterprise Plus",
+  subscriptionPlan: "Enterprise Plus",
+  hasSeparateInventoryDept: false,
+  dropdownManagementMode: "FORM_OTHER",
+  enabledSections: [
+    "dashboard",
+    "vms",
+    "products",
+    "order-process",
+    "products-analytics",
+    "transaction",
+    "offline-sales",
+    "purchase",
+    "settings",
+    "account",
+  ],
+  enabledRoutes: [],
+  configurationData: null,
+  isDefault: true,
+};
+
+let inFlightPromise: Promise<ClientConfigurationData> | null = null;
+
 export const clientConfigurationService = {
   async getClientConfig(): Promise<ClientConfigurationData> {
-    try {
-      const response = await api.get<ClientConfigApiResponse>(BASE_URL);
-      if (response?.data) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(CLIENT_CONFIG_STORAGE_KEY, JSON.stringify(response.data));
-          window.dispatchEvent(new Event("client_configuration_updated"));
-        }
-        return response.data;
-      }
-    } catch (err) {
-      console.warn("Failed to fetch fresh client config from server:", err);
+    if (inFlightPromise) {
+      return inFlightPromise;
     }
 
-    // Fallback to local storage cache if network is unavailable
-    if (typeof window !== "undefined") {
+    inFlightPromise = (async () => {
       try {
-        const cached = localStorage.getItem(CLIENT_CONFIG_STORAGE_KEY);
-        if (cached) return JSON.parse(cached);
-      } catch (e) {
-        // ignore parse error
+        const response = await api.get<ClientConfigApiResponse>(BASE_URL);
+        if (response?.data) {
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(CLIENT_CONFIG_STORAGE_KEY, JSON.stringify(response.data));
+              window.dispatchEvent(new Event("client_configuration_updated"));
+            } catch {
+              // ignore storage error
+            }
+          }
+          return response.data;
+        }
+      } catch (err: any) {
+        // Silently handle if offline or endpoint unavailable
+        const errMsg = String(err?.message || "");
+        if (!errMsg.includes("404")) {
+          console.debug("Notice fetching client configuration:", err?.message || err);
+        }
       }
-    }
 
-    return {
-      clientName: "Enterprise Plus",
-      subscriptionPlan: "Enterprise Plus",
-      hasSeparateInventoryDept: false,
-      enabledSections: [
-        "dashboard",
-        "vms",
-        "products",
-        "order-process",
-        "products-analytics",
-        "transaction",
-        "offline-sales",
-        "purchase",
-        "settings",
-        "account",
-      ],
-      enabledRoutes: [],
-      configurationData: null,
-      isDefault: true,
-    };
+      // Fallback to local storage cache if network is unavailable or endpoint is missing
+      if (typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem(CLIENT_CONFIG_STORAGE_KEY);
+          if (cached) return JSON.parse(cached);
+        } catch {
+          // ignore parse error
+        }
+
+        // Cache default config so subsequent mounts don't repeatedly hit fallback
+        try {
+          localStorage.setItem(CLIENT_CONFIG_STORAGE_KEY, JSON.stringify(DEFAULT_CLIENT_CONFIG));
+        } catch {
+          // ignore storage error
+        }
+      }
+
+      return DEFAULT_CLIENT_CONFIG;
+    })().finally(() => {
+      inFlightPromise = null;
+    });
+
+    return inFlightPromise;
   },
 
   async updateClientConfig(data: Partial<ClientConfigurationData>): Promise<ClientConfigurationData> {
-    const response = await api.put<ClientConfigApiResponse>(BASE_URL, data);
-    if (response?.data) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(CLIENT_CONFIG_STORAGE_KEY, JSON.stringify(response.data));
-        window.dispatchEvent(new Event("client_configuration_updated"));
+    try {
+      const response = await api.put<ClientConfigApiResponse>(BASE_URL, data);
+      if (response?.data) {
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(CLIENT_CONFIG_STORAGE_KEY, JSON.stringify(response.data));
+            window.dispatchEvent(new Event("client_configuration_updated"));
+          } catch {
+            // ignore storage error
+          }
+        }
+        return response.data;
       }
-      return response.data;
+    } catch {
+      // If remote update fails, still update localStorage so client features remain consistent
+      if (typeof window !== "undefined") {
+        const current = clientConfigurationService.getLocalCachedConfig() || DEFAULT_CLIENT_CONFIG;
+        const updated = { ...current, ...data, updatedAt: new Date().toISOString() };
+        try {
+          localStorage.setItem(CLIENT_CONFIG_STORAGE_KEY, JSON.stringify(updated));
+          window.dispatchEvent(new Event("client_configuration_updated"));
+        } catch {
+          // ignore storage error
+        }
+        return updated;
+      }
     }
-    throw new Error(response?.message || "Failed to update client configuration");
+
+    const current = clientConfigurationService.getLocalCachedConfig() || DEFAULT_CLIENT_CONFIG;
+    const updated = { ...current, ...data, updatedAt: new Date().toISOString() };
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(CLIENT_CONFIG_STORAGE_KEY, JSON.stringify(updated));
+        window.dispatchEvent(new Event("client_configuration_updated"));
+      } catch {
+        // ignore storage error
+      }
+    }
+    return updated;
   },
 
   getLocalCachedConfig(): ClientConfigurationData | null {
@@ -90,4 +150,3 @@ export function getLocalDropdownManagementMode(): "SETTING_MASTERS" | "FORM_OTHE
   }
   return "FORM_OTHER";
 }
-

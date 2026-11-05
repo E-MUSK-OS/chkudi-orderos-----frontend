@@ -14,7 +14,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { Company } from "../types/company.types";
-import { getMediaUrl } from "@/lib/utils";
+import { getMediaUrl, getCompanyInitials } from "@/lib/utils";
 
 interface ViewCompanyModalProps {
   open: boolean;
@@ -44,15 +44,26 @@ export default function ViewCompanyModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 dark:bg-black dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 dark:bg-black dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0 select-none">
               {company.logoUrl ? (
                 <img
                   src={getMediaUrl(company.logoUrl)}
                   alt={company.companyName}
                   className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    if (e.currentTarget.parentElement) {
+                      const span = document.createElement("span");
+                      span.className = "text-base font-bold tracking-wider text-slate-800 dark:text-slate-100 uppercase select-none font-sans";
+                      span.textContent = getCompanyInitials(company.companyName);
+                      e.currentTarget.parentElement.appendChild(span);
+                    }
+                  }}
                 />
               ) : (
-                <Building2 size={24} className="text-[#B88728] dark:text-[#F5C451]" />
+                <span className="text-base font-bold tracking-wider text-slate-800 dark:text-slate-100 uppercase select-none font-sans">
+                  {getCompanyInitials(company.companyName)}
+                </span>
               )}
             </div>
 

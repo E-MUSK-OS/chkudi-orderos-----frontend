@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown, Plus, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
 import { toast } from "sonner";
 import { useDropdownManagementMode } from "@/components/Dashboard/Settings/Configuration/hooks/useDropdownManagementMode";
@@ -23,6 +23,10 @@ interface DropdownWithOtherProps {
   fieldKey: string;
   allowOther?: boolean;
   className?: string;
+  hideLabel?: boolean;
+  labelClassName?: string;
+  buttonClassName?: string;
+  menuClassName?: string;
 }
 
 export default function DropdownWithOther({
@@ -36,8 +40,31 @@ export default function DropdownWithOther({
   fieldKey,
   allowOther = true,
   className,
+  hideLabel = false,
+  labelClassName,
+  buttonClassName,
+  menuClassName,
 }: DropdownWithOtherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openDirection, setOpenDirection] = useState<"down" | "up">("down");
+
+  const determineDirection = () => {
+    if (!containerRef.current) return;
+    const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(containerRef.current);
+
+    if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+      setOpenDirection("up");
+    } else {
+      setOpenDirection("down");
+    }
+  };
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      determineDirection();
+    }
+    setIsOpen((prev) => !prev);
+  };
   const [isOtherActive, setIsOtherActive] = useState(false);
   const [customValue, setCustomValue] = useState("");
   const [localCustomOptions, setLocalCustomOptions] = useState<DropdownOption[]>([]);
@@ -141,23 +168,31 @@ export default function DropdownWithOther({
 
   return (
     <div ref={containerRef} className={cn("space-y-1.5 w-full", className)}>
-      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-        {label.replace(/\.+$/, "")}
-        {required && <span className="text-rose-500 ml-0.5">*</span>}
-      </label>
+      {!hideLabel && (
+        <label
+          className={cn(
+            "block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight",
+            labelClassName
+          )}
+        >
+          {label.replace(/\.+$/, "")}
+          {required && <span className="text-rose-500 ml-0.5">*</span>}
+        </label>
+      )}
 
       {/* Main Select Trigger */}
       <div className="relative">
         <button
           type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
+          onClick={handleToggle}
           className={cn(
             "w-full h-11 sm:h-12 px-3.5 flex items-center justify-between text-left text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 outline-none cursor-pointer",
             "border border-slate-200 bg-white hover:border-[#E8C16D] hover:bg-slate-50/50 shadow-xs",
             "dark:border-white/[0.08] dark:bg-[#0B0F17] dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]",
             isOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/25 dark:border-[#F5C451] dark:ring-[#F5C451]/20",
             error && "border-rose-500 dark:border-rose-500",
-            value ? "text-[#0A0E1A] dark:text-white" : "text-slate-400 dark:text-slate-500"
+            value ? "text-[#0A0E1A] dark:text-white" : "text-slate-400 dark:text-slate-500",
+            buttonClassName
           )}
         >
           <span className="truncate">
@@ -174,7 +209,15 @@ export default function DropdownWithOther({
 
         {/* Dropdown Menu (no search box) */}
         {isOpen && (
-          <div className="absolute z-50 left-0 right-0 mt-1.5 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+          <div
+            className={cn(
+              "absolute z-50 left-0 right-0 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in-50 duration-150",
+              openDirection === "up"
+                ? "bottom-full mb-1.5 origin-bottom zoom-in-95"
+                : "top-full mt-1.5 origin-top zoom-in-95",
+              menuClassName
+            )}
+          >
             <div className="max-h-56 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
               {mergedOptions.length === 0 ? (
                 <div className="px-3 py-3 text-xs text-slate-400 text-center">

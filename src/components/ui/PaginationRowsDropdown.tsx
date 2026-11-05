@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,15 +19,65 @@ export default function PaginationRowsDropdown({
   className = "",
 }: PaginationRowsDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    const menuHeight = options.length * 32 + 16;
+    const up = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    setOpenUpward(up);
+
+    const rightPos = Math.max(8, viewportWidth - rect.right);
+
+    if (up) {
+      setMenuStyle({
+        position: "fixed",
+        bottom: `${Math.max(8, viewportHeight - rect.top + 6)}px`,
+        right: `${rightPos}px`,
+        zIndex: 9999,
+        maxHeight: `${Math.max(100, spaceAbove - 16)}px`,
+      });
+    } else {
+      setMenuStyle({
+        position: "fixed",
+        top: `${Math.max(8, rect.bottom + 6)}px`,
+        right: `${rightPos}px`,
+        zIndex: 9999,
+        maxHeight: `${Math.max(100, spaceBelow - 16)}px`,
+      });
+    }
+  }, [options.length]);
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      updatePosition();
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   // Close on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -39,6 +90,23 @@ export default function PaginationRowsDropdown({
     };
   }, [isOpen]);
 
+  // Recalculate on scroll or resize while open
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = (e: Event) => {
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+        return;
+      }
+      updatePosition();
+    };
+    window.addEventListener("resize", handleScrollOrResize, { passive: true });
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener("resize", handleScrollOrResize);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+    };
+  }, [isOpen, updatePosition]);
+
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,16 +118,7 @@ export default function PaginationRowsDropdown({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  // Determine opening direction based on screen position
-  const handleToggle = () => {
-    if (!isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      // If less than 170px space below, flip upward so menu is always visible
-      setOpenUpward(spaceBelow < 170);
-    }
-    setIsOpen((prev) => !prev);
-  };
+
 
   return (
     <div
@@ -88,13 +147,14 @@ export default function PaginationRowsDropdown({
         />
       </button>
 
-      {/* Floating Menu matching Image 2 */}
-      {isOpen && (
+      {/* Floating Menu mounted via portal so it is never clipped by table overflow-hidden */}
+      {isOpen && mounted && createPortal(
         <div
+          ref={menuRef}
+          style={menuStyle}
           className={cn(
-            "absolute z-50 min-w-[80px] w-max rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-2xl dark:shadow-black/80 animate-in fade-in zoom-in-95 duration-100",
-            openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5",
-            "left-0"
+            "min-w-[80px] w-max rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-2xl dark:shadow-black/80 duration-100",
+            openUpward ? "origin-bottom animate-in fade-in zoom-in-95" : "origin-top animate-in fade-in zoom-in-95"
           )}
         >
           <div className="flex flex-col gap-0.5">
@@ -123,7 +183,8 @@ export default function PaginationRowsDropdown({
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

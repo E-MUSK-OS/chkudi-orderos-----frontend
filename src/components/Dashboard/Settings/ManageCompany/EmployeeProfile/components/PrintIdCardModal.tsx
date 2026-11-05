@@ -16,7 +16,7 @@ export default function PrintIdCardModal({
   employee,
   isOpen,
   onClose,
-  companyName = "JAY BHAVANI FASHION",
+  companyName = "Company Name",
 }: PrintIdCardModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +71,7 @@ export default function PrintIdCardModal({
             {/* Company Name */}
             <div className="mt-1 mb-4">
               <h2 className="text-sm font-bold tracking-wider text-white uppercase">
-                {employee.branch || companyName}
+                {employee.company || employee.branch || companyName}
               </h2>
               <p className="text-[10px] text-gray-400 tracking-wide uppercase">Identity Card</p>
             </div>

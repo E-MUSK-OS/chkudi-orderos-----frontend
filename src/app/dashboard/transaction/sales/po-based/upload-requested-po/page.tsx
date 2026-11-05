@@ -1,5 +1,6 @@
 import UploadRequestedPOPage from "@/components/Dashboard/Transaction/Sales/PoBased/UploadRequestedPO/UploadRequestedPOPage";
 import { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Upload Requested PO | OrderOS",
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <UploadRequestedPOPage />;
+  return (
+    <Suspense fallback={null}>
+      <UploadRequestedPOPage />
+    </Suspense>
+  );
 }

@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
+  AlertCircle,
   Circle,
   Save,
   Check,
-  Building2,
   Loader2,
   FileText,
   Upload,
@@ -19,6 +19,10 @@ import { toast } from "sonner";
 import ThemeSelectDropdown, {
   ThemeSelectOption,
 } from "@/components/ui/ThemeSelectDropdown";
+import DropdownWithOther, {
+  type DropdownOption,
+} from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
+import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
 import { cn, getMediaUrl } from "@/lib/utils";
 
 interface CompanyProfileFormProps {
@@ -56,12 +60,17 @@ export default function CompanyProfileForm({
 }: CompanyProfileFormProps) {
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Hidden file inputs for Logo and Signature
-  const logoInputRef = React.useRef<HTMLInputElement | null>(null);
-  const signatureInputRef = React.useRef<HTMLInputElement | null>(null);
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const signatureInputRef = useRef<HTMLInputElement | null>(null);
   const [isLogoDragging, setIsLogoDragging] = useState(false);
   const [isSignatureDragging, setIsSignatureDragging] = useState(false);
+
+  // Fetch dynamic dropdown options from DB
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
 
   const processImageFile = (
     file: File,
@@ -120,34 +129,42 @@ export default function CompanyProfileForm({
     }
   };
 
-  // Dropdown options matching software ThemeSelectDropdown
-  const businessTypeOptions: ThemeSelectOption[] = useMemo(
-    () => [
-      { value: "Properiter", label: "Properiter" },
-      { value: "Partnership", label: "Partnership" },
-      { value: "Private Limited", label: "Private Limited" },
-      { value: "Public Limited", label: "Public Limited" },
-      { value: "LLP", label: "LLP" },
-      { value: "Individual", label: "Individual" },
-    ],
-    []
-  );
-
   const stateOptions: ThemeSelectOption[] = useMemo(
     () => INDIAN_STATES.map((st) => ({ value: st, label: st })),
     []
   );
 
-  const tradeCategoryOptions: ThemeSelectOption[] = useMemo(
-    () => [
-      { value: "Manufacturing", label: "Manufacturing" },
-      { value: "Wholesale", label: "Wholesale" },
-      { value: "Retail", label: "Retail" },
-      { value: "Service", label: "Service" },
-      { value: "E-Commerce", label: "E-Commerce" },
-    ],
-    []
-  );
+  // Dynamic businessTypeOptions purely loaded from database
+  const businessTypeOptions: DropdownOption[] = useMemo(() => {
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "businesstype")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    dbSaved.forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
+
+  // Dynamic tradeCategoryOptions purely loaded from database
+  const tradeCategoryOptions: DropdownOption[] = useMemo(() => {
+    const dbSaved = (dropdownData?.savedOptions || [])
+      .filter((o) => o.field.toLowerCase() === "tradecategory")
+      .map((o) => ({ label: o.label || o.value, value: o.value }));
+
+    const map = new Map<string, DropdownOption>();
+    dbSaved.forEach((opt) => {
+      const v = opt.value?.trim();
+      if (v && !map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
+      }
+    });
+    return Array.from(map.values());
+  }, [dropdownData]);
 
   const accountTypeOptions: ThemeSelectOption[] = useMemo(
     () => [
@@ -232,9 +249,9 @@ export default function CompanyProfileForm({
     productCode: "",
 
     // Invoice Details
-    taxInvoicePrefix: "JBFT",
+    taxInvoicePrefix: "",
     taxInvoiceNext: "1",
-    retailInvoicePrefix: "JBFR",
+    retailInvoicePrefix: "",
     retailInvoiceNext: "1",
     considerInPnL: "Yes",
 
@@ -300,9 +317,9 @@ export default function CompanyProfileForm({
         clientCode: company.clientCode || "",
         productCode: company.productCode || "",
 
-        taxInvoicePrefix: company.taxInvoicePrefix || "JBFT",
+        taxInvoicePrefix: company.taxInvoicePrefix || "",
         taxInvoiceNext: company.taxInvoiceNext || "1",
-        retailInvoicePrefix: company.retailInvoicePrefix || "JBFR",
+        retailInvoicePrefix: company.retailInvoicePrefix || "",
         retailInvoiceNext: company.retailInvoiceNext || "1",
         considerInPnL: company.considerInPnL || "Yes",
 
@@ -313,13 +330,24 @@ export default function CompanyProfileForm({
     }
   }, [company]);
 
-  const handleChange = (field: keyof UpdateCompanyPayload, value: any) => {
+  const handleChange = (
+    field: keyof UpdateCompanyPayload,
+    value: UpdateCompanyPayload[keyof UpdateCompanyPayload]
+  ) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
 
       // If shipping same as billing is checked, sync billing fields to shipping
       if (
         updated.shippingSameAsBilling &&
+        typeof value === "string" &&
         (field === "billingAddress1" ||
           field === "billingAddress2" ||
           field === "billingAddress3" ||
@@ -367,7 +395,7 @@ export default function CompanyProfileForm({
   };
 
   // Dynamic completion percentage calculation
-  const completionPercentage = React.useMemo(() => {
+  const completionPercentage = useMemo(() => {
     const requiredFields = [
       formData.legalName,
       formData.companyName,
@@ -394,58 +422,349 @@ export default function CompanyProfileForm({
     return Math.min(100, Math.round((filled / requiredFields.length) * 100));
   }, [formData]);
 
+  const getInputClassName = (fieldKey?: string, isMono = false, disabled = false) => {
+    const hasErr = Boolean(fieldKey && errors[fieldKey]);
+    if (disabled) {
+      return cn(
+        "w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+        isMono && "font-mono"
+      );
+    }
+    return cn(
+      "w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B26] dark:text-white outline-none transition-all",
+      isMono && "font-mono",
+      hasErr
+        ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
+        : "border-[#E7E0D2] focus:border-[#E8C16D] dark:border-white/[0.08] dark:focus:border-white/[0.2]"
+    );
+  };
+
+  const renderFieldError = (fieldKey: string) => {
+    if (!errors[fieldKey]) return null;
+    return (
+      <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+        <AlertCircle size={11} className="shrink-0" />
+        <span>{errors[fieldKey]}</span>
+      </p>
+    );
+  };
+
+  const validateForm = (): { isValid: boolean; firstErrorTab?: TabType } => {
+    const newErrors: Record<string, string> = {};
+    let firstErrorTab: TabType | undefined;
+
+    // --- Tab 1: General ---
+    if (!formData.legalName?.trim()) {
+      newErrors.legalName = "Legal Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.companyName?.trim()) {
+      newErrors.companyName = "Company Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.ownerName?.trim()) {
+      newErrors.ownerName = "Owner Name is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.abbreviation?.trim()) {
+      newErrors.abbreviation = "Abbreviation is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.businessType?.trim()) {
+      newErrors.businessType = "Business Type is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+    if (!formData.email?.trim()) {
+      newErrors.email = "Email is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = "Please enter a valid email address.";
+        if (!firstErrorTab) firstErrorTab = "general";
+      }
+    }
+    if (!formData.phone?.trim()) {
+      newErrors.phone = "Contact number is required.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    } else if (formData.phone.trim().length !== 10) {
+      newErrors.phone = "Contact number must be exactly 10 digits.";
+      if (!firstErrorTab) firstErrorTab = "general";
+    }
+
+    // --- Tab 2: Contact ---
+    if (!formData.billingAddress1?.trim()) {
+      newErrors.billingAddress1 = "Billing Address 1 is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingPincode?.trim()) {
+      newErrors.billingPincode = "Billing Pincode is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    } else if (formData.billingPincode.trim().length !== 6) {
+      newErrors.billingPincode = "Pincode must be exactly 6 digits.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingArea?.trim()) {
+      newErrors.billingArea = "Billing Area is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingCity?.trim()) {
+      newErrors.billingCity = "Billing City is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingState?.trim()) {
+      newErrors.billingState = "Billing State is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingContactName?.trim()) {
+      newErrors.billingContactName = "Billing Contact Name is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+    if (!formData.billingContactNo?.trim()) {
+      newErrors.billingContactNo = "Billing Contact No is required.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    } else if (formData.billingContactNo.trim().length !== 10) {
+      newErrors.billingContactNo = "Contact number must be exactly 10 digits.";
+      if (!firstErrorTab) firstErrorTab = "contact";
+    }
+
+    // Shipping (if not same as billing)
+    if (!formData.shippingSameAsBilling) {
+      if (!formData.shippingAddress1?.trim()) {
+        newErrors.shippingAddress1 = "Shipping Address 1 is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingPincode?.trim()) {
+        newErrors.shippingPincode = "Shipping Pincode is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      } else if (formData.shippingPincode.trim().length !== 6) {
+        newErrors.shippingPincode = "Pincode must be exactly 6 digits.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingArea?.trim()) {
+        newErrors.shippingArea = "Shipping Area is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingCity?.trim()) {
+        newErrors.shippingCity = "Shipping City is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingState?.trim()) {
+        newErrors.shippingState = "Shipping State is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingContactName?.trim()) {
+        newErrors.shippingContactName = "Shipping Contact Name is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+      if (!formData.shippingContactNo?.trim()) {
+        newErrors.shippingContactNo = "Shipping Contact No is required.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      } else if (formData.shippingContactNo.trim().length !== 10) {
+        newErrors.shippingContactNo = "Contact number must be exactly 10 digits.";
+        if (!firstErrorTab) firstErrorTab = "contact";
+      }
+    }
+
+    // --- Tab 3: Accounting ---
+    if (!formData.gstNumber?.trim()) {
+      newErrors.gstNumber = "GST Number is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    } else if (formData.gstNumber.trim().length !== 15) {
+      newErrors.gstNumber = "GST Number must be exactly 15 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+
+    if (!formData.panNumber?.trim()) {
+      newErrors.panNumber = "PAN Number is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    } else if (formData.panNumber.trim().length !== 10) {
+      newErrors.panNumber = "PAN Number must be exactly 10 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+
+    if (!formData.bankName?.trim()) {
+      newErrors.bankName = "Bank Name is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.accountHolderName?.trim()) {
+      newErrors.accountHolderName = "Account Holder Name is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.accountNumber?.trim()) {
+      newErrors.accountNumber = "Bank Account Number is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.ifscCode?.trim()) {
+      newErrors.ifscCode = "IFSC Code is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    } else if (formData.ifscCode.trim().length !== 11) {
+      newErrors.ifscCode = "IFSC Code must be exactly 11 characters.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.accountType?.trim()) {
+      newErrors.accountType = "Account Type is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.branchName?.trim()) {
+      newErrors.branchName = "Branch Name is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+    if (!formData.upiId?.trim()) {
+      newErrors.upiId = "UPI ID is required.";
+      if (!firstErrorTab) firstErrorTab = "accounting";
+    }
+
+    setErrors(newErrors);
+    return {
+      isValid: Object.keys(newErrors).length === 0,
+      firstErrorTab,
+    };
+  };
+
+  const hasTabError = (tabKey: TabType) => {
+    if (tabKey === "general") {
+      return Boolean(
+        errors.legalName ||
+        errors.companyName ||
+        errors.ownerName ||
+        errors.abbreviation ||
+        errors.businessType ||
+        errors.email ||
+        errors.phone
+      );
+    }
+    if (tabKey === "contact") {
+      return Boolean(
+        errors.billingAddress1 ||
+        errors.billingPincode ||
+        errors.billingArea ||
+        errors.billingCity ||
+        errors.billingState ||
+        errors.billingContactName ||
+        errors.billingContactNo ||
+        errors.shippingAddress1 ||
+        errors.shippingPincode ||
+        errors.shippingArea ||
+        errors.shippingCity ||
+        errors.shippingState ||
+        errors.shippingContactName ||
+        errors.shippingContactNo
+      );
+    }
+    if (tabKey === "accounting") {
+      return Boolean(
+        errors.gstNumber ||
+        errors.panNumber ||
+        errors.bankName ||
+        errors.accountHolderName ||
+        errors.accountNumber ||
+        errors.ifscCode ||
+        errors.accountType ||
+        errors.branchName ||
+        errors.upiId
+      );
+    }
+    return false;
+  };
+
   const handleSave = async () => {
     if (!company) return;
+
+    const { isValid, firstErrorTab } = validateForm();
+    if (!isValid) {
+      if (firstErrorTab) {
+        setActiveTab(firstErrorTab);
+      }
+      toast.error("Please fill in all required fields before saving.");
+      return;
+    }
+
     try {
       setSaving(true);
 
       const payload: UpdateCompanyPayload = {
         ...formData,
-        companyCode: formData.abbreviation || company.companyCode || "JBF",
+        companyCode: formData.abbreviation || company.companyCode || "ACM",
         completionPercentage,
       };
 
       const res = await companyService.updateCompany(company.id, payload);
       toast.success("Company profile updated successfully.");
       onSaved(res.data);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to update company profile.");
+    } catch (err: unknown) {
+      // Handled via toast notification
+      const msg = err instanceof Error ? err.message : "Failed to update company profile.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
   };
 
-  const tabs = [
+  const tabs: { key: TabType; label: string; completed: boolean }[] = [
     {
       key: "general",
       label: "General",
-      completed: Boolean(formData.companyName && formData.ownerName && formData.email),
+      completed: Boolean(
+        formData.legalName &&
+        formData.companyName &&
+        formData.ownerName &&
+        formData.abbreviation &&
+        formData.businessType &&
+        formData.email &&
+        formData.phone
+      ),
     },
     {
       key: "contact",
       label: "Contact",
-      completed: Boolean(formData.billingAddress1 && formData.billingPincode),
+      completed: Boolean(
+        formData.billingAddress1 &&
+        formData.billingPincode &&
+        formData.billingArea &&
+        formData.billingCity &&
+        formData.billingState &&
+        formData.billingContactName &&
+        formData.billingContactNo
+      ),
     },
     {
       key: "accounting",
       label: "Accounting",
-      completed: Boolean(formData.gstNumber && formData.bankName),
+      completed: Boolean(
+        formData.gstNumber &&
+        formData.panNumber &&
+        formData.bankName &&
+        formData.accountHolderName &&
+        formData.accountNumber &&
+        formData.ifscCode &&
+        formData.accountType &&
+        formData.branchName &&
+        formData.upiId
+      ),
     },
-    { key: "logo", label: "Logo", completed: Boolean(formData.logoUrl) },
-    { key: "signature", label: "Signature", completed: Boolean(formData.signatureUrl) },
+    {
+      key: "logo",
+      label: "Logo",
+      completed: Boolean(formData.logoUrl),
+    },
+    {
+      key: "signature",
+      label: "Signature",
+      completed: Boolean(formData.signatureUrl),
+    },
   ];
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
-      {/* Top Header Bar matching media_1793255914393.png */}
-      <div className="px-6 pt-5 pb-3 w-full flex items-center justify-between border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
+      {/* Top Header Bar matching Screenshot 2 */}
+      <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-4 bg-white dark:bg-[#0E121A]">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-colors cursor-pointer"
-            title="Back to Company Profiles"
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            title="Back to list"
           >
             <ArrowLeft size={18} />
           </button>
@@ -455,9 +774,9 @@ export default function CompanyProfileForm({
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               <span className="font-semibold text-slate-700 dark:text-slate-300">Name.</span>{" "}
-              {formData.companyName || company?.companyName || "JAY BHAVANI FASHION"}{" "}
+              {formData.companyName || company?.companyName || "Company Name"}{" "}
               <span className="ml-3 font-semibold text-slate-700 dark:text-slate-300">GSTN.</span>{" "}
-              {formData.gstNumber || company?.gstNumber || "24CAGPB1419N1ZW"}
+              <span className="font-mono">{formData.gstNumber || company?.gstNumber || "24ABCDE1234F1Z5"}</span>
             </p>
           </div>
         </div>
@@ -476,23 +795,29 @@ export default function CompanyProfileForm({
         </div>
       </div>
 
-      {/* Full-Width Tabs Segmented Bar matching media_1793255914393.png */}
+      {/* Full-Width Tabs Segmented Bar matching screenshot */}
       <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
         <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-5 gap-1 select-none">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
+            const hasErr = hasTabError(tab.key);
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as TabType)}
+                onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
                     : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
                 }`}
               >
-                {tab.completed ? (
+                {hasErr ? (
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                  </span>
+                ) : tab.completed ? (
                   <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                 ) : (
                   <Circle size={14} className="text-slate-500 shrink-0 stroke-dashed" />
@@ -504,7 +829,7 @@ export default function CompanyProfileForm({
         </div>
       </div>
 
-      {/* Form Content Area - Full-width padding with 4-column balanced grid (hidden scrollbar) */}
+      {/* Form Content Area - Full-width padding with 2-column balanced grid */}
       <div className="flex-1 px-6 py-6 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* ========================================================================= */}
         {/* TAB 1: GENERAL DETAILS                                                   */}
@@ -521,143 +846,157 @@ export default function CompanyProfileForm({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
-                {/* Legal Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Legal Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.legalName || ""}
-                    onChange={(e) => handleChange("legalName", e.target.value)}
-                    placeholder="Enter Legal Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Company Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Company Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.companyName || ""}
-                    onChange={(e) => handleChange("companyName", e.target.value)}
-                    placeholder="Enter Company Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Brand Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Brand Name.
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.brandName || ""}
-                    onChange={(e) => handleChange("brandName", e.target.value)}
-                    placeholder="Enter Brand Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Owner Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Owner Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ownerName || ""}
-                    onChange={(e) => handleChange("ownerName", e.target.value)}
-                    placeholder="Enter Owner Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Abbreviation */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Abbreviation. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.abbreviation || ""}
-                    onChange={(e) => handleChange("abbreviation", e.target.value.toUpperCase())}
-                    placeholder="e.g. JBF"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase transition-all"
-                  />
-                </div>
-
-                {/* Type Dropdown */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Type. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <ThemeSelectDropdown
-                    value={formData.businessType || "Properiter"}
-                    onChange={(val) => handleChange("businessType", val)}
-                    options={businessTypeOptions}
-                    placeholder="Select Type"
-                    className="w-full"
-                    buttonClassName={dropdownButtonClassName}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Email. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="Enter Email Address"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Contact No with 10/10 counter */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                      Contact No. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <span className="text-[10px] text-emerald-400 font-mono">
-                      {formData.phone ? formData.phone.length : 0}/10
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    value={formData.phone || ""}
-                    onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ""))}
-                    placeholder="Enter 10-digit Contact No"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all font-mono"
-                  />
-                </div>
-
-                {/* Website - spans 1 column only */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Website.
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.website || ""}
-                    onChange={(e) => handleChange("website", e.target.value)}
-                    placeholder="https://example.com"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-                <div />
+              {/* Legal Name */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Legal Name. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.legalName || ""}
+                  onChange={(e) => handleChange("legalName", e.target.value)}
+                  placeholder="Enter Legal Name"
+                  className={getInputClassName("legalName")}
+                />
+                {renderFieldError("legalName")}
               </div>
+
+              {/* Company Name */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Company Name. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.companyName || ""}
+                  onChange={(e) => handleChange("companyName", e.target.value)}
+                  placeholder="Enter Company Name"
+                  className={getInputClassName("companyName")}
+                />
+                {renderFieldError("companyName")}
+              </div>
+
+              {/* Brand Name */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Brand Name.
+                </label>
+                <input
+                  type="text"
+                  value={formData.brandName || ""}
+                  onChange={(e) => handleChange("brandName", e.target.value)}
+                  placeholder="Enter Brand Name"
+                  className={getInputClassName()}
+                />
+              </div>
+
+              {/* Owner Name */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Owner Name. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.ownerName || ""}
+                  onChange={(e) => handleChange("ownerName", e.target.value)}
+                  placeholder="Enter Owner Name"
+                  className={getInputClassName("ownerName")}
+                />
+                {renderFieldError("ownerName")}
+              </div>
+
+              {/* Abbreviation */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Abbreviation. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.abbreviation || ""}
+                  onChange={(e) => handleChange("abbreviation", e.target.value.toUpperCase())}
+                  placeholder="e.g. ACM"
+                  className={getInputClassName("abbreviation", true)}
+                />
+                {renderFieldError("abbreviation")}
+              </div>
+
+              {/* Type Dropdown */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Type. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <DropdownWithOther
+                  hideLabel
+                  label="Type"
+                  required
+                  value={formData.businessType || "Properiter"}
+                  onChange={(val) => handleChange("businessType", val)}
+                  options={businessTypeOptions}
+                  placeholder="Select Type"
+                  fieldKey="businesstype"
+                  className="w-full"
+                  buttonClassName={cn(
+                    dropdownButtonClassName,
+                    errors.businessType && "border-rose-500 ring-1 ring-rose-500/30"
+                  )}
+                  menuClassName={dropdownMenuClassName}
+                />
+                {renderFieldError("businessType")}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Email. <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  placeholder="Enter Email Address"
+                  className={getInputClassName("email")}
+                />
+                {renderFieldError("email")}
+              </div>
+
+              {/* Contact No with 10/10 counter */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                    Contact No. <span className="text-red-500 font-bold">*</span>
+                  </label>
+                  <span className="text-[10px] text-emerald-400 font-mono">
+                    {formData.phone ? formData.phone.length : 0}/10
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={formData.phone || ""}
+                  onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 10-digit Contact No"
+                  className={getInputClassName("phone", true)}
+                />
+                {renderFieldError("phone")}
+              </div>
+
+              {/* Website - spans 1 column only */}
+              <div>
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Website.
+                </label>
+                <input
+                  type="url"
+                  value={formData.website || ""}
+                  onChange={(e) => handleChange("website", e.target.value)}
+                  placeholder="https://example.com"
+                  className={getInputClassName()}
+                />
+              </div>
+              <div />
             </div>
-          )}
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* TAB 2: CONTACT DETAILS (Billing & Shipping)                               */}
@@ -689,9 +1028,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.billingAddress1 || ""}
                       onChange={(e) => handleChange("billingAddress1", e.target.value)}
-                      placeholder="Plot- No-D-9/13A"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. Plot No. 12, Main Street"
+                      className={getInputClassName("billingAddress1")}
                     />
+                    {renderFieldError("billingAddress1")}
                   </div>
 
                   <div>
@@ -702,8 +1042,8 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.billingAddress2 || ""}
                       onChange={(e) => handleChange("billingAddress2", e.target.value)}
-                      placeholder="Sachin Udhyognagar Sahakari Mandli"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. Industrial Area, Phase 1"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -715,8 +1055,8 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.billingAddress3 || ""}
                       onChange={(e) => handleChange("billingAddress3", e.target.value)}
-                      placeholder="Hojiwal Industrial Estata vanz Road No-2"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. Near City Center, Ring Road"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -729,9 +1069,10 @@ export default function CompanyProfileForm({
                       maxLength={6}
                       value={formData.billingPincode || ""}
                       onChange={(e) => handleChange("billingPincode", e.target.value.replace(/\D/g, ""))}
-                      placeholder="394230"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      placeholder="e.g. 395001"
+                      className={getInputClassName("billingPincode", true)}
                     />
+                    {renderFieldError("billingPincode")}
                   </div>
 
                   <div>
@@ -742,9 +1083,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.billingArea || ""}
                       onChange={(e) => handleChange("billingArea", e.target.value)}
-                      placeholder="Sachin"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. Central Zone"
+                      className={getInputClassName("billingArea")}
                     />
+                    {renderFieldError("billingArea")}
                   </div>
 
                   <div>
@@ -755,9 +1097,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.billingCity || ""}
                       onChange={(e) => handleChange("billingCity", e.target.value)}
-                      placeholder="Surat"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. Surat"
+                      className={getInputClassName("billingCity")}
                     />
+                    {renderFieldError("billingCity")}
                   </div>
 
                   <div>
@@ -770,9 +1113,13 @@ export default function CompanyProfileForm({
                       options={stateOptions}
                       placeholder="Select a state"
                       className="w-full"
-                      buttonClassName={dropdownButtonClassName}
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.billingState && "border-rose-500 ring-1 ring-rose-500/30"
+                      )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {renderFieldError("billingState")}
                   </div>
 
                   <div>
@@ -783,7 +1130,7 @@ export default function CompanyProfileForm({
                       type="text"
                       disabled
                       value={formData.billingCountry || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed select-none"
+                      className={getInputClassName(undefined, false, true)}
                     />
                   </div>
 
@@ -795,9 +1142,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.billingContactName || ""}
                       onChange={(e) => handleChange("billingContactName", e.target.value)}
-                      placeholder="Shailesh Bhatiya"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. John Doe"
+                      className={getInputClassName("billingContactName")}
                     />
+                    {renderFieldError("billingContactName")}
                   </div>
 
                   <div>
@@ -816,9 +1164,10 @@ export default function CompanyProfileForm({
                       onChange={(e) =>
                         handleChange("billingContactNo", e.target.value.replace(/\D/g, ""))
                       }
-                      placeholder="9925377339"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      placeholder="e.g. 9876543210"
+                      className={getInputClassName("billingContactNo", true)}
                     />
+                    {renderFieldError("billingContactNo")}
                   </div>
                 </div>
               </div>
@@ -848,13 +1197,10 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingAddress1 || ""}
                       onChange={(e) => handleChange("shippingAddress1", e.target.value)}
-                      placeholder="Plot- No-D-9/13A"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. Plot No. 12, Main Street"
+                      className={getInputClassName("shippingAddress1", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingAddress1")}
                   </div>
 
                   <div>
@@ -866,12 +1212,8 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingAddress2 || ""}
                       onChange={(e) => handleChange("shippingAddress2", e.target.value)}
-                      placeholder="Sachin Udhyognagar Sahakari Mandli"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. Industrial Area, Phase 1"
+                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
                     />
                   </div>
 
@@ -884,12 +1226,8 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingAddress3 || ""}
                       onChange={(e) => handleChange("shippingAddress3", e.target.value)}
-                      placeholder="Hojiwal Industrial Estata vanz Road No-2"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. Near City Center, Ring Road"
+                      className={getInputClassName(undefined, false, Boolean(formData.shippingSameAsBilling))}
                     />
                   </div>
 
@@ -903,13 +1241,10 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingPincode || ""}
                       onChange={(e) => handleChange("shippingPincode", e.target.value.replace(/\D/g, ""))}
-                      placeholder="394230"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. 395001"
+                      className={getInputClassName("shippingPincode", true, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingPincode")}
                   </div>
 
                   <div>
@@ -921,13 +1256,10 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingArea || ""}
                       onChange={(e) => handleChange("shippingArea", e.target.value)}
-                      placeholder="Sachin"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. Central Zone"
+                      className={getInputClassName("shippingArea", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingArea")}
                   </div>
 
                   <div>
@@ -939,13 +1271,10 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingCity || ""}
                       onChange={(e) => handleChange("shippingCity", e.target.value)}
-                      placeholder="Surat"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. Surat"
+                      className={getInputClassName("shippingCity", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingCity")}
                   </div>
 
                   <div>
@@ -962,10 +1291,14 @@ export default function CompanyProfileForm({
                       buttonClassName={cn(
                         dropdownButtonClassName,
                         formData.shippingSameAsBilling &&
-                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed pointer-events-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400",
+                        !formData.shippingSameAsBilling &&
+                          errors.shippingState &&
+                          "border-rose-500 ring-1 ring-rose-500/30"
                       )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingState")}
                   </div>
 
                   <div>
@@ -976,7 +1309,7 @@ export default function CompanyProfileForm({
                       type="text"
                       disabled
                       value={formData.shippingCountry || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed select-none"
+                      className={getInputClassName(undefined, false, true)}
                     />
                   </div>
 
@@ -989,13 +1322,10 @@ export default function CompanyProfileForm({
                       disabled={Boolean(formData.shippingSameAsBilling)}
                       value={formData.shippingContactName || ""}
                       onChange={(e) => handleChange("shippingContactName", e.target.value)}
-                      placeholder="Shailesh Bhatiya"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. John Doe"
+                      className={getInputClassName("shippingContactName", false, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingContactName")}
                   </div>
 
                   <div>
@@ -1015,13 +1345,10 @@ export default function CompanyProfileForm({
                       onChange={(e) =>
                         handleChange("shippingContactNo", e.target.value.replace(/\D/g, ""))
                       }
-                      placeholder="9925377339"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      placeholder="e.g. 9876543210"
+                      className={getInputClassName("shippingContactNo", true, Boolean(formData.shippingSameAsBilling))}
                     />
+                    {!formData.shippingSameAsBilling && renderFieldError("shippingContactNo")}
                   </div>
                 </div>
               </div>
@@ -1030,7 +1357,7 @@ export default function CompanyProfileForm({
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: ACCOUNTING DETAILS (Legal, Bank, Invoice, Other)                   */}
+        {/* TAB 3: ACCOUNTING DETAILS                                                 */}
         {/* ========================================================================= */}
         {activeTab === "accounting" && (
           <div className="w-full">
@@ -1067,9 +1394,10 @@ export default function CompanyProfileForm({
                       maxLength={15}
                       value={formData.gstNumber || ""}
                       onChange={(e) => handleChange("gstNumber", e.target.value.toUpperCase())}
-                      placeholder="24CAGPB1419N1ZW"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      placeholder="e.g. 24ABCDE1234F1Z5"
+                      className={getInputClassName("gstNumber", true)}
                     />
+                    {renderFieldError("gstNumber")}
                   </div>
 
                   {/* TAN Number */}
@@ -1087,8 +1415,8 @@ export default function CompanyProfileForm({
                       maxLength={10}
                       value={formData.tanNumber || ""}
                       onChange={(e) => handleChange("tanNumber", e.target.value.toUpperCase())}
-                      placeholder="SRTD09780B"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      placeholder="e.g. ABCD12345E"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1107,9 +1435,10 @@ export default function CompanyProfileForm({
                       maxLength={10}
                       value={formData.panNumber || ""}
                       onChange={(e) => handleChange("panNumber", e.target.value.toUpperCase())}
-                      placeholder="CAGPB1419N"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      placeholder="e.g. ABCDE1234F"
+                      className={getInputClassName("panNumber", true)}
                     />
+                    {renderFieldError("panNumber")}
                   </div>
 
                   {/* Central Sale Tax Number */}
@@ -1127,8 +1456,8 @@ export default function CompanyProfileForm({
                       maxLength={11}
                       value={formData.cstNumber || ""}
                       onChange={(e) => handleChange("cstNumber", e.target.value)}
-                      placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      placeholder="e.g. CST12345678"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1147,8 +1476,8 @@ export default function CompanyProfileForm({
                       maxLength={14}
                       value={formData.fssaiNumber || ""}
                       onChange={(e) => handleChange("fssaiNumber", e.target.value)}
-                      placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      placeholder="e.g. 12345678901234"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1157,11 +1486,14 @@ export default function CompanyProfileForm({
                     <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Trade Category.
                     </label>
-                    <ThemeSelectDropdown
+                    <DropdownWithOther
+                      hideLabel
+                      label="Trade Category"
                       value={formData.tradeCategory || "Manufacturing"}
                       onChange={(val) => handleChange("tradeCategory", val)}
                       options={tradeCategoryOptions}
                       placeholder="Select Trade Category"
+                      fieldKey="tradecategory"
                       className="w-full"
                       buttonClassName={dropdownButtonClassName}
                       menuClassName={dropdownMenuClassName}
@@ -1183,8 +1515,8 @@ export default function CompanyProfileForm({
                       maxLength={19}
                       value={formData.msmeNumber || ""}
                       onChange={(e) => handleChange("msmeNumber", e.target.value)}
-                      placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      placeholder="e.g. UDYAM-GJ-01-0000000"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1208,9 +1540,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.bankName || ""}
                       onChange={(e) => handleChange("bankName", e.target.value)}
-                      placeholder="KOTAK MAHINDRA BANK"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      placeholder="e.g. HDFC Bank"
+                      className={getInputClassName("bankName")}
                     />
+                    {renderFieldError("bankName")}
                   </div>
 
                   <div>
@@ -1221,9 +1554,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.accountHolderName || ""}
                       onChange={(e) => handleChange("accountHolderName", e.target.value)}
-                      placeholder="DIPABEN RAMESHBHAI BHATIYA"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      placeholder="e.g. John Doe"
+                      className={getInputClassName("accountHolderName")}
                     />
+                    {renderFieldError("accountHolderName")}
                   </div>
 
                   <div>
@@ -1234,8 +1568,8 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.accountName || ""}
                       onChange={(e) => handleChange("accountName", e.target.value)}
-                      placeholder="JAY BHAVANI FASHION"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      placeholder="e.g. Acme Corporation"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -1247,9 +1581,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.accountNumber || ""}
                       onChange={(e) => handleChange("accountNumber", e.target.value)}
-                      placeholder="9925828382"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      placeholder="e.g. 123456789012"
+                      className={getInputClassName("accountNumber", true)}
                     />
+                    {renderFieldError("accountNumber")}
                   </div>
 
                   <div>
@@ -1261,9 +1596,10 @@ export default function CompanyProfileForm({
                       maxLength={11}
                       value={formData.ifscCode || ""}
                       onChange={(e) => handleChange("ifscCode", e.target.value.toUpperCase())}
-                      placeholder="KKBK0002868"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      placeholder="e.g. HDFC0001234"
+                      className={getInputClassName("ifscCode", true)}
                     />
+                    {renderFieldError("ifscCode")}
                   </div>
 
                   <div>
@@ -1276,9 +1612,13 @@ export default function CompanyProfileForm({
                       options={accountTypeOptions}
                       placeholder="Select Account Type"
                       className="w-full"
-                      buttonClassName={dropdownButtonClassName}
+                      buttonClassName={cn(
+                        dropdownButtonClassName,
+                        errors.accountType && "border-rose-500 ring-1 ring-rose-500/30"
+                      )}
                       menuClassName={dropdownMenuClassName}
                     />
+                    {renderFieldError("accountType")}
                   </div>
 
                   <div>
@@ -1289,9 +1629,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.branchName || ""}
                       onChange={(e) => handleChange("branchName", e.target.value)}
-                      placeholder="KATARGAM SURAT"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      placeholder="e.g. Main Branch"
+                      className={getInputClassName("branchName")}
                     />
+                    {renderFieldError("branchName")}
                   </div>
 
                   <div>
@@ -1302,9 +1643,10 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.upiId || ""}
                       onChange={(e) => handleChange("upiId", e.target.value)}
-                      placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. company@okhdfcbank"
+                      className={getInputClassName("upiId")}
                     />
+                    {renderFieldError("upiId")}
                   </div>
 
                   <div>
@@ -1315,8 +1657,8 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.clientCode || ""}
                       onChange={(e) => handleChange("clientCode", e.target.value)}
-                      placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. CLI12345"
+                      className={getInputClassName()}
                     />
                   </div>
 
@@ -1328,8 +1670,8 @@ export default function CompanyProfileForm({
                       type="text"
                       value={formData.productCode || ""}
                       onChange={(e) => handleChange("productCode", e.target.value)}
-                      placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      placeholder="e.g. PRD12345"
+                      className={getInputClassName()}
                     />
                   </div>
                 </div>
@@ -1351,10 +1693,10 @@ export default function CompanyProfileForm({
                     </label>
                     <input
                       type="text"
-                      value={formData.taxInvoicePrefix || "JBFT"}
+                      value={formData.taxInvoicePrefix || ""}
                       onChange={(e) => handleChange("taxInvoicePrefix", e.target.value.toUpperCase())}
-                      placeholder="JBFT"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase font-mono"
+                      placeholder="e.g. INV"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1367,7 +1709,7 @@ export default function CompanyProfileForm({
                       value={formData.taxInvoiceNext || "1"}
                       onChange={(e) => handleChange("taxInvoiceNext", e.target.value)}
                       placeholder="1"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1377,10 +1719,10 @@ export default function CompanyProfileForm({
                     </label>
                     <input
                       type="text"
-                      value={formData.retailInvoicePrefix || "JBFR"}
+                      value={formData.retailInvoicePrefix || ""}
                       onChange={(e) => handleChange("retailInvoicePrefix", e.target.value.toUpperCase())}
-                      placeholder="JBFR"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase font-mono"
+                      placeholder="e.g. RET"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
 
@@ -1393,7 +1735,7 @@ export default function CompanyProfileForm({
                       value={formData.retailInvoiceNext || "1"}
                       onChange={(e) => handleChange("retailInvoiceNext", e.target.value)}
                       placeholder="1"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={getInputClassName(undefined, true)}
                     />
                   </div>
                 </div>
@@ -1505,7 +1847,7 @@ export default function CompanyProfileForm({
                         />
                       </svg>
                       <span className="text-[11px] font-black uppercase tracking-tight text-slate-800 dark:text-white mt-3.5 leading-tight px-2">
-                        {formData.companyName || company?.companyName || "JAY BHAVANI FASHION"}
+                        {formData.companyName || company?.companyName || "Company Name"}
                       </span>
                     </div>
                   )}

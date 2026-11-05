@@ -101,8 +101,29 @@ export interface CompanyFilterState {
 export interface CreateCompanyDraftPayload {
   gstNumber: string;
   companyName?: string;
+  branchName?: string | null;
+  parentCompanyName?: string | null;
+  parentCompanyId?: string | null;
   companyCode?: string;
   ownerName?: string;
+}
+
+export interface CompanyBranchItem {
+  companyId?: string;
+  id: string;
+  companyName: string;
+  branchName: string;
+  displayName: string;
+  gstNumber: string;
+  status: string;
+  createdAt?: string;
+}
+
+export interface CreateCompanyBranchPayload {
+  companyId: string;
+  branchName: string;
+  gstNumber: string;
+  status?: string;
 }
 
 export type UpdateCompanyPayload = Partial<Omit<Company, "id" | "userId" | "createdAt" | "updatedAt">>;

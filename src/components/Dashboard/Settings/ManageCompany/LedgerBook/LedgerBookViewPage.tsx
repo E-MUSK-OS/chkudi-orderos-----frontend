@@ -172,8 +172,8 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
 
   const creationDateFormatted = formatDate(ledger.joinDate || ledger.createdAt, "01-09-2026");
   const lastUpdatedFormatted = formatDate(ledger.updatedAt || ledger.createdAt, "04-09-2026");
-  const createdBy = ledger.createdByName || "Shailesh Bhatiya";
-  const updatedBy = ledger.updatedByName || ledger.createdByName || "Shailesh Bhatiya";
+  const createdBy = ledger.createdByName || "Admin";
+  const updatedBy = ledger.updatedByName || ledger.createdByName || "Admin";
 
   return (
     <DashboardLayout title="Ledger Book">

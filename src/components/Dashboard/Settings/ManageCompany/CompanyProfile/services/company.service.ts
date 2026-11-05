@@ -5,6 +5,8 @@ import {
   CompanyFilterState,
   CreateCompanyDraftPayload,
   UpdateCompanyPayload,
+  CompanyBranchItem,
+  CreateCompanyBranchPayload,
 } from "../types/company.types";
 
 function extractErrorMessage(err: any, fallback: string): string {
@@ -110,5 +112,44 @@ export const companyService = {
       const err = await res.json().catch(() => ({}));
       throw new Error(extractErrorMessage(err, "Failed to delete company."));
     }
+  },
+
+  async createBranch(payload: CreateCompanyBranchPayload): Promise<{ data: CompanyBranchItem; message: string }> {
+    const res = await fetchWithAuth(`${API_BASE_URL}/companies/${payload.companyId}/branches`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(extractErrorMessage(err, "Failed to create company branch."));
+    }
+    return await res.json();
+  },
+
+  async getBranches(companyId?: string): Promise<{ data: CompanyBranchItem[] }> {
+    const url = companyId
+      ? `${API_BASE_URL}/companies/${companyId}/branches`
+      : `${API_BASE_URL}/companies/branches`;
+    const res = await fetchWithAuth(url);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(extractErrorMessage(err, "Failed to load company branches."));
+    }
+    return await res.json();
+  },
+
+  async updateBranchStatus(
+    branchId: string,
+    status: "ACTIVE" | "INACTIVE"
+  ): Promise<{ data: CompanyBranchItem; message: string }> {
+    const res = await fetchWithAuth(`${API_BASE_URL}/companies/branches/${branchId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(extractErrorMessage(err, "Failed to update branch status."));
+    }
+    return await res.json();
   },
 };

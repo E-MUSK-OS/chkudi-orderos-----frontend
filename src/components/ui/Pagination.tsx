@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
 
 /* =========================================================================
@@ -15,7 +16,7 @@ export interface RowsPerPageDropdownProps {
   options?: number[];
   variant?: "dark" | "light" | "gold";
   size?: "sm" | "md";
-  dropDirection?: "up" | "down";
+  dropDirection?: "up" | "down" | "auto";
   className?: string;
 }
 
@@ -36,12 +37,74 @@ export function RowsPerPageDropdown({
     onChange?.(newVal);
   };
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [openUpward, setOpenUpward] = useState(dropDirection !== "down");
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    if (!dropdownRef.current) return;
+    const rect = dropdownRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    const menuHeight = options.length * 32 + 16;
+    let up = dropDirection === "up";
+    if (dropDirection === "auto" || dropDirection === undefined) {
+      up = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    } else if (dropDirection === "down") {
+      up = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    } else if (dropDirection === "up") {
+      up = spaceAbove >= menuHeight || spaceAbove >= spaceBelow;
+    }
+
+    setOpenUpward(up);
+
+    const rightPos = Math.max(8, viewportWidth - rect.right);
+
+    if (up) {
+      setMenuStyle({
+        position: "fixed",
+        bottom: `${Math.max(8, viewportHeight - rect.top + 6)}px`,
+        right: `${rightPos}px`,
+        zIndex: 9999,
+        maxHeight: `${Math.max(100, spaceAbove - 16)}px`,
+      });
+    } else {
+      setMenuStyle({
+        position: "fixed",
+        top: `${Math.max(8, rect.bottom + 6)}px`,
+        right: `${rightPos}px`,
+        zIndex: 9999,
+        maxHeight: `${Math.max(100, spaceBelow - 16)}px`,
+      });
+    }
+  }, [dropDirection, options.length]);
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      updatePosition();
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -52,6 +115,23 @@ export function RowsPerPageDropdown({
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [isOpen]);
+
+  // Recalculate on scroll or resize while open
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = (e: Event) => {
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+        return;
+      }
+      updatePosition();
+    };
+    window.addEventListener("resize", handleScrollOrResize, { passive: true });
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener("resize", handleScrollOrResize);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+    };
+  }, [isOpen, updatePosition]);
 
   // Close dropdown on Escape key
   useEffect(() => {
@@ -108,7 +188,7 @@ export function RowsPerPageDropdown({
 
   // Popup position
   const positionClasses =
-    dropDirection === "up"
+    openUpward
       ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
       : "top-full mt-2 left-1/2 -translate-x-1/2";
 
@@ -117,7 +197,7 @@ export function RowsPerPageDropdown({
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={`
           inline-flex
           items-center
@@ -143,22 +223,19 @@ export function RowsPerPageDropdown({
         />
       </button>
 
-      {/* Dropdown Options Popup */}
-      {isOpen && (
+      {/* Dropdown Options Popup mounted via portal so it is never clipped by table overflow-hidden */}
+      {isOpen && mounted && createPortal(
         <div
+          ref={menuRef}
+          style={menuStyle}
           className={`
-            absolute
-            z-50
             min-w-[86px]
             rounded-xl
             border
             p-1.5
             shadow-2xl
-            animate-in
-            fade-in
-            zoom-in-95
             duration-100
-            ${positionClasses}
+            ${openUpward ? "origin-bottom animate-in fade-in zoom-in-95" : "origin-top animate-in fade-in zoom-in-95"}
             ${menuPanelClasses}
           `}
         >
@@ -174,6 +251,7 @@ export function RowsPerPageDropdown({
                     setIsOpen(false);
                   }}
                   className={`
+                    w-full
                     flex
                     items-center
                     justify-between
@@ -194,7 +272,8 @@ export function RowsPerPageDropdown({
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
