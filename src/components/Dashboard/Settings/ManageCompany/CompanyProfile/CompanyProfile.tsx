@@ -127,16 +127,16 @@ export default function CompanyProfile() {
   const handleToggleStatus = async (company: Company) => {
     try {
       setTogglingId(company.id);
-      const newStatus = company.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+      const newStatus: "ACTIVE" | "DRAFT" = company.status === "ACTIVE" ? "DRAFT" : "ACTIVE";
 
       // Optimistic update
       setCompanies((prev) =>
         prev.map((c) => (c.id === company.id ? { ...c, status: newStatus } : c))
       );
 
-      const res = await companyService.toggleStatus(company.id);
+      const res = await companyService.toggleStatus(company.id, newStatus);
       toast.success(
-        `${company.companyName} is now ${res.data.status === "ACTIVE" ? "Active" : "Inactive"}.`
+        `${company.companyName} is now ${res.data.status === "ACTIVE" ? "Active" : "Draft"}.`
       );
     } catch (err: any) {
       console.error(err);
