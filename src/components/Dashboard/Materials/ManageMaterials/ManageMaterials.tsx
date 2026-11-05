@@ -355,7 +355,7 @@ const ManageMaterials = () => {
 
   return (
     <DashboardLayout title="Material Profile">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8">
         {/* Header Information Banner matching Inventory */}
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <MaterialHeader
@@ -486,7 +486,7 @@ const ManageMaterials = () => {
                 : "materials"
             }
             variant="dark"
-            className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
+            className="border-t border-[#E7E0D2] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size);

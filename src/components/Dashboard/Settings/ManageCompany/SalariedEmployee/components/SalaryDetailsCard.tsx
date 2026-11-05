@@ -73,7 +73,7 @@ export default function SalaryDetailsCard({
     });
   }, [employee]);
 
-  // Dynamic automatic calculations matching Image 2
+  // Dynamic automatic calculations
   const calculatedTotalHours = useMemo(() => {
     return Number((formData.workingDays * formData.workingHoursPerDay).toFixed(0));
   }, [formData.workingDays, formData.workingHoursPerDay]);
@@ -120,17 +120,17 @@ export default function SalaryDetailsCard({
   };
 
   return (
-    <div className="w-full rounded-2xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:shadow-xl flex flex-col font-sans">
+    <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-7 shadow-sm flex flex-col font-sans">
       {/* Card Header Title */}
-      <h2 className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white mb-4">
+      <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white mb-4">
         Basic Salary and Working Details
       </h2>
 
-      {/* Profile Summary Box matching Image 2 */}
-      <div className="w-full rounded-2xl bg-slate-50 border border-slate-200 p-4 sm:p-5 mb-5 shadow-xs dark:bg-[#141923] dark:border-white/[0.08]">
+      {/* Profile Summary Box matching theme */}
+      <div className="w-full rounded-2xl bg-[#FFFDF8] dark:bg-[#080B11] border border-[#EAE4D8] dark:border-white/[0.08] p-4 sm:p-5 mb-5 shadow-xs">
         <div className="flex items-start gap-4">
           {/* Avatar */}
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border border-slate-200 dark:bg-[#1C2230] dark:border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border border-[#EAE4D8] dark:bg-[#161B24] dark:border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
             {employee.photoUrl ? (
               <img
                 src={getMediaUrl(employee.photoUrl)}
@@ -146,7 +146,7 @@ export default function SalaryDetailsCard({
           <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
             {/* Name */}
             <div className="col-span-2">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Name</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Name</span>
               <span className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
                 {employee.fullName}
               </span>
@@ -154,7 +154,7 @@ export default function SalaryDetailsCard({
 
             {/* Contact */}
             <div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Contact</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Contact</span>
               <span className="font-mono text-slate-800 dark:text-slate-200">
                 {employee.contactNo || "—"}
               </span>
@@ -162,7 +162,7 @@ export default function SalaryDetailsCard({
 
             {/* Joined */}
             <div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Joined</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Joined</span>
               <span className="font-mono text-slate-800 dark:text-slate-200">
                 {formatDate(employee.joiningDate)}
               </span>
@@ -170,7 +170,7 @@ export default function SalaryDetailsCard({
 
             {/* Designation */}
             <div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Designation</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Designation</span>
               <span className="text-slate-800 dark:text-slate-200 font-medium">
                 {employee.designation || "—"}
               </span>
@@ -178,7 +178,7 @@ export default function SalaryDetailsCard({
 
             {/* Department */}
             <div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Department</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Department</span>
               <span className="text-slate-800 dark:text-slate-200 font-medium">
                 {employee.department || "—"}
               </span>
@@ -186,22 +186,22 @@ export default function SalaryDetailsCard({
           </div>
         </div>
 
-        {/* Bank Sub-row matching Image 2 */}
-        <div className="mt-4 pt-3 border-t border-slate-200 dark:border-white/[0.06] grid grid-cols-3 gap-2 text-xs">
+        {/* Bank Sub-row */}
+        <div className="mt-4 pt-3 border-t border-[#EAE4D8] dark:border-white/[0.06] grid grid-cols-3 gap-2 text-xs">
           <div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Bank</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Bank</span>
             <span className="text-slate-800 dark:text-slate-300 font-medium truncate block">
               {employee.bankName || "—"}
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Account No.</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Account No.</span>
             <span className="font-mono text-slate-800 dark:text-slate-300 truncate block">
               {employee.accountNumber || "—"}
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">IFSC Code.</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">IFSC Code.</span>
             <span className="font-mono text-slate-800 dark:text-slate-300 truncate block">
               {employee.ifscCode || "—"}
             </span>
@@ -209,7 +209,7 @@ export default function SalaryDetailsCard({
         </div>
       </div>
 
-      {/* Salary & Working Details Form matching Image 2 */}
+      {/* Salary & Working Details Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Row 1: Basic Salary, Working Day Mode, Working Days */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -231,7 +231,7 @@ export default function SalaryDetailsCard({
                   handleChange("basicSalary", parseFloat(e.target.value) || 0)
                 }
                 placeholder="0"
-                className="w-full h-9 pl-7 pr-3 text-xs rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+                className="w-full h-10 pl-7 pr-3 text-xs rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] placeholder-slate-400 dark:bg-[#080B11] dark:border-white/[0.08] dark:focus:border-[#E8C16D] dark:text-white outline-none transition-all shadow-xs font-mono"
               />
             </div>
           </div>
@@ -247,7 +247,7 @@ export default function SalaryDetailsCard({
               onChange={(val) => handleChange("workingDayMode", val)}
               options={WORKING_DAY_MODE_OPTIONS}
               className="w-full block"
-              buttonClassName="w-full h-9 px-3 text-xs font-semibold rounded-xl justify-between border border-[#E7E0D2] bg-white text-[#0A0E1A] hover:bg-slate-50 dark:bg-[#161B24] dark:border-white/[0.08] dark:text-white dark:hover:bg-white/[0.04]"
+              buttonClassName="w-full h-10 px-3 text-xs font-semibold rounded-xl justify-between border border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D]"
               menuClassName="w-full min-w-full max-w-none"
             />
           </div>
@@ -265,7 +265,7 @@ export default function SalaryDetailsCard({
               onChange={(e) =>
                 handleChange("workingDays", parseInt(e.target.value, 10) || 0)
               }
-              className="w-full h-9 px-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+              className="w-full h-10 px-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:focus:border-[#E8C16D] dark:text-white outline-none transition-all shadow-xs font-mono"
             />
           </div>
         </div>
@@ -288,7 +288,7 @@ export default function SalaryDetailsCard({
                   parseFloat(e.target.value) || 0
                 )
               }
-              className="w-full h-9 px-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+              className="w-full h-10 px-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:focus:border-[#E8C16D] dark:text-white outline-none transition-all shadow-xs font-mono"
             />
           </div>
 
@@ -297,7 +297,7 @@ export default function SalaryDetailsCard({
             <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
               Total Hours
             </label>
-            <div className="w-full h-9 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-100 border border-slate-200 text-slate-800 dark:bg-[#161B24]/60 dark:border-white/[0.06] dark:text-slate-200 font-mono select-none">
+            <div className="w-full h-10 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-50 dark:bg-[#080B11]/50 border border-[#E7E0D2]/60 dark:border-white/[0.04] text-slate-800 dark:text-slate-200 font-mono select-none font-semibold">
               {calculatedTotalHours || 0}
             </div>
           </div>
@@ -307,7 +307,7 @@ export default function SalaryDetailsCard({
             <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
               Wage Rate
             </label>
-            <div className="w-full h-9 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-100 border border-slate-200 text-slate-800 dark:bg-[#161B24]/60 dark:border-white/[0.06] dark:text-slate-200 font-mono select-none">
+            <div className="w-full h-10 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-50 dark:bg-[#080B11]/50 border border-[#E7E0D2]/60 dark:border-white/[0.04] text-slate-800 dark:text-slate-200 font-mono select-none font-semibold">
               {calculatedWageRate > 0 ? calculatedWageRate.toFixed(2) : "—"}
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function SalaryDetailsCard({
                   handleChange("otRatePercent", parseFloat(e.target.value) || 0)
                 }
                 placeholder="0.00"
-                className="w-full h-9 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+                className="w-full h-10 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] placeholder-slate-400 dark:bg-[#080B11] dark:border-white/[0.08] dark:focus:border-[#E8C16D] dark:text-white outline-none transition-all shadow-xs font-mono"
               />
             </div>
           </div>
@@ -343,7 +343,7 @@ export default function SalaryDetailsCard({
             <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
               OT Rate / Hour
             </label>
-            <div className="w-full h-9 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-100 border border-slate-200 text-slate-800 dark:bg-[#161B24]/60 dark:border-white/[0.06] dark:text-slate-200 font-mono select-none">
+            <div className="w-full h-10 px-3 flex items-center justify-end text-xs rounded-xl bg-slate-50 dark:bg-[#080B11]/50 border border-[#E7E0D2]/60 dark:border-white/[0.04] text-slate-800 dark:text-slate-200 font-mono select-none font-semibold">
               {calculatedOtRatePerHour > 0
                 ? calculatedOtRatePerHour.toFixed(2)
                 : "—"}
@@ -374,7 +374,7 @@ export default function SalaryDetailsCard({
                   )
                 }
                 placeholder="0"
-                className="w-full h-9 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+                className="w-full h-10 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] placeholder-slate-400 dark:bg-[#080B11] dark:border-white/[0.08] dark:focus:border-[#E8C16D] dark:text-white outline-none transition-all shadow-xs font-mono"
               />
             </div>
           </div>
@@ -400,18 +400,18 @@ export default function SalaryDetailsCard({
                   )
                 }
                 placeholder="0"
-                className="w-full h-9 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] text-[#0A0E1A] placeholder-slate-400 dark:bg-[#161B24] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all shadow-xs font-mono"
+                className="w-full h-10 pl-7 pr-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] placeholder-slate-400 dark:bg-[#080B11] dark:border-white/[0.08] dark:focus:border-[#E8C16D] dark:text-white outline-none transition-all shadow-xs font-mono"
               />
             </div>
           </div>
         </div>
 
-        {/* Submit Button matching Image 2 */}
+        {/* Submit Button */}
         <div className="pt-2">
           <button
             type="submit"
             disabled={saving}
-            className="w-full h-10 rounded-xl bg-[#F5C451] hover:bg-[#E8B83D] text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+            className="w-full h-11 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.98] text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm hover:shadow transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {saving ? (
               <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
@@ -425,4 +425,3 @@ export default function SalaryDetailsCard({
     </div>
   );
 }
-

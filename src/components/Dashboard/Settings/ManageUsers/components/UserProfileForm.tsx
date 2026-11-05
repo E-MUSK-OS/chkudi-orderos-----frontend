@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Save } from "lucide-react";
+import { Save, CheckCircle2, Circle } from "lucide-react";
 import UserGeneralTab from "./UserGeneralTab";
 import UserPhotoTab from "./UserPhotoTab";
 import { useCreateUser, useUpdateUser } from "../hooks/useManageUsers";
 import type { ManagedUser, UserFormValues } from "../types/userManagement.types";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props {
   initialData?: ManagedUser | null;
@@ -140,30 +141,42 @@ export default function UserProfileForm({ initialData, mode, onSuccess, onCancel
         <input type="password" name="chrome_prevent_autofill_password" tabIndex={-1} autoComplete="new-password" defaultValue="" />
       </div>
 
-      {/* Tab Switcher Header matching Amazon OrderProcess & Analytics theme */}
-      <div className="flex items-center rounded-2xl bg-slate-100 dark:bg-[#141B2D] p-1.5 border border-slate-200 dark:border-white/[0.08]">
+      {/* Tab Switcher Header matching Company Profile & Material Profile segmented pill style */}
+      <div className="w-full rounded-2xl sm:rounded-full bg-white dark:bg-[#080B11] border border-[#E7E0D2] dark:border-white/[0.08] p-1.5 flex items-center justify-between shadow-xs gap-1 sm:gap-2 select-none overflow-x-auto no-scrollbar">
         <button
           type="button"
           onClick={() => setActiveTab("general")}
-          className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 sm:px-6 rounded-full text-xs sm:text-sm md:text-base font-bold transition-all cursor-pointer whitespace-nowrap",
             activeTab === "general"
-              ? "bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white shadow-xs"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-          }`}
+              ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+          )}
         >
-          General
+          {activeTab === "general" ? (
+            <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+          ) : (
+            <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+          )}
+          <span>General</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("photo")}
-          className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 sm:px-6 rounded-full text-xs sm:text-sm md:text-base font-bold transition-all cursor-pointer whitespace-nowrap",
             activeTab === "photo"
-              ? "bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white shadow-xs"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-          }`}
+              ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+          )}
         >
-          Photo
+          {activeTab === "photo" ? (
+            <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+          ) : (
+            <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+          )}
+          <span>Photo</span>
         </button>
       </div>
 
@@ -200,7 +213,7 @@ export default function UserProfileForm({ initialData, mode, onSuccess, onCancel
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="min-h-[44px] h-11 px-6 rounded-2xl text-xs sm:text-sm font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98] shadow-xs"
+            className="inline-flex h-11 items-center justify-center px-6 rounded-full text-xs sm:text-sm font-bold border border-[#E7E0D2] bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-200 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -208,7 +221,7 @@ export default function UserProfileForm({ initialData, mode, onSuccess, onCancel
           <button
             type="submit"
             disabled={loading}
-            className="min-h-[44px] h-11 px-7 rounded-2xl text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A] active:scale-[0.98] shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+            className="inline-flex h-11 items-center justify-center gap-2 px-7 rounded-full text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>

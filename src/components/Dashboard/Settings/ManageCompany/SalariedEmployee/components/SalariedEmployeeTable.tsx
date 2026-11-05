@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { SalariedEmployee } from "../types/salariedEmployee.types";
 
 interface SalariedEmployeeTableProps {
@@ -61,10 +61,10 @@ export default function SalariedEmployeeTable({
     selectedIds.length > 0 && selectedIds.length < employees.length;
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
-      <div className="overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <div className="w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm relative overflow-visible font-sans">
+      <div className="w-full overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
         <table className="w-full text-left border-collapse text-xs">
-          {/* Table Header matching OrderOS standard */}
+          {/* Table Header matching OrderOS standard & Employee Profile */}
           <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
             <tr>
               {/* No. */}
@@ -84,7 +84,7 @@ export default function SalariedEmployeeTable({
                       if (el) el.indeterminate = someSelected;
                     }}
                     onChange={onToggleSelectAll}
-                    className="w-4 h-4 rounded border-slate-300 bg-white text-slate-900 accent-[#F5C451] dark:border-white/20 dark:bg-[#161B24] cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 bg-white text-slate-900 accent-[#B88728] dark:border-white/20 dark:bg-[#161B24] dark:accent-[#E8C16D] cursor-pointer"
                   />
                 </th>
               )}
@@ -153,7 +153,7 @@ export default function SalariedEmployeeTable({
               <tr>
                 <td colSpan={10} className="py-16 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <Loader2 size={24} className="animate-spin text-[#F5C451] dark:text-white" />
+                    <Loader2 size={24} className="animate-spin text-[#B88728] dark:text-[#E8C16D]" />
                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Loading salaried employees...</span>
                   </div>
                 </td>
@@ -176,7 +176,7 @@ export default function SalariedEmployeeTable({
                       if ((e.target as HTMLElement).tagName === "INPUT") return;
                       router.push(`/dashboard/setting/manage-company/salaried-employee/${emp.id}`);
                     }}
-                    className={`transition-colors hover:bg-[#FAF8F5] dark:hover:bg-white/[0.06] cursor-pointer ${
+                    className={`transition-colors hover:bg-[#FFFDF8] dark:hover:bg-white/[0.02] cursor-pointer ${
                       isSelected ? "bg-amber-500/10 dark:bg-white/[0.04]" : ""
                     }`}
                   >
@@ -194,7 +194,7 @@ export default function SalariedEmployeeTable({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => onToggleSelect(emp.id)}
-                          className="w-4 h-4 rounded border-slate-300 bg-white text-slate-900 accent-black dark:border-white/20 dark:bg-[#161B24] dark:accent-white cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 bg-white text-slate-900 accent-[#B88728] dark:border-white/20 dark:bg-[#161B24] dark:accent-[#E8C16D] cursor-pointer"
                         />
                       </td>
                     )}
@@ -276,4 +276,3 @@ export default function SalariedEmployeeTable({
     </div>
   );
 }
-

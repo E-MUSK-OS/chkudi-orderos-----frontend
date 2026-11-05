@@ -30,6 +30,7 @@ import { getAvatarUrl } from "@/components/Dashboard/Settings/ManageUsers/utils/
 import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 
 export function getInitials(name?: string | null, email?: string | null): string {
   if (name && name.trim()) {
@@ -89,17 +90,6 @@ function formatDobForInput(rawDob: any): string {
     }
   } catch {}
   return "";
-}
-
-function normalizeGender(rawGender?: string | null): string {
-  if (!rawGender) return "";
-  const trimmed = String(rawGender).trim();
-  if (!trimmed) return "";
-  const lower = trimmed.toLowerCase();
-  if (lower === "male") return "Male";
-  if (lower === "female") return "Female";
-  if (lower === "other") return "Other";
-  return trimmed;
 }
 
 function getStoredUser(): User | null {
@@ -194,25 +184,13 @@ export default function ProfileForm() {
   }, [profileForm.dob]);
 
   const genderOptions = useMemo(() => {
-    const defaultList = ["Male", "Female", "Other"];
-    const optionsMap = new Map<string, string>();
-
-    defaultList.forEach((g) => optionsMap.set(g.toLowerCase(), g));
-
-    (dropdownData?.genders || []).forEach((g: string) => {
-      const trimmed = g.trim();
-      if (trimmed && !optionsMap.has(trimmed.toLowerCase())) {
-        optionsMap.set(trimmed.toLowerCase(), trimmed);
-      }
-    });
-
-    const currentG = normalizeGender(profileForm.gender || user?.gender || "");
-    if (currentG && !optionsMap.has(currentG.toLowerCase())) {
-      optionsMap.set(currentG.toLowerCase(), currentG);
+    const masterOptions = buildMergedOptions("gender", [], dropdownData?.savedOptions);
+    if (masterOptions.length > 0) return masterOptions;
+    if (dropdownData?.genders && dropdownData.genders.length > 0) {
+      return dropdownData.genders.map((g: string) => ({ value: g, label: g }));
     }
-
-    return Array.from(optionsMap.values());
-  }, [dropdownData?.genders, profileForm.gender, user?.gender]);
+    return [];
+  }, [dropdownData?.savedOptions, dropdownData?.genders]);
 
   const initials = useMemo(
     () => getInitials(profileForm.fullName || user?.fullName, profileForm.email || user?.email),
@@ -228,7 +206,7 @@ export default function ProfileForm() {
       phone: data.phone || "",
       username: data.username || "",
       dob: formatDobForInput(data.dob),
-      gender: normalizeGender(data.gender),
+      gender: data.gender ? String(data.gender).trim() : "",
       avatar: data.avatar || "",
     });
   };
@@ -348,7 +326,7 @@ export default function ProfileForm() {
         email,
         phone: profileForm.phone.trim() || null,
         dob: profileForm.dob ? profileForm.dob : null,
-        gender: profileForm.gender ? normalizeGender(profileForm.gender) : null,
+        gender: profileForm.gender.trim() || null,
         avatar: profileForm.avatar || null,
       });
 
@@ -627,9 +605,9 @@ export default function ProfileForm() {
             </span>
             <div className="mt-2">
               <ThemeSelectDropdown
-                value={normalizeGender(profileForm.gender)}
+                value={profileForm.gender}
                 onChange={(val) => setProfileForm((prev) => ({ ...prev, gender: val }))}
-                options={genderOptions.map((g) => ({ value: g, label: g }))}
+                options={genderOptions}
                 placeholder="Select Gender"
                 icon={<UserCheck size={16} />}
                 className="w-full block"

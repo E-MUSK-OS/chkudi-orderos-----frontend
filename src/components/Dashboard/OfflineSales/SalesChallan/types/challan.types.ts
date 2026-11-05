@@ -90,6 +90,7 @@ export interface SalesChallan {
 }
 
 export interface ChallanFiltersState {
+  search?: string;
   challanNo: string;
   challanRefNo: string;
   partyName: string;

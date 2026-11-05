@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import Pagination from "@/components/ui/Pagination";
+import Pagination, { DEFAULT_PAGE_SIZE_OPTIONS } from "@/components/ui/Pagination";
 
 interface CompanyPaginationProps {
   total: number;
   page: number;
   pageSize: number;
   totalPages?: number;
+  options?: number[];
   onPageChange: (newPage: number) => void;
   onPageSizeChange: (newPageSize: number) => void;
   className?: string;
@@ -18,6 +19,7 @@ export default function CompanyPagination({
   page,
   pageSize,
   totalPages: propTotalPages,
+  options = DEFAULT_PAGE_SIZE_OPTIONS,
   onPageChange,
   onPageSizeChange,
   className = "",
@@ -33,11 +35,11 @@ export default function CompanyPagination({
       pageSize={pageSize}
       limit={pageSize}
       itemName="entries"
-      variant="light"
-      options={[10, 20, 50, 100]}
+      variant="dark"
+      options={options}
       className={
         className ||
-        "border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+        "border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
       }
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}

@@ -274,6 +274,16 @@ export default function MobileCameraScanner({
   const scanZoneRef = useRef<HTMLDivElement>(null);
   const zxingTimeoutRef = useRef<any>(null);
 
+  const onScanRef = useRef(onScan);
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>("checking");
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
@@ -397,13 +407,13 @@ export default function MobileCameraScanner({
       // Trigger vibrant "Reading / Barcode Caught" animation
       setIsReading(true);
 
-      onScan(code);
+      onScanRef.current(code);
 
       setTimeout(() => {
         setIsReading(false);
       }, 500);
     },
-    [onScan, playBeepSound]
+    [playBeepSound]
   );
 
   const handleNoBarcodeInFrame = useCallback(() => {
@@ -838,7 +848,7 @@ export default function MobileCameraScanner({
     return () => {
       stopCamera();
     };
-  }, [isOpen, checkInitialPermission, stopCamera]);
+  }, [isOpen]);
 
   // Mobile Back Button / Gesture Navigation & ESC Handler:
   // When camera opens on mobile, push a dummy history state so pressing "Back" or swiping back
@@ -858,13 +868,13 @@ export default function MobileCameraScanner({
 
     const handlePopState = () => {
       isBackNav = true;
-      onClose();
+      onCloseRef.current();
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
 
@@ -885,7 +895,7 @@ export default function MobileCameraScanner({
         }
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

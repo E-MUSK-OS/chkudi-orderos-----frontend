@@ -31,62 +31,54 @@ export default function PurchaseChallanStats({ challans }: PurchaseChallanStatsP
       value: totalChallans,
       subtext: "All-time inward challan records",
       icon: FileSpreadsheet,
-      iconBg: "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       title: "Received Quantity",
       value: totalQuantity.toLocaleString("en-IN"),
       subtext: "Units received into godown",
       icon: PackageCheck,
-      iconBg: "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       title: "Total Inward Value",
       value: `₹${totalAmount.toLocaleString("en-IN")}`,
       subtext: "Total inward turnover",
       icon: IndianRupee,
-      iconBg: "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
     {
       title: "Pending Invoicing",
       value: pendingCount,
       subtext: "Challans awaiting tax invoice",
       icon: Clock,
-      iconBg: "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]",
     },
   ];
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <div
+          <article
             key={card.title}
-            className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/50 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50"
+            className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
-                  {card.title}
-                </p>
-                <h3 className="mt-2 text-2xl sm:text-3xl font-bold text-[#0A0E1A] dark:text-white">
-                  {card.value}
-                </h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {card.subtext}
-                </p>
-              </div>
-
-              <div
-                className={`grid h-12 w-12 place-items-center rounded-2xl border shrink-0 ${card.iconBg}`}
-              >
-                <Icon className="h-6 w-6" />
-              </div>
+            <div className="flex flex-col justify-center">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
+                {card.title}
+              </p>
+              <h3 className="mt-1.5 text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white leading-none">
+                {card.value}
+              </h3>
+              <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+                {card.subtext}
+              </p>
             </div>
-          </div>
+
+            <div className="flex h-12 w-12 sm:h-13 sm:w-13 shrink-0 items-center justify-center rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D]">
+              <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+          </article>
         );
       })}
-    </section>
+    </div>
   );
 }

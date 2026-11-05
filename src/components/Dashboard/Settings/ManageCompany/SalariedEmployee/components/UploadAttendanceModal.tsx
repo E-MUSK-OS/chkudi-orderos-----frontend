@@ -71,12 +71,12 @@ export default function UploadAttendanceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white border border-[#E7E0D2] dark:bg-[#101623] dark:border-white/[0.08] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col font-sans">
+      <div className="bg-white border border-[#E7E0D2] dark:bg-[#0F1626] dark:border-white/[0.08] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col font-sans">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 dark:border-white/[0.08] dark:bg-[#0E121A]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-white/[0.06] flex items-center justify-center text-amber-600 dark:text-white">
-              <FileSpreadsheet size={18} />
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#E7E0D2] bg-[#FAF8F5] dark:border-white/[0.08] dark:bg-[#080B11]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
+              <FileSpreadsheet size={20} />
             </div>
             <div>
               <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white leading-tight">
@@ -90,7 +90,7 @@ export default function UploadAttendanceModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-black hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="p-1.5 rounded-full text-slate-400 hover:text-black hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -101,7 +101,7 @@ export default function UploadAttendanceModal({
           {/* File Drop Box */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-full h-44 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#E8C16D] bg-slate-50/70 hover:bg-slate-50 dark:border-white/[0.12] dark:hover:border-white/30 dark:bg-[#161B24]/60 dark:hover:bg-[#161B24] flex flex-col items-center justify-center cursor-pointer transition-all p-4 text-center group"
+            className="w-full h-44 rounded-2xl border-2 border-dashed border-[#E7E0D2] hover:border-[#E8C16D] bg-[#FAF8F5]/60 hover:bg-[#FAF8F5] dark:border-white/[0.12] dark:hover:border-[#E8C16D]/50 dark:bg-[#080B11]/60 dark:hover:bg-[#080B11] flex flex-col items-center justify-center cursor-pointer transition-all p-4 text-center group"
           >
             <input
               ref={fileInputRef}
@@ -113,25 +113,25 @@ export default function UploadAttendanceModal({
 
             {selectedFile ? (
               <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 dark:bg-white/[0.08] flex items-center justify-center text-emerald-600 dark:text-white">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 dark:bg-white/[0.08] flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                   <FileSpreadsheet size={24} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#0A0E1A] dark:text-white break-all">
                     {selectedFile.name}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
                     {(selectedFile.size / 1024).toFixed(1)} KB — Click to change
                   </p>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-[#F5C451]/20 dark:bg-white/[0.06] dark:group-hover:bg-white/[0.1] flex items-center justify-center text-slate-600 group-hover:text-slate-900 dark:text-slate-300 dark:group-hover:text-white transition-all">
+                <div className="w-12 h-12 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 group-hover:scale-105 flex items-center justify-center text-[#B88728] dark:text-[#E8C16D] transition-all">
                   <Upload size={22} />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
                     Click to select CSV / Excel attendance file
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
@@ -143,12 +143,12 @@ export default function UploadAttendanceModal({
           </div>
 
           {/* Download Template Hint */}
-          <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200 dark:border-white/[0.06]">
+          <div className="flex items-center justify-between text-xs pt-1 border-t border-[#E7E0D2] dark:border-white/[0.06]">
             <span className="text-slate-500 dark:text-slate-400">Need the correct columns format?</span>
             <button
               type="button"
               onClick={() => downloadBlankAttendanceTemplate()}
-              className="inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white font-medium hover:underline cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs text-[#B88728] dark:text-[#E8C16D] font-bold hover:underline cursor-pointer"
             >
               <Download size={13} />
               <span>Download Template</span>
@@ -157,11 +157,11 @@ export default function UploadAttendanceModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/80 dark:border-white/[0.08] dark:bg-[#0E121A]">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E7E0D2] bg-[#FAF8F5] dark:border-white/[0.08] dark:bg-[#080B11]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -169,12 +169,12 @@ export default function UploadAttendanceModal({
             type="button"
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
-            className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.98] text-slate-900 font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.98] text-[#0A0E1A] font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploading ? (
-              <Loader2 size={16} className="animate-spin text-slate-900" />
+              <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
             ) : (
-              <Upload size={16} className="text-slate-900 stroke-[2.5]" />
+              <Upload size={16} className="text-[#0A0E1A] stroke-[2.5]" />
             )}
             <span>{uploading ? "Uploading..." : "Upload Record"}</span>
           </button>
@@ -183,4 +183,3 @@ export default function UploadAttendanceModal({
     </div>
   );
 }
-

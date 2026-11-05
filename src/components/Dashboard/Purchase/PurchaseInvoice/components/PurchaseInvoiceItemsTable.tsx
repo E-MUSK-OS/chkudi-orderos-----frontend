@@ -103,40 +103,28 @@ export default function PurchaseInvoiceItemsTable({
 
       if (field === "sgstRate") {
         sgstRate = rawVal === "" ? 0 : parseFloat(rawVal) || 0;
-        if (isIntraState) {
-          cgstRate = sgstRate;
-          current.cgstRate = cgstRate === 0 ? "" : cgstRate;
-        }
+        cgstRate = sgstRate;
+        current.cgstRate = sgstRate === 0 ? "" : sgstRate;
         sgstAmt = Math.round(taxableAmt * (sgstRate / 100) * 100) / 100;
+        cgstAmt = sgstAmt;
         current.sgstAmount = sgstAmt === 0 ? "" : sgstAmt;
-        if (isIntraState) {
-          cgstAmt = sgstAmt;
-          current.cgstAmount = cgstAmt === 0 ? "" : cgstAmt;
-        }
+        current.cgstAmount = cgstAmt === 0 ? "" : cgstAmt;
       } else if (field === "cgstRate") {
         cgstRate = rawVal === "" ? 0 : parseFloat(rawVal) || 0;
-        if (isIntraState) {
-          sgstRate = cgstRate;
-          current.sgstRate = sgstRate === 0 ? "" : sgstRate;
-        }
+        sgstRate = cgstRate;
+        current.sgstRate = cgstRate === 0 ? "" : cgstRate;
         cgstAmt = Math.round(taxableAmt * (cgstRate / 100) * 100) / 100;
+        sgstAmt = cgstAmt;
         current.cgstAmount = cgstAmt === 0 ? "" : cgstAmt;
-        if (isIntraState) {
-          sgstAmt = cgstAmt;
-          current.sgstAmount = sgstAmt === 0 ? "" : sgstAmt;
-        }
+        current.sgstAmount = sgstAmt === 0 ? "" : sgstAmt;
       } else if (field === "sgstAmount") {
         sgstAmt = rawVal === "" ? 0 : parseFloat(rawVal) || 0;
-        if (isIntraState) {
-          cgstAmt = sgstAmt;
-          current.cgstAmount = cgstAmt === 0 ? "" : cgstAmt;
-        }
+        cgstAmt = sgstAmt;
+        current.cgstAmount = cgstAmt === 0 ? "" : cgstAmt;
       } else if (field === "cgstAmount") {
         cgstAmt = rawVal === "" ? 0 : parseFloat(rawVal) || 0;
-        if (isIntraState) {
-          sgstAmt = cgstAmt;
-          current.sgstAmount = sgstAmt === 0 ? "" : sgstAmt;
-        }
+        sgstAmt = cgstAmt;
+        current.sgstAmount = sgstAmt === 0 ? "" : sgstAmt;
       } else if (isIntraState && (sgstRate > 0 || cgstRate > 0)) {
         sgstAmt = Math.round(taxableAmt * (sgstRate / 100) * 100) / 100;
         cgstAmt = Math.round(taxableAmt * (cgstRate / 100) * 100) / 100;
@@ -179,11 +167,11 @@ export default function PurchaseInvoiceItemsTable({
     ) / 1000;
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white overflow-hidden shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white overflow-hidden shadow-xs dark:bg-[#0F1626]">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-100/90 text-slate-700 dark:bg-[#0B101B] dark:text-slate-300 border-b border-slate-200 dark:border-white/[0.08]">
+            <tr className="bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#080B11] border-b border-slate-800 dark:border-white/[0.08]">
               <th className="py-2.5 px-2 text-center w-10 font-bold">No.</th>
               <th className="py-2.5 px-2.5 min-w-[190px] font-bold">Particular</th>
               <th className="py-2.5 px-1.5 text-center w-24 font-bold">HSN</th>
@@ -206,7 +194,7 @@ export default function PurchaseInvoiceItemsTable({
             {items.map((item, index) => (
               <tr
                 key={index}
-                className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors"
+                className="hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.02] transition-colors"
               >
                 {/* No. */}
                 <td className="py-1.5 px-2 text-center text-slate-500 font-bold dark:text-slate-400">
@@ -223,7 +211,7 @@ export default function PurchaseInvoiceItemsTable({
                       handleItemFieldChange(index, "particular", e.target.value)
                     }
                     placeholder="Particular / SKU"
-                    className="w-full h-8 px-2 text-xs font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-2 text-xs font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -237,7 +225,7 @@ export default function PurchaseInvoiceItemsTable({
                       handleItemFieldChange(index, "hsn", e.target.value)
                     }
                     placeholder="HSN"
-                    className="w-full h-8 px-1.5 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
@@ -253,11 +241,11 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "quantity", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* Rate - Clean removal of 0 */}
+                {/* Rate */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -269,11 +257,11 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "rate", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* Amount - Clean removal of 0 */}
+                {/* Amount */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -285,16 +273,15 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "amount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* Dis % - Clean removal of 0 */}
+                {/* Dis % */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
                     min="0"
-                    max="100"
                     step="any"
                     value={cleanDisplay(item.discountPercent)}
                     placeholder="0"
@@ -302,11 +289,11 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "discountPercent", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-right text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* Discount Amount - Clean removal of 0 */}
+                {/* Discount */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -318,11 +305,11 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "discountAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* Taxable Amt - Clean removal of 0 */}
+                {/* Taxable Amount */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -334,27 +321,27 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "taxableAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* SGST Rate - Clean removal of 0 */}
+                {/* SGST Rate */}
                 <td className="py-1.5 px-1">
                   <input
                     type="number"
                     min="0"
                     step="any"
                     value={cleanDisplay(item.sgstRate)}
-                    placeholder="0.00"
+                    placeholder="0"
                     disabled={disabled}
                     onChange={(e) =>
                       handleItemFieldChange(index, "sgstRate", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-center font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* SGST Amt - Clean removal of 0 */}
+                {/* SGST Amount */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -366,27 +353,27 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "sgstAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* CGST Rate - Clean removal of 0 */}
+                {/* CGST Rate */}
                 <td className="py-1.5 px-1">
                   <input
                     type="number"
                     min="0"
                     step="any"
                     value={cleanDisplay(item.cgstRate)}
-                    placeholder="0.00"
+                    placeholder="0"
                     disabled={disabled}
                     onChange={(e) =>
                       handleItemFieldChange(index, "cgstRate", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-center font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* CGST Amt - Clean removal of 0 */}
+                {/* CGST Amount */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -398,27 +385,27 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "cgstAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* IGST Rate - Clean removal of 0 */}
+                {/* IGST Rate */}
                 <td className="py-1.5 px-1">
                   <input
                     type="number"
                     min="0"
                     step="any"
                     value={cleanDisplay(item.igstRate)}
-                    placeholder="0.00"
+                    placeholder="0"
                     disabled={disabled}
                     onChange={(e) =>
                       handleItemFieldChange(index, "igstRate", e.target.value)
                     }
-                    className="w-full h-8 px-1 text-xs text-center font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1 text-xs text-center font-medium text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* IGST Amt - Clean removal of 0 */}
+                {/* IGST Amount */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -430,11 +417,11 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "igstAmount", e.target.value)
                     }
-                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-1.5 text-xs text-right font-mono text-slate-800 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
 
-                {/* Total - Clean removal of 0 */}
+                {/* Total */}
                 <td className="py-1.5 px-1.5">
                   <input
                     type="number"
@@ -446,24 +433,24 @@ export default function PurchaseInvoiceItemsTable({
                     onChange={(e) =>
                       handleItemFieldChange(index, "total", e.target.value)
                     }
-                    className="w-full h-8 px-2 text-xs text-right font-mono font-bold text-slate-900 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] dark:focus:border-[#F5C451] focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-8 px-2 text-xs text-right font-mono font-bold text-slate-900 dark:text-white bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.1] rounded-lg focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 focus:outline-none transition-all placeholder:text-slate-400"
                   />
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-slate-100/90 dark:bg-[#0B101B] border-t border-slate-200 dark:border-white/[0.08] font-bold">
+            <tr className="bg-[#FFF9EC] dark:bg-[#1A160E] border-t border-[#E8C16D]/40 font-bold">
               <td
                 colSpan={3}
-                className="py-2.5 px-3 text-right text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200"
+                className="py-3 px-3 text-right text-xs uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]"
               >
                 Total Qty
               </td>
-              <td className="py-2.5 px-1.5 text-right font-mono text-xs font-bold text-slate-900 dark:text-white">
+              <td className="py-3 px-1.5 text-right font-mono text-xs font-bold text-[#0A0E1A] dark:text-white">
                 {totalQty}
               </td>
-              <td colSpan={12} className="py-2.5 px-2"></td>
+              <td colSpan={12} className="py-3 px-2"></td>
             </tr>
           </tfoot>
         </table>

@@ -52,16 +52,16 @@ export default function WebstoreFilterSortBar({
   return (
     <div className="space-y-3">
       {/* Top Search, Channel Filter & View Toggle Bar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.08] p-3 rounded-2xl shadow-sm">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by store name, company or marketplace..."
             value={filters.search}
             onChange={(e) => onFilterChange("search", e.target.value)}
-            className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 dark:border-white/[0.1] dark:bg-[#080B11] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#F5C451] focus:border-[#F5C451] dark:focus:ring-[#E8C16D]"
+            className="w-full pl-9 pr-8 py-2 text-xs rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-slate-50/50 dark:border-white/[0.1] dark:bg-[#080B11] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#E8C16D] focus:border-[#E8C16D] dark:focus:ring-[#E8C16D]"
           />
           {filters.search && (
             <button
@@ -82,7 +82,7 @@ export default function WebstoreFilterSortBar({
             value={filters.marketplaceName}
             onChange={(val) => onFilterChange("marketplaceName", val)}
             options={channelFilterOptions}
-            buttonClassName="h-9 px-3 text-xs font-semibold rounded-xl"
+            buttonClassName="h-9 px-3 text-xs font-semibold rounded-xl border border-[#E7E0D2] dark:border-white/[0.08]"
             menuClassName="w-48"
           />
 
@@ -92,7 +92,7 @@ export default function WebstoreFilterSortBar({
             value={filters.isActive}
             onChange={(val) => onFilterChange("isActive", val)}
             options={statusFilterOptions}
-            buttonClassName="h-9 px-3 text-xs font-semibold rounded-xl"
+            buttonClassName="h-9 px-3 text-xs font-semibold rounded-xl border border-[#E7E0D2] dark:border-white/[0.08]"
             menuClassName="w-40"
           />
 
@@ -102,21 +102,21 @@ export default function WebstoreFilterSortBar({
               type="button"
               onClick={onResetFilters}
               title="Reset Filters"
-              className="px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20 rounded-xl transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20 rounded-full border border-rose-200/60 dark:border-rose-900/40 transition-colors cursor-pointer"
             >
               Reset
             </button>
           )}
 
           {/* Layout Mode Toggle (Grid vs Table) */}
-          <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 dark:border-white/[0.1] dark:bg-[#080B11] p-0.5 ml-1">
+          <div className="flex items-center rounded-xl border border-[#E7E0D2] bg-slate-50/50 dark:border-white/[0.1] dark:bg-[#080B11] p-0.5 ml-1">
             <button
               type="button"
               onClick={() => onLayoutModeChange("grid")}
               title="Card Grid View"
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 layoutMode === "grid"
-                  ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
+                  ? "bg-[#E8C16D] text-[#0A0E1A] shadow-xs font-bold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               }`}
             >
@@ -128,7 +128,7 @@ export default function WebstoreFilterSortBar({
               title="Table View"
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 layoutMode === "table"
-                  ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
+                  ? "bg-[#E8C16D] text-[#0A0E1A] shadow-xs font-bold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               }`}
             >
@@ -156,7 +156,7 @@ export default function WebstoreFilterSortBar({
                   <span>{col.label}</span>
                   <ArrowUpDown
                     className={`h-3 w-3 transition-opacity ${
-                      isSorted ? "opacity-100 text-[#F5C451]" : "opacity-40"
+                      isSorted ? "opacity-100 text-[#E8C16D]" : "opacity-40"
                     }`}
                   />
                 </button>

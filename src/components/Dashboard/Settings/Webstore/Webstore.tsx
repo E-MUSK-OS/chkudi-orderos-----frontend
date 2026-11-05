@@ -231,7 +231,7 @@ export default function Webstore() {
 
   return (
     <DashboardLayout title="Webstore">
-      <div className="space-y-4 font-sans">
+      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-20 max-w-[1600px] mx-auto">
         {/* Header with Title & Action Buttons */}
         <WebstoreHeader
           viewMode={viewMode}
@@ -261,15 +261,31 @@ export default function Webstore() {
 
             {/* Cards Grid or Tabular List depending on layoutMode */}
             {layoutMode === "grid" ? (
-              <WebstoreCardGrid
-                stores={stores}
-                loading={loading}
-                onModify={handleModify}
-                onToggleStatus={handleToggleStatus}
-                onDelete={(store) => setDeletingStore(store)}
-                onAddNew={handleAddNew}
-                togglingId={togglingId}
-              />
+              <div className="space-y-4">
+                <WebstoreCardGrid
+                  stores={stores}
+                  loading={loading}
+                  onModify={handleModify}
+                  onToggleStatus={handleToggleStatus}
+                  onDelete={(store) => setDeletingStore(store)}
+                  onAddNew={handleAddNew}
+                  togglingId={togglingId}
+                />
+                {stores.length > 0 && (
+                  <div className="rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08]">
+                    <WebstorePagination
+                      total={total || stores.length}
+                      page={filters.page || 1}
+                      pageSize={filters.pageSize || 20}
+                      onPageChange={(page) => handleFilterChange("page", page)}
+                      onPageSizeChange={(pageSize) => {
+                        handleFilterChange("pageSize", pageSize);
+                        handleFilterChange("page", 1);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             ) : (
               <WebstoreTableView
                 stores={stores}

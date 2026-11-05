@@ -152,37 +152,30 @@ export default function MaterialStats({
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      {cards.map((card, idx) => (
-        <div
-          key={idx}
-          className="rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/60 dark:bg-[#0B0F17]/60 p-3.5 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:border-[#E8C16D] dark:hover:border-[#F5C451]/40 transition-colors"
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      {cards.map((item) => (
+        <article
+          key={item.title}
+          className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 truncate">
-              {card.title}
-            </span>
-            <span
-              className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full border ${card.badgeClass} dark:bg-transparent dark:border-white/10 dark:text-slate-300 shrink-0`}
-            >
-              {card.badgeText}
-            </span>
-          </div>
+          <p className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate" title={item.title}>
+            {item.title}
+          </p>
 
-          <div className="flex items-baseline gap-2">
-            <span
-              className={`text-xl sm:text-3xl font-black tracking-tight dark:text-white ${card.valueClass || "text-[#0A0E1A]"}`}
-            >
-              {isLoading ? (
-                <span className="inline-block h-7 w-14 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
-              ) : (
-                card.value.toLocaleString()
-              )}
+          <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+            {isLoading ? (
+              <div className="h-8 sm:h-9 w-20 animate-pulse rounded-lg bg-slate-100 dark:bg-white/[0.06]" />
+            ) : (
+              <h3 className={`text-xl sm:text-2xl lg:text-3xl font-black ${item.valueClass ?? "text-[#0A0E1A]"} dark:text-white truncate`}>
+                {Number(item.value ?? 0).toLocaleString()}
+              </h3>
+            )}
+            <span className={`rounded-lg sm:rounded-xl border px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold shrink-0 ${item.badgeClass}`}>
+              {item.badgeText}
             </span>
           </div>
-        </div>
+        </article>
       ))}
     </div>
   );
 }
-

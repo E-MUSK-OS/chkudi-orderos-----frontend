@@ -394,7 +394,7 @@ export default function SizeMultiSelect({
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold text-[#B88728] dark:text-[#F5C451] hover:bg-[#FFF9EC] dark:hover:bg-[#F5C451]/10 rounded-xl transition-colors cursor-pointer"
                 >
                   <Plus size={14} />
-                  <span>Other</span>
+                  <span>+ Other (Enter custom value)</span>
                 </button>
               )}
             </div>

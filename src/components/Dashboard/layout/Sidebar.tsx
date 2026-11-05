@@ -46,6 +46,183 @@ export const normalizeRoute = (p?: string): string => {
   return clean;
 };
 
+// Canonical route standardizing /setting/ and /settings/ uniformly
+export const canonicalRoute = (p?: string): string => {
+  if (!p) return "";
+  let clean = p.split("?")[0].replace(/\/+$/, "") || "/";
+  if (clean === "/dashboard" || clean === "/dashboard/") return "/dashboard";
+  if (clean.startsWith("/dashboard/")) clean = clean.slice("/dashboard".length);
+  if (clean.startsWith("/setting/")) {
+    clean = "/settings/" + clean.slice("/setting/".length);
+  } else if (clean === "/setting") {
+    clean = "/settings";
+  }
+  return clean;
+};
+
+// Deep route matcher for both exact match and nested sub-pages (create, edit, view)
+export const isItemActive = (item: NavItem, path: string): boolean => {
+  const currentNorm = normalizeRoute(path);
+  const currCanon = canonicalRoute(path);
+
+  if (item.href) {
+    const itemNorm = normalizeRoute(item.href);
+    const itemCanon = canonicalRoute(item.href);
+
+    // 1. Root Dashboard item: ONLY active if current path is /dashboard or root /
+    if (itemNorm === "/dashboard") {
+      return currentNorm === "/dashboard" || currentNorm === "/";
+    }
+
+    // 2. Exact match
+    if (currentNorm === itemNorm || currCanon === itemCanon) {
+      return true;
+    }
+
+    // 3. Manage Company items: match root, edit, view, create/new, and aliases
+    if (
+      item.label === "Company Profile" ||
+      itemCanon === "/settings/company-profile" ||
+      itemCanon === "/settings/manage-company/company-profile"
+    ) {
+      if (
+        currCanon === "/settings/company-profile" ||
+        currCanon.startsWith("/settings/company-profile/") ||
+        currCanon === "/settings/manage-company/company-profile" ||
+        currCanon.startsWith("/settings/manage-company/company-profile/")
+      ) {
+        return true;
+      }
+    }
+
+    if (
+      item.label === "Ledger Book" ||
+      itemCanon === "/settings/manage-company/ledger-book" ||
+      itemCanon === "/settings/ledger-book"
+    ) {
+      if (
+        currCanon === "/settings/manage-company/ledger-book" ||
+        currCanon.startsWith("/settings/manage-company/ledger-book/") ||
+        currCanon === "/settings/ledger-book" ||
+        currCanon.startsWith("/settings/ledger-book/")
+      ) {
+        return true;
+      }
+    }
+
+    if (
+      item.label === "Employee Profile" ||
+      itemCanon === "/settings/manage-company/employee-profile" ||
+      itemCanon === "/settings/employee-profile"
+    ) {
+      if (
+        currCanon === "/settings/manage-company/employee-profile" ||
+        currCanon.startsWith("/settings/manage-company/employee-profile/") ||
+        currCanon === "/settings/employee-profile" ||
+        currCanon.startsWith("/settings/employee-profile/")
+      ) {
+        return true;
+      }
+    }
+
+    if (
+      item.label === "Salaried Employee" ||
+      itemCanon === "/settings/manage-company/salaried-employee" ||
+      itemCanon === "/settings/salaried-employee"
+    ) {
+      if (
+        currCanon === "/settings/manage-company/salaried-employee" ||
+        currCanon.startsWith("/settings/manage-company/salaried-employee/") ||
+        currCanon === "/settings/salaried-employee" ||
+        currCanon.startsWith("/settings/salaried-employee/")
+      ) {
+        return true;
+      }
+    }
+
+    // Purchase & Sales aliases
+    if (
+      (itemNorm === "/purchase/finish-goods/invoice" || itemNorm === "/purchase-invoice") &&
+      (currentNorm === "/purchase/finish-goods/invoice" || currentNorm === "/purchase-invoice" || currentNorm.startsWith("/purchase-invoice/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/purchase/finish-goods/challan" || itemNorm === "/purchase-challan") &&
+      (currentNorm === "/purchase/finish-goods/challan" || currentNorm === "/purchase-challan" || currentNorm.startsWith("/purchase-challan/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/offline-sales/sales-invoice" || itemNorm === "/sales-invoice") &&
+      (currentNorm === "/offline-sales/sales-invoice" || currentNorm === "/sales-invoice" || currentNorm.startsWith("/sales-invoice/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/offline-sales/sales-challan" || itemNorm === "/sales-challan") &&
+      (currentNorm === "/offline-sales/sales-challan" || currentNorm === "/sales-challan" || currentNorm.startsWith("/sales-challan/"))
+    ) {
+      return true;
+    }
+
+    // Settings sub-modules
+    if (
+      (itemCanon === "/settings/manage-product" || itemCanon === "/settings/manage-product/product-profile") &&
+      currCanon.startsWith("/settings/manage-product")
+    ) {
+      return true;
+    }
+    if (
+      (itemCanon === "/settings/manage-material" || itemCanon === "/settings/manage-material/material-profile") &&
+      currCanon.startsWith("/settings/manage-material")
+    ) {
+      return true;
+    }
+    if (
+      itemCanon === "/settings/labels/label-config" &&
+      currCanon.startsWith("/settings/labels/label-config")
+    ) {
+      return true;
+    }
+    if (
+      itemCanon === "/settings/labels/label-print" &&
+      currCanon === "/settings/labels/label-print"
+    ) {
+      return true;
+    }
+    if (
+      itemCanon &&
+      itemCanon.startsWith("/settings/manage-users") &&
+      currCanon.startsWith("/settings/manage-users")
+    ) {
+      return true;
+    }
+
+    // 4. Sub-path match: if item has children
+    if (item.children && item.children.length > 0 && (currentNorm.startsWith(itemNorm + "/") || currCanon.startsWith(itemCanon + "/"))) {
+      return true;
+    }
+  }
+
+  // 5. If item is "Manage Company" without href, check if current path is under manage-company
+  if (item.label === "Manage Company") {
+    if (
+      currCanon.startsWith("/settings/manage-company") ||
+      currCanon.startsWith("/settings/company-profile")
+    ) {
+      return true;
+    }
+  }
+
+  // 6. If item has children, check if any child is active
+  if (item.children && item.children.length > 0) {
+    return item.children.some((child) => isItemActive(child, path));
+  }
+
+  return false;
+};
+
 export default function Sidebar({
   sidebarOpen,
   sidebarCollapsed,
@@ -96,99 +273,26 @@ export default function Sidebar({
     router.push(normalizeRoute(href));
   };
 
+  const isMenuActive = (item: NavItem): boolean => {
+    return isItemActive(item, pathname);
+  };
+
   const findActivePath = (
     items: NavItem[],
     path: string,
     trail: string[] = [],
   ): string[] | null => {
-    const currentNorm = normalizeRoute(path);
-
     for (const item of items) {
       const nextTrail = [...trail, item.label];
-      const itemNorm = normalizeRoute(item.href);
 
-      // 1. Traverse children first to locate deepest exact match
+      // 1. Traverse children first to locate deepest match
       if (item.children && item.children.length > 0) {
         const found = findActivePath(item.children, path, nextTrail);
         if (found) return found;
       }
 
-      // 2. Exact match for this node
-      if (itemNorm && itemNorm === currentNorm) {
-        return trail;
-      }
-
-      // 3. Special aliases
-      if (
-        (itemNorm === "/setting/company-profile" || itemNorm === "/setting/manage-company/company-profile") &&
-        (currentNorm === "/setting/company-profile" || currentNorm === "/setting/manage-company/company-profile")
-      ) {
-        return trail;
-      }
-      if (
-        itemNorm === "/purchase/finish-goods/invoice" &&
-        currentNorm === "/purchase-invoice"
-      ) {
-        return trail;
-      }
-      if (
-        itemNorm === "/purchase/finish-goods/challan" &&
-        currentNorm === "/purchase-challan"
-      ) {
-        return trail;
-      }
-      if (
-        (itemNorm === "/offline-sales/sales-invoice" || itemNorm === "/sales-invoice") &&
-        (currentNorm === "/offline-sales/sales-invoice" || currentNorm === "/sales-invoice")
-      ) {
-        return trail;
-      }
-      if (
-        (itemNorm === "/offline-sales/sales-challan" || itemNorm === "/sales-challan") &&
-        (currentNorm === "/offline-sales/sales-challan" || currentNorm === "/sales-challan")
-      ) {
-        return trail;
-      }
-      if (
-        (itemNorm === "/settings/manage-product" || itemNorm === "/settings/manage-product/product-profile") &&
-        currentNorm.startsWith("/settings/manage-product")
-      ) {
-        return trail;
-      }
-      if (
-        (itemNorm === "/settings/manage-material" || itemNorm === "/settings/manage-material/material-profile") &&
-        currentNorm.startsWith("/settings/manage-material")
-      ) {
-        return trail;
-      }
-      if (
-        itemNorm === "/settings/labels/label-config" &&
-        currentNorm.startsWith("/settings/labels/label-config")
-      ) {
-        return trail;
-      }
-      if (
-        itemNorm === "/settings/labels/label-print" &&
-        currentNorm === "/settings/labels/label-print"
-      ) {
-        return trail;
-      }
-      if (
-        itemNorm &&
-        itemNorm.startsWith("/settings/manage-users") &&
-        currentNorm.startsWith("/settings/manage-users")
-      ) {
-        return trail;
-      }
-
-      // 4. Prefix match only if item has children and is not root dashboard
-      if (
-        itemNorm &&
-        itemNorm !== "/dashboard" &&
-        item.children &&
-        item.children.length > 0 &&
-        currentNorm.startsWith(itemNorm + "/")
-      ) {
+      // 2. Check if this item is active for current path
+      if (isItemActive(item, path)) {
         return trail;
       }
     }
@@ -207,100 +311,6 @@ export default function Sidebar({
       });
     }
   }, [pathname, visibleNavItems]);
-
-  const isMenuActive = (item: NavItem): boolean => {
-    const currentNorm = normalizeRoute(pathname);
-
-    if (item.href) {
-      const itemNorm = normalizeRoute(item.href);
-
-      // 1. Root Dashboard item: ONLY active if current path is /dashboard or root /
-      if (itemNorm === "/dashboard") {
-        return currentNorm === "/dashboard" || currentNorm === "/";
-      }
-
-      // 2. Exact match
-      if (currentNorm === itemNorm) {
-        return true;
-      }
-
-      // 3. Special aliases
-      if (
-        (itemNorm === "/setting/company-profile" || itemNorm === "/setting/manage-company/company-profile") &&
-        (currentNorm === "/setting/company-profile" || currentNorm === "/setting/manage-company/company-profile")
-      ) {
-        return true;
-      }
-      if (
-        itemNorm === "/purchase/finish-goods/invoice" &&
-        currentNorm === "/purchase-invoice"
-      ) {
-        return true;
-      }
-      if (
-        itemNorm === "/purchase/finish-goods/challan" &&
-        currentNorm === "/purchase-challan"
-      ) {
-        return true;
-      }
-      if (
-        (itemNorm === "/offline-sales/sales-invoice" || itemNorm === "/sales-invoice") &&
-        (currentNorm === "/offline-sales/sales-invoice" || currentNorm === "/sales-invoice")
-      ) {
-        return true;
-      }
-      if (
-        (itemNorm === "/offline-sales/sales-challan" || itemNorm === "/sales-challan") &&
-        (currentNorm === "/offline-sales/sales-challan" || currentNorm === "/sales-challan")
-      ) {
-        return true;
-      }
-      if (
-        (itemNorm === "/settings/manage-product" || itemNorm === "/settings/manage-product/product-profile") &&
-        currentNorm.startsWith("/settings/manage-product")
-      ) {
-        return true;
-      }
-      if (
-        (itemNorm === "/settings/manage-material" || itemNorm === "/settings/manage-material/material-profile") &&
-        currentNorm.startsWith("/settings/manage-material")
-      ) {
-        return true;
-      }
-      if (
-        itemNorm === "/settings/labels/label-config" &&
-        currentNorm.startsWith("/settings/labels/label-config")
-      ) {
-        return true;
-      }
-      if (
-        itemNorm === "/settings/labels/label-print" &&
-        currentNorm === "/settings/labels/label-print"
-      ) {
-        return true;
-      }
-      if (
-        itemNorm &&
-        itemNorm.startsWith("/settings/manage-users") &&
-        currentNorm.startsWith("/settings/manage-users")
-      ) {
-        return true;
-      }
-
-      // 4. Sub-path match: ONLY if item has children!
-      // Leaf items (like "Order Process -> Dashboard") must NOT match sub-routes!
-      if (item.children && item.children.length > 0 && currentNorm.startsWith(itemNorm + "/")) {
-        return true;
-      }
-    }
-
-    // 5. If item has children, check if any child is active
-    if (item.children && item.children.length > 0) {
-      return item.children.some(isMenuActive);
-    }
-
-    return false;
-  };
 
   const isMenuOpen = (item: NavItem) => {
     return openMenus[item.label] ?? isMenuActive(item);

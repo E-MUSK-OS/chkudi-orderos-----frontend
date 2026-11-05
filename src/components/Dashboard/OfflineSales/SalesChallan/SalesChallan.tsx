@@ -38,6 +38,7 @@ export default function SalesChallan() {
 
   // Filters State
   const [filters, setFilters] = useState<ChallanFiltersState>({
+    search: "",
     challanNo: "",
     challanRefNo: "",
     partyName: "",
@@ -102,6 +103,16 @@ export default function SalesChallan() {
     }
   };
 
+  const handleDateRangeChange = (startDate: string, endDate: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    const nextFilters = { ...filters, startDate, endDate };
+    setFilters(nextFilters);
+    filtersRef.current = nextFilters;
+    fetchChallans(nextFilters);
+  };
+
   const handleSearchClick = () => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -114,6 +125,7 @@ export default function SalesChallan() {
       clearTimeout(debounceTimerRef.current);
     }
     const defaultFilters: ChallanFiltersState = {
+      search: "",
       challanNo: "",
       challanRefNo: "",
       partyName: "",
@@ -253,6 +265,7 @@ export default function SalesChallan() {
             <ChallanFilters
               filters={filters}
               onChange={handleFilterChange}
+              onDateRangeChange={handleDateRangeChange}
               onSearch={handleSearchClick}
               onReset={handleResetFilters}
             />

@@ -22,6 +22,7 @@ import {
   Calendar,
   User as UserIcon,
   X,
+  Users,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -335,53 +336,50 @@ export default function UserProfileDetailView({ userId }: Props) {
 
   return (
     <div className="space-y-6 w-full pb-10 animate-in fade-in duration-200">
-      {/* 1. Page Header Card matching OrderOS Amazon theme */}
-      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
+      {/* 1. Page Header Card matching Material Profile & Company Profile */}
+      <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 sm:px-7 py-4 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/settings/manage-users/user-profile")}
+            className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+            title="Back to User Profile"
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              User Profile
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Detailed view of user profile, company associations, and system rights matrix.
+            </p>
+          </div>
+        </div>
+
+        {/* Top Right Actions */}
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+          {canEditUser && (
             <button
               type="button"
-              onClick={() => router.push("/dashboard/settings/manage-users/user-profile")}
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-700 hover:text-[#0A0E1A] dark:text-slate-300 dark:hover:text-white bg-slate-50 dark:bg-[#080B11] hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer border border-slate-200 dark:border-white/[0.08] shadow-xs"
-              title="Back to User Profile"
+              onClick={() => router.push(`/dashboard/settings/manage-users/user-profile/edit-user/${user.id}`)}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] text-slate-800 dark:text-white px-5 sm:px-6 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-[0.97]"
             >
-              <ArrowLeft size={18} />
+              <Edit2 size={15} className="text-[#B88728] dark:text-[#E8C16D]" />
+              <span>Edit</span>
             </button>
+          )}
 
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white tracking-tight">
-                User Profile
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Detailed view of user profile, company associations, and system rights matrix.
-              </p>
-            </div>
-          </div>
-
-          {/* Top Right Actions */}
-          <div className="flex items-center gap-2.5">
-            {canEditUser && (
-              <button
-                type="button"
-                onClick={() => router.push(`/dashboard/settings/manage-users/user-profile/edit-user/${user.id}`)}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs sm:text-sm font-bold text-slate-800 dark:text-white hover:border-[#E8C16D] transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-              >
-                <Edit2 size={14} className="text-[#B88728] dark:text-[#E8C16D]" />
-                <span>Edit</span>
-              </button>
-            )}
-
-            {canDeleteUser && (
-              <button
-                type="button"
-                onClick={() => setDeleteModalOpen(true)}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 text-xs sm:text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all shadow-xs active:scale-[0.98] cursor-pointer"
-              >
-                <Trash2 size={14} />
-                <span>Delete</span>
-              </button>
-            )}
-          </div>
+          {canDeleteUser && (
+            <button
+              type="button"
+              onClick={() => setDeleteModalOpen(true)}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-red-200 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 text-xs sm:text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all shadow-xs active:scale-[0.97] cursor-pointer px-5 sm:px-6"
+            >
+              <Trash2 size={15} />
+              <span>Delete</span>
+            </button>
+          )}
         </div>
       </div>
 

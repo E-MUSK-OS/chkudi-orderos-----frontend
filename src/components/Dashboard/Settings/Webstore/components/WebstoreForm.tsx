@@ -510,16 +510,16 @@ export default function WebstoreForm({
   };
 
   const inputClass =
-    "w-full h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/30 transition-all";
+    "w-full h-9 px-3 text-xs rounded-xl border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100 dark:focus:border-[#E8C16D] dark:focus:ring-[#E8C16D]/30 transition-all";
 
   const labelClass =
     "text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-right pr-2 min-w-[140px]";
 
   const fieldsetClass =
-    "rounded-2xl border border-slate-300/80 bg-white p-4 shadow-xs dark:border-white/[0.1] dark:bg-[#0F1626]";
+    "rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]";
 
   const legendClass =
-    "px-2 text-xs font-bold text-slate-700 dark:text-[#E8C16D] flex items-center gap-1.5";
+    "px-2.5 py-0.5 rounded-full text-xs font-bold text-[#B88728] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 inline-flex items-center gap-1.5";
 
   return (
     <form id="webstore-form" onSubmit={handleSubmit} className="space-y-4">
@@ -533,7 +533,7 @@ export default function WebstoreForm({
           <button
             type="button"
             onClick={handleFillDemoData}
-            className="px-3.5 py-1.5 rounded-xl bg-[#F5C451] hover:bg-[#E8B83D] active:scale-95 text-[#0A0E1A] font-bold text-xs shadow-sm transition-all cursor-pointer shrink-0"
+            className="px-4 py-1.5 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] font-bold text-xs shadow-sm transition-all cursor-pointer shrink-0"
           >
             Auto-fill Sample Info
           </button>
@@ -547,7 +547,7 @@ export default function WebstoreForm({
           {/* 1. Basic Fieldset */}
           <fieldset className={fieldsetClass}>
             <legend className={legendClass}>
-              <Store className="h-3.5 w-3.5 text-[#0284C7] dark:text-[#E8C16D]" />
+              <Store className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Basic:</span>
             </legend>
 
@@ -574,7 +574,7 @@ export default function WebstoreForm({
                     options={marketplaceOptions}
                     placeholder="Select Channel"
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[220px]"
                   />
                 </div>
@@ -595,7 +595,7 @@ export default function WebstoreForm({
                   <div
                     onClick={() => logoInputRef.current?.click()}
                     title="Click to upload custom logo"
-                    className="group relative cursor-pointer p-1 rounded-xl border border-slate-300 dark:border-white/[0.12] bg-slate-50 dark:bg-black/30 hover:border-[#E8C16D] dark:hover:border-[#F5C451] transition-all shadow-xs"
+                    className="group relative cursor-pointer p-1 rounded-xl border border-[#E7E0D2] dark:border-white/[0.12] bg-slate-50 dark:bg-black/30 hover:border-[#E8C16D] dark:hover:border-[#E8C16D] transition-all shadow-xs"
                   >
                     <MarketplaceLogo
                       name={marketplaceName}
@@ -619,7 +619,7 @@ export default function WebstoreForm({
                       type="button"
                       onClick={() => logoInputRef.current?.click()}
                       disabled={isUploadingLogo}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D] dark:hover:border-[#F5C451] hover:text-[#B88728] dark:hover:text-[#F5C451] transition-all cursor-pointer shadow-xs disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D] dark:hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-all cursor-pointer shadow-xs disabled:opacity-60"
                     >
                       {isUploadingLogo ? (
                         <>
@@ -676,7 +676,7 @@ export default function WebstoreForm({
                     options={parentOrChildOptions}
                     placeholder="Select..."
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[160px]"
                   />
                 </div>
@@ -738,7 +738,7 @@ export default function WebstoreForm({
                     value={registrationDate}
                     onChange={(_, dateStr) => setRegistrationDate(dateStr || "")}
                     placeholder="Select Date"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -748,7 +748,7 @@ export default function WebstoreForm({
           {/* 3. Account Fieldset */}
           <fieldset className={fieldsetClass}>
             <legend className={legendClass}>
-              <CreditCard className="h-3.5 w-3.5 text-[#0284C7] dark:text-[#E8C16D]" />
+              <CreditCard className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Account:</span>
             </legend>
 
@@ -785,7 +785,7 @@ export default function WebstoreForm({
                     value={lastPaymentDate}
                     onChange={(_, dateStr) => setLastPaymentDate(dateStr || "")}
                     placeholder="Select Date"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -798,7 +798,7 @@ export default function WebstoreForm({
           {/* 2. Address Fieldset */}
           <fieldset className={fieldsetClass}>
             <legend className={legendClass}>
-              <Building2 className="h-3.5 w-3.5 text-[#0284C7] dark:text-[#E8C16D]" />
+              <Building2 className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Address:</span>
             </legend>
 
@@ -892,7 +892,7 @@ export default function WebstoreForm({
           {/* 4. Configuration Fieldset */}
           <fieldset className={fieldsetClass}>
             <legend className={legendClass}>
-              <SettingsIcon className="h-3.5 w-3.5 text-[#0284C7] dark:text-[#E8C16D]" />
+              <SettingsIcon className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Configuration:</span>
             </legend>
 
@@ -906,7 +906,7 @@ export default function WebstoreForm({
                     onChange={(val) => setIsActive(val === "Yes")}
                     options={yesNoOptions}
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[140px]"
                   />
                 </div>
@@ -921,7 +921,7 @@ export default function WebstoreForm({
                     onChange={(val) => setReturnActive(val === "Yes")}
                     options={yesNoOptions}
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[140px]"
                   />
                 </div>
@@ -936,7 +936,7 @@ export default function WebstoreForm({
                     onChange={(val) => setIsOnTpBased(val === "Yes")}
                     options={noYesOptions}
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[140px]"
                   />
                 </div>
@@ -951,7 +951,7 @@ export default function WebstoreForm({
                     onChange={(val) => setIsOnResellerBased(val === "Yes")}
                     options={noYesOptions}
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[140px]"
                   />
                 </div>
@@ -968,7 +968,7 @@ export default function WebstoreForm({
                     }
                     options={noYesOptions}
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[140px]"
                   />
                 </div>
@@ -985,7 +985,7 @@ export default function WebstoreForm({
                     }
                     options={noYesOptions}
                     className="w-full"
-                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-slate-300 dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
+                    buttonClassName="w-full h-9 px-3 rounded-xl text-xs font-normal justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                     menuClassName="w-full min-w-[140px]"
                   />
                 </div>
@@ -1010,7 +1010,7 @@ export default function WebstoreForm({
       {/* ===================== 5. API CONFIGURATION (FULL WIDTH) ===================== */}
       <fieldset className={fieldsetClass}>
         <legend className={legendClass}>
-          <Key className="h-3.5 w-3.5 text-[#0284C7] dark:text-[#E8C16D]" />
+          <Key className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
           <span>API Configuration:</span>
         </legend>
 
@@ -1096,7 +1096,7 @@ export default function WebstoreForm({
       {/* ===================== 6. SP-API CONFIGURATION (FULL WIDTH) ===================== */}
       <fieldset className={fieldsetClass}>
         <legend className={legendClass}>
-          <ShieldCheck className="h-3.5 w-3.5 text-[#0284C7] dark:text-[#E8C16D]" />
+          <ShieldCheck className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
           <span>Selling Partner API Configuration:</span>
         </legend>
 
@@ -1240,7 +1240,7 @@ export default function WebstoreForm({
               type="button"
               onClick={handleTestSpapiConnection}
               disabled={isTestingSpapi}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#0284C7] bg-[#0284C7]/10 hover:bg-[#0284C7]/20 border border-[#0284C7]/30 transition-all cursor-pointer dark:text-[#38BDF8] dark:bg-[#38BDF8]/10 dark:border-[#38BDF8]/30 dark:hover:bg-[#38BDF8]/20 disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-[#B88728] bg-[#FFF9EC] hover:bg-[#FDF3DC] border border-[#E8C16D]/40 transition-all cursor-pointer dark:text-[#E8C16D] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 disabled:opacity-60"
             >
               {isTestingSpapi ? (
                 <>
@@ -1280,29 +1280,29 @@ export default function WebstoreForm({
       </fieldset>
 
       {/* Form Bottom Actions */}
-      <div className="flex items-center justify-end gap-3 pt-3">
-        <Button
+      <div className="flex items-center justify-end gap-3 pt-6 border-t border-[#E7E0D2] dark:border-white/[0.08]">
+        <button
           type="button"
-          variant="secondary"
-          fullWidth={false}
+
+
           onClick={onCancel}
           disabled={isSaving}
-          className="h-10 px-5 text-xs font-semibold rounded-xl flex items-center gap-1.5"
+          className="inline-flex h-11 items-center justify-center px-6 rounded-full text-xs sm:text-sm font-bold border border-[#E7E0D2] bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-200 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Cancel</span>
-        </Button>
+        </button>
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          fullWidth={false}
+
+
           disabled={isSaving}
-          className="h-10 px-6 text-xs font-bold rounded-xl flex items-center gap-1.5"
+          className="inline-flex h-11 items-center justify-center gap-2 px-7 rounded-full text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Save className="h-3.5 w-3.5" />
           <span>{isSaving ? "Saving..." : isEdit ? "Update Webstore" : "Create Webstore"}</span>
-        </Button>
+        </button>
       </div>
     </form>
   );

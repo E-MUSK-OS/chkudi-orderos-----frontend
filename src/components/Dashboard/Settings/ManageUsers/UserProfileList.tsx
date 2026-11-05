@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, X, AlertTriangle, RotateCcw } from "lucide-react";
+import { Plus, Trash2, X, AlertTriangle, RotateCcw, Users } from "lucide-react";
 import UserCard from "./components/UserCard";
 import UserToolbar from "./components/UserToolbar";
 import UserViewModal from "./components/UserViewModal";
@@ -83,28 +83,33 @@ export default function UserProfileList() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full pb-10">
-      {/* Top Header Card matching Amazon Analytics & Order Process */}
+    <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-10">
+      {/* Top Header Card matching Material Profile & Company Profile */}
       <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1.5">
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-              User Profile
-            </h1>
+          <div className="space-y-1.5 min-w-0 max-w-2xl">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                User Profile
+              </h1>
+            </div>
+
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
               Manage users and rights
             </p>
           </div>
 
           {canCreate && (
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard/settings/manage-users/user-profile/create-user")}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer self-start md:self-auto min-h-[40px] sm:min-h-[44px]"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Create</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/settings/manage-users/user-profile/create-user")}
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
+              >
+                <Plus size={18} strokeWidth={2.5} />
+                <span>Create User</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -135,7 +140,7 @@ export default function UserProfileList() {
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="h-48 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.06] bg-slate-50 dark:bg-[#080B11] p-5 animate-pulse"
+                className="h-48 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.06] bg-[#FFFDF8] dark:bg-[#080B11] p-5 animate-pulse"
               />
             ))}
           </div>
@@ -198,7 +203,7 @@ export default function UserProfileList() {
             pageSize={pageSize}
             itemName="users"
             variant="dark"
-            className="rounded-2xl border border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3"
+            className="border-t border-[#E7E0D2] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size);

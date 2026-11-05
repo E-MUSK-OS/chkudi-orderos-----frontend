@@ -36,10 +36,10 @@ export default function WebstoreCard({
   }, [store.registrationDate]);
 
   return (
-    <div className="relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm hover:shadow-md transition-all duration-200 dark:border-white/[0.08] dark:bg-[#0F1626]">
-      {/* Top SKU Badge matching Screenshot */}
+    <div className="relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-[#E8C16D]/50 transition-all duration-200 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50">
+      {/* Top SKU Badge */}
       <div className="flex justify-end">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#1E3A8A] text-white dark:bg-[#0369A1] shadow-xs">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#1A160E] dark:text-[#E8C16D] border border-[#E8C16D]/30 shadow-xs">
           No. of SKU - {store.skuCount ?? 0}
         </span>
       </div>
@@ -53,7 +53,7 @@ export default function WebstoreCard({
         />
       </div>
 
-      {/* Store & Company Details matching Screenshot */}
+      {/* Store & Company Details */}
       <div className="text-center space-y-1 mb-4">
         {/* Webstore Name */}
         <h3
@@ -80,9 +80,9 @@ export default function WebstoreCard({
         </p>
       </div>
 
-      {/* Bottom Actions Row matching Screenshot */}
-      <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-white/[0.06]">
-        {/* Active Toggle Switch matching green toggle in screenshot */}
+      {/* Bottom Actions Row */}
+      <div className="flex items-center justify-between pt-3 border-t border-[#E7E0D2]/60 dark:border-white/[0.06]">
+        {/* Active Toggle Switch */}
         <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
@@ -101,17 +101,17 @@ export default function WebstoreCard({
               type="button"
               onClick={() => onDelete(store)}
               title="Delete Webstore"
-              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
 
-          {/* Modify Button matching second image golden theme */}
+          {/* Modify Button in golden theme */}
           <button
             type="button"
             onClick={() => onModify(store)}
-            className="px-3.5 py-1 text-xs font-bold rounded-xl bg-[#F5C451] hover:bg-[#e8b83e] active:scale-95 text-[#0A0E1A] shadow-xs transition-all cursor-pointer dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11]"
+            className="px-4 py-1 text-xs font-bold rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] shadow-xs transition-all cursor-pointer"
           >
             Modify
           </button>

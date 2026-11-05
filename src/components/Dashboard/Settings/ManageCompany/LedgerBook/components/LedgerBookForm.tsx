@@ -7,10 +7,15 @@ import {
   CheckCircle2,
   Save,
   Upload,
-  Calendar,
   Trash2,
   Loader2,
   Check,
+  BookOpen,
+  MapPin,
+  Scale,
+  Landmark,
+  CircleDot,
+  FileText,
 } from "lucide-react";
 import { Ledger, CreateLedgerPayload } from "../types/ledger.types";
 import { ledgerService } from "../services/ledger.service";
@@ -127,12 +132,17 @@ export default function LedgerBookForm({
     []
   );
 
+  const commonInputClass =
+    "w-full h-11 px-4 text-xs sm:text-sm rounded-full bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:placeholder:text-slate-500 dark:focus:border-[#E8C16D] transition-all";
+
   const dropdownButtonClassName =
-    "w-full justify-between h-10 px-3.5 text-xs font-normal rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "w-full justify-between h-11 px-4 text-xs sm:text-sm font-normal rounded-full bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D] transition-all";
+
   const dropdownMenuClassName =
-    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-xl shadow-2xl";
+    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl";
+
   const datePickerButtonClassName =
-    "h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "h-11 px-4 text-xs sm:text-sm rounded-full bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D] transition-all";
 
   const [formData, setFormData] = useState<CreateLedgerPayload>({
     // General
@@ -184,17 +194,17 @@ export default function LedgerBookForm({
     accountType: "Current",
     ifsc: "",
 
-    // Other Details
+    // Accounting - Other Details
     creditDebitLimit: 0,
     billDueDays: 0,
     refContactName: "",
 
-    // Logo
+    // Logo & metadata
     logoUrl: "",
     completionPercentage: 0,
   });
 
-  // Populate initial values if editing
+  // Populate initial values on edit mode
   useEffect(() => {
     if (initialLedger) {
       setFormData({
@@ -431,265 +441,294 @@ export default function LedgerBookForm({
   ];
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
-      {/* Top Header Bar matching Company Profile */}
-      <div className="px-6 pt-5 pb-3 w-full flex items-center justify-between border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-        <div className="flex items-center gap-3">
+    <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4 max-w-[1600px] mx-auto">
+      {/* ========================================================================= */}
+      {/* 1. TOP HEADER BAR matching Company Profile / Main Ledger Book Page        */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 sm:px-7 py-4 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3.5">
           <button
             type="button"
             onClick={onBack}
-            className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-colors cursor-pointer"
+            className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
             title="Back to Ledger Book"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={22} />
           </button>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
+            <BookOpen className="h-6 w-6" />
+          </div>
           <div>
-            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Ledger Book
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Name.</span>{" "}
-              <span className="text-slate-900 dark:text-white font-medium">{formData.partyName || initialLedger?.partyName || "---"}</span>{" "}
-              <span className="ml-3 font-semibold text-slate-700 dark:text-slate-300">GSTN.</span>{" "}
-              <span className="text-slate-900 dark:text-white font-medium">{formData.gstin || initialLedger?.gstin || "---"}</span>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">Name.</span>{" "}
+              <span className="text-slate-900 dark:text-white font-medium">
+                {formData.partyName || initialLedger?.partyName || "---"}
+              </span>
+              <span className="mx-2 text-slate-400">·</span>
+              <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">GSTN.</span>{" "}
+              <span className="text-slate-900 dark:text-white font-medium">
+                {formData.gstin || initialLedger?.gstin || "---"}
+              </span>
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           {/* Active Status Badge matching Company Profile */}
           <button
             type="button"
             onClick={() => handleChange("isActive", !formData.isActive)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border shadow-xs transition-colors cursor-pointer ${
+            className={cn(
+              "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-xs border",
               formData.isActive
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                : "bg-red-500/10 text-red-500 border-red-500/20 dark:text-red-400"
-            }`}
-            title="Click to toggle active status"
+                ? "bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/50 dark:bg-[#1A160E] dark:text-[#E8C16D] dark:border-[#E8C16D]/30"
+                : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50"
+            )}
+            title="Click to toggle status"
           >
             <span>{formData.isActive ? "Active" : "Inactive"}</span>
-            {formData.isActive && <Check size={12} className="stroke-[3]" />}
+            {formData.isActive && <Check size={14} className="stroke-[3]" />}
           </button>
 
-          {/* Edit Mode / New Mode indicator */}
-          <div className="px-3.5 py-1 rounded-md border border-[#E7E0D2] bg-white text-slate-900 dark:border-white/[0.08] dark:bg-[#161B24] dark:text-white font-bold text-xs shadow-xs select-none">
+          {/* Edit Mode / New Mode Pill matching Company Profile */}
+          <div className="px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#0A0E1A] text-white border border-[#0A0E1A] dark:bg-[#080B11] dark:text-slate-300 dark:border-white/[0.1] shadow-xs select-none">
             {isEditMode ? "Edit Mode" : "New Mode"}
           </div>
         </div>
       </div>
 
-      {/* Tabs Segmented Bar matching Company Profile */}
-      <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-        <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-4 gap-1 select-none">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key as TabType)}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
-                    : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
-                }`}
-              >
-                {tab.completed ? (
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                ) : (
-                  <Circle size={14} className="text-slate-500 shrink-0 stroke-dashed" />
-                )}
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* ========================================================================= */}
+      {/* 2. TABS FLOATING BAR matching Company Profile Edit UI                      */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-2xl sm:rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-1.5 flex items-center justify-between gap-1 shadow-sm overflow-x-auto no-scrollbar">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key as TabType)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
+                isActive
+                  ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+              )}
+            >
+              {isActive ? (
+                <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+              ) : tab.completed ? (
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+              ) : (
+                <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+              )}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Form Content Area (Scrollable with hidden scrollbar) */}
-      <div className="flex-1 px-6 py-6 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* ========================================================================= */}
+      {/* 3. MAIN FORM CARD matching Edit Company UI theme                          */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-8 shadow-sm">
         {/* ========================================================================= */}
         {/* TAB 1: GENERAL DETAILS                                                   */}
         {/* ========================================================================= */}
         {activeTab === "general" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                General Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter basic information about ledger.
-              </p>
+            {/* Section Header with Golden BookOpen Icon Badge */}
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <BookOpen size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  General Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Enter basic information about ledger.
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
-                {/* Ledger Name. * */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Ledger Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.partyName || ""}
-                    onChange={(e) => handleChange("partyName", e.target.value)}
-                    placeholder="Enter ledger name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
+            {/* 2-Column Balanced Form Grid with pill inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+              {/* Ledger Name. * */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Ledger Name. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.partyName || ""}
+                  onChange={(e) => handleChange("partyName", e.target.value)}
+                  placeholder="Enter ledger name"
+                  className={commonInputClass}
+                />
+              </div>
 
-                {/* Alias. * */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                      Alias. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <span
-                      className={`text-[10px] font-mono ${
-                        formData.alias?.length ? "text-emerald-400" : "text-red-500"
-                      }`}
-                    >
-                      {formData.alias ? formData.alias.length : 0}/10
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    required
-                    value={formData.alias || ""}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
-                      handleChange("alias", val);
-                      handleChange("accountCode", val);
-                    }}
-                    placeholder="SHORT CODE / ALIAS"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase font-mono transition-all"
-                  />
-                </div>
-
-                {/* Account Head. * */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Account Head. <span className="text-red-500 font-bold">*</span>
+              {/* Alias. * */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    Alias. <span className="text-rose-500 font-bold">*</span>
                   </label>
+                  <span
+                    className={`text-xs font-mono font-semibold ${
+                      formData.alias?.length ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"
+                    }`}
+                  >
+                    {formData.alias ? formData.alias.length : 0}/10
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={10}
+                  required
+                  value={formData.alias || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    handleChange("alias", val);
+                    handleChange("accountCode", val);
+                  }}
+                  placeholder="SHORT CODE / ALIAS"
+                  className={cn(commonInputClass, "uppercase font-mono")}
+                />
+              </div>
+
+              {/* Account Head. * */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Account Head. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <ThemeSelectDropdown
+                  value={formData.accountHead || "Sundry Debtors"}
+                  onChange={(val) => handleChange("accountHead", val)}
+                  options={accountHeadOptions}
+                  placeholder="Select Account Head"
+                  className="w-full"
+                  buttonClassName={dropdownButtonClassName}
+                  menuClassName={dropdownMenuClassName}
+                />
+              </div>
+
+              {/* Email. */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Email.
+                </label>
+                <input
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  placeholder="Enter email address"
+                  className={commonInputClass}
+                />
+              </div>
+
+              {/* Contact Name. */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Contact Name.
+                </label>
+                <input
+                  type="text"
+                  value={formData.contactPerson || ""}
+                  onChange={(e) => handleChange("contactPerson", e.target.value)}
+                  placeholder="Contact person name"
+                  className={commonInputClass}
+                />
+              </div>
+
+              {/* Creation Date. */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Creation Date.
+                </label>
+                <DatePicker
+                  value={formData.creationDate || todayFormatted}
+                  onChange={(_, str) => handleChange("creationDate", str || "")}
+                  placeholder="DD-MM-YYYY"
+                  dateFormat="dd-MM-yyyy"
+                  className="w-full"
+                  buttonClassName={datePickerButtonClassName}
+                />
+              </div>
+
+              {/* Opening Balance. + Dr / Cr */}
+              <div className="md:col-span-2">
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Opening Balance.
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg">
+                  <input
+                    type="number"
+                    value={formData.openingBalance ?? 0}
+                    onChange={(e) => handleChange("openingBalance", Number(e.target.value))}
+                    placeholder="0"
+                    className={cn(commonInputClass, "sm:col-span-2 font-mono")}
+                  />
                   <ThemeSelectDropdown
-                    value={formData.accountHead || "Sundry Debtors"}
-                    onChange={(val) => handleChange("accountHead", val)}
-                    options={accountHeadOptions}
-                    placeholder="Select Account Head"
+                    value={formData.balanceType || "Dr"}
+                    onChange={(val) => handleChange("balanceType", val)}
+                    options={balanceTypeOptions}
+                    placeholder="Dr/Cr"
                     className="w-full"
                     buttonClassName={dropdownButtonClassName}
                     menuClassName={dropdownMenuClassName}
                   />
                 </div>
-
-                {/* Email. */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Email.
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="Enter email address"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Contact Name. */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Contact Name.
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.contactPerson || ""}
-                    onChange={(e) => handleChange("contactPerson", e.target.value)}
-                    placeholder="Contact person name"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Creation Date. */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Creation Date.
-                  </label>
-                  <DatePicker
-                    value={formData.creationDate || todayFormatted}
-                    onChange={(_, str) => handleChange("creationDate", str || "")}
-                    placeholder="DD-MM-YYYY"
-                    dateFormat="dd-MM-yyyy"
-                    className="w-full"
-                    buttonClassName={datePickerButtonClassName}
-                  />
-                </div>
-
-                {/* Opening Balance. + Dr / Cr */}
-                <div className="sm:col-span-2">
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Opening Balance.
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-md">
-                    <input
-                      type="number"
-                      value={formData.openingBalance ?? 0}
-                      onChange={(e) => handleChange("openingBalance", Number(e.target.value))}
-                      placeholder="0"
-                      className="sm:col-span-2 w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono transition-all"
-                    />
-                    <ThemeSelectDropdown
-                      value={formData.balanceType || "Dr"}
-                      onChange={(val) => handleChange("balanceType", val)}
-                      options={balanceTypeOptions}
-                      placeholder="Dr/Cr"
-                      className="w-full"
-                      buttonClassName={dropdownButtonClassName}
-                      menuClassName={dropdownMenuClassName}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* TAB 2: CONTACT DETAILS                                                   */}
         {/* ========================================================================= */}
         {activeTab === "contact" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                Contact Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter billing and shipping information
-              </p>
+            {/* Section Header with Golden MapPin Icon Badge */}
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <MapPin size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  Contact Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Enter billing and shipping information
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
               {/* Billing Column */}
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Billing</h3>
+                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">Billing</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Address 1. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.addressLine1 || ""}
                       onChange={(e) => handleChange("addressLine1", e.target.value)}
                       placeholder="Plot / Building / Street address"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 2.
                     </label>
                     <input
@@ -697,12 +736,12 @@ export default function LedgerBookForm({
                       value={formData.addressLine2 || ""}
                       onChange={(e) => handleChange("addressLine2", e.target.value)}
                       placeholder="Suite / Floor / Landmark"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 3.
                     </label>
                     <input
@@ -710,13 +749,13 @@ export default function LedgerBookForm({
                       value={formData.addressLine3 || ""}
                       onChange={(e) => handleChange("addressLine3", e.target.value)}
                       placeholder="Additional address details"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Pincode. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -726,39 +765,39 @@ export default function LedgerBookForm({
                         handleChange("pincode", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="394230"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Area. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.area || ""}
                       onChange={(e) => handleChange("area", e.target.value)}
                       placeholder="Area / Locality"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      City. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.city || ""}
                       onChange={(e) => handleChange("city", e.target.value)}
                       placeholder="City"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      State. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       value={formData.state || "Gujarat"}
@@ -772,27 +811,30 @@ export default function LedgerBookForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Country.
                     </label>
                     <input
                       type="text"
                       disabled
                       value={formData.country || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed"
+                      className={cn(
+                        commonInputClass,
+                        "bg-slate-100 border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 cursor-not-allowed"
+                      )}
                     />
                   </div>
 
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         Contact No.
                       </label>
                       <span
-                        className={`text-[10px] font-mono ${
+                        className={`text-xs font-mono font-semibold ${
                           formData.phone?.length === 10
-                            ? "text-emerald-400"
-                            : "text-red-500"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-500"
                         }`}
                       >
                         {formData.phone ? formData.phone.length : 0}/10
@@ -806,7 +848,7 @@ export default function LedgerBookForm({
                         handleChange("phone", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="Enter 10-digit Contact No"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
                 </div>
@@ -815,22 +857,22 @@ export default function LedgerBookForm({
               {/* Shipping Column */}
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Shipping</h3>
+                  <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">Shipping</h3>
                   <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 dark:text-slate-300">
                     <input
                       type="checkbox"
                       checked={Boolean(formData.shippingSameAsBilling)}
                       onChange={(e) => handleShippingSameToggle(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded border-slate-300 bg-white text-slate-900 accent-[#E8C16D] dark:border-white/[0.2] dark:bg-[#161B26] dark:accent-[#F5C451] focus:ring-0 cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 bg-white text-[#E8C16D] accent-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] focus:ring-0 cursor-pointer"
                     />
-                    <span>Shipping same as billing.</span>
+                    <span className="font-medium">Shipping same as billing.</span>
                   </label>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Address 1. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -838,16 +880,16 @@ export default function LedgerBookForm({
                       value={formData.shippingAddress1 || ""}
                       onChange={(e) => handleChange("shippingAddress1", e.target.value)}
                       placeholder="Plot / Building / Street address"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(
+                        commonInputClass,
+                        formData.shippingSameAsBilling &&
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                      )}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 2.
                     </label>
                     <input
@@ -856,16 +898,16 @@ export default function LedgerBookForm({
                       value={formData.shippingAddress2 || ""}
                       onChange={(e) => handleChange("shippingAddress2", e.target.value)}
                       placeholder="Suite / Floor / Landmark"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(
+                        commonInputClass,
+                        formData.shippingSameAsBilling &&
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                      )}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 3.
                     </label>
                     <input
@@ -874,17 +916,17 @@ export default function LedgerBookForm({
                       value={formData.shippingAddress3 || ""}
                       onChange={(e) => handleChange("shippingAddress3", e.target.value)}
                       placeholder="Additional address details"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(
+                        commonInputClass,
+                        formData.shippingSameAsBilling &&
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                      )}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Pincode. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -895,17 +937,18 @@ export default function LedgerBookForm({
                         handleChange("shippingPincode", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="394230"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(
+                        commonInputClass,
+                        "font-mono",
+                        formData.shippingSameAsBilling &&
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                      )}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Area. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -913,17 +956,17 @@ export default function LedgerBookForm({
                       value={formData.shippingArea || ""}
                       onChange={(e) => handleChange("shippingArea", e.target.value)}
                       placeholder="Area / Locality"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(
+                        commonInputClass,
+                        formData.shippingSameAsBilling &&
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                      )}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      City. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -931,17 +974,17 @@ export default function LedgerBookForm({
                       value={formData.shippingCity || ""}
                       onChange={(e) => handleChange("shippingCity", e.target.value)}
                       placeholder="City"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(
+                        commonInputClass,
+                        formData.shippingSameAsBilling &&
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                      )}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      State. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       disabled={Boolean(formData.shippingSameAsBilling)}
@@ -960,27 +1003,30 @@ export default function LedgerBookForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Country.
                     </label>
                     <input
                       type="text"
                       disabled
                       value={formData.shippingCountry || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed"
+                      className={cn(
+                        commonInputClass,
+                        "bg-slate-100 border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 cursor-not-allowed"
+                      )}
                     />
                   </div>
 
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         Contact No.
                       </label>
                       <span
-                        className={`text-[10px] font-mono ${
+                        className={`text-xs font-mono font-semibold ${
                           formData.shippingPhone?.length === 10
-                            ? "text-emerald-400"
-                            : "text-red-500"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-500"
                         }`}
                       >
                         {formData.shippingPhone ? formData.shippingPhone.length : 0}/10
@@ -995,11 +1041,12 @@ export default function LedgerBookForm({
                         handleChange("shippingPhone", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="Enter 10-digit Contact No"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(
+                        commonInputClass,
+                        "font-mono",
+                        formData.shippingSameAsBilling &&
+                          "bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
+                      )}
                     />
                   </div>
                 </div>
@@ -1013,20 +1060,26 @@ export default function LedgerBookForm({
         {/* ========================================================================= */}
         {activeTab === "accounting" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                Legal & Accounting Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter Legal and Accounting Details
-              </p>
+            {/* Section Header with Golden Scale Icon Badge */}
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <Scale size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  Legal & Accounting Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Enter Legal and Accounting Details
+                </p>
+              </div>
             </div>
 
             {/* Top Grid: Taxation & Legal vs Bank Details */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 mb-8">
               {/* Taxation & Legal Details */}
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
+                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
                   Taxation & Legal Details
                 </h3>
 
@@ -1034,14 +1087,14 @@ export default function LedgerBookForm({
                   {/* GST Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         GST Number.
                       </label>
                       <span
-                        className={`text-[10px] font-mono ${
+                        className={`text-xs font-mono font-semibold ${
                           formData.gstin?.length === 15
-                            ? "text-emerald-400"
-                            : "text-red-500"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-500"
                         }`}
                       >
                         {formData.gstin ? formData.gstin.length : 0}/15
@@ -1053,21 +1106,21 @@ export default function LedgerBookForm({
                       value={formData.gstin || ""}
                       onChange={(e) => handleChange("gstin", e.target.value.toUpperCase())}
                       placeholder="24ABCDE1234F1Z5"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   {/* PAN Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         PAN Number.
                       </label>
                       <span
-                        className={`text-[10px] font-mono ${
+                        className={`text-xs font-mono font-semibold ${
                           formData.pan?.length === 10
-                            ? "text-emerald-400"
-                            : "text-red-500"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-500"
                         }`}
                       >
                         {formData.pan ? formData.pan.length : 0}/10
@@ -1079,21 +1132,21 @@ export default function LedgerBookForm({
                       value={formData.pan || ""}
                       onChange={(e) => handleChange("pan", e.target.value.toUpperCase())}
                       placeholder="ABCDE1234F"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   {/* MSME Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         MSME Number.
                       </label>
                       <span
-                        className={`text-[10px] font-mono ${
+                        className={`text-xs font-mono font-semibold ${
                           formData.msmeNumber?.length
-                            ? "text-emerald-400"
-                            : "text-red-500"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-500"
                         }`}
                       >
                         {formData.msmeNumber ? formData.msmeNumber.length : 0}/19
@@ -1107,13 +1160,13 @@ export default function LedgerBookForm({
                         handleChange("msmeNumber", e.target.value.toUpperCase())
                       }
                       placeholder="UDYAM-XX-00-0000000"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   {/* Legal Name */}
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Legal Name.
                     </label>
                     <input
@@ -1121,7 +1174,7 @@ export default function LedgerBookForm({
                       value={formData.legalName || ""}
                       onChange={(e) => handleChange("legalName", e.target.value)}
                       placeholder="Registered legal entity name"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
                 </div>
@@ -1129,11 +1182,11 @@ export default function LedgerBookForm({
 
               {/* Bank Details */}
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Bank Details</h3>
+                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">Bank Details</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Account No.
                     </label>
                     <input
@@ -1141,12 +1194,12 @@ export default function LedgerBookForm({
                       value={formData.accountNumber || ""}
                       onChange={(e) => handleChange("accountNumber", e.target.value)}
                       placeholder="Enter account number"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Holder Name.
                     </label>
                     <input
@@ -1154,12 +1207,12 @@ export default function LedgerBookForm({
                       value={formData.accountHolderName || ""}
                       onChange={(e) => handleChange("accountHolderName", e.target.value)}
                       placeholder="Account holder's full name"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Bank Name.
                     </label>
                     <input
@@ -1167,12 +1220,12 @@ export default function LedgerBookForm({
                       value={formData.bankName || ""}
                       onChange={(e) => handleChange("bankName", e.target.value)}
                       placeholder="e.g. KOTAK MAHINDRA BANK"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      className={cn(commonInputClass, "uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Branch Name.
                     </label>
                     <input
@@ -1180,12 +1233,12 @@ export default function LedgerBookForm({
                       value={formData.branchName || ""}
                       onChange={(e) => handleChange("branchName", e.target.value)}
                       placeholder="Branch name or location"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Account Type.
                     </label>
                     <ThemeSelectDropdown
@@ -1200,7 +1253,7 @@ export default function LedgerBookForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       IFSC Code.
                     </label>
                     <input
@@ -1209,7 +1262,7 @@ export default function LedgerBookForm({
                       value={formData.ifsc || ""}
                       onChange={(e) => handleChange("ifsc", e.target.value.toUpperCase())}
                       placeholder="KKBK0002868"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
                 </div>
@@ -1217,13 +1270,18 @@ export default function LedgerBookForm({
             </div>
 
             {/* Bottom Row: Other Details */}
-            <div className="pt-6 border-t border-[#E7E0D2] dark:border-white/[0.06]">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Other Details</h3>
+            <div className="pt-6 border-t border-slate-100 dark:border-white/[0.06]">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <CircleDot size={16} />
+                </div>
+                <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white">Other Details</h3>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-4">
                 <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Credit Debit Limit. <span className="text-red-500 font-bold">*</span>
+                  <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    Credit Debit Limit. <span className="text-rose-500 font-bold">*</span>
                   </label>
                   <input
                     type="number"
@@ -1231,24 +1289,24 @@ export default function LedgerBookForm({
                     onChange={(e) =>
                       handleChange("creditDebitLimit", Number(e.target.value))
                     }
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                    className={cn(commonInputClass, "font-mono")}
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Bill Due Days. <span className="text-red-500 font-bold">*</span>
+                  <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                    Bill Due Days. <span className="text-rose-500 font-bold">*</span>
                   </label>
                   <input
                     type="number"
                     value={formData.billDueDays ?? 0}
                     onChange={(e) => handleChange("billDueDays", Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                    className={cn(commonInputClass, "font-mono")}
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                     Ref. Contact Name.
                   </label>
                   <input
@@ -1256,7 +1314,7 @@ export default function LedgerBookForm({
                     value={formData.refContactName || ""}
                     onChange={(e) => handleChange("refContactName", e.target.value)}
                     placeholder="select / type reference"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                    className={commonInputClass}
                   />
                 </div>
               </div>
@@ -1269,13 +1327,19 @@ export default function LedgerBookForm({
         {/* ========================================================================= */}
         {activeTab === "logo" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
-                Ledger Logo
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload ledger image / logo from here.
-              </p>
+            {/* Section Header with Golden FileText/Upload Icon Badge */}
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <Upload size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  Ledger Logo
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Upload ledger image / logo from here.
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
@@ -1313,11 +1377,11 @@ export default function LedgerBookForm({
                     const f = e.dataTransfer.files?.[0];
                     if (f) handleLogoFile(f);
                   }}
-                  className={`w-48 h-48 rounded-2xl bg-slate-50 border ${
+                  className={`w-72 h-44 rounded-3xl bg-slate-50 border ${
                     isLogoDragging
                       ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
-                  } dark:bg-[#161B26] flex flex-col items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
+                      : "border-[#E7E0D2] hover:border-[#E8C16D]/60 dark:border-white/[0.1] dark:hover:border-[#E8C16D]/60"
+                  } dark:bg-[#0B0F17] flex items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
                   title="Click to select and upload ledger logo"
                 >
                   {formData.logoUrl ? (
@@ -1328,12 +1392,14 @@ export default function LedgerBookForm({
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center select-none">
-                      <Upload size={24} className="text-slate-400 mb-2" />
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                        Upload
+                      <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.1] flex items-center justify-center text-[#B88728] dark:text-[#E8C16D] mb-2 shadow-xs">
+                        <Upload size={22} />
+                      </div>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Upload Logo
                       </span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                        Click or drag & drop
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                        Click or drag & drop (PNG, JPG, WebP)
                       </span>
                     </div>
                   )}
@@ -1346,7 +1412,7 @@ export default function LedgerBookForm({
                         handleChange("logoUrl", "");
                         toast.success("Logo removed.");
                       }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
                       title="Remove Logo"
                     >
                       <Trash2 size={13} />
@@ -1354,11 +1420,11 @@ export default function LedgerBookForm({
                   )}
 
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-white" />
+                    <Upload size={22} className="text-[#E8C16D]" />
                     <span className="text-xs font-semibold">
                       {formData.logoUrl ? "Change Logo" : "Upload Logo"}
                     </span>
-                    <span className="text-[10px] text-slate-700 dark:text-slate-300">
+                    <span className="text-[10px] text-slate-300">
                       Click or drag & drop
                     </span>
                   </div>
@@ -1370,37 +1436,37 @@ export default function LedgerBookForm({
         )}
       </div>
 
-      {/* Bottom Sticky Action Bar */}
-      <div className="p-4 sm:p-5 border-t border-[#E7E0D2] bg-slate-50 dark:border-white/[0.08] dark:bg-[#0E121A] w-full">
-        <div className="w-full flex items-center justify-between">
-          {/* Left: Completion Percentage bar */}
-          <div className="w-48 sm:w-64 space-y-1">
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Completion Percentage: {completionPercentage}%
-            </p>
-            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/[0.1] overflow-hidden">
-              <div
-                className="h-full bg-[#0A0E1A] dark:bg-[#F5C451] rounded-full transition-all duration-300"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </div>
+      {/* ========================================================================= */}
+      {/* 4. BOTTOM BAR / FOOTER matching Edit Company UI theme                     */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 flex items-center justify-between shadow-sm">
+        {/* Left: Completion Percentage with gold progress bar */}
+        <div className="w-48 sm:w-64 space-y-1">
+          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+            Completion Percentage: {completionPercentage}%
+          </p>
+          <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className="h-full bg-[#E8C16D] rounded-full transition-all duration-300"
+              style={{ width: `${completionPercentage}%` }}
+            />
           </div>
-
-          {/* Right: Save Button */}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#F5C451] hover:bg-[#e8b83e] text-slate-900 font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 size={16} className="animate-spin text-slate-900" />
-            ) : (
-              <Save size={16} className="text-slate-900" />
-            )}
-            <span>{saving ? "Saving..." : "Save"}</span>
-          </button>
         </div>
+
+        {/* Right: Golden Save Button */}
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-50"
+        >
+          {saving ? (
+            <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
+          ) : (
+            <Save size={16} className="text-[#0A0E1A]" />
+          )}
+          <span>{saving ? "Saving..." : "Save"}</span>
+        </button>
       </div>
     </div>
   );

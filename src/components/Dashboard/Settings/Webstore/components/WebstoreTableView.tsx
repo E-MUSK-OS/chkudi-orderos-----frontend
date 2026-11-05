@@ -55,7 +55,7 @@ export default function WebstoreTableView({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
+    <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
@@ -152,7 +152,7 @@ export default function WebstoreTableView({
 
                   {/* Sub SKUs */}
                   <td className="py-3.5 px-4">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D]">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D]">
                       {store.skuCount ?? 0}
                     </span>
                   </td>
@@ -182,7 +182,7 @@ export default function WebstoreTableView({
                       <button
                         type="button"
                         onClick={() => onModify(store)}
-                        className="px-3 py-1 text-xs font-bold rounded-xl bg-[#F5C451] hover:bg-[#e8b83e] active:scale-95 text-[#0A0E1A] shadow-xs transition-all cursor-pointer dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11]"
+                        className="px-3 py-1 text-xs font-bold rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A]"
                       >
                         Modify
                       </button>

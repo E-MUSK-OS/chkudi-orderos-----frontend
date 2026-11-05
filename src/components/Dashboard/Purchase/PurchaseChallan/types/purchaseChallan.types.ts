@@ -45,6 +45,7 @@ export interface PurchaseChallan {
 }
 
 export interface PurchaseChallanFiltersState {
+  search?: string;
   challanNo: string;
   partyChallanNo: string;
   supplierName: string;

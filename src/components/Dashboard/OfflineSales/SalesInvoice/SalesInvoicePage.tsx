@@ -51,6 +51,7 @@ export default function SalesInvoicePage() {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [filters, setFilters] = useState<SalesInvoiceFilterState>({
+    search: "",
     invoiceNo: "",
     challanNo: "",
     challanRefNo: "",
@@ -167,6 +168,16 @@ export default function SalesInvoicePage() {
     }
   };
 
+  const handleDateRangeChange = (startDate: string, endDate: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    const nextFilters = { ...filters, startDate, endDate };
+    setFilters(nextFilters);
+    filtersRef.current = nextFilters;
+    fetchInvoices(nextFilters);
+  };
+
   const handleFilterSearch = () => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -179,6 +190,7 @@ export default function SalesInvoicePage() {
       clearTimeout(debounceTimerRef.current);
     }
     const defaultFilters: SalesInvoiceFilterState = {
+      search: "",
       invoiceNo: "",
       challanNo: "",
       challanRefNo: "",
@@ -348,7 +360,7 @@ export default function SalesInvoicePage() {
       editOn: inv.editOn ?? true,
       remarks: inv.remarks || "",
       ewayBillNo: inv.ewayBillNo || "",
-      expenseOnSales: inv.expenseOnSales || 0,
+      expenseOnSales: 0,
       hasReceipt: inv.hasReceipt || false,
       receivedAmount:
         inv.receivedAmount !== undefined && inv.receivedAmount !== null
@@ -746,6 +758,7 @@ export default function SalesInvoicePage() {
             <InvoiceFilters
               filters={filters}
               onChange={handleFilterChange}
+              onDateRangeChange={handleDateRangeChange}
               onSearch={handleFilterSearch}
               onReset={handleFilterReset}
             />

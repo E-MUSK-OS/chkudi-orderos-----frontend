@@ -7,13 +7,17 @@ import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
    1. RowsPerPageDropdown Component & Types
    ========================================================================= */
 
+export const DEFAULT_PAGE_SIZE_OPTIONS: number[] = [10, 20, 50, 100];
+
+export type PaginationVariant = "dark" | "light" | "gold" | "theme";
+
 export interface RowsPerPageDropdownProps {
   limit?: number;
   value?: number;
   onLimitChange?: (limit: number) => void;
   onChange?: (value: number) => void;
   options?: number[];
-  variant?: "dark" | "light" | "gold";
+  variant?: PaginationVariant;
   size?: "sm" | "md";
   dropDirection?: "up" | "down";
   className?: string;
@@ -24,8 +28,8 @@ export function RowsPerPageDropdown({
   value,
   onLimitChange,
   onChange,
-  options = [10, 30, 50, 100],
-  variant = "dark",
+  options = DEFAULT_PAGE_SIZE_OPTIONS,
+  variant = "theme",
   size = "sm",
   dropDirection = "up",
   className = "",
@@ -75,6 +79,7 @@ export function RowsPerPageDropdown({
     dark: "border-slate-700 bg-[#141B2D] text-white hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-[#E8C16D]/30",
     light: "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 focus:border-[#E8C16D] focus:ring-[#E8C16D]/30",
     gold: "border-[#E8C16D] bg-[#FFF9EC] text-[#0A0E1A] hover:bg-[#FFF3D6] focus:border-[#E8C16D] focus:ring-[#E8C16D]/40",
+    theme: "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 focus:border-[#E8C16D] focus:ring-[#E8C16D]/30 dark:border-white/[0.1] dark:bg-[#080B11] dark:text-white dark:hover:border-[#E8C16D] dark:focus:ring-[#E8C16D]/30",
   }[variant];
 
   // Chevron icon colors
@@ -82,22 +87,28 @@ export function RowsPerPageDropdown({
     dark: "text-[#E8C16D]",
     light: "text-[#B88728]",
     gold: "text-[#B88728]",
+    theme: "text-[#B88728] dark:text-[#E8C16D]",
   }[variant];
 
   // Menu popup panel styling
   const menuPanelClasses = {
-    dark: "border-[#E8C16D]/40 bg-[#0A0E1A] text-white",
-    light: "border-[#E7E0D2] bg-white text-[#0A0E1A]",
-    gold: "border-[#E8C16D]/50 bg-white text-[#0A0E1A]",
+    dark: "border-[#E8C16D]/40 bg-[#0A0E1A] text-white shadow-2xl",
+    light: "border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-xl",
+    gold: "border-[#E8C16D]/50 bg-white text-[#0A0E1A] shadow-xl",
+    theme: "border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-white dark:shadow-2xl",
   }[variant];
 
   // Menu item button active / normal styles
   const getItemClasses = (isSelected: boolean) => {
     if (isSelected) {
       if (variant === "gold") {
-        return "bg-[#0A0E1A] text-[#E8C16D] shadow-xs";
+        return "bg-[#0A0E1A] text-[#E8C16D] shadow-xs font-bold";
       }
-      return "bg-[#E8C16D] text-[#0A0E1A] shadow-xs";
+      return "bg-[#E8C16D] text-[#0A0E1A] shadow-xs font-bold";
+    }
+
+    if (variant === "theme") {
+      return "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-200 dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D]";
     }
 
     if (variant === "dark") {
@@ -106,18 +117,37 @@ export function RowsPerPageDropdown({
     return "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728]";
   };
 
+  // Determine opening direction based on screen position so options are always visible
+  const [openUpward, setOpenUpward] = useState(dropDirection === "up");
+
+  const handleToggle = () => {
+    if (!isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      // If space below is limited (< 180px) and space above is sufficient, open up; else if space above is limited (< 180px), open down
+      if (spaceBelow < 180 && spaceAbove >= 180) {
+        setOpenUpward(true);
+      } else if (spaceAbove < 180 && spaceBelow >= 180) {
+        setOpenUpward(false);
+      } else {
+        setOpenUpward(dropDirection === "up");
+      }
+    }
+    setIsOpen((prev) => !prev);
+  };
+
   // Popup position
-  const positionClasses =
-    dropDirection === "up"
-      ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
-      : "top-full mt-2 left-1/2 -translate-x-1/2";
+  const positionClasses = openUpward
+    ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
+    : "top-full mt-2 left-1/2 -translate-x-1/2";
 
   return (
     <div className={`relative inline-flex items-center ${className}`} ref={dropdownRef}>
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={`
           inline-flex
           items-center
@@ -148,9 +178,9 @@ export function RowsPerPageDropdown({
         <div
           className={`
             absolute
-            z-50
-            min-w-[86px]
-            rounded-xl
+            z-[70]
+            min-w-[90px]
+            rounded-2xl
             border
             p-1.5
             shadow-2xl
@@ -178,7 +208,7 @@ export function RowsPerPageDropdown({
                     items-center
                     justify-between
                     gap-2
-                    rounded-lg
+                    rounded-xl
                     px-2.5
                     py-1.5
                     text-xs
@@ -214,7 +244,7 @@ export interface PaginationProps {
 
   itemName?: string;
   options?: number[];
-  variant?: "dark" | "light" | "gold";
+  variant?: PaginationVariant;
   className?: string;
   isLoading?: boolean;
 
@@ -231,7 +261,7 @@ export default function Pagination({
   pageSize,
   limit,
   itemName = "records",
-  options = [10, 30, 50, 100],
+  options = DEFAULT_PAGE_SIZE_OPTIONS,
   variant = "dark",
   className = "",
   isLoading = false,
@@ -250,8 +280,11 @@ export default function Pagination({
   const end = Math.min(page * currentLimit, currentTotal);
 
   const isLight = variant === "light";
+  const isTheme = variant === "theme";
 
-  const defaultContainerClass = isLight
+  const defaultContainerClass = isTheme
+    ? "mt-6 flex flex-col gap-4 rounded-2xl border border-[#E7E0D2] bg-white text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300"
+    : isLight
     ? "mt-6 flex flex-col gap-4 rounded-xl border border-[#E7E0D2] bg-white text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300"
     : "mt-6 flex flex-col gap-4 rounded-xl border border-slate-800 bg-[#0F172A] text-gray-300 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#090D17]";
 
@@ -259,20 +292,44 @@ export default function Pagination({
     ? `flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-colors ${className}`
     : defaultContainerClass;
 
+  const countTextColor = isTheme || isLight
+    ? "text-slate-600 dark:text-slate-400"
+    : "text-slate-300 dark:text-slate-400";
+
+  const countBoldColor = isTheme || isLight
+    ? "text-[#0A0E1A] dark:text-white"
+    : "text-white";
+
+  const rowsLabelColor = isTheme || isLight
+    ? "text-slate-600 dark:text-slate-400"
+    : "text-slate-300 dark:text-slate-400";
+
+  const prevNextBtnClass = isTheme
+    ? "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:bg-[#FFF9EC] hover:text-[#B88728] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-white dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] dark:hover:border-[#E8C16D]"
+    : isLight
+    ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
+    : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]";
+
+  const pageIndicatorClass = isTheme
+    ? "border-[#E7E0D2] bg-white text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-white"
+    : isLight
+    ? "border-[#E7E0D2] bg-[#FFF9EC] text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#141B2D] dark:text-white"
+    : "border-slate-700 bg-[#141B2D] text-white dark:border-white/[0.08] dark:bg-[#0F1626]";
+
   return (
     <div className={containerClasses}>
       {/* Left count indicator */}
-      <div className={`text-xs sm:text-sm text-center sm:text-left ${isLight ? "text-slate-600 dark:text-slate-400" : "text-slate-300 dark:text-slate-400"}`}>
+      <div className={`text-xs sm:text-sm text-center sm:text-left ${countTextColor}`}>
         Showing{" "}
-        <span className={`font-bold ${isLight ? "text-[#0A0E1A] dark:text-white" : "text-white"}`}>
+        <span className={`font-bold ${countBoldColor}`}>
           {start}
         </span>
         {" - "}
-        <span className={`font-bold ${isLight ? "text-[#0A0E1A] dark:text-white" : "text-white"}`}>
+        <span className={`font-bold ${countBoldColor}`}>
           {end}
         </span>
         {" of "}
-        <span className={`font-bold ${isLight ? "text-[#0A0E1A] dark:text-white" : "text-white"}`}>
+        <span className={`font-bold ${countBoldColor}`}>
           {currentTotal}
         </span>{" "}
         {itemName}
@@ -282,7 +339,7 @@ export default function Pagination({
       <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
         {/* Rows Per Page dropdown */}
         <div className="flex items-center gap-1.5">
-          <span className={`text-xs sm:text-sm font-medium ${isLight ? "text-slate-600 dark:text-slate-400" : "text-slate-300 dark:text-slate-400"}`}>
+          <span className={`text-xs sm:text-sm font-medium ${rowsLabelColor}`}>
             Rows:
           </span>
           <RowsPerPageDropdown
@@ -315,11 +372,7 @@ export default function Pagination({
             active:scale-[0.98]
             disabled:opacity-40
             disabled:cursor-not-allowed
-            ${
-              isLight
-                ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
-                : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
-            }
+            ${prevNextBtnClass}
           `}
         >
           <ChevronLeft className="h-3.5 w-3.5 shrink-0" />
@@ -341,14 +394,12 @@ export default function Pagination({
             font-bold
             shadow-2xs
             whitespace-nowrap
-            ${
-              isLight
-                ? "border-[#E7E0D2] bg-[#FFF9EC] text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#141B2D] dark:text-white"
-                : "border-slate-700 bg-[#141B2D] text-white dark:border-white/[0.08] dark:bg-[#0F1626]"
-            }
+            ${pageIndicatorClass}
           `}
         >
-          <span className={isLight ? "text-[#B88728] dark:text-[#F5C451]" : "text-[#E8C16D] dark:text-[#F5C451]"}>{page}</span>
+          <span className={isTheme || isLight ? "text-[#B88728] dark:text-[#E8C16D] font-bold" : "text-[#E8C16D] dark:text-[#F5C451]"}>
+            {page}
+          </span>
           <span className="mx-1 text-slate-500 font-normal">/</span>
           <span>{Math.max(totalPages, 1)}</span>
         </div>
@@ -375,11 +426,7 @@ export default function Pagination({
             active:scale-[0.98]
             disabled:opacity-40
             disabled:cursor-not-allowed
-            ${
-              isLight
-                ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
-                : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
-            }
+            ${prevNextBtnClass}
           `}
         >
           <span>Next</span>

@@ -41,7 +41,7 @@ export default function MaterialTable({
   if (!materials.length) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]">
           <Package className="h-7 w-7" />
         </div>
         <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
@@ -57,7 +57,7 @@ export default function MaterialTable({
   return (
     <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
       <table className="w-full min-w-[1050px] border-collapse text-left font-sans">
-        <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#F5C451]">
+        <thead className="bg-[#0A0E1A] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] dark:bg-[#080B11] select-none">
           <tr>
             <th className="px-3 sm:px-4 py-3.5 text-center w-12">
               <div className="flex items-center justify-center">
@@ -68,42 +68,42 @@ export default function MaterialTable({
                     if (el) el.indeterminate = isSomeCurrentPageSelected;
                   }}
                   onChange={() => onToggleSelectAll?.()}
-                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] cursor-pointer focus:ring-[#E8C16D] focus:ring-offset-0 transition"
+                  className="h-4 w-4 rounded border-slate-300 text-slate-900 accent-[#B88728] dark:border-white/20 dark:bg-[#161B24] dark:accent-[#E8C16D] cursor-pointer focus:ring-[#E8C16D] focus:ring-offset-0 transition"
                   title="Select all materials on this page"
                 />
               </div>
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[200px]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[200px] text-[#E8C16D]">
               Material Details
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[120px]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[120px] text-[#E8C16D]">
               Master SKU
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[100px]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[100px] text-[#E8C16D]">
               Brand & Unit
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px] text-[#E8C16D]">
               Category
             </th>
 
             {/* Kardex Pricing (Cost / MRP / Dealer / Retail) */}
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px] text-[#E8C16D]">
               Kardex Pricing
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[90px]">
+            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[90px] text-[#E8C16D]">
               Status
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
+            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20 text-[#E8C16D]">
               Actions
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
+            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20 text-[#E8C16D]">
               Variants
             </th>
           </tr>
@@ -117,8 +117,8 @@ export default function MaterialTable({
                 <tr
                   className={`transition-colors ${
                     isSelected
-                      ? "bg-[#FFF9EC]/80 dark:bg-[#F5C451]/10 hover:bg-[#FFF9EC] dark:hover:bg-[#F5C451]/15"
-                      : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
+                      ? "bg-amber-500/10 dark:bg-white/[0.04]"
+                      : "hover:bg-[#FFFDF8] dark:hover:bg-white/[0.02]"
                   }`}
                 >
                 <td className="px-3 sm:px-4 py-3.5 text-center w-12 align-middle">
@@ -127,7 +127,7 @@ export default function MaterialTable({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => onToggleSelect?.(material.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] cursor-pointer focus:ring-[#E8C16D] focus:ring-offset-0 transition"
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 accent-[#B88728] dark:border-white/20 dark:bg-[#161B24] dark:accent-[#E8C16D] cursor-pointer focus:ring-[#E8C16D] focus:ring-offset-0 transition"
                       title={isSelected ? "Deselect row" : "Select row"}
                     />
                   </div>
@@ -198,12 +198,12 @@ export default function MaterialTable({
                       {material.category}
                     </span>
                     <div className="mt-1">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-[#F5C451]/10 px-1.5 py-0.5 text-[10px] sm:text-[11px] font-mono border border-amber-200/60 dark:border-[#F5C451]/20 shadow-2xs">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] px-1.5 py-0.5 text-[10px] sm:text-[11px] font-mono border border-[#E8C16D]/30 shadow-2xs">
                         <span className="text-slate-600 dark:text-slate-400 font-medium">
                           Sub Category
                         </span>
                         <span className="text-slate-400 dark:text-slate-500 font-normal">:</span>
-                        <span className="font-bold text-[#B88728] dark:text-[#F5C451]">
+                        <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">
                           {material.subCategory || "No Sub Category"}
                         </span>
                       </span>
@@ -213,7 +213,7 @@ export default function MaterialTable({
 
                 {/* Kardex Pricing (Material Cost, MRP, Sales Rate) */}
                 <td className="px-3 sm:px-4 py-3.5 align-middle whitespace-nowrap">
-                  <div className="space-y-0.5 text-xs">
+                  <div className="space-y-0.5 text-xs font-mono">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-slate-400 dark:text-slate-500">Cost:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -222,7 +222,7 @@ export default function MaterialTable({
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-slate-400 dark:text-slate-500">MRP:</span>
-                      <span className="font-semibold text-[#B88728] dark:text-[#F5C451]">
+                      <span className="font-semibold text-[#B88728] dark:text-[#E8C16D]">
                         ₹{material.mrp || 0}
                       </span>
                     </div>
@@ -262,7 +262,7 @@ export default function MaterialTable({
                     <button
                       type="button"
                       onClick={() => onVariantToggle?.(material)}
-                      className="grid h-8 w-8 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] transition-all shadow-2xs active:scale-95 cursor-pointer dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 dark:hover:border-[#F5C451]/50 dark:hover:bg-[#F5C451]/10 dark:hover:text-[#F5C451]"
+                      className="grid h-8 w-8 place-items-center rounded-full border border-[#E7E0D2] bg-white text-slate-700 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] transition-all shadow-2xs active:scale-95 cursor-pointer dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-300 dark:hover:border-[#E8C16D]/50 dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D]"
                       title={expandedMaterialId === material.id ? "Collapse variants" : "Expand variants"}
                     >
                       {expandedMaterialId === material.id ? (
@@ -279,7 +279,7 @@ export default function MaterialTable({
                 <tr>
                   <td
                     colSpan={9}
-                    className="border-t border-[#E7E0D2] bg-slate-50/60 p-3 sm:p-5 dark:border-white/[0.08] dark:bg-[#080B11]/50"
+                    className="border-t border-[#E7E0D2] bg-[#FAF8F5] p-3 sm:p-5 dark:border-white/[0.08] dark:bg-[#080B11]/50"
                   >
                     <MaterialVariantInline
                       materialId={material.id}
@@ -302,5 +302,3 @@ export default function MaterialTable({
     </div>
   );
 }
-
-

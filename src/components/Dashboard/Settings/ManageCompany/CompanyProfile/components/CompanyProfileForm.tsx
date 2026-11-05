@@ -12,6 +12,8 @@ import {
   FileText,
   Upload,
   Trash2,
+  MapPin,
+  Landmark,
 } from "lucide-react";
 import { Company, UpdateCompanyPayload } from "../types/company.types";
 import { companyService } from "../services/company.service";
@@ -168,13 +170,12 @@ export default function CompanyProfileForm({
   );
 
   const dropdownButtonClassName =
-    "w-full justify-between h-10 px-3.5 text-xs font-normal rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:text-white dark:hover:border-white/20 transition-all";
+    "w-full justify-between h-11 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-slate-200 text-[#0A0E1A] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:bg-[#080B11] dark:border-white/[0.1] dark:text-white dark:hover:border-white/20 transition-all shadow-xs";
   const dropdownMenuClassName =
-    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-xl shadow-2xl";
+    "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl";
 
   // Form state holding all fields from database
   const [formData, setFormData] = useState<UpdateCompanyPayload>({
-    // General Details
     legalName: "",
     companyName: "",
     brandName: "",
@@ -185,7 +186,6 @@ export default function CompanyProfileForm({
     phone: "",
     website: "",
 
-    // Billing Details
     billingAddress1: "",
     billingAddress2: "",
     billingAddress3: "",
@@ -197,7 +197,6 @@ export default function CompanyProfileForm({
     billingContactName: "",
     billingContactNo: "",
 
-    // Shipping Details
     shippingSameAsBilling: true,
     shippingAddress1: "",
     shippingAddress2: "",
@@ -210,7 +209,6 @@ export default function CompanyProfileForm({
     shippingContactName: "",
     shippingContactNo: "",
 
-    // Accounting - Legal
     gstNumber: "",
     tanNumber: "",
     panNumber: "",
@@ -219,7 +217,6 @@ export default function CompanyProfileForm({
     tradeCategory: "Manufacturing",
     msmeNumber: "",
 
-    // Accounting - Bank
     bankName: "",
     accountHolderName: "",
     accountName: "",
@@ -231,14 +228,12 @@ export default function CompanyProfileForm({
     clientCode: "",
     productCode: "",
 
-    // Invoice Details
     taxInvoicePrefix: "JBFT",
     taxInvoiceNext: "1",
     retailInvoicePrefix: "JBFR",
     retailInvoiceNext: "1",
     considerInPnL: "Yes",
 
-    // Logo & Signature
     logoUrl: "",
     signatureUrl: "",
     status: "ACTIVE",
@@ -317,7 +312,6 @@ export default function CompanyProfileForm({
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
 
-      // If shipping same as billing is checked, sync billing fields to shipping
       if (
         updated.shippingSameAsBilling &&
         (field === "billingAddress1" ||
@@ -436,241 +430,280 @@ export default function CompanyProfileForm({
     { key: "signature", label: "Signature", completed: Boolean(formData.signatureUrl) },
   ];
 
+  const commonInputClass =
+    "w-full h-11 px-5 text-xs sm:text-sm font-medium rounded-full border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 shadow-xs transition-all";
+
+  const commonDisabledInputClass =
+    "w-full h-11 px-5 text-xs sm:text-sm font-medium rounded-full border border-slate-200 dark:border-white/[0.06] bg-slate-100 dark:bg-[#161B26]/50 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none outline-none shadow-xs";
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-2xl border border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-md dark:border-white/[0.08] dark:bg-[#0E121A] dark:text-slate-100 dark:shadow-2xl overflow-hidden font-sans">
-      {/* Top Header Bar matching media_1793255914393.png */}
-      <div className="px-6 pt-5 pb-3 w-full flex items-center justify-between border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-colors cursor-pointer"
-            title="Back to Company Profiles"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white leading-tight">
-              Company Profile
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Name.</span>{" "}
-              {formData.companyName || company?.companyName || "JAY BHAVANI FASHION"}{" "}
-              <span className="ml-3 font-semibold text-slate-700 dark:text-slate-300">GSTN.</span>{" "}
-              {formData.gstNumber || company?.gstNumber || "24CAGPB1419N1ZW"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          {/* Active Status Badge matching screenshot */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#2A3444] dark:text-white dark:border-white/[0.1] shadow-xs">
-            <span>{formData.status === "ACTIVE" ? "Active" : "Draft"}</span>
-            <Check size={12} className="stroke-[3] text-[#B88728] dark:text-white" />
-          </div>
-
-          {/* Edit Mode indicator */}
-          <div className="px-3.5 py-1 rounded-md bg-slate-100 text-slate-800 border border-slate-200 dark:bg-white dark:text-slate-900 dark:border-transparent font-bold text-xs shadow-xs select-none">
-            Edit Mode
-          </div>
-        </div>
-      </div>
-
-      {/* Full-Width Tabs Segmented Bar matching media_1793255914393.png */}
-      <div className="px-6 py-3 w-full border-b border-slate-100 bg-white dark:border-white/[0.06] dark:bg-[#0E121A]">
-        <div className="w-full rounded-xl bg-slate-100 border border-slate-200 dark:bg-[#161B24] dark:border-white/[0.08] p-1 grid grid-cols-5 gap-1 select-none">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
+    <div className="flex flex-col gap-4 w-full text-[#0A0E1A] dark:text-slate-100 font-sans">
+      {/* ========================================================================= */}
+      {/* 1. TOP HEADER BAR matching Company Profile Main Page                      */}
+      {/* ========================================================================= */}
+      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1.5 min-w-0 max-w-2xl">
+            <div className="flex items-center gap-3">
               <button
-                key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as TabType)}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "border border-slate-300 bg-white text-slate-900 shadow-xs dark:border-white/20 dark:bg-white/[0.05] dark:text-white"
-                    : "border border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.02]"
-                }`}
+                onClick={onBack}
+                className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                title="Back to Company Profiles"
               >
-                {tab.completed ? (
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                ) : (
-                  <Circle size={14} className="text-slate-500 shrink-0 stroke-dashed" />
-                )}
-                <span>{tab.label}</span>
+                <ArrowLeft size={18} />
               </button>
-            );
-          })}
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                Company Profile
+              </h1>
+            </div>
+
+            {/* Metadata Name & GSTN (Breadcrumb path removed per request) */}
+            <div className="mt-1 flex items-center gap-x-4 gap-y-1 text-xs sm:text-sm font-medium ml-1 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">Name.</span>
+                <span className="text-slate-900 dark:text-slate-100 font-semibold">
+                  {formData.companyName || company?.companyName || "Company Name"}
+                </span>
+              </div>
+              <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-[#B88728] dark:text-[#E8C16D]">GSTN.</span>
+                <span className="text-slate-900 dark:text-slate-100 font-mono font-semibold">
+                  {formData.gstNumber || company?.gstNumber || "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+            {/* Active Status Badge */}
+            <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs">
+              <span>{formData.status === "ACTIVE" ? "Active" : formData.status === "DRAFT" ? "Draft" : "Inactive"}</span>
+              <Check size={14} className="stroke-[3] text-[#B88728] dark:text-[#E8C16D]" />
+            </div>
+
+            {/* Edit Mode badge */}
+            <div className="px-4 py-2 rounded-2xl bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] border border-[#0A0E1A] dark:border-white/[0.1] font-bold text-xs sm:text-sm shadow-xs select-none">
+              Edit Mode
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Form Content Area - Full-width padding with 4-column balanced grid (hidden scrollbar) */}
-      <div className="flex-1 px-6 py-6 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* ========================================================================= */}
+      {/* 2. SEGMENTED TABS BAR matching img-1 (high-contrast active tab in dark mode) */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-2xl sm:rounded-full bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] p-1.5 flex items-center justify-between shadow-xs gap-1 sm:gap-2 select-none overflow-x-auto no-scrollbar">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key as TabType)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
+                isActive
+                  ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+              )}
+            >
+              {isActive ? (
+                <CheckCircle2 size={16} className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0" />
+              ) : tab.completed ? (
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+              ) : (
+                <Circle size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+              )}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 3. MAIN FORM CARD matching img-1 layout and aesthetics                     */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-8 shadow-sm">
         {/* ========================================================================= */}
-        {/* TAB 1: GENERAL DETAILS                                                   */}
+        {/* TAB 1: GENERAL DETAILS matching img-1                                     */}
         {/* ========================================================================= */}
         {activeTab === "general" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                General Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter basic information about company.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
-                {/* Legal Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Legal Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.legalName || ""}
-                    onChange={(e) => handleChange("legalName", e.target.value)}
-                    placeholder="Enter Legal Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Company Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Company Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.companyName || ""}
-                    onChange={(e) => handleChange("companyName", e.target.value)}
-                    placeholder="Enter Company Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Brand Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Brand Name.
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.brandName || ""}
-                    onChange={(e) => handleChange("brandName", e.target.value)}
-                    placeholder="Enter Brand Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Owner Name */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Owner Name. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ownerName || ""}
-                    onChange={(e) => handleChange("ownerName", e.target.value)}
-                    placeholder="Enter Owner Name"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Abbreviation */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Abbreviation. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.abbreviation || ""}
-                    onChange={(e) => handleChange("abbreviation", e.target.value.toUpperCase())}
-                    placeholder="e.g. JBF"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase transition-all"
-                  />
-                </div>
-
-                {/* Type Dropdown */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Type. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <ThemeSelectDropdown
-                    value={formData.businessType || "Properiter"}
-                    onChange={(val) => handleChange("businessType", val)}
-                    options={businessTypeOptions}
-                    placeholder="Select Type"
-                    className="w-full"
-                    buttonClassName={dropdownButtonClassName}
-                    menuClassName={dropdownMenuClassName}
-                  />
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Email. <span className="text-red-500 font-bold">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="Enter Email Address"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-
-                {/* Contact No with 10/10 counter */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                      Contact No. <span className="text-red-500 font-bold">*</span>
-                    </label>
-                    <span className="text-[10px] text-emerald-400 font-mono">
-                      {formData.phone ? formData.phone.length : 0}/10
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    value={formData.phone || ""}
-                    onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ""))}
-                    placeholder="Enter 10-digit Contact No"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all font-mono"
-                  />
-                </div>
-
-                {/* Website - spans 1 column only */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Website.
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.website || ""}
-                    onChange={(e) => handleChange("website", e.target.value)}
-                    placeholder="https://example.com"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none transition-all"
-                  />
-                </div>
-                <div />
+            {/* Section Header with Golden Building Icon Badge */}
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <Building2 size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  General Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Enter basic information about company.
+                </p>
               </div>
             </div>
-          )}
+
+            {/* 2-Column Balanced Form Grid matching img-1 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+              {/* Legal Name */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Legal Name. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.legalName || ""}
+                  onChange={(e) => handleChange("legalName", e.target.value)}
+                  placeholder="Enter Legal Name"
+                  className={commonInputClass}
+                />
+              </div>
+
+              {/* Company Name */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Company Name. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.companyName || ""}
+                  onChange={(e) => handleChange("companyName", e.target.value)}
+                  placeholder="Enter Company Name"
+                  className={commonInputClass}
+                />
+              </div>
+
+              {/* Brand Name */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Brand Name.
+                </label>
+                <input
+                  type="text"
+                  value={formData.brandName || ""}
+                  onChange={(e) => handleChange("brandName", e.target.value)}
+                  placeholder="Enter Brand Name"
+                  className={commonInputClass}
+                />
+              </div>
+
+              {/* Owner Name */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Owner Name. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.ownerName || ""}
+                  onChange={(e) => handleChange("ownerName", e.target.value)}
+                  placeholder="Enter Owner Name"
+                  className={commonInputClass}
+                />
+              </div>
+
+              {/* Abbreviation */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Abbreviation. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.abbreviation || ""}
+                  onChange={(e) => handleChange("abbreviation", e.target.value.toUpperCase())}
+                  placeholder="e.g. NETU"
+                  className={cn(commonInputClass, "uppercase")}
+                />
+              </div>
+
+              {/* Type Dropdown */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Type. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <ThemeSelectDropdown
+                  value={formData.businessType || "Properiter"}
+                  onChange={(val) => handleChange("businessType", val)}
+                  options={businessTypeOptions}
+                  placeholder="Select Type"
+                  className="w-full"
+                  buttonClassName={dropdownButtonClassName}
+                  menuClassName={dropdownMenuClassName}
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Email. <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  placeholder="Enter Email Address"
+                  className={commonInputClass}
+                />
+              </div>
+
+              {/* Contact No with 10/10 counter on top-right matching img-1 */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    Contact No. <span className="text-rose-500 font-bold">*</span>
+                  </label>
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                    {formData.phone ? formData.phone.length : 0}/10
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={formData.phone || ""}
+                  onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 10-digit Contact No"
+                  className={cn(commonInputClass, "font-mono")}
+                />
+              </div>
+
+              {/* Website - spans 1 column */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                  Website.
+                </label>
+                <input
+                  type="url"
+                  value={formData.website || ""}
+                  onChange={(e) => handleChange("website", e.target.value)}
+                  placeholder="https://netutechno.com/"
+                  className={commonInputClass}
+                />
+              </div>
+              <div />
+            </div>
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* TAB 2: CONTACT DETAILS (Billing & Shipping)                               */}
         {/* ========================================================================= */}
         {activeTab === "contact" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Contact Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter billing and shipping information
-              </p>
+            {/* Section Header with Golden MapPin Icon Badge */}
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <MapPin size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  Contact Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Enter billing and shipping information
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
@@ -682,20 +715,20 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Address 1. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingAddress1 || ""}
                       onChange={(e) => handleChange("billingAddress1", e.target.value)}
                       placeholder="Plot- No-D-9/13A"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 2.
                     </label>
                     <input
@@ -703,12 +736,12 @@ export default function CompanyProfileForm({
                       value={formData.billingAddress2 || ""}
                       onChange={(e) => handleChange("billingAddress2", e.target.value)}
                       placeholder="Sachin Udhyognagar Sahakari Mandli"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 3.
                     </label>
                     <input
@@ -716,13 +749,13 @@ export default function CompanyProfileForm({
                       value={formData.billingAddress3 || ""}
                       onChange={(e) => handleChange("billingAddress3", e.target.value)}
                       placeholder="Hojiwal Industrial Estata vanz Road No-2"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Pincode. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -730,39 +763,39 @@ export default function CompanyProfileForm({
                       value={formData.billingPincode || ""}
                       onChange={(e) => handleChange("billingPincode", e.target.value.replace(/\D/g, ""))}
                       placeholder="394230"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Area. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingArea || ""}
                       onChange={(e) => handleChange("billingArea", e.target.value)}
                       placeholder="Sachin"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      City. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingCity || ""}
                       onChange={(e) => handleChange("billingCity", e.target.value)}
                       placeholder="Surat"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      State. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       value={formData.billingState || "Gujarat"}
@@ -776,36 +809,36 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Country.
                     </label>
                     <input
                       type="text"
                       disabled
                       value={formData.billingCountry || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed select-none"
+                      className={commonDisabledInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Contact Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Contact Name. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.billingContactName || ""}
                       onChange={(e) => handleChange("billingContactName", e.target.value)}
                       placeholder="Shailesh Bhatiya"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        Contact No. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        Contact No. <span className="text-rose-500 font-bold">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                         {formData.billingContactNo ? formData.billingContactNo.length : 0}/10
                       </span>
                     </div>
@@ -817,7 +850,7 @@ export default function CompanyProfileForm({
                         handleChange("billingContactNo", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="9925377339"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
                 </div>
@@ -832,7 +865,7 @@ export default function CompanyProfileForm({
                       type="checkbox"
                       checked={Boolean(formData.shippingSameAsBilling)}
                       onChange={(e) => handleShippingSameToggle(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded border-slate-300 bg-white text-[#B88728] focus:ring-[#F5C451] cursor-pointer dark:border-white/[0.2] dark:bg-[#161B26] dark:text-white"
+                      className="w-4 h-4 rounded border-slate-300 text-[#B88728] focus:ring-[#E8C16D] cursor-pointer dark:border-white/[0.2] dark:bg-[#161B26]"
                     />
                     <span>Shipping same as billing.</span>
                   </label>
@@ -840,8 +873,8 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Address 1. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Address 1. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -849,16 +882,12 @@ export default function CompanyProfileForm({
                       value={formData.shippingAddress1 || ""}
                       onChange={(e) => handleChange("shippingAddress1", e.target.value)}
                       placeholder="Plot- No-D-9/13A"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 2.
                     </label>
                     <input
@@ -867,16 +896,12 @@ export default function CompanyProfileForm({
                       value={formData.shippingAddress2 || ""}
                       onChange={(e) => handleChange("shippingAddress2", e.target.value)}
                       placeholder="Sachin Udhyognagar Sahakari Mandli"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Address 3.
                     </label>
                     <input
@@ -885,17 +910,13 @@ export default function CompanyProfileForm({
                       value={formData.shippingAddress3 || ""}
                       onChange={(e) => handleChange("shippingAddress3", e.target.value)}
                       placeholder="Hojiwal Industrial Estata vanz Road No-2"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Pincode. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Pincode. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -904,17 +925,13 @@ export default function CompanyProfileForm({
                       value={formData.shippingPincode || ""}
                       onChange={(e) => handleChange("shippingPincode", e.target.value.replace(/\D/g, ""))}
                       placeholder="394230"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass, "font-mono")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Area. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Area. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -922,17 +939,13 @@ export default function CompanyProfileForm({
                       value={formData.shippingArea || ""}
                       onChange={(e) => handleChange("shippingArea", e.target.value)}
                       placeholder="Sachin"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      City. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      City. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -940,17 +953,13 @@ export default function CompanyProfileForm({
                       value={formData.shippingCity || ""}
                       onChange={(e) => handleChange("shippingCity", e.target.value)}
                       placeholder="Surat"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      State. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      State. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       disabled={Boolean(formData.shippingSameAsBilling)}
@@ -969,20 +978,20 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Country.
                     </label>
                     <input
                       type="text"
                       disabled
                       value={formData.shippingCountry || "India"}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 border border-[#E7E0D2] text-slate-500 dark:bg-[#161B26]/50 dark:border-white/[0.06] dark:text-slate-400 outline-none cursor-not-allowed select-none"
+                      className={commonDisabledInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Contact Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Contact Name. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -990,20 +999,16 @@ export default function CompanyProfileForm({
                       value={formData.shippingContactName || ""}
                       onChange={(e) => handleChange("shippingContactName", e.target.value)}
                       placeholder="Shailesh Bhatiya"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass}
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        Contact No. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        Contact No. <span className="text-rose-500 font-bold">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                         {formData.shippingContactNo ? formData.shippingContactNo.length : 0}/10
                       </span>
                     </div>
@@ -1016,11 +1021,7 @@ export default function CompanyProfileForm({
                         handleChange("shippingContactNo", e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="9925377339"
-                      className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono ${
-                        formData.shippingSameAsBilling
-                          ? "bg-slate-100 border border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400"
-                          : "bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white"
-                      }`}
+                      className={cn(formData.shippingSameAsBilling ? commonDisabledInputClass : commonInputClass, "font-mono")}
                     />
                   </div>
                 </div>
@@ -1034,13 +1035,19 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "accounting" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Accounting Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Enter Legal, Invoicing and Banking Information
-              </p>
+            {/* Section Header with Golden Landmark Icon Badge */}
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <Landmark size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  Accounting Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Enter Legal, Invoicing and Banking Information
+                </p>
+              </div>
             </div>
 
             {/* Top Grid: Legal vs Bank Details */}
@@ -1055,10 +1062,10 @@ export default function CompanyProfileForm({
                   {/* GST Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        GST Number. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        GST Number. <span className="text-rose-500 font-bold">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                         {formData.gstNumber ? formData.gstNumber.length : 0}/15
                       </span>
                     </div>
@@ -1068,17 +1075,17 @@ export default function CompanyProfileForm({
                       value={formData.gstNumber || ""}
                       onChange={(e) => handleChange("gstNumber", e.target.value.toUpperCase())}
                       placeholder="24CAGPB1419N1ZW"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   {/* TAN Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         TAN Number.
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                         {formData.tanNumber ? formData.tanNumber.length : 0}/10
                       </span>
                     </div>
@@ -1088,17 +1095,17 @@ export default function CompanyProfileForm({
                       value={formData.tanNumber || ""}
                       onChange={(e) => handleChange("tanNumber", e.target.value.toUpperCase())}
                       placeholder="SRTD09780B"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   {/* PAN Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                        PAN Number. <span className="text-red-500 font-bold">*</span>
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        PAN Number. <span className="text-rose-500 font-bold">*</span>
                       </label>
-                      <span className="text-[10px] text-emerald-400 font-mono">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                         {formData.panNumber ? formData.panNumber.length : 0}/10
                       </span>
                     </div>
@@ -1108,17 +1115,17 @@ export default function CompanyProfileForm({
                       value={formData.panNumber || ""}
                       onChange={(e) => handleChange("panNumber", e.target.value.toUpperCase())}
                       placeholder="CAGPB1419N"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   {/* Central Sale Tax Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         Central Sale Tax Number.
                       </label>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-xs text-slate-500 font-mono">
                         {formData.cstNumber ? formData.cstNumber.length : 0}/11
                       </span>
                     </div>
@@ -1128,17 +1135,17 @@ export default function CompanyProfileForm({
                       value={formData.cstNumber || ""}
                       onChange={(e) => handleChange("cstNumber", e.target.value)}
                       placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
                   {/* FSSAI Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         FSSAI Number.
                       </label>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-xs text-slate-500 font-mono">
                         {formData.fssaiNumber ? formData.fssaiNumber.length : 0}/14
                       </span>
                     </div>
@@ -1148,13 +1155,13 @@ export default function CompanyProfileForm({
                       value={formData.fssaiNumber || ""}
                       onChange={(e) => handleChange("fssaiNumber", e.target.value)}
                       placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
                   {/* Trade Category */}
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Trade Category.
                     </label>
                     <ThemeSelectDropdown
@@ -1171,10 +1178,10 @@ export default function CompanyProfileForm({
                   {/* MSME Number */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         MSME Number.
                       </label>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-xs text-slate-500 font-mono">
                         {formData.msmeNumber ? formData.msmeNumber.length : 0}/19
                       </span>
                     </div>
@@ -1184,11 +1191,10 @@ export default function CompanyProfileForm({
                       value={formData.msmeNumber || ""}
                       onChange={(e) => handleChange("msmeNumber", e.target.value)}
                       placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
-                  {/* Empty cell to balance MSME */}
                   <div />
                 </div>
               </div>
@@ -1201,33 +1207,33 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Bank Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Bank Name. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.bankName || ""}
                       onChange={(e) => handleChange("bankName", e.target.value)}
                       placeholder="KOTAK MAHINDRA BANK"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      className={cn(commonInputClass, "uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Holder Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Account Holder Name. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.accountHolderName || ""}
                       onChange={(e) => handleChange("accountHolderName", e.target.value)}
                       placeholder="DIPABEN RAMESHBHAI BHATIYA"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      className={cn(commonInputClass, "uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Account Name.
                     </label>
                     <input
@@ -1235,26 +1241,26 @@ export default function CompanyProfileForm({
                       value={formData.accountName || ""}
                       onChange={(e) => handleChange("accountName", e.target.value)}
                       placeholder="JAY BHAVANI FASHION"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      className={cn(commonInputClass, "uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Bank Account Number. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Bank Account Number. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.accountNumber || ""}
                       onChange={(e) => handleChange("accountNumber", e.target.value)}
                       placeholder="9925828382"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      IFSC Code. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      IFSC Code. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -1262,13 +1268,13 @@ export default function CompanyProfileForm({
                       value={formData.ifscCode || ""}
                       onChange={(e) => handleChange("ifscCode", e.target.value.toUpperCase())}
                       placeholder="KKBK0002868"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono uppercase"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Account Type. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Account Type. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <ThemeSelectDropdown
                       value={formData.accountType || "Current"}
@@ -1282,33 +1288,33 @@ export default function CompanyProfileForm({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Branch Name. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Branch Name. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.branchName || ""}
                       onChange={(e) => handleChange("branchName", e.target.value)}
                       placeholder="KATARGAM SURAT"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase"
+                      className={cn(commonInputClass, "uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      UPI ID. <span className="text-red-500 font-bold">*</span>
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      UPI ID. <span className="text-rose-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.upiId || ""}
                       onChange={(e) => handleChange("upiId", e.target.value)}
                       placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Client Code.
                     </label>
                     <input
@@ -1316,12 +1322,12 @@ export default function CompanyProfileForm({
                       value={formData.clientCode || ""}
                       onChange={(e) => handleChange("clientCode", e.target.value)}
                       placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Product Code.
                     </label>
                     <input
@@ -1329,7 +1335,7 @@ export default function CompanyProfileForm({
                       value={formData.productCode || ""}
                       onChange={(e) => handleChange("productCode", e.target.value)}
                       placeholder=""
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none"
+                      className={commonInputClass}
                     />
                   </div>
                 </div>
@@ -1337,7 +1343,7 @@ export default function CompanyProfileForm({
             </div>
 
             {/* Bottom Grid: Invoice Details vs Other Details */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 pt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 pt-6 border-t border-slate-100 dark:border-white/[0.06]">
               {/* Invoice Details */}
               <div>
                 <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-4">
@@ -1346,7 +1352,7 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       TAX Invoice Prefix.
                     </label>
                     <input
@@ -1354,12 +1360,12 @@ export default function CompanyProfileForm({
                       value={formData.taxInvoicePrefix || "JBFT"}
                       onChange={(e) => handleChange("taxInvoicePrefix", e.target.value.toUpperCase())}
                       placeholder="JBFT"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase font-mono"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       TAX Invoice Next.
                     </label>
                     <input
@@ -1367,12 +1373,12 @@ export default function CompanyProfileForm({
                       value={formData.taxInvoiceNext || "1"}
                       onChange={(e) => handleChange("taxInvoiceNext", e.target.value)}
                       placeholder="1"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Retail Invoice Prefix.
                     </label>
                     <input
@@ -1380,12 +1386,12 @@ export default function CompanyProfileForm({
                       value={formData.retailInvoicePrefix || "JBFR"}
                       onChange={(e) => handleChange("retailInvoicePrefix", e.target.value.toUpperCase())}
                       placeholder="JBFR"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none uppercase font-mono"
+                      className={cn(commonInputClass, "font-mono uppercase")}
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Retail Invoice Next.
                     </label>
                     <input
@@ -1393,7 +1399,7 @@ export default function CompanyProfileForm({
                       value={formData.retailInvoiceNext || "1"}
                       onChange={(e) => handleChange("retailInvoiceNext", e.target.value)}
                       placeholder="1"
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 focus:border-[#E8C16D] dark:bg-[#161B26] dark:border-white/[0.08] dark:focus:border-white/[0.2] dark:text-white outline-none font-mono"
+                      className={cn(commonInputClass, "font-mono")}
                     />
                   </div>
                 </div>
@@ -1407,7 +1413,7 @@ export default function CompanyProfileForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 block">
                       Consider in Profit & Loss.
                     </label>
                     <ThemeSelectDropdown
@@ -1432,13 +1438,18 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "logo" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Company Logo <span className="text-red-500 font-bold">*</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload your company logo
-              </p>
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <Upload size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  Company Logo <span className="text-rose-500 font-bold">*</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Upload your company logo
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
@@ -1467,10 +1478,10 @@ export default function CompanyProfileForm({
                   }}
                   onDragLeave={() => setIsLogoDragging(false)}
                   onDrop={handleLogoDrop}
-                  className={`w-48 h-48 rounded-2xl bg-slate-50 border ${
+                  className={`w-52 h-52 rounded-3xl bg-slate-50 border ${
                     isLogoDragging
                       ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
+                      : "border-[#E7E0D2] hover:border-[#E8C16D]/60 dark:border-white/[0.1] dark:hover:border-[#E8C16D]/60"
                   } dark:bg-[#0B0F17] flex flex-col items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
                   title="Click to select and upload company logo"
                 >
@@ -1505,7 +1516,7 @@ export default function CompanyProfileForm({
                         />
                       </svg>
                       <span className="text-[11px] font-black uppercase tracking-tight text-slate-800 dark:text-white mt-3.5 leading-tight px-2">
-                        {formData.companyName || company?.companyName || "JAY BHAVANI FASHION"}
+                        {formData.companyName || company?.companyName || "COMPANY LOGO"}
                       </span>
                     </div>
                   )}
@@ -1519,7 +1530,7 @@ export default function CompanyProfileForm({
                         handleChange("logoUrl", "");
                         toast.success("Logo removed.");
                       }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
                       title="Remove Logo"
                     >
                       <Trash2 size={13} />
@@ -1528,11 +1539,11 @@ export default function CompanyProfileForm({
 
                   {/* Hover Overlay indicating click to upload */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-white" />
+                    <Upload size={22} className="text-[#E8C16D]" />
                     <span className="text-xs font-semibold">
                       {formData.logoUrl ? "Change Logo" : "Upload Logo"}
                     </span>
-                    <span className="text-[10px] text-slate-700 dark:text-slate-300">Click or drag & drop</span>
+                    <span className="text-[10px] text-slate-300">Click or drag & drop</span>
                   </div>
                 </div>
               </div>
@@ -1546,13 +1557,18 @@ export default function CompanyProfileForm({
         {/* ========================================================================= */}
         {activeTab === "signature" && (
           <div className="w-full">
-            <div className="mb-6">
-              <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                Company Signature <span className="text-red-500 font-bold">*</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload authorized signatory signature for invoices and tax documents
-              </p>
+            <div className="flex items-center gap-3.5 mb-7 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="w-11 h-11 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                <FileText size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                  Company Signature <span className="text-rose-500 font-bold">*</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Upload authorized signatory signature for invoices and tax documents
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
@@ -1581,10 +1597,10 @@ export default function CompanyProfileForm({
                   }}
                   onDragLeave={() => setIsSignatureDragging(false)}
                   onDrop={handleSignatureDrop}
-                  className={`w-64 h-36 rounded-2xl bg-slate-50 border ${
+                  className={`w-72 h-40 rounded-3xl bg-slate-50 border ${
                     isSignatureDragging
                       ? "border-[#E8C16D] ring-2 ring-[#E8C16D]/30"
-                      : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.1] dark:hover:border-white/30"
+                      : "border-[#E7E0D2] hover:border-[#E8C16D]/60 dark:border-white/[0.1] dark:hover:border-[#E8C16D]/60"
                   } dark:bg-[#0B0F17] flex items-center justify-center p-4 shadow-sm dark:shadow-2xl overflow-hidden relative group cursor-pointer transition-all select-none`}
                   title="Click to select and upload company signature"
                 >
@@ -1597,7 +1613,9 @@ export default function CompanyProfileForm({
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-500 text-center select-none">
                       <FileText size={28} className="mb-1.5 text-slate-400 dark:text-slate-500" />
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">No Signature Uploaded</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        No Signature Uploaded
+                      </span>
                     </div>
                   )}
 
@@ -1610,7 +1628,7 @@ export default function CompanyProfileForm({
                         handleChange("signatureUrl", "");
                         toast.success("Signature removed.");
                       }}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-700 dark:text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/80 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg"
                       title="Remove Signature"
                     >
                       <Trash2 size={13} />
@@ -1619,11 +1637,11 @@ export default function CompanyProfileForm({
 
                   {/* Hover Overlay indicating click to upload */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none">
-                    <Upload size={22} className="text-white" />
+                    <Upload size={22} className="text-[#E8C16D]" />
                     <span className="text-xs font-semibold">
                       {formData.signatureUrl ? "Change Signature" : "Upload Signature"}
                     </span>
-                    <span className="text-[10px] text-slate-700 dark:text-slate-300">Click or drag & drop</span>
+                    <span className="text-[10px] text-slate-300">Click or drag & drop</span>
                   </div>
                 </div>
               </div>
@@ -1633,37 +1651,37 @@ export default function CompanyProfileForm({
         )}
       </div>
 
-      {/* Bottom Sticky Action Bar */}
-      <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 dark:border-white/[0.08] dark:bg-[#0E121A] w-full">
-        <div className="w-full flex items-center justify-between">
-          {/* Left: Completion Percentage bar */}
-          <div className="w-48 sm:w-64 space-y-1">
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Completion Percentage: {completionPercentage}%
-            </p>
-            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/[0.1] overflow-hidden">
-              <div
-                className="h-full bg-[#0A0E1A] dark:bg-[#F5C451] rounded-full transition-all duration-300"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </div>
+      {/* ========================================================================= */}
+      {/* 4. BOTTOM BAR / FOOTER matching img-1                                      */}
+      {/* ========================================================================= */}
+      <div className="w-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 flex items-center justify-between shadow-sm">
+        {/* Left: Completion Percentage with gold progress bar matching img-1 */}
+        <div className="w-48 sm:w-64 space-y-1">
+          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+            Completion Percentage: {completionPercentage}%
+          </p>
+          <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className="h-full bg-[#E8C16D] rounded-full transition-all duration-300"
+              style={{ width: `${completionPercentage}%` }}
+            />
           </div>
-
-          {/* Right: Save Button */}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0A0E1A] hover:bg-black text-white dark:bg-[#F5C451] dark:text-slate-900 dark:hover:bg-[#e8b83e] font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
-            <span>{saving ? "Saving..." : "Save"}</span>
-          </button>
         </div>
+
+        {/* Right: Golden Save Button matching img-1 */}
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-50"
+        >
+          {saving ? (
+            <Loader2 size={16} className="animate-spin text-[#0A0E1A]" />
+          ) : (
+            <Save size={16} className="text-[#0A0E1A]" />
+          )}
+          <span>{saving ? "Saving..." : "Save"}</span>
+        </button>
       </div>
     </div>
   );

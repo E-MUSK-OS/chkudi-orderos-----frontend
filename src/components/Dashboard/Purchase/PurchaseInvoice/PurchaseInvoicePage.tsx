@@ -51,6 +51,7 @@ export default function PurchaseInvoicePage() {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [filters, setFilters] = useState<PurchaseInvoiceFilterState>({
+    search: "",
     invoiceNo: "",
     challanNo: "",
     partyName: "",
@@ -167,6 +168,16 @@ export default function PurchaseInvoicePage() {
     }
   };
 
+  const handleDateRangeChange = (startDate: string, endDate: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    const nextFilters = { ...filters, startDate, endDate };
+    setFilters(nextFilters);
+    filtersRef.current = nextFilters;
+    fetchInvoices(nextFilters);
+  };
+
   const handleFilterSearch = () => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -179,6 +190,7 @@ export default function PurchaseInvoicePage() {
       clearTimeout(debounceTimerRef.current);
     }
     const defaultFilters: PurchaseInvoiceFilterState = {
+      search: "",
       invoiceNo: "",
       challanNo: "",
       partyName: "",
@@ -691,6 +703,7 @@ export default function PurchaseInvoicePage() {
             <PurchaseInvoiceFilters
               filters={filters}
               onChange={handleFilterChange}
+              onDateRangeChange={handleDateRangeChange}
               onSearch={handleFilterSearch}
               onReset={handleFilterReset}
             />

@@ -13,42 +13,60 @@ export default function SalariedEmployeeHeader({
   onUploadClick,
 }: SalariedEmployeeHeaderProps) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-200/80 dark:border-white/[0.06]">
-      {/* Title & Subtitle matching Image 1 */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A] dark:text-white">
-          Salaried Employee
-        </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Manage salaried employees
-        </p>
-      </div>
+    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        {/* Title & Breadcrumbs matching Employee Profile & Ledger Book theme */}
+        <div className="space-y-1.5 min-w-0 max-w-2xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
+              <Users className="h-6 w-6" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              Salaried Employee
+            </h1>
+          </div>
 
-      {/* Top Right Action Buttons matching Image 1 */}
-      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-        {/* Blank Template Button */}
-        <button
-          type="button"
-          onClick={onDownloadTemplate}
-          className="inline-flex items-center gap-2 h-9 sm:h-10 px-4 rounded-xl border border-[#E7E0D2] bg-white hover:bg-slate-50 text-slate-700 hover:text-black dark:border-white/[0.1] dark:bg-[#161B24] dark:hover:bg-white/[0.06] dark:text-slate-200 text-xs sm:text-sm font-medium transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-          title="Download Blank Attendance Template"
-        >
-          <Download size={15} className="text-slate-500 dark:text-slate-300" />
-          <span>Blank Template</span>
-        </button>
+          {/* Breadcrumb matching system style */}
+          <div className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+            <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Setting
+            </span>
+            <span>/</span>
+            <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Manage Company
+            </span>
+            <span>/</span>
+            <span className="text-[#B88728] dark:text-[#E8C16D] font-bold">
+              Salaried Employee
+            </span>
+          </div>
+        </div>
 
-        {/* Upload Attendance Record Button */}
-        <button
-          type="button"
-          onClick={onUploadClick}
-          className="inline-flex items-center gap-2 h-9 sm:h-10 px-4 rounded-xl border border-[#E7E0D2] bg-white hover:bg-slate-50 text-slate-700 hover:text-black dark:border-white/[0.1] dark:bg-[#161B24] dark:hover:bg-white/[0.06] dark:text-slate-200 text-xs sm:text-sm font-medium transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-          title="Upload Attendance Record"
-        >
-          <Upload size={15} className="text-slate-500 dark:text-slate-300" />
-          <span>Upload Attendance Record</span>
-        </button>
+        {/* Action Buttons matching theme */}
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+          {/* Blank Template Button */}
+          <button
+            type="button"
+            onClick={onDownloadTemplate}
+            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] text-slate-800 dark:text-white px-5 sm:px-6 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-[0.97]"
+            title="Download Blank Attendance Template"
+          >
+            <Download size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
+            <span>Blank Template</span>
+          </button>
+
+          {/* Upload Attendance Record Button */}
+          <button
+            type="button"
+            onClick={onUploadClick}
+            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
+            title="Upload Attendance Record"
+          >
+            <Upload size={16} strokeWidth={2.5} />
+            <span>Upload Attendance Record</span>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
