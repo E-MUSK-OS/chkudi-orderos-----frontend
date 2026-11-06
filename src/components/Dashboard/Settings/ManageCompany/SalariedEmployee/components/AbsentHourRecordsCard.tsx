@@ -251,7 +251,7 @@ export default function AbsentHourRecordsCard({
       <div className="overflow-x-auto flex-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <table className="w-full text-left border-collapse text-xs">
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-[#EAE4D8] bg-[#FAF8F5] dark:border-white/[0.08] dark:bg-[#080B11] text-[11px] font-semibold text-slate-700 dark:text-slate-300 select-none">
+            <tr className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11] text-[11px] font-bold text-[#6A4D1D] dark:text-slate-300 select-none">
               <th className="py-2.5 px-3 min-w-[120px]">Month</th>
               <th className="py-2.5 px-3 min-w-[200px]">Period</th>
               <th className="py-2.5 px-3 min-w-[110px] text-center">Absent Hour</th>

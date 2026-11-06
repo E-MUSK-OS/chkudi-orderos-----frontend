@@ -505,7 +505,7 @@ export default function InvoiceFormatter() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Myntra Invoice & Label 4×6 Formatter
                 </h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300">
@@ -523,7 +523,7 @@ export default function InvoiceFormatter() {
                 <>
                   <button
                     onClick={handleResetAll}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 cursor-pointer shadow-xs active:scale-[0.98]"
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>New Batch</span>
@@ -921,7 +921,7 @@ export default function InvoiceFormatter() {
                       <button 
                         type="button"
                         onClick={handlePrintSelectedPages} 
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A0E1A] dark:bg-[#E8C16D] py-3 text-xs sm:text-sm font-bold text-[#E8C16D] dark:text-[#0A0E1A] shadow-sm transition hover:bg-black dark:hover:bg-[#d4af5a] active:scale-[0.98]"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] dark:bg-[#E8C16D] py-3 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#0A0E1A] shadow-sm transition hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#d4af5a] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98]"
                       >
                         <Printer className="h-4 w-4" />
                         <span>Print Pages</span>

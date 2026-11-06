@@ -164,6 +164,9 @@ body {
   html {
     @apply font-sans;
   }
+  h1 {
+    font-size: 26px;
+  }
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
   textarea,
   select {

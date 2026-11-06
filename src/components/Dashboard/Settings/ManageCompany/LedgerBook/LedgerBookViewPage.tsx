@@ -118,7 +118,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0E1A] text-white hover:bg-black dark:bg-white dark:text-slate-900 font-semibold text-xs transition-all cursor-pointer dark:hover:bg-slate-100"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] text-[#6A4D1D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-white dark:text-slate-900 font-bold text-xs transition-all cursor-pointer dark:hover:bg-slate-100"
           >
             <ArrowLeft size={16} />
             <span>Back to Ledger Book</span>
@@ -191,7 +191,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
                 >
                   <ArrowLeft size={18} />
                 </button>
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Ledger Book
                 </h1>
               </div>

@@ -58,7 +58,7 @@ export default function WebstoreTableView({
     <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
+          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
             <tr>
               {columns.map((col) => {
                 const isSortable = col.key !== "actions" && col.key !== "code";
@@ -67,18 +67,18 @@ export default function WebstoreTableView({
                   <th
                     key={col.key}
                     scope="col"
-                    className={`whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D] ${col.width}`}
+                    className={`whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] ${col.width}`}
                   >
                     {isSortable ? (
                       <button
                         type="button"
                         onClick={() => onSortToggle(col.key)}
-                        className="flex items-center gap-1.5 text-[#E8C16D] hover:text-white transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 text-[#6A4D1D] hover:text-[#0A0E1A] dark:text-[#E8C16D] dark:hover:text-white transition-colors cursor-pointer"
                       >
                         <span>{col.label}</span>
                         <ArrowUpDown
                           className={`h-3 w-3 ${
-                            isSorted ? "opacity-100 text-[#F5C451]" : "opacity-40"
+                            isSorted ? "opacity-100 text-[#6A4D1D] dark:text-[#F5C451]" : "opacity-40"
                           }`}
                         />
                       </button>

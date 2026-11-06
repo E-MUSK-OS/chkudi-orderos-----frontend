@@ -53,7 +53,7 @@ export default function EditUserPage() {
               <ArrowLeft size={22} />
             </button>
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 User Profile
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

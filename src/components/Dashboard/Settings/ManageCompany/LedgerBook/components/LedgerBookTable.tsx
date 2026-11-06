@@ -55,37 +55,37 @@ export default function LedgerBookTable({
       <div className="w-full overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
         <table className="w-full text-left border-collapse">
           {/* Table Header matching OrderOS standard */}
-          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
+          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
             <tr>
               {isColVisible("no") && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#E8C16D] w-12">No.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-12">No.</th>
               )}
               {isColVisible("logo") && (
-                <th className="whitespace-nowrap px-3 py-3.5 text-center font-semibold text-[#E8C16D] w-14">Logo</th>
+                <th className="whitespace-nowrap px-3 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-14">Logo</th>
               )}
               {isColVisible("partyName") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Ledger Name.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Ledger Name.</th>
               )}
               {isColVisible("accountCode") && (
-                <th className="whitespace-nowrap px-3 py-3.5 font-semibold text-[#E8C16D]">Code.</th>
+                <th className="whitespace-nowrap px-3 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Code.</th>
               )}
               {isColVisible("accountHead") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Account Head.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Account Head.</th>
               )}
               {isColVisible("contactPerson") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Contact Name.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Contact Name.</th>
               )}
               {isColVisible("gstin") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">GSTN.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">GSTN.</th>
               )}
               {isColVisible("email") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">EMail Id.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">EMail Id.</th>
               )}
               {isColVisible("addedBy") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Added / Edited By</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Added / Edited By</th>
               )}
               {isColVisible("actions") && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#E8C16D] w-28">Actions</th>
+                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-28">Actions</th>
               )}
             </tr>
           </thead>

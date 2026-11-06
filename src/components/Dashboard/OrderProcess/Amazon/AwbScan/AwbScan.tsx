@@ -279,7 +279,7 @@ export default function AwbScan() {
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Amazon AWB Scan
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -288,7 +288,7 @@ export default function AwbScan() {
             </div>
             <a
               href="/dashboard/order-process/amazon/order-process"
-              className="inline-flex items-center gap-2 self-start md:self-center rounded-2xl border border-[#0A0E1A] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#131926] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#E8C16D] dark:text-[#F5C451] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] hover:shadow-md active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-2 self-start md:self-center rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#131926] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#F5C451] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 hover:shadow-md active:scale-[0.98] cursor-pointer"
             >
               ← Back to Order Process
             </a>

@@ -194,7 +194,7 @@ export default function AddBalanceModal({ open, onClose }: Props) {
 
           <button
             onClick={handleContinue}
-            className="h-11 w-full sm:w-auto rounded-2xl bg-[#0A0E1A] px-6 text-sm font-semibold text-white shadow-2xs transition hover:bg-[#161D2E] active:scale-[0.98] dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_15px_rgba(245,196,81,0.25)] cursor-pointer"
+            className="h-11 w-full sm:w-auto rounded-2xl border border-[#E8C16D]/60 bg-[#FEFAEE] px-6 text-sm font-bold text-[#6A4D1D] shadow-2xs transition hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_15px_rgba(245,196,81,0.25)] cursor-pointer"
           >
             Continue
           </button>

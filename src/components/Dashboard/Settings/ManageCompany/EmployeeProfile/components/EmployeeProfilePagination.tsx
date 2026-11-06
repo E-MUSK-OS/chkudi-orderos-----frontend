@@ -37,7 +37,7 @@ export default function EmployeeProfilePagination({
       options={[10, 20, 50, 100]}
       className={
         className ||
-        "border-t border-[#E7E0D2] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+        "border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
       }
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}

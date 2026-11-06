@@ -50,7 +50,7 @@ export default function DataTable<TData>({
       <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
         <table className="w-full min-w-[1020px] border-collapse text-center font-sans">
           {/* Header */}
-          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -62,7 +62,7 @@ export default function DataTable<TData>({
                     <th
                       key={header.id}
                       className={cn(
-                        "whitespace-nowrap px-3 sm:px-4 py-3.5 font-semibold text-[#E8C16D]",
+                        "whitespace-nowrap px-3 sm:px-4 py-3.5 font-bold text-[#6A4D1D] dark:text-[#E8C16D]",
                         meta?.headerClassName || "text-center",
                       )}
                     >

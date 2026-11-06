@@ -99,7 +99,7 @@ export default function SupplierDetailsSection({
             type="button"
             onClick={onOpenLedgerModal}
             title="Create New Supplier (Ledger Book)"
-            className="h-10 w-10 bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition-all cursor-pointer"
+            className="h-10 w-10 border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
           </button>

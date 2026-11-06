@@ -158,7 +158,7 @@ export default function InvoiceItemsTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#080B11] border-b border-slate-800 dark:border-white/[0.08]">
+            <tr className="bg-[#FEFAEE] dark:bg-none text-[#6A4D1D] dark:bg-[#080B11] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] font-bold">
               <th className="py-3 px-2 text-center w-10 font-bold uppercase tracking-wider">No.</th>
               <th className="py-3 px-2.5 min-w-[190px] font-bold uppercase tracking-wider">Particular</th>
               <th className="py-3 px-1.5 text-center w-24 font-bold uppercase tracking-wider">HSN</th>

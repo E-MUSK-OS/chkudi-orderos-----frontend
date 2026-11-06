@@ -94,7 +94,7 @@ export default function SignupForm() {
 
         <div className="mt-2 h-px w-20 sm:w-28 bg-gradient-to-r from-[#C89B3C] to-transparent dark:from-[#F5C451]" />
 
-        <h1 className="mt-3.5 sm:mt-5 font-heading text-2xl sm:text-3xl lg:text-4xl uppercase text-[#0A0E1A] dark:text-white">
+        <h1 className="mt-3.5 sm:mt-5 font-heading text-[26px] uppercase text-[#0A0E1A] dark:text-white">
           Join OrderOS
         </h1>
 

@@ -139,7 +139,7 @@ export default function DownloadDropdown({
         aria-haspopup="true"
         className={cn(
           "inline-flex items-center justify-between gap-2 rounded-2xl border px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer shrink-0 min-h-[40px] sm:min-h-[44px]",
-          "border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#111726] active:scale-[0.98]",
+          "border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#0A0E1A] text-[#6A4D1D] dark:text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#111726] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98]",
           isOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/30",
           buttonClassName
         )}
@@ -147,7 +147,7 @@ export default function DownloadDropdown({
         <span className="truncate">{label}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-[#E8C16D] transition-transform duration-200 shrink-0",
+            "h-4 w-4 text-[#6A4D1D] dark:text-[#E8C16D] transition-transform duration-200 shrink-0",
             isOpen && "rotate-180"
           )}
         />

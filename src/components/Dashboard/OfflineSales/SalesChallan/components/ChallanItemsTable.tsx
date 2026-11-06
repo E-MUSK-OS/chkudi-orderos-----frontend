@@ -298,32 +298,32 @@ export default function ChallanItemsTable({
         <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] mb-3">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#080B11] select-none whitespace-nowrap">
-                <th className="py-2.5 px-3 font-semibold text-center w-10 border-r border-slate-800 dark:border-white/[0.06]">
+              <tr className="bg-[#FEFAEE] dark:bg-none text-[#6A4D1D] dark:bg-[#080B11] dark:text-[#E8C16D] font-bold select-none whitespace-nowrap border-b border-[#F5E6BE] dark:border-white/[0.08]">
+                <th className="py-2.5 px-3 font-semibold text-center w-10 border-r border-[#F5E6BE] dark:border-white/[0.06]">
                   No.
                 </th>
-                <th className="py-2.5 px-3 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[170px]">
+                <th className="py-2.5 px-3 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[170px]">
                   Particulars [SKU]
                 </th>
-                <th className="py-2.5 px-3 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[200px]">
+                <th className="py-2.5 px-3 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[200px]">
                   Particulars [Name]
                 </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] text-center w-20">
+                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center w-20">
                   Quantity
                 </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] text-center w-20">
+                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center w-20">
                   Rate
                 </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] text-center w-20">
+                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center w-20">
                   Dis.Date
                 </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[90px]">
+                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[90px]">
                   Sub C.N
                 </th>
-                <th className="py-2.5 px-3 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[130px]">
+                <th className="py-2.5 px-3 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[130px]">
                   Remarks
                 </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] text-center w-12">
+                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center w-12">
                   Del.
                 </th>
                 <th className="py-2.5 px-2 font-semibold text-center w-10">
@@ -501,7 +501,7 @@ export default function ChallanItemsTable({
             type="button"
             onClick={handleAddRow}
             title="Add New Row"
-            className="h-9 w-9 bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+            className="h-9 w-9 border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
           </button>

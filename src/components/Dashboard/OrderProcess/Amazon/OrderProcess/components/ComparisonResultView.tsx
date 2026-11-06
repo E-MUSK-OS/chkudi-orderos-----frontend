@@ -3062,7 +3062,7 @@ export default function ComparisonResultView({
       <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1.5">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Amazon Order Process Results
             </h1>
 
@@ -3076,7 +3076,7 @@ export default function ComparisonResultView({
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer"
+              className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 cursor-pointer"
             >
               <RotateCcw size={16} />
               New Batch
@@ -3364,8 +3364,8 @@ export default function ComparisonResultView({
                 onClick={handleGeneratePicklist}
                 className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial px-3.5 sm:px-4 items-center justify-center gap-1.5 rounded-2xl border text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] ${
                   isMappingsLoading || isGeneratingPicklist
-                    ? "cursor-not-allowed border-[#0A0E1A]/40 bg-[#0A0E1A]/60 text-[#E8C16D]/60"
-                    : "cursor-pointer border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                    ? "cursor-not-allowed border-[#E8C16D]/30 bg-[#FEFAEE]/60 text-[#6A4D1D]/60 dark:border-[#0A0E1A]/40 dark:bg-[#0A0E1A]/60 dark:text-[#E8C16D]/60"
+                    : "cursor-pointer border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0"
                 }`}
                 title={
                   isMappingsLoading || isGeneratingPicklist
@@ -3643,7 +3643,7 @@ export default function ComparisonResultView({
           <div className="hidden md:block w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
             <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
               <table className="w-full min-w-[940px] lg:min-w-[1000px] border-collapse text-left font-sans">
-                <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+                <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
                   <tr>
                     <th className="w-12 min-w-[44px] px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center">
@@ -3838,7 +3838,7 @@ export default function ComparisonResultView({
             limit={limit}
             itemName="records"
             variant="dark"
-            className="border-t border-slate-800 dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+            className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
             onPageChange={setPage}
             onLimitChange={(newLimit) => {
               setLimit(newLimit);

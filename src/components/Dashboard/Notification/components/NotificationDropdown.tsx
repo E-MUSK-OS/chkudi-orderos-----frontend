@@ -141,14 +141,22 @@ export default function NotificationDropdown({ onClose }: Props) {
             justify-center
             gap-2
             rounded-xl
-            bg-[#0A0E1A]
+            border
+            border-[#E8C16D]/60
+            bg-[#FEFAEE]
             px-4
             py-2.5
             text-xs
             font-bold
-            text-white
+            text-[#6A4D1D]
             transition-all
-            hover:bg-[#1B2435]
+            hover:border-[#E8C16D]
+            hover:bg-[#FDF2D1]
+            hover:text-[#4A3514]
+            ring-1
+            ring-[#E8C16D]/20
+            dark:ring-0
+            dark:border-transparent
             dark:bg-gradient-to-r
             dark:from-[#F5C451]
             dark:to-[#E5A827]

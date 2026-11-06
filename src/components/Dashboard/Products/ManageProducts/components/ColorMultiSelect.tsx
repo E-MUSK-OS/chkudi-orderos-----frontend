@@ -438,7 +438,7 @@ export default function ColorMultiSelect({
                       type="button"
                       onClick={handleAddCustomColor}
                       disabled={!newColorName.trim() || saveOptionMutation.isPending}
-                      className="h-9 px-3 rounded-xl bg-[#0A0E1A] hover:bg-slate-900 text-[#E8C16D] dark:bg-[#F5C451] dark:hover:bg-[#e6b540] dark:text-black text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shrink-0"
+                      className="h-9 px-3 rounded-xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] text-[#6A4D1D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#F5C451] dark:hover:bg-[#e6b540] dark:text-black text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shrink-0"
                     >
                       Add
                     </button>

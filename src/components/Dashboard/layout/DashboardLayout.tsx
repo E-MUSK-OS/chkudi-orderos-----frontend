@@ -117,7 +117,7 @@ export default function DashboardLayout({
                 </p>
                 <Link
                   href={getFirstAllowedRoute(currentUser)}
-                  className="px-5 py-2.5 rounded-2xl bg-[#0A0E1A] dark:bg-[#F5C451] text-white dark:text-black font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity shadow-sm"
+                  className="px-5 py-2.5 rounded-2xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] dark:bg-[#F5C451] text-[#6A4D1D] dark:text-black font-bold text-xs sm:text-sm hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 transition-all shadow-sm"
                 >
                   Go to Accessible Module
                 </Link>

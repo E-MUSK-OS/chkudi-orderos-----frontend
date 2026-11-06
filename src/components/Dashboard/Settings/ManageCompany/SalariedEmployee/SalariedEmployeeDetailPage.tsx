@@ -57,7 +57,7 @@ export default function SalariedEmployeeDetailPage({
               <ArrowLeft size={22} />
             </button>
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Salaried Employee
               </h1>
               {/* One line page description */}

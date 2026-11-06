@@ -935,7 +935,7 @@ export default function CompanyProfileForm({
               >
                 <ArrowLeft size={18} />
               </button>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Company Profile
               </h1>
             </div>

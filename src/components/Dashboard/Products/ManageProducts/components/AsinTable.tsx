@@ -36,7 +36,7 @@ export default function AsinTable({
   return (
     <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
       <table className="w-full min-w-[950px] lg:min-w-[1100px] border-collapse text-left font-sans">
-        <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+        <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
           <tr>
             <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[160px]">
               ASIN

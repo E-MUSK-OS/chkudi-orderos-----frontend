@@ -93,7 +93,7 @@ export default function PaymentHistory() {
 
         {/* Export */}
 
-        <button className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0A0E1A] px-5 text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#161D2E] active:scale-[0.98] dark:border dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-slate-200 dark:hover:bg-white/[0.08] cursor-pointer">
+        <button className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D]/60 bg-[#FEFAEE] px-5 text-sm font-bold text-[#6A4D1D] shadow-2xs transition-all hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] dark:border dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-slate-200 dark:hover:bg-white/[0.08] cursor-pointer">
           <Download size={18} />
           Export
         </button>

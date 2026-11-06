@@ -571,7 +571,7 @@ export default function EditCompanyModal({
             <button
               type="submit"
               disabled={saving || deleting}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#0A0E1A] hover:bg-black text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 border border-[#0A0E1A] dark:border-transparent shadow transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#FEFAEE] hover:bg-[#FDF2D1] text-[#6A4D1D] hover:text-[#4A3514] border border-[#E8C16D]/60 hover:border-[#E8C16D] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 dark:border-transparent shadow transition-all cursor-pointer active:scale-95 disabled:opacity-50"
             >
               {saving ? (
                 <>

@@ -452,7 +452,7 @@ export default function StockAnalysis() {
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Myntra Stock Analysis
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -1007,9 +1007,9 @@ export default function StockAnalysis() {
               <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                 <table className="w-full text-center border-collapse whitespace-nowrap font-sans text-xs sm:text-sm">
                   <thead>
-                    <tr className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+                    <tr className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('brand')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1017,7 +1017,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('myntraSkuCode')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1025,7 +1025,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('sellerSkuCode')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1033,7 +1033,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('orders')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1041,7 +1041,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('returns')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1049,7 +1049,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('netOrders')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1057,7 +1057,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('avgOrdersPerDay')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1065,7 +1065,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('avgReturnsPerDay')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1073,7 +1073,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('req15Days')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1081,7 +1081,7 @@ export default function StockAnalysis() {
                         </div>
                       </th>
                       <th
-                        className="p-3.5 sm:p-4 text-xs font-bold text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-slate-900 dark:hover:bg-white/[0.04] transition-colors select-none"
+                        className="p-3.5 sm:p-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider cursor-pointer hover:bg-[#FBE9B8]/40 dark:hover:bg-white/[0.04] dark:hover:bg-white/[0.04] transition-colors select-none"
                         onClick={() => handleSort('req30Days')}
                       >
                         <div className="flex items-center justify-center gap-1.5">
@@ -1180,7 +1180,7 @@ export default function StockAnalysis() {
                   limit={itemsPerPage}
                   itemName="records"
                   variant="dark"
-                  className="bg-[#0A0E1A] dark:bg-[#080B11] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800 dark:border-white/[0.08]"
+                  className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 py-3.5 sm:py-4 mt-auto border-t border-[#F1E8D0] dark:border-white/[0.08]"
                   onPageChange={setCurrentPage}
                   onLimitChange={(newLimit) => {
                     setItemsPerPage(newLimit);

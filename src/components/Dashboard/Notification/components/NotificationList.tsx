@@ -32,7 +32,7 @@ export default function NotificationList() {
       {/* Header */}
       <section className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
         <div className="space-y-1.5 min-w-0 max-w-2xl">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+          <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
             Notifications
           </h1>
 

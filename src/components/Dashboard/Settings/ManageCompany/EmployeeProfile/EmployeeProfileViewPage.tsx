@@ -124,7 +124,7 @@ export default function EmployeeProfileViewPage({
                 >
                   <ArrowLeft size={18} />
                 </button>
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Employee Profile
                 </h1>
               </div>
@@ -137,7 +137,7 @@ export default function EmployeeProfileViewPage({
               {/* Create User pill */}
               <Link
                 href="/dashboard/settings/manage-users/user-profile/create-user"
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-[#0A0E1A] text-[#E8C16D] border border-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.15] hover:bg-[#E8C16D] hover:text-[#0A0E1A] shadow-xs transition-all cursor-pointer active:scale-95"
+                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-[#FEFAEE] text-[#6A4D1D] border border-[#E8C16D]/60 dark:bg-[#080B11] dark:border-white/[0.15] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <span>Create User</span>
               </Link>

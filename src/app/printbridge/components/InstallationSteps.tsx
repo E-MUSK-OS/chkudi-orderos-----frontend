@@ -78,7 +78,7 @@ export default function InstallationSteps({
                   href={`https://chromewebstore.google.com/detail/printbridge/${extensionId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center gap-2 bg-[#0A0E1A] px-4 text-xs font-semibold text-[#E8C16D] transition hover:bg-[#161D2E]"
+                  className="inline-flex h-10 items-center gap-2 border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] dark:bg-[#0A0E1A] px-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] ring-1 ring-[#E8C16D]/20 dark:ring-0 transition hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#161D2E]"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   Open Chrome Web Store
@@ -117,7 +117,7 @@ export default function InstallationSteps({
                 <button
                   type="button"
                   onClick={handleCopyExtId}
-                  className="flex h-10 items-center gap-1.5 border-l border-border bg-[#0A0E1A] px-4 text-xs font-semibold text-[#E8C16D] transition hover:bg-[#161D2E]"
+                  className="flex h-10 items-center gap-1.5 border-l border-border bg-[#FEFAEE] dark:bg-[#0A0E1A] px-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#161D2E]"
                 >
                   {copiedId ? (
                     <>
@@ -160,7 +160,7 @@ export default function InstallationSteps({
                     <button
                       type="button"
                       onClick={handleApplyAltId}
-                      className="h-10 border border-[#E8C16D] bg-[#0A0E1A] px-4 text-xs font-semibold text-[#E8C16D] transition hover:bg-[#E8C16D] hover:text-[#0A0E1A]"
+                      className="h-10 border border-[#E8C16D]/60 dark:border-[#E8C16D] bg-[#FEFAEE] dark:bg-[#0A0E1A] px-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] ring-1 ring-[#E8C16D]/20 dark:ring-0 transition hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A]"
                     >
                       Verify ID
                     </button>

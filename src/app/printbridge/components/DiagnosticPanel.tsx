@@ -108,7 +108,7 @@ export default function DiagnosticPanel({
           type="button"
           onClick={onRecheck}
           disabled={isChecking}
-          className="inline-flex h-11 items-center justify-center gap-2 border border-[#E8C16D] bg-[#0A0E1A] px-5 text-sm font-semibold text-[#E8C16D] transition hover:bg-[#E8C16D] hover:text-[#0A0E1A] disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-2 border border-[#E8C16D]/60 dark:border-[#E8C16D] bg-[#FEFAEE] dark:bg-[#0A0E1A] px-5 text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] ring-1 ring-[#E8C16D]/20 dark:ring-0 transition hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${isChecking ? "animate-spin" : ""}`} />
           {isChecking ? "Checking System..." : "Re-check Connection"}

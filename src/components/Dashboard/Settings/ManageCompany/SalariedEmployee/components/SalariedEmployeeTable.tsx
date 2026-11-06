@@ -65,11 +65,11 @@ export default function SalariedEmployeeTable({
       <div className="w-full overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
         <table className="w-full text-left border-collapse text-xs">
           {/* Table Header matching OrderOS standard & Employee Profile */}
-          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
+          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
             <tr>
               {/* No. */}
               {isVisible("no") && (
-                <th className="whitespace-nowrap py-3.5 px-3 w-12 text-center font-semibold text-[#E8C16D]">
+                <th className="whitespace-nowrap py-3.5 px-3 w-12 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">
                   No.
                 </th>
               )}
@@ -91,56 +91,56 @@ export default function SalariedEmployeeTable({
 
               {/* Name */}
               {isVisible("name") && (
-                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#E8C16D] min-w-[200px]">
+                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[200px]">
                   Name.
                 </th>
               )}
 
               {/* Worker Code */}
               {isVisible("workerCode") && (
-                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#E8C16D] min-w-[120px]">
+                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[120px]">
                   Worker Code.
                 </th>
               )}
 
               {/* Joining Date */}
               {isVisible("joiningDate") && (
-                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#E8C16D] min-w-[120px]">
+                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[120px]">
                   Joining Date.
                 </th>
               )}
 
               {/* Contact No */}
               {isVisible("contactNo") && (
-                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#E8C16D] min-w-[120px]">
+                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[120px]">
                   Contact No.
                 </th>
               )}
 
               {/* Departments */}
               {isVisible("departments") && (
-                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#E8C16D] min-w-[120px]">
+                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[120px]">
                   Departments.
                 </th>
               )}
 
               {/* Designation */}
               {isVisible("designation") && (
-                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#E8C16D] min-w-[120px]">
+                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[120px]">
                   Designation.
                 </th>
               )}
 
               {/* Bank Details */}
               {isVisible("bankDetails") && (
-                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#E8C16D] min-w-[180px]">
+                <th className="whitespace-nowrap py-3.5 px-4 font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[180px]">
                   Bank Details.
                 </th>
               )}
 
               {/* Basic Salary */}
               {isVisible("basicSalary") && (
-                <th className="whitespace-nowrap py-3.5 px-4 text-right font-semibold text-[#E8C16D] min-w-[120px]">
+                <th className="whitespace-nowrap py-3.5 px-4 text-right font-semibold text-[#6A4D1D] dark:text-[#E8C16D] min-w-[120px]">
                   Basic Salary.
                 </th>
               )}

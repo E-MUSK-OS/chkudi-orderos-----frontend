@@ -91,7 +91,7 @@ export default function POHistoryList({
         <>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-[#FAF8F5] dark:bg-white/[0.03] text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[11px] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+              <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-white/[0.03] text-[#6A4D1D] dark:text-slate-300 font-bold uppercase tracking-wider text-[11px] border-b border-[#F5E6BE] dark:border-white/[0.08]">
                 <tr>
                   <th className="px-4 py-3.5">PO Number</th>
                   <th className="px-4 py-3.5">Date</th>
@@ -203,7 +203,7 @@ export default function POHistoryList({
             itemName="records"
             variant="light"
             options={[10, 20, 50, 100]}
-            className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+            className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
             onLimitChange={setPageSize}

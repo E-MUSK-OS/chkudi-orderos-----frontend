@@ -161,7 +161,7 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A0E1A] text-white hover:bg-black dark:bg-[#F5C451] dark:text-slate-900 font-semibold text-xs transition-all cursor-pointer shadow-sm hover:shadow"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] text-[#6A4D1D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#F5C451] dark:text-slate-900 font-bold text-xs transition-all cursor-pointer shadow-sm hover:shadow"
           >
             <ArrowLeft size={16} />
             <span>Back to Upload Requested PO</span>
@@ -195,7 +195,7 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
                   <FileSpreadsheet className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.2]" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A0E1A] dark:text-white">
+                  <h1 className="text-[26px] font-bold tracking-tight text-[#0A0E1A] dark:text-white">
                     Purchase Order #{po.poNumber}
                   </h1>
 

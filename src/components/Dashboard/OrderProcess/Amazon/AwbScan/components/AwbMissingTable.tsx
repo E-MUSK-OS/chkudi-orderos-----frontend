@@ -150,7 +150,7 @@ export default function AwbMissingTable({
       {/* Table Content */}
       <div className="max-h-72 w-full overflow-y-auto overflow-x-auto">
         <table className="w-full min-w-[700px] border-collapse text-left font-sans">
-          <thead className="sticky top-0 z-10 bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-slate-800 dark:border-white/[0.08]">
+          <thead className="sticky top-0 z-10 bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
             <tr>
               <th className="px-4 py-3 text-center whitespace-nowrap w-14">NO.</th>
               <th className="px-4 py-3 text-center whitespace-nowrap">Scanned AWB / Tracking ID</th>

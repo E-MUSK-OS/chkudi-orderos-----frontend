@@ -156,25 +156,25 @@ export function RowsPerPageDropdown({
 
   // Variant styles for trigger button
   const triggerVariantClasses = {
-    dark: "border-slate-700 bg-[#141B2D] text-white hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-[#E8C16D]/30",
+    dark: "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-[#E8C16D]/30 dark:border-slate-700 dark:bg-[#141B2D] dark:text-white",
     light: "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 focus:border-[#E8C16D] focus:ring-[#E8C16D]/30",
-    gold: "border-[#E8C16D] bg-[#FFF9EC] text-[#0A0E1A] hover:bg-[#FFF3D6] focus:border-[#E8C16D] focus:ring-[#E8C16D]/40",
+    gold: "border-[#E8C16D] bg-white text-[#0A0E1A] hover:bg-[#FFF3D6] focus:border-[#E8C16D] focus:ring-[#E8C16D]/40 dark:border-slate-700 dark:bg-[#141B2D] dark:text-white",
     theme: "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 focus:border-[#E8C16D] focus:ring-[#E8C16D]/30 dark:border-white/[0.1] dark:bg-[#080B11] dark:text-white dark:hover:border-[#E8C16D] dark:focus:ring-[#E8C16D]/30",
   }[variant];
 
   // Chevron icon colors
   const chevronColors = {
-    dark: "text-[#E8C16D]",
+    dark: "text-slate-500 dark:text-[#E8C16D]",
     light: "text-[#B88728]",
-    gold: "text-[#B88728]",
-    theme: "text-[#B88728] dark:text-[#E8C16D]",
+    gold: "text-slate-500 dark:text-[#B88728]",
+    theme: "text-slate-500 dark:text-[#E8C16D]",
   }[variant];
 
   // Menu popup panel styling
   const menuPanelClasses = {
-    dark: "border-[#E8C16D]/40 bg-[#0A0E1A] text-white shadow-2xl",
+    dark: "border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-xl dark:border-[#E8C16D]/40 dark:bg-[#0A0E1A] dark:text-white dark:shadow-2xl",
     light: "border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-xl",
-    gold: "border-[#E8C16D]/50 bg-white text-[#0A0E1A] shadow-xl",
+    gold: "border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-xl dark:border-[#E8C16D]/50 dark:bg-[#0A0E1A] dark:text-white dark:shadow-2xl",
     theme: "border-[#E7E0D2] bg-white text-[#0A0E1A] shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-white dark:shadow-2xl",
   }[variant];
 
@@ -182,9 +182,9 @@ export function RowsPerPageDropdown({
   const getItemClasses = (isSelected: boolean) => {
     if (isSelected) {
       if (variant === "gold") {
-        return "bg-[#0A0E1A] text-[#E8C16D] shadow-xs font-bold";
+        return "bg-[#E9C371] text-[#0A0E1A] shadow-xs font-bold dark:bg-[#0A0E1A] dark:text-[#E8C16D]";
       }
-      return "bg-[#E8C16D] text-[#0A0E1A] shadow-xs font-bold";
+      return "bg-[#E9C371] text-[#0A0E1A] shadow-xs font-bold dark:bg-[#E8C16D] dark:text-[#0A0E1A]";
     }
 
     if (variant === "theme") {
@@ -192,7 +192,7 @@ export function RowsPerPageDropdown({
     }
 
     if (variant === "dark") {
-      return "text-slate-200 hover:bg-[#141B2D] hover:text-[#E8C16D]";
+      return "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-200 dark:hover:bg-[#141B2D] dark:hover:text-[#E8C16D]";
     }
     return "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728]";
   };
@@ -337,38 +337,36 @@ export default function Pagination({
   const isTheme = variant === "theme";
 
   const defaultContainerClass = isTheme
-    ? "mt-6 flex flex-col gap-4 rounded-2xl border border-[#E7E0D2] bg-white text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300"
+    ? "mt-6 flex flex-col gap-4 rounded-2xl border border-[#F1E8D0] bg-[#FEFAEE] text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-none dark:bg-[#0F1626] dark:text-slate-300"
     : isLight
-    ? "mt-6 flex flex-col gap-4 rounded-xl border border-[#E7E0D2] bg-white text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-slate-300"
-    : "mt-6 flex flex-col gap-4 rounded-xl border border-slate-800 bg-[#0F172A] text-gray-300 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#090D17]";
+    ? "mt-6 flex flex-col gap-4 rounded-xl border border-[#F1E8D0] bg-[#FEFAEE] text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-none dark:bg-[#0F1626] dark:text-slate-300"
+    : "mt-6 flex flex-col gap-4 rounded-xl border border-[#F1E8D0] bg-[#FEFAEE] text-slate-700 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm transition-colors dark:border-white/[0.08] dark:bg-none dark:bg-[#090D17] dark:text-slate-300";
 
-  const containerClasses = className
-    ? `flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-colors ${className}`
+  const resolvedClassName = className
+    ? className
+        .replace(/bg-gradient-to-b from-\[#FFFDF5\] to-\[#FCF6E6\]/g, "bg-[#FEFAEE] dark:bg-none")
+        .replace(/bg-\[#0A0E1A\]/g, "bg-[#FEFAEE] dark:bg-none dark:bg-[#0A0E1A]")
+        .replace(/bg-\[#0F172A\]/g, "bg-[#FEFAEE] dark:bg-none dark:bg-[#090D17]")
+        .replace(/bg-\[#FAF8F5\]/g, "bg-[#FEFAEE] dark:bg-none")
+        .replace(/\bborder-slate-800\b/g, "border-[#F1E8D0] dark:border-white/[0.08]")
+        .replace(/border-\[#E7E0D2\]/g, "border-[#F1E8D0]")
+    : "";
+
+  const containerClasses = resolvedClassName
+    ? `flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-colors ${resolvedClassName}`
     : defaultContainerClass;
 
-  const countTextColor = isTheme || isLight
-    ? "text-slate-600 dark:text-slate-400"
-    : "text-slate-300 dark:text-slate-400";
-
-  const countBoldColor = isTheme || isLight
-    ? "text-[#0A0E1A] dark:text-white"
-    : "text-white";
-
-  const rowsLabelColor = isTheme || isLight
-    ? "text-slate-600 dark:text-slate-400"
-    : "text-slate-300 dark:text-slate-400";
+  const countTextColor = "text-slate-600 dark:text-slate-400";
+  const countBoldColor = "text-[#0A0E1A] dark:text-white";
+  const rowsLabelColor = "text-slate-600 dark:text-slate-400";
 
   const prevNextBtnClass = isTheme
-    ? "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:bg-[#FFF9EC] hover:text-[#B88728] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-white dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] dark:hover:border-[#E8C16D]"
-    : isLight
-    ? "border-[#0A0E1A] bg-[#0A0E1A] text-[#E8C16D] hover:bg-[#161D2E] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]"
-    : "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] hover:border-[#ddb75d] disabled:hover:bg-[#E8C16D] dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]";
+    ? "border-[#E7E0D2] bg-white text-slate-700 hover:bg-[#FFF9EC] hover:text-[#0A0E1A] hover:border-[#E8C16D] shadow-2xs dark:border-white/[0.1] dark:bg-[#080B11] dark:text-white dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] dark:hover:border-[#E8C16D]"
+    : "border-[#E7E0D2] bg-white text-slate-700 hover:bg-[#FFF9EC] hover:text-[#0A0E1A] hover:border-[#E8C16D] shadow-2xs dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:to-[#E5A827] dark:text-[#080B11]";
 
   const pageIndicatorClass = isTheme
-    ? "border-[#E7E0D2] bg-white text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-white"
-    : isLight
-    ? "border-[#E7E0D2] bg-[#FFF9EC] text-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#141B2D] dark:text-white"
-    : "border-slate-700 bg-[#141B2D] text-white dark:border-white/[0.08] dark:bg-[#0F1626]";
+    ? "border-[#DCB35D] bg-[#E9C371] text-[#0A0E1A] font-bold shadow-2xs dark:border-white/[0.08] dark:bg-[#080B11] dark:text-white"
+    : "border-[#DCB35D] bg-[#E9C371] text-[#0A0E1A] font-bold shadow-2xs dark:border-white/[0.08] dark:bg-[#0F1626] dark:text-white";
 
   return (
     <div className={containerClasses}>
@@ -451,11 +449,11 @@ export default function Pagination({
             ${pageIndicatorClass}
           `}
         >
-          <span className={isTheme || isLight ? "text-[#B88728] dark:text-[#E8C16D] font-bold" : "text-[#E8C16D] dark:text-[#F5C451]"}>
+          <span className={isTheme || isLight ? "text-[#0A0E1A] dark:text-[#E8C16D] font-bold" : "text-[#0A0E1A] dark:text-[#F5C451] font-bold"}>
             {page}
           </span>
-          <span className="mx-1 text-slate-500 font-normal">/</span>
-          <span>{Math.max(totalPages, 1)}</span>
+          <span className="mx-1 text-[#0A0E1A]/70 dark:text-slate-500 font-medium dark:font-normal">/</span>
+          <span className="text-[#0A0E1A] dark:text-white font-bold dark:font-normal">{Math.max(totalPages, 1)}</span>
         </div>
 
         {/* Next */}

@@ -112,7 +112,7 @@ const Order = () => {
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Myntra Order Process
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
@@ -190,7 +190,7 @@ const Order = () => {
 
         {/* Pagination Footer with Dark Variant matching Amazon Analytics */}
         {totalRecords > 0 && (
-          <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800 dark:border-white/[0.08] shadow-sm">
+          <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#F1E8D0] dark:border-white/[0.08] shadow-sm">
             <Pagination
               page={currentPage}
               totalPages={totalPages}
@@ -198,7 +198,7 @@ const Order = () => {
               limit={limit}
               itemName="orders"
               variant="dark"
-              className="border-none bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 text-white"
+              className="border-none bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 text-slate-700 dark:text-white"
               onPageChange={setPage}
               onLimitChange={(newLimit) => {
                 setLimit(newLimit);

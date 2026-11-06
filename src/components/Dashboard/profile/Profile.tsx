@@ -13,7 +13,7 @@ export default function Profile() {
               Account Profile
             </p>
 
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">Profile</h1>
+            <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">Profile</h1>
 
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               View and manage your profile information.

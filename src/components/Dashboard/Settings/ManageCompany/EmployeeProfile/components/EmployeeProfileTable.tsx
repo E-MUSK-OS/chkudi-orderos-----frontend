@@ -63,40 +63,40 @@ export default function EmployeeProfileTable({
       <div className="w-full overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
         <table className="w-full text-left border-collapse">
           {/* Table Header matching OrderOS standard & Ledger Book */}
-          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
+          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
             <tr>
               {isVisible("no") && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#E8C16D] w-12">No.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-12">No.</th>
               )}
               {isVisible("name") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Name.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Name.</th>
               )}
               {isVisible("employeeId") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Employee Id.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Employee Id.</th>
               )}
               {isVisible("designation") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Designation.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Designation.</th>
               )}
               {isVisible("departments") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Departments.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Departments.</th>
               )}
               {isVisible("machineCode") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Machine Code.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Machine Code.</th>
               )}
               {isVisible("contactNo") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Contact No.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Contact No.</th>
               )}
               {isVisible("aadhaarNo") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Aadhaar No.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Aadhaar No.</th>
               )}
               {isVisible("status") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Status.</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Status.</th>
               )}
               {isVisible("addedEditedBy") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#E8C16D]">Added / Edited By</th>
+                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Added / Edited By</th>
               )}
               {isVisible("actions") && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#E8C16D] w-36">Actions</th>
+                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-36">Actions</th>
               )}
             </tr>
           </thead>

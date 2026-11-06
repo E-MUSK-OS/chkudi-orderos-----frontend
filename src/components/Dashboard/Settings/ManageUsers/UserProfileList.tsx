@@ -89,7 +89,7 @@ export default function UserProfileList() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1.5 min-w-0 max-w-2xl">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 User Profile
               </h1>
             </div>
@@ -203,7 +203,7 @@ export default function UserProfileList() {
             pageSize={pageSize}
             itemName="users"
             variant="dark"
-            className="border-t border-[#E7E0D2] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+            className="border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size);

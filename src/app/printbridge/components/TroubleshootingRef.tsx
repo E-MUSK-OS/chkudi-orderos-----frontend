@@ -94,7 +94,7 @@ export default function TroubleshootingRef({ onCopyText }: TroubleshootingRefPro
           <button
             type="button"
             onClick={handleCopyLogPath}
-            className="flex h-9 items-center gap-1.5 border-l border-border bg-[#0A0E1A] px-4 text-xs font-semibold text-[#E8C16D] transition hover:bg-[#161D2E]"
+            className="flex h-9 items-center gap-1.5 border-l border-border bg-[#FEFAEE] dark:bg-[#0A0E1A] px-4 text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#161D2E]"
           >
             {copiedLogPath ? (
               <>

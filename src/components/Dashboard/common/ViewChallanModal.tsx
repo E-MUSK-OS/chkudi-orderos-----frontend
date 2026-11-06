@@ -300,7 +300,7 @@ export default function ViewChallanModal({
             <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/30 bg-white dark:bg-[#0F1626] shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-[#0A0E1A] dark:bg-[#080B11] border-b border-slate-800 dark:border-white/[0.08] text-white">
+                  <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] text-[#6A4D1D] dark:text-white font-bold">
                     <tr>
                       <th className="px-4 py-3 text-center w-12 font-bold uppercase tracking-wider">
                         #

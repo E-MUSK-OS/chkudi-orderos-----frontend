@@ -81,7 +81,7 @@ export default function InvoiceListHeader({
           </div>
 
           <div className="space-y-1 min-w-0">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white truncate">
+            <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white truncate">
               Sales Invoice
             </h1>
 

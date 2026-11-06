@@ -57,7 +57,7 @@ export default function MaterialTable({
   return (
     <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
       <table className="w-full min-w-[1050px] border-collapse text-left font-sans">
-        <thead className="bg-[#0A0E1A] text-xs font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] dark:bg-[#080B11] select-none">
+        <thead className="bg-[#FEFAEE] dark:bg-none text-xs font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#E8C16D] select-none">
           <tr>
             <th className="px-3 sm:px-4 py-3.5 text-center w-12">
               <div className="flex items-center justify-center">
@@ -74,36 +74,36 @@ export default function MaterialTable({
               </div>
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[200px] text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[200px] text-[#6A4D1D] dark:text-[#E8C16D]">
               Material Details
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[120px] text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[120px] text-[#6A4D1D] dark:text-[#E8C16D]">
               Master SKU
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[100px] text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[100px] text-[#6A4D1D] dark:text-[#E8C16D]">
               Brand & Unit
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px] text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px] text-[#6A4D1D] dark:text-[#E8C16D]">
               Category
             </th>
 
             {/* Kardex Pricing (Cost / MRP / Dealer / Retail) */}
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px] text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px] text-[#6A4D1D] dark:text-[#E8C16D]">
               Kardex Pricing
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[90px] text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[90px] text-[#6A4D1D] dark:text-[#E8C16D]">
               Status
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20 text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20 text-[#6A4D1D] dark:text-[#E8C16D]">
               Actions
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20 text-[#E8C16D]">
+            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20 text-[#6A4D1D] dark:text-[#E8C16D]">
               Variants
             </th>
           </tr>

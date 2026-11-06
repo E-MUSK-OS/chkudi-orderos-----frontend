@@ -51,7 +51,7 @@ export default function TrackingTable({
     <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
       <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
         <table className="w-full min-w-[950px] border-collapse text-left font-sans">
-          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
             <tr>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Tracking ID</th>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Date</th>
@@ -160,7 +160,7 @@ export default function TrackingTable({
         itemName="records"
         isLoading={isLoading}
         variant="dark"
-        className="border-t border-slate-800 dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+        className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
         onPageChange={onPageChange}
         onLimitChange={(newLimit) => {
           onLimitChange(newLimit);

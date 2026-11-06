@@ -81,7 +81,7 @@ const InventoryTable = ({
     <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col dark:border-white/[0.08] dark:bg-[#0F1626]">
       <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
         <table className="w-full min-w-[950px] lg:min-w-[1100px] border-collapse text-left font-sans">
-          <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#F5C451]">
+          <thead className="bg-[#FEFAEE] dark:bg-none text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#F5C451]">
             <tr>
               <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[240px] max-w-[280px]">
                 Product
@@ -295,7 +295,7 @@ const InventoryTable = ({
         pageSize={pagination?.limit ?? 10}
         itemName="inventories"
         variant="dark"
-        className="border-t border-slate-800 bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
+        className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />

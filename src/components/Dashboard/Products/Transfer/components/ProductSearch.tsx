@@ -102,19 +102,19 @@ export default function ProductSearchModal({
 
         <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/[0.08]">
           <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-[#080B11]">
-              <tr className="border-b border-slate-200 dark:border-white/[0.08]">
+            <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11]">
+              <tr className="border-b border-[#F5E6BE] dark:border-white/[0.08]">
                 <th className="w-16 py-3"></th>
 
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[#6A4D1D] dark:text-slate-400">
                   SKU
                 </th>
 
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[#6A4D1D] dark:text-slate-400">
                   Product
                 </th>
 
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
+                <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[#6A4D1D] dark:text-slate-400">
                   Available
                 </th>
               </tr>

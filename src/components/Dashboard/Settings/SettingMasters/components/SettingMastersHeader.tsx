@@ -20,7 +20,7 @@ export default function SettingMastersHeader({
         {/* Left side: Title & Subtitle */}
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Setting Masters
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] px-2.5 py-0.5 text-xs font-bold text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">

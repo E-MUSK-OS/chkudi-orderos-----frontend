@@ -103,7 +103,7 @@ export default function ChallanTable({
       <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
         <table className="w-full min-w-[1000px] border-collapse text-left font-sans">
           {/* Header styled with SaaS Dark Obsidian & Gold palette */}
-          <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] select-none">
+          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
             <tr>
               <th className="px-3 sm:px-4 py-3.5 text-center w-12">
                 <input
@@ -120,7 +120,7 @@ export default function ChallanTable({
 
               <th
                 onClick={() => handleSort("challanNo")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Challan No</span>
@@ -130,7 +130,7 @@ export default function ChallanTable({
 
               <th
                 onClick={() => handleSort("partyName")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Party Name</span>
@@ -140,7 +140,7 @@ export default function ChallanTable({
 
               <th
                 onClick={() => handleSort("challanRefNo")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Ref No</span>
@@ -150,7 +150,7 @@ export default function ChallanTable({
 
               <th
                 onClick={() => handleSort("challanDate")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Date</span>
@@ -158,13 +158,13 @@ export default function ChallanTable({
                 </div>
               </th>
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Contact
               </th>
 
               <th
                 onClick={() => handleSort("totalQuantity")}
-                className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors"
+                className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center justify-center gap-1.5">
                   <span>Quantity</span>
@@ -172,23 +172,23 @@ export default function ChallanTable({
                 </div>
               </th>
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Prepared By
               </th>
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Category
               </th>
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Stock Out
               </th>
 
-              <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Status
               </th>
 
-              <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Actions
               </th>
             </tr>
@@ -387,7 +387,7 @@ export default function ChallanTable({
           options={[10, 20, 50, 100]}
           itemName="challans"
           variant="dark"
-          className="border-t border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
+          className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
           onPageChange={setPage}
           onLimitChange={(newLimit) => {
             setLimit(newLimit);

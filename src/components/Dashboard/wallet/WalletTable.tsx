@@ -63,12 +63,12 @@ export default function WalletTable({
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11]">
+          <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11]">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D] ${
+                  className={`px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] ${
                     column.align === "right"
                       ? "text-right"
                       : column.align === "center"
@@ -131,7 +131,7 @@ export default function WalletTable({
         options={[5, 10, 20, 50]}
         itemName="records"
         variant="dark"
-        className="border-t border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#090D17]"
+        className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#090D17]"
         onPageChange={setPage}
         onLimitChange={(newLimit) => {
           setLimit(newLimit);

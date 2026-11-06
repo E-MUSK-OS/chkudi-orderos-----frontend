@@ -452,7 +452,7 @@ export default function ColorMultiSelect({
                   <button
                     type="button"
                     onClick={handleAddCustomColor}
-                    className="px-4 h-8 text-xs font-bold bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black rounded-lg cursor-pointer"
+                    className="px-4 h-8 text-xs font-bold border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] text-[#6A4D1D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#F5C451] dark:text-black rounded-lg cursor-pointer transition-all"
                   >
                     Save & Add
                   </button>

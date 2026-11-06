@@ -123,7 +123,7 @@ export default function InvoiceListModal({
             <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/[0.08]">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] border-b border-slate-800 dark:border-white/[0.08]">
+                  <tr className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] font-bold">
                     <th className="py-3 px-3 font-bold uppercase tracking-wider">Invoice No</th>
                     <th className="py-3 px-3 font-bold uppercase tracking-wider">Date</th>
                     <th className="py-3 px-3 font-bold uppercase tracking-wider">Challan No</th>

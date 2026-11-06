@@ -51,25 +51,25 @@ export default function WarehouseTable({
     <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[750px]">
-          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11]">
+          <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11]">
             <tr>
-              <th className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Warehouse
               </th>
 
-              <th className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Contact
               </th>
 
-              <th className="px-6 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-6 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Default
               </th>
 
-              <th className="px-6 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-6 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Active
               </th>
 
-              <th className="px-6 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white dark:text-[#E8C16D]">
+              <th className="px-6 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 Actions
               </th>
             </tr>
@@ -163,7 +163,7 @@ export default function WarehouseTable({
         options={[5, 10, 20, 50]}
         itemName="warehouses"
         variant="dark"
-        className="border-t border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#090D17]"
+        className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#090D17]"
         onPageChange={setPage}
         onLimitChange={(newLimit) => {
           setLimit(newLimit);

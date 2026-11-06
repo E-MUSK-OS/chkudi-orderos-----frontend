@@ -14,7 +14,7 @@ export default function RequestedPOHeader() {
             <div className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shrink-0 shadow-xs">
               <Upload className="h-5 w-5 stroke-[2.2]" />
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Upload Requested PO
             </h1>
           </div>

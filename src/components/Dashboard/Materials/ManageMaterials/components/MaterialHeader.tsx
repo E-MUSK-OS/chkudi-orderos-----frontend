@@ -22,7 +22,7 @@ export default function MaterialHeader({
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="space-y-1.5 min-w-0 max-w-2xl">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+          <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
             Material Profile
           </h1>
         </div>

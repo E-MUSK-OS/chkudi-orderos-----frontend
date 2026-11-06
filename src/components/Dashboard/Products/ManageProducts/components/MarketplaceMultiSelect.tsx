@@ -208,7 +208,7 @@ export default function MarketplaceMultiSelect({
             type="button"
             onClick={handleCustomSubmit}
             disabled={!customValue.trim() || saveOptionMutation.isPending}
-            className="h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center shrink-0 disabled:opacity-50"
+            className="h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] text-[#6A4D1D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#F5C451] dark:text-black font-bold text-xs transition-all cursor-pointer flex items-center justify-center shrink-0 disabled:opacity-50"
           >
             Add
           </button>

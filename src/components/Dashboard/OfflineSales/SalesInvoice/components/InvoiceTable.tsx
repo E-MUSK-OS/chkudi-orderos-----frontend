@@ -176,7 +176,7 @@ export default function InvoiceTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1400px] text-left border-collapse">
           {/* Header matching theme */}
-          <thead className="border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] select-none text-white">
+          <thead className="border-b border-[#F5E6BE] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] select-none text-[#6A4D1D] dark:text-white font-bold">
             <tr>
               <th className="px-4 py-3.5 text-center w-12">
                 <input
@@ -191,13 +191,13 @@ export default function InvoiceTable({
                 />
               </th>
 
-              <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D] w-12">
+              <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] w-12">
                 No.
               </th>
 
               <th
                 onClick={() => handleSort("billingPartyName")}
-                className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Party Name</span>
@@ -207,7 +207,7 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("invoiceType")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Invoice Type</span>
@@ -217,7 +217,7 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("invoiceNo")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1.5">
                   <span>OC Invoice No</span>
@@ -227,7 +227,7 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("invoiceDate")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Date</span>
@@ -237,7 +237,7 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("challanNo")}
-                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1.5">
                   <span>OC Challan No</span>
@@ -245,7 +245,7 @@ export default function InvoiceTable({
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center gap-1">
                   <span>Challan Ref No</span>
                 </div>
@@ -253,7 +253,7 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("totalQuantity")}
-                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center justify-end gap-1.5">
                   <span>Qty</span>
@@ -263,7 +263,7 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("netAmount")}
-                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center justify-end gap-1.5">
                   <span>Net Amount</span>
@@ -271,25 +271,25 @@ export default function InvoiceTable({
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>CN Amount</span>
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>DCN Amount</span>
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>Received</span>
                 </div>
               </th>
 
-              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
                   <span>Pending</span>
                 </div>
@@ -297,7 +297,7 @@ export default function InvoiceTable({
 
               <th
                 onClick={() => handleSort("status")}
-                className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D] cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center justify-center gap-1.5">
                   <span>Status</span>
@@ -305,7 +305,7 @@ export default function InvoiceTable({
                 </div>
               </th>
 
-              <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap">
+              <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap">
                 <div className="flex items-center justify-center gap-1.5">
                   <span>Actions</span>
                   {selectedIds.length > 0 && (
@@ -313,7 +313,7 @@ export default function InvoiceTable({
                       type="button"
                       onClick={handlePrintSelected}
                       title={`Print ${selectedIds.length} Selected Invoices`}
-                      className="inline-flex items-center justify-center p-1 rounded-lg text-[#E8C16D] hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center p-1 rounded-lg text-[#6A4D1D] dark:text-[#E8C16D] hover:text-black dark:hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
                     >
                       <Printer className="h-3.5 w-3.5" />
                     </button>
@@ -521,7 +521,7 @@ export default function InvoiceTable({
           options={[10, 20, 50, 100]}
           itemName="invoices"
           variant="dark"
-          className="border-t border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
+          className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
           onPageChange={setPage}
           onLimitChange={(newLimit) => {
             setLimit(newLimit);

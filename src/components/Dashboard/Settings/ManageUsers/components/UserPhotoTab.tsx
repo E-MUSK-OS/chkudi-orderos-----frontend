@@ -647,7 +647,7 @@ export default function UserPhotoTab({
         {/* Permission Rights Table matching View Mode exactly */}
         <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] shadow-2xs">
           <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] font-bold uppercase text-[11px] sm:text-xs tracking-wider">
+            <thead className="border-b border-[#F5E6BE] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] font-bold uppercase text-[11px] sm:text-xs tracking-wider">
               <tr>
                 <th className="py-3.5 px-4 w-12 text-center">No.</th>
                 <th className="py-3.5 px-4 min-w-[240px]">Page</th>

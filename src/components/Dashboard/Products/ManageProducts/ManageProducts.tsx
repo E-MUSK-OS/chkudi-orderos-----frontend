@@ -478,7 +478,7 @@ const ManageProducts = () => {
                 : "products"
             }
             variant="dark"
-            className="border-t border-slate-800 bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
+            className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size);

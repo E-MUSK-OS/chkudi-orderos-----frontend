@@ -54,7 +54,7 @@ export default function PurchaseChallanHeader({
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
               {viewMode === "create"
                 ? "Create Purchase Challan"
                 : viewMode === "edit"

@@ -274,7 +274,7 @@ export default function PrintBridgePage() {
 
         {/* Hero Section */}
         <div className="space-y-2 border-l-4 border-[#E8C16D] bg-card p-6 shadow-sm">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+          <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
             Set Up 1-Click Silent Printing
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -317,7 +317,7 @@ export default function PrintBridgePage() {
               href={STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center gap-2 border border-[#0A0E1A] bg-[#0A0E1A] px-6 text-sm font-bold text-white transition hover:bg-[#E8C16D] hover:text-[#0A0E1A] dark:border-white dark:bg-slate-800 dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A]"
+              className="inline-flex h-12 items-center justify-center gap-2 border border-[#E8C16D]/60 dark:border-white bg-[#FEFAEE] dark:bg-slate-800 px-6 text-sm font-bold text-[#6A4D1D] dark:text-white ring-1 ring-[#E8C16D]/20 dark:ring-0 transition hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A]"
             >
               <ExternalLink className="h-4 w-4" />
               Install Extension

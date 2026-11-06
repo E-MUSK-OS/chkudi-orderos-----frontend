@@ -816,27 +816,27 @@ export default function ProductVariantInline({
     <div className="w-full overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#0F1626]">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] border-collapse text-left font-sans">
-          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] text-xs font-semibold tracking-wider text-[#E8C16D] dark:border-white/[0.08] dark:bg-[#080B11]">
+          <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none text-xs font-bold tracking-wider text-[#6A4D1D] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#E8C16D]">
             <tr>
               {/* Img column */}
-              <th className="px-3.5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap w-[70px]">
+              <th className="px-3.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[70px]">
                 Img
               </th>
 
               {/* Colour column */}
-              <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+              <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
                 Color
               </th>
 
               {/* Size column */}
               {hasSizeAttribute && (
-                <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[110px]">
+                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[110px]">
                   Size
                 </th>
               )}
 
               {/* Variant SKU column */}
-              <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[180px]">
+              <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[180px]">
                 Variant SKU
               </th>
 
@@ -844,7 +844,7 @@ export default function ProductVariantInline({
               {extraAttributes.map((attr) => (
                 <th
                   key={attr.id || attr.attributeName}
-                  className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap"
+                  className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap"
                 >
                   {attr.attributeName}
                 </th>
@@ -852,35 +852,35 @@ export default function ProductVariantInline({
 
               {/* Dynamic Marketplace Identifiers */}
               {showAsin && (
-                <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
                   ASIN
                 </th>
               )}
 
               {showMyntraSku && (
-                <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
                   Myntra SKU
                 </th>
               )}
 
               {showFsnCode && (
-                <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
                   FSN Code
                 </th>
               )}
 
               {/* Rack Address */}
-              <th className="px-3.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+              <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
                 Rack Address
               </th>
 
               {/* Status */}
-              <th className="px-3.5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[90px]">
+              <th className="px-3.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[90px]">
                 Status
               </th>
 
               {/* Action */}
-              <th className="px-3.5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap min-w-[100px]">
+              <th className="px-3.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[100px]">
                 Action
               </th>
             </tr>

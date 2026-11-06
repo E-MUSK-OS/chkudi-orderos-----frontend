@@ -43,7 +43,7 @@ export default function OfflinePage() {
       <div className="text-center p-8 max-w-md bg-[#0A0E1A] shadow-2xl dark:border dark:border-white/[0.08] dark:bg-[#0F1626]">
         <div className="text-6xl mb-4">📡</div>
         
-        <h1 className="text-3xl font-bold text-[#E8C16D] dark:text-[#F5C451] mb-3">
+        <h1 className="text-[26px] font-bold text-[#E8C16D] dark:text-[#F5C451] mb-3">
           No Internet Connection
         </h1>
         

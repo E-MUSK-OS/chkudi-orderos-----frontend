@@ -69,7 +69,7 @@ export default function RecentOrders() {
 
         <div className="overflow-x-auto custom-scrollbar" style={{ WebkitOverflowScrolling: "touch" }}>
           <table className="w-full min-w-[550px] border-collapse text-left font-sans">
-            <thead className="bg-[#0A0E1A] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:bg-[#090D17] dark:text-[#F5C451] dark:border-white/[0.08]">
+            <thead className="bg-[#FEFAEE] dark:bg-none text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:bg-[#090D17] dark:text-[#F5C451] dark:border-white/[0.08]">
               <tr>
                 <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Order ID</th>
                 <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
@@ -130,7 +130,7 @@ export default function RecentOrders() {
         options={[5, 10, 20, 50]}
         itemName="orders"
         variant="dark"
-        className="border-t border-[#E7E0D2] bg-[#0A0E1A] px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#090D17]"
+        className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#090D17]"
         onPageChange={setPage}
         onLimitChange={(newLimit) => {
           setLimit(newLimit);

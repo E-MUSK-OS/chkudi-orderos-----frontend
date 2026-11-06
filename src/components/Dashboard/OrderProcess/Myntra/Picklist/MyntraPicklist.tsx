@@ -963,7 +963,7 @@ export default function MyntraPicklist() {
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 {hasResults ? "Myntra Picklist Results" : "Myntra Picklist"}
               </h1>
 
@@ -987,7 +987,7 @@ export default function MyntraPicklist() {
                   <button
                     type="button"
                     onClick={handleResetAll}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 cursor-pointer shadow-xs active:scale-[0.98]"
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>New Batch</span>
@@ -1482,7 +1482,7 @@ export default function MyntraPicklist() {
             <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col">
               <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                 <table className="w-full min-w-[750px] border-collapse text-left font-sans">
-                  <thead className="bg-[#0A0E1A] dark:bg-[#080B11] text-xs sm:text-sm font-semibold tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08]">
+                  <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
                     <tr>
                       <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[120px]">Rack</th>
                       <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[160px]">Seller SKU</th>
@@ -1596,7 +1596,7 @@ export default function MyntraPicklist() {
                   limit={itemsPerPage}
                   itemName="records"
                   variant="dark"
-                  className="bg-[#0A0E1A] px-4 py-3.5 sm:py-4 mt-auto border-t border-slate-800 dark:border-white/[0.08]"
+                  className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 py-3.5 sm:py-4 mt-auto border-t border-[#F1E8D0] dark:border-white/[0.08]"
                   onPageChange={setCurrentPage}
                   onLimitChange={(newLimit) => {
                     setItemsPerPage(newLimit);

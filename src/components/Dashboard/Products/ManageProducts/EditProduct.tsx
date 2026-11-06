@@ -98,7 +98,7 @@ export default function EditProduct({
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Edit Product Profile
                 </h1>
                 {product?.productName && (

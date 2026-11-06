@@ -781,15 +781,15 @@ export default function POItemsTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] text-left border-collapse">
           {/* Header styled with Dark Obsidian & Gold palette */}
-          <thead className="border-b border-[#E7E0D2] bg-[#0A0E1A] dark:border-white/[0.08] dark:bg-[#080B11] select-none">
+          <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11] select-none">
             <tr>
-              <th className="px-4 py-3.5 w-14 text-center text-xs font-semibold uppercase tracking-wider text-[#E8C16D]">
+              <th className="px-4 py-3.5 w-14 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 #
               </th>
               {dynamicColumns.map((colName) => (
                 <th
                   key={colName}
-                  className={`px-4 py-3.5 ${getHeaderAlignment(colName)} text-xs font-semibold uppercase tracking-wider text-[#E8C16D] whitespace-nowrap`}
+                  className={`px-4 py-3.5 ${getHeaderAlignment(colName)} text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap`}
                 >
                   {colName}
                 </th>
@@ -839,7 +839,7 @@ export default function POItemsTable({
         itemName="records"
         variant="light"
         options={[10, 20, 50, 100]}
-        className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+        className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onLimitChange={setPageSize}
