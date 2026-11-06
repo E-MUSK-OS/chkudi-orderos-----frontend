@@ -15,6 +15,7 @@ import {
   Building2,
   MapPin,
   Landmark,
+  ImageIcon,
 } from "lucide-react";
 import { Company, UpdateCompanyPayload } from "../types/company.types";
 import { companyService } from "../services/company.service";
@@ -27,6 +28,7 @@ import DropdownWithOther, {
 } from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
 import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
 import { cn, getMediaUrl } from "@/lib/utils";
+import DatePicker from "@/components/ui/DatePicker";
 
 interface CompanyProfileFormProps {
   company: Company | null;
@@ -62,6 +64,101 @@ const INDIAN_STATES = [
   "Jharkhand",
   "Uttarakhand",
 ];
+
+export const PAN_ENTITY_MAP: Record<string, string> = {
+  P: "Individual / Proprietor",
+  C: "Company",
+  H: "Hindu Undivided Family (HUF)",
+  F: "Firm / Partnership",
+  A: "Association of Persons (AOP)",
+  B: "Body of Individuals (BOI)",
+  T: "Trust",
+  L: "Local Authority",
+  J: "Artificial Juridical Person",
+  G: "Government",
+};
+
+const STANDARD_BUSINESS_TYPES: DropdownOption[] = [
+  { label: "Individual / Proprietor", value: "Individual / Proprietor" },
+  { label: "Company", value: "Company" },
+  { label: "Firm / Partnership", value: "Firm / Partnership" },
+  { label: "Hindu Undivided Family (HUF)", value: "Hindu Undivided Family (HUF)" },
+  { label: "Association of Persons (AOP)", value: "Association of Persons (AOP)" },
+  { label: "Body of Individuals (BOI)", value: "Body of Individuals (BOI)" },
+  { label: "Trust", value: "Trust" },
+  { label: "Local Authority", value: "Local Authority" },
+  { label: "Artificial Juridical Person", value: "Artificial Juridical Person" },
+  { label: "Government", value: "Government" },
+  { label: "Properiter", value: "Properiter" },
+  { label: "Partnership", value: "Partnership" },
+  { label: "Private Limited", value: "Private Limited" },
+  { label: "Public Limited", value: "Public Limited" },
+  { label: "LLP", value: "LLP" },
+  { label: "Individual", value: "Individual" },
+];
+
+export const getBusinessTypeFromPan = (
+  panOrGst?: string | null,
+  availableOptions?: DropdownOption[]
+): string | null => {
+  if (!panOrGst || typeof panOrGst !== "string") return null;
+  const clean = panOrGst.trim().toUpperCase().replace(/[^0-9A-Z]/g, "");
+  let panChar = "";
+  if (clean.length === 15) {
+    panChar = clean.charAt(5);
+  } else if (clean.length >= 4) {
+    panChar = clean.charAt(3);
+  }
+
+  if (!panChar || !PAN_ENTITY_MAP[panChar]) return null;
+
+  const targetType = PAN_ENTITY_MAP[panChar];
+
+  if (availableOptions && availableOptions.length > 0) {
+    const directMatch = availableOptions.find(
+      (opt) =>
+        opt.value.trim().toLowerCase() === targetType.toLowerCase() ||
+        opt.label.trim().toLowerCase() === targetType.toLowerCase()
+    );
+    if (directMatch) return directMatch.value;
+
+    if (panChar === "P") {
+      const match = availableOptions.find((opt) => {
+        const v = opt.value.trim().toLowerCase();
+        return (
+          v === "individual / proprietor" ||
+          v === "properiter" ||
+          v === "proprietor" ||
+          v === "individual"
+        );
+      });
+      if (match) return match.value;
+    } else if (panChar === "C") {
+      const match = availableOptions.find((opt) => {
+        const v = opt.value.trim().toLowerCase();
+        return v === "company" || v === "private limited" || v === "public limited";
+      });
+      if (match) return match.value;
+    } else if (panChar === "F") {
+      const match = availableOptions.find((opt) => {
+        const v = opt.value.trim().toLowerCase();
+        return v === "firm / partnership" || v === "partnership" || v === "firm" || v === "llp";
+      });
+      if (match) return match.value;
+    } else if (panChar === "H") {
+      const match = availableOptions.find((opt) => {
+        const v = opt.value.trim().toLowerCase();
+        return v === "hindu undivided family (huf)" || v === "huf";
+      });
+      if (match) return match.value;
+    } else if (panChar === "T") {
+      const match = availableOptions.find((opt) => opt.value.trim().toLowerCase() === "trust");
+      if (match) return match.value;
+    }
+  }
+
+  return targetType;
+};
 
 export default function CompanyProfileForm({
   company,
@@ -144,19 +241,29 @@ export default function CompanyProfileForm({
     []
   );
 
-  // Dynamic businessTypeOptions purely loaded from database
+  // Dynamic businessTypeOptions loaded from database + standard Indian PAN entity types
   const businessTypeOptions: DropdownOption[] = useMemo(() => {
     const dbSaved = (dropdownData?.savedOptions || [])
       .filter((o) => o.field.toLowerCase() === "businesstype")
       .map((o) => ({ label: o.label || o.value, value: o.value }));
 
     const map = new Map<string, DropdownOption>();
+    // First, user saved options from DB
     dbSaved.forEach((opt) => {
       const v = opt.value?.trim();
       if (v && !map.has(v.toLowerCase())) {
         map.set(v.toLowerCase(), { label: opt.label || v, value: v });
       }
     });
+
+    // Merge standard Indian PAN entity types if not already present
+    STANDARD_BUSINESS_TYPES.forEach((opt) => {
+      const v = opt.value.trim();
+      if (!map.has(v.toLowerCase())) {
+        map.set(v.toLowerCase(), opt);
+      }
+    });
+
     return Array.from(map.values());
   }, [dropdownData]);
 
@@ -207,10 +314,11 @@ export default function CompanyProfileForm({
     brandName: "",
     ownerName: "",
     abbreviation: "",
-    businessType: "Properiter",
+    businessType: "Individual / Proprietor",
     email: "",
     phone: "",
     website: "",
+    registrationDate: "",
 
     // Billing Details
     billingAddress1: "",
@@ -275,16 +383,33 @@ export default function CompanyProfileForm({
   useEffect(() => {
     if (!company) return;
 
+    const panOrGst = company.panNumber || company.gstNumber || "";
+    const autoType = getBusinessTypeFromPan(panOrGst, businessTypeOptions);
+
+    let initialBusinessType = company.businessType;
+    if (!initialBusinessType) {
+      initialBusinessType = autoType || "Individual / Proprietor";
+    } else if (
+      (initialBusinessType === "Properiter" || initialBusinessType.toLowerCase() === "properiter") &&
+      autoType &&
+      autoType !== "Properiter" &&
+      autoType !== "Individual / Proprietor"
+    ) {
+      // If company has default "Properiter" in database but PAN indicates another entity (e.g. C -> Company)
+      initialBusinessType = autoType;
+    }
+
     setFormData({
       legalName: company.legalName || company.companyName || "",
       companyName: company.companyName || "",
-      brandName: company.brandName || "",
+      brandName: company.brandName || company.companyName || "",
       ownerName: company.ownerName || "",
-      abbreviation: company.abbreviation || "",
-      businessType: company.businessType || "Properiter",
+      abbreviation: company.abbreviation || company.companyCode || "",
+      businessType: initialBusinessType || "Individual / Proprietor",
       email: company.email || "",
       phone: company.phone || "",
       website: company.website || "",
+      registrationDate: company.registrationDate || (company.createdAt ? company.createdAt.split("T")[0] : ""),
 
       billingAddress1: company.billingAddress1 || company.addressLine1 || "",
       billingAddress2: company.billingAddress2 || company.addressLine2 || "",
@@ -352,6 +477,34 @@ export default function CompanyProfileForm({
 
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
+
+      // Auto-derive businessType based on PAN number 4th character
+      if (field === "panNumber" && typeof value === "string") {
+        const cleanPan = value.trim().toUpperCase();
+        if (cleanPan.length >= 4) {
+          const autoType = getBusinessTypeFromPan(cleanPan, businessTypeOptions);
+          if (autoType) {
+            updated.businessType = autoType;
+          }
+        }
+      }
+
+      // Auto-derive PAN number and businessType from GST number
+      if (field === "gstNumber" && typeof value === "string") {
+        const cleanGst = value.trim().toUpperCase();
+        if (cleanGst.length >= 12) {
+          const panPart = cleanGst.substring(2, 12);
+          if (!prev.panNumber || (prev.gstNumber && prev.panNumber === prev.gstNumber.substring(2, 12))) {
+            updated.panNumber = panPart;
+          }
+        }
+        if (cleanGst.length >= 6) {
+          const autoType = getBusinessTypeFromPan(cleanGst, businessTypeOptions);
+          if (autoType) {
+            updated.businessType = autoType;
+          }
+        }
+      }
 
       if (
         updated.shippingSameAsBilling &&
@@ -622,18 +775,6 @@ export default function CompanyProfileForm({
       if (!firstErrorTab) firstErrorTab = "accounting";
     }
 
-    // --- Tab 4: Logo ---
-    if (!formData.logoUrl?.trim()) {
-      newErrors.logoUrl = "Company Logo is required.";
-      if (!firstErrorTab) firstErrorTab = "logo";
-    }
-
-    // --- Tab 5: Signature ---
-    if (!formData.signatureUrl?.trim()) {
-      newErrors.signatureUrl = "Company Signature is required.";
-      if (!firstErrorTab) firstErrorTab = "signature";
-    }
-
     setErrors(newErrors);
     return { isValid: Object.keys(newErrors).length === 0, firstErrorTab };
   };
@@ -702,13 +843,16 @@ export default function CompanyProfileForm({
       setSaving(true);
       const isCreate = !company?.id;
 
+      // Clean payload: omit frontend-only UI fields like registrationDate
+      const { registrationDate: _regDate, ...payload } = formData;
+
       let savedCompany: Company;
       if (isCreate) {
-        const res = await companyService.createCompany(formData);
+        const res = await companyService.createCompany(payload);
         savedCompany = res.data;
         toast.success(res.message || "Company created successfully.");
       } else {
-        const res = await companyService.updateCompany(company.id, formData);
+        const res = await companyService.updateCompany(company.id, payload);
         savedCompany = res.data;
         toast.success(res.message || "Company updated successfully.");
       }
@@ -962,7 +1106,7 @@ export default function CompanyProfileForm({
                   hideLabel
                   label="Type"
                   required
-                  value={formData.businessType || "Properiter"}
+                  value={formData.businessType || ""}
                   onChange={(val) => handleChange("businessType", val)}
                   options={businessTypeOptions}
                   placeholder="Select Type"
@@ -1034,7 +1178,20 @@ export default function CompanyProfileForm({
                 />
               </div>
 
-              <div />
+{/* Registration Date */}
+              <div>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
+                  Registration Date.
+                </label>
+                <DatePicker
+                  allowInput
+                  value={formData.registrationDate || ""}
+                  onChange={(_, str) => handleChange("registrationDate", str || "")}
+                  placeholder="YYYY-MM-DD (e.g. 2004-07-01)"
+                  dateFormat="yyyy-MM-dd"
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -1878,7 +2035,7 @@ export default function CompanyProfileForm({
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                  Company Logo <span className="text-rose-500 font-bold ml-0.5">*</span>
+                  Company Logo
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Upload your official company logo for invoices and portal branding.
@@ -1929,32 +2086,9 @@ export default function CompanyProfileForm({
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-center select-none">
-                      <svg
-                        width="54"
-                        height="42"
-                        viewBox="0 0 40 32"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="text-slate-700 dark:text-white"
-                      >
-                        <path
-                          d="M20 16C15 6 6 6 6 13C6 20 15 20 20 16ZM20 16C25 6 34 6 34 13C34 20 25 20 20 16Z"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M20 16C19 21 17 26 15 29M20 16C21 21 23 26 25 29"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <span className="text-[11px] font-black uppercase tracking-tight text-slate-800 dark:text-white mt-3.5 leading-tight px-2">
-                        {formData.companyName || company?.companyName || "Company Name"}
-                      </span>
+                    <div className="flex flex-col items-center justify-center text-slate-500 text-center select-none">
+                      <ImageIcon size={28} className="mb-1.5 text-slate-400 dark:text-slate-500" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">No Logo Uploaded</span>
                     </div>
                   )}
 
@@ -2002,7 +2136,7 @@ export default function CompanyProfileForm({
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                  Company Signature <span className="text-rose-500 font-bold ml-0.5">*</span>
+                  Company Signature
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Upload authorized signatory signature for invoices and tax documents.

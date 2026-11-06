@@ -555,6 +555,11 @@ export default function Sidebar({
             .custom-scroll::-webkit-scrollbar {
               width: 4px;
             }
+            .custom-scroll::-webkit-scrollbar-button {
+              display: none;
+              width: 0;
+              height: 0;
+            }
             .custom-scroll::-webkit-scrollbar-track {
               background: transparent;
             }

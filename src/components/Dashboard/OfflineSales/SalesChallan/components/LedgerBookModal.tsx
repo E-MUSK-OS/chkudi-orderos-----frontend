@@ -488,9 +488,12 @@ export default function LedgerBookModal({
                       <span>Join Date</span>
                     </label>
                     <DatePicker
+                      allowInput
                       value={formData.joinDate}
                       onChange={(_, str) => handleChange("joinDate", str || "")}
-                      placeholder="Select Join Date"
+                      placeholder="YYYY-MM-DD"
+                      dateFormat="yyyy-MM-dd"
+                      className="w-full"
                       buttonClassName="h-11 px-5 rounded-full text-xs sm:text-sm font-medium"
                     />
                   </div>
@@ -935,9 +938,12 @@ export default function LedgerBookModal({
                       </div>
                       <div className="w-44 shrink-0">
                         <DatePicker
+                          allowInput
                           value={formData.gstDate}
                           onChange={(_, str) => handleChange("gstDate", str || "")}
-                          placeholder="GST Date"
+                          placeholder="YYYY-MM-DD"
+                          dateFormat="yyyy-MM-dd"
+                          className="w-full"
                           buttonClassName="h-11 px-4 rounded-full text-xs font-semibold"
                         />
                       </div>
@@ -968,9 +974,12 @@ export default function LedgerBookModal({
                       />
                       <div className="w-44 shrink-0">
                         <DatePicker
+                          allowInput
                           value={formData.cstDate}
                           onChange={(_, str) => handleChange("cstDate", str || "")}
-                          placeholder="CST Date"
+                          placeholder="YYYY-MM-DD"
+                          dateFormat="yyyy-MM-dd"
+                          className="w-full"
                           buttonClassName="h-11 px-4 rounded-full text-xs font-semibold"
                         />
                       </div>
@@ -992,9 +1001,12 @@ export default function LedgerBookModal({
                       />
                       <div className="w-44 shrink-0">
                         <DatePicker
+                          allowInput
                           value={formData.serviceTaxDate}
                           onChange={(_, str) => handleChange("serviceTaxDate", str || "")}
-                          placeholder="Tax Date"
+                          placeholder="YYYY-MM-DD"
+                          dateFormat="yyyy-MM-dd"
+                          className="w-full"
                           buttonClassName="h-11 px-4 rounded-full text-xs font-semibold"
                         />
                       </div>
@@ -1018,9 +1030,12 @@ export default function LedgerBookModal({
                       />
                       <div className="w-44 shrink-0">
                         <DatePicker
+                          allowInput
                           value={formData.otherTaxDate}
                           onChange={(_, str) => handleChange("otherTaxDate", str || "")}
-                          placeholder="Tax Date"
+                          placeholder="YYYY-MM-DD"
+                          dateFormat="yyyy-MM-dd"
+                          className="w-full"
                           buttonClassName="h-11 px-4 rounded-full text-xs font-semibold"
                         />
                       </div>

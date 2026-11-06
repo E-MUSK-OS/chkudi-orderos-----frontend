@@ -491,11 +491,14 @@ export default function InvoiceSummaryFooter({
                         Date
                       </label>
                       <DatePicker
+                        allowInput
                         value={
                           formData.transactionDate || formData.invoiceDate || getTodayFormatted()
                         }
                         onChange={(_, dateStr) => onChange({ transactionDate: dateStr || "" })}
-                        placeholder="DD-MM-YYYY"
+                        placeholder="YYYY-MM-DD"
+                        dateFormat="yyyy-MM-dd"
+                        className="w-full"
                         buttonClassName="h-9 text-xs w-full rounded-xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                         disabled={disabled}
                       />

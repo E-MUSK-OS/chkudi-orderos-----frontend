@@ -86,7 +86,7 @@ export default function LedgerBookForm({
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
+    return `${year}-${month}-${day}`;
   }, []);
 
   // Dynamic accountHeadOptions purely loaded from database
@@ -134,6 +134,8 @@ export default function LedgerBookForm({
     "w-full min-w-full max-w-none bg-white border border-[#E7E0D2] text-[#0A0E1A] dark:bg-[#0F1626] dark:border-white/[0.08] dark:text-white rounded-2xl shadow-2xl p-1.5";
   const datePickerButtonClassName =
     "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-[#E7E0D2] hover:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white transition-all shadow-xs";
+
+  const isAliasManuallyEditedRef = useRef<boolean>(false);
 
   const [formData, setFormData] = useState<CreateLedgerPayload>({
     // General
@@ -198,6 +200,9 @@ export default function LedgerBookForm({
   // Populate initial values if editing
   useEffect(() => {
     if (initialLedger) {
+      isAliasManuallyEditedRef.current = Boolean(
+        initialLedger.alias && initialLedger.alias !== initialLedger.partyName
+      );
       setFormData({
         partyName: initialLedger.partyName || "",
         alias: initialLedger.alias || initialLedger.accountCode || "",
@@ -267,19 +272,12 @@ export default function LedgerBookForm({
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
 
-      // Auto generate alias/code from partyName if alias is empty
-      if (field === "partyName" && (!prev.alias || prev.alias.trim() === "")) {
-        const words = String(value).trim().split(/\s+/);
-        const code =
-          words.length === 1
-            ? words[0].slice(0, 4).toUpperCase()
-            : words
-                .map((w) => w[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 10);
-        next.alias = code;
-        next.accountCode = code;
+      // Auto-sync alias & accountCode from partyName unless alias has been manually customized
+      if (field === "partyName") {
+        if (!isAliasManuallyEditedRef.current || !prev.alias || prev.alias === prev.partyName) {
+          next.alias = value;
+          next.accountCode = value;
+        }
       }
 
       // If Shipping is set to Same as Billing, sync billing fields
@@ -753,15 +751,20 @@ export default function LedgerBookForm({
                         formData.alias?.length ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"
                       )}
                     >
-                      {formData.alias ? formData.alias.length : 0}/10
+                      {formData.alias ? formData.alias.length : 0}/100
                     </span>
                   </div>
                   <input
                     type="text"
-                    maxLength={10}
+                    maxLength={100}
                     value={formData.alias || ""}
                     onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
+                      const val = e.target.value;
+                      if (!val || val.trim() === "") {
+                        isAliasManuallyEditedRef.current = false;
+                      } else {
+                        isAliasManuallyEditedRef.current = true;
+                      }
                       handleChange("alias", val);
                       handleChange("accountCode", val);
                     }}
@@ -830,10 +833,11 @@ export default function LedgerBookForm({
                     Creation Date.
                   </label>
                   <DatePicker
-                    value={formData.creationDate || todayFormatted}
+                    allowInput
+                    value={formData.creationDate !== undefined ? formData.creationDate : todayFormatted}
                     onChange={(_, str) => handleChange("creationDate", str || "")}
-                    placeholder="DD-MM-YYYY"
-                    dateFormat="dd-MM-yyyy"
+                    placeholder="YYYY-MM-DD (e.g. 2004-07-01)"
+                    dateFormat="yyyy-MM-dd"
                     className="w-full"
                     buttonClassName={datePickerButtonClassName}
                   />

@@ -33,7 +33,7 @@ function getTodayFormatted(): string {
   const d = String(today.getDate()).padStart(2, "0");
   const m = String(today.getMonth() + 1).padStart(2, "0");
   const y = today.getFullYear();
-  return `${d}-${m}-${y}`;
+  return `${y}-${m}-${d}`;
 }
 
 export default function SalesInvoicePage() {
@@ -327,15 +327,18 @@ export default function SalesInvoicePage() {
   function formatDateForPicker(dateVal: any): string {
     if (!dateVal) return "";
     const str = String(dateVal);
+    const ymd = str.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+    if (ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+
     const dmy = str.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
-    if (dmy) return `${dmy[1]}-${dmy[2]}-${dmy[3]}`;
+    if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
 
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return str;
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
+    return `${year}-${month}-${day}`;
   }
 
   const populateFromInvoice = (inv: SalesInvoice) => {

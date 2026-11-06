@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
-import { Company } from "./types/company.types";
+import { Company, CompanyBranchItem } from "./types/company.types";
 import { companyService } from "./services/company.service";
 import DeleteCompanyModal from "./components/DeleteCompanyModal";
 import {
@@ -29,40 +29,64 @@ import {
   Building2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getMediaUrl } from "@/lib/utils";
+import { getMediaUrl, getCompanyInitials } from "@/lib/utils";
 
 /* ── Create Branch Modal ─────────────────────────────────────────── */
 interface CreateBranchModalProps {
   open: boolean;
+  companyId?: string;
+  companyName?: string;
   onClose: () => void;
+  onCreated?: () => void;
 }
 
-function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
-  const router = useRouter();
+function CreateBranchModal({
+  open,
+  companyId,
+  companyName,
+  onClose,
+  onCreated,
+}: CreateBranchModalProps) {
+  const [branchName, setBranchName] = useState("");
   const [gstNumber, setGstNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!branchName.trim()) {
+      toast.error("Branch name is required.");
+      return;
+    }
     if (!gstNumber.trim()) {
       toast.error("GST number is required.");
       return;
     }
     if (gstNumber.trim().length !== 15) {
       toast.error("GST number must be 15 characters.");
+      return; 
+    }
+    if (!companyId) {
+      toast.error("Parent company information is missing.");
       return;
     }
+
     setLoading(true);
     try {
-      const res = await companyService.createDraft({ gstNumber: gstNumber.trim().toUpperCase() });
-      toast.success(res.message || "Branch draft created successfully.");
+      const res = await companyService.createBranch({
+        companyId,
+        branchName: branchName.trim(),
+        gstNumber: gstNumber.trim().toUpperCase(),
+      });
+      toast.success(res.message || "Branch created successfully.");
+      setBranchName("");
       setGstNumber("");
       onClose();
-      if (res.data?.id) {
-        router.push(`/dashboard/setting/manage-company/company-profile/edit/${res.data.id}`);
+      if (onCreated) {
+        onCreated();
       }
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to create branch. Please try again.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to create branch. Please try again.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -70,6 +94,7 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
 
   const handleClose = () => {
     if (loading) return;
+    setBranchName("");
     setGstNumber("");
     onClose();
   };
@@ -82,43 +107,66 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
       onClick={handleClose}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      {/* Modal with golden theme border */}
+      {/* Modal */}
       <div
-        className="relative w-full max-w-md rounded-3xl bg-white border border-[#E8C16D]/50 shadow-2xl p-6 sm:p-7 dark:bg-[#0F1626] dark:border-[#E8C16D]/40 z-10 animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-md rounded-2xl bg-white border border-[#E7E0D2] shadow-2xl p-6 dark:bg-[#111827] dark:border-white/[0.1]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-              <Building2 size={18} />
+        <div className="flex items-start justify-between mb-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 dark:bg-white/[0.06] dark:border-white/[0.1] flex items-center justify-center shrink-0">
+              <Building2 size={15} className="text-[#B88728] dark:text-slate-300" />
             </div>
             <div>
               <h2 className="text-base font-bold text-[#0A0E1A] dark:text-white">
-                Create a company branch
+                Create a Company Branch
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Start by entering your GST number.
-              </p>
+              {companyName && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  for {companyName}
+                </p>
+              )}
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:hover:bg-white/[0.08] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 dark:hover:bg-white/[0.08] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-50"
           >
             <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 mt-4">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 ml-[42px]">
+          Enter the branch name and 15-character GST number.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Branch Name Input */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
+              Branch Name{" "}
+              <span className="text-rose-500 dark:text-rose-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={branchName}
+              onChange={(e) => setBranchName(e.target.value)}
+              placeholder="e.g. Surat Main Branch, Mumbai Office"
+              disabled={loading}
+              className="w-full rounded-lg bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 text-sm px-3.5 py-2.5 focus:outline-none focus:border-[#E8C16D] transition-colors disabled:opacity-60 dark:bg-[#0E121A] dark:border-white/[0.1] dark:text-white dark:placeholder-slate-500 dark:focus:border-white/30"
+            />
+          </div>
+
           {/* GST Number Input */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
-              GST Number <span className="text-rose-500 font-bold">*</span>
+              GST Number{" "}
+              <span className="text-rose-500 dark:text-rose-400">*</span>
             </label>
             <div className="relative">
               <input
@@ -127,31 +175,30 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
                 onChange={(e) =>
                   setGstNumber(e.target.value.toUpperCase().slice(0, 15))
                 }
-                placeholder="Enter your GST number"
+                placeholder="Enter 15-digit GST number"
                 disabled={loading}
-                className="w-full h-11 px-4 pr-16 text-xs sm:text-sm font-mono rounded-2xl bg-white border border-slate-200 text-[#0A0E1A] placeholder-slate-400 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 transition-all disabled:opacity-60 dark:bg-[#080B11] dark:border-white/[0.1] dark:text-white dark:placeholder-slate-500 shadow-xs uppercase"
+                className="w-full rounded-lg bg-white border border-[#E7E0D2] text-[#0A0E1A] placeholder-slate-400 text-sm px-3.5 py-2.5 pr-14 focus:outline-none focus:border-[#E8C16D] transition-colors disabled:opacity-60 dark:bg-[#0E121A] dark:border-white/[0.1] dark:text-white dark:placeholder-slate-500 dark:focus:border-white/30 font-mono"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono select-none">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono select-none">
                 {gstNumber.length}/15
               </span>
             </div>
           </div>
 
           {/* Info list */}
-          <div className="rounded-2xl bg-slate-50 border border-slate-200/80 px-4 py-3.5 dark:bg-white/[0.03] dark:border-white/[0.06]">
-            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
-              After creating the branch, you&apos;ll have to:
+          <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 dark:bg-white/[0.03] dark:border-white/[0.06]">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-1.5 font-medium">
+              Branch Requirements:
             </p>
-            <ul className="space-y-1.5">
-              {[
-                "Complete the registration form at once",
-                "Activate the branch once all details are complete",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#E8C16D] shrink-0" />
-                  {item}
-                </li>
-              ))}
+            <ul className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+              <li className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0" />
+                Valid 15-digit state GST registration
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0" />
+                Will be linked directly under this parent company
+              </li>
             </ul>
           </div>
 
@@ -161,21 +208,21 @@ function CreateBranchModal({ open, onClose }: CreateBranchModalProps) {
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.1]"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-[#E7E0D2] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.1]"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading || gstNumber.trim().length === 0}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !branchName.trim() || gstNumber.trim().length !== 15}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A0E1A] hover:bg-black text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-xs font-bold transition-all cursor-pointer shadow disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             >
               {loading ? (
-                <Loader2 size={13} className="animate-spin text-[#0A0E1A]" />
+                <Loader2 size={13} className="animate-spin" />
               ) : (
-                <Plus size={14} className="stroke-[3] text-[#0A0E1A]" />
+                <Plus size={13} className="stroke-[3]" />
               )}
-              <span>{loading ? "Creating…" : "Create Draft"}</span>
+              <span>{loading ? "Creating…" : "Create Branch"}</span>
             </button>
           </div>
         </form>
@@ -194,12 +241,25 @@ function CopyButton({ text }: { text?: string | null }) {
 
   if (!text || text === "—") return null;
 
-  const handleCopy = (e: React.MouseEvent) => {
+  const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success("Copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+      }
+      setCopied(true);
+      toast.success("Copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy");
+    }
   };
 
   return (
@@ -231,7 +291,7 @@ function formatDateDisplay(v?: string | Date | null): string {
 export default function CompanyProfileViewPage({ id: propId }: CompanyProfileViewPageProps) {
   const router = useRouter();
   const params = useParams();
-  const companyId = propId || (params?.id as string);
+  const companyId = propId || (Array.isArray(params?.id) ? params.id[0] : (params?.id as string));
 
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -239,27 +299,76 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [createBranchModalOpen, setCreateBranchModalOpen] = useState(false);
+  const [togglingStatus, setTogglingStatus] = useState(false);
 
-  const fetchCompany = useCallback(async () => {
+  // Branches state
+  const [branches, setBranches] = useState<CompanyBranchItem[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+
+  const fetchBranches = useCallback(async () => {
     if (!companyId) return;
     try {
-      setLoading(true);
-      setError(null);
-      const res = await companyService.getCompanyById(companyId);
-      setCompany(res.data);
-    } catch (err: any) {
-      console.error(err);
-      const msg = err.message || "Failed to load company profile.";
-      setError(msg);
-      toast.error(msg);
+      setBranchesLoading(true);
+      const res = await companyService.getBranches(companyId);
+      setBranches(res.data || []);
+    } catch (err: unknown) {
+      console.error("Failed to load branches:", err);
     } finally {
-      setLoading(false);
+      setBranchesLoading(false);
     }
   }, [companyId]);
 
   useEffect(() => {
-    fetchCompany();
-  }, [fetchCompany]);
+    if (!companyId) return;
+
+    let isMounted = true;
+
+    async function loadInitialData() {
+      try {
+        setError(null);
+        const [compRes, branchRes] = await Promise.allSettled([
+          companyService.getCompanyById(companyId),
+          companyService.getBranches(companyId),
+        ]);
+
+        if (!isMounted) return;
+
+        if (compRes.status === "fulfilled") {
+          setCompany(compRes.value.data);
+        } else {
+          const msg =
+            compRes.reason instanceof Error
+              ? compRes.reason.message
+              : "Failed to load company profile.";
+          setError(msg);
+          toast.error(msg);
+        }
+
+        if (branchRes.status === "fulfilled") {
+          setBranches(branchRes.value.data || []);
+        }
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Failed to load company profile.";
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [companyId]);
 
   const handleBack = () => {
     router.push("/dashboard/setting/manage-company/company-profile");
@@ -270,6 +379,35 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
     router.push(`/dashboard/setting/manage-company/company-profile/edit/${company.id}`);
   };
 
+  const handleToggleStatus = async () => {
+    if (!company || togglingStatus) return;
+    const currentIsActive = (company.status || "").toUpperCase() === "ACTIVE";
+    const targetStatus = currentIsActive ? "DRAFT" : "ACTIVE";
+
+    // Optimistic UI update
+    setCompany((prev) => (prev ? { ...prev, status: targetStatus } : prev));
+
+    try {
+      setTogglingStatus(true);
+      const res = await companyService.toggleStatus(company.id, targetStatus);
+      if (res?.data) {
+        setCompany(res.data);
+      }
+      toast.success(
+        `Company status updated to ${targetStatus === "ACTIVE" ? "Active" : "Draft"}.`
+      );
+    } catch (err: unknown) {
+      // Revert on failure
+      setCompany((prev) =>
+        prev ? { ...prev, status: currentIsActive ? "ACTIVE" : "DRAFT" } : prev
+      );
+      const msg = err instanceof Error ? err.message : "Failed to toggle status.";
+      toast.error(msg);
+    } finally {
+      setTogglingStatus(false);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!company) return;
     try {
@@ -278,13 +416,42 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
       toast.success(`Company "${company.companyName}" deleted successfully.`);
       setDeleteModalOpen(false);
       router.push("/dashboard/setting/manage-company/company-profile");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Failed to delete company profile.");
+      const msg = err instanceof Error ? err.message : "Failed to delete company profile.";
+      toast.error(msg);
     } finally {
       setIsDeleting(false);
     }
   };
+
+  // Dynamic completion percentage calculation
+  const completionPercentage = useMemo(() => {
+    if (!company) return 0;
+    if (typeof company.completionPercentage === "number" && company.completionPercentage > 0) {
+      return company.completionPercentage;
+    }
+    const fields = [
+      company.legalName,
+      company.companyName,
+      company.ownerName,
+      company.abbreviation || company.companyCode,
+      company.email,
+      company.phone,
+      company.billingAddress1 || company.addressLine1,
+      company.billingPincode || company.pincode,
+      company.billingCity || company.city,
+      company.billingState || company.state,
+      company.gstNumber,
+      company.panNumber,
+      company.bankName,
+      company.accountHolderName,
+      company.accountNumber,
+      company.ifscCode,
+    ];
+    const filled = fields.filter((f) => f && String(f).trim().length > 0).length;
+    return Math.min(100, Math.round((filled / fields.length) * 100));
+  }, [company]);
 
   const handleGenerateReport = () => {
     if (!company) return;
@@ -338,6 +505,19 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
     border-bottom: 2.5px solid #0f172a;
     margin-bottom: 18px;
   }
+  .company-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .company-logo {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 2px;
+  }
   .company-name { font-size: 20px; font-weight: 800; letter-spacing: 0.5px; color: #0f172a; }
   .company-meta { margin-top: 4px; font-size: 10px; color: #64748b; font-weight: 500; }
   .report-badge { text-align: right; }
@@ -364,6 +544,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
   .report-footer { margin-top: 18px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end; }
   .footer-meta { font-size: 9px; color: #94a3b8; line-height: 1.7; }
   .signature-box { text-align: center; }
+  .signature-img { max-height: 44px; max-width: 140px; object-fit: contain; margin-bottom: 2px; }
   .signature-line { width: 160px; border-bottom: 1.5px solid #0f172a; margin-bottom: 4px; height: 32px; }
   .signature-label { font-size: 9px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
   @media print {
@@ -375,16 +556,19 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 <body>
 
 <div class="report-header">
-  <div>
-    <div class="company-name">${fmt(company.companyName)}</div>
-    <div class="company-meta">
-      ${fmt(company.abbreviation || company.companyCode)} &nbsp;&bull;&nbsp;
-      ${fmt(company.businessType)} &nbsp;&bull;&nbsp;
-      GST: ${fmt(company.gstNumber)}
-    </div>
-    <div class="company-meta" style="margin-top:3px;">
-      ${fmt(company.email)} &nbsp;&bull;&nbsp; ${fmt(company.phone)}
-      ${company.website ? `&nbsp;&bull;&nbsp; ${fmt(company.website)}` : ""}
+  <div class="company-title-wrap">
+    ${company.logoUrl ? `<img src="${getMediaUrl(company.logoUrl)}" class="company-logo" alt="Logo" />` : `<div style="width:48px;height:48px;border-radius:8px;border:1.5px solid #0f172a;background:#f8fafc;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#0f172a;line-height:48px;text-align:center;">${getCompanyInitials(company.companyName)}</div>`}
+    <div>
+      <div class="company-name">${fmt(company.companyName)}</div>
+      <div class="company-meta">
+        ${fmt(company.abbreviation || company.companyCode)} &nbsp;&bull;&nbsp;
+        ${fmt(company.businessType)} &nbsp;&bull;&nbsp;
+        GST: ${fmt(company.gstNumber)}
+      </div>
+      <div class="company-meta" style="margin-top:3px;">
+        ${fmt(company.email)} &nbsp;&bull;&nbsp; ${fmt(company.phone)}
+        ${company.website ? `&nbsp;&bull;&nbsp; ${fmt(company.website)}` : ""}
+      </div>
     </div>
   </div>
   <div class="report-badge">
@@ -473,7 +657,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
     <div style="margin-top:4px;font-size:8px;">This report was generated from OrderOS — ${new Date().toLocaleString("en-IN")}</div>
   </div>
   <div class="signature-box">
-    <div class="signature-line"></div>
+    ${company.signatureUrl ? `<img src="${getMediaUrl(company.signatureUrl)}" class="signature-img" alt="Signature" /><br/>` : `<div class="signature-line"></div>`}
     <div class="signature-label">Authorized Signature</div>
   </div>
 </div>
@@ -481,7 +665,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 </body>
 </html>`;
 
-    // Hidden iframe print
+    // Use a hidden iframe so the print dialog opens cleanly
     const existing = document.getElementById("__company-report-frame__");
     if (existing) existing.remove();
 
@@ -501,12 +685,26 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
     doc.write(html);
     doc.close();
 
-    iframe.onload = () => {
-      setTimeout(() => {
+    const triggerPrint = () => {
+      try {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
-        setTimeout(() => iframe.remove(), 2000);
-      }, 300);
+      } catch (err) {
+        console.error("Print error:", err);
+      } finally {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            iframe.remove();
+          }
+        }, 3000);
+      }
+    };
+
+    // Trigger print safely across browsers
+    const timer = setTimeout(triggerPrint, 350);
+    iframe.onload = () => {
+      clearTimeout(timer);
+      setTimeout(triggerPrint, 100);
     };
   };
 
@@ -514,7 +712,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
     return (
       <DashboardLayout title="Company Profile">
         <div className="flex flex-col items-center justify-center min-h-[500px] text-slate-400">
-          <Loader2 size={36} className="animate-spin text-[#E8C16D] mb-3" />
+          <Loader2 size={36} className="animate-spin text-[#F5C451] mb-3" />
           <p className="text-sm font-medium">Loading company profile details...</p>
         </div>
       </DashboardLayout>
@@ -524,12 +722,12 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
   if (error || !company) {
     return (
       <DashboardLayout title="Company Profile">
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-[#E8C16D]/50 shadow-sm dark:bg-[#0E121A] rounded-3xl dark:border-[#E8C16D]/40">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-[#E7E0D2] shadow-sm dark:bg-[#0E121A] rounded-2xl dark:border-white/[0.08]">
           <p className="text-sm text-rose-500 dark:text-rose-400 mb-4">{error || "Company not found."}</p>
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#0A0E1A] text-white hover:bg-black dark:bg-[#E8C16D] dark:text-[#0A0E1A] font-bold text-xs transition-all cursor-pointer shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0E1A] text-white hover:bg-black dark:bg-white dark:text-slate-900 font-semibold text-xs transition-all cursor-pointer dark:hover:bg-slate-100"
           >
             <ArrowLeft size={16} />
             <span>Back to Company Profiles</span>
@@ -572,641 +770,693 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
   const shippingContactPerson = company.shippingContactName || company.ownerName || "—";
   const shippingPhone = company.shippingContactNo || company.phone || "—";
 
+  const companyStatusNorm = (company.status || "ACTIVE").toUpperCase();
+
   return (
     <DashboardLayout title="Company Profile">
-      <div className="flex flex-col gap-4 w-full text-[#0A0E1A] dark:text-slate-100 font-sans">
-        {/* ========================================================================= */}
-        {/* TOP HEADER BAR matching Company Profile Page Header                       */}
-        {/* ========================================================================= */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <div className="flex items-center gap-3.5">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
-                  title="Back to Company Profiles"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
-                  Company Profile
-                </h1>
-              </div>
-
-              {/* One line page description */}
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
-                View comprehensive registration, banking, and contact details of the company.
-              </p>
+      <div className="flex flex-col h-auto lg:h-[calc(100vh-72px)] -my-4 sm:-my-6 lg:-my-8 w-full text-[#0A0E1A] dark:text-slate-100 font-sans overflow-hidden">
+        {/* Top Header Card */}
+        <div className="w-full pt-4 sm:pt-6 pb-2 shrink-0 z-20">
+          <div className="w-full rounded-2xl bg-white border border-[#E7E0D2] px-5 py-3.5 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer"
+                title="Back to Company Profiles"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <h1 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                Company Profile
+              </h1>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-3">
+              {/* Active / Draft Status Switch */}
+              <label
+                className={`relative inline-flex items-center select-none ${
+                  togglingStatus ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                }`}
+                title={
+                  companyStatusNorm === "ACTIVE"
+                    ? "Status: Active (Click to set as Draft)"
+                    : "Status: Draft (Click to set as Active)"
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={companyStatusNorm === "ACTIVE"}
+                  disabled={togglingStatus}
+                  onChange={handleToggleStatus}
+                  className="sr-only peer"
+                />
+                <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 transition-colors"></div>
+              </label>
+
               <button
                 type="button"
                 onClick={handleEdit}
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-900 border border-[#E7E0D2] shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.1] transition-all cursor-pointer active:scale-95"
               >
-                <Edit3 size={16} className="text-[#0A0E1A]" />
-                <span>Edit Profile</span>
+                <Edit3 size={13} />
+                <span>Edit</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setDeleteModalOpen(true)}
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-4 sm:px-5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 shadow-xs dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:hover:text-rose-300 dark:border-rose-500/20 transition-all cursor-pointer active:scale-95"
               >
-                <Trash2 size={16} />
+                <Trash2 size={13} />
                 <span>Delete</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* MAIN DETAIL GRID: Left 8 cols, Right 4 cols (Golden Theme Border Cards)   */}
-        {/* ========================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
-          {/* LEFT COLUMN: Main Company Card + 4 Detail Cards */}
-          <div className="lg:col-span-8 flex flex-col gap-4">
-            {/* Main Company Card with Golden Theme Border */}
-            <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative">
-              <div className="flex items-start sm:items-center gap-4 flex-1">
-                {/* Logo Box with subtle Golden Border */}
-                <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E8C16D]/40 dark:bg-black dark:border-[#E8C16D]/30 flex flex-col items-center justify-center p-2 shrink-0 relative overflow-hidden group select-none shadow-xs">
-                  <ExternalLink size={12} className="text-slate-400 absolute top-2 right-2 pointer-events-none" />
-                  {company.logoUrl ? (
-                    <img
-                      src={getMediaUrl(company.logoUrl)}
-                      alt={company.companyName}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <svg
-                        width="36"
-                        height="26"
-                        viewBox="0 0 40 32"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="text-slate-700 dark:text-white"
-                      >
-                        <path
-                          d="M20 16C15 6 6 6 6 13C6 20 15 20 20 16ZM20 16C25 6 34 6 34 13C34 20 25 20 20 16Z"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M20 16C19 21 17 26 15 29M20 16C21 21 23 26 25 29"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <span className="text-[9px] font-black uppercase tracking-tight text-slate-800 dark:text-white mt-1.5 leading-tight px-1 text-center">
-                        {company.companyName || "COMPANY"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Company Information */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg sm:text-xl font-bold text-[#0A0E1A] dark:text-white tracking-wide truncate">
-                      {company.companyName || "Untitled Company"}
-                    </h2>
-                    {company.status === "ACTIVE" && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#1A160E] text-[#E8C16D] border border-[#E8C16D]/30 shadow-xs">
-                        <Check size={11} className="stroke-[3] text-[#E8C16D]" />
-                        Active
+        {/* Scrollable Middle Content Area */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {/* Main Content Grid: Left 8 cols, Right 4 cols */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
+            {/* ========================================================================= */}
+            {/* LEFT COLUMN: Main Company Card + 4 Detail Cards                           */}
+            {/* ========================================================================= */}
+            <div className="lg:col-span-8 flex flex-col gap-4">
+              {/* Main Company Card */}
+              <div className="rounded-2xl bg-white border border-[#E7E0D2] p-5 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative">
+                <div className="flex items-start sm:items-center gap-4 flex-1">
+                  {/* Logo Box */}
+                  <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-black dark:border-white/[0.1] flex flex-col items-center justify-center p-2 shrink-0 relative overflow-hidden group select-none shadow-xs">
+                    {company.logoUrl && (
+                      <ExternalLink size={12} className="text-slate-400 absolute top-2 right-2 pointer-events-none" />
+                    )}
+                    {company.logoUrl && !logoError ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={getMediaUrl(company.logoUrl)}
+                        alt={company.companyName}
+                        className="w-full h-full object-contain"
+                        onError={() => setLogoError(true)}
+                      />
+                    ) : (
+                      <span className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wider uppercase select-none font-sans">
+                        {getCompanyInitials(company.companyName)}
                       </span>
                     )}
-                    {company.status === "DRAFT" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                        Draft
-                      </span>
-                    )}
-                    {company.status === "INACTIVE" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/15 text-slate-400 border border-slate-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                        Inactive
-                      </span>
-                    )}
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.08] dark:text-slate-300 dark:border-white/[0.08]">
-                      Completion: {company.completionPercentage ?? 60}%
-                    </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wide">
-                    {company.companyName || "Company"} {company.abbreviation || company.companyCode ? `@ ${company.abbreviation || company.companyCode}` : ""} {company.businessType ? `• ${company.businessType}` : ""}
-                  </p>
-
-                  <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap mt-3 text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <User size={13} className="text-[#E8C16D] shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Owner.</span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white">
-                        {company.ownerName || "—"}
+                  {/* Company Information */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg sm:text-xl font-bold text-[#0A0E1A] dark:text-white tracking-wide truncate">
+                        {company.companyName || "Untitled Company"}
+                      </h2>
+                      {companyStatusNorm === "ACTIVE" && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                          Active
+                        </span>
+                      )}
+                      {companyStatusNorm === "DRAFT" && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+                          Draft
+                        </span>
+                      )}
+                      {companyStatusNorm === "INACTIVE" && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-500/15 dark:text-slate-400 dark:border-slate-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          Inactive
+                        </span>
+                      )}
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.08] dark:text-slate-300 dark:border-white/[0.08]">
+                        Completion: {completionPercentage}%
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <Mail size={13} className="text-[#E8C16D] shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Email.</span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white">
-                        {company.email || "—"}
-                      </span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wide">
+                      {company.companyName || "Company"} {company.abbreviation || company.companyCode ? `@ ${company.abbreviation || company.companyCode}` : ""} {company.businessType ? `• ${company.businessType}` : ""}
+                    </p>
+
+                    <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap mt-3 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <User size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Owner.</span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white">
+                          {company.ownerName || "—"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <Mail size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Email.</span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white">
+                          {company.email || "—"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <Phone size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Phone.</span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white">
+                          {company.phone ? (company.phone.startsWith("+") ? company.phone : `+91 ${company.phone}`) : "—"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <Globe size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Website.</span>
+                        {company.website ? (
+                          <a
+                            href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold text-sky-600 hover:underline flex items-center gap-1 dark:text-sky-400"
+                          >
+                            <span>{company.website}</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        ) : (
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white">—</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Authorized Signature Box */}
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#0B0D13] dark:border-white/[0.08] flex items-center justify-center p-2 overflow-hidden shadow-xs">
+                    {company.signatureUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={getMediaUrl(company.signatureUrl)}
+                        alt="Authorized Signature"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-500 text-center select-none">
+                        <FileText size={22} className="mb-1 text-slate-400 dark:text-slate-500" />
+                        <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 leading-tight">
+                          No Signature
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
+                    Authorized Signature
+                  </span>
+                </div>
+              </div>
+
+              {/* 2x2 Grid of Detail Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Card 1: Contact Details */}
+                <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin size={15} className="text-slate-500 dark:text-slate-400" />
+                      <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                        Contact Details
+                      </h3>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <Phone size={13} className="text-[#E8C16D] shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Phone.</span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white">
-                        {company.phone ? (company.phone.startsWith("+") ? company.phone : `+91 ${company.phone}`) : "—"}
-                      </span>
+                    <div className="space-y-3.5 text-xs">
+                      {/* Billing Address */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                            Billing Address.
+                          </span>
+                          <CopyButton text={billingAddressFull} />
+                        </div>
+                        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                          {billingAddressFull || "No billing address provided."}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium">
+                          <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                            <User size={12} className="text-slate-400 dark:text-slate-500" />
+                            {billingContactPerson}
+                          </span>
+                          <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                            <Phone size={12} className="text-slate-400 dark:text-slate-500" />
+                            {billingPhone}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-100 dark:border-white/[0.06] pt-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                            Shipping Address.
+                          </span>
+                          <CopyButton text={shippingAddressFull} />
+                        </div>
+                        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                          {shippingAddressFull || "No shipping address provided."}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium">
+                          <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                            <User size={12} className="text-slate-400 dark:text-slate-500" />
+                            {shippingContactPerson}
+                          </span>
+                          <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                            <Phone size={12} className="text-slate-400 dark:text-slate-500" />
+                            {shippingPhone}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Taxation & Legal Details */}
+                <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileCheck size={15} className="text-slate-500 dark:text-slate-400" />
+                      <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                        Taxation & Legal Details
+                      </h3>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <Globe size={13} className="text-[#E8C16D] shrink-0" />
-                      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Website.</span>
-                      {company.website ? (
-                        <a
-                          href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-[#E8C16D] hover:underline flex items-center gap-1"
-                        >
-                          <span>{company.website}</span>
-                          <ExternalLink size={10} />
-                        </a>
-                      ) : (
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white">—</span>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          GST No.
+                        </span>
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                            {company.gstNumber || "—"}
+                          </span>
+                          {company.gstNumber && <CopyButton text={company.gstNumber} />}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          PAN No.
+                        </span>
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                            {company.panNumber || "—"}
+                          </span>
+                          {company.panNumber && <CopyButton text={company.panNumber} />}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Trade Category.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.tradeCategory || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          TAN No.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                          {company.tanNumber || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          FSSAI No.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.fssaiNumber || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Central Sales Tax No.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.cstNumber || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          MSME ID.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.msmeNumber || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Bank Details */}
+                <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Landmark size={15} className="text-slate-500 dark:text-slate-400" />
+                      <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                        Bank Details
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Account No.
+                        </span>
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                            {company.accountNumber || "—"}
+                          </span>
+                          {company.accountNumber && <CopyButton text={company.accountNumber} />}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Holder Name.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                          {company.accountHolderName || company.ownerName || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Account Name.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                          {company.accountName || company.companyName || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          UPI ID.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.upiId || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Bank Name.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                          {company.bankName || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Branch Name.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px] truncate block">
+                          {company.branchName || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Account Type.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.accountType || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          IFSC Code.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                          {company.ifscCode || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Client Code.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.clientCode || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Product Code.
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                          {company.productCode || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4: Invoice Details */}
+                <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Receipt size={15} className="text-slate-500 dark:text-slate-400" />
+                      <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                        Invoice Details
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Tax Invoice Prefix. [Offline]
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                          {company.taxInvoicePrefix || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Next Tax Invoice No. [Offline]
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                          {company.taxInvoiceNext || "1"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Retail Invoice Prefix. [Offline]
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                          {company.retailInvoicePrefix || "—"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                          Next Retail Invoice No. [Offline]
+                        </span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                          {company.retailInvoiceNext || "1"}
+                        </span>
+                      </div>
+
+                      {company.considerInPnL && (
+                        <div>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
+                            Consider In P&L.
+                          </span>
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white text-[11px]">
+                            {company.considerInPnL}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Authorized Signature Box with Golden Border */}
-              <div className="flex flex-col items-center shrink-0">
-                <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E8C16D]/40 dark:bg-[#0B0D13] dark:border-[#E8C16D]/30 flex items-center justify-center p-2 overflow-hidden shadow-xs">
-                  {company.signatureUrl ? (
-                    <img
-                      src={getMediaUrl(company.signatureUrl)}
-                      alt="Authorized Signature"
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <span className="text-xl font-bold tracking-wider text-slate-700 dark:text-slate-300 select-none">
-                      JA
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
-                  Authorized Signature
-                </span>
-              </div>
             </div>
 
-            {/* 2x2 Grid of Detail Cards with Golden Theme Border */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Card 1: Contact Details */}
-              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
-                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                      <MapPin size={15} />
-                    </div>
+            {/* ========================================================================= */}
+            {/* RIGHT COLUMN: Branch(s) Card                                              */}
+            {/* ========================================================================= */}
+            <div className="lg:col-span-4 flex flex-col">
+              <div className="rounded-2xl bg-white border border-[#E7E0D2] p-4 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col h-full min-h-[460px]">
+                {/* Header with Title & + Create Button */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+                  <div className="flex items-center gap-2">
                     <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                      Contact Details
+                      Branch(s)
                     </h3>
+                    {branches.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                        {branches.length}
+                      </span>
+                    )}
                   </div>
-
-                  <div className="space-y-3.5 text-xs">
-                    {/* Billing Address */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          Billing Address.
-                        </span>
-                        <CopyButton text={billingAddressFull} />
-                      </div>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
-                        {billingAddressFull || "No billing address provided."}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs font-medium">
-                        <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <User size={12} className="text-[#E8C16D]" />
-                          {billingContactPerson}
-                        </span>
-                        <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <Phone size={12} className="text-[#E8C16D]" />
-                          {billingPhone}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 dark:border-white/[0.06] pt-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          Shipping Address.
-                        </span>
-                        <CopyButton text={shippingAddressFull} />
-                      </div>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
-                        {shippingAddressFull || "No shipping address provided."}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs font-medium">
-                        <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <User size={12} className="text-[#E8C16D]" />
-                          {shippingContactPerson}
-                        </span>
-                        <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <Phone size={12} className="text-[#E8C16D]" />
-                          {shippingPhone}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCreateBranchModalOpen(true)}
+                    className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-[#F5C451] hover:bg-[#e8b83e] active:scale-[0.97] text-slate-900 font-bold text-[11px] transition-all cursor-pointer shadow-md"
+                  >
+                    <Plus size={12} className="stroke-[3]" />
+                    <span>Create</span>
+                  </button>
                 </div>
-              </div>
 
-              {/* Card 2: Taxation & Legal Details */}
-              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
-                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                      <FileCheck size={15} />
-                    </div>
-                    <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                      Taxation & Legal Details
-                    </h3>
+                {/* Table Column Headers */}
+                <div className="grid grid-cols-12 text-[11px] font-semibold text-slate-500 dark:text-slate-400 py-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+                  <span className="col-span-2">No.</span>
+                  <span className="col-span-7">Branch / Company Name.</span>
+                  <span className="col-span-3 text-right">Status.</span>
+                </div>
+
+                {/* Branch list or Empty state */}
+                {branchesLoading ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-400">
+                    <Loader2 size={24} className="animate-spin text-[#F5C451] mb-2" />
+                    <p className="text-xs font-medium">Loading branches...</p>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        GST No.
-                      </span>
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                          {company.gstNumber || "—"}
+                ) : branches.length > 0 ? (
+                  <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.04]">
+                    {branches.map((b, idx) => (
+                      <div
+                        key={b.id || idx}
+                        className="grid grid-cols-12 items-center text-xs py-2.5 px-1 hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
+                      >
+                        <span className="col-span-2 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                          {String(idx + 1).padStart(2, "0")}
                         </span>
-                        {company.gstNumber && <CopyButton text={company.gstNumber} />}
+                        <div className="col-span-7 min-w-0 pr-2">
+                          <p className="font-semibold text-[#0A0E1A] dark:text-white truncate text-[11px]">
+                            {b.branchName || b.companyName}
+                          </p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate">
+                            {b.gstNumber}
+                          </p>
+                        </div>
+                        <div className="col-span-3 text-right">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              (b.status || "").toUpperCase() === "ACTIVE"
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30"
+                                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-white/10"
+                            }`}
+                          >
+                            {b.status || "ACTIVE"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        PAN No.
-                      </span>
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                          {company.panNumber || "—"}
-                        </span>
-                        {company.panNumber && <CopyButton text={company.panNumber} />}
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Trade Category.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.tradeCategory || "Manufacturing"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        TAN No.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                        {company.tanNumber || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        FSSAI No.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.fssaiNumber || "-"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Central Sales Tax No.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.cstNumber || "-"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        MSME ID.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.msmeNumber || "-"}
-                      </span>
-                    </div>
+                    ))}
                   </div>
-                </div>
-              </div>
-
-              {/* Card 3: Bank Details */}
-              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
-                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                      <Landmark size={15} />
+                ) : (
+                  /* Empty State matching Screenshot with clipboard icon */
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 select-none">
+                    <div className="mb-3">
+                      <svg width="42" height="48" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="5" width="28" height="32" rx="4" fill="#C58349" />
+                        <rect x="5" y="8" width="22" height="26" rx="2" fill="#FFFFFF" />
+                        <line x1="8" y1="14" x2="24" y2="14" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="8" y1="18" x2="24" y2="18" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="8" y1="22" x2="24" y2="22" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="8" y1="26" x2="18" y2="26" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
+                        <rect x="11" y="2" width="10" height="6" rx="2" fill="#94A3B8" />
+                        <rect x="13" y="1" width="6" height="3" rx="1.5" fill="#64748B" />
+                      </svg>
                     </div>
-                    <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                      Bank Details
-                    </h3>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      No data available
+                    </p>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Account No.
-                      </span>
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                          {company.accountNumber || "—"}
-                        </span>
-                        {company.accountNumber && <CopyButton text={company.accountNumber} />}
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Holder Name.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
-                        {company.accountHolderName || company.ownerName || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Account Name.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
-                        {company.accountName || company.companyName || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        UPI ID.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.upiId || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Bank Name.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
-                        {company.bankName || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Branch Name.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs truncate block">
-                        {company.branchName || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Account Type.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.accountType || "Current"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        IFSC Code.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                        {company.ifscCode || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Client Code.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.clientCode || "-"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Product Code.
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white text-xs">
-                        {company.productCode || "-"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4: Invoice Details */}
-              <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
-                    <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                      <Receipt size={15} />
-                    </div>
-                    <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                      Invoice Details
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Tax Invoice Prefix. [Offline]
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                        {company.taxInvoicePrefix || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Next Tax Invoice No. [Offline]
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                        {company.taxInvoiceNext || "1"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Retail Invoice Prefix. [Offline]
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                        {company.retailInvoicePrefix || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Next Retail Invoice No. [Offline]
-                      </span>
-                      <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-xs">
-                        {company.retailInvoiceNext || "1"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Branch(s) Card with Golden Theme Border */}
-          <div className="lg:col-span-4 flex flex-col">
-            <div className="rounded-3xl bg-white border border-[#E8C16D]/50 p-5 sm:p-6 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col h-full min-h-[460px]">
-              {/* Header with Title & + Create Button */}
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-white/[0.06]">
-                <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
-                  Branch(s)
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setCreateBranchModalOpen(true)}
-                  className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] font-bold text-[11px] transition-all cursor-pointer shadow-sm"
-                >
-                  <Plus size={12} className="stroke-[3] text-[#0A0E1A]" />
-                  <span>Create</span>
-                </button>
-              </div>
-
-              {/* Table Column Headers */}
-              <div className="grid grid-cols-12 text-[11px] font-semibold text-[#E8C16D] py-2.5 border-b border-slate-100 dark:border-white/[0.06]">
-                <span className="col-span-2">No.</span>
-                <span className="col-span-7">Company Name.</span>
-                <span className="col-span-3 text-right">Status.</span>
-              </div>
-
-              {/* Empty State */}
-              <div className="flex-1 flex flex-col items-center justify-center p-8 select-none">
-                <div className="mb-3">
-                  <svg width="42" height="48" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="5" width="28" height="32" rx="4" fill="#C58349" />
-                    <rect x="5" y="8" width="22" height="26" rx="2" fill="#FFFFFF" />
-                    <line x1="8" y1="14" x2="24" y2="14" stroke="#E8C16D" strokeWidth="1.5" strokeLinecap="round" />
-                    <line x1="8" y1="18" x2="24" y2="18" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
-                    <line x1="8" y1="22" x2="24" y2="22" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
-                    <line x1="8" y1="26" x2="18" y2="26" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
-                    <rect x="11" y="2" width="10" height="6" rx="2" fill="#94A3B8" />
-                    <rect x="13" y="1" width="6" height="3" rx="1.5" fill="#64748B" />
-                  </svg>
-                </div>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  No data available
-                </p>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* BOTTOM METADATA BAR with Golden Theme Border                              */}
-        {/* ========================================================================= */}
-        <div className="w-full rounded-2xl sm:rounded-3xl bg-white border border-[#E8C16D]/50 px-6 py-4 shadow-sm hover:border-[#E8C16D] hover:shadow-[0_4px_20px_rgba(232,193,109,0.12)] transition-all dark:bg-[#0F1626] dark:border-[#E8C16D]/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Left Metadata items */}
-          <div className="flex items-center gap-6 sm:gap-8 flex-wrap">
-            {/* Creation Date */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <Calendar size={14} />
+        {/* BOTTOM STATIC FOOTER BAR */}
+        <div className="w-full pt-3 pb-4 sm:pb-5 lg:pb-6 bg-transparent dark:bg-[#080B11] shrink-0 z-20">
+          <div className="w-full rounded-2xl bg-white border border-[#E7E0D2] px-5 py-3.5 shadow-sm dark:bg-[#131622] dark:border-white/[0.08] dark:shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Left Metadata items */}
+            <div className="flex items-center gap-6 sm:gap-8 flex-wrap">
+              {/* Creation Date */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <Calendar size={14} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Creation Date
+                  </p>
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                    {formatDateDisplay(company.registrationDate || company.createdAt)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Creation Date
-                </p>
-                <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
-                  {formatDateDisplay(company.createdAt)}
-                </p>
+
+              {/* Created By */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <User size={14} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Created By
+                  </p>
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                    {company.ownerName || "Admin"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Last Updated */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <Calendar size={14} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Last Updated
+                  </p>
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                    {formatDateDisplay(company.updatedAt)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Last Updated By */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <User size={14} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Last Updated By
+                  </p>
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                    {company.ownerName || "Admin"}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Created By */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <User size={14} />
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Created By
-                </p>
-                <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
-                  {company.ownerName || "Admin"}
-                </p>
-              </div>
-            </div>
-
-            {/* Last Updated */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <Calendar size={14} />
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Last Updated
-                </p>
-                <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
-                  {formatDateDisplay(company.updatedAt)}
-                </p>
-              </div>
-            </div>
-
-            {/* Last Updated By */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                <User size={14} />
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Last Updated By
-                </p>
-                <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
-                  {company.ownerName || "Admin"}
-                </p>
-              </div>
-            </div>
+            {/* Right Action: Generate Report */}
+            <button
+              type="button"
+              onClick={handleGenerateReport}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-[#E7E0D2] shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-white dark:border-white/[0.1] text-xs font-semibold transition-all cursor-pointer active:scale-95 shrink-0"
+            >
+              <FileText size={14} />
+              <span>Generate Report</span>
+            </button>
           </div>
-
-          {/* Right Action: Generate Report */}
-          <button
-            type="button"
-            onClick={handleGenerateReport}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-[#E8C16D]/40 shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-white dark:border-[#E8C16D]/40 text-xs font-bold transition-all cursor-pointer active:scale-95 shrink-0"
-          >
-            <FileText size={14} />
-            <span>Generate Report</span>
-          </button>
         </div>
       </div>
 
@@ -1223,7 +1473,10 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
       {/* Create Branch Modal */}
       <CreateBranchModal
         open={createBranchModalOpen}
+        companyId={company?.id}
+        companyName={company?.companyName}
         onClose={() => setCreateBranchModalOpen(false)}
+        onCreated={fetchBranches}
       />
     </DashboardLayout>
   );

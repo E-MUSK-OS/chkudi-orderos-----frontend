@@ -70,7 +70,7 @@ export default function POUploadPanel({
         detectedPo ||
         (fileBaseName && fileBaseName.length > 0 ? fileBaseName : `PO-${Date.now().toString().slice(-6)}`);
 
-      const finalPoDate = poDate?.trim() || format(new Date(), "dd-MM-yyyy");
+      const finalPoDate = poDate?.trim() || format(new Date(), "yyyy-MM-dd");
 
       const totalQty =
         parsed.totalQuantity ||
@@ -163,11 +163,13 @@ export default function POUploadPanel({
             </label>
             <div className="w-36 sm:w-44">
               <DatePicker
+                allowInput
                 value={poDate}
                 onChange={(_, dateStr) => setPoDate(dateStr || "")}
-                placeholder="DD-MM-YYYY"
-                dateFormat="dd-MM-yyyy"
+                placeholder="YYYY-MM-DD"
+                dateFormat="yyyy-MM-dd"
                 disabled={isParsing}
+                className="w-full"
                 buttonClassName="h-9 sm:h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white shadow-2xs hover:border-[#E8C16D] transition-colors disabled:opacity-50"
               />
             </div>

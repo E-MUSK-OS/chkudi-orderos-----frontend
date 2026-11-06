@@ -38,44 +38,89 @@ function formatDate(val?: string | null): string {
   }
 }
 
+function getDaysInCurrentMonth(): number {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+}
+
+function getCurrentMonthName(): string {
+  const MONTH_NAMES = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  return MONTH_NAMES[new Date().getMonth()];
+}
+
+function resolveInitialWorkingDays(
+  empDays?: number | null,
+  maxDays: number = getDaysInCurrentMonth()
+): number {
+  const num = Number(empDays);
+  if (!num || isNaN(num) || num <= 0) return maxDays;
+  if (num > maxDays) return maxDays;
+  return num;
+}
+
 export default function SalaryDetailsCard({
   employee,
   onUpdateSuccess,
 }: SalaryDetailsCardProps) {
-  const [formData, setFormData] = useState<SalaryDetailsFormData>({
-    basicSalary: Number(employee.basicSalary || 0),
-    workingDayMode: employee.workingDayMode || "Monthly",
-    workingDays: Number(employee.workingDays || 31),
-    workingHoursPerDay: Number(employee.workingHoursPerDay || 8),
-    totalHours: Number(employee.totalHours || 248),
-    wageRate: Number(employee.wageRate || 0),
-    otRatePercent: Number(employee.otRatePercent || 0),
-    otRatePerHour: Number(employee.otRatePerHour || 0),
-    transportAllowance: Number(employee.transportAllowance || 0),
-    medicalAllowance: Number(employee.medicalAllowance || 0),
+  const daysInCurrentMonth = useMemo(() => getDaysInCurrentMonth(), []);
+  const currentMonthName = useMemo(() => getCurrentMonthName(), []);
+
+  const [formData, setFormData] = useState<SalaryDetailsFormData>(() => {
+    const days = resolveInitialWorkingDays(employee.workingDays, daysInCurrentMonth);
+    const hoursPerDay = Number(employee.workingHoursPerDay || 8);
+    const totalHours = Number((days * hoursPerDay).toFixed(0));
+    const basicSalary = Number(employee.basicSalary || 0);
+    const wageRate = totalHours > 0 ? Number((basicSalary / totalHours).toFixed(2)) : 0;
+    const otPercent = Number(employee.otRatePercent || 0);
+    const otPerHour = otPercent > 0 ? Number(((wageRate * otPercent) / 100).toFixed(2)) : 0;
+
+    return {
+      basicSalary,
+      workingDayMode: employee.workingDayMode || "Monthly",
+      workingDays: days,
+      workingHoursPerDay: hoursPerDay,
+      totalHours,
+      wageRate,
+      otRatePercent: otPercent,
+      otRatePerHour: otPerHour,
+      transportAllowance: Number(employee.transportAllowance || 0),
+      medicalAllowance: Number(employee.medicalAllowance || 0),
+    };
   });
 
   const [saving, setSaving] = useState(false);
 
   // Sync state if employee prop updates
   useEffect(() => {
+    const days = resolveInitialWorkingDays(employee.workingDays, daysInCurrentMonth);
+    const hoursPerDay = Number(employee.workingHoursPerDay || 8);
+    const totalHours = Number((days * hoursPerDay).toFixed(0));
+    const basicSalary = Number(employee.basicSalary || 0);
+    const wageRate = totalHours > 0 ? Number((basicSalary / totalHours).toFixed(2)) : 0;
+    const otPercent = Number(employee.otRatePercent || 0);
+    const otPerHour = otPercent > 0 ? Number(((wageRate * otPercent) / 100).toFixed(2)) : 0;
+
     setFormData({
-      basicSalary: Number(employee.basicSalary || 0),
+      basicSalary,
       workingDayMode: employee.workingDayMode || "Monthly",
-      workingDays: Number(employee.workingDays || 31),
-      workingHoursPerDay: Number(employee.workingHoursPerDay || 8),
-      totalHours: Number(employee.totalHours || 248),
-      wageRate: Number(employee.wageRate || 0),
-      otRatePercent: Number(employee.otRatePercent || 0),
-      otRatePerHour: Number(employee.otRatePerHour || 0),
+      workingDays: days,
+      workingHoursPerDay: hoursPerDay,
+      totalHours,
+      wageRate,
+      otRatePercent: otPercent,
+      otRatePerHour: otPerHour,
       transportAllowance: Number(employee.transportAllowance || 0),
       medicalAllowance: Number(employee.medicalAllowance || 0),
     });
-  }, [employee]);
+  }, [employee, daysInCurrentMonth]);
 
   // Dynamic automatic calculations
   const calculatedTotalHours = useMemo(() => {
-    return Number((formData.workingDays * formData.workingHoursPerDay).toFixed(0));
+    const days = Number(formData.workingDays) || 0;
+    return Number((days * formData.workingHoursPerDay).toFixed(0));
   }, [formData.workingDays, formData.workingHoursPerDay]);
 
   const calculatedWageRate = useMemo(() => {
@@ -95,13 +140,62 @@ export default function SalaryDetailsCard({
     }));
   };
 
+  const handleWorkingDayModeChange = (val: string) => {
+    handleChange("workingDayMode", val);
+    if (val === "Monthly") {
+      const cur = Number(formData.workingDays);
+      if (!cur || cur > daysInCurrentMonth) {
+        handleChange("workingDays", daysInCurrentMonth);
+      }
+    }
+  };
+
+  const handleWorkingDaysChange = (valStr: string) => {
+    if (valStr === "") {
+      setFormData((prev) => ({ ...prev, workingDays: "" as any }));
+      return;
+    }
+    const val = parseInt(valStr, 10);
+    if (isNaN(val)) return;
+    if (val > daysInCurrentMonth) {
+      toast.warning(`Working days cannot exceed ${daysInCurrentMonth} days for ${currentMonthName}.`);
+      setFormData((prev) => ({ ...prev, workingDays: daysInCurrentMonth }));
+      return;
+    }
+    if (val < 0) {
+      setFormData((prev) => ({ ...prev, workingDays: 0 }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, workingDays: val }));
+  };
+
+  const handleWorkingDaysBlur = () => {
+    const currentVal = Number(formData.workingDays);
+    if (!currentVal || currentVal < 1) {
+      setFormData((prev) => ({ ...prev, workingDays: daysInCurrentMonth }));
+    } else if (currentVal > daysInCurrentMonth) {
+      setFormData((prev) => ({ ...prev, workingDays: daysInCurrentMonth }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const finalWorkingDays = Math.min(
+      Math.max(1, Number(formData.workingDays) || daysInCurrentMonth),
+      daysInCurrentMonth
+    );
+
+    if (Number(formData.workingDays) > daysInCurrentMonth) {
+      toast.error(`Working days cannot exceed ${daysInCurrentMonth} days for ${currentMonthName}.`);
+      return;
+    }
+
     try {
       setSaving(true);
       const payload: Partial<SalaryDetailsFormData> = {
         ...formData,
-        totalHours: calculatedTotalHours,
+        workingDays: finalWorkingDays,
+        totalHours: Number((finalWorkingDays * formData.workingHoursPerDay).toFixed(0)),
         wageRate: calculatedWageRate,
         otRatePerHour: calculatedOtRatePerHour,
       };
@@ -245,7 +339,7 @@ export default function SalaryDetailsCard({
             <ThemeSelectDropdown
               ariaLabel="Working Day Mode"
               value={formData.workingDayMode || "Monthly"}
-              onChange={(val) => handleChange("workingDayMode", val)}
+              onChange={(val) => handleWorkingDayModeChange(val)}
               options={WORKING_DAY_MODE_OPTIONS}
               className="w-full block"
               buttonClassName="w-full h-10 px-3 text-xs font-semibold rounded-xl justify-between border border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white dark:hover:border-[#E8C16D]"
@@ -255,17 +349,21 @@ export default function SalaryDetailsCard({
 
           {/* Working Days */}
           <div>
-            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-              Working Days
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">
+                Working Days
+              </label>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                Max: {daysInCurrentMonth}
+              </span>
+            </div>
             <input
               type="number"
               min="1"
-              max="366"
+              max={daysInCurrentMonth}
               value={formData.workingDays}
-              onChange={(e) =>
-                handleChange("workingDays", parseInt(e.target.value, 10) || 0)
-              }
+              onChange={(e) => handleWorkingDaysChange(e.target.value)}
+              onBlur={handleWorkingDaysBlur}
               className="w-full h-10 px-3 text-xs text-right rounded-xl bg-white border border-[#E7E0D2] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:focus:border-[#E8C16D] dark:text-white outline-none transition-all shadow-xs font-mono"
             />
           </div>

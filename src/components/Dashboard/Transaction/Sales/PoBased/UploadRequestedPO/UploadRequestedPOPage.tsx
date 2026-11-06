@@ -24,7 +24,7 @@ export default function UploadRequestedPOPage() {
 
   // Form states
   const [poNumber, setPoNumber] = useState<string>("");
-  const [poDate, setPoDate] = useState<string>(format(new Date(), "dd-MM-yyyy"));
+  const [poDate, setPoDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [carouselVersion, setCarouselVersion] = useState<number>(0);
 
   // Database-backed states (NO localStorage used)
