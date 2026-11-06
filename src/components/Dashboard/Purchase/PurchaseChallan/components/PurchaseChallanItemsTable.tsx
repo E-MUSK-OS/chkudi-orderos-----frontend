@@ -324,7 +324,7 @@ export default function PurchaseChallanItemsTable({
                 <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[110px]">
                   Challan No
                 </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[130px]">
+                <th className="py-2.5 px-2 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[145px]">
                   Rec.Date
                 </th>
                 <th className="py-2.5 px-3 font-semibold border-r border-slate-800 dark:border-white/[0.06] min-w-[130px]">
@@ -462,15 +462,17 @@ export default function PurchaseChallanItemsTable({
                     </td>
 
                     {/* Rec.Date */}
-                    <td className="py-1.5 px-2 border-r border-[#E7E0D2]/60 dark:border-white/[0.06] min-w-[130px]">
+                    <td className="py-1.5 px-2 border-r border-[#E7E0D2]/60 dark:border-white/[0.06] min-w-[145px]">
                       <DatePicker
+                        allowInput
                         value={item.receivedDate || ""}
                         onChange={(_, dateStr) =>
                           handleRowChange(idx, "receivedDate", dateStr || "")
                         }
-                        placeholder="DD-MM-YYYY"
+                        placeholder="YYYY-MM-DD"
+                        dateFormat="yyyy-MM-dd"
                         className="w-full"
-                        buttonClassName="h-8.5 px-2 text-xs rounded-xl bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] justify-between shadow-2xs"
+                        buttonClassName="h-8.5 pl-2.5 pr-8 text-xs rounded-xl bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] shadow-2xs"
                       />
                     </td>
 

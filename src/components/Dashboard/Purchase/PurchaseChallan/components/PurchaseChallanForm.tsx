@@ -234,11 +234,14 @@ const PurchaseChallanForm = forwardRef<PurchaseChallanFormHandle, PurchaseChalla
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                   Date
                 </label>
-                <div className="w-36">
+                <div className="w-40 sm:w-44">
                   <DatePicker
+                    allowInput
                     value={challanDate}
                     onChange={(_, dateStr) => setChallanDate(dateStr || "")}
-                    placeholder="25-10-2026"
+                    placeholder="YYYY-MM-DD"
+                    dateFormat="yyyy-MM-dd"
+                    className="w-full"
                     buttonClassName="h-10 px-3 rounded-2xl text-xs sm:text-sm font-semibold border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                   />
                 </div>
@@ -249,11 +252,14 @@ const PurchaseChallanForm = forwardRef<PurchaseChallanFormHandle, PurchaseChalla
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                   Party Challan Date
                 </label>
-                <div className="w-36">
+                <div className="w-40 sm:w-44">
                   <DatePicker
+                    allowInput
                     value={partyChallanDate}
                     onChange={(_, dateStr) => setPartyChallanDate(dateStr || "")}
-                    placeholder="27-10-2026"
+                    placeholder="YYYY-MM-DD"
+                    dateFormat="yyyy-MM-dd"
+                    className="w-full"
                     buttonClassName="h-10 px-3 rounded-2xl text-xs sm:text-sm font-semibold border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                   />
                 </div>

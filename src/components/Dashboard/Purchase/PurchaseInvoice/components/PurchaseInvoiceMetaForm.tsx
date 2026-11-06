@@ -74,9 +74,12 @@ export default function PurchaseInvoiceMetaForm({
             Date
           </label>
           <DatePicker
+            allowInput
             value={formData.invoiceDate}
             onChange={(_, dateStr) => onChange({ invoiceDate: dateStr || "" })}
-            placeholder="DD-MM-YYYY"
+            placeholder="YYYY-MM-DD"
+            dateFormat="yyyy-MM-dd"
+            className="w-full"
             buttonClassName="h-10 text-xs sm:text-sm font-semibold rounded-xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
           />
         </div>
@@ -114,9 +117,12 @@ export default function PurchaseInvoiceMetaForm({
             Challan Date
           </label>
           <DatePicker
+            allowInput
             value={formData.challanDate || ""}
             onChange={(_, dateStr) => onChange({ challanDate: dateStr || "" })}
-            placeholder="DD-MM-YYYY"
+            placeholder="YYYY-MM-DD"
+            dateFormat="yyyy-MM-dd"
+            className="w-full"
             buttonClassName="h-10 text-xs sm:text-sm font-semibold rounded-xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
           />
         </div>

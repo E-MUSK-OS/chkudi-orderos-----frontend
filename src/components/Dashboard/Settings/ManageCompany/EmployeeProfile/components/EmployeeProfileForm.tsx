@@ -9,13 +9,9 @@ import {
   CheckCircle2,
   Save,
   Upload,
-  Calendar as CalendarIcon,
   Trash2,
   Loader2,
   FileText,
-  User,
-  CreditCard,
-  Building,
   Check,
   Printer,
   Eye,
@@ -23,6 +19,7 @@ import {
   X,
   AlertCircle,
   Landmark,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Employee, EmployeeFormData, EmployeeDocumentItem } from "../types/employee.types";
@@ -210,6 +207,7 @@ export default function EmployeeProfileForm({
 
   // Prepopulate from initialData
   useEffect(() => {
+    let isMounted = true;
     if (initialData) {
       let initialDocs: EmployeeDocumentItem[] = [];
       if (Array.isArray(initialData.documents) && initialData.documents.length > 0) {
@@ -226,52 +224,60 @@ export default function EmployeeProfileForm({
         ];
       }
 
-      setFormData({
-        firstName: initialData.firstName || "",
-        middleName: initialData.middleName || "",
-        lastName: initialData.lastName || "",
-        employeeId: initialData.employeeId || "",
-        machineCode: initialData.machineCode || "",
-        loginId: initialData.loginId || "",
-        email: initialData.email || "",
-        contactNo: initialData.contactNo || "",
-        aadhaarNo: initialData.aadhaarNo || "",
-        dob: formatToDisplayDate(initialData.dob) || "25-08-1982",
-        bloodGroup: initialData.bloodGroup || "B+",
-        company: initialData.company || "",
-        branch: initialData.branch || "",
-        department: initialData.department || "Admin",
-        designation: initialData.designation || "Admin",
-        salaryType: initialData.salaryType || "Salaried",
-        joiningDate: formatToDisplayDate(initialData.joiningDate) || "01-09-2026",
-        workerProcess: initialData.workerProcess || "Select Process",
-        basicSalary: initialData.basicSalary !== undefined && initialData.basicSalary !== null ? String(initialData.basicSalary) : "",
-        isActive: initialData.isActive !== undefined ? initialData.isActive : true,
+      Promise.resolve().then(() => {
+        if (isMounted) {
+          setFormData({
+            firstName: initialData.firstName || "",
+            middleName: initialData.middleName || "",
+            lastName: initialData.lastName || "",
+            employeeId: initialData.employeeId || "",
+            machineCode: initialData.machineCode || "",
+            loginId: initialData.loginId || "",
+            email: initialData.email || "",
+            contactNo: initialData.contactNo || "",
+            aadhaarNo: initialData.aadhaarNo || "",
+            dob: formatToDisplayDate(initialData.dob) || "25-08-1982",
+            bloodGroup: initialData.bloodGroup || "B+",
+            company: initialData.company || "",
+            branch: initialData.branch || "",
+            department: initialData.department || "Admin",
+            designation: initialData.designation || "Admin",
+            salaryType: initialData.salaryType || "Salaried",
+            joiningDate: formatToDisplayDate(initialData.joiningDate) || "01-09-2026",
+            workerProcess: initialData.workerProcess || "Select Process",
+            basicSalary: initialData.basicSalary !== undefined && initialData.basicSalary !== null ? String(initialData.basicSalary) : "",
+            isActive: initialData.isActive !== undefined ? initialData.isActive : true,
 
-        addressLine1: initialData.addressLine1 || "",
-        addressLine2: initialData.addressLine2 || "",
-        city: initialData.city || "Surat",
-        state: initialData.state || "Gujarat",
-        country: initialData.country || "India",
-        pincode: initialData.pincode || "",
+            addressLine1: initialData.addressLine1 || "",
+            addressLine2: initialData.addressLine2 || "",
+            city: initialData.city || "Surat",
+            state: initialData.state || "Gujarat",
+            country: initialData.country || "India",
+            pincode: initialData.pincode || "",
 
-        accountNumber: initialData.accountNumber || "",
-        accountHolderName: initialData.accountHolderName || initialData.fullName || "",
-        bankName: initialData.bankName || "",
-        branchName: initialData.branchName || "",
-        accountType: initialData.accountType || "Savings",
-        ifscCode: initialData.ifscCode || "",
+            accountNumber: initialData.accountNumber || "",
+            accountHolderName: initialData.accountHolderName || initialData.fullName || "",
+            bankName: initialData.bankName || "",
+            branchName: initialData.branchName || "",
+            accountType: initialData.accountType || "Savings",
+            ifscCode: initialData.ifscCode || "",
 
-        photoUrl: initialData.photoUrl || "",
-        identityDocUrl: initialData.identityDocUrl || "",
-        bankDocUrl: initialData.bankDocUrl || "",
-        documents: initialDocs,
+            photoUrl: initialData.photoUrl || "",
+            identityDocUrl: initialData.identityDocUrl || "",
+            bankDocUrl: initialData.bankDocUrl || "",
+            documents: initialDocs,
+          });
+        }
       });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [initialData]);
 
   // Auto-resolve company from branch if branch is already known but company is blank (e.g. legacy records)
   useEffect(() => {
+    let isMounted = true;
     if (branchList.length > 0 && !formData.company && formData.branch) {
       const foundBranch = branchList.find(
         (b) =>
@@ -280,15 +286,22 @@ export default function EmployeeProfileForm({
           `${b.companyName} - ${b.branchName}` === formData.branch
       );
       if (foundBranch && foundBranch.companyName) {
-        setFormData((prev) => ({
-          ...prev,
-          company: foundBranch.companyName,
-        }));
+        Promise.resolve().then(() => {
+          if (isMounted) {
+            setFormData((prev) => ({
+              ...prev,
+              company: foundBranch.companyName,
+            }));
+          }
+        });
       }
     }
+    return () => {
+      isMounted = false;
+    };
   }, [branchList, formData.branch, formData.company]);
 
-  const handleChange = (field: keyof EmployeeFormData, value: any) => {
+  const handleChange = (field: keyof EmployeeFormData, value: unknown) => {
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -492,10 +505,6 @@ export default function EmployeeProfileForm({
       newErrors.firstName = "First Name is required.";
       if (!firstErrorTab) firstErrorTab = "general";
     }
-    if (!formData.middleName?.trim()) {
-      newErrors.middleName = "Middle Name is required.";
-      if (!firstErrorTab) firstErrorTab = "general";
-    }
     if (!formData.lastName?.trim()) {
       newErrors.lastName = "Last Name is required.";
       if (!firstErrorTab) firstErrorTab = "general";
@@ -581,7 +590,6 @@ export default function EmployeeProfileForm({
   const completionPercentage = useMemo(() => {
     const fields = [
       formData.firstName,
-      formData.middleName,
       formData.lastName,
       formData.contactNo,
       formData.employeeId,
@@ -615,8 +623,9 @@ export default function EmployeeProfileForm({
       const res = await employeeService.uploadMedia(file, "employees", prefix);
       handleChange(targetField, res.url);
       toast.success("File uploaded to storage successfully.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to upload file to storage.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to upload file to storage.";
+      toast.error(msg);
     } finally {
       setUploadingField(null);
     }
@@ -660,8 +669,9 @@ export default function EmployeeProfileForm({
       });
 
       toast.success(`"${file.name}" added successfully.`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to upload document.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to upload document.";
+      toast.error(msg);
     } finally {
       setUploadingDoc(false);
       if (identityDocInputRef.current) {
@@ -740,8 +750,9 @@ export default function EmployeeProfileForm({
       setTimeout(() => {
         router.push("/dashboard/setting/manage-company/employee-profile");
       }, 700);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save employee profile.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save employee profile.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -753,7 +764,6 @@ export default function EmployeeProfileForm({
       label: "General",
       completed: Boolean(
         formData.firstName &&
-        formData.middleName &&
         formData.lastName &&
         formData.contactNo &&
         formData.aadhaarNo &&
@@ -949,7 +959,7 @@ export default function EmployeeProfileForm({
 
                   <div>
                     <label className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight mb-1.5 block">
-                      Middle Name. <span className="text-rose-500 font-bold ml-0.5">*</span>
+                      Middle Name.
                     </label>
                     <input
                       type="text"
@@ -1056,10 +1066,11 @@ export default function EmployeeProfileForm({
                       Date Of Birth <span className="text-rose-500 font-bold ml-0.5">*</span>
                     </label>
                     <DatePicker
+                      allowInput
                       value={formData.dob}
                       onChange={(_, str) => handleChange("dob", str || "")}
-                      placeholder="DD-MM-YYYY"
-                      dateFormat="dd-MM-yyyy"
+                      placeholder="YYYY-MM-DD (e.g. 2004-07-01)"
+                      dateFormat="yyyy-MM-dd"
                       className="w-full"
                       buttonClassName={cn(
                         datePickerButtonClassName,
@@ -1214,10 +1225,11 @@ export default function EmployeeProfileForm({
                       Joining Date.
                     </label>
                     <DatePicker
+                      allowInput
                       value={formData.joiningDate}
                       onChange={(_, str) => handleChange("joiningDate", str || "")}
-                      placeholder="DD-MM-YYYY"
-                      dateFormat="dd-MM-yyyy"
+                      placeholder="YYYY-MM-DD (e.g. 2004-07-01)"
+                      dateFormat="yyyy-MM-dd"
                       className="w-full"
                       buttonClassName={datePickerButtonClassName}
                     />
@@ -1848,7 +1860,7 @@ export default function EmployeeProfileForm({
             fullName: displayedFullName,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-          } as any)
+          } as unknown as Employee)
         }
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}

@@ -160,7 +160,16 @@ export default function CompanyTableView({
 
                     {/* Status Toggle */}
                     <td className="py-3 px-4 text-center">
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label
+                        className={`relative inline-flex items-center select-none ${
+                          togglingId === company.id ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                        }`}
+                        title={
+                          isActive
+                            ? "Status: Active (Click to set as Draft)"
+                            : "Status: Draft (Click to set as Active)"
+                        }
+                      >
                         <input
                           type="checkbox"
                           checked={isActive}
@@ -168,7 +177,7 @@ export default function CompanyTableView({
                           onChange={() => onToggleStatus(company)}
                           className="sr-only peer"
                         />
-                        <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 transition-colors"></div>
                       </label>
                     </td>
 

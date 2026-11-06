@@ -735,9 +735,12 @@ export default function WebstoreForm({
                 <label className={labelClass}>Date of Registration</label>
                 <div className="flex-1 w-full">
                   <DatePicker
+                    allowInput
                     value={registrationDate}
                     onChange={(_, dateStr) => setRegistrationDate(dateStr || "")}
-                    placeholder="Select Date"
+                    placeholder="YYYY-MM-DD"
+                    dateFormat="yyyy-MM-dd"
+                    className="w-full"
                     buttonClassName="w-full h-9 px-3 rounded-xl text-xs justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                   />
                 </div>
@@ -782,9 +785,12 @@ export default function WebstoreForm({
                 <label className={labelClass}>Last Payment Date</label>
                 <div className="flex-1 w-full">
                   <DatePicker
+                    allowInput
                     value={lastPaymentDate}
                     onChange={(_, dateStr) => setLastPaymentDate(dateStr || "")}
-                    placeholder="Select Date"
+                    placeholder="YYYY-MM-DD"
+                    dateFormat="yyyy-MM-dd"
+                    className="w-full"
                     buttonClassName="w-full h-9 px-3 rounded-xl text-xs justify-between border-[#E7E0D2] dark:border-white/[0.12] dark:bg-[#080B11] dark:text-slate-100"
                   />
                 </div>

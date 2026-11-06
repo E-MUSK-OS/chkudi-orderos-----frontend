@@ -97,9 +97,11 @@ export const companyService = {
     return await res.json();
   },
 
-  async toggleStatus(id: string): Promise<{ data: Company; message: string }> {
+  async toggleStatus(id: string, targetStatus?: "ACTIVE" | "DRAFT"): Promise<{ data: Company; message: string }> {
     const res = await fetchWithAuth(`${API_BASE_URL}/companies/${id}/status`, {
       method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: targetStatus ? JSON.stringify({ status: targetStatus }) : undefined,
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

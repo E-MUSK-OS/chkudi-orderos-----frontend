@@ -126,10 +126,31 @@ export default function CompanyCard({
         </div>
       </div>
 
-      {/* Bottom Action Bar: Delete on left, View + Edit on right */}
+      {/* Bottom Action Bar: Active/Draft Switch & Delete on left, View + Edit on right */}
       <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
-        {/* Left: Delete */}
-        <div className="flex items-center gap-2">
+        {/* Left: Active/Draft Switch & Delete */}
+        <div className="flex items-center gap-3">
+          {/* Active / Draft Status Switch matching Image 2 */}
+          <label
+            className={`relative inline-flex items-center select-none ${
+              togglingStatus ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+            }`}
+            title={
+              isActive
+                ? "Status: Active (Click to set as Draft)"
+                : "Status: Draft (Click to set as Active)"
+            }
+          >
+            <input
+              type="checkbox"
+              checked={isActive}
+              disabled={togglingStatus}
+              onChange={() => onToggleStatus(company)}
+              className="sr-only peer"
+            />
+            <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 transition-colors"></div>
+          </label>
+
           {onDelete && (
             <button
               type="button"
