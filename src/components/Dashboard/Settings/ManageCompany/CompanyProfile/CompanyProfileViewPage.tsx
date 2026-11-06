@@ -428,9 +428,6 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
   // Dynamic completion percentage calculation
   const completionPercentage = useMemo(() => {
     if (!company) return 0;
-    if (typeof company.completionPercentage === "number" && company.completionPercentage > 0) {
-      return company.completionPercentage;
-    }
     const fields = [
       company.legalName,
       company.companyName,
@@ -448,6 +445,10 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
       company.accountHolderName,
       company.accountNumber,
       company.ifscCode,
+      company.branchName,
+      company.upiId,
+      company.logoUrl,
+      company.signatureUrl,
     ];
     const filled = fields.filter((f) => f && String(f).trim().length > 0).length;
     return Math.min(100, Math.round((filled / fields.length) * 100));

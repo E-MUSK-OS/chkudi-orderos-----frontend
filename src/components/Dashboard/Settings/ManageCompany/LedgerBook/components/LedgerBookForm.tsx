@@ -136,6 +136,7 @@ export default function LedgerBookForm({
     "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border border-[#E7E0D2] hover:border-[#E8C16D] text-[#0A0E1A] dark:bg-[#080B11] dark:border-white/[0.08] dark:text-white transition-all shadow-xs";
 
   const isAliasManuallyEditedRef = useRef<boolean>(false);
+  const isPanManuallyEditedRef = useRef<boolean>(false);
 
   const [formData, setFormData] = useState<CreateLedgerPayload>({
     // General
@@ -203,6 +204,10 @@ export default function LedgerBookForm({
       isAliasManuallyEditedRef.current = Boolean(
         initialLedger.alias && initialLedger.alias !== initialLedger.partyName
       );
+      isPanManuallyEditedRef.current = Boolean(
+        initialLedger.pan &&
+        (!initialLedger.gstin || initialLedger.pan !== initialLedger.gstin.substring(2, 12))
+      );
       setFormData({
         partyName: initialLedger.partyName || "",
         alias: initialLedger.alias || initialLedger.accountCode || "",
@@ -269,6 +274,14 @@ export default function LedgerBookForm({
       });
     }
 
+    if (field === "alias") {
+      isAliasManuallyEditedRef.current = true;
+    }
+
+    if (field === "pan") {
+      isPanManuallyEditedRef.current = true;
+    }
+
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
 
@@ -277,6 +290,34 @@ export default function LedgerBookForm({
         if (!isAliasManuallyEditedRef.current || !prev.alias || prev.alias === prev.partyName) {
           next.alias = value;
           next.accountCode = value;
+        }
+      }
+
+      // Auto-derive PAN number from GST number (characters 3-12)
+      if (field === "gstin" && typeof value === "string") {
+        const cleanGst = value.trim().toUpperCase();
+        if (cleanGst.length >= 12) {
+          const panPart = cleanGst.substring(2, 12);
+          if (
+            !isPanManuallyEditedRef.current ||
+            !prev.pan ||
+            (prev.gstin && prev.pan === prev.gstin.substring(2, 12))
+          ) {
+            next.pan = panPart;
+            isPanManuallyEditedRef.current = false;
+            if (errors.pan) {
+              setErrors((errs) => {
+                const updated = { ...errs };
+                delete updated.pan;
+                return updated;
+              });
+            }
+          }
+        } else if (cleanGst.length === 0) {
+          if (!isPanManuallyEditedRef.current || (prev.gstin && prev.pan === prev.gstin.substring(2, 12))) {
+            next.pan = "";
+            isPanManuallyEditedRef.current = false;
+          }
         }
       }
 
@@ -341,6 +382,7 @@ export default function LedgerBookForm({
       formData.bankName,
       formData.accountNumber,
       formData.ifsc,
+      formData.logoUrl,
     ];
     const filled = requiredFields.filter((f) => f && String(f).trim().length > 0).length;
     return Math.min(100, Math.round((filled / requiredFields.length) * 100));
