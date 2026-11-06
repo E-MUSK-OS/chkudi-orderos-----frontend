@@ -584,6 +584,9 @@ export default function CompanyProfileForm({
       formData.accountNumber,
       formData.ifscCode,
       formData.branchName,
+      formData.upiId,
+      formData.logoUrl,
+      formData.signatureUrl,
     ];
     const filled = requiredFields.filter((f) => f && String(f).trim().length > 0).length;
     return Math.min(100, Math.round((filled / requiredFields.length) * 100));
@@ -845,6 +848,7 @@ export default function CompanyProfileForm({
 
       // Clean payload: omit frontend-only UI fields like registrationDate
       const { registrationDate: _regDate, ...payload } = formData;
+      payload.completionPercentage = completionPercentage;
 
       let savedCompany: Company;
       if (isCreate) {

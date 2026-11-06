@@ -20,7 +20,6 @@ import {
   Upload,
   RotateCcw,
 } from "lucide-react";
-import Button from "@/components/ui/Button";
 import { toast } from "sonner";
 import {
   Webstore,
@@ -59,7 +58,7 @@ const noYesOptions: ThemeSelectOption[] = [
 interface WebstoreFormProps {
   initialData?: Webstore | null;
   nextCode?: number;
-  onSave: (payload: any) => Promise<void>;
+  onSave: (payload: Partial<Webstore> & Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
 }
@@ -225,6 +224,7 @@ export default function WebstoreForm({
   // Keep state synchronized with initialData (e.g. when modify fetches fresh data or user switches stores)
   useEffect(() => {
     if (initialData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCode(initialData.code ?? nextCode);
       setMarketplaceName(initialData.marketplaceName || "Amazon");
       setMarketplaceLogo(initialData.marketplaceLogo || "");
@@ -284,7 +284,7 @@ export default function WebstoreForm({
       setCode(nextCode);
       setMarketplaceName("Amazon");
       setMarketplaceLogo("");
-      setStoreName("Chakudee Fashion - DROPSHIP");
+      setStoreName(nextCode > 1 ? `Chakudee Fashion - DROPSHIP ${nextCode}` : "Chakudee Fashion - DROPSHIP");
       setParentOrChild("Parent");
       setRegisteredEmail("seller@domain.com");
       setContactUsEmail("support@domain.com");
@@ -363,7 +363,7 @@ export default function WebstoreForm({
         setMarketplaceLogo(uploadedUrl);
         toast.success("Logo uploaded successfully.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Server upload failed, using local base64 preview:", err);
       toast.info("Custom logo loaded.");
     } finally {
@@ -399,12 +399,14 @@ export default function WebstoreForm({
       });
       setSpapiTestResult({ success: true, message: res.message });
       toast.success(res.message);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to verify SP-API connection.";
       setSpapiTestResult({
         success: false,
-        message: err.message || "Failed to verify SP-API connection.",
+        message,
       });
-      toast.error(err.message || "SP-API test connection failed.");
+      toast.error(message);
     } finally {
       setIsTestingSpapi(false);
     }
@@ -465,7 +467,7 @@ export default function WebstoreForm({
       contactUsEmail: contactUsEmail.trim() || undefined,
       registeredPhone: registeredPhone.trim() || undefined,
       contactUsPhone: contactUsPhone.trim() || undefined,
-      registrationDate: registrationDate ? new Date(registrationDate) : undefined,
+      registrationDate: registrationDate ? new Date(registrationDate).toISOString() : undefined,
 
       billTo: billTo.trim() || undefined,
       address1: address1.trim() || undefined,
@@ -477,7 +479,7 @@ export default function WebstoreForm({
 
       bankAccount: bankAccount.trim() || undefined,
       bankIfscCode: bankIfscCode.trim() || undefined,
-      lastPaymentDate: lastPaymentDate ? new Date(lastPaymentDate) : undefined,
+      lastPaymentDate: lastPaymentDate ? new Date(lastPaymentDate).toISOString() : undefined,
 
       isActive,
       returnActive,

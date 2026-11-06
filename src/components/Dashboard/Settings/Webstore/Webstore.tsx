@@ -56,9 +56,10 @@ export default function Webstore() {
         const res = await webstoreService.getWebstores(activeFilters);
         setStores(res.data || []);
         setTotal(res.meta?.total ?? res.data?.length ?? 0);
-      } catch (err: any) {
-        console.error(err);
-        toast.error(err.message || "Failed to load webstores.");
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load webstores.";
+        toast.error(message);
       } finally {
         setLoading(false);
       }
@@ -70,19 +71,20 @@ export default function Webstore() {
     try {
       const code = await webstoreService.getNextCode();
       setNextCode(code);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Silently handled
     }
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStores();
     fetchNextCode();
   }, [fetchStores, fetchNextCode]);
 
-  const handleFilterChange = (
-    key: keyof WebstoreFilterState,
-    value: any
+  const handleFilterChange = <K extends keyof WebstoreFilterState>(
+    key: K,
+    value: WebstoreFilterState[K]
   ) => {
     const nextFilters = { ...filters, [key]: value };
     setFilters(nextFilters);
@@ -128,8 +130,8 @@ export default function Webstore() {
       if (res?.data) {
         setSelectedStore(res.data);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Silently handled
     }
   };
 
@@ -146,36 +148,62 @@ export default function Webstore() {
         prev.map((s) => (s.id === store.id ? { ...s, isActive: !s.isActive } : s))
       );
       const res = await webstoreService.toggleStatus(store.id);
+      if (!res.success) {
+        toast.error(res.error || "Failed to update store status.");
+        fetchStores();
+        return;
+      }
       toast.success(
-        `${store.storeName} is now ${res.data.isActive ? "Active" : "Inactive"}.`
+        `${store.storeName} is now ${res.data?.isActive ? "Active" : "Inactive"}.`
       );
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to update store status.");
-      // Rollback
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update store status.";
+      toast.error(message);
       fetchStores();
     } finally {
       setTogglingId(null);
     }
   };
 
-  const handleSave = async (payload: any) => {
+  const handleSave = async (payload: Partial<IWebstore> & Record<string, unknown>) => {
     try {
       setIsSaving(true);
+      // Pre-check duplicate in currently loaded stores for instant feedback
+      const isDuplicate = stores.some(
+        (s) =>
+          s.storeName.trim().toLowerCase() ===
+            String(payload.storeName || "").trim().toLowerCase() &&
+          s.id !== selectedStore?.id
+      );
+      if (isDuplicate) {
+        toast.error(`Webstore with name "${payload.storeName}" already exists.`);
+        return;
+      }
+
       if (viewMode === "edit" && selectedStore) {
-        await webstoreService.updateWebstore(selectedStore.id, payload);
+        const res = await webstoreService.updateWebstore(selectedStore.id, payload);
+        if (!res.success) {
+          toast.error(res.error || "Failed to update webstore.");
+          return;
+        }
         toast.success(`Webstore "${payload.storeName}" updated successfully.`);
       } else {
-        await webstoreService.createWebstore(payload);
+        const res = await webstoreService.createWebstore(payload);
+        if (!res.success) {
+          toast.error(res.error || "Failed to create webstore.");
+          return;
+        }
         toast.success(`Webstore "${payload.storeName}" created successfully.`);
       }
       setViewMode("list");
       setSelectedStore(null);
       fetchStores();
       fetchNextCode();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to save webstore.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to save webstore.";
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
@@ -185,13 +213,18 @@ export default function Webstore() {
     if (!deletingStore) return;
     try {
       setIsDeleting(true);
-      await webstoreService.deleteWebstore(deletingStore.id);
+      const res = await webstoreService.deleteWebstore(deletingStore.id);
+      if (!res.success) {
+        toast.error(res.error || "Failed to delete webstore.");
+        return;
+      }
       toast.success(`Webstore "${deletingStore.storeName}" deleted successfully.`);
       setDeletingStore(null);
       fetchStores();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to delete webstore.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to delete webstore.";
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
@@ -209,7 +242,7 @@ export default function Webstore() {
     try {
       exportWebstoresToCsv(stores);
       toast.success(`Exported ${stores.length} webstore listings successfully.`);
-    } catch (err) {
+    } catch {
       toast.error("Failed to export listings.");
     }
   };

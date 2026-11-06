@@ -2,18 +2,32 @@ import { API_BASE_URL } from "@/lib/config";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { Webstore, WebstoreFilterState } from "../types/webstore.types";
 
-function extractErrorMessage(err: any, fallback: string): string {
+function extractErrorMessage(err: unknown, fallback: string): string {
   if (!err) return fallback;
-  let msg = err.message || fallback;
-  if (typeof msg === "string" && msg.trim().startsWith("[") && msg.trim().endsWith("]")) {
-    try {
-      const parsed = JSON.parse(msg);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map((p: any) => p.message || p.code || "Validation error").join(", ");
+  if (typeof err === "object" && err !== null) {
+    const errorRecord = err as Record<string, unknown>;
+    const msg = typeof errorRecord.message === "string" ? errorRecord.message : fallback;
+    if (typeof msg === "string" && msg.trim().startsWith("[") && msg.trim().endsWith("]")) {
+      try {
+        const parsed = JSON.parse(msg);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+            .map((p: unknown) => {
+              if (p && typeof p === "object") {
+                const item = p as Record<string, unknown>;
+                return String(item.message || item.code || "Validation error");
+              }
+              return "Validation error";
+            })
+            .join(", ");
+        }
+      } catch {
+        // Ignore json parse error
       }
-    } catch (_) {}
+    }
+    return msg;
   }
-  return msg;
+  return fallback;
 }
 
 export const webstoreService = {
@@ -62,56 +76,83 @@ export const webstoreService = {
     return await res.json();
   },
 
-  async createWebstore(payload: any): Promise<{ data: Webstore }> {
+  async createWebstore(
+    payload: Partial<Webstore> | Record<string, unknown>
+  ): Promise<{ success: boolean; data?: Webstore; error?: string }> {
     const res = await fetchWithAuth(`${API_BASE_URL}/webstores`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(extractErrorMessage(err, "Failed to create webstore."));
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || result.success === false) {
+      return {
+        success: false,
+        error: extractErrorMessage(result, "Failed to create webstore."),
+      };
     }
-    return await res.json();
+    return {
+      success: true,
+      data: result.data,
+    };
   },
 
-  async updateWebstore(id: string, payload: any): Promise<{ data: Webstore }> {
+  async updateWebstore(
+    id: string,
+    payload: Partial<Webstore> | Record<string, unknown>
+  ): Promise<{ success: boolean; data?: Webstore; error?: string }> {
     const res = await fetchWithAuth(`${API_BASE_URL}/webstores/${id}`, {
       method: "PUT",
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(extractErrorMessage(err, "Failed to update webstore."));
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || result.success === false) {
+      return {
+        success: false,
+        error: extractErrorMessage(result, "Failed to update webstore."),
+      };
     }
-    return await res.json();
+    return {
+      success: true,
+      data: result.data,
+    };
   },
 
-  async toggleStatus(id: string): Promise<{ data: Webstore }> {
+  async toggleStatus(id: string): Promise<{ success: boolean; data?: Webstore; error?: string }> {
     const res = await fetchWithAuth(`${API_BASE_URL}/webstores/${id}/status`, {
       method: "PATCH",
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(extractErrorMessage(err, "Failed to update status."));
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || result.success === false) {
+      return {
+        success: false,
+        error: extractErrorMessage(result, "Failed to update status."),
+      };
     }
-    return await res.json();
+    return {
+      success: true,
+      data: result.data,
+    };
   },
 
-  async deleteWebstore(id: string): Promise<void> {
+  async deleteWebstore(id: string): Promise<{ success: boolean; error?: string }> {
     const res = await fetchWithAuth(`${API_BASE_URL}/webstores/${id}`, {
       method: "DELETE",
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(extractErrorMessage(err, "Failed to delete webstore."));
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || result.success === false) {
+      return {
+        success: false,
+        error: extractErrorMessage(result, "Failed to delete webstore."),
+      };
     }
+    return { success: true };
   },
 
   async testSpapiConnection(payload: {
     spClientId: string;
     spClientSecret: string;
     refreshToken: string;
-  }): Promise<{ success: boolean; message: string; data?: any }> {
+  }): Promise<{ success: boolean; message: string; data?: unknown }> {
     const res = await fetchWithAuth(`${API_BASE_URL}/webstores/test-spapi`, {
       method: "POST",
       body: JSON.stringify(payload),
@@ -123,4 +164,3 @@ export const webstoreService = {
     return result;
   },
 };
-

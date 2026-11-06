@@ -371,8 +371,8 @@ export default function Sidebar({
                   : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
               }`}
               style={{
-                paddingLeft: `${sidebarCollapsed ? 16 : 14 + level * 16}px`,
-                paddingRight: "14px",
+                paddingLeft: `${sidebarCollapsed ? 16 : 10 + level * 14}px`,
+                paddingRight: "10px",
               }}
             >
               <div className="flex items-center gap-2.5">
@@ -458,8 +458,8 @@ export default function Sidebar({
       : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
   }`}
           style={{
-            paddingLeft: `${sidebarCollapsed ? 16 : 14 + level * 16}px`,
-            paddingRight: "14px",
+            paddingLeft: `${sidebarCollapsed ? 16 : 10 + level * 14}px`,
+                paddingRight: "10px",
           }}
         >
           <div className="flex items-center gap-2.5">
@@ -497,11 +497,11 @@ export default function Sidebar({
       <aside
         className={`fixed inset-y-0 left-0 z-40 h-screen border-r border-white/[0.08] bg-[#080B11] text-white transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
   ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-  ${sidebarCollapsed ? "w-72 lg:w-[88px]" : "w-72"}`}
+  ${sidebarCollapsed ? "w-[264px] lg:w-[88px]" : "w-[264px]"}`}
       >
         <div
           className={`relative flex h-full flex-col overflow-hidden py-6 transition-all duration-300
-  ${sidebarCollapsed ? "px-5 lg:px-4" : "px-5"}`}
+  ${sidebarCollapsed ? "px-5 lg:px-4" : "pl-3.5 pr-4"}`}
         >
           {/* Logo */}
           <div
@@ -534,13 +534,7 @@ export default function Sidebar({
           </div>
 
           <nav
-            className="custom-scroll mt-6 flex-1 space-y-1 overflow-y-auto"
-            style={{
-              marginRight: "-19px",
-              paddingRight: "10px",
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(245, 196, 81, 0.35) transparent",
-            }}
+            className="custom-scroll mt-6 flex-1 space-y-1 overflow-y-auto pr-1"
           >
             {visibleNavItems.length > 0 ? (
               renderMenu(visibleNavItems)
@@ -552,13 +546,24 @@ export default function Sidebar({
           </nav>
 
           <style jsx>{`
+            @supports (-moz-appearance: none) {
+              .custom-scroll {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(245, 196, 81, 0.35) transparent;
+              }
+            }
             .custom-scroll::-webkit-scrollbar {
               width: 4px;
             }
-            .custom-scroll::-webkit-scrollbar-button {
-              display: none;
-              width: 0;
-              height: 0;
+            .custom-scroll::-webkit-scrollbar-button,
+            .custom-scroll::-webkit-scrollbar-button:single-button,
+            .custom-scroll::-webkit-scrollbar-button:vertical:decrement,
+            .custom-scroll::-webkit-scrollbar-button:vertical:increment,
+            .custom-scroll::-webkit-scrollbar-button:start:decrement,
+            .custom-scroll::-webkit-scrollbar-button:end:increment {
+              display: none !important;
+              width: 0 !important;
+              height: 0 !important;
             }
             .custom-scroll::-webkit-scrollbar-track {
               background: transparent;
