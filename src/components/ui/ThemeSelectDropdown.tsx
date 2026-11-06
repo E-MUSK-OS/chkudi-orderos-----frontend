@@ -22,6 +22,7 @@ export interface ThemeSelectDropdownProps {
   ariaLabel?: string;
   disabled?: boolean;
   dropDirection?: "auto" | "up" | "down";
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function ThemeSelectDropdown({
@@ -37,6 +38,7 @@ export default function ThemeSelectDropdown({
   ariaLabel,
   disabled = false,
   dropDirection = "auto",
+  onOpenChange,
 }: ThemeSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
@@ -102,6 +104,7 @@ export default function ThemeSelectDropdown({
     const handleOutsideClick = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        onOpenChange?.(false);
       }
     };
     if (isOpen) {
@@ -117,6 +120,7 @@ export default function ThemeSelectDropdown({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
         setIsOpen(false);
+        onOpenChange?.(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -132,7 +136,11 @@ export default function ThemeSelectDropdown({
     if (!isOpen) {
       determineDirection();
     }
-    setIsOpen((prev) => !prev);
+    setIsOpen((prev) => {
+      const next = !prev;
+      onOpenChange?.(next);
+      return next;
+    });
   };
 
   return (
@@ -209,6 +217,7 @@ export default function ThemeSelectDropdown({
                   onClick={() => {
                     onChange(opt.value);
                     setIsOpen(false);
+                    onOpenChange?.(false);
                   }}
                   className={`
                     flex

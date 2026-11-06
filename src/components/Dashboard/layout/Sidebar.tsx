@@ -140,6 +140,19 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
       }
     }
 
+    if (
+      item.label === "Upload Excel" ||
+      itemCanon === "/settings/upload-excel"
+    ) {
+      if (
+        currCanon === "/settings/upload-excel" ||
+        currCanon.startsWith("/settings/upload-excel/") ||
+        currCanon.startsWith("/settings/upload-excel")
+      ) {
+        return true;
+      }
+    }
+
     // Purchase & Sales aliases
     if (
       (itemNorm === "/purchase/finish-goods/invoice" || itemNorm === "/purchase-invoice") &&

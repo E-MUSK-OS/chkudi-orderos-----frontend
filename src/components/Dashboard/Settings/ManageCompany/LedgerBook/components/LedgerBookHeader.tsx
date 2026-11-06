@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { Download, Upload, Plus, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { Download, Upload, Plus, BookOpen, FileSpreadsheet } from "lucide-react";
 
 interface LedgerBookHeaderProps {
   onCreateClick: () => void;
-  onDownloadTemplate: () => void;
-  onUploadClick: () => void;
+  onDownloadTemplate?: () => void;
+  onUploadClick?: () => void;
 }
 
 export default function LedgerBookHeader({
@@ -33,27 +34,15 @@ export default function LedgerBookHeader({
 
         {/* Top Right Action Buttons matching Company Profile theme */}
         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
-          {/* Blank Template Button */}
-          <button
-            type="button"
-            onClick={onDownloadTemplate}
+          {/* Upload Excel Button */}
+          <Link
+            href="/dashboard/settings/upload-excel?tab=ledger"
             className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs"
-            title="Download Blank Ledger Template"
+            title="Upload Excel"
           >
-            <Download size={16} />
-            <span>Blank Template</span>
-          </button>
-
-          {/* Upload Ledger Book Button */}
-          <button
-            type="button"
-            onClick={onUploadClick}
-            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#E8C16D] transition-all hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D] cursor-pointer shadow-xs"
-            title="Upload Excel/CSV Ledger Book"
-          >
-            <Upload size={16} />
-            <span>Upload Ledger Book</span>
-          </button>
+            <FileSpreadsheet size={16} />
+            <span>Upload Excel</span>
+          </Link>
 
           {/* Create Ledger Button */}
           <button
