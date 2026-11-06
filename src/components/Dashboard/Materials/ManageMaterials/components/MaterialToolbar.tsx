@@ -9,6 +9,7 @@ import {
   X,
   Layers,
   Boxes,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -243,17 +244,19 @@ export default function MaterialToolbar({
           {/* Upload Button Pill */}
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              window.location.href = "/dashboard/settings/upload-excel?tab=material";
+            }}
             disabled={isImporting}
             className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] text-slate-800 dark:text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
-            title="Import Excel file"
+            title="Upload Excel"
           >
-            <Upload className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
-            <span>{isImporting ? "Importing..." : "Import"}</span>
+            <FileSpreadsheet className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
+            <span>Upload Excel</span>
           </button>
 
           {/* Export / Demo Button Pill */}
-          {hasData ? (
+          {false && (
             <button
               type="button"
               onClick={handleDownloadData}
@@ -271,7 +274,8 @@ export default function MaterialToolbar({
                   : "Export"}
               </span>
             </button>
-          ) : (
+          )}
+          {false && (
             <button
               type="button"
               onClick={handleDownloadDemoSheet}

@@ -1,54 +1,92 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import { CheckCircle2, AlertTriangle, AlertCircle, Barcode } from "lucide-react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { CheckCircle2, AlertTriangle, AlertCircle, Barcode, Camera } from "lucide-react";
 import { ScanFeedbackMessage } from "../hooks/useAwbScanner";
+import MobileCameraScanner from "@/components/Dashboard/vms/Scans/TrackingIdScan/components/MobileCameraScanner";
 
 interface Props {
   value: string;
   onChange: (val: string) => void;
   onScan: () => void;
+  onCameraScan?: (code: string) => void;
   isScanning?: boolean;
   message?: ScanFeedbackMessage | null;
 }
+
+// Helper to detect mobile devices where focusing inputs forces the on-screen keyboard to pop up
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false;
+  const isTouch = "maxTouchPoints" in navigator && navigator.maxTouchPoints > 0;
+  const isSmallScreen = window.innerWidth < 768;
+  const isMobileUA =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  return (isTouch && isSmallScreen) || isMobileUA || isSmallScreen;
+};
 
 export default function AwbScanner({
   value,
   onChange,
   onScan,
+  onCameraScan,
   isScanning,
   message,
 }: Props) {
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const focusAndSelectInput = useCallback(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    input.focus();
-    input.setSelectionRange(0, input.value.length);
-  }, []);
+  const focusAndSelectInput = useCallback(
+    (forceDesktopOnly = true) => {
+      const input = inputRef.current;
+      if (!input) return;
 
-  // Initial focus and select on mount
+      // On mobile devices or while camera scanner is open, never programmatically focus the input
+      // to prevent the virtual soft-keyboard from popping up.
+      if (forceDesktopOnly && (isMobileDevice() || isCameraOpen)) {
+        if (document.activeElement === input) {
+          input.blur();
+        }
+        return;
+      }
+
+      input.focus();
+      input.setSelectionRange(0, input.value.length);
+    },
+    [isCameraOpen]
+  );
+
+  // Initial focus and select on mount (desktop only)
   useEffect(() => {
-    focusAndSelectInput();
+    if (!isMobileDevice()) {
+      focusAndSelectInput();
+    }
   }, [focusAndSelectInput]);
 
-  // When message updates (scan completed / error / warning), keep cursor and select text
+  // When message updates (scan completed / error / warning), keep cursor and select text on desktop
   useEffect(() => {
     if (message) {
-      requestAnimationFrame(() => {
-        focusAndSelectInput();
-      });
-      const t = setTimeout(() => {
-        focusAndSelectInput();
-      }, 30);
-      return () => clearTimeout(t);
+      if (isMobileDevice() || isCameraOpen) {
+        if (inputRef.current && document.activeElement === inputRef.current) {
+          inputRef.current.blur();
+        }
+      } else {
+        requestAnimationFrame(() => {
+          focusAndSelectInput();
+        });
+        const t = setTimeout(() => {
+          focusAndSelectInput();
+        }, 30);
+        return () => clearTimeout(t);
+      }
     }
-  }, [message, focusAndSelectInput]);
+  }, [message, focusAndSelectInput, isCameraOpen]);
 
-  // Global keydown fallback: if user clicks outside accidentally, refocus input on typing
+  // Global keydown fallback for desktop: if user clicks outside accidentally, refocus input on typing
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (isMobileDevice() || isCameraOpen) return;
       const target = e.target as HTMLElement | null;
       const tagName = target?.tagName?.toLowerCase();
       if (tagName === "input" || tagName === "textarea" || tagName === "select") {
@@ -63,13 +101,28 @@ export default function AwbScanner({
     return () => {
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, []);
+  }, [isCameraOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       if (!value.trim()) return;
       onScan();
+      if (!isMobileDevice() && !isCameraOpen) {
+        requestAnimationFrame(() => {
+          focusAndSelectInput();
+        });
+        setTimeout(() => {
+          focusAndSelectInput();
+        }, 30);
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!value.trim()) return;
+    onScan();
+    if (!isMobileDevice() && !isCameraOpen) {
       requestAnimationFrame(() => {
         focusAndSelectInput();
       });
@@ -79,16 +132,24 @@ export default function AwbScanner({
     }
   };
 
-  const handleSubmit = () => {
-    if (!value.trim()) return;
-    onScan();
-    requestAnimationFrame(() => {
-      focusAndSelectInput();
-    });
-    setTimeout(() => {
-      focusAndSelectInput();
-    });
-  };
+  const handleCameraClose = useCallback(() => {
+    setIsCameraOpen(false);
+    if (!isMobileDevice()) {
+      setTimeout(() => focusAndSelectInput(), 50);
+    }
+  }, [focusAndSelectInput]);
+
+  const handleCameraScan = useCallback(
+    (code: string) => {
+      if (onCameraScan) {
+        onCameraScan(code);
+      } else {
+        onChange(code);
+        onScan();
+      }
+    },
+    [onCameraScan, onChange, onScan]
+  );
 
   return (
     <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-sm">
@@ -101,9 +162,22 @@ export default function AwbScanner({
               </div>
               <span>Scan Amazon AWB Tracking Barcode</span>
             </label>
-            <span className="rounded-md bg-[#0A0E1A] dark:bg-[#131926] px-2 py-0.5 text-[11px] font-bold text-[#E8C16D] dark:text-[#F5C451]">
-              AWB Only
-            </span>
+
+            <div className="flex items-center gap-2">
+              {/* Mobile-Only: Camera Scanner Button (Hidden on tablet, laptop & desktop) */}
+              <button
+                type="button"
+                onClick={() => setIsCameraOpen(true)}
+                className="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#252014] text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer"
+              >
+                <Camera size={14} />
+                <span>Camera Scan</span>
+              </button>
+
+              <span className="hidden sm:inline-block rounded-md bg-[#0A0E1A] dark:bg-[#131926] px-2 py-0.5 text-[11px] font-bold text-[#E8C16D] dark:text-[#F5C451]">
+                AWB Only
+              </span>
+            </div>
           </div>
 
           <div className="relative flex items-center">
@@ -113,8 +187,16 @@ export default function AwbScanner({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={focusAndSelectInput}
-              onClick={focusAndSelectInput}
+              onFocus={() => {
+                if (inputRef.current) {
+                  inputRef.current.setSelectionRange(0, inputRef.current.value.length);
+                }
+              }}
+              onClick={() => {
+                if (inputRef.current) {
+                  inputRef.current.setSelectionRange(0, inputRef.current.value.length);
+                }
+              }}
               placeholder="Scan Amazon AWB tracking barcode only..."
               autoComplete="off"
               spellCheck={false}
@@ -197,6 +279,14 @@ export default function AwbScanner({
           </div>
         )}
       </div>
+
+      {/* Mobile-Only: Camera Barcode Viewfinder Modal */}
+      <MobileCameraScanner
+        isOpen={isCameraOpen}
+        onClose={handleCameraClose}
+        onScan={handleCameraScan}
+        message={message?.text}
+      />
     </div>
   );
 }

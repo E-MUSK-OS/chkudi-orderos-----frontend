@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
-import { Download, Upload, Users } from "lucide-react";
+import Link from "next/link";
+import { Download, Upload, Users, FileSpreadsheet } from "lucide-react";
 
 interface SalariedEmployeeHeaderProps {
-  onDownloadTemplate: () => void;
-  onUploadClick: () => void;
+  onDownloadTemplate?: () => void;
+  onUploadClick?: () => void;
 }
 
 export default function SalariedEmployeeHeader({
@@ -31,27 +32,15 @@ export default function SalariedEmployeeHeader({
 
         {/* Action Buttons matching theme */}
         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
-          {/* Blank Template Button */}
-          <button
-            type="button"
-            onClick={onDownloadTemplate}
-            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] text-slate-800 dark:text-white px-5 sm:px-6 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-[0.97]"
-            title="Download Blank Attendance Template"
-          >
-            <Download size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
-            <span>Blank Template</span>
-          </button>
-
-          {/* Upload Attendance Record Button */}
-          <button
-            type="button"
-            onClick={onUploadClick}
+          {/* Upload Excel Button */}
+          <Link
+            href="/dashboard/settings/upload-excel?tab=salaried"
             className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
-            title="Upload Attendance Record"
+            title="Upload Excel"
           >
-            <Upload size={16} strokeWidth={2.5} />
-            <span>Upload Attendance Record</span>
-          </button>
+            <FileSpreadsheet size={16} />
+            <span>Upload Excel</span>
+          </Link>
         </div>
       </div>
     </div>

@@ -371,6 +371,12 @@ export const navItems: NavItem[] = [
         defaultTimeAgo: "Just now",
       },
       {
+        label: "Upload Excel",
+        icon: FileSpreadsheet,
+        href: "/dashboard/settings/upload-excel",
+        defaultTimeAgo: "Just now",
+      },
+      {
         label: "Webstore",
         icon: Store,
         href: "/dashboard/settings/webstore",

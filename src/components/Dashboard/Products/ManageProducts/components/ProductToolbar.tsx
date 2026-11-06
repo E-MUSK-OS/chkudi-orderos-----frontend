@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import {
   Download,
   RotateCw,
@@ -381,21 +382,23 @@ export default function ProductToolbar({
           {canCreate && (
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              window.location.href = "/dashboard/settings/upload-excel?tab=product";
+            }}
             disabled={isImporting}
             className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] active:scale-[0.98] disabled:opacity-50 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-white dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]"
-            title="Import Excel file"
+            title="Upload Excel"
           >
             <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0 dark:bg-white/[0.06] dark:text-slate-300">
-              <Upload className="h-3.5 w-3.5" />
+              <FileSpreadsheet className="h-3.5 w-3.5" />
             </div>
-            <span>{isImporting ? "Importing..." : "Import"}</span>
+            <span>Upload Excel</span>
           </button>
 
           )}
 
           {/* Export / Demo Button */}
-          {hasData ? (
+          {false && (
             <button
               type="button"
               onClick={handleDownloadData}
@@ -415,7 +418,8 @@ export default function ProductToolbar({
                   : "Export"}
               </span>
             </button>
-          ) : (
+          )}
+          {false && (
             <button
               type="button"
               onClick={handleDownloadDemoSheet}

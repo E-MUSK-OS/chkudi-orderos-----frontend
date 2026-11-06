@@ -331,6 +331,7 @@ export default function AwbScan() {
           value={scanValue}
           onChange={setScanValue}
           onScan={() => handleScan()}
+          onCameraScan={(code) => handleScan(code)}
           isScanning={isScanning}
           message={message}
         />
