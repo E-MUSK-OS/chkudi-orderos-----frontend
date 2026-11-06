@@ -39,7 +39,7 @@ export default function UploadExcelPage() {
 
   return (
     <DashboardLayout title="Upload Excel">
-      <div className="space-y-6 max-w-[1600px] mx-auto pb-16 font-sans">
+      <div className="space-y-6 max-w-[1600px] mx-auto pb-36 font-sans">
         {/* Header Banner matching Client, Profile & Wallet pages */}
         <section className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

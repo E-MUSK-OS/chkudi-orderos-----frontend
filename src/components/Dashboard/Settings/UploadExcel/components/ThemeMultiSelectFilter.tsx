@@ -34,7 +34,7 @@ export default function ThemeMultiSelectFilter({
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  // Close on outside click & recalculate direction on scroll/resize
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -46,11 +46,19 @@ export default function ThemeMultiSelectFilter({
         setSearchQuery("");
       }
     }
+    const handleScrollOrResize = () => {
+      determineDirection();
+    };
+
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("resize", handleScrollOrResize, { passive: true });
+      window.addEventListener("scroll", handleScrollOrResize, { passive: true, capture: true });
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", handleScrollOrResize);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
     };
   }, [isOpen, onOpenChange]);
 
@@ -58,10 +66,13 @@ export default function ThemeMultiSelectFilter({
   const determineDirection = () => {
     if (!containerRef.current) return;
     const { spaceBelow, spaceAbove } = getAvailableVerticalSpace(containerRef.current);
-    if (spaceBelow < 280 && spaceAbove > spaceBelow) {
+    const neededSpace = Math.min(Math.max(realOptions.length * 36 + 90, 120), 300);
+    if (spaceBelow >= neededSpace) {
+      setOpenUpward(false);
+    } else if (spaceAbove >= neededSpace) {
       setOpenUpward(true);
     } else {
-      setOpenUpward(false);
+      setOpenUpward(spaceAbove > spaceBelow);
     }
   };
 
@@ -234,7 +245,7 @@ export default function ThemeMultiSelectFilter({
           </div>
 
           {/* Options list */}
-          <div className="max-h-56 overflow-y-auto py-0.5 flex flex-col gap-0.5 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="max-h-56 overflow-y-auto py-0.5 flex flex-col gap-0.5 pr-1 custom-scrollbar">
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-2 text-center text-slate-400 text-[11px]">
                 No matching options found

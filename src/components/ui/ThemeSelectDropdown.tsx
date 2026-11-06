@@ -52,8 +52,8 @@ export default function ThemeSelectDropdown({
     const { rect, viewportWidth, spaceBelow, spaceAbove } =
       getAvailableVerticalSpace(containerRef.current);
 
-    // Estimate menu height: ~36px per option + ~14px padding + border, capped at 260px
-    const estimatedMenuHeight = Math.min(Math.max(options.length * 36 + 14, 48), 260);
+    // Estimate menu height: ~36px per option + ~14px padding + border, capped at 280px
+    const estimatedMenuHeight = Math.min(Math.max(options.length * 36 + 14, 50), 280);
 
     let up = false;
     if (dropDirection === "up") {
@@ -61,16 +61,19 @@ export default function ThemeSelectDropdown({
     } else if (dropDirection === "down") {
       up = false;
     } else {
-      up =
-        (spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow) ||
-        (spaceBelow < 220 && spaceAbove > spaceBelow) ||
-        (spaceBelow < 150 && spaceAbove >= 150);
+      if (spaceBelow >= estimatedMenuHeight) {
+        up = false;
+      } else if (spaceAbove >= estimatedMenuHeight) {
+        up = true;
+      } else {
+        up = spaceAbove > spaceBelow;
+      }
     }
 
     setOpenUpward(up);
 
     const availableSpace = (up ? spaceAbove : spaceBelow) - 16;
-    const maxH = Math.min(260, Math.max(availableSpace - 14, 110));
+    const maxH = Math.min(280, Math.max(availableSpace, Math.min(estimatedMenuHeight, 180)));
     setMaxMenuHeight(maxH);
 
     // Auto-adjust alignment if right edge would overflow
@@ -201,7 +204,7 @@ export default function ThemeSelectDropdown({
           )}
         >
           <div
-            className="overflow-y-auto flex flex-col gap-0.5 pr-0.5 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="overflow-y-auto flex flex-col gap-0.5 pr-1 custom-scrollbar"
             style={{
               scrollbarWidth: "none",
               msOverflowStyle: "none",

@@ -136,7 +136,7 @@ export default function ExcelAccordionSection({
     <div className={cn(
         "rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xs mb-3.5 transition-all hover:border-[#E8C16D]/40 dark:hover:border-white/[0.14]",
         activeDropdownKey
-          ? "relative z-40 overflow-visible"
+          ? "relative z-50 overflow-visible"
           : isOpen
           ? "relative z-10 overflow-visible"
           : "relative z-0 overflow-hidden"
@@ -281,6 +281,7 @@ export default function ExcelAccordionSection({
                               options={options}
                               placeholder={`All ${label === "Category" ? "categories" : label === "Master SKU" ? "Master SKUs" : label}`}
                               buttonClassName="h-8.5 px-3.5 text-xs rounded-xl bg-white dark:bg-[#131622] border border-[#E7E0D2] dark:border-white/[0.08] text-slate-800 dark:text-white font-medium hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 shadow-xs"
+                              onOpenChange={(open) => setActiveDropdownKey(open ? filterKey : null)}
                             />
                           </div>
                         );
@@ -296,6 +297,7 @@ export default function ExcelAccordionSection({
                             onChange={(val) => handleFilterChange(filterKey, val)}
                             options={options as ThemeSelectOption[]}
                             buttonClassName="h-8.5 px-3.5 text-xs rounded-xl bg-white dark:bg-[#131622] border border-[#E7E0D2] dark:border-white/[0.08] text-slate-800 dark:text-white font-medium hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 shadow-xs"
+                            onOpenChange={(open) => setActiveDropdownKey(open ? filterKey : null)}
                           />
                         </div>
                       );
