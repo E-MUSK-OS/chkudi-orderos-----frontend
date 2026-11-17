@@ -8,6 +8,7 @@ import { getToken, logout, handleAuthFailure } from "@/utils/auth";
 import { authService } from "@/services/auth/auth.service";
 
 const AUTH_PAGES = [
+  "/",
   "/login",
   "/forgot-password",
   "/reset-password",
@@ -18,7 +19,9 @@ const AUTH_PAGES = [
 ];
 
 function isPublicAuthPage(pathname: string): boolean {
-  return AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const cleanPath = pathname?.split("?")[0]?.replace(/\/+$/, "") || "/";
+  if (cleanPath === "/" || cleanPath === "") return true;
+  return AUTH_PAGES.some((p) => p !== "/" && (cleanPath === p || cleanPath.startsWith(p + "/")));
 }
 
 export default function AccountLockChecker() {

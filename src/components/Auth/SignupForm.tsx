@@ -78,14 +78,14 @@ export default function SignupForm() {
         className="w-full max-w-md mx-auto"
       >
         {/* Mobile / Tablet Brand Header */}
-        <div className="lg:hidden flex items-center justify-center gap-2.5 pb-3.5 mb-3.5 sm:pb-4 sm:mb-4 border-b border-slate-100 dark:border-white/[0.06]">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C89B3C]/30 bg-[#C89B3C]/10 dark:border-[#F5C451]/30 dark:bg-[#F5C451]/10">
+        <Link href="/" className="lg:hidden flex items-center justify-center gap-2.5 pb-3.5 mb-3.5 sm:pb-4 sm:mb-4 border-b border-slate-100 dark:border-white/[0.06] group">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C89B3C]/30 bg-[#C89B3C]/10 dark:border-[#F5C451]/30 dark:bg-[#F5C451]/10 group-hover:scale-105 transition-transform">
             <Package size={18} className="text-[#E8C170] dark:text-[#F5C451]" />
           </div>
           <span className="font-display text-lg sm:text-xl tracking-[2px] uppercase text-[#C89B3C] dark:text-[#F5C451] font-bold">
             Chakudee <span className="text-[#0A0E1A] dark:text-white">OrderOS</span>
           </span>
-        </div>
+        </Link>
 
         {/* Header */}
         <span className="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#C89B3C] dark:text-[#F5C451]">

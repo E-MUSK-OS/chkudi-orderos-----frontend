@@ -153,7 +153,7 @@ export default function ProductStats({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
       {cards.map((item) => (
         <article
           key={item.title}
@@ -167,11 +167,11 @@ export default function ProductStats({
             {isLoading ? (
               <div className="h-8 sm:h-9 w-20 animate-pulse rounded-lg bg-slate-100 dark:bg-white/[0.06]" />
             ) : (
-              <h3 className={`text-2xl sm:text-3xl font-black ${item.valueClass ?? "text-[#0A0E1A]"} dark:text-white truncate`}>
+              <h3 className={`text-xl sm:text-2xl xl:text-3xl font-black ${item.valueClass ?? "text-[#0A0E1A]"} dark:text-white truncate`}>
                 {Number(item.value ?? 0).toLocaleString()}
               </h3>
             )}
-            <span className={`rounded-xl border px-2.5 py-1 text-xs font-bold shrink-0 ${item.badgeClass}`}>
+            <span className={`rounded-lg sm:rounded-xl border px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold shrink-0 whitespace-nowrap ${item.badgeClass}`}>
               {item.badgeText}
             </span>
           </div>

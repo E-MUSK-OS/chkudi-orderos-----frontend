@@ -256,7 +256,7 @@ const Order = () => {
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Myntra Order Process
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
@@ -266,12 +266,12 @@ const Order = () => {
 
             {/* Quick Action Buttons in Header when rows are selected */}
             {selectedRows.length > 0 && (
-              <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 self-stretch md:self-center">
                 {(status === "OPEN" || status === "PRIORITY") && (
                   <button
                     type="button"
                     onClick={moveToPicking}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer"
+                    className="inline-flex h-10 sm:h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer"
                   >
                     <ArrowRight className="h-4 w-4" />
                     <span>Move to In Picking ({selectedRows.length})</span>
@@ -283,7 +283,7 @@ const Order = () => {
                     <button
                       type="button"
                       onClick={handleGeneratePicklist}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
+                      className="inline-flex h-10 sm:h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
                       title="Download formatted Picklist PDF"
                     >
                       <Printer className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
@@ -293,7 +293,7 @@ const Order = () => {
                     <button
                       type="button"
                       onClick={handleProcessPicking}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer"
+                      className="inline-flex h-10 sm:h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer"
                     >
                       <ArrowRight className="h-4 w-4" />
                       <span>Process ({selectedRows.length})</span>

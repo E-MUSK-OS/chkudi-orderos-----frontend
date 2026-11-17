@@ -122,7 +122,7 @@ export default function ClientConfiguration() {
 
   return (
     <DashboardLayout title="Client Configuration">
-      <div className="space-y-5 sm:space-y-6 w-full pb-16">
+      <div className="space-y-4 sm:space-y-6 w-full pb-16">
         {/* Header Card matching UI Theme of Order Process & Amazon Analytics */}
         <ClientConfigHeader
           onSave={handleSave}
@@ -141,7 +141,7 @@ export default function ClientConfiguration() {
 
         {/* 3 Columns Layout */}
         {isLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 animate-pulse pt-2">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5 animate-pulse pt-2">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -150,7 +150,7 @@ export default function ClientConfiguration() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 pt-1">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5 pt-1">
             {/* Column 1: Dashboard, VMS, Products */}
             <div className="flex flex-col">
               {columns.column1.map((section) => (

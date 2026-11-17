@@ -19,10 +19,10 @@ export default function ProductHeader({
   const { canCreate } = usePagePermissions("settings/manage-product");
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
       <div className="space-y-1.5 min-w-0 max-w-2xl">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+          <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
             Product Profile
           </h1>
         </div>
@@ -31,12 +31,12 @@ export default function ProductHeader({
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto self-stretch lg:self-auto shrink-0">
+      <div className="flex flex-row items-center gap-2 sm:gap-2.5 w-full xl:w-auto shrink-0">
         {onDownloadDemoSheet && (
           <button
             type="button"
             onClick={onDownloadDemoSheet}
-            className="inline-flex w-full sm:w-auto h-11 items-center justify-center gap-2 rounded-full border border-[#E7E0D2] bg-white hover:bg-slate-50 px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs transition-all active:scale-[0.98] cursor-pointer dark:border-white/[0.08] dark:bg-[#080B11] dark:text-white dark:hover:bg-white/[0.04]"
+            className="inline-flex flex-1 sm:flex-initial w-auto min-h-[38px] sm:h-11 items-center justify-center gap-1.5 sm:gap-2 rounded-full border border-[#E7E0D2] bg-white hover:bg-slate-50 px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs transition-all active:scale-[0.98] cursor-pointer dark:border-white/[0.08] dark:bg-[#080B11] dark:text-white dark:hover:bg-white/[0.04]"
             title="Download demo Excel sheet"
           >
             <Download className="h-4 w-4 text-[#B88728] dark:text-[#F5C451]" />
@@ -48,7 +48,7 @@ export default function ProductHeader({
           <button
             type="button"
             onClick={onAddProduct}
-            className="inline-flex w-full sm:w-auto h-11 items-center justify-center gap-2 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] px-5 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-sm transition-all active:scale-[0.97] cursor-pointer"
+            className="inline-flex flex-1 sm:flex-initial w-auto min-h-[38px] sm:h-11 items-center justify-center gap-1.5 sm:gap-2 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-sm transition-all active:scale-[0.97] cursor-pointer shrink-0"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
             <span>{buttonLabel}</span>

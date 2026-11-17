@@ -25,8 +25,8 @@ const OperatorLoginModal: React.FC<OperatorLoginModalProps> = ({
         className="max-w-md overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08] p-0 shadow-2xl !rounded-3xl sm:!rounded-[32px] bg-white dark:bg-[#0F1626]"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b border-[#EFE5D5] dark:border-white/[0.08] bg-gradient-to-b from-[#FDE8B5]/60 via-[#FFF4DD]/40 to-white dark:bg-none dark:bg-[#080B11] px-6 py-5 text-center space-y-0">
-          <DialogTitle className="text-xl sm:text-2xl font-bold text-[#111827] dark:text-[#E8C16D] text-center">
+        <DialogHeader className="border-b border-[#EFE5D5] dark:border-white/[0.08] bg-gradient-to-b from-[#FDE8B5]/60 via-[#FFF4DD]/40 to-white dark:bg-none dark:bg-[#080B11] px-5 sm:px-6 py-4 sm:py-5 text-center space-y-0">
+          <DialogTitle className="text-lg sm:text-xl md:text-2xl font-bold text-[#111827] dark:text-[#E8C16D] text-center">
             Operator Login
           </DialogTitle>
 
@@ -35,7 +35,7 @@ const OperatorLoginModal: React.FC<OperatorLoginModalProps> = ({
           </p>
         </DialogHeader>
 
-        <div className="p-6 sm:p-7">
+        <div className="p-5 sm:p-7">
           <OperatorLoginForm
             onSuccess={(account: Account) => {
               localStorage.setItem(

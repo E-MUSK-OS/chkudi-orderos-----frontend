@@ -267,11 +267,11 @@ export default function ChallanItemsTable({
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white">Challan Details</h2>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={downloadBlankExcelFormat}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 h-8.5 sm:h-9 px-3 sm:px-3.5 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Download className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Download Blank Format</span>
@@ -280,7 +280,7 @@ export default function ChallanItemsTable({
             <button
               type="button"
               onClick={() => router.push("/dashboard/settings/upload-excel?tab=salesChallan")}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 h-8.5 sm:h-9 px-3 sm:px-3.5 rounded-xl sm:rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>Import from Excelsheet</span>
@@ -534,7 +534,7 @@ export default function ChallanItemsTable({
           </div>
 
           {/* Prepared by */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[80px]">
               Prepared by
             </label>
@@ -543,7 +543,7 @@ export default function ChallanItemsTable({
               value={preparedBy}
               onChange={(e) => onChangePreparedBy(e.target.value)}
               placeholder="Ramesh"
-              className="h-10 px-3.5 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all flex-1 shadow-xs"
+              className="h-10 px-3.5 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all flex-1 min-w-0 shadow-xs"
             />
           </div>
         </div>

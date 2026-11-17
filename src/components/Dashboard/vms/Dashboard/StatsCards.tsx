@@ -84,7 +84,7 @@ export default function StatsCards() {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="h-28 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm animate-pulse"
+            className="h-24 sm:h-28 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm animate-pulse"
           />
         ))}
       </div>
@@ -108,11 +108,11 @@ export default function StatsCards() {
           </div>
 
           <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-            <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white">
               {item.value}
             </h3>
             <span
-              className={`rounded-lg border px-2.5 py-0.5 text-xs font-bold ${item.badgeStyle}`}
+              className={`rounded-lg border px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold ${item.badgeStyle}`}
             >
               {item.badge}
             </span>

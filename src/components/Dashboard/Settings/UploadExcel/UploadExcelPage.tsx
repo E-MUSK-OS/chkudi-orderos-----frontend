@@ -39,12 +39,12 @@ export default function UploadExcelPage() {
 
   return (
     <DashboardLayout title="Upload Excel">
-      <div className="space-y-6 max-w-[1600px] mx-auto font-sans pb-12 sm:pb-16">
+      <div className="space-y-4 sm:space-y-6 max-w-[1600px] mx-auto font-sans pb-12 sm:pb-16">
         {/* Header Banner matching Client, Profile & Wallet pages */}
-        <section className="rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+        <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            <div className="space-y-1 sm:space-y-1.5 min-w-0 max-w-2xl">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Upload Excel
               </h1>
 
@@ -59,7 +59,7 @@ export default function UploadExcelPage() {
         <ProfileTabSelector activeTab={activeTab} onTabChange={handleTabChange} />
 
         {/* Sections List matching ClientConfigSectionCard */}
-        <div className="space-y-3.5 pt-2">
+        <div className="space-y-3 sm:space-y-3.5 pt-1 sm:pt-2">
           {activeSections.map((section, idx) => (
             <ExcelAccordionSection
               key={`${activeTab}-${section.id}`}

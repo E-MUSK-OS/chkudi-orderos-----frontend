@@ -91,13 +91,13 @@ export default function ClientConfigSectionCard({
   const isSectionOpen = searchQuery ? true : isOpen;
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden mb-4 transition-all hover:border-[#E8C16D]/30">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden mb-3 sm:mb-4 transition-all hover:border-[#E8C16D]/30">
       {/* Section Header */}
       <div
-        className="flex items-center justify-between px-3.5 sm:px-4 py-3 bg-[#FDFBF7] dark:bg-white/[0.02] border-b border-[#E7E0D2]/70 dark:border-white/[0.06] cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors"
+        className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 bg-[#FDFBF7] dark:bg-white/[0.02] border-b border-[#E7E0D2]/70 dark:border-white/[0.06] cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors"
         onClick={() => hasChildren && setIsOpen(!isOpen)}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {/* Main Section Checkbox */}
           <button
             type="button"
@@ -132,10 +132,10 @@ export default function ClientConfigSectionCard({
         </div>
 
         {/* Section Right Controls */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Route Count Pill */}
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold border shrink-0 whitespace-nowrap ${
               granted === total && total > 0
                 ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20"
                 : granted > 0

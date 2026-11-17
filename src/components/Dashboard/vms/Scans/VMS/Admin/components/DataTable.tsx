@@ -74,7 +74,7 @@ export default function DataTable<TData>({
                     <th
                       key={header.id}
                       className={cn(
-                        "whitespace-nowrap px-3 sm:px-4 py-3.5 font-bold text-[#6A4D1D] dark:text-[#E8C16D] bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs",
+                        "whitespace-nowrap px-3 sm:px-4 py-2.5 sm:py-3.5 font-bold text-[#6A4D1D] dark:text-[#E8C16D] bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs",
                         meta?.headerClassName || "text-center",
                       )}
                     >
@@ -97,7 +97,7 @@ export default function DataTable<TData>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-16 text-center text-slate-500 dark:text-slate-400"
+                  className="py-12 sm:py-16 text-center text-slate-500 dark:text-slate-400"
                 >
                   <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#0A0E1A] dark:border-[#E8C16D] border-r-transparent mb-3" />
                   <p className="text-xs sm:text-sm font-medium">Loading VMS records...</p>
@@ -107,7 +107,7 @@ export default function DataTable<TData>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-16 text-center text-slate-500 dark:text-slate-400 font-semibold text-xs sm:text-sm"
+                  className="py-12 sm:py-16 text-center text-slate-500 dark:text-slate-400 font-semibold text-xs sm:text-sm"
                 >
                   No VMS Records Found
                 </td>
@@ -127,7 +127,7 @@ export default function DataTable<TData>({
                       <td
                         key={cell.id}
                         className={cn(
-                          "px-3 sm:px-4 py-3.5 align-middle text-slate-700 dark:text-slate-300",
+                          "px-3 sm:px-4 py-2.5 sm:py-3.5 align-middle text-slate-700 dark:text-slate-300",
                           meta?.cellClassName || "text-center",
                         )}
                       >

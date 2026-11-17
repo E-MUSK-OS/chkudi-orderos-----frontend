@@ -76,42 +76,42 @@ export default function EmployeeProfileTable({
         className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar overscroll-contain rounded-t-2xl sm:rounded-t-3xl"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[1100px] text-left border-collapse">
           {/* Table Header matching OrderOS standard & Ledger Book */}
           <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none shadow-xs">
             <tr>
               {isVisible("no") && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-12">No.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-12">No.</th>
               )}
               {isVisible("name") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Name.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Name.</th>
               )}
               {isVisible("employeeId") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Employee Id.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Employee Id.</th>
               )}
               {isVisible("designation") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Designation.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Designation.</th>
               )}
               {isVisible("departments") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Departments.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Departments.</th>
               )}
               {isVisible("machineCode") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Machine Code.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Machine Code.</th>
               )}
               {isVisible("contactNo") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Contact No.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Contact No.</th>
               )}
               {isVisible("aadhaarNo") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Aadhaar No.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Aadhaar No.</th>
               )}
               {isVisible("status") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Status.</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Status.</th>
               )}
               {isVisible("addedEditedBy") && (
-                <th className="whitespace-nowrap px-4 py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Added / Edited By</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 font-semibold text-[#6A4D1D] dark:text-[#E8C16D]">Added / Edited By</th>
               )}
               {isVisible("actions") && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-36">Actions</th>
+                <th className="whitespace-nowrap px-3 sm:px-4 py-3 sm:py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-36">Actions</th>
               )}
             </tr>
           </thead>
@@ -120,7 +120,7 @@ export default function EmployeeProfileTable({
           <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs font-sans">
             {isLoading ? (
               <tr>
-                <td colSpan={11} className="py-16 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={11} className="py-12 sm:py-16 text-center text-slate-500 dark:text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Loader2 size={24} className="animate-spin text-[#F5C451]" />
                     <span className="text-xs font-medium">Loading employee records...</span>
@@ -129,7 +129,7 @@ export default function EmployeeProfileTable({
               </tr>
             ) : employees.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-16 text-center text-slate-500 dark:text-slate-400 font-semibold text-xs sm:text-sm">
+                <td colSpan={11} className="py-12 sm:py-16 text-center text-slate-500 dark:text-slate-400 font-semibold text-xs sm:text-sm">
                   No Employee Records Found
                 </td>
               </tr>
@@ -147,16 +147,16 @@ export default function EmployeeProfileTable({
                   >
                     {/* Row Number */}
                     {isVisible("no") && (
-                      <td className="py-3.5 px-4 text-center text-slate-500 dark:text-slate-400 text-xs font-mono font-medium">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-center text-slate-500 dark:text-slate-400 text-xs font-mono font-medium">
                         {rowNumber}
                       </td>
                     )}
 
                     {/* Name + Logo Avatar */}
                     {isVisible("name") && (
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-slate-100 border border-[#E7E0D2] dark:bg-slate-800/80 dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
+                          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-slate-100 border border-[#E7E0D2] dark:bg-slate-800/80 dark:border-white/[0.1] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
                             {emp.photoUrl ? (
                               <img
                                 src={getMediaUrl(emp.photoUrl)}
@@ -181,56 +181,56 @@ export default function EmployeeProfileTable({
 
                     {/* Employee ID */}
                     {isVisible("employeeId") && (
-                      <td className="py-3.5 px-4 font-mono font-medium text-slate-800 dark:text-slate-200 text-[11px]">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 font-mono font-medium text-slate-800 dark:text-slate-200 text-[11px]">
                         {emp.employeeId}
                       </td>
                     )}
 
                     {/* Designation */}
                     {isVisible("designation") && (
-                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
                         {emp.designation}
                       </td>
                     )}
 
                     {/* Department */}
                     {isVisible("departments") && (
-                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-slate-800 dark:text-slate-300 font-medium text-xs">
                         {emp.department}
                       </td>
                     )}
 
                     {/* Machine Code */}
                     {isVisible("machineCode") && (
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
                         {emp.machineCode || "—"}
                       </td>
                     )}
 
                     {/* Contact No */}
                     {isVisible("contactNo") && (
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
                         {emp.contactNo}
                       </td>
                     )}
 
                     {/* Aadhaar No */}
                     {isVisible("aadhaarNo") && (
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
                         {emp.aadhaarNo || "—"}
                       </td>
                     )}
 
                     {/* Status */}
                     {isVisible("status") && (
-                      <td className="py-3.5 px-4">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4">
                         {emp.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#EAFBF3] text-emerald-600 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50 shadow-xs">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] font-semibold bg-[#EAFBF3] text-emerald-600 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50 shadow-xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-400 dark:border-white/[0.08] shadow-xs">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-400 dark:border-white/[0.08] shadow-xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
                             Inactive
                           </span>
@@ -240,7 +240,7 @@ export default function EmployeeProfileTable({
 
                     {/* Added / Edited By */}
                     {isVisible("addedEditedBy") && (
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-slate-700 dark:text-slate-300">
                         {creatorName || dateFormatted ? (
                           <div className="space-y-1 text-[11px]">
                             {creatorName && (
@@ -268,12 +268,12 @@ export default function EmployeeProfileTable({
 
                     {/* Actions (View, Edit, Print ID Card, Delete) matching Ledger Book */}
                     {isVisible("actions") && (
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="whitespace-nowrap py-2.5 sm:py-3.5 px-3 sm:px-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           {/* View Button */}
                           <Link
                             href={`/dashboard/setting/manage-company/employee-profile/view/${emp.id}`}
-                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
                             title="View Employee Profile"
                           >
                             <Eye size={14} />
@@ -282,7 +282,7 @@ export default function EmployeeProfileTable({
                           {/* Edit Button */}
                           <Link
                             href={`/dashboard/setting/manage-company/employee-profile/edit/${emp.id}`}
-                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
                             title="Edit Employee"
                           >
                             <Edit3 size={14} />
@@ -292,7 +292,7 @@ export default function EmployeeProfileTable({
                           <button
                             type="button"
                             onClick={() => onPrintIdCard(emp)}
-                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] hover:bg-[#FFF9EC] text-slate-500 hover:text-[#B88728] dark:hover:bg-[#1A160E] dark:hover:text-[#E8C16D] flex items-center justify-center transition-all cursor-pointer shadow-xs"
                             title="Print ID Card"
                           >
                             <Printer size={14} />
@@ -302,7 +302,7 @@ export default function EmployeeProfileTable({
                           <button
                             type="button"
                             onClick={() => onDeleteEmployee(emp)}
-                            className="w-8 h-8 rounded-full border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 text-rose-500 hover:text-rose-600 dark:hover:bg-rose-950/30 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                            className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 text-rose-500 hover:text-rose-600 dark:hover:bg-rose-950/30 flex items-center justify-center transition-all cursor-pointer shadow-xs"
                             title="Delete Employee"
                           >
                             <Trash2 size={14} />

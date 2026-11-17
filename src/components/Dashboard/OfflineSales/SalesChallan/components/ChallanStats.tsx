@@ -59,21 +59,21 @@ export default function ChallanStats({ challans }: ChallanStatsProps) {
         return (
           <article
             key={card.title}
-            className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-between"
+            className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-between"
           >
             <div className="flex flex-col justify-center">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
+              <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
                 {card.title}
               </p>
-              <h3 className="mt-1.5 text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white leading-none">
+              <h3 className="mt-1 sm:mt-1.5 text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white leading-none">
                 {card.value}
               </h3>
-              <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+              <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs text-slate-400 dark:text-slate-500">
                 {card.subtext}
               </p>
             </div>
 
-            <div className="flex h-12 w-12 sm:h-13 sm:w-13 shrink-0 items-center justify-center rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D]">
+            <div className="flex h-11 w-11 sm:h-13 sm:w-13 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D]">
               <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
           </article>

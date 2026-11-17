@@ -84,6 +84,11 @@ export interface Company {
 
   status: CompanyStatus;
   isDefault: boolean;
+  isBranch?: boolean;
+  parentCompanyId?: string | null;
+  parentCompanyName?: string | null;
+  parentCompanyCode?: string | null;
+  companyBranchName?: string | null;
   registrationDate?: string | null;
   createdAt: string;
   updatedAt: string;

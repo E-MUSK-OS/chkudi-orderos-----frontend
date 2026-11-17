@@ -85,20 +85,20 @@ export default function EditProduct({
     <DashboardLayout title="Edit Product Profile">
       <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-28 sm:pb-36 max-w-[1600px] mx-auto">
         {/* Top Header Card */}
-        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 sm:px-7 py-4 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
+        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 sm:px-7 py-3.5 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-3.5">
             <button
               type="button"
               onClick={() => router.push(returnPath)}
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
               title="Back to Product Profile"
             >
-              <ArrowLeft size={22} />
+              <ArrowLeft size={20} className="sm:w-[22px] sm:h-[22px]" />
             </button>
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Edit Product Profile
                 </h1>
                 {product?.productName && (
@@ -114,12 +114,12 @@ export default function EditProduct({
           </div>
 
           {/* Top Actions */}
-          <div className="flex items-center gap-2.5 self-end md:self-center">
+          <div className="flex items-center gap-2 sm:gap-2.5 w-full md:w-auto justify-end">
             <button
               type="button"
               onClick={() => router.push(returnPath)}
               disabled={loading || deleteLoading}
-              className="inline-flex h-11 items-center justify-center px-6 rounded-full text-xs sm:text-sm font-bold border border-[#E7E0D2] bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-200 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              className="inline-flex flex-1 md:flex-initial min-h-[38px] sm:h-11 items-center justify-center px-4 sm:px-6 rounded-full text-xs sm:text-sm font-bold border border-[#E7E0D2] bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-200 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -128,7 +128,7 @@ export default function EditProduct({
               type="submit"
               form="product-form"
               disabled={loading || isLoading || !product || deleteLoading}
-              className="inline-flex h-11 items-center justify-center gap-2 px-6 rounded-full text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex flex-1 md:flex-initial min-h-[38px] sm:h-11 items-center justify-center gap-2 px-4 sm:px-6 rounded-full text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -185,7 +185,7 @@ export default function EditProduct({
             </div>
           </div>
         ) : (
-          <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
             <ProductForm
               key={`edit-${product.id}`}
               mode="edit"
@@ -195,25 +195,25 @@ export default function EditProduct({
             />
 
             {/* Bottom Actions */}
-            <div className="mt-8 pt-6 border-t border-[#E7E0D2] dark:border-white/[0.08] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="mt-8 pt-6 border-t border-[#E7E0D2] dark:border-white/[0.08] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
               {canDelete && (
                 <button
                   type="button"
                   onClick={() => setDeleteModalOpen(true)}
                   disabled={loading || deleteLoading}
-                  className="w-full sm:w-auto min-h-[42px] h-11 px-5 rounded-full text-xs sm:text-sm font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/20 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  className="w-full sm:w-auto min-h-[38px] sm:h-11 px-4 sm:px-5 rounded-full text-xs sm:text-sm font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/20 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   <Trash2 size={16} />
                   <span>Delete Product</span>
                 </button>
               )}
 
-              <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => router.push(returnPath)}
                   disabled={loading || deleteLoading}
-                  className="flex-1 sm:flex-none min-h-[42px] h-11 px-6 rounded-full text-xs sm:text-sm font-bold border border-[#E7E0D2] bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-200 disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98] text-center"
+                  className="flex-1 sm:flex-none min-h-[38px] sm:h-11 px-4 sm:px-6 rounded-full text-xs sm:text-sm font-bold border border-[#E7E0D2] bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-200 disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98] text-center"
                 >
                   Cancel
                 </button>
@@ -222,7 +222,7 @@ export default function EditProduct({
                   type="submit"
                   form="product-form"
                   disabled={loading || deleteLoading}
-                  className="flex-1 sm:flex-none min-h-[42px] h-11 px-7 rounded-full text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-none min-h-[38px] sm:h-11 px-4 sm:px-7 rounded-full text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>

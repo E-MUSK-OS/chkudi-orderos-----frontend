@@ -110,7 +110,7 @@ export default function EmployeeProfileViewPage({
         {/* ========================================================================= */}
         {/* Top Header Bar matching Ledger Book / Company Profile header UI            */}
         {/* ========================================================================= */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
               <div className="flex items-center gap-3.5">
@@ -119,16 +119,16 @@ export default function EmployeeProfileViewPage({
                   onClick={() =>
                     router.push("/dashboard/setting/manage-company/employee-profile")
                   }
-                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
                   title="Back to Employee Profile"
                 >
                   <ArrowLeft size={18} />
                 </button>
-                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Employee Profile
                 </h1>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-0.5 sm:ml-1">
                 Comprehensive view of employee personal details, addresses, banking, and company documents.
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function EmployeeProfileViewPage({
               {/* Create User pill */}
               <Link
                 href="/dashboard/settings/manage-users/user-profile/create-user"
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-[#FEFAEE] text-[#6A4D1D] border border-[#E8C16D]/60 dark:bg-[#080B11] dark:border-white/[0.15] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 shadow-xs transition-all cursor-pointer active:scale-95"
+                className="inline-flex min-h-[38px] sm:h-12 items-center justify-center gap-1.5 px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-[#FEFAEE] text-[#6A4D1D] border border-[#E8C16D]/60 dark:bg-[#080B11] dark:border-white/[0.15] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <span>Create User</span>
               </Link>
@@ -145,7 +145,7 @@ export default function EmployeeProfileViewPage({
               {/* Edit Button pill */}
               <Link
                 href={`/dashboard/setting/manage-company/employee-profile/edit/${employee.id}`}
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] shadow-sm transition-all cursor-pointer"
+                className="inline-flex min-h-[38px] sm:h-12 items-center justify-center gap-1.5 px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] shadow-sm transition-all cursor-pointer"
               >
                 <Edit2 size={15} />
                 <span>Edit</span>
@@ -155,7 +155,7 @@ export default function EmployeeProfileViewPage({
               <button
                 type="button"
                 onClick={() => setIsPrintModalOpen(true)}
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-1.5 px-5 sm:px-6 rounded-2xl text-xs sm:text-sm font-bold bg-white dark:bg-[#080B11] text-slate-800 dark:text-white border border-[#E7E0D2] dark:border-white/[0.1] hover:bg-slate-50 dark:hover:bg-white/[0.04] shadow-xs transition-all cursor-pointer active:scale-95"
+                className="inline-flex min-h-[38px] sm:h-12 items-center justify-center gap-1.5 px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-white dark:bg-[#080B11] text-slate-800 dark:text-white border border-[#E7E0D2] dark:border-white/[0.1] hover:bg-slate-50 dark:hover:bg-white/[0.04] shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <Printer size={15} />
                 <span>Print ID Card</span>

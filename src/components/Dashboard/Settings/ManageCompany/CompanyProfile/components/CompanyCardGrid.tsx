@@ -29,7 +29,7 @@ export default function CompanyCardGrid({
 }: CompanyCardGridProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
@@ -94,7 +94,7 @@ export default function CompanyCardGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
       {companies.map((company) => (
         <CompanyCard
           key={company.id}

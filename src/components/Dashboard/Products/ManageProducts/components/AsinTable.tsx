@@ -21,7 +21,7 @@ export default function AsinTable({
 }: Props) {
   if (!isLoading && items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
+      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] dark:bg-[#E8C16D]/10 text-[#B88728] dark:text-[#F5C451] border border-[#E8C16D]/30 dark:border-[#E8C16D]/20">
           <Package className="h-7 w-7" />
         </div>

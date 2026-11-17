@@ -53,12 +53,12 @@ export default function FieldGroupsPanel({
   };
 
   return (
-    <div className="flex flex-col h-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
+    <div className="flex flex-col h-auto lg:h-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
       {/* Top Search & Filter Bar */}
-      <div className="p-3 sm:p-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center gap-2">
-        <div className="relative flex-1 group">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 py-2 transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/20 shadow-2xs">
-            <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
+      <div className="p-2.5 sm:p-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center gap-2">
+        <div className="relative flex-1 group min-w-0">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 py-1.5 sm:py-2 h-9 sm:h-10 transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/20 shadow-2xs">
+            <div className="grid h-5 w-5 place-items-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
               <Search className="h-3 w-3" />
             </div>
             <input
@@ -85,7 +85,7 @@ export default function FieldGroupsPanel({
           type="button"
           onClick={handleReset}
           disabled={!isFilteredOrSorted}
-          className={`grid h-9.5 w-9.5 place-items-center rounded-xl border transition-all cursor-pointer shadow-2xs shrink-0 ${
+          className={`grid h-9 w-9 sm:h-9.5 sm:w-9.5 place-items-center rounded-full border transition-all cursor-pointer shadow-2xs shrink-0 ${
             isFilteredOrSorted
               ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#E8C16D]/20 active:scale-95"
               : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-60"
@@ -97,24 +97,24 @@ export default function FieldGroupsPanel({
       </div>
 
       {/* Field Groups Table */}
-      <div className="flex-1 overflow-y-auto max-h-[600px] divide-y divide-[#E7E0D2]/60 dark:divide-white/[0.04]">
+      <div className="flex-1 overflow-y-auto max-h-[340px] sm:max-h-[460px] lg:max-h-[600px] divide-y divide-[#E7E0D2]/60 dark:divide-white/[0.04]">
         {/* Table Header with interactive sort toggle and reset */}
-        <div className="grid grid-cols-12 px-3.5 py-3 bg-[#FEFAEE] dark:bg-[#080B11] text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] sticky top-0 z-10 select-none shadow-xs">
+        <div className="grid grid-cols-12 px-3 sm:px-3.5 py-2.5 sm:py-3 bg-[#FEFAEE] dark:bg-[#080B11] text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] sticky top-0 z-10 select-none shadow-xs">
           <div className="col-span-2 text-center">No.</div>
-          <div className="col-span-10 flex items-center justify-between pr-2">
+          <div className="col-span-10 flex items-center justify-between pr-1 sm:pr-2">
             <button
               type="button"
               onClick={handleToggleSort}
-              className="inline-flex items-center gap-1.5 hover:text-[#0A0E1A] dark:hover:text-white transition-colors cursor-pointer group text-left"
+              className="inline-flex items-center gap-1.5 hover:text-[#0A0E1A] dark:hover:text-white transition-colors cursor-pointer group text-left min-w-0"
               title={`Sorted ${sortOrder === "asc" ? "A-Z (Click for Z-A)" : "Z-A (Click for A-Z)"}`}
             >
-              <span>Field Groups</span>
+              <span className="truncate">Field Groups</span>
               {sortOrder === "asc" ? (
-                <ArrowDownAZ className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
+                <ArrowDownAZ className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
               ) : (
-                <ArrowUpZA className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
+                <ArrowUpZA className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
               )}
-              <span className="text-[10px] font-normal normal-case opacity-75">
+              <span className="text-[10px] font-normal normal-case opacity-75 hidden sm:inline">
                 ({sortOrder === "asc" ? "A-Z" : "Z-A"})
               </span>
             </button>
@@ -123,7 +123,7 @@ export default function FieldGroupsPanel({
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center gap-1 text-[10px] normal-case font-semibold text-slate-500 hover:text-[#B88728] dark:text-slate-400 dark:hover:text-[#E8C16D] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[10px] normal-case font-semibold text-slate-500 hover:text-[#B88728] dark:text-slate-400 dark:hover:text-[#E8C16D] transition-colors cursor-pointer shrink-0"
                 title="Reset to default (A-Z)"
               >
                 <RotateCcw className="h-3 w-3" />
@@ -149,7 +149,7 @@ export default function FieldGroupsPanel({
               <div
                 key={group.id || group.field}
                 onClick={() => onSelectGroup(group)}
-                className={`grid grid-cols-12 items-center px-3.5 py-2 cursor-pointer transition-colors ${
+                className={`grid grid-cols-12 items-center px-3 sm:px-3.5 py-1.5 sm:py-2 cursor-pointer transition-colors ${
                   isSelected
                     ? "bg-[#FFF9EC]/80 dark:bg-white/[0.06]"
                     : "hover:bg-slate-50 dark:hover:bg-white/[0.03]"
@@ -167,19 +167,19 @@ export default function FieldGroupsPanel({
                 </div>
 
                 {/* Field Group Pill */}
-                <div className="col-span-10 flex items-center justify-between pr-2 min-w-0">
+                <div className="col-span-10 flex items-center justify-between pr-1 sm:pr-2 min-w-0">
                   <div
-                    className={`inline-flex items-center gap-2 rounded-xl transition-all truncate ${
+                    className={`inline-flex items-center gap-2 rounded-full transition-all truncate ${
                       isSelected
-                        ? "px-3.5 py-1.5 bg-[#E8C16D] dark:bg-white text-[#0A0E1A] dark:text-black font-extrabold shadow-xs"
-                        : "text-xs font-medium text-slate-700 dark:text-slate-300 py-1"
+                        ? "px-3 sm:px-3.5 py-1 sm:py-1.5 bg-[#E8C16D] dark:bg-white text-[#0A0E1A] dark:text-black font-extrabold shadow-xs"
+                        : "text-xs font-medium text-slate-700 dark:text-slate-300 py-1 px-1"
                     }`}
                   >
                     <span className="text-xs sm:text-[13px] tracking-tight truncate">{group.label}</span>
                   </div>
 
                   <span
-                    className={`text-[11px] font-semibold shrink-0 ml-2 ${
+                    className={`text-[11px] font-semibold shrink-0 ml-1.5 ${
                       isSelected
                         ? "text-[#0A0E1A] dark:text-white font-bold"
                         : "text-slate-400 dark:text-slate-500"

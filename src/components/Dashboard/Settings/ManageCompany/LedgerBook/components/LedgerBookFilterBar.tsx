@@ -115,18 +115,18 @@ export default function LedgerBookFilterBar({
     (Boolean(filters.accountHead) && filters.accountHead !== "All");
 
   return (
-    <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm">
+    <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm">
       {/* Left side filters matching Company Profile & media_1793780330613_48c59a6f.png pill style */}
-      <div className="flex flex-1 flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto xl:flex-1">
         {/* Ledger Name Pill Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
+        <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px] sm:max-w-xs">
           <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
             value={filters.ledgerName}
             onChange={(e) => onFilterChange("ledgerName", e.target.value)}
             placeholder="Ledger Name"
-            className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
+            className="w-full h-9 sm:h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
           />
           {filters.ledgerName && (
             <button
@@ -145,16 +145,17 @@ export default function LedgerBookFilterBar({
           value={filters.accountHead && filters.accountHead !== "" ? filters.accountHead : "All"}
           onChange={(val) => onFilterChange("accountHead", val)}
           options={accountHeadOptions}
-          buttonClassName="rounded-full h-10 px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
-          menuClassName="w-56 rounded-2xl"
+          className="w-full sm:w-auto"
+          buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+          menuClassName="w-full sm:w-56 rounded-2xl"
         />
 
-        {/* Reset Filters Pill matching media_1793780330613_48c59a6f.png */}
+        {/* Reset Filters Pill matching media_1793780330613_48c59a6f.png (visible on tablet/desktop) */}
         {hasActiveFilters && (
           <button
             type="button"
             onClick={onResetFilters}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs"
+            className="hidden sm:inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs shrink-0"
             title="Reset filters"
           >
             <RotateCcw className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
@@ -164,16 +165,16 @@ export default function LedgerBookFilterBar({
       </div>
 
       {/* Right side search & column controls matching pill style */}
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5 w-full xl:w-auto">
         {/* Global Search Pill Input */}
-        <div className="relative flex-1 min-w-[180px] sm:min-w-[240px]">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
+        <div className="relative flex-1 min-w-0 sm:min-w-[240px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
             value={filters.search}
             onChange={(e) => onFilterChange("search", e.target.value)}
             placeholder="Global search..."
-            className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
+            className="w-full h-9 sm:h-10 pl-9 sm:pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
           />
           {filters.search && (
             <button
@@ -187,13 +188,13 @@ export default function LedgerBookFilterBar({
         </div>
 
         {/* Columns Dropdown Pill Button */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative shrink-0" ref={dropdownRef}>
           <button
             type="button"
             aria-label="Toggle Columns"
             onClick={handleToggleColumns}
             className={cn(
-              "inline-flex items-center gap-2 h-10 px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none",
+              "inline-flex items-center gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-xs select-none",
               "border-[#E7E0D2] bg-white text-[#0A0E1A] hover:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#0F1626] dark:text-white dark:hover:border-[#E8C16D]",
               columnsDropdownOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/30 dark:border-[#E8C16D] dark:ring-[#E8C16D]/30"
             )}
@@ -262,6 +263,21 @@ export default function LedgerBookFilterBar({
           )}
         </div>
       </div>
+
+      {/* Mobile Reset Filters Pill (renders at the very end / last on mobile screens) */}
+      {hasActiveFilters && (
+        <div className="flex items-center sm:hidden">
+          <button
+            type="button"
+            onClick={onResetFilters}
+            className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs shrink-0"
+            title="Reset filters"
+          >
+            <RotateCcw className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+            <span>Reset</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

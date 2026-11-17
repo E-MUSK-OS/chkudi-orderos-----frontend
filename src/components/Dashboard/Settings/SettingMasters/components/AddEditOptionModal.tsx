@@ -154,7 +154,7 @@ export default function AddEditOptionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-md rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 shadow-2xl relative">
+      <div className="w-full max-w-md rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-2xl relative">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/[0.06]">
           <div>
@@ -368,14 +368,14 @@ export default function AddEditOptionModal({
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-all cursor-pointer"
+              className="px-4 sm:px-5 py-2 rounded-full min-h-[38px] sm:h-10 border border-slate-200 dark:border-white/[0.08] text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving || !label.trim()}
-              className="px-5 py-2 rounded-xl bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A] text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+              className="px-5 sm:px-6 py-2 rounded-full min-h-[38px] sm:h-10 bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A] text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50 active:scale-[0.98]"
             >
               {isSaving
                 ? "Saving..."

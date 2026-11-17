@@ -949,7 +949,7 @@ export default function OrderProcess() {
           <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1.5 min-w-0 max-w-2xl">
-                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Amazon Order Processing
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -958,9 +958,9 @@ export default function OrderProcess() {
               </div>
 
               {/* Progress Badge & 7-Day History Dropdown */}
-              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 self-start md:self-center">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 self-start md:self-center">
                 <AmazonProcessHistoryDropdown />
-                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-white/[0.02] shadow-xs">
+                <div className="inline-flex h-9 sm:h-11 items-center px-2.5 sm:px-4 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-white/[0.02] shadow-xs">
                   <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap">
                     <span className={pdfFiles.length > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                       {pdfFiles.length} PDF{pdfFiles.length !== 1 ? "s" : ""}
@@ -1014,14 +1014,14 @@ export default function OrderProcess() {
                     onDragOver={handlePdfDragOver}
                     onDragLeave={handlePdfDragLeave}
                     onDrop={handlePdfDrop}
-                    className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
+                    className={`group relative flex min-h-[160px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                       isDraggingPdf
                         ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
                         : "border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-white/[0.02] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-white/[0.04]"
                     }`}
                   >
-                    <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0A0E1A] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-red-600 dark:group-hover:text-red-400">
-                      <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
+                    <div className="mb-2 sm:mb-2.5 grid h-11 w-11 sm:h-14 sm:w-14 place-items-center rounded-xl sm:rounded-2xl bg-white dark:bg-[#0A0E1A] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-red-600 dark:group-hover:text-red-400">
+                      <UploadCloud className="h-5 w-5 sm:h-7 sm:w-7" />
                     </div>
 
                     <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
@@ -1031,7 +1031,7 @@ export default function OrderProcess() {
                       Select one or multiple Adobe PDF (<code className="font-mono text-red-600 dark:text-red-400 font-semibold">.pdf</code>) files
                     </p>
 
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0A0E1A] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                    <div className="mt-2.5 sm:mt-3 inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0A0E1A] px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                       <FileText className="h-3.5 w-3.5 text-red-500" />
                       Browse PDF Files
                     </div>
@@ -1187,14 +1187,14 @@ export default function OrderProcess() {
                     onDragOver={handleZplDragOver}
                     onDragLeave={handleZplDragLeave}
                     onDrop={handleZplDrop}
-                    className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
+                    className={`group relative flex min-h-[160px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                       isDraggingZpl
                         ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
                         : "border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-white/[0.02] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-white/[0.04]"
                     }`}
                   >
-                    <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0A0E1A] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                      <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
+                    <div className="mb-2 sm:mb-2.5 grid h-11 w-11 sm:h-14 sm:w-14 place-items-center rounded-xl sm:rounded-2xl bg-white dark:bg-[#0A0E1A] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                      <UploadCloud className="h-5 w-5 sm:h-7 sm:w-7" />
                     </div>
 
                     <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
@@ -1204,7 +1204,7 @@ export default function OrderProcess() {
                       Select one or multiple Zebra Barcode (<code className="font-mono text-amber-600 dark:text-amber-400 font-semibold">.zpl</code>) files
                     </p>
 
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0A0E1A] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                    <div className="mt-2.5 sm:mt-3 inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0A0E1A] px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                       <Barcode className="h-3.5 w-3.5 text-amber-600" />
                       Browse ZPL Files
                     </div>
@@ -1330,7 +1330,7 @@ export default function OrderProcess() {
               type="button"
               disabled={pdfFiles.length === 0 && zplFiles.length === 0}
               onClick={handleResetAll}
-              className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.04] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
+              className="inline-flex h-10 sm:h-12 items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.04] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700"
             >
               <RotateCcw className="h-4 w-4" />
               <span>Clear All</span>
@@ -1341,7 +1341,7 @@ export default function OrderProcess() {
                 type="button"
                 disabled={!isReadyToSubmit || isProcessing || !canCreate}
                 onClick={handleSubmit}
-                className="w-full sm:w-auto inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-6 sm:px-8 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs hover:bg-[#d4af5a] transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto inline-flex h-10 sm:h-12 items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-6 sm:px-8 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs hover:bg-[#d4af5a] transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <>

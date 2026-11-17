@@ -359,11 +359,11 @@ export default function PurchaseInvoiceSummaryFooter({
         <div className="mt-5 pt-4 border-t border-slate-200/80 dark:border-white/[0.08]">
           {/* Receipt Panel Details Box */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[#FFF9EC]/20 dark:bg-[#080B11]/60 border border-[#E8C16D]/30 dark:border-white/[0.08]">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
               {/* Left Column: Received Amount, Receipt Mode, Account */}
               <div
                 className={`space-y-3.5 ${
-                  formData.receiptMode === "Bank" ? "lg:col-span-5" : "lg:col-span-7"
+                  formData.receiptMode === "Bank" ? "xl:col-span-5" : "xl:col-span-7"
                 }`}
               >
                 {/* Received Amount */}
@@ -462,7 +462,7 @@ export default function PurchaseInvoiceSummaryFooter({
 
               {/* Right Column: Transaction Details (visible ONLY when Receipt Mode is Bank) */}
               {formData.receiptMode === "Bank" && (
-                <div className="lg:col-span-7 pt-4 lg:pt-0 lg:pl-6 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-white/[0.08] space-y-3">
+                <div className="xl:col-span-7 pt-4 xl:pt-0 xl:pl-6 border-t xl:border-t-0 xl:border-l border-slate-200 dark:border-white/[0.08] space-y-3">
                   <div className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wide">
                     Transaction Details
                   </div>

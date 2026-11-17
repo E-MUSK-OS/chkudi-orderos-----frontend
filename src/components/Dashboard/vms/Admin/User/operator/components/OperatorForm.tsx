@@ -83,12 +83,13 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
           onSubmit(values as UpdateOperatorPayload);
         }
       })}
-      className="space-y-5"
+      className="space-y-4 sm:space-y-5"
     >
       {/* Operator Name */}
       <Input
         label="Operator Name"
         placeholder="Enter operator name"
+        inputClassName="h-12 sm:h-14 text-sm sm:text-[15px]"
         {...form.register("operatorName")}
         error={
           typeof form.formState.errors.operatorName?.message === "string"
@@ -103,6 +104,7 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
           type="password"
           label="Password"
           placeholder="Enter password"
+          inputClassName="h-12 sm:h-14 text-sm sm:text-[15px]"
           {...form.register("password")}
           error={
             typeof form.formState.errors.password?.message === "string"

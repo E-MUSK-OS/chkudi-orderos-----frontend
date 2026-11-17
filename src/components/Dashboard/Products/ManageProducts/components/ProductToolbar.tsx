@@ -265,21 +265,6 @@ export default function ProductToolbar({
     }
   };
 
-  const isFilterActive =
-    (search && search.trim() !== "") ||
-    Boolean(status) ||
-    Boolean(category) ||
-    Boolean(brand) ||
-    Boolean(marketplace);
-
-  const handleResetFilters = () => {
-    onSearchChange("");
-    onStatusChange("");
-    onCategoryChange("");
-    onBrandChange("");
-    onMarketplaceChange?.("");
-  };
-
   const hasData =
     (importType === "asin" && asinData.length > 0) ||
     (importType === "product" && productsData.length > 0) ||
@@ -287,11 +272,11 @@ export default function ProductToolbar({
 
   return (
     <>
-      <div className="rounded-2xl border border-[#E7E0D2] bg-white p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 sm:gap-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
         {/* Left side: Searchbar matching OrderOS theme */}
         <div className="w-full xl:w-auto xl:max-w-md xl:flex-1 transition-all">
-          <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451] dark:focus-within:ring-[#F5C451]/30 dark:focus-within:bg-[#0B0F17]">
-            <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
+          <div className="group flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-3.5 sm:px-4 h-9 sm:h-10 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] dark:hover:border-[#F5C451]/50 dark:focus-within:border-[#F5C451] dark:focus-within:ring-[#F5C451]/30 dark:focus-within:bg-[#0B0F17]">
+            <div className="grid h-5 w-5 sm:h-6 sm:w-6 place-items-center rounded-md bg-[#FFF9EC] text-[#B88728] shrink-0 border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
               <Search className="h-3.5 w-3.5" />
             </div>
             <input
@@ -328,7 +313,9 @@ export default function ProductToolbar({
             value={status}
             onChange={(val) => onStatusChange(val)}
             options={statusOptions}
-            icon={<Boxes className="h-3.5 w-3.5" />}
+            className="flex-1 sm:flex-initial min-w-[140px]"
+            buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50"
+            icon={<Boxes className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451]" />}
           />
 
           {/* Category Dropdown (if on product view) */}
@@ -338,7 +325,9 @@ export default function ProductToolbar({
               value={category}
               onChange={(val) => onCategoryChange(val)}
               options={categoryOptions}
-              icon={<Layers className="h-3.5 w-3.5" />}
+              className="flex-1 sm:flex-initial min-w-[140px]"
+              buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50"
+              icon={<Layers className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451]" />}
             />
           )}
 
@@ -349,7 +338,9 @@ export default function ProductToolbar({
               value={brand}
               onChange={(val) => onBrandChange(val)}
               options={brandOptions}
-              icon={<Sparkles className="h-3.5 w-3.5" />}
+              className="flex-1 sm:flex-initial min-w-[140px]"
+              buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50"
+              icon={<Sparkles className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451]" />}
             />
           )}
 
@@ -360,7 +351,9 @@ export default function ProductToolbar({
               value={marketplace}
               onChange={(val) => onMarketplaceChange(val)}
               options={marketplaceOptions}
-              icon={<Store className="h-3.5 w-3.5" />}
+              className="flex-1 sm:flex-initial min-w-[140px]"
+              buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50"
+              icon={<Store className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451]" />}
             />
           )}
 
@@ -370,23 +363,14 @@ export default function ProductToolbar({
             value={importType}
             onChange={(val) => handleSelectImportType(val as ImportType)}
             options={importTypeOptions}
-            icon={<FileSpreadsheet className="h-3.5 w-3.5" />}
+            className={
+              importType === "product"
+                ? "w-[calc(100%-44px)] sm:w-auto min-w-[calc(100%-44px)] sm:min-w-[140px] flex-1 sm:flex-initial"
+                : "flex-1 sm:flex-initial min-w-[140px]"
+            }
+            buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-white/[0.08] hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50"
+            icon={<FileSpreadsheet className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451]" />}
           />
-
-          {/* Reset filter button if active */}
-          {isFilterActive && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-600 hover:text-red-700 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer dark:border-red-500/30 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25"
-              title="Reset all filters"
-            >
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-red-100 text-red-600 shrink-0 dark:bg-red-500/20 dark:text-red-400">
-                <X className="h-3.5 w-3.5" />
-              </div>
-              <span>Reset</span>
-            </button>
-          )}
 
           {/* Upload / Import Excel Button */}
           {canCreate && (
@@ -397,26 +381,26 @@ export default function ProductToolbar({
                   window.location.href = "/dashboard/settings/upload-excel?tab=product";
                 }}
                 disabled={isImporting}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] disabled:opacity-50"
+                className="order-1 sm:order-none inline-flex flex-1 sm:flex-initial w-[calc(50%-4px)] sm:w-auto min-w-[calc(50%-4px)] sm:min-w-0 justify-center items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 h-9 sm:h-10 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] disabled:opacity-50"
                 title="Upload Excel"
               >
                 <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                   <FileSpreadsheet className="h-3.5 w-3.5" />
                 </div>
-                <span>Upload Excel</span>
+                <span className="whitespace-nowrap">Upload Excel</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] disabled:opacity-50"
+                className="order-1 sm:order-none inline-flex flex-1 sm:flex-initial w-[calc(50%-4px)] sm:w-auto min-w-[calc(50%-4px)] sm:min-w-0 justify-center items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 h-9 sm:h-10 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] disabled:opacity-50"
                 title={`Import ${importType === "asin" ? "ASIN" : "Myntra"} Excel`}
               >
                 <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                   <Upload className="h-3.5 w-3.5" />
                 </div>
-                <span>{isImporting ? "Importing..." : "Import"}</span>
+                <span className="whitespace-nowrap">{isImporting ? "Importing..." : "Import"}</span>
               </button>
             )
           )}
@@ -426,7 +410,7 @@ export default function ProductToolbar({
             <button
               type="button"
               onClick={handleDownloadData}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] cursor-pointer"
+              className="order-2 sm:order-none inline-flex flex-1 sm:flex-initial w-[calc(50%-4px)] sm:w-auto min-w-[calc(50%-4px)] sm:min-w-0 justify-center items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 h-9 sm:h-10 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer dark:border-[#F5C451]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:ring-[#F5C451]/20 dark:hover:bg-[#F5C451]/25"
               title={
                 importType === "product" && selectedCount > 0
                   ? `Export ${selectedCount} selected product(s)`
@@ -436,7 +420,7 @@ export default function ProductToolbar({
               <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                 <Download className="h-3.5 w-3.5" />
               </div>
-              <span>
+              <span className="whitespace-nowrap">
                 {importType === "product" && selectedCount > 0
                   ? `Export (${selectedCount})`
                   : "Export"}
@@ -446,13 +430,13 @@ export default function ProductToolbar({
             <button
               type="button"
               onClick={handleDownloadDemoSheet}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98]"
+              className="order-2 sm:order-none inline-flex flex-1 sm:flex-initial w-[calc(50%-4px)] sm:w-auto min-w-[calc(50%-4px)] sm:min-w-0 justify-center items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 h-9 sm:h-10 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98]"
               title="Download demo Excel sheet"
             >
               <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                 <Download className="h-3.5 w-3.5" />
               </div>
-              <span>Demo Sheet</span>
+              <span className="whitespace-nowrap">Demo Sheet</span>
             </button>
           )}
 
@@ -460,10 +444,10 @@ export default function ProductToolbar({
           <button
             type="button"
             onClick={onRefresh}
-            className="inline-flex items-center justify-center h-9 sm:h-10 w-9 sm:w-10 rounded-2xl border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-slate-700 transition-all shadow-xs active:scale-[0.98] cursor-pointer dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
+            className="inline-flex items-center justify-center h-9 sm:h-10 w-9 sm:w-10 rounded-full border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-slate-700 transition-all shadow-xs active:scale-[0.98] cursor-pointer shrink-0 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
             title="Refresh"
           >
-            <RotateCw className="h-4 w-4" />
+            <RotateCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
       </div>

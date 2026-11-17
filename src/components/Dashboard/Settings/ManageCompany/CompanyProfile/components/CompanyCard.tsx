@@ -27,12 +27,12 @@ export default function CompanyCard({
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="group relative bg-white border border-[#E7E0D2] hover:border-[#E8C16D] rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all duration-300 dark:bg-[#0F1626] dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50 dark:shadow-lg dark:hover:shadow-2xl flex flex-col justify-between w-full">
+    <div className="group relative bg-white border border-[#E7E0D2] hover:border-[#E8C16D] rounded-3xl p-4 sm:p-5 xl:p-6 shadow-sm hover:shadow-md transition-all duration-300 dark:bg-[#0F1626] dark:border-white/[0.08] dark:hover:border-[#E8C16D]/50 dark:shadow-lg dark:hover:shadow-2xl flex flex-col justify-between w-full">
       <div>
         {/* Top Header: Logo + Title + Status + Code */}
-        <div className="flex items-start gap-3.5">
+        <div className="flex items-start gap-3 sm:gap-3.5">
           {/* Logo container */}
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-[#161B26] dark:border-white/[0.1] flex items-center justify-center shrink-0 shadow-xs overflow-hidden select-none">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-[#161B26] dark:border-white/[0.1] flex items-center justify-center shrink-0 shadow-xs overflow-hidden select-none">
             {company.logoUrl && !imageError ? (
               <img
                 src={getMediaUrl(company.logoUrl)}
@@ -58,9 +58,14 @@ export default function CompanyCard({
               </h3>
 
               {/* Status Badge */}
-              <div className="shrink-0 mt-0.5">
+              <div className="shrink-0 mt-0.5 flex items-center gap-1.5">
+                {company.isBranch && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40">
+                    Branch
+                  </span>
+                )}
                 {isActive && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#1A160E] text-[#E8C16D] border border-[#E8C16D]/30 shadow-xs">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 rounded-full text-xs font-semibold bg-[#1A160E] text-[#E8C16D] border border-[#E8C16D]/30 shadow-xs">
                     <Check size={11} className="stroke-[3] text-[#E8C16D]" />
                     Active
                   </span>
@@ -80,17 +85,33 @@ export default function CompanyCard({
               </div>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            <p
+              className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium truncate"
+              title={
+                company.isBranch && company.parentCompanyName
+                  ? `Code: ${company.companyCode || "—"} • Company: ${company.parentCompanyName}`
+                  : `Code: ${company.companyCode || "—"}`
+              }
+            >
               Code: <span className="text-slate-800 dark:text-slate-200 font-semibold">{company.companyCode || "—"}</span>
+              {Boolean(company.isBranch) && (
+                <>
+                  <span className="mx-1.5 text-slate-300 dark:text-slate-600 font-bold">•</span>
+                  Company:{" "}
+                  <span className="text-slate-800 dark:text-slate-200 font-semibold">
+                    {company.parentCompanyName || "—"}
+                  </span>
+                </>
+              )}
             </p>
           </div>
         </div>
 
         {/* Middle Details: Owner & GSTN */}
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/[0.06] grid grid-cols-2 gap-4">
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/[0.06] grid grid-cols-2 gap-3 sm:gap-4">
           {/* Owner Details */}
-          <div className="flex items-start gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:border-white/[0.08] flex items-center justify-center shrink-0 text-[#B88728] dark:text-[#E8C16D] mt-0.5">
+          <div className="flex items-start gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:border-white/[0.08] flex items-center justify-center shrink-0 text-[#B88728] dark:text-[#E8C16D] mt-0.5">
               <User size={14} />
             </div>
             <div className="min-w-0 flex-1">
@@ -98,7 +119,7 @@ export default function CompanyCard({
                 Owner
               </p>
               <p
-                className="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase leading-snug break-words mt-0.5"
+                className="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase leading-snug break-words line-clamp-2 mt-0.5"
                 title={company.ownerName || "Not Specified"}
               >
                 {company.ownerName || "—"}
@@ -107,8 +128,8 @@ export default function CompanyCard({
           </div>
 
           {/* GSTN Details */}
-          <div className="flex items-start gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:border-white/[0.08] flex items-center justify-center shrink-0 text-[#B88728] dark:text-[#E8C16D] mt-0.5">
+          <div className="flex items-start gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:border-white/[0.08] flex items-center justify-center shrink-0 text-[#B88728] dark:text-[#E8C16D] mt-0.5">
               <FileText size={14} />
             </div>
             <div className="min-w-0 flex-1">
@@ -127,9 +148,9 @@ export default function CompanyCard({
       </div>
 
       {/* Bottom Action Bar: Active/Draft Switch & Delete on left, View + Edit on right */}
-      <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+      <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2 min-w-0">
         {/* Left: Active/Draft Switch & Delete */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Active / Draft Status Switch matching Image 2 */}
           <label
             className={`relative inline-flex items-center select-none ${
@@ -164,14 +185,14 @@ export default function CompanyCard({
         </div>
 
         {/* Right: View & Edit buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {onView && (
             <button
               type="button"
               onClick={() => onView(company)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-black dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-all cursor-pointer active:scale-95 shadow-xs"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-black dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-all cursor-pointer active:scale-95 shadow-xs shrink-0"
             >
-              <Eye size={13} className="text-slate-400" />
+              <Eye size={13} className="text-slate-400 shrink-0" />
               <span>View</span>
             </button>
           )}
@@ -179,9 +200,9 @@ export default function CompanyCard({
           <button
             type="button"
             onClick={() => onModify(company)}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#E8C16D] hover:bg-[#d8b05c] text-xs font-bold text-[#0A0E1A] transition-all cursor-pointer active:scale-95 shadow-xs"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-[#E8C16D] hover:bg-[#d8b05c] text-xs font-bold text-[#0A0E1A] transition-all cursor-pointer active:scale-95 shadow-xs shrink-0"
           >
-            <Edit3 size={13} className="text-[#0A0E1A]" />
+            <Edit3 size={13} className="text-[#0A0E1A] shrink-0" />
             <span>Edit</span>
           </button>
         </div>

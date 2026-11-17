@@ -178,7 +178,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
     <DashboardLayout title="Ledger Book">
       <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4 max-w-[1600px] mx-auto">
         {/* Top Header Bar matching main Ledger Book page header */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Title & Breadcrumbs matching main Ledger Book theme */}
             <div className="space-y-1.5 min-w-0 max-w-2xl">
@@ -186,18 +186,18 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
                   title="Back to Ledger Book"
                 >
                   <ArrowLeft size={18} />
                 </button>
-                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Ledger Book
                 </h1>
               </div>
 
               {/* One line page description */}
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-1">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-0.5 sm:ml-1">
                 Track and balance financial ledger books, debit and credit transaction records.
               </p>
             </div>
@@ -207,7 +207,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
               <button
                 type="button"
                 onClick={handleEdit}
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
+                className="inline-flex min-h-[38px] sm:h-12 items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-4 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
                 title="Edit Ledger"
               >
                 <Edit3 size={16} className="text-[#0A0E1A]" />
@@ -217,7 +217,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
               <button
                 type="button"
                 onClick={() => setDeleteModalOpen(true)}
-                className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-4 sm:px-5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-all cursor-pointer shadow-xs"
+                className="inline-flex min-h-[38px] sm:h-12 items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-3.5 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-all cursor-pointer shadow-xs"
                 title="Delete Ledger"
               >
                 <Trash2 size={16} />
@@ -271,7 +271,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
               </div>
 
               {/* 4-column layout matching img-1 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-x-6 sm:gap-x-8 gap-y-4">
                 {/* Column 1 */}
                 <div className="space-y-3.5">
                   <div>
@@ -346,11 +346,11 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
           </div>
 
           {/* ========================================================================= */}
-          {/* MIDDLE SECTION: 3 COLUMNS (WITH CLEAN VERTICAL DIVIDERS)                  */}
+          {/* MIDDLE SECTION: 3 COLUMNS (WITH CLEAN VERTICAL DIVIDERS ON XL)            */}
           {/* ========================================================================= */}
-          <div className="p-6 sm:p-8 border-t border-[#EAE4D8] dark:border-white/[0.08] grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[#EAE4D8] dark:divide-white/[0.08]">
+          <div className="p-6 sm:p-8 border-t border-[#EAE4D8] dark:border-white/[0.08] grid grid-cols-1 xl:grid-cols-3 divide-y xl:divide-y-0 xl:divide-x divide-[#EAE4D8] dark:divide-white/[0.08]">
             {/* Column 1: Contact Details */}
-            <div className="space-y-4 pb-6 lg:pb-0 lg:pr-8">
+            <div className="space-y-4 pb-6 xl:pb-0 xl:pr-8">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
                   <MapPin size={14} />
@@ -394,7 +394,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
             </div>
 
             {/* Column 2: Taxation & Legal Details + Other Details */}
-            <div className="space-y-6 py-6 lg:py-0 lg:px-8">
+            <div className="space-y-6 py-6 xl:py-0 xl:px-8">
               {/* Taxation & Legal */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -406,36 +406,36 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5">
+                  <div className="min-w-0">
                     <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       GST No.
                     </span>
-                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5 truncate select-all">
                       {ledger.gstin || "—"}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       PAN No.
                     </span>
-                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5 truncate select-all">
                       {ledger.pan || "—"}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       MSME No.
                     </span>
-                    <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5">
+                    <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5 truncate">
                       {ledger.msmeNumber || "—"}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Legal Name.
                     </span>
-                    <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5">
+                    <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5 break-words">
                       {ledger.legalName || "Karo Deal"}
                     </p>
                   </div>
@@ -453,20 +453,20 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5">
+                  <div className="min-w-0">
                     <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Credit Debit Limit.
                     </span>
-                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5 truncate">
                       {ledger.creditDebitLimit || ledger.creditLimit || 0}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                       Bill Due Days.
                     </span>
-                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                    <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5 truncate">
                       {ledger.billDueDays || 0}
                     </p>
                   </div>
@@ -475,7 +475,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
             </div>
 
             {/* Column 3: Bank Details */}
-            <div className="space-y-4 pt-6 lg:pt-0 lg:pl-8">
+            <div className="space-y-4 pt-6 xl:pt-0 xl:pl-8">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
                   <Landmark size={14} />
@@ -485,54 +485,54 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
                 </h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5">
+                <div className="min-w-0">
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Account No.
                   </span>
-                  <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+                  <p className="text-[14px] font-bold font-mono text-slate-900 dark:text-white mt-0.5 truncate select-all">
                     {ledger.accountNumber || "—"}
                   </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Holder Name.
                   </span>
-                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5">
+                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5 break-words">
                     {ledger.accountHolderName || "HEET BHATIYA"}
                   </p>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Bank Name.
                   </span>
-                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5">
+                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5 break-words">
                     {ledger.bankName || "—"}
                   </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Branch Name.
                   </span>
-                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5">
+                  <p className="text-[14px] font-bold uppercase text-slate-900 dark:text-white mt-0.5 break-words">
                     {ledger.branchName || "—"}
                   </p>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     Account Type.
                   </span>
-                  <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5">
+                  <p className="text-[14px] font-bold text-slate-900 dark:text-white mt-0.5 truncate">
                     {ledger.accountType || "Current"}
                   </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-[12px] text-slate-400 dark:text-slate-500 font-normal block">
                     IFSC Code.
                   </span>
-                  <p className="text-[14px] font-bold font-mono uppercase text-slate-900 dark:text-white mt-0.5">
+                  <p className="text-[14px] font-bold font-mono uppercase text-slate-900 dark:text-white mt-0.5 truncate select-all">
                     {ledger.ifsc || "—"}
                   </p>
                 </div>

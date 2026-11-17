@@ -224,7 +224,7 @@ export default function ProductTable({
 
   if (!products.length) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
+      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
           <Package className="h-7 w-7" />
         </div>
@@ -318,7 +318,7 @@ export default function ProductTable({
                   </td>
 
                   {/* Product Details (Name, SKU, Description, Party) */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle max-w-[260px]">
+                  <td className="px-3 sm:px-4 py-3.5 align-middle min-w-[200px] max-w-[260px]">
                     <div>
                       <p className="font-bold text-[#0A0E1A] truncate dark:text-white" title={product.productName}>
                         {product.productName}
@@ -406,7 +406,7 @@ export default function ProductTable({
                   </td>
 
                   {/* Category & Attributes */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle">
+                  <td className="px-3 sm:px-4 py-3.5 align-middle min-w-[160px]">
                     <div>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {product.category}

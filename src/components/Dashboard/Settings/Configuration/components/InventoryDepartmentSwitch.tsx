@@ -10,7 +10,7 @@ interface Props {
 
 export default function InventoryDepartmentSwitch({ checked, onChange }: Props) {
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm mb-4 flex items-center justify-between gap-3 transition-all hover:border-[#E8C16D]/40">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm mb-4 flex items-center justify-between gap-3 transition-all hover:border-[#E8C16D]/40">
       <div className="flex items-center gap-3">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shrink-0">
           <Warehouse className="h-4.5 w-4.5" />

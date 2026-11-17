@@ -52,16 +52,16 @@ export default function WebstoreFilterSortBar({
   return (
     <div className="space-y-3">
       {/* Top Search, Channel Filter & View Toggle Bar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm">
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5 sm:gap-3 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm">
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="relative flex-1 max-w-md w-full">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by store name, company or marketplace..."
             value={filters.search}
             onChange={(e) => onFilterChange("search", e.target.value)}
-            className="w-full pl-9 pr-8 py-2 text-xs rounded-xl sm:rounded-2xl border border-[#E7E0D2] bg-slate-50/50 dark:border-white/[0.1] dark:bg-[#080B11] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#E8C16D] focus:border-[#E8C16D] dark:focus:ring-[#E8C16D]"
+            className="w-full h-9 sm:h-10 pl-9 pr-8 text-xs sm:text-sm rounded-full border border-[#E7E0D2] bg-slate-50/50 dark:border-white/[0.1] dark:bg-[#080B11] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#E8C16D] focus:border-[#E8C16D] dark:focus:ring-[#E8C16D]"
           />
           {filters.search && (
             <button
@@ -75,26 +75,30 @@ export default function WebstoreFilterSortBar({
         </div>
 
         {/* Channel Dropdown, Status Filter & Layout Switcher */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 w-full xl:w-auto">
           {/* Marketplace Filter */}
-          <ThemeSelectDropdown
-            ariaLabel="Filter by Channel"
-            value={filters.marketplaceName}
-            onChange={(val) => onFilterChange("marketplaceName", val)}
-            options={channelFilterOptions}
-            buttonClassName="h-9 px-3 text-xs font-semibold rounded-xl border border-[#E7E0D2] dark:border-white/[0.08]"
-            menuClassName="w-48"
-          />
+          <div className="flex-1 sm:flex-initial min-w-0">
+            <ThemeSelectDropdown
+              ariaLabel="Filter by Channel"
+              value={filters.marketplaceName}
+              onChange={(val) => onFilterChange("marketplaceName", val)}
+              options={channelFilterOptions}
+              buttonClassName="h-9 px-3 text-xs font-semibold rounded-full border border-[#E7E0D2] dark:border-white/[0.08] w-full"
+              menuClassName="w-48"
+            />
+          </div>
 
           {/* Status Filter */}
-          <ThemeSelectDropdown
-            ariaLabel="Filter by Status"
-            value={filters.isActive}
-            onChange={(val) => onFilterChange("isActive", val)}
-            options={statusFilterOptions}
-            buttonClassName="h-9 px-3 text-xs font-semibold rounded-xl border border-[#E7E0D2] dark:border-white/[0.08]"
-            menuClassName="w-40"
-          />
+          <div className="flex-1 sm:flex-initial min-w-0">
+            <ThemeSelectDropdown
+              ariaLabel="Filter by Status"
+              value={filters.isActive}
+              onChange={(val) => onFilterChange("isActive", val)}
+              options={statusFilterOptions}
+              buttonClassName="h-9 px-3 text-xs font-semibold rounded-full border border-[#E7E0D2] dark:border-white/[0.08] w-full"
+              menuClassName="w-40"
+            />
+          </div>
 
           {/* Reset Filters button */}
           {hasActiveFilters && onResetFilters && (
@@ -102,19 +106,19 @@ export default function WebstoreFilterSortBar({
               type="button"
               onClick={onResetFilters}
               title="Reset Filters"
-              className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20 rounded-full border border-rose-200/60 dark:border-rose-900/40 transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20 rounded-full border border-rose-200/60 dark:border-rose-900/40 transition-colors cursor-pointer shrink-0"
             >
               Reset
             </button>
           )}
 
           {/* Layout Mode Toggle (Grid vs Table) */}
-          <div className="flex items-center rounded-xl border border-[#E7E0D2] bg-slate-50/50 dark:border-white/[0.1] dark:bg-[#080B11] p-0.5 ml-1">
+          <div className="flex items-center rounded-full border border-[#E7E0D2] bg-slate-50/50 dark:border-white/[0.1] dark:bg-[#080B11] p-0.5 shrink-0">
             <button
               type="button"
               onClick={() => onLayoutModeChange("grid")}
               title="Card Grid View"
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 layoutMode === "grid"
                   ? "bg-[#E8C16D] text-[#0A0E1A] shadow-xs font-bold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -126,7 +130,7 @@ export default function WebstoreFilterSortBar({
               type="button"
               onClick={() => onLayoutModeChange("table")}
               title="Table View"
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 layoutMode === "table"
                   ? "bg-[#E8C16D] text-[#0A0E1A] shadow-xs font-bold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -140,7 +144,7 @@ export default function WebstoreFilterSortBar({
 
       {/* Styled Columns Bar matching system standard (Header bar with sort arrows) - Shown in Grid view */}
       {layoutMode === "grid" && (
-        <div className="overflow-x-auto rounded-xl bg-[#FEFAEE] dark:bg-[#080B11] border border-[#F5E6BE] dark:border-white/[0.08] shadow-sm">
+        <div className="overflow-x-auto no-scrollbar rounded-xl sm:rounded-2xl bg-[#FEFAEE] dark:bg-[#080B11] border border-[#F5E6BE] dark:border-white/[0.08] shadow-sm">
           <div className="grid grid-cols-6 min-w-[700px] text-[#6A4D1D] dark:text-[#E8C16D] text-xs font-semibold py-2.5 px-4 select-none">
             {sortColumns.map((col) => {
               const isSorted = filters.sortBy === col.key;

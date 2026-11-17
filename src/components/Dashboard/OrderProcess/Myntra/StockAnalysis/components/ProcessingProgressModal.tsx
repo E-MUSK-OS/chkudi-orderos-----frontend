@@ -26,7 +26,7 @@ export default function ProcessingProgressModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="relative w-full max-w-xl sm:max-w-2xl overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white p-6 sm:p-10 shadow-2xl dark:border-[#E8C16D]/30 dark:bg-[#0A0E1A]"
+          className="relative w-full max-w-xl sm:max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-10 shadow-2xl dark:border-[#E8C16D]/30 dark:bg-[#0A0E1A]"
         >
           {/* Subtle Ambient Background Glows */}
           <div className="pointer-events-none absolute -top-20 -left-20 h-52 w-52 rounded-full bg-[#FFF9EC] blur-3xl dark:bg-[#E8C16D]/10" />
@@ -34,11 +34,11 @@ export default function ProcessingProgressModal({
 
           {/* Top Title Section */}
           <div className="flex flex-col items-center text-center space-y-2">
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF9EC] px-4 py-1 text-xs font-bold text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#E8C16D]/15 dark:text-[#E8C16D]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF9EC] px-3.5 sm:px-4 py-1 text-[11px] sm:text-xs font-bold text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#E8C16D]/15 dark:text-[#E8C16D]">
               <Sparkles className="h-3.5 w-3.5 animate-pulse text-[#B88728] dark:text-[#E8C16D]" />
               Myntra Stock Analysis Engine
             </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0A0E1A] dark:text-white">
+            <h3 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[#0A0E1A] dark:text-white">
               Processing Orders & Returns
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md">

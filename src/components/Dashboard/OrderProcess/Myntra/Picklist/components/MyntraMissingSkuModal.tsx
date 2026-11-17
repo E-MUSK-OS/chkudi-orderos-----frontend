@@ -127,7 +127,7 @@ export default function MyntraMissingSkuModal({
           exit={{ opacity: 0, scale: 0.94, y: 12 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md sm:max-w-lg overflow-hidden rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-7 shadow-2xl text-slate-900 dark:text-white"
+          className="relative w-full max-w-md sm:max-w-lg overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-2xl text-slate-900 dark:text-white"
         >
           {/* Close button at top right */}
           <button

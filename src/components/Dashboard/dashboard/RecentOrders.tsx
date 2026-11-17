@@ -57,7 +57,7 @@ export default function RecentOrders() {
             <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF9EC] border border-[#E8C16D]/30 text-[#B88728] shrink-0 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-[#F5C451] dark:shadow-[0_0_12px_rgba(245,196,81,0.15)]">
               <ShoppingBag className="h-4 w-4" />
             </div>
-            <h3 className="text-base sm:text-lg font-black text-[#0A0E1A] tracking-tight dark:text-white">
+            <h3 className="text-sm sm:text-base md:text-lg font-black text-[#0A0E1A] tracking-tight dark:text-white">
               Recent Orders
             </h3>
           </div>
@@ -71,10 +71,10 @@ export default function RecentOrders() {
           <table className="w-full min-w-[550px] border-collapse text-left font-sans">
             <thead className="bg-[#FEFAEE] dark:bg-none text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:bg-[#090D17] dark:text-[#F5C451] dark:border-white/[0.08]">
               <tr>
-                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Order ID</th>
-                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
-                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Status</th>
-                <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Amount</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap">Order ID</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap">Status</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap">Amount</th>
               </tr>
             </thead>
 
@@ -84,15 +84,15 @@ export default function RecentOrders() {
                   key={order.id}
                   className="transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
                 >
-                  <td className="px-4 py-3.5 text-center font-mono font-bold text-[#0A0E1A] whitespace-nowrap text-xs sm:text-sm dark:text-slate-100">
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-mono font-bold text-[#0A0E1A] whitespace-nowrap text-xs sm:text-sm dark:text-slate-100">
                     {order.id}
                   </td>
 
-                  <td className="px-4 py-3.5 text-center font-semibold text-slate-800 whitespace-nowrap text-xs sm:text-sm dark:text-slate-200">
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold text-slate-800 whitespace-nowrap text-xs sm:text-sm dark:text-slate-200">
                     {order.customer}
                   </td>
 
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center whitespace-nowrap">
                     {order.status === "Delivered" ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-400 dark:shadow-[0_0_12px_rgba(16,185,129,0.15)]">
                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -111,7 +111,7 @@ export default function RecentOrders() {
                     )}
                   </td>
 
-                  <td className="px-4 py-3.5 text-center font-mono font-bold text-[#0A0E1A] whitespace-nowrap text-xs sm:text-sm dark:text-slate-100 dark:tabular-nums">
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-mono font-bold text-[#0A0E1A] whitespace-nowrap text-xs sm:text-sm dark:text-slate-100 dark:tabular-nums">
                     {order.amount}
                   </td>
                 </tr>

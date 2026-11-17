@@ -140,9 +140,9 @@ export default function POUploadPanel({
 
       {/* Main Upload Input Row */}
       <div className="flex flex-wrap items-center justify-between gap-y-3.5 gap-x-4">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3.5">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3.5 w-full min-[1400px]:w-auto">
           {/* Enter PO No. */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 w-full sm:w-auto">
             <label className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-200 whitespace-nowrap">
               Enter PO No.
             </label>
@@ -152,16 +152,16 @@ export default function POUploadPanel({
               onChange={(e) => setPoNumber(e.target.value)}
               placeholder="e.g. PO-2026-908"
               disabled={isParsing}
-              className="h-9 sm:h-10 w-36 sm:w-48 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 transition-all shadow-2xs disabled:opacity-50"
+              className="h-9 sm:h-10 flex-1 max-w-[190px] sm:max-w-none sm:w-48 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 transition-all shadow-2xs disabled:opacity-50"
             />
           </div>
 
           {/* Date. */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 w-full sm:w-auto">
             <label className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-200 whitespace-nowrap">
               Date.
             </label>
-            <div className="w-36 sm:w-44">
+            <div className="flex-1 max-w-[190px] sm:max-w-none sm:w-44">
               <DatePicker
                 allowInput
                 value={poDate}
@@ -170,52 +170,54 @@ export default function POUploadPanel({
                 dateFormat="yyyy-MM-dd"
                 disabled={isParsing}
                 className="w-full"
-                buttonClassName="h-9 sm:h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white shadow-2xs hover:border-[#E8C16D] transition-colors disabled:opacity-50"
+                buttonClassName="h-9 sm:h-10 w-full px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white shadow-2xs hover:border-[#E8C16D] transition-colors disabled:opacity-50"
               />
             </div>
           </div>
 
           {/* Select PO Excel File. */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2.5 w-full sm:w-auto">
             <label className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-200 whitespace-nowrap">
               Select PO Excel File.
             </label>
-            <input
-              type="text"
-              readOnly
-              value={selectedFileName}
-              placeholder="No file chosen"
-              onClick={handleBrowseClick}
-              className="h-9 sm:h-10 w-44 sm:w-60 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-100/90 dark:bg-white/[0.06] text-xs font-semibold text-[#0A0E1A] dark:text-slate-200 cursor-pointer outline-none truncate transition-colors"
-            />
-            <button
-              type="button"
-              onClick={handleBrowseClick}
-              disabled={isParsing}
-              className="h-9 sm:h-10 px-5 rounded-xl border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_15px_rgba(245,196,81,0.25)] font-bold text-xs sm:text-sm transition-all duration-200 active:scale-95 shadow-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-            >
-              {isParsing ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <span>Browse</span>
-              )}
-            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                readOnly
+                value={selectedFileName}
+                placeholder="No file chosen"
+                onClick={handleBrowseClick}
+                className="h-9 sm:h-10 flex-1 sm:flex-none sm:w-60 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-100/90 dark:bg-white/[0.06] text-xs font-semibold text-[#0A0E1A] dark:text-slate-200 cursor-pointer outline-none truncate transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleBrowseClick}
+                disabled={isParsing}
+                className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:border-transparent dark:bg-gradient-to-r dark:from-[#F5C451] dark:via-[#F3BD3C] dark:to-[#E5A827] dark:text-[#080B11] dark:shadow-[0_0_15px_rgba(245,196,81,0.25)] font-bold text-xs sm:text-sm transition-all duration-200 active:scale-95 shadow-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              >
+                {isParsing ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <span>Browse</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Action Controls: Template Download */}
-        <div className="flex items-center gap-2.5 ml-auto">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto min-[1400px]:ml-auto">
           <button
             type="button"
             onClick={handleDownloadTemplate}
             title="Download Sample PO Excel Template"
-            className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#252014] text-[#B88728] dark:text-[#E8C16D] font-bold text-xs sm:text-sm transition-all shadow-xs active:scale-95 cursor-pointer ring-1 ring-[#E8C16D]/30"
+            className="inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#252014] text-[#B88728] dark:text-[#E8C16D] font-bold text-xs sm:text-sm transition-all shadow-xs active:scale-95 cursor-pointer ring-1 ring-[#E8C16D]/30 w-full sm:w-auto"
           >
             <Download className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
-            <span className="hidden sm:inline">Sample Template</span>
+            <span>Sample Template</span>
           </button>
         </div>
       </div>

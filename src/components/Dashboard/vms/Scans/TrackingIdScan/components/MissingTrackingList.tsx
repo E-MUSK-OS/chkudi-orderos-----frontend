@@ -78,33 +78,33 @@ export default function MissingTrackingList({
   return (
     <div className="rounded-2xl sm:rounded-3xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-[#0F1626] shadow-sm transition-all overflow-hidden mb-6">
       {/* Header bar */}
-      <div className="flex flex-col gap-3 border-b border-red-100 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-red-100 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 px-4 sm:px-5 py-3 sm:py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-300">
-            <AlertCircle className="h-4.5 w-4.5" />
+          <div className="mt-0.5 flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-300">
+            <AlertCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-base sm:text-lg font-bold text-red-950 dark:text-red-200 tracking-tight">
+              <h2 className="text-sm sm:text-base md:text-lg font-bold text-red-950 dark:text-red-200 tracking-tight">
                 Missing / Unmatched Tracking IDs
               </h2>
-              <span className="rounded-lg bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800/60 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:text-red-300">
+              <span className="rounded-lg bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800/60 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-red-700 dark:text-red-300">
                 {trackingIds.length} Missing
               </span>
             </div>
-            <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
+            <p className="mt-0.5 text-[11px] sm:text-xs text-red-700 dark:text-red-400">
               These Tracking IDs were scanned but no matching VMS record was found.
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           {/* Export Excel */}
           <button
             type="button"
             onClick={handleExportExcel}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 px-3.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-[0.98]"
+            className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 px-3 sm:px-3.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-[0.98]"
             title="Download Excel file of missing Tracking IDs"
           >
             <Download className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
@@ -115,7 +115,7 @@ export default function MissingTrackingList({
           <button
             type="button"
             onClick={handleCopyAll}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] px-3.5 text-xs font-bold transition shadow-xs cursor-pointer ring-1 ring-[#E8C16D]/30 active:scale-[0.98]"
+            className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] px-3 sm:px-3.5 text-xs font-bold transition shadow-xs cursor-pointer ring-1 ring-[#E8C16D]/30 active:scale-[0.98]"
             title="Copy all missing Tracking IDs to clipboard"
           >
             {copiedAll ? (
@@ -136,7 +136,7 @@ export default function MissingTrackingList({
             <button
               type="button"
               onClick={onClearAll}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-[#080B11] hover:bg-red-50 dark:hover:bg-red-950/30 px-3.5 text-xs font-bold text-red-700 dark:text-red-400 transition shadow-xs cursor-pointer active:scale-[0.98]"
+              className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-[#080B11] hover:bg-red-50 dark:hover:bg-red-950/30 px-3 sm:px-3.5 text-xs font-bold text-red-700 dark:text-red-400 transition shadow-xs cursor-pointer active:scale-[0.98]"
               title="Clear missing Tracking IDs list"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -151,11 +151,11 @@ export default function MissingTrackingList({
         <table className="w-full min-w-[600px] border-collapse text-left font-sans">
           <thead className="sticky top-0 z-10 bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
             <tr>
-              <th className="px-4 py-3 text-center whitespace-nowrap w-14">NO.</th>
-              <th className="px-4 py-3 text-center whitespace-nowrap">Scanned Tracking ID</th>
-              <th className="px-4 py-3 text-center whitespace-nowrap">Status</th>
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-center whitespace-nowrap w-14">NO.</th>
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-center whitespace-nowrap">Scanned Tracking ID</th>
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-center whitespace-nowrap">Status</th>
               {onRemoveItem && (
-                <th className="px-4 py-3 text-center whitespace-nowrap w-20">Action</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-center whitespace-nowrap w-20">Action</th>
               )}
             </tr>
           </thead>
@@ -170,14 +170,14 @@ export default function MissingTrackingList({
                   className="transition-colors hover:bg-red-50/40 dark:hover:bg-red-950/20"
                 >
                   {/* NO. */}
-                  <td className="px-4 py-3 text-center font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-center font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     {index + 1}
                   </td>
 
                   {/* Scanned Tracking ID */}
-                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-center whitespace-nowrap">
                     <div className="inline-flex items-center gap-2">
-                      <span className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/40 px-3 py-1 font-mono text-xs sm:text-sm font-bold text-red-950 dark:text-red-300 tracking-wider">
+                      <span className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/40 px-2.5 sm:px-3 py-0.5 sm:py-1 font-mono text-xs sm:text-sm font-bold text-red-950 dark:text-red-300 tracking-wider">
                         {id}
                       </span>
                       <button
@@ -196,8 +196,8 @@ export default function MissingTrackingList({
                   </td>
 
                   {/* Status */}
-                  <td className="px-4 py-3 text-center whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 dark:border-red-900/40 bg-red-100 dark:bg-red-900/50 px-3 py-0.5 text-xs font-bold text-red-700 dark:text-red-300">
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-center whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 dark:border-red-900/40 bg-red-100 dark:bg-red-900/50 px-2.5 sm:px-3 py-0.5 text-[11px] sm:text-xs font-bold text-red-700 dark:text-red-300">
                       <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
                       NOT FOUND
                     </span>

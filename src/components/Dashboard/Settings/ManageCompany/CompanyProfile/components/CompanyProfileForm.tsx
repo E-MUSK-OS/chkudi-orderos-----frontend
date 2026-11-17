@@ -596,12 +596,12 @@ export default function CompanyProfileForm({
     const hasErr = Boolean(fieldKey && errors[fieldKey]);
     if (disabled) {
       return cn(
-        "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400 transition-all shadow-xs",
+        "w-full h-10 sm:h-11 sm:h-12 px-4 sm:px-5 text-xs sm:text-sm font-medium rounded-full border outline-none bg-slate-100 border-[#E7E0D2] text-slate-500 cursor-not-allowed select-none dark:bg-[#161B26]/50 dark:border-white/[0.04] dark:text-slate-400 transition-all shadow-xs",
         isMono && "font-mono"
       );
     }
     return cn(
-      "w-full h-11 sm:h-12 px-5 text-xs sm:text-sm font-medium rounded-full bg-white border text-[#0A0E1A] placeholder:text-slate-400 dark:bg-[#080B11] dark:text-white outline-none transition-all shadow-xs",
+      "w-full h-10 sm:h-11 sm:h-12 px-4 sm:px-5 text-xs sm:text-sm font-medium rounded-full bg-white border text-[#0A0E1A] placeholder:text-slate-400 dark:bg-[#080B11] dark:text-white outline-none transition-all shadow-xs",
       isMono && "font-mono",
       hasErr
         ? "border-rose-500 focus:border-rose-500 ring-2 ring-rose-500/20 dark:border-rose-500"
@@ -934,12 +934,12 @@ export default function CompanyProfileForm({
               <button
                 type="button"
                 onClick={onBack}
-                className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
                 title="Back to Company Profiles"
               >
                 <ArrowLeft size={18} />
               </button>
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Company Profile
               </h1>
             </div>
@@ -949,12 +949,12 @@ export default function CompanyProfileForm({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs">
+            <div className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs">
               <Check size={12} className="stroke-[3] text-[#B88728] dark:text-[#E8C16D]" />
               <span>{formData.status === "ACTIVE" ? "Active" : "Draft"}</span>
             </div>
 
-            <div className="px-4 py-1.5 rounded-full bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] font-bold text-xs shadow-xs select-none">
+            <div className="px-3.5 sm:px-4 py-1.5 rounded-full bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] font-bold text-xs shadow-xs select-none">
               Edit Mode
             </div>
           </div>
@@ -1002,7 +1002,7 @@ export default function CompanyProfileForm({
       {/* 3. MAIN SECTION CARD with Integrated Action Bar matching our theme        */}
       {/* ========================================================================= */}
       <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 sm:p-8 flex-1">
+        <div className="p-4 sm:p-6 sm:p-8 flex-1">
         {/* ========================================================================= */}
         {/* TAB 1: GENERAL DETAILS                                                   */}
         {/* ========================================================================= */}

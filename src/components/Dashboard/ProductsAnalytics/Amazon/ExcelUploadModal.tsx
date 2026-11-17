@@ -200,7 +200,7 @@ export default function ExcelUploadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl !rounded-3xl sm:!rounded-[32px] overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-2xl relative m-4">
+      <div className="w-full max-w-2xl !rounded-2xl sm:!rounded-[32px] overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-2xl relative m-2 sm:m-4">
         {/* Header Banner */}
         <div className="bg-[#0A0E1A] dark:bg-[#080B11] px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-800 dark:border-white/[0.08] text-left">
           <div className="flex items-center justify-between gap-3">
@@ -258,14 +258,14 @@ export default function ExcelUploadModal({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`group relative flex min-h-[180px] sm:min-h-[210px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-[24px] border-2 border-dashed p-6 sm:p-8 text-center transition-all ${
+                className={`group relative flex min-h-[160px] sm:min-h-[210px] cursor-pointer flex-col items-center justify-center rounded-xl sm:rounded-[24px] border-2 border-dashed p-4 sm:p-8 text-center transition-all ${
                   isDragging
                     ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
                     : "border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5]/80 dark:bg-[#080B11]/80 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 dark:hover:bg-[#1A160E]/40"
                 }`}
               >
-                <div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 text-[#B88728] dark:text-[#E8C16D] shadow-xs transition-transform group-hover:scale-105">
-                  <UploadCloud className="h-7 w-7" />
+                <div className="mb-2 sm:mb-3 grid h-11 w-11 sm:h-14 sm:w-14 place-items-center rounded-xl sm:rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 text-[#B88728] dark:text-[#E8C16D] shadow-xs transition-transform group-hover:scale-105">
+                  <UploadCloud className="h-5 w-5 sm:h-7 sm:w-7" />
                 </div>
 
                 <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
@@ -275,7 +275,7 @@ export default function ExcelUploadModal({
                   Select a valid Excel (<code className="font-mono text-[#B88728] dark:text-[#E8C16D] font-bold">.xlsx</code>) file
                 </p>
 
-                <div className="mt-3.5 inline-flex items-center gap-2 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-white dark:bg-[#0F1626] px-3.5 py-1.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D]">
+                <div className="mt-2.5 sm:mt-3.5 inline-flex items-center gap-2 text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] bg-white dark:bg-[#0F1626] px-3 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-2xs group-hover:border-[#E8C16D]">
                   <FileSpreadsheet className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
                   <span>Browse Excel Files</span>
                 </div>
@@ -312,18 +312,18 @@ export default function ExcelUploadModal({
                   )}
                 </div>
 
-                <div className="mt-4 flex justify-end gap-3">
+                <div className="mt-4 flex justify-end gap-2.5 sm:gap-3">
                   <button
                     onClick={onClose}
                     disabled={isUploading}
-                    className="h-11 sm:h-12 inline-flex items-center justify-center rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition active:scale-[0.98] cursor-pointer"
+                    className="h-10 sm:h-12 inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition active:scale-[0.98] cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUploadToServer}
                     disabled={isUploading}
-                    className="h-11 sm:h-12 inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] transition shadow-xs active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                    className="h-10 sm:h-12 inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] transition shadow-xs active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                   >
                     {isUploading ? (
                       <>

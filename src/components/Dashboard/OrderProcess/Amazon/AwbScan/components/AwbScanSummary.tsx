@@ -27,8 +27,8 @@ export default function AwbScanSummary({ total, pending, scanned, missing = 0 }:
           </div>
         </div>
         <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-          <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">{total}</h3>
-          <span className="rounded-lg border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:text-blue-400">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white">{total}</h3>
+          <span className="rounded-lg border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-400">
             Total
           </span>
         </div>
@@ -43,8 +43,8 @@ export default function AwbScanSummary({ total, pending, scanned, missing = 0 }:
           </div>
         </div>
         <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-          <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">{scanned}</h3>
-          <span className="rounded-lg border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white">{scanned}</h3>
+          <span className="rounded-lg border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-400">
             Scanned
           </span>
         </div>
@@ -59,8 +59,8 @@ export default function AwbScanSummary({ total, pending, scanned, missing = 0 }:
           </div>
         </div>
         <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-          <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">{pending}</h3>
-          <span className="rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-400">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white">{pending}</h3>
+          <span className="rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-amber-800 dark:text-amber-400">
             Pending
           </span>
         </div>
@@ -76,8 +76,8 @@ export default function AwbScanSummary({ total, pending, scanned, missing = 0 }:
             </div>
           </div>
           <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-            <h3 className="text-2xl sm:text-3xl font-black text-red-600 dark:text-red-400">{missing}</h3>
-            <span className="rounded-lg border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:text-red-400">
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-red-600 dark:text-red-400">{missing}</h3>
+            <span className="rounded-lg border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-red-700 dark:text-red-400">
               Unmatched
             </span>
           </div>

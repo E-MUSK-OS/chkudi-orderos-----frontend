@@ -26,6 +26,8 @@ interface ReactSelectProps extends Props<
   borderRadius?: number;
   height?: number;
   indicatorColor?: string;
+  fontSize?: number;
+  paddingHorizontal?: number;
 }
 
 const emptySubscribe = () => () => {};
@@ -43,6 +45,8 @@ export default function ReactSelect({
   borderRadius = 16,
   height = 44,
   indicatorColor,
+  fontSize = 14,
+  paddingHorizontal = 14,
   ...props
 }: ReactSelectProps) {
   const isMounted = useSyncExternalStore(
@@ -129,7 +133,7 @@ export default function ReactSelect({
     valueContainer: (base) => ({
       ...base,
       height,
-      padding: "0 14px",
+      padding: `0 ${paddingHorizontal}px`,
     }),
 
     input: (base) => ({
@@ -141,14 +145,14 @@ export default function ReactSelect({
     singleValue: (base) => ({
       ...base,
       color: resolvedTextColor,
-      fontSize: 14,
+      fontSize,
       fontWeight: 600,
     }),
 
     placeholder: (base) => ({
       ...base,
       color: resolvedPlaceholderColor,
-      fontSize: 14,
+      fontSize,
     }),
 
     indicatorSeparator: () => ({
@@ -157,6 +161,7 @@ export default function ReactSelect({
 
     dropdownIndicator: (base) => ({
       ...base,
+      padding: paddingHorizontal < 14 ? 4 : 8,
       color: indicatorColor ?? (isDark ? "#94A3B8" : resolvedTextColor),
       transition: "color 150ms ease",
       "&:hover": {

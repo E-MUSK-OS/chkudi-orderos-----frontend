@@ -144,7 +144,7 @@ export const getColumns = ({
           rounded="rounded-xl"
           leftIcon={<Eye size={15} />}
           onClick={() => onPreview(row.original)}
-          className="h-9 px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#e0b040] shadow-2xs whitespace-nowrap cursor-pointer"
+          className="h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs font-semibold bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#ddb75d] dark:bg-[#F5C451] dark:text-[#080B11] dark:hover:bg-[#e0b040] shadow-2xs whitespace-nowrap cursor-pointer"
         >
           Preview
         </Button>
@@ -168,7 +168,7 @@ export const getColumns = ({
           rounded="rounded-xl"
           leftIcon={<Download size={15} />}
           onClick={() => onDownload(row.original)}
-          className="h-9 px-3.5 text-xs font-semibold border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] shadow-2xs whitespace-nowrap cursor-pointer"
+          className="h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs font-semibold border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#251F14] shadow-2xs whitespace-nowrap cursor-pointer"
         >
           Download
         </Button>
@@ -180,7 +180,7 @@ export const getColumns = ({
           rounded="rounded-xl"
           leftIcon={<Trash2 size={15} />}
           onClick={() => onDelete(row.original)}
-          className="h-9 px-3.5 text-xs font-semibold border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 shadow-2xs whitespace-nowrap cursor-pointer"
+          className="h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs font-semibold border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 shadow-2xs whitespace-nowrap cursor-pointer"
         >
           Delete
         </Button>

@@ -46,20 +46,20 @@ const AccountTable: React.FC<Props> = ({
 
   if (loading) {
     return (
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-8 sm:p-12 text-center shadow-sm">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent mx-auto mb-2" />
-        <p className="text-sm font-bold text-[#0A0E1A] dark:text-white">Loading accounts...</p>
+        <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">Loading accounts...</p>
       </div>
     );
   }
 
   if (accounts.length === 0) {
     return (
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
-        <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 dark:border-[#E8C16D]/20">
-          <Store className="h-7 w-7 text-[#B88728] dark:text-[#E8C16D]" />
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-8 sm:p-12 text-center shadow-sm">
+        <div className="mb-2 mx-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 dark:border-[#E8C16D]/20">
+          <Store className="h-6 w-6 sm:h-7 sm:w-7 text-[#B88728] dark:text-[#E8C16D]" />
         </div>
-        <p className="text-base font-bold text-[#0A0E1A] dark:text-white">No Accounts Found</p>
+        <p className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white">No Accounts Found</p>
       </div>
     );
   }
@@ -74,10 +74,10 @@ const AccountTable: React.FC<Props> = ({
         <table className="w-full min-w-[600px] border-collapse text-left font-sans">
           <thead className="sticky top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-[0_1px_0_0_#F5E6BE] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.08)]">
             <tr>
-              <th className="px-5 py-3.5 sm:py-4 text-left font-semibold">
+              <th className="px-4 sm:px-5 py-2.5 sm:py-3.5 text-left font-semibold">
                 Account Name
               </th>
-              <th className="px-5 py-3.5 sm:py-4 text-center font-semibold w-32">
+              <th className="px-4 sm:px-5 py-2.5 sm:py-3.5 text-center font-semibold w-32">
                 Actions
               </th>
             </tr>
@@ -86,28 +86,28 @@ const AccountTable: React.FC<Props> = ({
           <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-sans">
             {paginatedAccounts.map((account) => (
               <tr key={account.id} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.06] transition-colors">
-                <td className="px-5 py-3.5 sm:py-4 font-semibold text-slate-900 dark:text-white">
+                <td className="px-4 sm:px-5 py-2.5 sm:py-3.5 font-semibold text-slate-900 dark:text-white">
                   {account.accountName}
                 </td>
 
-                <td className="px-5 py-3.5 sm:py-4 text-center">
+                <td className="px-4 sm:px-5 py-2.5 sm:py-3.5 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => onEdit(account)}
-                      className="rounded-xl p-2 text-slate-600 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] transition cursor-pointer"
+                      className="rounded-xl p-1.5 sm:p-2 text-slate-600 dark:text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] transition cursor-pointer"
                       title="Edit"
                     >
-                      <Edit size={18} />
+                      <Edit size={16} className="sm:w-[18px] sm:h-[18px]" />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => onDelete(account)}
-                      className="rounded-xl p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer"
+                      className="rounded-xl p-1.5 sm:p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer"
                       title="Delete"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                     </button>
                   </div>
                 </td>

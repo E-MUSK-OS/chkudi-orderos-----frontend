@@ -59,9 +59,9 @@ export default function SupplierDetailsSection({
   }, []);
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 h-full flex flex-col shadow-sm">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 h-full flex flex-col shadow-sm">
       {/* Title */}
-      <h3 className="text-sm font-bold text-[#0A0E1A] dark:text-white mb-3">
+      <h3 className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white mb-3">
         Supplier Details [Creditor]
       </h3>
 
@@ -81,7 +81,7 @@ export default function SupplierDetailsSection({
                 setDropdownOpen(true);
               }}
               placeholder="Search Party [Sundry Creditor]"
-              className="w-full h-10 pl-9 pr-7 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+              className="w-full h-9 sm:h-10 pl-9 pr-7 text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
             />
             {searchTerm && (
               <button
@@ -99,7 +99,7 @@ export default function SupplierDetailsSection({
             type="button"
             onClick={onOpenLedgerModal}
             title="Create New Supplier (Ledger Book)"
-            className="h-10 w-10 border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition-all cursor-pointer"
+            className="h-9 w-9 sm:h-10 sm:w-10 border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
           </button>

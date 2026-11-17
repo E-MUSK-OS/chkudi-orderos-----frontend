@@ -63,7 +63,7 @@ export default function StatsCards() {
             </div>
 
             <div className="relative z-10 mt-3 sm:mt-4 flex items-end justify-between gap-3">
-              <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white dark:tabular-nums">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white dark:tabular-nums">
                 {item.value}
               </h3>
 

@@ -34,7 +34,7 @@ export default function PurchaseInvoiceMetaForm({
 
   return (
     <section className="rounded-2xl sm:rounded-3xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-xs">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 sm:gap-4 items-end">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9 gap-3 sm:gap-4 items-end">
         {/* Invoice Type */}
         <div className="space-y-1.5 col-span-2 sm:col-span-1">
           <label className="text-[11px] font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
@@ -175,7 +175,7 @@ export default function PurchaseInvoiceMetaForm({
         </div>
 
         {/* Consignee Name + Edit Toggle */}
-        <div className="space-y-1.5 col-span-2 sm:col-span-1">
+        <div className="space-y-1.5 col-span-2 sm:col-span-1 md:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-bold uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]">
               Consignee

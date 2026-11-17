@@ -41,8 +41,10 @@ export const logout = () => {
 export const handleAuthFailure = () => {
   if (typeof window === "undefined" || isRedirecting) return;
 
-  const path = window.location.pathname;
+  const rawPath = window.location.pathname;
+  const path = rawPath?.split("?")[0]?.replace(/\/+$/, "") || "/";
   const isAuthPage =
+    path === "/" ||
     path === "/login" ||
     path.startsWith("/login/") ||
     path === "/forgot-password" ||

@@ -260,18 +260,18 @@ export default function PurchaseChallanItemsTable({
   );
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm flex flex-col justify-between">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm flex flex-col justify-between">
       <div>
         {/* Header & Excel action buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white">Challan Details</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 mb-3">
+          <h2 className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">Challan Details</h2>
 
           <div className="flex items-center gap-2">
             {/* Download Template Button */}
             <button
               type="button"
               onClick={downloadPurchaseBlankFormatExcel}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[11px] sm:text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Download className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
               <span>Download Template</span>
@@ -281,7 +281,7 @@ export default function PurchaseChallanItemsTable({
             <button
               type="button"
               onClick={() => router.push("/dashboard/settings/upload-excel?tab=purchaseChallan")}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 h-8.5 sm:h-9 px-3 sm:px-3.5 rounded-xl sm:rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>Import from Excelsheet</span>
@@ -532,9 +532,9 @@ export default function PurchaseChallanItemsTable({
             type="button"
             onClick={handleAddRow}
             title="Add New Row"
-            className="h-9 w-9 border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+            className="h-8 w-8 sm:h-9 sm:w-9 border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-xl sm:rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-[0.98]"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
           </button>
         </div>
       </div>
@@ -544,7 +544,7 @@ export default function PurchaseChallanItemsTable({
         <h4 className="text-xs font-bold text-[#0A0E1A] dark:text-white uppercase tracking-wider">
           Delivery &amp; Inward Verification
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 text-xs">
           {/* Courier Partner */}
           <div className="space-y-1">
             <label className="font-semibold text-slate-700 dark:text-slate-300">
@@ -555,7 +555,7 @@ export default function PurchaseChallanItemsTable({
               value={courierPartner}
               onChange={(e) => onChangeCourierPartner(e.target.value)}
               placeholder="e.g. BlueDart"
-              className="h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
             />
           </div>
 
@@ -569,7 +569,7 @@ export default function PurchaseChallanItemsTable({
               value={lrNo}
               onChange={(e) => onChangeLrNo(e.target.value)}
               placeholder="e.g. 10293847"
-              className="h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
             />
           </div>
 
@@ -583,7 +583,7 @@ export default function PurchaseChallanItemsTable({
               value={receivedBy}
               onChange={(e) => onChangeReceivedBy(e.target.value)}
               placeholder="Ramesh"
-              className="h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
             />
           </div>
 
@@ -597,7 +597,7 @@ export default function PurchaseChallanItemsTable({
               value={checkedBy}
               onChange={(e) => onChangeCheckedBy(e.target.value)}
               placeholder="Ramesh"
-              className="h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
             />
           </div>
 
@@ -611,7 +611,7 @@ export default function PurchaseChallanItemsTable({
               value={preparedBy}
               onChange={(e) => onChangePreparedBy(e.target.value)}
               placeholder="Ramesh"
-              className="h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
             />
           </div>
         </div>

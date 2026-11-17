@@ -141,11 +141,18 @@ export default function CompanyTableView({
 
                     {/* Company Name */}
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white">
-                        {company.companyName || "Untitled Company"}
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>{company.companyName || "Untitled Company"}</span>
+                        {company.isBranch && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40">
+                            Branch
+                          </span>
+                        )}
                       </div>
                       <div className="text-[10px] text-slate-400">
-                        {company.state || "Head Office"}
+                        {company.isBranch && company.parentCompanyName
+                          ? `Company: ${company.parentCompanyName}`
+                          : company.state || "Head Office"}
                       </div>
                     </td>
 

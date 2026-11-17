@@ -98,9 +98,9 @@ const OperatorLoginForm: React.FC<OperatorLoginFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
           Account Name
         </label>
 
@@ -123,7 +123,7 @@ const OperatorLoginForm: React.FC<OperatorLoginFormProps> = ({ onSuccess }) => {
         />
 
         {errors.accountId && (
-          <p className="text-sm text-red-500">{errors.accountId.message}</p>
+          <p className="text-xs sm:text-sm text-red-500">{errors.accountId.message}</p>
         )}
       </div>
 
@@ -131,6 +131,7 @@ const OperatorLoginForm: React.FC<OperatorLoginFormProps> = ({ onSuccess }) => {
         label="Employee Code"
         className="!bg-[#FFFDF5] border-[#EFE5D5] hover:border-[#DEC38E] focus:border-[#C89B3C] [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#FFFDF5] [&:-webkit-autofill]:[-webkit-text-fill-color:#111827] dark:!bg-[#0F1626] dark:border-white/[0.1] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0F1626] dark:[&:-webkit-autofill]:[-webkit-text-fill-color:#F8FAFC]"
         labelClassName="bg-white text-slate-600 dark:bg-[#0F1626] dark:text-slate-400"
+        inputClassName="h-12 sm:h-14 text-sm sm:text-[15px]"
         {...register("employeeCode")}
         error={errors.employeeCode?.message}
       />
@@ -140,11 +141,17 @@ const OperatorLoginForm: React.FC<OperatorLoginFormProps> = ({ onSuccess }) => {
         label="Password"
         className="!bg-[#FFFDF5] border-[#EFE5D5] hover:border-[#DEC38E] focus:border-[#C89B3C] [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#FFFDF5] [&:-webkit-autofill]:[-webkit-text-fill-color:#111827] dark:!bg-[#0F1626] dark:border-white/[0.1] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0F1626] dark:[&:-webkit-autofill]:[-webkit-text-fill-color:#F8FAFC]"
         labelClassName="bg-white text-slate-600 dark:bg-[#0F1626] dark:text-slate-400"
+        inputClassName="h-12 sm:h-14 text-sm sm:text-[15px]"
         {...register("password")}
         error={errors.password?.message}
       />
 
-      <Button type="submit" loading={loading} fullWidth>
+      <Button
+        type="submit"
+        loading={loading}
+        fullWidth
+        className="h-12 sm:h-14 text-sm sm:text-[15px] font-bold"
+      >
         Login
       </Button>
     </form>

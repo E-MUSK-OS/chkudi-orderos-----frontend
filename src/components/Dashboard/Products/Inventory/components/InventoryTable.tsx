@@ -73,11 +73,11 @@ const InventoryTable = ({
 
   if (!inventories.length) {
     return (
-      <div className="lg:h-full flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
-          <Boxes className="h-7 w-7" />
+      <div className="lg:h-full flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-8 sm:p-12 text-center shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+        <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
+          <Boxes className="h-6 w-6 sm:h-7 sm:w-7" />
         </div>
-        <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
+        <h3 className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white">
           No Inventories Found
         </h3>
         <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-sm dark:text-slate-400">
@@ -97,34 +97,34 @@ const InventoryTable = ({
         <table className="w-full min-w-[950px] lg:min-w-[1100px] border-collapse text-left font-sans relative">
           <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-none text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#F5C451] shadow-xs">
             <tr>
-              <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[240px] max-w-[280px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-left font-semibold whitespace-nowrap w-[240px] max-w-[280px]">
                 Product
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[150px] min-w-[130px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-left font-semibold whitespace-nowrap w-[150px] min-w-[130px]">
                 Variant SKU
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[150px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap min-w-[150px]">
                 Warehouse
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
                 Available
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
                 Reserved
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
                 Incoming
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
                 Damaged
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap min-w-[100px]">
                 Reorder
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[130px]">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap min-w-[130px]">
                 Status
               </th>
-              <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
+              <th className="px-3 sm:px-4 py-2.5 sm:py-3.5 text-center font-semibold whitespace-nowrap w-20">
                 Action
               </th>
             </tr>

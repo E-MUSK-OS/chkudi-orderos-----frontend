@@ -74,15 +74,15 @@ export default function PurchaseInvoiceFilters({
   };
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Controls Container */}
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap 2xl:flex-nowrap lg:items-center">
+        <div className="flex flex-1 flex-col gap-2.5 sm:gap-3 sm:flex-row sm:flex-wrap 2xl:flex-nowrap lg:items-center">
           {/* 1. Single Unified Search */}
-          <div className="relative flex-1 min-w-[220px] sm:min-w-[280px]">
-            <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 py-2 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 h-10 sm:h-11">
-              <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
-                <Search className="h-3.5 w-3.5" />
+          <div className="relative flex-1 min-w-[200px] sm:min-w-[280px]">
+            <div className="group flex items-center gap-2 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 sm:px-3.5 py-1.5 sm:py-2 shadow-xs transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 h-9 sm:h-11">
+              <div className="grid h-5 w-5 sm:h-6 sm:w-6 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
+                <Search className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </div>
               <input
                 type="text"
@@ -125,7 +125,7 @@ export default function PurchaseInvoiceFilters({
               onChange={(val) => onChange("invoiceType", val)}
               placeholder="Select Invoice Type"
               className="w-full"
-              buttonClassName="w-full h-10 sm:h-11 justify-between font-bold text-xs sm:text-sm rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#B88728] dark:text-[#E8C16D]"
+              buttonClassName="w-full h-9 sm:h-11 justify-between font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#B88728] dark:text-[#E8C16D]"
               menuClassName="w-full min-w-[190px]"
               icon={<Layers className="h-3.5 w-3.5" />}
             />
@@ -140,7 +140,7 @@ export default function PurchaseInvoiceFilters({
               onChange={(val) => onChange("status", val)}
               placeholder="Select Payment Status"
               className="w-full"
-              buttonClassName="w-full h-10 sm:h-11 justify-between font-bold text-xs sm:text-sm rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#B88728] dark:text-[#E8C16D]"
+              buttonClassName="w-full h-9 sm:h-11 justify-between font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#B88728] dark:text-[#E8C16D]"
               menuClassName="w-full min-w-[190px]"
               icon={<Clock className="h-3.5 w-3.5" />}
             />
@@ -148,15 +148,15 @@ export default function PurchaseInvoiceFilters({
         </div>
 
         {/* Action Buttons: Reset & Filter */}
-        <div className="flex items-center justify-end gap-2.5 shrink-0 pt-2 lg:pt-0 border-t border-[#E7E0D2] dark:border-white/[0.06] lg:border-t-0">
+        <div className="flex items-center justify-end gap-2 sm:gap-2.5 shrink-0 pt-2 lg:pt-0 border-t border-[#E7E0D2] dark:border-white/[0.06] lg:border-t-0">
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex items-center gap-2 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer h-10 sm:h-11"
+            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer h-9 sm:h-11"
             title="Reset all filters"
           >
-            <div className="grid h-5 w-5 place-items-center rounded-md bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 shrink-0">
-              <RotateCw className="h-3.5 w-3.5" />
+            <div className="grid h-4 w-4 sm:h-5 sm:w-5 place-items-center rounded-md bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 shrink-0">
+              <RotateCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </div>
             <span>Reset</span>
           </button>
@@ -164,9 +164,9 @@ export default function PurchaseInvoiceFilters({
           <button
             type="button"
             onClick={onSearch}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer h-10 sm:h-11"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-3.5 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer h-9 sm:h-11"
           >
-            <Search size={16} />
+            <Search size={15} />
             <span>Filter</span>
           </button>
         </div>

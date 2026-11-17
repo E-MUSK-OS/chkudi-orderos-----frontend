@@ -154,7 +154,7 @@ export default function TrackingScanner({
   const isError = message && !isSuccess && !isWarning;
 
   return (
-    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-sm mb-6">
+    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm mb-6">
       <div className="space-y-4">
         {/* Live Feedback Banner - Displayed on TOP */}
         {message && (
@@ -182,7 +182,7 @@ export default function TrackingScanner({
 
         <div>
           <div className="flex items-center justify-between mb-2.5">
-            <label className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white">
+            <label className="flex items-center gap-2.5 text-sm sm:text-base md:text-lg font-bold text-[#0A0E1A] dark:text-white">
               <div
                 className={`grid h-7 w-7 place-items-center rounded-lg border transition-all duration-200 shrink-0 ${
                   isScanActive
@@ -204,7 +204,7 @@ export default function TrackingScanner({
             <button
               type="button"
               onClick={() => setIsCameraOpen(true)}
-              className="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#252014] text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer"
+              className="sm:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#252014] text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer"
             >
               <Camera size={14} />
               <span>Camera Scan</span>
@@ -232,15 +232,15 @@ export default function TrackingScanner({
               autoComplete="off"
               spellCheck={false}
               className={`
-                h-12 sm:h-13
+                h-11 sm:h-13
                 w-full
                 rounded-2xl
                 border-2
                 bg-[#FFFDF5] dark:bg-[#080B11]
                 focus:bg-white dark:focus:bg-[#0B0F17]
-                px-4
-                pr-28
-                text-sm sm:text-base
+                px-3.5 sm:px-4
+                pr-24 sm:pr-28
+                text-xs sm:text-sm md:text-base
                 font-mono
                 font-bold
                 text-[#0A0E1A] dark:text-white
@@ -264,10 +264,10 @@ export default function TrackingScanner({
               className="
                 absolute
                 right-2
-                h-9 sm:h-9.5
+                h-8 sm:h-9.5
                 rounded-xl
                 bg-[#E8C16D]
-                px-4 sm:px-5
+                px-3 sm:px-5
                 text-xs sm:text-sm
                 font-bold
                 text-[#0A0E1A]

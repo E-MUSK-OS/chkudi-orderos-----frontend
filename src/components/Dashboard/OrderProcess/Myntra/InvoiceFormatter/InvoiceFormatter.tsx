@@ -504,12 +504,12 @@ export default function InvoiceFormatter() {
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                   Myntra Invoice & Label 4×6 Formatter
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-bold text-amber-800 dark:text-amber-300">
+                  <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-600 dark:text-amber-400" />
                   Auto 4×6 Thermal Fit
                 </span>
               </div>
@@ -523,28 +523,28 @@ export default function InvoiceFormatter() {
                 <>
                   <button
                     onClick={handleResetAll}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="inline-flex h-10 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 cursor-pointer shadow-xs active:scale-[0.98]"
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>New Batch</span>
                   </button>
                   <button
                     onClick={handleDownloadPdf}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 shadow-xs transition active:scale-[0.98] cursor-pointer"
+                    className="inline-flex h-10 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 shadow-xs transition active:scale-[0.98] cursor-pointer"
                   >
                     <Download className="h-4 w-4 stroke-[2.5]" />
                     <span>Download</span>
                   </button>
                   <button
                     onClick={handlePrintClick}
-                    className="inline-flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] hover:bg-[#d4af5a] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs transition active:scale-[0.98] cursor-pointer"
+                    className="inline-flex h-10 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] hover:bg-[#d4af5a] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs transition active:scale-[0.98] cursor-pointer"
                   >
                     <Printer className="h-4 w-4 stroke-[2.5]" />
                     <span>Print PDF</span>
                   </button>
                 </>
               ) : (
-                <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-white/[0.02] shadow-xs">
+                <div className="inline-flex h-9 sm:h-11 items-center px-3 sm:px-4 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-white/[0.02] shadow-xs">
                   <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">0 PDF Files</span>
                 </div>
               )}
@@ -554,30 +554,30 @@ export default function InvoiceFormatter() {
 
         {/* CONTENT SECTION */}
         {isProcessing ? (
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-8">
-            <Loader2 className="h-10 w-10 animate-spin text-[#E8C16D]" />
-            <p className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-300">Formatting pages to 4×6 thermal size and adding page numbers...</p>
+          <div className="flex min-h-[350px] sm:min-h-[400px] flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-8">
+            <Loader2 className="h-9 w-9 sm:h-10 sm:w-10 animate-spin text-[#E8C16D]" />
+            <p className="mt-4 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">Formatting pages to 4×6 thermal size and adding page numbers...</p>
           </div>
         ) : !pdfUrl ? (
-          <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
-            <div className="mb-4 sm:mb-6 flex flex-col gap-2">
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+            <div className="mb-3.5 sm:mb-6 flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20 dark:ring-emerald-800/40">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20 dark:ring-emerald-800/40">
                     <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
                   <div>
-                    <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white">PDF Order File</h2>
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Upload one .pdf file</p>
+                    <h2 className="text-sm sm:text-lg font-bold text-slate-800 dark:text-white">PDF Order File</h2>
+                    <p className="text-[11px] sm:text-sm text-slate-500 dark:text-slate-400">Upload one .pdf file</p>
                   </div>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 ring-1 ring-amber-600/20 dark:ring-amber-800/40">
+                <span className="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/40 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-amber-700 dark:text-amber-300 ring-1 ring-amber-600/20 dark:ring-amber-800/40">
                   Required
                 </span>
               </div>
             </div>
 
-            <div className="relative group flex min-h-[220px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[#E8C16D]/60 bg-[#E8C16D]/[0.02] dark:bg-white/[0.01] hover:bg-[#E8C16D]/5 dark:hover:bg-white/[0.03] hover:border-[#E8C16D] p-6 sm:p-8 text-center transition-all duration-300">
+            <div className="relative group flex min-h-[185px] sm:min-h-[220px] w-full flex-col items-center justify-center rounded-xl sm:rounded-3xl border-2 border-dashed border-[#E8C16D]/60 bg-[#E8C16D]/[0.02] dark:bg-white/[0.01] hover:bg-[#E8C16D]/5 dark:hover:bg-white/[0.03] hover:border-[#E8C16D] p-5 sm:p-8 text-center transition-all duration-300">
               <input
                 type="file"
                 accept=".pdf"
@@ -585,17 +585,17 @@ export default function InvoiceFormatter() {
                 className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
               <div className="flex flex-col items-center justify-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white dark:bg-[#0A0E1A] text-[#E8C16D] shadow-sm ring-1 ring-black/5 dark:ring-white/[0.08] group-hover:scale-110 transition-transform">
-                  <Upload className="h-6 w-6" />
+                <div className="mb-2.5 sm:mb-4 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-xl sm:rounded-2xl bg-white dark:bg-[#0A0E1A] text-[#E8C16D] shadow-sm ring-1 ring-black/5 dark:ring-white/[0.08] group-hover:scale-110 transition-transform">
+                  <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <h3 className="mb-1 text-sm sm:text-base font-bold text-slate-800 dark:text-white">
+                <h3 className="mb-1 text-xs sm:text-base font-bold text-slate-800 dark:text-white">
                   Click to upload or drag & drop PDF
                 </h3>
-                <p className="mb-6 text-xs text-slate-500 dark:text-slate-400 max-w-[320px]">
+                <p className="mb-4 sm:mb-6 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-[320px]">
                   Select a Myntra Invoice & Label PDF file (.pdf). Labels and Invoices will be automatically formatted to 4×6.
                 </p>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0A0E1A] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-colors group-hover:border-[#E8C16D] group-hover:text-[#E8C16D]">
-                  <FileText className="h-4 w-4" />
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0A0E1A] px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-colors group-hover:border-[#E8C16D] group-hover:text-[#E8C16D]">
+                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>Browse PDF File</span>
                 </div>
               </div>
@@ -667,7 +667,7 @@ export default function InvoiceFormatter() {
               exit={{ opacity: 0, scale: 0.94, y: 12 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-7 shadow-2xl text-slate-900 dark:text-white"
+              className="relative w-full max-w-lg overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4.5 sm:p-7 shadow-2xl text-slate-900 dark:text-white"
             >
               <button
                 type="button"
@@ -684,11 +684,11 @@ export default function InvoiceFormatter() {
               <div className="relative">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/20 dark:ring-amber-800/40">
-                    <Printer className="h-6 w-6 stroke-[2.2]" />
+                  <div className="grid h-10 w-10 sm:h-12 sm:w-12 shrink-0 place-items-center rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/20 dark:ring-amber-800/40">
+                    <Printer className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.2]" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-800 dark:text-white">Print Options</h3>
+                    <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white">Print Options</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Total <strong>{processedPdfDoc?.getPageCount() || 0} pages</strong> loaded in PDF
                     </p>

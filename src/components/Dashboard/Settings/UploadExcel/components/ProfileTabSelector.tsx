@@ -37,8 +37,8 @@ export default function ProfileTabSelector({
   onTabChange,
 }: ProfileTabSelectorProps) {
   return (
-    <div className="border-b border-[#E7E0D2] dark:border-white/[0.08] overflow-x-auto no-scrollbar">
-      <div className="flex items-center gap-1.5 sm:gap-2 -mb-px min-w-max">
+    <div className="w-full overflow-x-auto no-scrollbar border-b border-[#E7E0D2] dark:border-white/[0.08]">
+      <div className="flex flex-nowrap sm:flex-wrap gap-1 sm:gap-2 min-w-max sm:min-w-0 pb-px -mb-px">
         {PROFILES_LIST.map((profile) => {
           const Icon = tabIcons[profile.key];
           const isActive = activeTab === profile.key;
@@ -49,13 +49,13 @@ export default function ProfileTabSelector({
               type="button"
               onClick={() => onTabChange(profile.key)}
               className={cn(
-                "flex items-center gap-2 rounded-t-2xl border-b-2 px-3.5 sm:px-5 py-3 text-xs sm:text-sm font-bold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap",
+                "flex items-center gap-2 rounded-t-xl sm:rounded-t-2xl border-b-2 px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap",
                 isActive
                   ? "border-[#B88728] text-[#B88728] bg-[#FFF9EC]/70 dark:border-[#F5C451] dark:text-[#F5C451] dark:bg-white/[0.04]"
                   : "border-transparent text-slate-500 hover:text-[#0A0E1A] hover:bg-slate-50/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.02]"
               )}
             >
-              <Icon size={16} />
+              <Icon size={16} className="shrink-0" />
               <span>{profile.label}</span>
             </button>
           );

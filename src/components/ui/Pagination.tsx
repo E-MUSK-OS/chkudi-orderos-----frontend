@@ -388,7 +388,7 @@ export default function Pagination({
       </div>
 
       {/* Right controls */}
-      <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-end gap-1.5 sm:gap-3 w-full sm:w-auto">
         {/* Rows Per Page dropdown */}
         <div className="flex items-center gap-1.5">
           <span className={`text-xs sm:text-sm font-medium ${rowsLabelColor}`}>
@@ -415,7 +415,7 @@ export default function Pagination({
             gap-1
             rounded-xl
             border
-            px-2.5 sm:px-3
+            px-2 sm:px-3
             text-xs
             font-bold
             transition-all
@@ -436,12 +436,12 @@ export default function Pagination({
           className={`
             inline-flex
             h-8 sm:h-9
-            min-w-[55px] sm:min-w-[65px]
+            min-w-[46px] sm:min-w-[65px]
             items-center
             justify-center
             rounded-xl
             border
-            px-2.5
+            px-1.5 sm:px-2.5
             text-xs
             font-bold
             shadow-2xs
@@ -452,7 +452,7 @@ export default function Pagination({
           <span className={isTheme || isLight ? "text-[#0A0E1A] dark:text-[#E8C16D] font-bold" : "text-[#0A0E1A] dark:text-[#F5C451] font-bold"}>
             {page}
           </span>
-          <span className="mx-1 text-[#0A0E1A]/70 dark:text-slate-500 font-medium dark:font-normal">/</span>
+          <span className="mx-0.5 sm:mx-1 text-[#0A0E1A]/70 dark:text-slate-500 font-medium dark:font-normal">/</span>
           <span className="text-[#0A0E1A] dark:text-white font-bold dark:font-normal">{Math.max(totalPages, 1)}</span>
         </div>
 
@@ -469,7 +469,7 @@ export default function Pagination({
             gap-1
             rounded-xl
             border
-            px-2.5 sm:px-3
+            px-2 sm:px-3
             text-xs
             font-bold
             transition-all

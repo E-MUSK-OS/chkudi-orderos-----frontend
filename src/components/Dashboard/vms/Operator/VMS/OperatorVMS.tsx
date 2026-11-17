@@ -64,16 +64,16 @@ const OperatorVMS = () => {
         </div>
       ) : !isAuthenticated ? (
         <div className="flex min-h-[70vh] items-center justify-center py-6 sm:py-10">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[#E7E0D2] bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626]">
-            <div className="border-b border-[#EFE5D5] bg-gradient-to-b from-[#FDE8B5]/60 via-[#FFF4DD]/40 to-white px-6 py-5 text-center dark:border-white/[0.08] dark:bg-none dark:bg-[#080B11]">
-              <h2 className="text-xl font-bold text-[#111827] sm:text-2xl dark:text-[#E8C16D]">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626]">
+            <div className="border-b border-[#EFE5D5] bg-gradient-to-b from-[#FDE8B5]/60 via-[#FFF4DD]/40 to-white px-5 sm:px-6 py-4 sm:py-5 text-center dark:border-white/[0.08] dark:bg-none dark:bg-[#080B11]">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#111827] dark:text-[#E8C16D]">
                 Operator Login
               </h2>
-              <p className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-300">
+              <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-300">
                 Login to start barcode scanning and video recording.
               </p>
             </div>
-            <div className="p-6 sm:p-7">
+            <div className="p-5 sm:p-7">
               <OperatorLoginForm
                 onSuccess={(account: Account) => {
                   localStorage.setItem("selectedAccount", JSON.stringify(account));

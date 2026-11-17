@@ -27,7 +27,7 @@ export default function DashboardHome() {
                 </span>
               </div>
 
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Dashboard
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">

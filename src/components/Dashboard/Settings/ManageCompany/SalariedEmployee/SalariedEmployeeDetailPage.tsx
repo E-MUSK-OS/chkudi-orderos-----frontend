@@ -42,26 +42,26 @@ export default function SalariedEmployeeDetailPage({
 
   return (
     <DashboardLayout title="Salaried Employee">
-      <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8 max-w-[1600px] mx-auto">
+      <div className="w-full space-y-3 sm:space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8 max-w-[1600px] mx-auto">
         {/* Top Header Bar matching Employee Profile & Ledger Book */}
-        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 sm:px-7 py-4 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
+        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={() =>
                 router.push("/dashboard/setting/manage-company/salaried-employee")
               }
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
               title="Back to Salaried Employees"
             >
-              <ArrowLeft size={22} />
+              <ArrowLeft size={18} />
             </button>
             <div>
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Salaried Employee
               </h1>
               {/* One line page description */}
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-0.5 mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium ml-0.5 sm:ml-1 mt-0.5 sm:mt-1">
                 View detailed monthly attendance logs, salary slips, and payment histories for {employee?.fullName || "employee"}.
               </p>
             </div>

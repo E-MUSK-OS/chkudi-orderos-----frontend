@@ -786,12 +786,12 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="w-10 h-10 rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
                     title="Back to Company Profiles"
                   >
                     <ArrowLeft size={18} />
                   </button>
-                  <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                  <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                     Company Profile
                   </h1>
                 </div>
@@ -802,9 +802,9 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+              <div className="grid grid-cols-3 gap-2 w-full md:w-auto md:flex md:items-center md:gap-3 shrink-0">
                 {/* Active / Draft Status Switch */}
-                <div className="inline-flex h-11 sm:h-12 items-center gap-2.5 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAFAF8] dark:bg-white/[0.04] px-3.5 sm:px-4 shadow-2xs">
+                <div className="inline-flex min-h-[38px] sm:h-11 sm:h-12 items-center justify-center gap-2 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAFAF8] dark:bg-white/[0.04] px-2 sm:px-4 shadow-2xs">
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
                     {companyStatusNorm === "ACTIVE" ? "Active" : "Draft"}
                   </span>
@@ -833,10 +833,10 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 <button
                   type="button"
                   onClick={handleEdit}
-                  className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-5 sm:px-6 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
+                  className="inline-flex min-h-[38px] sm:h-11 sm:h-12 items-center justify-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all cursor-pointer shadow-sm shrink-0"
                   title="Edit Company"
                 >
-                  <Edit3 size={16} className="text-[#0A0E1A]" />
+                  <Edit3 size={15} className="text-[#0A0E1A] shrink-0" />
                   <span>Edit</span>
                 </button>
 
@@ -844,10 +844,10 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 <button
                   type="button"
                   onClick={() => setDeleteModalOpen(true)}
-                  className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-4 sm:px-5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-all cursor-pointer shadow-xs"
+                  className="inline-flex min-h-[38px] sm:h-11 sm:h-12 items-center justify-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-3 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-all cursor-pointer shadow-xs shrink-0"
                   title="Delete Company"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={15} className="shrink-0" />
                   <span>Delete</span>
                 </button>
               </div>
@@ -856,106 +856,146 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
         </div>
 
         {/* Scrollable Middle Content Area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-4 custom-scrollbar">
           {/* Main Content Grid: Left 8 cols, Right 4 cols */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 w-full">
             {/* ========================================================================= */}
             {/* LEFT COLUMN: Main Company Card + 4 Detail Cards                           */}
             {/* ========================================================================= */}
-            <div className="lg:col-span-8 flex flex-col gap-4">
+            <div className="xl:col-span-8 min-w-0 flex flex-col gap-4">
               {/* Main Company Card */}
-              <div className="rounded-3xl bg-white border border-[#E7E0D2] p-5 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative">
-                <div className="flex items-start sm:items-center gap-4 flex-1">
-                  {/* Logo Box */}
-                  <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#080B11] dark:border-white/[0.1] flex flex-col items-center justify-center p-2 shrink-0 relative overflow-hidden group select-none shadow-xs">
-                    {company.logoUrl && (
-                      <ExternalLink size={12} className="text-slate-400 absolute top-2 right-2 pointer-events-none" />
-                    )}
-                    {company.logoUrl && !logoError ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={getMediaUrl(company.logoUrl)}
-                        alt={company.companyName}
-                        className="w-full h-full object-contain"
-                        onError={() => setLogoError(true)}
-                      />
-                    ) : (
-                      <span className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wider uppercase select-none font-sans">
-                        {getCompanyInitials(company.companyName)}
+              <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] p-4 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] relative">
+                {/* ========================================================================= */}
+                {/* MOBILE VIEW (< sm): Logo & Signature on Top, Info Below                   */}
+                {/* ========================================================================= */}
+                <div className="flex flex-col gap-3.5 w-full sm:hidden">
+                  {/* Top Row: Logo (Left) and Signature (Right) */}
+                  <div className="flex items-start justify-between gap-3 w-full">
+                    {/* Logo Box */}
+                    <div className="flex flex-col items-start gap-1">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#080B11] dark:border-white/[0.1] flex flex-col items-center justify-center p-2 relative overflow-hidden group select-none shadow-xs shrink-0">
+                        {company.logoUrl && (
+                          <ExternalLink size={12} className="text-slate-400 absolute top-2 right-2 pointer-events-none" />
+                        )}
+                        {company.logoUrl && !logoError ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={getMediaUrl(company.logoUrl)}
+                            alt={company.companyName}
+                            className="w-full h-full object-contain"
+                            onError={() => setLogoError(true)}
+                          />
+                        ) : (
+                          <span className="text-xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wider uppercase select-none font-sans">
+                            {getCompanyInitials(company.companyName)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                        Company Logo
                       </span>
-                    )}
+                    </div>
+
+                    {/* Signature Box */}
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#080B11] dark:border-white/[0.1] flex items-center justify-center p-2 overflow-hidden shadow-xs shrink-0">
+                        {company.signatureUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={getMediaUrl(company.signatureUrl)}
+                            alt="Authorized Signature"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-slate-500 text-center select-none">
+                            <FileText size={20} className="mb-0.5 text-[#B88728] dark:text-[#E8C16D]" />
+                            <span className="text-[9px] font-medium text-slate-600 dark:text-slate-400 leading-tight">
+                              No Signature
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium text-right">
+                        Authorized Signature
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Company Information */}
-                  <div className="flex-1 min-w-0">
+                  {/* Information Section Below (Full Width) */}
+                  <div className="w-full space-y-2 pt-2 border-t border-[#E7E0D2]/60 dark:border-white/[0.06]">
+                    {/* Title & Badges */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-lg sm:text-xl font-bold text-[#0A0E1A] dark:text-white tracking-wide truncate">
+                      <h2 className="text-lg font-bold text-[#0A0E1A] dark:text-white tracking-wide break-words">
                         {company.companyName || "Untitled Company"}
                       </h2>
                       {companyStatusNorm === "ACTIVE" && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                           Active
                         </span>
                       )}
                       {companyStatusNorm === "DRAFT" && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                           Draft
                         </span>
                       )}
                       {companyStatusNorm === "INACTIVE" && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/50">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/50 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
                           Inactive
                         </span>
                       )}
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-300 dark:border-white/[0.08]">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-300 dark:border-white/[0.08] shrink-0">
                         Completion: {completionPercentage}%
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wide">
+                    {/* Subtitle */}
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide break-words">
                       {company.companyName || "Company"} {company.abbreviation || company.companyCode ? `@ ${company.abbreviation || company.companyCode}` : ""} {company.businessType ? `• ${company.businessType}` : ""}
+                      {company.isBranch && company.parentCompanyName ? ` • Branch of ${company.parentCompanyName}` : ""}
                     </p>
 
-                    <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap mt-3 text-xs">
-                      <div className="flex items-center gap-1.5">
+                    {/* Metadata Details (Full Width clean rows) */}
+                    <div className="grid grid-cols-1 gap-2 pt-2 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
                         <User size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Owner.</span>
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white">
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Owner:</span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white truncate" title={company.ownerName || undefined}>
                           {company.ownerName || "—"}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <Mail size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Email.</span>
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white">
-                          {company.email || "—"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Phone size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Phone.</span>
-                        <span className="font-semibold text-[#0A0E1A] dark:text-white">
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Phone:</span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white truncate">
                           {company.phone ? (company.phone.startsWith("+") ? company.phone : `+91 ${company.phone}`) : "—"}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Mail size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Email:</span>
+                        <span className="font-semibold text-[#0A0E1A] dark:text-white truncate" title={company.email || undefined}>
+                          {company.email || "—"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 min-w-0">
                         <Globe size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">Website.</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Website:</span>
                         {company.website ? (
                           <a
                             href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="font-semibold text-[#B88728] hover:underline flex items-center gap-1 dark:text-[#E8C16D]"
+                            className="font-semibold text-[#B88728] hover:underline flex items-center gap-1 dark:text-[#E8C16D] truncate"
+                            title={company.website}
                           >
-                            <span>{company.website}</span>
-                            <ExternalLink size={10} />
+                            <span className="truncate">{company.website}</span>
+                            <ExternalLink size={10} className="shrink-0" />
                           </a>
                         ) : (
                           <span className="font-semibold text-[#0A0E1A] dark:text-white">—</span>
@@ -965,35 +1005,142 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                   </div>
                 </div>
 
-                {/* Authorized Signature Box */}
-                <div className="flex flex-col items-center shrink-0">
-                  <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#080B11] dark:border-white/[0.1] flex items-center justify-center p-2 overflow-hidden shadow-xs">
-                    {company.signatureUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={getMediaUrl(company.signatureUrl)}
-                        alt="Authorized Signature"
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-slate-500 text-center select-none">
-                        <FileText size={22} className="mb-1 text-[#B88728] dark:text-[#E8C16D]" />
-                        <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 leading-tight">
-                          No Signature
+                {/* ========================================================================= */}
+                {/* DESKTOP VIEW (sm and up): Untouched Side-by-Side Layout                   */}
+                {/* ========================================================================= */}
+                <div className="hidden sm:flex items-center justify-between gap-5 w-full">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    {/* Logo Box */}
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#080B11] dark:border-white/[0.1] flex flex-col items-center justify-center p-2 shrink-0 relative overflow-hidden group select-none shadow-xs">
+                      {company.logoUrl && (
+                        <ExternalLink size={12} className="text-slate-400 absolute top-2 right-2 pointer-events-none" />
+                      )}
+                      {company.logoUrl && !logoError ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={getMediaUrl(company.logoUrl)}
+                          alt={company.companyName}
+                          className="w-full h-full object-contain"
+                          onError={() => setLogoError(true)}
+                        />
+                      ) : (
+                        <span className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wider uppercase select-none font-sans">
+                          {getCompanyInitials(company.companyName)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Company Information */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-lg sm:text-xl font-bold text-[#0A0E1A] dark:text-white tracking-wide truncate">
+                          {company.companyName || "Untitled Company"}
+                        </h2>
+                        {companyStatusNorm === "ACTIVE" && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            Active
+                          </span>
+                        )}
+                        {companyStatusNorm === "DRAFT" && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                            Draft
+                          </span>
+                        )}
+                        {companyStatusNorm === "INACTIVE" && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/50 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                            Inactive
+                          </span>
+                        )}
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-300 dark:border-white/[0.08] shrink-0">
+                          Completion: {completionPercentage}%
                         </span>
                       </div>
-                    )}
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wide truncate">
+                        {company.companyName || "Company"} {company.abbreviation || company.companyCode ? `@ ${company.abbreviation || company.companyCode}` : ""} {company.businessType ? `• ${company.businessType}` : ""}
+                        {company.isBranch && company.parentCompanyName ? ` • Branch of ${company.parentCompanyName}` : ""}
+                      </p>
+
+                      <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap mt-3 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <User size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">Owner.</span>
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white truncate max-w-[140px]" title={company.ownerName || undefined}>
+                            {company.ownerName || "—"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Mail size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">Email.</span>
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white truncate max-w-[180px]" title={company.email || undefined}>
+                            {company.email || "—"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Phone size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">Phone.</span>
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white truncate max-w-[140px]">
+                            {company.phone ? (company.phone.startsWith("+") ? company.phone : `+91 ${company.phone}`) : "—"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Globe size={13} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">Website.</span>
+                          {company.website ? (
+                            <a
+                              href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-[#B88728] hover:underline flex items-center gap-1 dark:text-[#E8C16D] max-w-[160px]"
+                              title={company.website}
+                            >
+                              <span className="truncate">{company.website}</span>
+                              <ExternalLink size={10} className="shrink-0" />
+                            </a>
+                          ) : (
+                            <span className="font-semibold text-[#0A0E1A] dark:text-white">—</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
-                    Authorized Signature
-                  </span>
+
+                  {/* Authorized Signature Box */}
+                  <div className="flex flex-col items-center shrink-0 self-center">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-50 border border-[#E7E0D2] dark:bg-[#080B11] dark:border-white/[0.1] flex items-center justify-center p-2 overflow-hidden shadow-xs">
+                      {company.signatureUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={getMediaUrl(company.signatureUrl)}
+                          alt="Authorized Signature"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-slate-500 text-center select-none">
+                          <FileText size={22} className="mb-1 text-[#B88728] dark:text-[#E8C16D]" />
+                          <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 leading-tight">
+                            No Signature
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
+                      Authorized Signature
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {/* 2x2 Grid of Detail Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Card 1: Contact Details */}
-                <div className="rounded-3xl bg-white border border-[#E7E0D2] p-5 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
+                <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] p-4 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-[#E7E0D2] dark:border-white/[0.08]">
                       <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
@@ -1013,39 +1160,39 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                           </span>
                           <CopyButton text={billingAddressFull} />
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed break-words">
                           {billingAddressFull || "No billing address provided."}
                         </p>
-                        <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium">
+                        <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium flex-wrap">
                           <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                            <User size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
-                            {billingContactPerson}
+                            <User size={12} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                            <span className="truncate max-w-[140px] sm:max-w-[130px]">{billingContactPerson}</span>
                           </span>
                           <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                            <Phone size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
-                            {billingPhone}
+                            <Phone size={12} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                            <span className="truncate max-w-[140px] sm:max-w-[130px]">{billingPhone}</span>
                           </span>
                         </div>
                       </div>
 
                       <div className="border-t border-[#E7E0D2] dark:border-white/[0.08] pt-3">
-                        <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center justify-between mb-1 gap-2">
                           <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                             Shipping Address.
                           </span>
                           <CopyButton text={shippingAddressFull} />
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed break-words">
                           {shippingAddressFull || "No shipping address provided."}
                         </p>
-                        <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium">
+                        <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium flex-wrap">
                           <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                            <User size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
-                            {shippingContactPerson}
+                            <User size={12} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                            <span className="truncate max-w-[140px] sm:max-w-[130px]">{shippingContactPerson}</span>
                           </span>
                           <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                            <Phone size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
-                            {shippingPhone}
+                            <Phone size={12} className="text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                            <span className="truncate max-w-[140px] sm:max-w-[130px]">{shippingPhone}</span>
                           </span>
                         </div>
                       </div>
@@ -1054,7 +1201,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 </div>
 
                 {/* Card 2: Taxation & Legal Details */}
-                <div className="rounded-3xl bg-white border border-[#E7E0D2] p-5 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
+                <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] p-4 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-[#E7E0D2] dark:border-white/[0.08]">
                       <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
@@ -1065,13 +1212,13 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                    <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 block mb-0.5">
                           GST No.
                         </span>
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px] truncate" title={company.gstNumber || undefined}>
                             {company.gstNumber || "—"}
                           </span>
                           {company.gstNumber && <CopyButton text={company.gstNumber} />}
@@ -1082,8 +1229,8 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 block mb-0.5">
                           PAN No.
                         </span>
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px] truncate" title={company.panNumber || undefined}>
                             {company.panNumber || "—"}
                           </span>
                           {company.panNumber && <CopyButton text={company.panNumber} />}
@@ -1139,7 +1286,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 </div>
 
                 {/* Card 3: Bank Details */}
-                <div className="rounded-3xl bg-white border border-[#E7E0D2] p-5 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
+                <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] p-4 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-[#E7E0D2] dark:border-white/[0.08]">
                       <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
@@ -1150,13 +1297,13 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                    <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 block mb-0.5">
                           Account No.
                         </span>
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px]">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-[#0A0E1A] dark:text-white font-mono text-[11px] truncate" title={company.accountNumber || undefined}>
                             {company.accountNumber || "—"}
                           </span>
                           {company.accountNumber && <CopyButton text={company.accountNumber} />}
@@ -1248,7 +1395,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 </div>
 
                 {/* Card 4: Invoice Details */}
-                <div className="rounded-3xl bg-white border border-[#E7E0D2] p-5 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
+                <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] p-4 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-3.5 pb-2.5 border-b border-[#E7E0D2] dark:border-white/[0.08]">
                       <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
@@ -1259,7 +1406,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                    <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 block mb-0.5">
                           Tax Invoice Prefix. [Offline]
@@ -1315,19 +1462,19 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
             {/* ========================================================================= */}
             {/* RIGHT COLUMN: Branch(s) Card                                              */}
             {/* ========================================================================= */}
-            <div className="lg:col-span-4 flex flex-col">
-              <div className="rounded-3xl bg-white border border-[#E7E0D2] p-5 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col h-full min-h-[460px]">
+            <div className="xl:col-span-4 min-w-0 flex flex-col">
+              <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] p-4 sm:p-6 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col h-full min-h-[300px] sm:min-h-[360px] xl:min-h-[460px]">
                 {/* Header with Title & + Create Button */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08]">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between pb-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <div className="w-8 h-8 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] flex items-center justify-center shrink-0">
                       <Building2 size={15} />
                     </div>
-                    <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide">
+                    <h3 className="text-xs font-bold text-[#0A0E1A] dark:text-white tracking-wide truncate">
                       Branch(s)
                     </h3>
                     {branches.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D]">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
                         {branches.length}
                       </span>
                     )}
@@ -1335,7 +1482,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                   <button
                     type="button"
                     onClick={() => setCreateBranchModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] font-bold text-[11px] transition-all cursor-pointer shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-xl sm:rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] font-bold text-[11px] transition-all cursor-pointer shadow-sm shrink-0"
                   >
                     <Plus size={12} className="stroke-[3] text-[#0A0E1A]" />
                     <span>Create</span>
@@ -1343,9 +1490,9 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                 </div>
 
                 {/* Table Column Headers */}
-                <div className="grid grid-cols-12 text-[11px] font-semibold text-[#B88728] dark:text-[#E8C16D] py-2.5 border-b border-[#E7E0D2] dark:border-white/[0.08]">
+                <div className="grid grid-cols-12 text-[11px] font-semibold text-[#B88728] dark:text-[#E8C16D] py-2.5 border-b border-[#E7E0D2] dark:border-white/[0.08] gap-1">
                   <span className="col-span-2">No.</span>
-                  <span className="col-span-7">Branch / Company Name.</span>
+                  <span className="col-span-7 truncate">Branch / Company Name.</span>
                   <span className="col-span-3 text-right">Status.</span>
                 </div>
 
@@ -1356,20 +1503,20 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
                     <p className="text-xs font-medium">Loading branches...</p>
                   </div>
                 ) : branches.length > 0 ? (
-                  <div className="flex-1 overflow-y-auto divide-y divide-[#E7E0D2] dark:divide-white/[0.04]">
+                  <div className="flex-1 overflow-y-auto divide-y divide-[#E7E0D2] dark:divide-white/[0.04] custom-scrollbar">
                     {branches.map((b, idx) => (
                       <div
                         key={b.id || idx}
-                        className="grid grid-cols-12 items-center text-xs py-2.5 px-1 hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
+                        className="grid grid-cols-12 items-center text-xs py-2.5 px-1 hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors gap-1"
                       >
                         <span className="col-span-2 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                           {String(idx + 1).padStart(2, "0")}
                         </span>
                         <div className="col-span-7 min-w-0 pr-2">
-                          <p className="font-semibold text-[#0A0E1A] dark:text-white truncate text-[11px]">
+                          <p className="font-semibold text-[#0A0E1A] dark:text-white truncate text-[11px]" title={b.branchName || b.companyName}>
                             {b.branchName || b.companyName}
                           </p>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate">
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate" title={b.gstNumber}>
                             {b.gstNumber}
                           </p>
                         </div>
@@ -1414,64 +1561,64 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
 
         {/* BOTTOM STATIC FOOTER BAR */}
         <div className="w-full pt-3 pb-4 sm:pb-5 lg:pb-6 bg-transparent shrink-0 z-20">
-          <div className="w-full rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] px-6 py-4 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Left Metadata items */}
-            <div className="flex items-center gap-6 sm:gap-8 flex-wrap">
-              {/* Creation Date */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <Calendar size={14} />
+          <div className="w-full rounded-2xl sm:rounded-3xl bg-white border border-[#E7E0D2] p-4 sm:px-6 sm:py-4 shadow-sm dark:bg-[#0F1626] dark:border-white/[0.08] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            {/* Left Metadata items: 2x2 grid (1 2 / 3 4) on laptop/tablet, flex on ultra-wide */}
+            <div className="grid grid-cols-2 gap-x-4 sm:gap-x-10 gap-y-2.5 sm:gap-y-3 2xl:flex 2xl:items-center 2xl:gap-8 min-w-0">
+              {/* 1. Creation Date */}
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <Calendar size={13} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
                     Creation Date
                   </p>
-                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5 truncate">
                     {formatDateDisplay(company.registrationDate || company.createdAt)}
                   </p>
                 </div>
               </div>
 
-              {/* Created By */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <User size={14} />
+              {/* 2. Created By */}
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <User size={13} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
                     Created By
                   </p>
-                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5 truncate max-w-[130px] sm:max-w-[180px]" title={company.ownerName || "Admin"}>
                     {company.ownerName || "Admin"}
                   </p>
                 </div>
               </div>
 
-              {/* Last Updated */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <Calendar size={14} />
+              {/* 3. Last Updated */}
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <Calendar size={13} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
                     Last Updated
                   </p>
-                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5 truncate">
                     {formatDateDisplay(company.updatedAt)}
                   </p>
                 </div>
               </div>
 
-              {/* Last Updated By */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
-                  <User size={14} />
+              {/* 4. Last Updated By */}
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF9EC] border border-[#E8C16D]/40 text-[#B88728] dark:bg-[#1A160E] dark:border-[#E8C16D]/30 dark:text-[#E8C16D] flex items-center justify-center shrink-0">
+                  <User size={13} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
                     Last Updated By
                   </p>
-                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5">
+                  <p className="text-xs font-semibold text-[#0A0E1A] dark:text-white mt-0.5 truncate max-w-[130px] sm:max-w-[180px]" title={company.ownerName || "Admin"}>
                     {company.ownerName || "Admin"}
                   </p>
                 </div>
@@ -1482,7 +1629,7 @@ export default function CompanyProfileViewPage({ id: propId }: CompanyProfileVie
             <button
               type="button"
               onClick={handleGenerateReport}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-[#E8C16D]/40 shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-white dark:border-white/[0.1] text-xs font-bold transition-all cursor-pointer active:scale-95 shrink-0"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl sm:rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-[#E8C16D]/40 shadow-xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-white dark:border-white/[0.1] text-xs font-bold transition-all cursor-pointer active:scale-95 shrink-0 w-full sm:w-auto"
             >
               <FileText size={14} className="text-[#B88728] dark:text-[#E8C16D]" />
               <span>Generate Report</span>

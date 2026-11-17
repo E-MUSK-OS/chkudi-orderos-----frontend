@@ -290,7 +290,7 @@ export default function AmazonProcessHistoryDropdown({
           }
         }}
         disabled={loadingBatchId !== null}
-        className={`w-full sm:w-auto inline-flex items-center justify-between gap-1.5 sm:gap-2 rounded-2xl border px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer shrink-0 ${
+        className={`w-full sm:w-auto inline-flex items-center justify-between gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer shrink-0 ${
           isOpen
             ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] ring-2 ring-[#E8C16D]/30"
             : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white hover:border-[#E8C16D] hover:bg-slate-50 dark:hover:bg-white/[0.04]"

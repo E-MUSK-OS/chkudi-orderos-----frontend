@@ -155,7 +155,7 @@ const OperatorTable: React.FC<Props> = ({
     return (
       <div className="min-h-[220px] flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent mx-auto mb-2" />
-        <p className="text-sm font-bold text-[#0A0E1A] dark:text-white">Loading operators...</p>
+        <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">Loading operators...</p>
       </div>
     );
   }
@@ -166,7 +166,7 @@ const OperatorTable: React.FC<Props> = ({
         <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30">
           <Users className="h-7 w-7 text-[#B88728] dark:text-[#E8C16D]" />
         </div>
-        <p className="text-base font-bold text-[#0A0E1A] dark:text-white">No Operators Found</p>
+        <p className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white">No Operators Found</p>
       </div>
     );
   }

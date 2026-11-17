@@ -154,33 +154,20 @@ export default function MaterialToolbar({
     }
   };
 
-  const isFilterActive =
-    (search && search.trim() !== "") ||
-    Boolean(status) ||
-    Boolean(category);
-
-  const handleResetFilters = () => {
-    onSearchChange("");
-    onStatusChange("");
-    onCategoryChange("");
-    onBrandChange?.("");
-    onMarketplaceChange?.("");
-  };
-
   const hasData = Boolean(materialsData && materialsData.length > 0);
 
   return (
     <>
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 sm:gap-4 dark:border-white/[0.08] dark:bg-[#0F1626]">
         {/* Left side: Searchbar matching OrderOS pill theme */}
-        <div className="relative flex-1 min-w-[220px] max-w-md">
+        <div className="relative flex-1 min-w-[200px] max-w-md w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
             placeholder="Search Material / SKU..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
+            className="w-full h-9 sm:h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
           />
           {search && (
             <button
@@ -195,26 +182,27 @@ export default function MaterialToolbar({
         </div>
 
         {/* Right side: Filters & Actions */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full xl:w-auto">
           {/* Status Dropdown Pill */}
           <ThemeSelectDropdown
             ariaLabel="Filter by Status"
             value={status}
             onChange={(val) => onStatusChange(val)}
             options={statusOptions}
-            buttonClassName="rounded-full h-10 px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+            className="flex-1 sm:flex-initial min-w-[120px]"
+            buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
             icon={<Boxes className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />}
           />
 
           {/* Category Search Pill */}
-          <div className="relative min-w-[170px] max-w-[220px]">
+          <div className="relative flex-1 sm:flex-initial min-w-[140px] sm:max-w-[220px]">
             <Layers className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
             <input
               type="text"
               placeholder="Search Category..."
               value={category}
               onChange={(e) => onCategoryChange(e.target.value)}
-              className="w-full h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
+              className="w-full h-9 sm:h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 transition-all shadow-xs"
             />
             {category && (
               <button
@@ -228,19 +216,6 @@ export default function MaterialToolbar({
             )}
           </div>
 
-          {/* Reset filter pill button if active */}
-          {isFilterActive && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
-              title="Reset all filters"
-            >
-              <X className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-              <span>Reset</span>
-            </button>
-          )}
-
           {/* Upload Button Pill */}
           <button
             type="button"
@@ -248,7 +223,7 @@ export default function MaterialToolbar({
               window.location.href = "/dashboard/settings/upload-excel?tab=material";
             }}
             disabled={isImporting}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex flex-1 sm:flex-initial justify-center items-center gap-2 h-9 sm:h-10 px-3.5 sm:px-4 rounded-full border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
             title="Upload Excel"
           >
             <FileSpreadsheet className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
@@ -260,7 +235,7 @@ export default function MaterialToolbar({
             <button
               type="button"
               onClick={handleDownloadData}
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs font-bold transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#252014] active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-2 h-9 sm:h-10 px-4 rounded-full border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs font-bold transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#252014] active:scale-[0.98] cursor-pointer"
               title={
                 importType === "material" && selectedCount > 0
                   ? `Export ${selectedCount} selected material(s)`
@@ -279,7 +254,7 @@ export default function MaterialToolbar({
             <button
               type="button"
               onClick={handleDownloadDemoSheet}
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] text-slate-800 dark:text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+              className="inline-flex items-center gap-2 h-9 sm:h-10 px-4 rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] text-slate-800 dark:text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
               title="Download demo Excel sheet"
             >
               <Download className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
@@ -291,7 +266,7 @@ export default function MaterialToolbar({
           <button
             type="button"
             onClick={onRefresh}
-            className="h-10 w-10 flex items-center justify-center rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-300 hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
+            className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-300 hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
             title="Refresh"
           >
             <RotateCw className="h-3.5 w-3.5" />

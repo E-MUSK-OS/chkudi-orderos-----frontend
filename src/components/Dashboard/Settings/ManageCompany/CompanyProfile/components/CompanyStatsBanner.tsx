@@ -65,31 +65,31 @@ export default function CompanyStatsBanner({
         return (
           <div
             key={i}
-            className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#E8C16D]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between"
+            className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#E8C16D]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <p className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   {stat.label}
                 </p>
                 <span
-                  className={`rounded-xl border px-2.5 py-0.5 text-xs font-bold ${stat.badgeClass}`}
+                  className={`rounded-xl border px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-bold ${stat.badgeClass}`}
                 >
                   {stat.badge}
                 </span>
               </div>
 
-              <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
+              <div className="mt-2.5 sm:mt-4 flex items-end justify-between gap-3">
                 <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
                   {stat.value}
                 </h3>
 
-                <div className="grid h-11 w-11 place-items-center rounded-2xl border shrink-0 bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]">
-                  <Icon className="h-5 w-5" />
+                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl sm:rounded-2xl border shrink-0 bg-[#FFF9EC] text-[#B88728] border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]">
+                  <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
               </div>
 
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
                 {stat.subtext}
               </p>
             </div>

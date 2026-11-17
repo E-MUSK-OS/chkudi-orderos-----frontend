@@ -146,28 +146,28 @@ export default function GroupValuesPanel({
   };
 
   return (
-    <div className="flex flex-col h-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
+    <div className="flex flex-col h-auto lg:h-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
       {/* Top Search & Filter Bar */}
-      <div className="px-4 sm:px-7 py-3 sm:py-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs sm:text-sm font-extrabold text-[#0A0E1A] dark:text-white">
+      <div className="px-3.5 sm:px-7 py-2.5 sm:py-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <span className="text-xs sm:text-sm font-extrabold text-[#0A0E1A] dark:text-white truncate max-w-[110px] sm:max-w-none">
             {selectedGroup ? selectedGroup.label : "Values"}
           </span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] font-bold border border-[#E8C16D]/30">
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] font-bold border border-[#E8C16D]/30 shrink-0">
             {filteredOptions.length}
           </span>
           {sortMode !== "default" && (
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#E8C16D]/15 text-[#B88728] dark:text-[#E8C16D] font-bold border border-[#E8C16D]/30 hidden sm:inline-flex items-center gap-1">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E8C16D]/15 text-[#B88728] dark:text-[#E8C16D] font-bold border border-[#E8C16D]/30 hidden sm:inline-flex items-center gap-1">
               {sortMode === "asc" ? <ArrowDownAZ className="h-3 w-3" /> : <ArrowUpZA className="h-3 w-3" />}
               {sortMode === "asc" ? "Sorted A-Z" : "Sorted Z-A"}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2 max-w-sm w-full justify-end">
-          <div className="relative flex-1 group">
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 py-2 transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/20 shadow-2xs">
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
+        <div className="flex items-center gap-2 max-w-sm w-full justify-end min-w-0">
+          <div className="relative flex-1 group min-w-0">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 py-1.5 sm:py-2 h-9 sm:h-10 transition-all hover:border-[#E8C16D] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/20 shadow-2xs">
+              <div className="grid h-5 w-5 place-items-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
                 <Search className="h-3 w-3" />
               </div>
               <input
@@ -194,7 +194,7 @@ export default function GroupValuesPanel({
             type="button"
             onClick={handleReset}
             disabled={!isFilteredOrSorted}
-            className={`grid h-9.5 w-9.5 place-items-center rounded-xl border transition-all cursor-pointer shadow-2xs shrink-0 ${
+            className={`grid h-9 w-9 sm:h-9.5 sm:w-9.5 place-items-center rounded-full border transition-all cursor-pointer shadow-2xs shrink-0 ${
               isFilteredOrSorted
                 ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#E8C16D]/20 active:scale-95"
                 : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-60"
@@ -207,28 +207,28 @@ export default function GroupValuesPanel({
       </div>
 
       {/* Values Table */}
-      <div className="flex-1 overflow-y-auto max-h-[550px] divide-y divide-[#E7E0D2]/60 dark:divide-white/[0.04]">
+      <div className="flex-1 overflow-y-auto max-h-[360px] sm:max-h-[460px] lg:max-h-[550px] divide-y divide-[#E7E0D2]/60 dark:divide-white/[0.04]">
         {/* Table Header matching OrderOS theme */}
-        <div className="grid grid-cols-12 px-4 py-3 bg-[#FEFAEE] dark:bg-[#080B11] text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] sticky top-0 z-10 select-none shadow-xs">
+        <div className="grid grid-cols-12 px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FEFAEE] dark:bg-[#080B11] text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] sticky top-0 z-10 select-none shadow-xs">
           <div className="col-span-1 text-center">No.</div>
-          <div className="col-span-6 pl-2 flex items-center justify-between pr-2">
+          <div className="col-span-6 pl-1.5 sm:pl-2 flex items-center justify-between pr-1.5 sm:pr-2">
             <button
               type="button"
               onClick={handleToggleValueSort}
-              className="inline-flex items-center gap-1.5 hover:text-[#0A0E1A] dark:hover:text-white transition-colors cursor-pointer group text-left"
+              className="inline-flex items-center gap-1.5 hover:text-[#0A0E1A] dark:hover:text-white transition-colors cursor-pointer group text-left min-w-0"
               title={`Sorted ${sortMode === "default" ? "Default (Click for A-Z)" : sortMode === "asc" ? "A-Z (Click for Z-A)" : "Z-A (Click for A-Z)"}`}
             >
-              <span>{isColorGroup ? "Color (Name & Hex)" : "Value"}</span>
+              <span className="truncate">{isColorGroup ? "Color (Name & Hex)" : "Value"}</span>
               {sortMode === "default" && (
-                <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#6A4D1D] dark:group-hover:text-[#E8C16D] transition-colors shrink-0" />
+                <ArrowUpDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-400 group-hover:text-[#6A4D1D] dark:group-hover:text-[#E8C16D] transition-colors shrink-0" />
               )}
               {sortMode === "asc" && (
-                <ArrowDownAZ className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
+                <ArrowDownAZ className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
               )}
               {sortMode === "desc" && (
-                <ArrowUpZA className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
+                <ArrowUpZA className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
               )}
-              <span className="text-[10px] font-normal normal-case opacity-75">
+              <span className="text-[10px] font-normal normal-case opacity-75 hidden sm:inline">
                 ({sortMode === "default" ? "Default" : sortMode === "asc" ? "A-Z" : "Z-A"})
               </span>
             </button>
@@ -237,7 +237,7 @@ export default function GroupValuesPanel({
               <button
                 type="button"
                 onClick={() => setSortMode("default")}
-                className="inline-flex items-center gap-1 text-[10px] normal-case font-semibold text-slate-500 hover:text-[#B88728] dark:text-slate-400 dark:hover:text-[#E8C16D] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[10px] normal-case font-semibold text-slate-500 hover:text-[#B88728] dark:text-slate-400 dark:hover:text-[#E8C16D] transition-colors cursor-pointer shrink-0"
                 title="Reset to default sorting (defaults first, new added last)"
               >
                 <RotateCcw className="h-3 w-3" />
@@ -246,7 +246,7 @@ export default function GroupValuesPanel({
             )}
           </div>
           <div className="col-span-2 text-center">Active</div>
-          <div className="col-span-3 text-right pr-2">Actions</div>
+          <div className="col-span-3 text-right pr-1 sm:pr-2">Actions</div>
         </div>
 
         {/* Table Body */}
@@ -256,14 +256,14 @@ export default function GroupValuesPanel({
             <p className="mt-2 text-xs text-slate-400">Loading values...</p>
           </div>
         ) : filteredOptions.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center justify-center">
+          <div className="p-8 sm:p-12 text-center flex flex-col items-center justify-center">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               No options found for this group
             </p>
             <button
               type="button"
               onClick={onOpenAddModal}
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+              className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8C16D] text-[#0A0E1A] text-xs font-bold hover:bg-[#d4af5a] transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{isColorGroup ? "Add First Color" : "Add First Option"}</span>
@@ -274,7 +274,7 @@ export default function GroupValuesPanel({
             return (
               <div
                 key={opt.id || opt.value}
-                className="grid grid-cols-12 items-center px-4 py-2 hover:bg-[#FFF9EC]/40 dark:hover:bg-[#1A160E]/30 transition-colors"
+                className="grid grid-cols-12 items-center px-3.5 sm:px-4 py-2 sm:py-2.5 hover:bg-[#FFF9EC]/40 dark:hover:bg-[#1A160E]/30 transition-colors"
               >
                 {/* No. */}
                 <div className="col-span-1 text-center text-xs font-medium text-slate-400 dark:text-slate-500">
@@ -282,10 +282,10 @@ export default function GroupValuesPanel({
                 </div>
 
                 {/* Value / Color */}
-                <div className="col-span-6 pl-2 flex items-center gap-2.5">
+                <div className="col-span-6 pl-1.5 sm:pl-2 flex items-center gap-2 sm:gap-2.5 min-w-0">
                   {isColorGroup && (
                     <div
-                      className="w-4 h-4 rounded-full border border-slate-300 dark:border-white/20 shrink-0 shadow-2xs"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-slate-300 dark:border-white/20 shrink-0 shadow-2xs"
                       style={{ backgroundColor: getColorHex(opt) }}
                     />
                   )}
@@ -293,12 +293,12 @@ export default function GroupValuesPanel({
                     {opt.label || opt.value}
                   </span>
                   {opt.value && opt.value.startsWith("#") ? (
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]">
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
                       {opt.value}
                     </span>
                   ) : (
                     opt.label && opt.label !== opt.value && (
-                      <span className="text-[10px] text-slate-400">({opt.value})</span>
+                      <span className="text-[10px] text-slate-400 truncate hidden sm:inline">({opt.value})</span>
                     )
                   )}
                 </div>
@@ -328,9 +328,9 @@ export default function GroupValuesPanel({
                 </div>
 
                 {/* Actions: Edit & Delete */}
-                <div className="col-span-3 flex items-center justify-end gap-1.5 pr-1">
+                <div className="col-span-3 flex items-center justify-end gap-1 sm:gap-1.5 pr-0.5 sm:pr-1">
                   {isReadOnly ? (
-                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 italic pr-2">
+                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 italic pr-1">
                       View-only
                     </span>
                   ) : (
@@ -339,7 +339,7 @@ export default function GroupValuesPanel({
                       <button
                         type="button"
                         onClick={() => onOpenEditModal(opt)}
-                        className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-all cursor-pointer shadow-2xs"
+                        className="grid h-7 w-7 sm:h-7.5 sm:w-7.5 place-items-center rounded-lg sm:rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-all cursor-pointer shadow-2xs"
                         title={isColorGroup ? "Edit Color" : "Edit Option"}
                       >
                         <Edit3 className="h-3.5 w-3.5" />
@@ -349,7 +349,7 @@ export default function GroupValuesPanel({
                       <button
                         type="button"
                         onClick={() => onOpenDeleteModal(opt)}
-                        className="grid h-7 w-7 place-items-center rounded-lg border border-red-200 dark:border-red-900/30 bg-red-500/15 dark:bg-red-500/20 text-red-500 dark:text-red-400 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
+                        className="grid h-7 w-7 sm:h-7.5 sm:w-7.5 place-items-center rounded-lg sm:rounded-xl border border-red-200 dark:border-red-900/30 bg-red-500/15 dark:bg-red-500/20 text-red-500 dark:text-red-400 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
                         title={isColorGroup ? "Delete or Deactivate Color" : "Delete Option"}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -365,11 +365,11 @@ export default function GroupValuesPanel({
 
       {/* Bottom Footer with Add Button */}
       {!isReadOnly && (
-        <div className="px-4 sm:px-7 py-3 sm:py-3.5 border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-start">
+        <div className="px-3.5 sm:px-7 py-2.5 sm:py-3.5 border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] flex items-center justify-start">
           <button
             type="button"
             onClick={onOpenAddModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs font-bold text-[#0A0E1A] dark:text-white hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-all cursor-pointer shadow-2xs active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-all cursor-pointer shadow-2xs active:scale-[0.98] min-h-[36px] sm:h-10"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{isColorGroup ? "Add Color" : "Add"}</span>

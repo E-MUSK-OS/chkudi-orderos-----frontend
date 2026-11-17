@@ -456,7 +456,7 @@ export default function AmazonAnalytics() {
         <div className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Amazon Products Analytics
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
@@ -469,7 +469,7 @@ export default function AmazonAnalytics() {
                 <button
                   type="button"
                   onClick={downloadAmazonAnalyticsDemoSheet}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer flex-1 sm:flex-none min-h-[40px] sm:min-h-[44px]"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer flex-1 sm:flex-none min-h-[38px] sm:min-h-[44px]"
                   title="Download sample Excel template"
                 >
                   <FileDown className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
@@ -481,7 +481,7 @@ export default function AmazonAnalytics() {
                     setSelectedGraphItem(null);
                     setIsGraphModalOpen(true);
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#E8C16D]/20 ring-2 ring-[#E8C16D]/30 cursor-pointer flex-1 sm:flex-none min-h-[40px] sm:min-h-[44px]"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#E8C16D]/20 ring-2 ring-[#E8C16D]/30 cursor-pointer flex-1 sm:flex-none min-h-[38px] sm:min-h-[44px]"
                 >
                   <BarChart3 className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
                   <span>Show Graph</span>
@@ -489,7 +489,7 @@ export default function AmazonAnalytics() {
 
                 <button
                   onClick={() => router.push("/dashboard/settings/upload-excel?tab=productAnalytics")}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer flex-1 sm:flex-none min-h-[40px] sm:min-h-[44px]"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-3.5 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer flex-1 sm:flex-none min-h-[38px] sm:min-h-[44px]"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add More</span>
@@ -499,7 +499,7 @@ export default function AmazonAnalytics() {
                   <button
                     type="button"
                     onClick={() => setIsDeleteModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer animate-in fade-in zoom-in-95 duration-150 flex-1 sm:flex-none min-h-[40px] sm:min-h-[44px]"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer animate-in fade-in zoom-in-95 duration-150 flex-1 sm:flex-none min-h-[38px] sm:min-h-[44px]"
                   >
                     <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                     <span>Delete ({selectedIds.length})</span>
@@ -523,7 +523,7 @@ export default function AmazonAnalytics() {
             <div className="shrink-0 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
             {/* Left side: Searchbar matching OrderOS theme with increased width */}
             <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
-              <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 dark:hover:bg-white/[0.04] dark:hover:border-[#F5C451]/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:focus-within:bg-[#080B11]">
+              <div className="group flex items-center gap-2.5 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 dark:hover:bg-white/[0.04] dark:hover:border-[#F5C451]/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:focus-within:bg-[#080B11]">
                 <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
                   <Search className="h-3.5 w-3.5" />
                 </div>
@@ -591,7 +591,7 @@ export default function AmazonAnalytics() {
                     setSortDirection(null);
                     setCurrentPage(1);
                   }}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/70 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                   title="Reset all filters and sorting"
                 >
                   <div className="grid h-5 w-5 place-items-center rounded-md bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 shrink-0">
@@ -603,7 +603,7 @@ export default function AmazonAnalytics() {
 
               {/* Date Filter */}
               <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-                <PopoverTrigger className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 dark:hover:bg-white/[0.04] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
+                <PopoverTrigger className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 dark:hover:bg-white/[0.04] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
                   <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D]">
                     <CalendarIcon className="h-3.5 w-3.5" />
                   </div>
@@ -635,7 +635,7 @@ export default function AmazonAnalytics() {
               {/* Last Updated Time */}
               {lastUpdatedTime && (
                 <div
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-300 shadow-xs cursor-default"
+                  className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-slate-300 shadow-xs cursor-default"
                   title="Last Updated Time"
                 >
                   <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D]">
@@ -654,7 +654,7 @@ export default function AmazonAnalytics() {
                     selectedDate,
                   })
                 }
-                className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer"
                 title="Download complete analytics insights Excel sheet"
               >
                 <FileDown className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
@@ -670,28 +670,28 @@ export default function AmazonAnalytics() {
             <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading data...</p>
           </div>
         ) : data.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-dashed border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-8 sm:p-12 md:p-16 text-center shadow-sm">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/20">
-              <Upload size={32} className="text-[#B88728] dark:text-[#E8C16D]" />
+          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-dashed border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-6 sm:p-12 md:p-16 text-center shadow-sm">
+            <div className="mb-4 sm:mb-6 flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/20">
+              <Upload className="h-7 w-7 sm:h-8 sm:w-8 text-[#B88728] dark:text-[#E8C16D]" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-[#0A0E1A] dark:text-white">No Analytics Data Found</h2>
-            <p className="mb-8 max-w-md text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="mb-1.5 sm:mb-2 text-lg sm:text-xl font-bold text-[#0A0E1A] dark:text-white">No Analytics Data Found</h2>
+            <p className="mb-6 sm:mb-8 max-w-md text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               It looks like you haven&apos;t uploaded any Amazon SKUs yet. Upload an Excel file containing your SKUs to get started.
             </p>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={downloadAmazonAnalyticsDemoSheet}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] px-5 sm:px-6 py-2.5 sm:py-3 font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-sm active:scale-[0.98] cursor-pointer ring-2 ring-[#E8C16D]/30 text-xs sm:text-sm w-full sm:w-auto min-h-[42px] sm:min-h-[44px]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] px-4 sm:px-6 py-2 sm:py-3 font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-sm active:scale-[0.98] cursor-pointer ring-2 ring-[#E8C16D]/30 text-xs sm:text-sm w-full sm:w-auto min-h-[40px] sm:min-h-[44px]"
               >
-                <FileDown size={20} className="text-[#B88728] dark:text-[#E8C16D]" />
+                <FileDown className="h-4 w-4 sm:h-5 sm:w-5 text-[#B88728] dark:text-[#E8C16D]" />
                 <span>Download Demo Sheet</span>
               </button>
               <button
                 onClick={() => router.push("/dashboard/settings/upload-excel?tab=productAnalytics")}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-5 sm:px-6 py-2.5 sm:py-3 font-bold text-[#0A0E1A] transition-all hover:bg-[#d4af5a] shadow-sm text-xs sm:text-sm cursor-pointer w-full sm:w-auto min-h-[42px] sm:min-h-[44px]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-6 py-2 sm:py-3 font-bold text-[#0A0E1A] transition-all hover:bg-[#d4af5a] shadow-sm text-xs sm:text-sm cursor-pointer w-full sm:w-auto min-h-[40px] sm:min-h-[44px]"
               >
-                <Upload size={20} />
+                <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Upload Excel File</span>
               </button>
             </div>

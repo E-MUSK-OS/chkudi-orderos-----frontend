@@ -40,11 +40,11 @@ export default function MaterialTable({
 
   if (!materials.length) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]">
-          <Package className="h-7 w-7" />
+      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center">
+        <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]">
+          <Package className="h-6 w-6 sm:h-7 sm:w-7" />
         </div>
-        <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
+        <h3 className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white">
           No materials Found
         </h3>
         <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-sm dark:text-slate-400">
@@ -134,7 +134,7 @@ export default function MaterialTable({
                 </td>
 
                 {/* Material Details (Name, SKU, Description, Party) */}
-                <td className="px-3 sm:px-4 py-3.5 align-middle max-w-[260px]">
+                <td className="px-3 sm:px-4 py-3.5 align-middle min-w-[200px] max-w-[260px]">
                   <div>
                     <p className="font-bold text-[#0A0E1A] truncate dark:text-white" title={material.materialName}>
                       {material.materialName}
@@ -192,7 +192,7 @@ export default function MaterialTable({
                 </td>
 
                 {/* Category & Sub Category */}
-                <td className="px-3 sm:px-4 py-3.5 align-middle">
+                <td className="px-3 sm:px-4 py-3.5 align-middle min-w-[140px] whitespace-nowrap">
                   <div>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                       {material.category}

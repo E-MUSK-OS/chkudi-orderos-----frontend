@@ -23,16 +23,16 @@ export default function DropdownModeCard({ mode, onChange }: Props) {
   const isFormOther = mode === "FORM_OTHER";
 
   return (
-    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm transition-all duration-200">
+    <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm transition-all duration-200">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-[#E7E0D2]/70 dark:border-white/[0.06]">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shrink-0 shadow-2xs">
-            <SlidersHorizontal className="h-5 w-5" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-3 sm:pb-3.5 border-b border-[#E7E0D2]/70 dark:border-white/[0.06]">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl sm:rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shrink-0 shadow-2xs">
+            <SlidersHorizontal className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm sm:text-base font-extrabold text-[#0A0E1A] dark:text-white tracking-tight">
+              <h2 className="text-xs sm:text-base font-extrabold text-[#0A0E1A] dark:text-white tracking-tight">
                 Dropdown Governance & Option Management
               </h2>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 uppercase tracking-wider">
@@ -47,8 +47,8 @@ export default function DropdownModeCard({ mode, onChange }: Props) {
 
         {/* Current Active Mode Pill */}
         <div className="self-start sm:self-center shrink-0">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#E8C16D]/40 bg-[#FFF9EC]/80 dark:bg-[#1A160E]/80 text-[#0A0E1A] dark:text-white text-xs font-bold shadow-2xs">
-            <span className="h-2 w-2 rounded-full bg-[#E8C16D] dark:bg-[#F5C451] animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-[#E8C16D]/40 bg-[#FFF9EC]/80 dark:bg-[#1A160E]/80 text-[#0A0E1A] dark:text-white text-[11px] sm:text-xs font-bold shadow-2xs">
+            <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#E8C16D] dark:bg-[#F5C451] animate-pulse" />
             <span className="text-slate-500 dark:text-slate-400 font-medium">Active Mode:</span>
             <span className="text-[#B88728] dark:text-[#E8C16D]">
               {isSettingMasters ? "Setting Masters Only" : "Allow Other in Forms & Setting Masters"}
@@ -58,12 +58,12 @@ export default function DropdownModeCard({ mode, onChange }: Props) {
       </div>
 
       {/* 2 Interactive Options Grid (Side-by-side in Amazon theme) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 mt-3.5 sm:mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
         {/* OPTION 1: Setting Masters Only (Centralized) */}
         <button
           type="button"
           onClick={() => onChange("SETTING_MASTERS")}
-          className={`group w-full p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border text-left transition-all duration-200 cursor-pointer relative flex flex-col justify-between ${
+          className={`group w-full p-3.5 sm:p-4.5 rounded-2xl sm:rounded-3xl border text-left transition-all duration-200 cursor-pointer relative flex flex-col justify-between ${
             isSettingMasters
               ? "border-[#E8C16D] bg-[#FFFDF9] dark:bg-[#151C2C] ring-2 ring-[#E8C16D]/25 dark:border-[#F5C451] dark:ring-[#F5C451]/20 shadow-sm"
               : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:border-[#E8C16D]/40 hover:bg-[#FFF9EC]/20 dark:hover:bg-white/[0.02]"
@@ -135,7 +135,7 @@ export default function DropdownModeCard({ mode, onChange }: Props) {
         <button
           type="button"
           onClick={() => onChange("FORM_OTHER")}
-          className={`group w-full p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border text-left transition-all duration-200 cursor-pointer relative flex flex-col justify-between ${
+          className={`group w-full p-3.5 sm:p-4.5 rounded-2xl sm:rounded-3xl border text-left transition-all duration-200 cursor-pointer relative flex flex-col justify-between ${
             isFormOther
               ? "border-[#E8C16D] bg-[#FFFDF9] dark:bg-[#151C2C] ring-2 ring-[#E8C16D]/25 dark:border-[#F5C451] dark:ring-[#F5C451]/20 shadow-sm"
               : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:border-[#E8C16D]/40 hover:bg-[#FFF9EC]/20 dark:hover:bg-white/[0.02]"

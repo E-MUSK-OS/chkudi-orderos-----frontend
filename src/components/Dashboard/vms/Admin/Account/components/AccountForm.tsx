@@ -99,11 +99,12 @@ const AccountForm: React.FC<AccountFormProps> = ({
   return (
     <form
       onSubmit={form.handleSubmit(handleSubmit)}
-      className="space-y-6"
+      className="space-y-4 sm:space-y-5"
     >
       <Input
         label="Account Name"
         placeholder="Enter account name"
+        inputClassName="h-12 sm:h-14 text-sm sm:text-[15px]"
         {...form.register("accountName")}
         error={
           typeof form.formState.errors.accountName?.message ===
@@ -118,7 +119,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
           type="submit"
           loading={loading}
           fullWidth={false}
-          className="w-full sm:w-auto px-8 min-h-[42px] sm:min-h-[44px] h-11 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
+          className="w-full sm:w-auto px-8 min-h-[40px] sm:min-h-[44px] h-11 rounded-2xl text-xs sm:text-sm font-bold active:scale-[0.98]"
         >
           {mode === "create"
             ? "Add Account"

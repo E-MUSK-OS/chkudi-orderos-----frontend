@@ -167,7 +167,7 @@ const AccountPage = () => {
         <div ref={headerCardRef} className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Selling Accounts
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
@@ -177,7 +177,7 @@ const AccountPage = () => {
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto self-stretch md:self-center">
               <div
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs ring-2 ring-[#E8C16D]/30 w-full sm:w-auto min-h-[42px] sm:min-h-[44px]"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs ring-2 ring-[#E8C16D]/30 w-full sm:w-auto min-h-[40px] sm:min-h-[44px]"
                 title="Total Accounts"
               >
                 <Store className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
@@ -187,7 +187,7 @@ const AccountPage = () => {
               <button
                 type="button"
                 onClick={() => setOpenCreate(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2.5 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer w-full sm:w-auto min-h-[42px] sm:min-h-[44px]"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer w-full sm:w-auto min-h-[40px] sm:min-h-[44px]"
               >
                 <Plus className="h-4 w-4" />
                 <span>Add Account</span>

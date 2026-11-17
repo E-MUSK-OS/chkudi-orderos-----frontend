@@ -346,63 +346,61 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
       <div ref={containerRef} className="space-y-4 sm:space-y-6 pb-6 lg:pb-0">
         {/* Top Rounded Header Card matching OrderOS theme and cards below */}
         <div ref={headerCardRef} className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
               <button
                 type="button"
                 onClick={handleBack}
-                className="p-2 sm:p-2.5 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 hover:bg-[#FFF3D6] dark:bg-[#1A160E] dark:text-[#E8C16D] dark:hover:bg-[#252014] transition-all cursor-pointer shadow-2xs shrink-0"
+                className="p-2 sm:p-2.5 rounded-xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 hover:bg-[#FFF3D6] dark:bg-[#1A160E] dark:text-[#E8C16D] dark:hover:bg-[#252014] transition-all cursor-pointer shadow-2xs shrink-0 mt-0.5 sm:mt-0"
                 title="Back to Upload Requested PO"
               >
                 <ArrowLeft className="h-5 w-5 stroke-[2.5]" />
               </button>
-              <div className="flex items-center gap-2.5">
-                <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/40 shrink-0 shadow-2xs">
-                  <FileSpreadsheet className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.2]" />
-                </div>
-                <div>
-                  <h1 className="text-[26px] font-bold tracking-tight text-[#0A0E1A] dark:text-white">
-                    Purchase Order #{po.poNumber}
-                  </h1>
+              <div className="grid h-9 w-9 sm:h-11 sm:w-11 place-items-center rounded-xl sm:rounded-2xl bg-rose-50 text-rose-600 border border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/40 shrink-0 shadow-2xs mt-0.5 sm:mt-0">
+                <FileSpreadsheet className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.2]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-2xl md:text-[26px] font-bold tracking-tight text-[#0A0E1A] dark:text-white leading-snug sm:leading-tight break-words">
+                  Purchase Order #{po.poNumber}
+                </h1>
 
-                  {/* Breadcrumbs */}
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium select-none">
-                    <Link
-                      href="/dashboard"
-                      className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors"
-                    >
-                      Transaction
-                    </Link>
-                    <span>/</span>
-                    <span className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors">
-                      Sales
-                    </span>
-                    <span>/</span>
-                    <span className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors">
-                      PO Based
-                    </span>
-                    <span>/</span>
-                    <Link
-                      href={backUrl}
-                      className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors"
-                    >
-                      Upload Requested PO
-                    </Link>
-                    <span>/</span>
-                    <span className="font-semibold text-[#008ECC] dark:text-[#38BDF8]">
-                      PO #{po.poNumber}
-                    </span>
-                  </div>
+                {/* Breadcrumbs */}
+                <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium select-none">
+                  <Link
+                    href="/dashboard"
+                    className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors"
+                  >
+                    Transaction
+                  </Link>
+                  <span>/</span>
+                  <span className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors">
+                    Sales
+                  </span>
+                  <span>/</span>
+                  <span className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors">
+                    PO Based
+                  </span>
+                  <span>/</span>
+                  <Link
+                    href={backUrl}
+                    className="hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors"
+                  >
+                    Upload Requested PO
+                  </Link>
+                  <span>/</span>
+                  <span className="font-semibold text-[#008ECC] dark:text-[#38BDF8] break-all">
+                    PO #{po.poNumber}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Top Action Buttons (Back & Delete PO) */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
               <button
                 type="button"
                 onClick={handleBack}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#FFF9EC] text-slate-700 hover:text-[#B88728] border border-[#E7E0D2] hover:border-[#E8C16D] shadow-2xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/[0.1] transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#FFF9EC] text-slate-700 hover:text-[#B88728] border border-[#E7E0D2] hover:border-[#E8C16D] shadow-2xs dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/[0.1] transition-all cursor-pointer"
               >
                 <ArrowLeft size={14} />
                 <span>Back</span>
@@ -410,7 +408,7 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
               <button
                 type="button"
                 onClick={handleDelete}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 shadow-2xs dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:hover:text-rose-300 dark:border-rose-500/20 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 shadow-2xs dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:hover:text-rose-300 dark:border-rose-500/20 transition-all cursor-pointer"
               >
                 <Trash2 size={14} />
                 <span>Delete PO</span>

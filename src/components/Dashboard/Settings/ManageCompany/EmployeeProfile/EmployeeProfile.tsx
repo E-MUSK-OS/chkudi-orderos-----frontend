@@ -250,7 +250,7 @@ export default function EmployeeProfile() {
     <DashboardLayout title="Employee Profile">
       <div
         ref={containerRef}
-        className="w-full flex flex-col gap-4 font-sans text-slate-900 dark:text-slate-100 min-h-0"
+        className="w-full flex flex-col gap-4 font-sans text-slate-900 dark:text-slate-100 min-h-0 max-w-[1600px] mx-auto pb-8"
         style={{
           maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
         }}

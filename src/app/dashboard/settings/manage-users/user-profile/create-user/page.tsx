@@ -36,18 +36,18 @@ export default function CreateUserPage() {
     <DashboardLayout title="Create User Profile">
       <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-10 max-w-[1600px] mx-auto">
         {/* Header Card matching Material Profile & Company Profile */}
-        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 sm:px-7 py-4 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
+        <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 sm:px-7 py-3.5 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-3.5">
             <button
               type="button"
               onClick={() => router.push(returnPath)}
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer shrink-0"
               title="Back to User Profile"
             >
-              <ArrowLeft size={22} />
+              <ArrowLeft size={20} className="sm:w-[22px] sm:h-[22px]" />
             </button>
             <div>
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 User Profile
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

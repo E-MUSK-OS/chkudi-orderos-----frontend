@@ -217,7 +217,7 @@ export default function SettingMasters() {
         {/* Two-Panel Layout matching user reference image */}
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 items-start w-full">
           {/* Left Panel: Values for selected group - expanded width */}
-          <div className="flex-1 w-full min-w-0 h-[680px]">
+          <div className="flex-1 w-full min-w-0 h-auto lg:h-[680px]">
             <GroupValuesPanel
               selectedGroup={selectedGroup}
               options={options}
@@ -231,7 +231,7 @@ export default function SettingMasters() {
           </div>
 
           {/* Right Panel: Field Groups - compact width */}
-          <div className="w-full lg:w-[320px] xl:w-[350px] shrink-0 h-[680px]">
+          <div className="w-full lg:w-[320px] xl:w-[350px] shrink-0 h-auto lg:h-[680px]">
             <FieldGroupsPanel
               groups={liveGroups}
               selectedGroup={selectedGroup}

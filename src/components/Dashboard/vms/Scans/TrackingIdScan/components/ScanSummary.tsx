@@ -27,8 +27,8 @@ export default function ScanSummary({ total, pending, scanned, missing = 0 }: Pr
           </div>
         </div>
         <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-          <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">{total}</h3>
-          <span className="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:text-blue-300">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white">{total}</h3>
+          <span className="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/40 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300">
             Total
           </span>
         </div>
@@ -43,8 +43,8 @@ export default function ScanSummary({ total, pending, scanned, missing = 0 }: Pr
           </div>
         </div>
         <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-          <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">{scanned}</h3>
-          <span className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white">{scanned}</h3>
+          <span className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300">
             Scanned
           </span>
         </div>
@@ -59,8 +59,8 @@ export default function ScanSummary({ total, pending, scanned, missing = 0 }: Pr
           </div>
         </div>
         <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-          <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">{pending}</h3>
-          <span className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0A0E1A] dark:text-white">{pending}</h3>
+          <span className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/40 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-amber-800 dark:text-amber-300">
             Pending
           </span>
         </div>
@@ -76,8 +76,8 @@ export default function ScanSummary({ total, pending, scanned, missing = 0 }: Pr
             </div>
           </div>
           <div className="mt-3 sm:mt-4 flex items-end justify-between gap-3">
-            <h3 className="text-2xl sm:text-3xl font-black text-red-600 dark:text-red-400">{missing}</h3>
-            <span className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/40 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:text-red-300">
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-red-600 dark:text-red-400">{missing}</h3>
+            <span className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/40 px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-red-700 dark:text-red-300">
               Unmatched
             </span>
           </div>

@@ -214,17 +214,17 @@ export default function SalaryDetailsCard({
   };
 
   return (
-    <div className="w-full h-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-7 shadow-sm flex flex-col font-sans">
+    <div className="w-full h-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm flex flex-col font-sans">
       {/* Card Header Title */}
       <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white mb-4 shrink-0">
         Basic Salary and Working Details
       </h2>
 
       {/* Profile Summary Box matching theme */}
-      <div className="w-full rounded-2xl bg-[#FFFDF8] dark:bg-[#080B11] border border-[#EAE4D8] dark:border-white/[0.08] p-4 sm:p-5 mb-5 shadow-xs shrink-0">
-        <div className="flex items-start gap-4">
+      <div className="w-full rounded-xl sm:rounded-2xl bg-[#FFFDF8] dark:bg-[#080B11] border border-[#EAE4D8] dark:border-white/[0.08] p-3.5 sm:p-5 mb-5 shadow-xs shrink-0">
+        <div className="flex items-start gap-3 sm:gap-4">
           {/* Avatar */}
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border border-[#EAE4D8] dark:bg-[#161B24] dark:border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white border border-[#EAE4D8] dark:bg-[#161B24] dark:border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
             {employee.photoUrl ? (
               <img
                 src={getMediaUrl(employee.photoUrl)}
@@ -232,12 +232,12 @@ export default function SalaryDetailsCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User size={30} className="text-slate-400" />
+              <User size={26} className="text-slate-400" />
             )}
           </div>
 
           {/* Employee Details Grid */}
-          <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          <div className="flex-1 grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-2 text-xs">
             {/* Name */}
             <div className="col-span-2">
               <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Name</span>
@@ -281,10 +281,10 @@ export default function SalaryDetailsCard({
         </div>
 
         {/* Bank Sub-row */}
-        <div className="mt-4 pt-3 border-t border-[#EAE4D8] dark:border-white/[0.06] grid grid-cols-3 gap-2 text-xs">
-          <div>
+        <div className="mt-3.5 sm:mt-4 pt-3 border-t border-[#EAE4D8] dark:border-white/[0.06] grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-2 text-xs">
+          <div className="col-span-2 sm:col-span-1">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Bank</span>
-            <span className="text-slate-800 dark:text-slate-300 font-medium truncate block">
+            <span className="text-slate-800 dark:text-slate-300 font-medium break-words block">
               {employee.bankName || "—"}
             </span>
           </div>

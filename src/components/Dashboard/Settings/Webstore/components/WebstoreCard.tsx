@@ -39,17 +39,17 @@ export default function WebstoreCard({
     <div className="relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-[#E8C16D]/50 transition-all duration-200 dark:border-white/[0.08] dark:bg-[#0F1626] dark:hover:border-[#F5C451]/50">
       {/* Top SKU Badge */}
       <div className="flex justify-end">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs">
+        <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shadow-xs">
           No. of SKU - {store.skuCount ?? 0}
         </span>
       </div>
 
       {/* Center Marketplace Logo */}
-      <div className="flex flex-col items-center justify-center my-3">
+      <div className="flex flex-col items-center justify-center my-2 sm:my-3">
         <MarketplaceLogo
           name={store.marketplaceName}
           logoUrl={store.marketplaceLogo}
-          className="w-16 h-16"
+          className="w-14 h-14 sm:w-16 sm:h-16"
         />
       </div>
 
@@ -111,7 +111,7 @@ export default function WebstoreCard({
           <button
             type="button"
             onClick={() => onModify(store)}
-            className="px-4 py-1 text-xs font-bold rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] shadow-xs transition-all cursor-pointer"
+            className="px-4 py-1.5 min-h-[30px] sm:min-h-[32px] text-xs font-bold rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-95 text-[#0A0E1A] shadow-xs transition-all cursor-pointer"
           >
             Modify
           </button>

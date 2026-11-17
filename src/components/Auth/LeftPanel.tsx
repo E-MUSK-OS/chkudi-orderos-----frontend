@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShieldCheck, Package } from "lucide-react";
 
@@ -20,14 +21,14 @@ export default function LeftPanel() {
         }}
       />
 
-      <div className="relative z-10 flex items-center gap-3">
-        <div className="flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-lg border border-[#C89B3C]/30 bg-[#C89B3C]/10 shrink-0">
+      <Link href="/" className="relative z-10 flex items-center gap-3 group hover:opacity-90 transition-opacity w-fit">
+        <div className="flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-lg border border-[#C89B3C]/30 bg-[#C89B3C]/10 shrink-0 group-hover:scale-105 transition-transform">
           <Package size={20} className="text-[#E8C170]" />
         </div>
         <h2 className="font-display text-xl sm:text-2xl xl:text-3xl tracking-[2px] sm:tracking-[3px] uppercase text-[#E8C170] font-heading">
           Chakudee <span className="text-white/90">OrderOS</span>
         </h2>
-      </div>
+      </Link>
 
       <div className="relative z-10 my-6 lg:my-0">
         <span className="inline-flex items-center gap-2 rounded-full border border-[#C89B3C]/25 bg-white/5 px-3.5 py-1 sm:px-4 sm:py-1.5 font-mono text-xs sm:text-sm uppercase tracking-[2px] text-[#E8C170]">

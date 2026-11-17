@@ -191,7 +191,7 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
                 type="text"
                 readOnly
                 value={challanNo}
-                className="h-10 w-32 px-3 text-xs sm:text-sm bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 rounded-2xl font-bold text-[#B88728] dark:text-[#E8C16D] text-center cursor-not-allowed tracking-wider shadow-xs"
+                className="h-9 sm:h-10 w-28 sm:w-32 px-3 text-xs sm:text-sm bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/40 rounded-xl sm:rounded-2xl font-bold text-[#B88728] dark:text-[#E8C16D] text-center cursor-not-allowed tracking-wider shadow-xs"
               />
             </div>
 
@@ -200,7 +200,7 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                 Date
               </label>
-              <div className="w-40 sm:w-44">
+              <div className="w-36 sm:w-44">
                 <DatePicker
                   allowInput
                   value={challanDate}
@@ -208,7 +208,7 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
                   placeholder="YYYY-MM-DD"
                   dateFormat="yyyy-MM-dd"
                   className="w-full"
-                  buttonClassName="h-10 px-3 rounded-2xl text-xs sm:text-sm font-semibold border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
+                  buttonClassName="h-9 sm:h-10 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
                 value={challanRefNo}
                 onChange={(e) => setChallanRefNo(e.target.value)}
                 placeholder="Optional Ref No"
-                className="h-10 w-36 px-3.5 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+                className="h-9 sm:h-10 w-32 sm:w-36 px-3 sm:px-3.5 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
               />
             </div>
 
@@ -300,7 +300,7 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
                       : []),
                     { value: "Other", label: "+ Other (Enter custom value)" },
                   ]}
-                  buttonClassName="h-10 px-3.5 text-xs sm:text-sm font-semibold rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
+                  buttonClassName="h-9 sm:h-10 px-3 sm:px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                   menuClassName="min-w-[160px]"
                 />
               )}
@@ -319,14 +319,14 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
                   { value: "Main Godown", label: "Main Godown" },
                   { value: "Warehouse 1", label: "Warehouse 1" },
                 ]}
-                buttonClassName="h-10 px-3.5 text-xs sm:text-sm font-semibold rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
+                buttonClassName="h-9 sm:h-10 px-3 sm:px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
                 menuClassName="min-w-[160px]"
               />
             </div>
           </div>
 
           {/* Consignee Name */}
-          <div className="flex items-center gap-2 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 px-3.5 py-2 text-xs">
+          <div className="flex items-center gap-2 rounded-xl sm:rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs">
             <span className="font-semibold text-slate-500 dark:text-slate-400">Consignee:</span>
             <span className="font-bold text-[#0A0E1A] dark:text-white">{consigneeName}</span>
           </div>
@@ -334,9 +334,9 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
       </div>
 
       {/* 2-Column Main Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left 3/4 Columns: Challan Details */}
-        <div className="lg:col-span-3">
+        <div className="xl:col-span-3">
           <ChallanItemsTable
             items={items}
             onChangeItems={setItems}
@@ -350,7 +350,7 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(function Cha
         </div>
 
         {/* Right 1/4 Column: Party Details [Debtors] */}
-        <div className="lg:col-span-1">
+        <div className="xl:col-span-1">
           <PartyDetailsSection
             selectedParty={selectedParty}
             onSelectParty={setSelectedParty}

@@ -452,7 +452,7 @@ export default function StockAnalysis() {
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
-              <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
                 Myntra Stock Analysis
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -462,7 +462,7 @@ export default function StockAnalysis() {
 
             {/* Counter Badge */}
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 self-start md:self-center">
-              <div className="inline-flex h-10 sm:h-11 items-center px-3.5 sm:px-4 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#080B11] shadow-xs">
+              <div className="inline-flex h-9 sm:h-11 items-center px-3 sm:px-4 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#080B11] shadow-xs">
                 <div className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap">
                   <span className={orders.length > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                     {orders.length} Order{orders.length !== 1 ? "s" : ""}
@@ -531,14 +531,14 @@ export default function StockAnalysis() {
                     setIsDraggingOrders(false);
                     if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'orders');
                   }}
-                  className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
+                  className={`group relative flex min-h-[175px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                     isDraggingOrders
                       ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
                       : "border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-[#0D121D]"
                   }`}
                 >
-                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0B0F17] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-blue-600">
-                    <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
+                  <div className="mb-2 sm:mb-2.5 grid h-11 w-11 sm:h-14 sm:w-14 place-items-center rounded-xl sm:rounded-2xl bg-white dark:bg-[#0B0F17] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-blue-600">
+                    <UploadCloud className="h-5 w-5 sm:h-7 sm:w-7" />
                   </div>
 
                   <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
@@ -548,7 +548,7 @@ export default function StockAnalysis() {
                     Select one or multiple Excel / CSV (<code className="font-mono text-blue-600 dark:text-blue-400 font-semibold">.xlsx, .csv</code>) files
                   </p>
 
-                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0B0F17] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.1] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                  <div className="mt-2.5 sm:mt-3 inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0B0F17] px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-slate-200 dark:border-white/[0.1] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                     <FileSpreadsheet className="h-3.5 w-3.5 text-blue-500" />
                     Browse Orders
                   </div>
@@ -729,14 +729,14 @@ export default function StockAnalysis() {
                     setIsDraggingReturns(false);
                     if (e.dataTransfer.files) handleFileUpload(e.dataTransfer.files, 'returns');
                   }}
-                  className={`group relative flex min-h-[190px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-2xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
+                  className={`group relative flex min-h-[175px] sm:min-h-[210px] xl:min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-xl sm:rounded-3xl border-2 border-dashed p-4 sm:p-6 text-center transition-all ${
                     isDraggingReturns
                       ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E]"
                       : "border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] hover:border-[#E8C16D] hover:bg-[#FFFDF5] dark:hover:bg-[#0D121D]"
                   }`}
                 >
-                  <div className="mb-2.5 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-white dark:bg-[#0B0F17] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600">
-                    <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
+                  <div className="mb-2 sm:mb-2.5 grid h-11 w-11 sm:h-14 sm:w-14 place-items-center rounded-xl sm:rounded-2xl bg-white dark:bg-[#0B0F17] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] shadow-xs transition-all group-hover:scale-110 group-hover:border-[#E8C16D] group-hover:text-amber-600">
+                    <UploadCloud className="h-5 w-5 sm:h-7 sm:w-7" />
                   </div>
 
                   <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">
@@ -746,7 +746,7 @@ export default function StockAnalysis() {
                     Select one or multiple Excel / CSV (<code className="font-mono text-amber-600 dark:text-amber-400 font-semibold">.xlsx, .csv</code>) files
                   </p>
 
-                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0B0F17] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.1] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
+                  <div className="mt-2.5 sm:mt-3 inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-[#0A0E1A] dark:text-white bg-white dark:bg-[#0B0F17] px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-slate-200 dark:border-white/[0.1] shadow-2xs group-hover:border-[#E8C16D] transition active:scale-[0.98]">
                     <FileSpreadsheet className="h-3.5 w-3.5 text-amber-500" />
                     Browse Returns
                   </div>
@@ -882,7 +882,7 @@ export default function StockAnalysis() {
             type="button"
             disabled={orders.length === 0 && returns.length === 0}
             onClick={handleClearAll}
-            className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 dark:disabled:hover:bg-[#080B11] disabled:hover:text-slate-700"
+            className="inline-flex h-10 sm:h-12 items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#080B11] px-4 sm:px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:hover:bg-slate-100 dark:disabled:hover:bg-[#080B11] disabled:hover:text-slate-700"
           >
             <RotateCcw className="h-4 w-4" />
             <span>Clear Files</span>
@@ -893,7 +893,7 @@ export default function StockAnalysis() {
               type="button"
               disabled={!isReadyToSubmit || isProcessing}
               onClick={handleAnalyze}
-              className="w-full sm:w-auto inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-6 sm:px-8 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs hover:bg-[#d4af5a] transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto inline-flex h-10 sm:h-12 items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-transparent bg-[#E8C16D] px-6 sm:px-8 text-xs sm:text-sm font-bold text-[#0A0E1A] shadow-xs hover:bg-[#d4af5a] transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isProcessing ? (
                 <>
