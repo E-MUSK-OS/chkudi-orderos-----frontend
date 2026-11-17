@@ -137,9 +137,7 @@ export default function AwbTable({
                 return (
                   <tr
                     key={item.id}
-                    className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.06] ${
-                      isScanned ? "bg-emerald-50/20 dark:bg-emerald-500/5" : ""
-                    }`}
+                    className="transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
                   >
                     {/* Invoice */}
                     <td className="px-4 py-3.5 text-center font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap text-xs sm:text-sm">
