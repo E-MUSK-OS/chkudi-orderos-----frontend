@@ -206,7 +206,7 @@ export default function SettingMasters() {
 
   return (
     <DashboardLayout title="Setting Masters">
-      <div className="space-y-4 sm:space-y-5 w-full pb-16">
+      <div className="space-y-4 sm:space-y-5 w-full">
         {/* Header */}
         <SettingMastersHeader
           activeGroupName={selectedGroup?.label}

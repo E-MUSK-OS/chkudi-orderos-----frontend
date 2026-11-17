@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, X, AlertTriangle, RotateCcw, Users } from "lucide-react";
 import UserCard from "./components/UserCard";
 import UserToolbar from "./components/UserToolbar";
 import UserViewModal from "./components/UserViewModal";
-import ProductPagination from "@/components/Dashboard/Products/ManageProducts/components/ProductPagination";
+import Pagination from "@/components/ui/Pagination";
 import { useUsers, useUpdateUserStatus, useDeleteUser } from "./hooks/useManageUsers";
 import type { ManagedUser } from "./types/userManagement.types";
 import { usePagePermissions } from "@/utils/pagePermissions";
@@ -18,7 +18,7 @@ export default function UserProfileList() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("oldest");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(16);
+  const [pageSize, setPageSize] = useState(10);
 
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -33,6 +33,158 @@ export default function UserProfileList() {
   const users = data?.data || [];
   const totalRecords = data?.pagination?.total || 0;
   const totalPages = data?.pagination?.totalPages || Math.ceil(totalRecords / pageSize) || 1;
+
+  // Scroll & Height coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const cardsContainerRef = useRef<HTMLDivElement>(null);
+
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height inside the scroll container so that when scrolled
+  // past the Header Card on desktop (>= 1024px), the lower section (Toolbar + Cards)
+  // fills the visible viewport exactly, stopping at Toolbar as shown in img-1.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      setTableMaxHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+
+      const toolbarHeight = toolbarRef.current?.offsetHeight || 60;
+      const gap = 24; // gap-4 sm:gap-6
+      const maxForCards = available - toolbarHeight - gap;
+      if (maxForCards > 160) {
+        setTableMaxHeight(Math.floor(maxForCards));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [users.length, calculateHeight]);
+
+  // Seamless scroll coordinator matching img-1:
+  // 1. When scrolling down, outer page scrolls until Header Card is hidden and stops at the fixed position (Toolbar + Cards).
+  // 2. Once at the fixed position, scrolling down over the cards scrolls the cards container internally.
+  // 3. When scrolling up, cards container scrolls up to the first row; then scrolling up reveals Header Card.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      const cardsContainer = cardsContainerRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverCards =
+        cardsContainer &&
+        (e.composedPath().includes(cardsContainer) ||
+          cardsContainer.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the fixed view yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else if (!isOverCards) {
+          // At the fixed point and outside the cards -> forward scroll to cards
+          if (cardsContainer) {
+            cardsContainer.scrollTop += e.deltaY;
+          }
+        }
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverCards) {
+          // Cursor is outside cards -> scroll outer page up if not at top
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          // Cursor is inside cards
+          const isCardsAtTop = !cardsContainer || cardsContainer.scrollTop <= 1;
+          if (isCardsAtTop && !isPageAtTop) {
+            // Cards is at top row -> scroll outer page up to reveal Header Card
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  useEffect(() => {
+    cardsContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page, pageSize, search, sort]);
 
   const handleView = (user: ManagedUser) => {
     router.push(`/dashboard/settings/manage-users/user-profile/${user.id}`);
@@ -83,9 +235,12 @@ export default function UserProfileList() {
   };
 
   return (
-    <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-10">
+    <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100 pb-8">
       {/* Top Header Card matching Material Profile & Company Profile */}
-      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+      <div
+        ref={headerCardRef}
+        className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm"
+      >
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1.5 min-w-0 max-w-2xl">
             <div className="flex items-center gap-3">
@@ -114,102 +269,123 @@ export default function UserProfileList() {
         </div>
       </div>
 
-      {/* Toolbar: Global Search + Sort */}
-      <UserToolbar
-        search={search}
-        onSearchChange={(s) => {
-          setSearch(s);
-          setPage(1);
+      {/* Lower Section (Toolbar + Cards Grid Container) - stops scrolling from Toolbar as shown in img-1 */}
+      <div
+        className="flex flex-col gap-4 sm:gap-6 min-h-0"
+        style={{
+          maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
         }}
-        sort={sort}
-        onSortChange={(st) => {
-          setSort(st);
-          setPage(1);
-        }}
-        onReset={() => {
-          setSearch("");
-          setSort("oldest");
-          setPage(1);
-        }}
-      />
-
-      {/* Cards Grid Container matching OrderOS layout */}
-      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm min-h-[400px] flex flex-col justify-between">
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-48 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.06] bg-[#FFFDF8] dark:bg-[#080B11] p-5 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-3">
-              <AlertTriangle className="w-7 h-7" />
-            </div>
-            <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
-              Unable to load user accounts
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mb-4">
-              {(error as any)?.message || "A network or server timeout occurred. Please retry."}
-            </p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0E1A] dark:bg-white text-white dark:text-[#0A0E1A] text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Retry</span>
-            </button>
-          </div>
-        ) : users.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 flex items-center justify-center text-[#B88728] dark:text-[#E8C16D] mb-3">
-              <span className="text-2xl font-bold">∅</span>
-            </div>
-            <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
-              No Admin or SuperAdmin Accounts Found
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-              {search
-                ? `No matching admin accounts found for "${search}".`
-                : "Create an admin user to get started."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {users.map((user) => (
-              <UserCard
-                key={user.id}
-                user={user}
-                onView={handleView}
-                onEdit={handleEdit}
-                onToggleStatus={handleToggleStatus}
-                onDelete={handleDeleteClick}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Bottom Pagination */}
-        <div className="mt-8 pt-4 border-t border-[#E7E0D2] dark:border-white/[0.08]">
-          <ProductPagination
-            page={page}
-            totalPages={totalPages}
-            totalRecords={totalRecords}
-            limit={pageSize}
-            pageSize={pageSize}
-            itemName="users"
-            variant="dark"
-            className="border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
-            onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
+      >
+        {/* Toolbar: Global Search + Sort */}
+        <div ref={toolbarRef} className="shrink-0">
+          <UserToolbar
+            search={search}
+            onSearchChange={(s) => {
+              setSearch(s);
+              setPage(1);
+            }}
+            sort={sort}
+            onSortChange={(st) => {
+              setSort(st);
+              setPage(1);
+            }}
+            onReset={() => {
+              setSearch("");
+              setSort("oldest");
               setPage(1);
             }}
           />
+        </div>
+
+        {/* Cards Grid Container matching OrderOS layout */}
+        <div
+          className="flex flex-col min-h-0 flex-1"
+          style={{
+            maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
+          }}
+        >
+          <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col min-h-0 max-h-full overflow-hidden">
+            <div
+              ref={cardsContainerRef}
+              className="w-full min-h-0 overflow-y-auto custom-scrollbar overscroll-contain flex-1 p-4 sm:p-7"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-48 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.06] bg-[#FFFDF8] dark:bg-[#080B11] p-5 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : isError ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-3">
+                    <AlertTriangle className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
+                    Unable to load user accounts
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mb-4">
+                    {(error as any)?.message || "A network or server timeout occurred. Please retry."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0E1A] dark:bg-white text-white dark:text-[#0A0E1A] text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Retry</span>
+                  </button>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D]/30 flex items-center justify-center text-[#B88728] dark:text-[#E8C16D] mb-3">
+                    <span className="text-2xl font-bold">∅</span>
+                  </div>
+                  <h3 className="text-base font-bold text-[#0A0E1A] dark:text-white">
+                    No Admin or SuperAdmin Accounts Found
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                    {search
+                      ? `No matching admin accounts found for "${search}".`
+                      : "Create an admin user to get started."}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {users.map((user) => (
+                    <UserCard
+                      key={user.id}
+                      user={user}
+                      onView={handleView}
+                      onEdit={handleEdit}
+                      onToggleStatus={handleToggleStatus}
+                      onDelete={handleDeleteClick}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Pagination */}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              limit={pageSize}
+              pageSize={pageSize}
+              itemName="users"
+              variant="dark"
+              className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Plus, Users } from "lucide-react";
 
 import DashboardLayout from "../../../layout/DashboardLayout";
@@ -14,6 +14,13 @@ import DeleteOperatorModal from "./operator/components/DeleteOperatorModal";
 import { Operator, UpdateOperatorPayload } from "./operator/types/operator";
 
 const User = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
   const {
     operators,
     loading,
@@ -32,6 +39,95 @@ const User = () => {
     fetchOperators();
   }, []);
 
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height on desktop (>= 1024px)
+  // so the table takes only the height needed for available records,
+  // up to the available viewport space, and scrolls internally if there are more records.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      setTableMaxHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+      const headerHeight = headerCardRef.current?.offsetHeight || 90;
+      const gap = 24; // gap-6
+      const maxForTable = available - headerHeight - gap;
+      if (maxForTable > 150) {
+        setTableMaxHeight(Math.floor(maxForTable));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  // Lock outer scroll at header position on desktop:
+  // Since this page only has Header Card + Table, the Header Card stays fixed at the top,
+  // outer page does not scroll, and scrolling forwards to the internal table.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      scrollContainer.scrollTop = 0;
+
+      const tableContainer = tableContainerRef.current;
+      if (!tableContainer) return;
+
+      // If wheel occurred over the header card or padding, scroll the table internally
+      if (!e.composedPath().includes(tableContainer) && !tableContainer.contains(e.target as Node)) {
+        tableContainer.scrollTop += e.deltaY;
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
   const handleEdit = (operator: Operator) => {
     setSelectedOperator(operator);
     setOpenUpdate(true);
@@ -44,9 +140,15 @@ const User = () => {
 
   return (
     <DashboardLayout title="Operator">
-      <div className="space-y-6">
+      <div
+        ref={containerRef}
+        className="flex flex-col gap-6"
+        style={{
+          maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+        }}
+      >
         {/* Header Card (Matching Account / Amazon Analytics UI) */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div ref={headerCardRef} className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
@@ -78,23 +180,33 @@ const User = () => {
           </div>
         </div>
 
-        {/* Table */}
-        <OperatorTable
-          operators={operators}
-          loading={loading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        {/* Table Container */}
+        <div
+          className="flex flex-col min-h-0"
+          style={{
+            maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
+          }}
+        >
+          <OperatorTable
+            operators={operators}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            tableContainerRef={tableContainerRef}
+          />
+        </div>
 
         {/* Create Modal */}
         <OperatorModal
           open={openCreate}
           onClose={() => setOpenCreate(false)}
           title="Create Operator"
+          description="Add a new operator to scan packages and record VMS"
         >
           <OperatorForm
             mode="create"
             loading={loading}
+            onClose={() => setOpenCreate(false)}
             onSubmit={async (data) => {
               await createOperator(data);
               setOpenCreate(false);
@@ -110,11 +222,16 @@ const User = () => {
             setSelectedOperator(null);
           }}
           title="Update Operator"
+          description="Update operator credentials and active status"
         >
           <OperatorForm
             mode="update"
             operator={selectedOperator}
             loading={loading}
+            onClose={() => {
+              setOpenUpdate(false);
+              setSelectedOperator(null);
+            }}
             onSubmit={async (data) => {
               if (!selectedOperator) return;
               await updateOperator(selectedOperator.id, data);

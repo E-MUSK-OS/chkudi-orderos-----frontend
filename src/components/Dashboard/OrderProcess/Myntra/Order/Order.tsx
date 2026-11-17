@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import { toast } from "sonner";
 import { ArrowRight, Printer } from "lucide-react";
@@ -105,11 +105,155 @@ const Order = () => {
     setSelectedRows([]);
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const lowerSectionRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height inside the scroll container so that when scrolled
+  // past the Header Card on desktop (>= 1024px), the Lower Section (Stage Cards + Table)
+  // fills the visible viewport exactly, stopping firmly as shown in user's image.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 100);
+    const timer2 = setTimeout(calculateHeight, 300);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      if (scrollContainer) resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  // Reset scroll to top when page first loads
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+    }
+  }, []);
+
+  // Scroll table back to top on page, limit, search, or status change
+  useEffect(() => {
+    tableScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage, limit, search, status]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until Header Card is hidden and stops firmly at Lower Section.
+  // 2. Once at the stopped position, scrolling down over the table or lower section scrolls the table rows internally.
+  // 3. When scrolling up, table rows scroll up to the first row; scrolling up further reveals the Header Card.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+
+      const tableScrollEl = tableScrollRef.current;
+      const lowerSectionEl = lowerSectionRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+
+      const path = e.composedPath();
+      const isOverLowerSection = lowerSectionEl && path.includes(lowerSectionEl);
+      const isOverTable = tableScrollEl && path.includes(tableScrollEl);
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Page is still scrolling to hide Header Card
+          return;
+        }
+
+        // Page reached stop-scrolling bottom (Header is hidden, Lower Section fills view)
+        if (isOverLowerSection && tableScrollEl) {
+          const maxTableScroll = tableScrollEl.scrollHeight - tableScrollEl.clientHeight;
+          if (maxTableScroll > 0) {
+            e.preventDefault();
+            tableScrollEl.scrollTop = Math.min(
+              maxTableScroll,
+              tableScrollEl.scrollTop + e.deltaY
+            );
+          }
+        }
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (isOverTable && tableScrollEl) {
+          if (tableScrollEl.scrollTop > 0) {
+            e.preventDefault();
+            tableScrollEl.scrollTop = Math.max(0, tableScrollEl.scrollTop + e.deltaY);
+            return;
+          }
+        }
+
+        // When table is at top (scrollTop === 0), let outer page scroll back up to reveal Header Card
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
   return (
     <DashboardLayout title="Order Process">
-      <div className="space-y-6">
+      <div ref={containerRef} className="space-y-4 sm:space-y-6">
         {/* Header Card (Matching Amazon Analytics) */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div
+          ref={headerCardRef}
+          className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm"
+        >
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
@@ -161,52 +305,62 @@ const Order = () => {
           </div>
         </div>
 
-        {/* Toolbar: Metric Stage Cards & Search Bar */}
-        <Toolbar
-          search={search}
-          onSearch={(value) => {
-            setSearch(value);
-            setPage(1);
+        {/* Lower Section (Shown in user's image): Stage Cards, Toolbar & Order Table */}
+        <div
+          ref={lowerSectionRef}
+          style={{
+            height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
           }}
-          status={status}
-          onStatusChange={(value) => {
-            setStatus(value);
-            setSelectedRows([]);
-            setPage(1);
-          }}
-          counts={counts}
-          selectedRows={selectedRows}
-          onMoveToPicking={moveToPicking}
-          onGeneratePicklist={handleGeneratePicklist}
-          onProcess={handleProcessPicking}
-        />
-
-        {/* Order Table with Theme Styling (Amazon Order Process result page typography) */}
-        <OrderTable
-          orders={currentOrders}
-          selectedRows={selectedRows}
-          onSelectionChange={setSelectedRows}
-        />
-
-        {/* Pagination Footer with Dark Variant matching Amazon Analytics */}
-        {totalRecords > 0 && (
-          <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#F1E8D0] dark:border-white/[0.08] shadow-sm">
-            <Pagination
-              page={currentPage}
-              totalPages={totalPages}
-              total={totalRecords}
-              limit={limit}
-              itemName="orders"
-              variant="dark"
-              className="border-none bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 text-slate-700 dark:text-white"
-              onPageChange={setPage}
-              onLimitChange={(newLimit) => {
-                setLimit(newLimit);
+          className="flex flex-col gap-4 sm:gap-5 min-h-0"
+        >
+          {/* Toolbar: Metric Stage Cards & Search Bar */}
+          <div className="shrink-0">
+            <Toolbar
+              search={search}
+              onSearch={(value) => {
+                setSearch(value);
                 setPage(1);
               }}
+              status={status}
+              onStatusChange={(value) => {
+                setStatus(value);
+                setSelectedRows([]);
+                setPage(1);
+              }}
+              counts={counts}
+              selectedRows={selectedRows}
+              onMoveToPicking={moveToPicking}
+              onGeneratePicklist={handleGeneratePicklist}
+              onProcess={handleProcessPicking}
             />
           </div>
-        )}
+
+          {/* Order Table with Sticky Header and Pinned Pagination Footer */}
+          <OrderTable
+            tableScrollRef={tableScrollRef}
+            orders={currentOrders}
+            selectedRows={selectedRows}
+            onSelectionChange={setSelectedRows}
+            pagination={
+              totalRecords > 0 ? (
+                <Pagination
+                  page={currentPage}
+                  totalPages={totalPages}
+                  total={totalRecords}
+                  limit={limit}
+                  itemName="orders"
+                  variant="dark"
+                  className="border-none bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 text-slate-700 dark:text-white"
+                  onPageChange={setPage}
+                  onLimitChange={(newLimit) => {
+                    setLimit(newLimit);
+                    setPage(1);
+                  }}
+                />
+              ) : null
+            }
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

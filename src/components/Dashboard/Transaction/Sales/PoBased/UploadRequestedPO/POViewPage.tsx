@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
@@ -134,6 +134,172 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
     );
   }, [po]);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const summaryCardRef = useRef<HTMLDivElement>(null);
+  const tableCardRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height inside the scroll container so that when scrolled
+  // past the Header Card and Summary Card on desktop (>= 1024px), POItemsTable
+  // fills the visible viewport exactly, stopping firmly at POItemsTable as shown in user's img.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024 || loading || !po) {
+      setTargetHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+    }
+  }, [loading, po]);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 100);
+    const timer2 = setTimeout(calculateHeight, 300);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      if (scrollContainer) resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight, loading, po]);
+
+  // Reset scroll to top on initial load
+  useEffect(() => {
+    if (!loading && po) {
+      const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 0;
+      }
+    }
+  }, [loading, po?.id]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until Header Card + Summary Card are hidden and stops firmly at POItemsTable.
+  // 2. Once at the stopped position, scrolling down over the table card scrolls the table rows internally.
+  // 3. When scrolling up, table rows scroll up to the first row; scrolling up further reveals Summary Card & Header Card.
+  useEffect(() => {
+    if (loading || !po) return;
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+
+      const tableScrollEl = tableScrollRef.current;
+      const tableCardEl = tableCardRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverTableCard =
+        tableCardEl &&
+        (e.composedPath().includes(tableCardEl) ||
+          tableCardEl.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the stopped position yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else {
+          // At the stopped position: forward scroll to inner table rows
+          if (tableScrollEl) {
+            const maxTableScroll = tableScrollEl.scrollHeight - tableScrollEl.clientHeight;
+            if (tableScrollEl.scrollTop < maxTableScroll) {
+              e.preventDefault();
+              tableScrollEl.scrollTop = Math.min(
+                maxTableScroll,
+                tableScrollEl.scrollTop + e.deltaY
+              );
+            }
+          }
+        }
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverTableCard) {
+          // Outside table card -> scroll outer page up if not at top
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          // Inside table card
+          const isTableAtTop = !tableScrollEl || tableScrollEl.scrollTop <= 1;
+          if (isTableAtTop && !isPageAtTop) {
+            // Table is at top row -> scroll outer page up to reveal Summary & Header Cards
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          } else if (tableScrollEl && !isTableAtTop) {
+            // Table rows scroll up internally
+            e.preventDefault();
+            tableScrollEl.scrollTop = Math.max(
+              0,
+              tableScrollEl.scrollTop + e.deltaY
+            );
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, [loading, po]);
+
   if (loading) {
     return (
       <DashboardLayout title="PO Details | OrderOS">
@@ -177,9 +343,9 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
 
   return (
     <DashboardLayout title={`PO #${po.poNumber || "Details"} | OrderOS`}>
-      <div className="space-y-4 sm:space-y-6">
+      <div ref={containerRef} className="space-y-4 sm:space-y-6 pb-6 lg:pb-0">
         {/* Top Rounded Header Card matching OrderOS theme and cards below */}
-        <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm">
+        <div ref={headerCardRef} className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
@@ -254,7 +420,7 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
         </div>
 
         {/* Summary Card with Key Metadata Pills */}
-        <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+        <div ref={summaryCardRef} className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* Store & PO Info */}
             <div className="flex flex-wrap items-center gap-4 sm:gap-6">
@@ -351,6 +517,10 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
           onClose={handleBack}
           onDeletePo={handleDelete}
           onItemsChange={handleItemsChange}
+          targetHeight={targetHeight}
+          isDesktop={isDesktop}
+          scrollRef={tableScrollRef}
+          cardRef={tableCardRef}
         />
       </div>
 

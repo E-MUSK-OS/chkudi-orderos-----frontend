@@ -52,6 +52,154 @@ export default function CompanyProfile() {
   const filtersRef = useRef(filters);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Scroll & Height coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const statsBannerRef = useRef<HTMLDivElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const gridScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [contentMaxHeight, setContentMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Calculate remaining viewport height for desktop (>= 1024px)
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const isLg = window.innerWidth >= 1024;
+    setIsDesktop(isLg);
+    if (!isLg || viewMode !== "list") {
+      setTargetHeight(null);
+      setContentMaxHeight(null);
+      return;
+    }
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+      const statsBannerHeight = statsBannerRef.current?.offsetHeight || 110;
+      const filterBarHeight = filterBarRef.current?.offsetHeight || 60;
+      const gaps = 48; // 2x gap-6 (24px each)
+      const maxForContent = available - statsBannerHeight - filterBarHeight - gaps;
+      if (maxForContent > 150) {
+        setContentMaxHeight(Math.floor(maxForContent));
+      }
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [companies.length, layoutMode, calculateHeight]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until CompanyProfileHeader is hidden and stops at the fixed position shown in img (CompanyStatsBanner + CompanyFilterBar + content).
+  // 2. Once at the fixed position, scrolling down over the cards/table scrolls the content internally.
+  // 3. When scrolling up, content scrolls up to the first row; then scrolling up reveals CompanyProfileHeader.
+  useEffect(() => {
+    if (viewMode !== "list") return;
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      const contentContainer = layoutMode === "grid" ? gridScrollRef.current : tableScrollRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverContent =
+        contentContainer &&
+        (e.composedPath().includes(contentContainer) ||
+          contentContainer.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the fixed view yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else if (!isOverContent) {
+          // At the fixed point and outside the content -> forward scroll to content
+          if (contentContainer) {
+            contentContainer.scrollTop += e.deltaY;
+          }
+        }
+        // If isPageAtBottom and isOverContent, allow content to scroll natively
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverContent) {
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          const isContentAtTop = !contentContainer || contentContainer.scrollTop <= 1;
+          if (isContentAtTop && !isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, [viewMode, layoutMode]);
+
+  // Scroll to top on page change
+  useEffect(() => {
+    if (gridScrollRef.current) {
+      gridScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [filters.page, filters.pageSize]);
+
   const fetchCompanies = useCallback(
     async (currentFilters?: CompanyFilterState) => {
       try {
@@ -212,80 +360,110 @@ export default function CompanyProfile() {
         />
       ) : (
         /* List View matching Webstore Design */
-        <div className="space-y-6 font-sans">
+        <div ref={containerRef} className="flex flex-col gap-6 font-sans">
           {/* Header with Title & Action Buttons matching Webstore */}
-          <CompanyProfileHeader
-            onCreateClick={() => setCreateDraftOpen(true)}
-            onDownloadListings={handleDownloadListings}
-          />
-
-          {/* Quick KPI Stats Banner matching Webstore */}
-          <CompanyStatsBanner companies={companies} />
-
-          {/* Filter & Sort Bar matching Webstore */}
-          <CompanyFilterBar
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onSortToggle={handleSortToggle}
-            totalCount={companies.length}
-            layoutMode={layoutMode}
-            onLayoutModeChange={setLayoutMode}
-            onResetFilters={handleResetFilters}
-          />
-
-          {/* Cards Grid or Tabular List depending on layoutMode */}
-          {layoutMode === "grid" ? (
-            <>
-              <CompanyCardGrid
-                companies={companies}
-                loading={loading}
-                onModify={handleEdit}
-                onToggleStatus={handleToggleStatus}
-                onDelete={(comp) => setDeletingCompany(comp)}
-                onView={handleView}
-                onAddNew={() => setCreateDraftOpen(true)}
-                togglingId={togglingId}
-              />
-              {meta.total > 0 && (
-                <div className="relative rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm mt-4">
-                  <CompanyPagination
-                    total={meta.total}
-                    page={filters.page || 1}
-                    pageSize={filters.pageSize || 50}
-                    totalPages={meta.totalPages || 1}
-                    onPageChange={(p) => handleFilterChange("page", p)}
-                    onPageSizeChange={(sz) => handleFilterChange("pageSize", sz)}
-                    className="border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            <CompanyTableView
-              companies={companies}
-              loading={loading}
-              onModify={handleEdit}
-              onToggleStatus={handleToggleStatus}
-              onDelete={(comp) => setDeletingCompany(comp)}
-              onView={handleView}
-              togglingId={togglingId}
-              filters={filters}
-              onSortToggle={handleSortToggle}
-              pagination={
-                meta.total > 0 ? (
-                  <CompanyPagination
-                    total={meta.total}
-                    page={filters.page || 1}
-                    pageSize={filters.pageSize || 50}
-                    totalPages={meta.totalPages || 1}
-                    onPageChange={(p) => handleFilterChange("page", p)}
-                    onPageSizeChange={(sz) => handleFilterChange("pageSize", sz)}
-                    className="border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
-                  />
-                ) : null
-              }
+          <div ref={headerRef} className="shrink-0">
+            <CompanyProfileHeader
+              onCreateClick={() => setCreateDraftOpen(true)}
+              onDownloadListings={handleDownloadListings}
             />
-          )}
+          </div>
+
+          {/* Lower Section (View shown in img: Stats Banner + Filter Bar + Content) */}
+          <div
+            className="flex flex-col gap-6 min-h-0"
+            style={{
+              maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+            }}
+          >
+            {/* Quick KPI Stats Banner matching Webstore */}
+            <div ref={statsBannerRef} className="shrink-0">
+              <CompanyStatsBanner companies={companies} />
+            </div>
+
+            {/* Filter & Sort Bar matching Webstore */}
+            <div ref={filterBarRef} className="shrink-0">
+              <CompanyFilterBar
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onSortToggle={handleSortToggle}
+                totalCount={companies.length}
+                layoutMode={layoutMode}
+                onLayoutModeChange={setLayoutMode}
+                onResetFilters={handleResetFilters}
+              />
+            </div>
+
+            {/* Content Area (Cards Grid or Tabular List depending on layoutMode) */}
+            <div
+              className="flex flex-col min-h-0 flex-1"
+              style={{
+                maxHeight: isDesktop && contentMaxHeight ? `${contentMaxHeight}px` : undefined,
+              }}
+            >
+              {layoutMode === "grid" ? (
+                <div className="flex flex-col min-h-0 max-h-full flex-1">
+                  {/* Scrollable Cards Grid */}
+                  <div
+                    ref={gridScrollRef}
+                    className="flex-1 min-h-0 overflow-y-auto custom-scrollbar overscroll-contain pr-1"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                  >
+                    <CompanyCardGrid
+                      companies={companies}
+                      loading={loading}
+                      onModify={handleEdit}
+                      onToggleStatus={handleToggleStatus}
+                      onDelete={(comp) => setDeletingCompany(comp)}
+                      onView={handleView}
+                      onAddNew={() => setCreateDraftOpen(true)}
+                      togglingId={togglingId}
+                    />
+                  </div>
+
+                  {meta.total > 0 && (
+                    <div className="shrink-0 relative rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm mt-3">
+                      <CompanyPagination
+                        total={meta.total}
+                        page={filters.page || 1}
+                        pageSize={filters.pageSize || 50}
+                        totalPages={meta.totalPages || 1}
+                        onPageChange={(p) => handleFilterChange("page", p)}
+                        onPageSizeChange={(sz) => handleFilterChange("pageSize", sz)}
+                        className="border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-2xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <CompanyTableView
+                  companies={companies}
+                  loading={loading}
+                  tableContainerRef={tableScrollRef}
+                  onModify={handleEdit}
+                  onToggleStatus={handleToggleStatus}
+                  onDelete={(comp) => setDeletingCompany(comp)}
+                  onView={handleView}
+                  togglingId={togglingId}
+                  filters={filters}
+                  onSortToggle={handleSortToggle}
+                  pagination={
+                    meta.total > 0 ? (
+                      <CompanyPagination
+                        total={meta.total}
+                        page={filters.page || 1}
+                        pageSize={filters.pageSize || 50}
+                        totalPages={meta.totalPages || 1}
+                        onPageChange={(p) => handleFilterChange("page", p)}
+                        onPageSizeChange={(sz) => handleFilterChange("pageSize", sz)}
+                        className="border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+                      />
+                    ) : null
+                  }
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
 

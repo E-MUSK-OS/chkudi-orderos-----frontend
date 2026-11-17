@@ -60,17 +60,17 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] sm:w-[92vw] md:w-full max-w-2xl max-h-[92dvh] sm:max-h-[90vh] flex flex-col !rounded-2xl sm:!rounded-[32px] border border-[#E7E0D2] dark:border-white/[0.08] overflow-hidden bg-white dark:bg-[#0F1626] p-0 shadow-2xl">
         {/* Header */}
-        <div className="shrink-0 border-b border-[#1A2235] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-4 sm:px-8 py-4 sm:py-6">
+        <div className="shrink-0 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#080B11] px-4 sm:px-8 py-4 sm:py-6">
           <DialogHeader>
             <div className="flex items-center gap-3 sm:gap-3.5">
               <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl sm:rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shadow-xs shrink-0">
                 <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
               <div className="text-left">
-                <DialogTitle className="text-lg sm:text-2xl font-black text-[#E8C16D] tracking-tight">
+                <DialogTitle className="text-lg sm:text-2xl font-black text-[#0A0E1A] dark:text-[#E8C16D] tracking-tight">
                   Add Tag Loop
                 </DialogTitle>
-                <p className="mt-0.5 text-xs sm:text-sm text-slate-300 dark:text-slate-400">
+                <p className="mt-0.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                   Define a starting sequence and volume to generate a continuous RFID / Barcode range.
                 </p>
               </div>
@@ -89,9 +89,9 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
                 placeholder="e.g. MP220167200"
                 value={startTag}
                 onChange={(e) => setStartTag(e.target.value.toUpperCase())}
-                className="w-full h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] text-xs sm:text-sm font-mono font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:border-[#E8C16D] focus:bg-white dark:focus:bg-[#080B11] transition"
+                className="w-full h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] text-xs sm:text-sm font-mono font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 focus:bg-white dark:focus:bg-[#080B11] transition"
               />
-              <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+              <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-500">
                 Must contain an alphabetical prefix followed by digits.
               </p>
             </div>
@@ -105,9 +105,9 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
                 min={1}
                 value={total}
                 onChange={(e) => setTotal(Math.max(1, Number(e.target.value)))}
-                className="w-full h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#E8C16D] focus:bg-white dark:focus:bg-[#080B11] transition"
+                className="w-full h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-[#FAF8F5] dark:bg-[#080B11] text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 focus:bg-white dark:focus:bg-[#080B11] transition"
               />
-              <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+              <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-500">
                 Total continuous sequence count to generate.
               </p>
             </div>
@@ -184,7 +184,7 @@ export default function AddTagLoopModal({ open, onClose }: Props) {
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="inline-flex h-11 w-full sm:w-auto items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#080B11] hover:bg-slate-200 dark:hover:bg-white/[0.04] px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="inline-flex h-11 w-full sm:w-auto items-center justify-center rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-[#FEFAEE] hover:text-[#6A4D1D] hover:border-[#E8C16D] dark:hover:bg-white/[0.04] px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>

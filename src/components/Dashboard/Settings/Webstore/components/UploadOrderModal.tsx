@@ -14,6 +14,7 @@ import {
   FileText,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import ThemeSelectDropdown, { ThemeSelectOption } from "@/components/ui/ThemeSelectDropdown";
 import { Webstore } from "../types/webstore.types";
 import { MarketplaceLogo } from "../utils/marketplaceLogos";
 import { useRouter } from "next/navigation";
@@ -57,6 +58,11 @@ const ORDER_FORMATS = [
     desc: "Custom order sheets with Order ID, SKU, Quantity, and Customer address",
   },
 ];
+
+const FORMAT_OPTIONS: ThemeSelectOption[] = ORDER_FORMATS.map((f) => ({
+  value: f.id,
+  label: f.label,
+}));
 
 export default function UploadOrderModal({
   open,
@@ -158,7 +164,7 @@ export default function UploadOrderModal({
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-white/[0.08]">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0284C7]/10 text-[#0284C7] dark:bg-[#0284C7]/20 dark:text-[#38BDF8]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D]">
               <Upload className="h-5 w-5" />
             </div>
             <div>
@@ -203,8 +209,8 @@ export default function UploadOrderModal({
                       onClick={() => setSelectedStoreId(s.id)}
                       className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? "border-[#0284C7] bg-[#0284C7]/5 dark:border-[#38BDF8] dark:bg-[#38BDF8]/10"
-                          : "border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15]"
+                          ? "border-[#E8C16D] bg-[#FFF9EC] text-[#0A0E1A] ring-1 ring-[#E8C16D]/40 dark:border-[#E8C16D] dark:bg-[#1A160E] dark:text-[#E8C16D]"
+                          : "border-[#E7E0D2] dark:border-white/[0.08] hover:border-[#E8C16D]/50 dark:hover:border-white/[0.15]"
                       }`}
                     >
                       <MarketplaceLogo
@@ -232,17 +238,15 @@ export default function UploadOrderModal({
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
               Order File Format
             </label>
-            <select
+            <ThemeSelectDropdown
+              ariaLabel="Select Order File Format"
               value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value)}
-              className="w-full h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0284C7] dark:focus:ring-[#E8C16D] cursor-pointer"
-            >
-              {ORDER_FORMATS.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedFormat(val)}
+              options={FORMAT_OPTIONS}
+              className="w-full"
+              buttonClassName="w-full justify-between h-10 px-3.5 text-xs rounded-xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#080B11] text-slate-800 dark:text-slate-100 font-semibold"
+              menuClassName="w-full"
+            />
           </div>
 
           {/* Drag & Drop File Upload Area */}
@@ -269,11 +273,11 @@ export default function UploadOrderModal({
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
                   isDragOver
-                    ? "border-[#0284C7] bg-[#0284C7]/5 dark:border-[#38BDF8] dark:bg-[#38BDF8]/10"
-                    : "border-slate-300 hover:border-slate-400 dark:border-white/[0.15] dark:hover:border-white/[0.25] bg-slate-50/50 dark:bg-black/20"
+                    ? "border-[#E8C16D] bg-[#FFF9EC]/50 dark:border-[#E8C16D] dark:bg-[#1A160E]"
+                    : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.15] dark:hover:border-white/[0.25] bg-[#FAF8F5]/50 dark:bg-black/20"
                 }`}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs dark:bg-slate-800 text-[#0284C7] dark:text-[#38BDF8] mb-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/20 mb-2">
                   <FileSpreadsheet className="h-6 w-6" />
                 </div>
                 <span className="text-xs font-bold text-slate-800 dark:text-white">
@@ -320,7 +324,7 @@ export default function UploadOrderModal({
               value={batchNote}
               onChange={(e) => setBatchNote(e.target.value)}
               placeholder="e.g. Morning dispatch batch, Diwali sale chunk 1"
-              className="w-full h-8 px-3 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0284C7] dark:focus:ring-[#E8C16D]"
+              className="w-full h-9 px-3.5 text-xs rounded-xl border border-[#E7E0D2] bg-white text-slate-800 dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#E8C16D] focus:border-[#E8C16D] dark:focus:ring-[#E8C16D]"
             />
           </div>
         </div>
@@ -330,44 +334,40 @@ export default function UploadOrderModal({
           <button
             type="button"
             onClick={handleNavigateToOrderProcess}
-            className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1 cursor-pointer dark:text-[#38BDF8]"
+            className="text-xs font-semibold text-[#B88728] hover:text-[#8C6018] dark:text-[#E8C16D] dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
           >
             <span>Open Dedicated Order Process</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
 
           <div className="flex items-center gap-2 justify-end">
-            <Button
+            <button
               type="button"
-              variant="secondary"
-              fullWidth={false}
               onClick={onClose}
               disabled={isUploading}
-              className="h-10 px-5 text-xs font-bold rounded-full border border-[#E7E0D2]"
+              className="inline-flex h-10 items-center justify-center px-5 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] text-xs font-bold shadow-xs transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] cursor-pointer"
             >
               Cancel
-            </Button>
+            </button>
 
-            <Button
+            <button
               type="button"
-              variant="primary"
-              fullWidth={false}
               onClick={handleUploadAndSync}
               disabled={isUploading || !orderFile}
-              className="h-10 px-6 text-xs font-bold rounded-full flex items-center gap-1.5 bg-[#E8C16D] hover:bg-[#d8b05c] text-[#0A0E1A]"
+              className="inline-flex h-10 items-center justify-center gap-2 px-6 rounded-2xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0A0E1A]" />
                   <span>Processing...</span>
                 </>
               ) : (
                 <>
-                  <Upload className="h-3.5 w-3.5" />
+                  <Upload className="h-3.5 w-3.5 text-[#0A0E1A]" />
                   <span>Upload & Sync</span>
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </div>
       </div>

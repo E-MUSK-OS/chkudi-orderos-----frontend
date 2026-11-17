@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Upload, Plus, Package, RefreshCw, ChevronLeft, ChevronRight, Clock, BarChart3, Calendar as CalendarIcon, CalendarDays, User, FileDown, X, Search, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -47,6 +48,7 @@ const DAY_OPTIONS = [
 ];
 
 export default function AmazonAnalytics() {
+  const router = useRouter();
   const [data, setData] = useState<AnalyticsData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,6 +80,139 @@ export default function AmazonAnalytics() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Scrolling coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Auto-scroll table to top on page or limit changes
+  useEffect(() => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentPage, rowsPerPage]);
+
+  // Calculate remaining viewport height for desktop (>= 1024px)
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const isLg = window.innerWidth >= 1024;
+    setIsDesktop(isLg);
+    if (!isLg) {
+      setTargetHeight(null);
+      return;
+    }
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [data.length, calculateHeight]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until the Header is hidden and stops at the fixed position (Toolbar + Table).
+  // 2. Once at the fixed position, scrolling down over the table scrolls the table rows internally.
+  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals the Header card.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      const tableContainer = tableContainerRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverTable =
+        tableContainer &&
+        (e.composedPath().includes(tableContainer) ||
+          tableContainer.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the fixed view yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else if (!isOverTable) {
+          // At the fixed point and outside the table (e.g. over Toolbar) -> forward scroll to table
+          if (tableContainer) {
+            tableContainer.scrollTop += e.deltaY;
+          }
+        }
+        // If isPageAtBottom and isOverTable, allow table to scroll natively
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverTable) {
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
+          if (isTableAtTop && !isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
 
   const selectedItems = useMemo(() => {
     return data.filter((item) => selectedIds.includes(item.id));
@@ -316,8 +451,9 @@ export default function AmazonAnalytics() {
 
   return (
     <DashboardLayout title="Amazon Analytics">
-      <div className="space-y-6">
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+      <div ref={containerRef} className="flex flex-col gap-6">
+        {/* Header Banner Card */}
+        <div className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
@@ -352,7 +488,7 @@ export default function AmazonAnalytics() {
                 </button>
 
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => router.push("/dashboard/settings/upload-excel?tab=productAnalytics")}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#d4af5a] active:scale-[0.98] cursor-pointer flex-1 sm:flex-none min-h-[40px] sm:min-h-[44px]"
                 >
                   <Plus className="h-4 w-4" />
@@ -374,9 +510,17 @@ export default function AmazonAnalytics() {
           </div>
         </div>
 
-        {/* Toolbar: Left side ONLY searchbar, Right side other filters & actions */}
-        {!isLoading && data.length > 0 && (
-          <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
+        {/* Lower Section (Toolbar + Table / Empty / Loading) */}
+        <div
+          className="flex flex-col gap-4 sm:gap-6"
+          style={{
+            height: isDesktop && targetHeight && !isLoading && data.length > 0 ? `${targetHeight}px` : undefined,
+            minHeight: isDesktop && targetHeight && !isLoading && data.length > 0 ? `${targetHeight}px` : undefined,
+          }}
+        >
+          {/* Toolbar: Left side ONLY searchbar, Right side other filters & actions */}
+          {!isLoading && data.length > 0 && (
+            <div className="shrink-0 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
             {/* Left side: Searchbar matching OrderOS theme with increased width */}
             <div className="w-full xl:max-w-md sm:w-80 md:w-96 lg:w-[420px] transition-all">
               <div className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 dark:hover:bg-white/[0.04] dark:hover:border-[#F5C451]/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:focus-within:bg-[#080B11]">
@@ -544,7 +688,7 @@ export default function AmazonAnalytics() {
                 <span>Download Demo Sheet</span>
               </button>
               <button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => router.push("/dashboard/settings/upload-excel?tab=productAnalytics")}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#E8C16D] px-5 sm:px-6 py-2.5 sm:py-3 font-bold text-[#0A0E1A] transition-all hover:bg-[#d4af5a] shadow-sm text-xs sm:text-sm cursor-pointer w-full sm:w-auto min-h-[42px] sm:min-h-[44px]"
               >
                 <Upload size={20} />
@@ -553,10 +697,15 @@ export default function AmazonAnalytics() {
             </div>
           </div>
         ) : (
-          <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl">
-            <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-              <table className="w-full min-w-[950px] lg:min-w-[1100px] border-collapse text-left font-sans">
-                <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
+          <div className="lg:flex-1 lg:min-h-0 flex flex-col">
+            <div className="lg:h-full flex flex-col lg:min-h-0 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl">
+              <div
+                ref={tableContainerRef}
+                className="w-full overflow-x-auto lg:flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <table className="w-full min-w-[950px] lg:min-w-[1100px] border-collapse text-left font-sans">
+                  <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">
                   <tr>
                     <th className="px-3 sm:px-4 py-3.5 text-center w-12">
                       <div className="flex items-center justify-center">
@@ -578,7 +727,7 @@ export default function AmazonAnalytics() {
                     <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[110px]">ASIN</th>
                     <th
                       onClick={() => handleSort("categoryRank")}
-                      className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[170px] cursor-pointer select-none transition-colors hover:bg-slate-900 dark:hover:bg-white/[0.04] group"
+                      className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[170px] cursor-pointer select-none transition-colors hover:bg-[#F5E6BE]/70 dark:hover:bg-white/[0.04] group"
                       title="1st click: 0 to ... | 2nd click: ... to 0 | 3rd click: Original"
                     >
                       <div className="inline-flex items-center justify-center gap-1.5">
@@ -602,7 +751,7 @@ export default function AmazonAnalytics() {
                     </th>
                     <th
                       onClick={() => handleSort("productRank")}
-                      className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[170px] cursor-pointer select-none transition-colors hover:bg-slate-900 dark:hover:bg-white/[0.04] group"
+                      className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[170px] cursor-pointer select-none transition-colors hover:bg-[#F5E6BE]/70 dark:hover:bg-white/[0.04] group"
                       title="1st click: 0 to ... | 2nd click: ... to 0 | 3rd click: Original"
                     >
                       <div className="inline-flex items-center justify-center gap-1.5">
@@ -777,7 +926,7 @@ export default function AmazonAnalytics() {
                 limit={rowsPerPage}
                 itemName="records"
                 variant="dark"
-                className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+                className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
                 onPageChange={setCurrentPage}
                 onLimitChange={(newLimit) => {
                   setRowsPerPage(newLimit);
@@ -785,8 +934,10 @@ export default function AmazonAnalytics() {
                 }}
               />
             )}
-          </div>
-        )}
+              </div>
+            </div>
+          )}
+        </div>
 
         <ExcelUploadModal
           isOpen={isModalOpen}

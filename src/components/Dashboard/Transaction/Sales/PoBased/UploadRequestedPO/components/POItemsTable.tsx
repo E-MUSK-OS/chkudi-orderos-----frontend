@@ -26,6 +26,10 @@ interface POItemsTableProps {
   readOnly?: boolean;
   onDeletePo?: () => void;
   onItemsChange?: (updatedItems: RequestedPOItem[]) => void;
+  targetHeight?: number | null;
+  isDesktop?: boolean;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
+  cardRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 function getHeaderAlignment(colName: string): string {
@@ -226,6 +230,10 @@ export default function POItemsTable({
   onClose,
   onDeletePo,
   onItemsChange,
+  targetHeight,
+  isDesktop,
+  scrollRef,
+  cardRef,
 }: POItemsTableProps) {
   // Normalize items to ensure initialQuantity and scannedQuantity are present
   const [prevItems, setPrevItems] = useState(items);
@@ -343,6 +351,13 @@ export default function POItemsTable({
       }
     }
   }, [highlightedItemId]);
+
+  // Scroll table back to top when page, pageSize, or search query changes
+  useEffect(() => {
+    if (scrollRef?.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page, pageSize, searchQuery, scrollRef]);
 
   // Global keydown fallback: refocus scanner on typing if outside search/inputs
   useEffect(() => {
@@ -619,9 +634,18 @@ export default function POItemsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626] animate-in fade-in duration-200">
+    <div
+      ref={cardRef}
+      className={cn(
+        "overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626] animate-in fade-in duration-200",
+        isDesktop && targetHeight ? "flex flex-col" : ""
+      )}
+      style={{
+        height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+      }}
+    >
       {/* Top Card Header with Summary and Metrics */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-5 border-b border-[#E7E0D2] dark:border-white/[0.06] bg-white dark:bg-[#0F1626]">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-5 border-b border-[#E7E0D2] dark:border-white/[0.06] bg-white dark:bg-[#0F1626] shrink-0">
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shadow-xs shrink-0">
             <FileSpreadsheet className="h-5 w-5" />
@@ -691,7 +715,7 @@ export default function POItemsTable({
 
       {/* Legacy Cached PO Notice Banner */}
       {isLegacyPO && (
-        <div className="mx-4 my-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="mx-4 my-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
             <span>
@@ -712,7 +736,7 @@ export default function POItemsTable({
       )}
 
       {/* Toolbar: Search Bar on Left + ASIN Scan Bar on Right */}
-      <div className="px-4 py-3 bg-[#FAF8F5] dark:bg-[#0A0E1A]/40 border-b border-[#E7E0D2] dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-3">
+      <div className="px-4 py-3 bg-[#FAF8F5] dark:bg-[#0A0E1A]/40 border-b border-[#E7E0D2] dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-3 shrink-0">
         {/* Left: Search Bar */}
         <div className="relative w-full sm:w-64 shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
@@ -778,10 +802,16 @@ export default function POItemsTable({
       </div>
 
       {/* Items Table matching signature OrderOS Dark & Gold table style */}
-      <div className="overflow-x-auto">
+      <div
+        ref={scrollRef}
+        className={cn(
+          "overflow-x-auto",
+          isDesktop && targetHeight ? "flex-1 overflow-y-auto min-h-0 custom-scrollbar" : ""
+        )}
+      >
         <table className="w-full min-w-[900px] text-left border-collapse">
           {/* Header styled with Dark Obsidian & Gold palette */}
-          <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11] select-none">
+          <thead className="lg:sticky lg:top-0 z-10 border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11] select-none shadow-xs">
             <tr>
               <th className="px-4 py-3.5 w-14 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
                 #
@@ -829,21 +859,23 @@ export default function POItemsTable({
       </div>
 
       {/* Pagination Footer */}
-      <Pagination
-        page={currentPage}
-        totalPages={totalPages}
-        totalRecords={filteredItems.length}
-        total={filteredItems.length}
-        pageSize={pageSize}
-        limit={pageSize}
-        itemName="records"
-        variant="light"
-        options={[10, 20, 50, 100]}
-        className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-        onLimitChange={setPageSize}
-      />
+      <div className="shrink-0">
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalRecords={filteredItems.length}
+          total={filteredItems.length}
+          pageSize={pageSize}
+          limit={pageSize}
+          itemName="records"
+          variant="light"
+          options={[10, 20, 50, 100]}
+          className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          onLimitChange={setPageSize}
+        />
+      </div>
     </div>
   );
 }

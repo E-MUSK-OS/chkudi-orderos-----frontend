@@ -34,6 +34,17 @@ export default function Webstore() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [nextCode, setNextCode] = useState<number>(1);
 
+  // Scroll & Height coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const statsBannerRef = useRef<HTMLDivElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const gridScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  const [contentMaxHeight, setContentMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
   // Filters State
   const [filters, setFilters] = useState<WebstoreFilterState>({
     search: "",
@@ -81,6 +92,114 @@ export default function Webstore() {
     fetchStores();
     fetchNextCode();
   }, [fetchStores, fetchNextCode]);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height on desktop (>= 1024px)
+  // so the header card, stats banner & filter bar remain fixed at the top,
+  // and the content (cards grid or table) scrolls internally.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024 || viewMode !== "list") {
+      setContentMaxHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      const headerHeight = headerRef.current?.offsetHeight || 80;
+      const statsBannerHeight = statsBannerRef.current?.offsetHeight || 88;
+      const filterBarHeight = filterBarRef.current?.offsetHeight || 110;
+      const gaps = 48; // 3x gap-4 (16px each)
+      const maxForContent = available - headerHeight - statsBannerHeight - filterBarHeight - gaps;
+      if (maxForContent > 150) {
+        setContentMaxHeight(Math.floor(maxForContent));
+      }
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [stores.length, layoutMode, calculateHeight]);
+
+  // Lock outer scroll at header position on desktop:
+  // Header, stats banner, and filter bar stay fixed at the top, outer page does not scroll,
+  // and wheel events outside the content container forward to the active content container.
+  useEffect(() => {
+    if (viewMode !== "list") return;
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      scrollContainer.scrollTop = 0;
+
+      const activeContentContainer =
+        layoutMode === "grid" ? gridScrollRef.current : tableScrollRef.current;
+      if (!activeContentContainer) return;
+
+      if (
+        !e.composedPath().includes(activeContentContainer) &&
+        !activeContentContainer.contains(e.target as Node)
+      ) {
+        activeContentContainer.scrollTop += e.deltaY;
+      }
+    };
+
+    const onScroll = () => {
+      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
+        scrollContainer.scrollTop = 0;
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
+    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+      scrollContainer.removeEventListener("scroll", onScroll);
+    };
+  }, [viewMode, layoutMode]);
 
   const handleFilterChange = <K extends keyof WebstoreFilterState>(
     key: K,
@@ -264,48 +383,68 @@ export default function Webstore() {
 
   return (
     <DashboardLayout title="Webstore">
-      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-20 max-w-[1600px] mx-auto">
+      <div
+        ref={containerRef}
+        className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-6 lg:pb-0 max-w-[1600px] mx-auto"
+      >
         {/* Header with Title & Action Buttons */}
-        <WebstoreHeader
-          viewMode={viewMode}
-          onAddNew={handleAddNew}
-          onBack={handleBack}
-          onUploadOrder={handleUploadOrder}
-          onDownloadListings={handleDownloadListings}
-          saving={isSaving}
-        />
+        <div ref={headerRef}>
+          <WebstoreHeader
+            viewMode={viewMode}
+            onAddNew={handleAddNew}
+            onBack={handleBack}
+            onUploadOrder={handleUploadOrder}
+            onDownloadListings={handleDownloadListings}
+            saving={isSaving}
+          />
+        </div>
 
         {/* List View */}
         {viewMode === "list" && (
           <div className="space-y-4">
             {/* Quick KPI Stats Banner */}
-            <WebstoreStatsBanner stores={stores} />
+            <div ref={statsBannerRef}>
+              <WebstoreStatsBanner stores={stores} />
+            </div>
 
             {/* Filter & Sort Bar */}
-            <WebstoreFilterSortBar
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onSortToggle={handleSortToggle}
-              totalCount={stores.length}
-              layoutMode={layoutMode}
-              onLayoutModeChange={setLayoutMode}
-              onResetFilters={handleResetFilters}
-            />
+            <div ref={filterBarRef}>
+              <WebstoreFilterSortBar
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onSortToggle={handleSortToggle}
+                totalCount={stores.length}
+                layoutMode={layoutMode}
+                onLayoutModeChange={setLayoutMode}
+                onResetFilters={handleResetFilters}
+              />
+            </div>
 
             {/* Cards Grid or Tabular List depending on layoutMode */}
             {layoutMode === "grid" ? (
-              <div className="space-y-4">
-                <WebstoreCardGrid
-                  stores={stores}
-                  loading={loading}
-                  onModify={handleModify}
-                  onToggleStatus={handleToggleStatus}
-                  onDelete={(store) => setDeletingStore(store)}
-                  onAddNew={handleAddNew}
-                  togglingId={togglingId}
-                />
+              <div className="flex flex-col gap-3 min-h-0">
+                <div
+                  ref={gridScrollRef}
+                  style={{
+                    maxHeight:
+                      contentMaxHeight && isDesktop
+                        ? `${Math.max(150, contentMaxHeight - (stores.length > 0 ? 64 : 0))}px`
+                        : undefined,
+                  }}
+                  className="overflow-y-auto custom-scrollbar pr-1"
+                >
+                  <WebstoreCardGrid
+                    stores={stores}
+                    loading={loading}
+                    onModify={handleModify}
+                    onToggleStatus={handleToggleStatus}
+                    onDelete={(store) => setDeletingStore(store)}
+                    onAddNew={handleAddNew}
+                    togglingId={togglingId}
+                  />
+                </div>
                 {stores.length > 0 && (
-                  <div className="rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08]">
+                  <div className="shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E7E0D2] dark:border-white/[0.08]">
                     <WebstorePagination
                       total={total || stores.length}
                       page={filters.page || 1}
@@ -329,6 +468,9 @@ export default function Webstore() {
                 togglingId={togglingId}
                 filters={filters}
                 onSortToggle={handleSortToggle}
+                maxHeight={contentMaxHeight}
+                isDesktop={isDesktop}
+                scrollRef={tableScrollRef}
                 pagination={
                   <WebstorePagination
                     total={total || stores.length}

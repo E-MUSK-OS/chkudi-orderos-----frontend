@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 import DashboardLayout from "../../layout/DashboardLayout";
@@ -225,6 +225,161 @@ const ManageMaterials = () => {
     page * pageSize,
   );
 
+  // Scroll & Height coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height inside the scroll container so that when scrolled
+  // past the Header Card and KPI Stats Cards on desktop (>= 1024px), the lower section
+  // (Toolbar + Table) fills the visible viewport exactly, stopping at Toolbar as shown in img.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      setTableMaxHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+
+      const toolbarHeight = toolbarRef.current?.offsetHeight || 60;
+      const gap = 24; // gap-4 sm:gap-6
+      const maxForTable = available - toolbarHeight - gap;
+      if (maxForTable > 160) {
+        setTableMaxHeight(Math.floor(maxForTable));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [filteredMaterials.length, asinItems.length, myntraItems.length, importType, calculateHeight]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until Header Card and KPI Stats Cards are hidden and stops at the fixed position (Toolbar + Table as shown in img).
+  // 2. Once at the fixed position, scrolling down over the table scrolls the table rows internally.
+  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals KPI Stats Cards and Header Card.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      const tableContainer = tableContainerRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverTable =
+        tableContainer &&
+        (e.composedPath().includes(tableContainer) ||
+          tableContainer.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the fixed view yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else if (!isOverTable) {
+          // At the fixed point and outside the table -> forward scroll to table
+          if (tableContainer) {
+            tableContainer.scrollTop += e.deltaY;
+          }
+        }
+        // If isPageAtBottom and isOverTable, allow table to scroll natively
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverTable) {
+          // Cursor is outside table -> scroll outer page up if not at top
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          // Cursor is inside table
+          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
+          if (isTableAtTop && !isPageAtTop) {
+            // Table is at top row -> scroll outer page up to reveal Header Card
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+          // If table is not at top, allow table to scroll natively upwards
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  useEffect(() => {
+    tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page, pageSize, importType]);
+
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
   const [expandedMaterialId, setExpandedMaterialId] = useState<string | null>(null);
 
@@ -355,9 +510,12 @@ const ManageMaterials = () => {
 
   return (
     <DashboardLayout title="Material Profile">
-      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8">
-        {/* Header Information Banner matching Inventory */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100 pb-8">
+        {/* Header Information Banner */}
+        <div
+          ref={headerCardRef}
+          className="shrink-0 rounded-3xl border border-[#E7E0D2] bg-white p-4 sm:p-7 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]"
+        >
           <MaterialHeader
             buttonLabel={
               importType === "asin"
@@ -380,119 +538,146 @@ const ManageMaterials = () => {
               }
             }}
           />
-
-          <div className="mt-5 sm:mt-6 border-t border-[#E7E0D2] dark:border-white/[0.08] pt-5 sm:pt-6">
-            <MaterialStats
-              importType={importType}
-              stats={materialStats}
-              totalMaterials={materials.length}
-              asinItems={asinItems}
-              asinTotal={asinResponse?.total}
-              myntraItems={myntraItems}
-              myntraTotal={myntraResponse?.total}
-              isLoading={
-                importType === "asin"
-                  ? asinLoading
-                  : importType === "myntra"
-                  ? myntraLoading
-                  : materialsLoading
-              }
-            />
-          </div>
         </div>
 
-        <MaterialToolbar
-          search={search}
-          onSearchChange={setSearch}
-          status={status}
-          onStatusChange={setStatus}
-          category={category}
-          onCategoryChange={setCategory}
-          brand={brand}
-          onBrandChange={setBrand}
-          marketplace={marketplace}
-          onMarketplaceChange={setMarketplace}
-          marketplaceOptions={marketplaceOptions}
-          importType={importType}
-          onImportTypeChange={(type) => {
-            setImportType(type);
-            setPage(1);
-          }}
-          categoryOptions={categoryOptions}
-          brandOptions={brandOptions}
-          onRefresh={handleRefresh}
-          onImportExcel={handleImportExcel}
-          isImporting={
-            importType === "myntra"
-              ? importMyntraExcelMutation.isPending
-              : importType === "asin"
-              ? importAsinExcelMutation.isPending
-              : importMaterialExcelMutation.isPending
-          }
-          materialsData={materials}
-          asinData={asinItems}
-          myntraData={myntraItems}
-          selectedCount={selectedMaterialIds.length}
-          onExportMaterials={handleExportMaterials}
-        />
-
-        {/* Table Container matching Inventory */}
-        <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col">
-          {importType === "material" ? (
-            <MaterialTable
-              materials={paginatedMaterials}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onStatusChange={handleStatus}
-              expandedMaterialId={expandedMaterialId}
-              onVariantToggle={handleVariantToggle}
-              selectedMaterialIds={selectedMaterialIds}
-              onToggleSelect={handleToggleSelect}
-              onToggleSelectAll={handleToggleSelectAll}
-            />
-          ) : importType === "asin" ? (
-            <AsinTable
-              items={paginatedAsinItems}
-              isLoading={asinLoading}
-              onEdit={handleEditAsin}
-              onDelete={handleDeleteAsin}
-            />
-          ) : (
-            <MyntraTable
-              items={paginatedMyntraItems}
-              isLoading={myntraLoading}
-              onEdit={handleEditMyntra}
-              onDelete={async (id) => {
-                try {
-                  await deleteMyntraMutation.mutateAsync(id);
-                } catch (e) {
-                  console.error(e);
-                }
-              }}
-            />
-          )}
-
-          <MaterialPagination
-            page={page}
-            totalPages={totalPages}
-            totalRecords={totalRecords}
-            limit={pageSize}
-            pageSize={pageSize}
-            itemName={
+        {/* KPI Stats Cards (scrolls off when scrolling down) */}
+        <div ref={statsRef} className="shrink-0">
+          <MaterialStats
+            importType={importType}
+            stats={materialStats}
+            totalMaterials={materials.length}
+            asinItems={asinItems}
+            asinTotal={asinResponse?.total}
+            myntraItems={myntraItems}
+            myntraTotal={myntraResponse?.total}
+            isLoading={
               importType === "asin"
-                ? "ASINs"
+                ? asinLoading
                 : importType === "myntra"
-                ? "Myntra SKUs"
-                : "materials"
+                ? myntraLoading
+                : materialsLoading
             }
-            variant="dark"
-            className="border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
-            onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPage(1);
-            }}
           />
+        </div>
+
+        {/* Lower Section (Toolbar + MaterialTable) - stops scrolling from Toolbar as shown in img */}
+        <div
+          className="flex flex-col gap-4 sm:gap-6 min-h-0"
+          style={{
+            maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+          }}
+        >
+          {/* Toolbar */}
+          <div ref={toolbarRef} className="shrink-0">
+            <MaterialToolbar
+              search={search}
+              onSearchChange={setSearch}
+              status={status}
+              onStatusChange={setStatus}
+              category={category}
+              onCategoryChange={setCategory}
+              brand={brand}
+              onBrandChange={setBrand}
+              marketplace={marketplace}
+              onMarketplaceChange={setMarketplace}
+              marketplaceOptions={marketplaceOptions}
+              importType={importType}
+              onImportTypeChange={(type) => {
+                setImportType(type);
+                setPage(1);
+              }}
+              categoryOptions={categoryOptions}
+              brandOptions={brandOptions}
+              onRefresh={handleRefresh}
+              onImportExcel={handleImportExcel}
+              isImporting={
+                importType === "myntra"
+                  ? importMyntraExcelMutation.isPending
+                  : importType === "asin"
+                  ? importAsinExcelMutation.isPending
+                  : importMaterialExcelMutation.isPending
+              }
+              materialsData={materials}
+              asinData={asinItems}
+              myntraData={myntraItems}
+              selectedCount={selectedMaterialIds.length}
+              onExportMaterials={handleExportMaterials}
+            />
+          </div>
+
+          {/* Table Container */}
+          <div
+            className="flex flex-col min-h-0 flex-1"
+            style={{
+              maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
+            }}
+          >
+            <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col min-h-0 max-h-full">
+              <div
+                ref={tableContainerRef}
+                className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar overscroll-contain flex-1"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                {importType === "material" ? (
+                  <MaterialTable
+                    materials={paginatedMaterials}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onStatusChange={handleStatus}
+                    expandedMaterialId={expandedMaterialId}
+                    onVariantToggle={handleVariantToggle}
+                    selectedMaterialIds={selectedMaterialIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
+                  />
+                ) : importType === "asin" ? (
+                  <AsinTable
+                    items={paginatedAsinItems}
+                    isLoading={asinLoading}
+                    onEdit={handleEditAsin}
+                    onDelete={handleDeleteAsin}
+                    tableWrapperClassName="w-full min-w-max"
+                  />
+                ) : (
+                  <MyntraTable
+                    items={paginatedMyntraItems}
+                    isLoading={myntraLoading}
+                    onEdit={handleEditMyntra}
+                    tableWrapperClassName="w-full min-w-max"
+                    onDelete={async (id) => {
+                      try {
+                        await deleteMyntraMutation.mutateAsync(id);
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+
+              <MaterialPagination
+                page={page}
+                totalPages={totalPages}
+                totalRecords={totalRecords}
+                limit={pageSize}
+                pageSize={pageSize}
+                itemName={
+                  importType === "asin"
+                    ? "ASINs"
+                    : importType === "myntra"
+                    ? "Myntra SKUs"
+                    : "materials"
+                }
+                variant="dark"
+                className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08] rounded-b-2xl sm:rounded-b-3xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

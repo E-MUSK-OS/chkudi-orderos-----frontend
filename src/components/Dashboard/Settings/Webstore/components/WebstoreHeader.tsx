@@ -52,36 +52,14 @@ export default function WebstoreHeader({
             </h1>
           </div>
 
-          {/* Breadcrumb: Settings / Webstore */}
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
-            <span className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-              Settings
-            </span>
-            <span>/</span>
-            <button
-              type="button"
-              onClick={viewMode !== "list" ? onBack : undefined}
-              className={`${
-                viewMode !== "list"
-                  ? "text-[#B88728] dark:text-[#E8C16D] hover:underline cursor-pointer"
-                  : "text-slate-700 dark:text-slate-200"
-              }`}
-            >
-              Webstore
-            </button>
-            {viewMode === "create" && (
-              <>
-                <span>/</span>
-                <span className="text-slate-700 dark:text-slate-200">New Store</span>
-              </>
-            )}
-            {viewMode === "edit" && (
-              <>
-                <span>/</span>
-                <span className="text-slate-700 dark:text-slate-200">Modify</span>
-              </>
-            )}
-          </div>
+          {/* Short one-line description related to the page */}
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            {viewMode === "create"
+              ? "Connect a new marketplace webstore and configure channel credentials."
+              : viewMode === "edit"
+              ? "Update store configurations, API credentials, and sync preferences."
+              : "Manage connected marketplace channels, store credentials, and sub-SKU mappings."}
+          </p>
         </div>
       </div>
 
@@ -93,9 +71,9 @@ export default function WebstoreHeader({
               <button
                 type="button"
                 onClick={onUploadOrder}
-                className="inline-flex h-11 items-center justify-center gap-2 px-5 rounded-full border border-[#E7E0D2] bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] cursor-pointer dark:border-white/[0.08] dark:bg-[#080B11] dark:text-white dark:hover:bg-white/[0.04]"
+                className="inline-flex h-11 items-center justify-center gap-2 px-5 rounded-2xl sm:rounded-3xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] text-xs sm:text-sm font-bold shadow-xs transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] cursor-pointer"
               >
-                <Upload size={16} />
+                <Upload size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
                 <span>Upload Order</span>
               </button>
             )}
@@ -104,9 +82,9 @@ export default function WebstoreHeader({
               <button
                 type="button"
                 onClick={onDownloadListings}
-                className="inline-flex h-11 items-center justify-center gap-2 px-5 rounded-full border border-[#E7E0D2] bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] cursor-pointer dark:border-white/[0.08] dark:bg-[#080B11] dark:text-white dark:hover:bg-white/[0.04]"
+                className="inline-flex h-11 items-center justify-center gap-2 px-5 rounded-2xl sm:rounded-3xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] text-xs sm:text-sm font-bold shadow-xs transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] cursor-pointer"
               >
-                <Download size={16} />
+                <Download size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
                 <span>Download Existing Listing [All]</span>
               </button>
             )}
@@ -114,7 +92,7 @@ export default function WebstoreHeader({
             <button
               type="button"
               onClick={onAddNew}
-              className="inline-flex h-11 items-center justify-center gap-2 px-6 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm shrink-0"
+              className="inline-flex h-11 items-center justify-center gap-2 px-6 rounded-2xl sm:rounded-3xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm shrink-0"
             >
               <Plus size={18} className="stroke-[2.5]" />
               <span>Create Webstore</span>
@@ -126,9 +104,9 @@ export default function WebstoreHeader({
               type="button"
               onClick={onBack}
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center gap-2 px-6 rounded-full border border-[#E7E0D2] bg-white text-slate-800 hover:bg-slate-50 text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 dark:border-white/[0.08] dark:bg-[#080B11] dark:text-slate-200"
+              className="inline-flex h-11 items-center justify-center gap-2 px-6 rounded-2xl sm:rounded-3xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] text-xs sm:text-sm font-bold transition-all hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 cursor-pointer active:scale-95 disabled:opacity-50"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
               <span>Back to List</span>
             </button>
 
@@ -137,7 +115,7 @@ export default function WebstoreHeader({
               form="webstore-form"
               onClick={onSave}
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center gap-2 px-7 rounded-full bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm shrink-0 disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center gap-2 px-7 rounded-2xl sm:rounded-3xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm shrink-0 disabled:opacity-50"
             >
               <Save size={18} />
               <span>

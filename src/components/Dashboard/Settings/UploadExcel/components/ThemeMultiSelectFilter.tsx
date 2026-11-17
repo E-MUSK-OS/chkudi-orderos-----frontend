@@ -77,12 +77,10 @@ export default function ThemeMultiSelectFilter({
   };
 
   const handleToggleOpen = () => {
-    if (!isOpen) determineDirection();
-    setIsOpen((prev) => {
-      const next = !prev;
-      onOpenChange?.(next);
-      return next;
-    });
+    const next = !isOpen;
+    if (next) determineDirection();
+    setIsOpen(next);
+    onOpenChange?.(next);
     setSearchQuery("");
   };
 
@@ -251,12 +249,12 @@ export default function ThemeMultiSelectFilter({
                 No matching options found
               </div>
             ) : (
-              filteredOptions.map((opt) => {
+              filteredOptions.map((opt, idx) => {
                 const isSelected = isAllSelected || value.includes(opt.value);
 
                 return (
                   <div
-                    key={opt.value}
+                    key={`${opt.value}-${idx}`}
                     onClick={() => handleOptionToggle(opt.value)}
                     className={cn(
                       "flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer select-none transition-colors",

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -12,7 +12,6 @@ import { useOperatorAuth } from "../hooks/useOperatorAuth";
 import { OperatorLoginPayload } from "../types/operatorAuth";
 import { getAccounts } from "../../../Admin/Account/services/account.service";
 import { Account } from "../../../Admin/Account/types/account";
-import { Controller } from "react-hook-form";
 
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { toast } from "sonner";
@@ -127,9 +126,11 @@ const OperatorLoginForm: React.FC<OperatorLoginFormProps> = ({ onSuccess }) => {
           <p className="text-sm text-red-500">{errors.accountId.message}</p>
         )}
       </div>
+
       <Input
         label="Employee Code"
-        // placeholder="EMP001"
+        className="!bg-[#FFFDF5] border-[#EFE5D5] hover:border-[#DEC38E] focus:border-[#C89B3C] [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#FFFDF5] [&:-webkit-autofill]:[-webkit-text-fill-color:#111827] dark:!bg-[#0F1626] dark:border-white/[0.1] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0F1626] dark:[&:-webkit-autofill]:[-webkit-text-fill-color:#F8FAFC]"
+        labelClassName="bg-white text-slate-600 dark:bg-[#0F1626] dark:text-slate-400"
         {...register("employeeCode")}
         error={errors.employeeCode?.message}
       />
@@ -137,7 +138,8 @@ const OperatorLoginForm: React.FC<OperatorLoginFormProps> = ({ onSuccess }) => {
       <Input
         type="password"
         label="Password"
-        // placeholder="Enter Password"
+        className="!bg-[#FFFDF5] border-[#EFE5D5] hover:border-[#DEC38E] focus:border-[#C89B3C] [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#FFFDF5] [&:-webkit-autofill]:[-webkit-text-fill-color:#111827] dark:!bg-[#0F1626] dark:border-white/[0.1] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0F1626] dark:[&:-webkit-autofill]:[-webkit-text-fill-color:#F8FAFC]"
+        labelClassName="bg-white text-slate-600 dark:bg-[#0F1626] dark:text-slate-400"
         {...register("password")}
         error={errors.password?.message}
       />

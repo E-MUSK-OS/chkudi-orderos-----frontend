@@ -140,8 +140,8 @@ export default function WebstoreFilterSortBar({
 
       {/* Styled Columns Bar matching system standard (Header bar with sort arrows) - Shown in Grid view */}
       {layoutMode === "grid" && (
-        <div className="overflow-x-auto rounded-xl bg-[#0A0E1A] dark:bg-[#080B11] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm">
-          <div className="grid grid-cols-6 min-w-[700px] text-[#E8C16D] text-xs font-semibold py-2.5 px-4 select-none">
+        <div className="overflow-x-auto rounded-xl bg-[#FEFAEE] dark:bg-[#080B11] border border-[#F5E6BE] dark:border-white/[0.08] shadow-sm">
+          <div className="grid grid-cols-6 min-w-[700px] text-[#6A4D1D] dark:text-[#E8C16D] text-xs font-semibold py-2.5 px-4 select-none">
             {sortColumns.map((col) => {
               const isSorted = filters.sortBy === col.key;
               return (
@@ -149,14 +149,16 @@ export default function WebstoreFilterSortBar({
                   key={col.key}
                   type="button"
                   onClick={() => onSortToggle(col.key)}
-                  className={`flex items-center gap-1.5 text-left text-[#E8C16D] hover:text-white transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 text-left text-[#6A4D1D] hover:text-[#0A0E1A] dark:text-[#E8C16D] dark:hover:text-white transition-colors cursor-pointer ${
                     col.key === "isActive" ? "justify-center" : ""
                   }`}
                 >
                   <span>{col.label}</span>
                   <ArrowUpDown
                     className={`h-3 w-3 transition-opacity ${
-                      isSorted ? "opacity-100 text-[#E8C16D]" : "opacity-40"
+                      isSorted
+                        ? "opacity-100 text-[#B88728] dark:text-[#F5C451]"
+                        : "opacity-40 text-[#6A4D1D] dark:text-[#E8C16D]"
                     }`}
                   />
                 </button>

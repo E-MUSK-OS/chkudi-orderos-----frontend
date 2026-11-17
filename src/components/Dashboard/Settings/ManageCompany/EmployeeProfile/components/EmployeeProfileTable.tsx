@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Eye,
@@ -27,6 +27,7 @@ interface EmployeeProfileTableProps {
   onPrintIdCard: (employee: Employee) => void;
   onDeleteEmployee: (employee: Employee) => void;
   pagination?: React.ReactNode;
+  tableContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 function formatDate(dateStr?: string | null): string | null {
@@ -52,18 +53,32 @@ export default function EmployeeProfileTable({
   onPrintIdCard,
   onDeleteEmployee,
   pagination,
+  tableContainerRef,
 }: EmployeeProfileTableProps) {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const resolvedRef = tableContainerRef || internalRef;
+
+  useEffect(() => {
+    if (resolvedRef.current) {
+      resolvedRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page, pageSize, resolvedRef]);
+
   const isVisible = (key: string) => {
     const col = columns.find((c) => c.key === key);
     return col ? col.visible : true;
   };
 
   return (
-    <div className="w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm relative overflow-visible font-sans">
-      <div className="w-full overflow-x-auto rounded-t-2xl sm:rounded-t-3xl">
+    <div className="flex flex-col min-h-0 max-h-full overflow-hidden w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm relative font-sans">
+      <div
+        ref={resolvedRef}
+        className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar overscroll-contain rounded-t-2xl sm:rounded-t-3xl"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         <table className="w-full text-left border-collapse">
           {/* Table Header matching OrderOS standard & Ledger Book */}
-          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
+          <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none shadow-xs">
             <tr>
               {isVisible("no") && (
                 <th className="whitespace-nowrap px-4 py-3.5 text-center font-semibold text-[#6A4D1D] dark:text-[#E8C16D] w-12">No.</th>
@@ -302,7 +317,7 @@ export default function EmployeeProfileTable({
           </tbody>
         </table>
       </div>
-      {pagination}
+      {pagination && <div className="shrink-0">{pagination}</div>}
     </div>
   );
 }

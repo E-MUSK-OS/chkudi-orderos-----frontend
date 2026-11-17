@@ -216,20 +216,20 @@ export default function LedgerBookModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-5 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-      <div className="w-full max-w-5xl rounded-[28px] sm:rounded-[32px] overflow-hidden border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white dark:bg-[#0A0E1A] shadow-2xl relative my-auto flex flex-col max-h-[92vh] transition-all">
-        {/* Top Header - Exact Dark Banner from Screenshot */}
-        <div className="bg-[#0A0E1A] dark:bg-[#080B11] border-b border-slate-800 dark:border-white/[0.08] px-5 sm:px-7 py-4 flex items-center justify-between shrink-0">
+      <div className="w-full max-w-5xl rounded-[28px] sm:rounded-[32px] overflow-hidden border border-[#E7E0D2] dark:border-[#E8C16D]/40 bg-white dark:bg-[#0A0E1A] shadow-2xl relative my-auto flex flex-col max-h-[92vh] transition-all">
+        {/* Top Header - OrderOS Theme in Light Mode, Dark theme in Dark Mode */}
+        <div className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#E7E0D2] dark:border-white/[0.08] px-5 sm:px-7 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E8C16D]/40 text-[#E8C16D] bg-[#FFF9EC]/10 shrink-0">
-              <BookOpen className="w-4 h-4 text-[#E8C16D]" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E8C16D]/30 text-[#B88728] bg-[#FFF9EC] dark:border-[#E8C16D]/40 dark:text-[#E8C16D] dark:bg-[#FFF9EC]/10 shrink-0">
+              <BookOpen className="w-4 h-4 text-[#B88728] dark:text-[#E8C16D]" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white leading-tight">
+              <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white leading-tight">
                 Ledger Book
               </h2>
-              <div className="text-xs text-slate-400 font-medium mt-0.5">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
                 Setting / Manage Company / Account / Ledger /{" "}
-                <span className="text-[#E8C16D] font-bold">{entityName}</span>
+                <span className="text-[#B88728] dark:text-[#E8C16D] font-bold">{entityName}</span>
               </div>
             </div>
           </div>
@@ -249,7 +249,7 @@ export default function LedgerBookModal({
               type="button"
               onClick={onClose}
               title="Cancel"
-              className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-[#E8C16D]/20 text-slate-500 hover:text-[#0A0E1A] dark:bg-white/10 dark:hover:bg-white/20 dark:text-slate-300 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

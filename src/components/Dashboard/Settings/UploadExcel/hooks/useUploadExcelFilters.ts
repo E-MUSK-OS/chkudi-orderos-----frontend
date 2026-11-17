@@ -94,6 +94,7 @@ export function useUploadExcelFilters(profile: ProfileKey) {
   const [materialMasterSkuOptions, setMaterialMasterSkuOptions] = useState<ThemeSelectOption[]>([]);
   const [companyOptions, setCompanyOptions] = useState<ThemeSelectOption[]>([]);
   const [employeeOptions, setEmployeeOptions] = useState<ThemeSelectOption[]>([]);
+  const [operatorOptions, setOperatorOptions] = useState<ThemeSelectOption[]>([]);
   const [dynamicDepartments, setDynamicDepartments] = useState<string[]>(STANDARD_DEPARTMENTS);
   const [accountHeadOptions, setAccountHeadOptions] = useState<string[]>(ACCOUNT_HEAD_OPTIONS);
 
@@ -123,15 +124,20 @@ export function useUploadExcelFilters(profile: ProfileKey) {
 
             if (productsRes.status === "fulfilled" && productsRes.value?.data) {
               const items = Array.isArray(productsRes.value.data) ? productsRes.value.data : [];
-              setProductOptions(
-                items.map((p) => {
+              const seenProduct = new Set<string>();
+              const dedupedProducts: ThemeSelectOption[] = [];
+              items.forEach((p) => {
+                const val = String(p.sku || p.masterSku || p.id || "").trim();
+                if (val && !seenProduct.has(val.toLowerCase())) {
+                  seenProduct.add(val.toLowerCase());
                   const statusSuffix = p.isActive === false ? " (Inactive)" : "";
-                  return {
+                  dedupedProducts.push({
                     label: `${p.productName || p.masterSku || p.sku || "Product"}${statusSuffix}`,
-                    value: p.masterSku || p.sku || p.id,
-                  };
-                })
-              );
+                    value: val,
+                  });
+                }
+              });
+              setProductOptions(dedupedProducts);
               const distinctMaster = Array.from(
                 new Set(items.map((p) => String(p.masterSku || "").trim()).filter(Boolean))
               );
@@ -159,15 +165,20 @@ export function useUploadExcelFilters(profile: ProfileKey) {
 
             if (materialsRes.status === "fulfilled" && materialsRes.value?.data) {
               const items = Array.isArray(materialsRes.value.data) ? materialsRes.value.data : [];
-              setMaterialOptions(
-                items.map((m) => {
+              const seenMaterial = new Set<string>();
+              const dedupedMaterials: ThemeSelectOption[] = [];
+              items.forEach((m) => {
+                const val = String(m.sku || m.masterSku || m.id || "").trim();
+                if (val && !seenMaterial.has(val.toLowerCase())) {
+                  seenMaterial.add(val.toLowerCase());
                   const statusSuffix = m.isActive === false ? " (Inactive)" : "";
-                  return {
+                  dedupedMaterials.push({
                     label: `${m.materialName || m.masterSku || m.sku || "Material"}${statusSuffix}`,
-                    value: m.masterSku || m.sku || m.id,
-                  };
-                })
-              );
+                    value: val,
+                  });
+                }
+              });
+              setMaterialOptions(dedupedMaterials);
               const distinctMaster = Array.from(
                 new Set(items.map((m) => String(m.masterSku || "").trim()).filter(Boolean))
               );
@@ -178,12 +189,19 @@ export function useUploadExcelFilters(profile: ProfileKey) {
           const res = await companyService.getCompanies();
           if (isMounted && res?.data) {
             const items = Array.isArray(res.data) ? res.data : [];
-            setCompanyOptions(
-              items.map((c) => ({
-                label: c.companyName || c.companyCode || "Company",
-                value: c.companyCode || c.id,
-              }))
-            );
+            const seenCompany = new Set<string>();
+            const dedupedCompanies: ThemeSelectOption[] = [];
+            items.forEach((c) => {
+              const val = String(c.companyCode || c.id || "").trim();
+              if (val && !seenCompany.has(val.toLowerCase())) {
+                seenCompany.add(val.toLowerCase());
+                dedupedCompanies.push({
+                  label: c.companyName || c.companyCode || "Company",
+                  value: val,
+                });
+              }
+            });
+            setCompanyOptions(dedupedCompanies);
           }
         } else if (profile === "ledger") {
           try {
@@ -226,6 +244,23 @@ export function useUploadExcelFilters(profile: ProfileKey) {
                 : [];
             setDynamicDepartments(Array.from(new Set([...STANDARD_DEPARTMENTS, ...distinctDepts, ...smDepts])));
           }
+        } else if (profile === "productAnalytics") {
+          try {
+            const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/amazon-analytics`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (res.ok) {
+              const json = await res.json();
+              const items = Array.isArray(json?.data) ? json.data : [];
+              const distinctOperators = Array.from(
+                new Set(items.map((i: any) => String(i.operatorName || "").trim()).filter(Boolean))
+              ) as string[];
+              if (isMounted) {
+                setOperatorOptions(distinctOperators.map((op) => ({ label: op, value: op })));
+              }
+            }
+          } catch (_) {}
         }
       } catch (err) {
         console.warn("Failed to load live filter dropdown options for upload excel:", err);
@@ -281,6 +316,14 @@ export function useUploadExcelFilters(profile: ProfileKey) {
         }
 
         case "status": {
+          if (profile === "purchaseChallan" || profile === "salesChallan") {
+            return [
+              { label: "All Status", value: "All" },
+              { label: "Pending", value: "Pending" },
+              { label: "Invoiced", value: "Invoiced" },
+              { label: "Not Invoiced", value: "Not Invoiced" },
+            ];
+          }
           return [
             { label: "All Status", value: "All" },
             { label: "Active", value: "ACTIVE" },
@@ -321,6 +364,23 @@ export function useUploadExcelFilters(profile: ProfileKey) {
           ];
         }
 
+        case "operator": {
+          return [{ label: "All Operators", value: "All" }, ...operatorOptions];
+        }
+
+        case "day": {
+          return [
+            { label: "All Days", value: "All" },
+            { label: "Sunday", value: "Sunday" },
+            { label: "Monday", value: "Monday" },
+            { label: "Tuesday", value: "Tuesday" },
+            { label: "Wednesday", value: "Wednesday" },
+            { label: "Thursday", value: "Thursday" },
+            { label: "Friday", value: "Friday" },
+            { label: "Saturday", value: "Saturday" },
+          ];
+        }
+
         default:
           return [{ label: "All", value: "All" }];
       }
@@ -335,6 +395,7 @@ export function useUploadExcelFilters(profile: ProfileKey) {
     materialMasterSkuOptions,
     companyOptions,
     employeeOptions,
+    operatorOptions,
     dynamicDepartments,
     accountHeadOptions,
   ]);

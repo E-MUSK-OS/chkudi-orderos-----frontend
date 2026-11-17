@@ -19,6 +19,7 @@ interface Props {
   selectedProductIds?: string[];
   onToggleSelect?: (productId: string) => void;
   onToggleSelectAll?: () => void;
+  tableWrapperClassName?: string;
 }
 
 const getProductAttributeItems = (product: Product) => {
@@ -212,6 +213,7 @@ export default function ProductTable({
   selectedProductIds = [],
   onToggleSelect,
   onToggleSelectAll,
+  tableWrapperClassName,
 }: Props) {
   const isAllCurrentPageSelected =
     products.length > 0 &&
@@ -237,9 +239,9 @@ export default function ProductTable({
   }
 
   return (
-    <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+    <div className={tableWrapperClassName || "w-full min-w-max"}>
       <table className="w-full min-w-[1050px] border-collapse text-left font-sans">
-        <thead className="bg-[#FEFAEE] dark:bg-none text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#F5C451]">
+        <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:text-[#E8C16D] select-none shadow-xs">
           <tr>
             <th className="px-3 sm:px-4 py-3.5 text-center w-12">
               <div className="flex items-center justify-center">

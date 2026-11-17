@@ -76,7 +76,7 @@ export default function Toolbar({
   onRefresh,
 }: Props) {
   return (
-    <div className="mb-6 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="shrink-0 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       {/* Left Filters */}
       <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:flex-wrap xl:flex-nowrap lg:items-center">
         {/* Search */}

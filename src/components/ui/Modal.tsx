@@ -18,6 +18,7 @@ interface ModalProps {
 
   title?: string;
   description?: string;
+  icon?: React.ReactNode;
 
   children: React.ReactNode;
 
@@ -44,6 +45,7 @@ export default function Modal({
   onClose,
   title,
   description,
+  icon,
   children,
   size = "lg",
   showHeader = true,
@@ -80,22 +82,31 @@ export default function Modal({
     top-0
     z-10
     border-b border-[#E7E0D2] dark:border-white/[0.08]
-    bg-[#0A0E1A] dark:bg-[#080B11]
+    bg-[#FEFAEE] dark:bg-[#080B11]
     px-4 sm:px-6
     py-3.5 sm:py-5
   "
           >
-            {title && (
-              <DialogTitle className="text-base sm:text-xl font-bold text-[#E8C16D] dark:text-[#F5C451]">
-                {title}
-              </DialogTitle>
-            )}
+            <div className="flex items-center gap-3">
+              {icon && (
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D] shrink-0">
+                  {icon}
+                </div>
+              )}
+              <div className="space-y-0.5 min-w-0 pr-8">
+                {title && (
+                  <DialogTitle className="text-base sm:text-xl font-bold text-[#0A0E1A] dark:text-[#F5C451] truncate">
+                    {title}
+                  </DialogTitle>
+                )}
 
-            {description && (
-              <DialogDescription className="text-xs sm:text-sm text-slate-300 dark:text-slate-400">
-                {description}
-              </DialogDescription>
-            )}
+                {description && (
+                  <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                    {description}
+                  </DialogDescription>
+                )}
+              </div>
+            </div>
           </DialogHeader>
         )}
 

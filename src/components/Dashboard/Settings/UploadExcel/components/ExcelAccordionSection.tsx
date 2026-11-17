@@ -40,7 +40,12 @@ export default function ExcelAccordionSection({
   const { getOptionsForFilterKey } = useUploadExcelFilters(profile);
 
   const availableFields = section.fields || [];
+  const fixedFields = section.fixedFields || [];
   const [selectedFields, setSelectedFields] = useState<string[]>(() => {
+    if (fixedFields.length > 0) {
+      const firstNonFixed = availableFields.find((f) => !fixedFields.includes(f));
+      return firstNonFixed ? [...fixedFields, firstNonFixed] : [...fixedFields];
+    }
     return availableFields.length > 0 ? [availableFields[0]] : [];
   });
 
@@ -63,6 +68,10 @@ export default function ExcelAccordionSection({
   };
 
   const handleToggleField = (field: string) => {
+    if (fixedFields.includes(field)) {
+      toast.info(`${field} is required for updating records.`);
+      return;
+    }
     setSelectedFields((prev) =>
       prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
     );
@@ -73,7 +82,7 @@ export default function ExcelAccordionSection({
 
   const handleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedFields([]);
+      setSelectedFields([...fixedFields]);
     } else {
       setSelectedFields([...availableFields]);
     }
@@ -91,6 +100,11 @@ export default function ExcelAccordionSection({
   const handleDownloadClick = async () => {
     if (availableFields.length > 0 && selectedFields.length === 0) {
       toast.warning("Please select at least one field to export.");
+      return;
+    }
+    const nonFixedSelected = selectedFields.filter((f) => !fixedFields.includes(f));
+    if (availableFields.length > 0 && fixedFields.length > 0 && nonFixedSelected.length === 0) {
+      toast.warning(`Please select at least one field to update alongside ${fixedFields.join(" & ")}.`);
       return;
     }
 
@@ -134,7 +148,7 @@ export default function ExcelAccordionSection({
 
   return (
     <div className={cn(
-        "rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xs mb-3.5 transition-all hover:border-[#E8C16D]/40 dark:hover:border-white/[0.14]",
+        "rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-xs transition-all hover:border-[#E8C16D]/40 dark:hover:border-white/[0.14]",
         activeDropdownKey
           ? "relative z-50 overflow-visible"
           : isOpen
@@ -143,7 +157,12 @@ export default function ExcelAccordionSection({
       )}>
       {/* Clean Accordion Header matching screenshots & OrderOS theme */}
       <div
-        className="flex items-center justify-between px-5 sm:px-6 py-4 cursor-pointer select-none bg-white dark:bg-[#0F1626] hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition-colors"
+        className={cn(
+          "flex items-center justify-between px-5 sm:px-6 py-4 cursor-pointer select-none transition-colors",
+          isOpen
+            ? "rounded-t-2xl border-b border-[#E7E0D2]/60 dark:border-white/[0.06] hover:bg-slate-50/60 dark:hover:bg-white/[0.02]"
+            : "rounded-2xl hover:bg-slate-50/60 dark:hover:bg-white/[0.02]"
+        )}
         onClick={() => {
           setIsOpen((prev) => {
             if (prev) setActiveDropdownKey(null);
@@ -162,19 +181,19 @@ export default function ExcelAccordionSection({
 
       {/* Accordion Body matching screenshots & OrderOS theme for Light and Dark mode */}
       {isOpen && (
-        <div className="px-5 sm:px-6 pb-6 pt-1 space-y-5 animate-in fade-in duration-150">
+        <div className="px-5 sm:px-6 pb-6 pt-5 space-y-5 animate-in fade-in duration-150 rounded-b-2xl">
           {section.isCreate ? (
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={handleBlankTemplateClick}
                 disabled={isDownloading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-transparent bg-white dark:bg-white text-slate-900 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-xs hover:bg-slate-50 hover:border-slate-400 dark:hover:bg-slate-100 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60"
               >
                 {isDownloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-900" />
+                  <Loader2 className="h-4 w-4 animate-spin text-[#B88728] dark:text-[#E8C16D]" />
                 ) : (
-                  <Download className="h-4 w-4 text-slate-900" />
+                  <Download className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
                 )}
                 <span>Blank Template</span>
               </button>
@@ -183,12 +202,12 @@ export default function ExcelAccordionSection({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A0E1A] dark:bg-[#1A1D27] text-white border border-transparent dark:border-white/[0.15] px-5 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold shadow-xs hover:bg-[#161D2E] dark:hover:bg-[#242836] active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] px-5 sm:px-6 py-2.5 text-xs sm:text-sm font-bold shadow-sm cursor-pointer transition-all disabled:opacity-60"
               >
                 {isUploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  <Loader2 className="h-4 w-4 animate-spin text-[#0A0E1A]" />
                 ) : (
-                  <Upload className="h-4 w-4 text-white" />
+                  <Upload className="h-4 w-4 text-[#0A0E1A]" />
                 )}
                 <span>Upload</span>
               </button>
@@ -220,21 +239,30 @@ export default function ExcelAccordionSection({
 
                   <div className="flex flex-wrap items-center gap-2 pt-0.5">
                     {availableFields.map((field) => {
-                      const isSelected = selectedFields.includes(field);
+                      const isFixed = fixedFields.includes(field);
+                      const isSelected = selectedFields.includes(field) || isFixed;
                       return (
                         <button
                           key={field}
                           type="button"
                           onClick={() => handleToggleField(field)}
                           className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all cursor-pointer select-none border",
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all select-none border",
                             isSelected
                               ? "bg-[#FFF9EC] dark:bg-transparent border-[#B88728] dark:border-white text-[#B88728] dark:text-white font-semibold shadow-2xs"
-                              : "bg-white dark:bg-[#1A1D27] border-slate-300 dark:border-white/[0.08] text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500"
+                              : "bg-white dark:bg-[#1A1D27] border-slate-300 dark:border-white/[0.08] text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500",
+                            isFixed
+                              ? "cursor-default ring-1 ring-[#B88728]/40 dark:ring-white/20"
+                              : "cursor-pointer"
                           )}
                         >
                           {isSelected && <Check className="h-3 w-3 stroke-[2.5]" />}
                           <span>{field}</span>
+                          {isFixed && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#B88728]/15 dark:bg-white/10 text-[#8B651B] dark:text-[#E8C16D] uppercase tracking-wider ml-0.5">
+                              Fixed
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -281,7 +309,7 @@ export default function ExcelAccordionSection({
                               options={options}
                               placeholder={`All ${label === "Category" ? "categories" : label === "Master SKU" ? "Master SKUs" : label}`}
                               buttonClassName="h-8.5 px-3.5 text-xs rounded-xl bg-white dark:bg-[#131622] border border-[#E7E0D2] dark:border-white/[0.08] text-slate-800 dark:text-white font-medium hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 shadow-xs"
-                              onOpenChange={(open) => setActiveDropdownKey(open ? filterKey : null)}
+                              onOpenChange={(open) => setActiveDropdownKey((prev) => (open ? filterKey : prev === filterKey ? null : prev))}
                             />
                           </div>
                         );
@@ -297,7 +325,7 @@ export default function ExcelAccordionSection({
                             onChange={(val) => handleFilterChange(filterKey, val)}
                             options={options as ThemeSelectOption[]}
                             buttonClassName="h-8.5 px-3.5 text-xs rounded-xl bg-white dark:bg-[#131622] border border-[#E7E0D2] dark:border-white/[0.08] text-slate-800 dark:text-white font-medium hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 shadow-xs"
-                            onOpenChange={(open) => setActiveDropdownKey(open ? filterKey : null)}
+                            onOpenChange={(open) => setActiveDropdownKey((prev) => (open ? filterKey : prev === filterKey ? null : prev))}
                           />
                         </div>
                       );
@@ -306,18 +334,18 @@ export default function ExcelAccordionSection({
                 </div>
               )}
 
-              {/* Action Buttons matching screenshots & OrderOS theme */}
+              {/* Action Buttons matching OrderOS theme */}
               <div className="flex flex-wrap items-center gap-3 pt-3">
                 <button
                   type="button"
                   onClick={handleDownloadClick}
                   disabled={isDownloading}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-transparent bg-white dark:bg-white text-slate-900 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-xs hover:bg-slate-50 hover:border-slate-400 dark:hover:bg-slate-100 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60"
                 >
                   {isDownloading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-slate-900" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#B88728] dark:text-[#E8C16D]" />
                   ) : (
-                    <Download className="h-4 w-4 text-slate-900" />
+                    <Download className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
                   )}
                   <span>Download</span>
                 </button>
@@ -326,12 +354,12 @@ export default function ExcelAccordionSection({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A0E1A] dark:bg-[#1A1D27] text-white border border-transparent dark:border-white/[0.15] px-5 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold shadow-xs hover:bg-[#161D2E] dark:hover:bg-[#242836] active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E8C16D] hover:bg-[#d8b05c] active:scale-[0.97] text-[#0A0E1A] px-5 sm:px-6 py-2.5 text-xs sm:text-sm font-bold shadow-sm cursor-pointer transition-all disabled:opacity-60"
                 >
                   {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0A0E1A]" />
                   ) : (
-                    <Upload className="h-4 w-4 text-white" />
+                    <Upload className="h-4 w-4 text-[#0A0E1A]" />
                   )}
                   <span>Upload & Update</span>
                 </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/utils";
 import {
   Building2,
   BookOpen,
@@ -8,6 +9,9 @@ import {
   Wallet,
   Layers,
   Package,
+  BarChart3,
+  Truck,
+  FileSpreadsheet,
 } from "lucide-react";
 import { PROFILES_LIST, type ProfileKey } from "../constants/uploadExcel.constants";
 
@@ -23,6 +27,9 @@ const tabIcons: Record<ProfileKey, React.ElementType> = {
   salaried: Wallet,
   material: Layers,
   product: Package,
+  productAnalytics: BarChart3,
+  purchaseChallan: Truck,
+  salesChallan: FileSpreadsheet,
 };
 
 export default function ProfileTabSelector({
@@ -30,27 +37,30 @@ export default function ProfileTabSelector({
   onTabChange,
 }: ProfileTabSelectorProps) {
   return (
-    <div className="flex flex-wrap gap-1.5 sm:gap-2 border-b border-[#E7E0D2] dark:border-white/[0.08]">
-      {PROFILES_LIST.map((profile) => {
-        const Icon = tabIcons[profile.key];
-        const isActive = activeTab === profile.key;
+    <div className="border-b border-[#E7E0D2] dark:border-white/[0.08] overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-1.5 sm:gap-2 -mb-px min-w-max">
+        {PROFILES_LIST.map((profile) => {
+          const Icon = tabIcons[profile.key];
+          const isActive = activeTab === profile.key;
 
-        return (
-          <button
-            key={profile.key}
-            type="button"
-            onClick={() => onTabChange(profile.key)}
-            className={`flex items-center gap-2 rounded-t-2xl border-b-2 px-3.5 sm:px-5 py-3 text-xs sm:text-sm font-bold transition-all cursor-pointer select-none ${
-              isActive
-                ? "border-[#B88728] text-[#B88728] bg-[#FFF9EC]/70 dark:border-[#F5C451] dark:text-[#F5C451] dark:bg-white/[0.04]"
-                : "border-transparent text-slate-500 hover:text-[#0A0E1A] hover:bg-slate-50/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.02]"
-            }`}
-          >
-            <Icon size={16} />
-            <span>{profile.label}</span>
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={profile.key}
+              type="button"
+              onClick={() => onTabChange(profile.key)}
+              className={cn(
+                "flex items-center gap-2 rounded-t-2xl border-b-2 px-3.5 sm:px-5 py-3 text-xs sm:text-sm font-bold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap",
+                isActive
+                  ? "border-[#B88728] text-[#B88728] bg-[#FFF9EC]/70 dark:border-[#F5C451] dark:text-[#F5C451] dark:bg-white/[0.04]"
+                  : "border-transparent text-slate-500 hover:text-[#0A0E1A] hover:bg-slate-50/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.02]"
+              )}
+            >
+              <Icon size={16} />
+              <span>{profile.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -39,18 +39,18 @@ export default function DeleteTagLoopModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="!rounded-3xl sm:!rounded-[32px] border border-[#E7E0D2] dark:border-white/[0.08] max-w-xl sm:max-w-2xl overflow-hidden bg-white dark:bg-[#0F1626] p-0 shadow-2xl">
         {/* Header */}
-        <div className="border-b border-[#1A2235] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-6 sm:px-8 py-5 sm:py-6">
+        <div className="border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#080B11] px-6 sm:px-8 py-5 sm:py-6">
           <DialogHeader>
             <div className="flex items-center gap-4">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/30 shadow-xs shrink-0">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40 shadow-xs shrink-0">
                 <AlertTriangle className="h-6 w-6" />
               </div>
 
               <div className="text-left">
-                <DialogTitle className="text-xl sm:text-2xl font-black text-[#E8C16D] tracking-tight">
+                <DialogTitle className="text-xl sm:text-2xl font-black text-[#0A0E1A] dark:text-[#E8C16D] tracking-tight">
                   Delete Tag Loop
                 </DialogTitle>
-                <p className="mt-0.5 text-xs sm:text-sm text-slate-300 dark:text-slate-400">
+                <p className="mt-0.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                   This action is permanent and cannot be undone.
                 </p>
               </div>
@@ -140,7 +140,7 @@ export default function DeleteTagLoopModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="inline-flex h-11 items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#080B11] hover:bg-slate-200 dark:hover:bg-white/[0.04] px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-[#FEFAEE] hover:text-[#6A4D1D] hover:border-[#E8C16D] dark:hover:bg-white/[0.04] px-5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>

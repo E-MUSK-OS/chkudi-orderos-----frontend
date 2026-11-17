@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useVMS } from "../../VMS/Admin/hooks/useVMS";
 import { useTrackingScanner } from "../hooks/useTrackingScanner";
 import TrackingScanner from "./TrackingScanner";
@@ -32,6 +32,121 @@ export default function TrackingList() {
   const { operators, fetchOperators } = useOperators();
   const { accounts, fetchAccounts } = useAccounts();
   const [limit, setLimit] = useState(10);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+
+      const tableContainer = tableContainerRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverTable =
+        tableContainer &&
+        (e.composedPath().includes(tableContainer) ||
+          tableContainer.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        if (!isPageAtBottom) {
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else if (!isOverTable) {
+          e.preventDefault();
+        }
+      } else if (e.deltaY < 0) {
+        if (!isOverTable) {
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
+          if (isTableAtTop && !isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
 
   const filteredData = useMemo(() => {
     const filtered = data.filter((item) => {
@@ -122,7 +237,7 @@ export default function TrackingList() {
   );
 
   return (
-    <>
+    <div ref={containerRef}>
       <TrackingToolbar
         search={search}
         onSearchChange={setSearch}
@@ -136,45 +251,57 @@ export default function TrackingList() {
         onSelectedDateChange={setSelectedDate}
       />
 
-      <ScanSummary
-        total={scanSummary.total}
-        pending={scanSummary.pending}
-        scanned={scanSummary.scanned}
-        missing={missingIds.length}
-      />
-
-      <TrackingScanner
-        value={scanValue}
-        onChange={setScanValue}
-        message={message}
-        onScan={() => {
-          handleScan(scanValue);
+      {/* Lower Section (ScanSummary + TrackingScanner + MissingTrackingList + TrackingTable) */}
+      <div
+        style={{
+          height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+          minHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
         }}
-        onCameraScan={(code) => {
-          handleScan(code);
-        }}
-      />
+        className="flex flex-col"
+      >
+        <div className="shrink-0">
+          <ScanSummary
+            total={scanSummary.total}
+            pending={scanSummary.pending}
+            scanned={scanSummary.scanned}
+            missing={missingIds.length}
+          />
 
-      <MissingTrackingList
-        trackingIds={missingIds}
-        onRemoveItem={removeMissingId}
-        onClearAll={clearMissingIds}
-      />
+          <TrackingScanner
+            value={scanValue}
+            onChange={setScanValue}
+            message={message}
+            onScan={() => {
+              handleScan(scanValue);
+            }}
+            onCameraScan={(code) => {
+              handleScan(code);
+            }}
+          />
 
-      <div className="mt-6">
-        <TrackingTable
-          data={paginatedData}
-          isLoading={loading}
-          total={filteredData.length}
-          page={page}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
-        />
+          <MissingTrackingList
+            trackingIds={missingIds}
+            onRemoveItem={removeMissingId}
+            onClearAll={clearMissingIds}
+          />
+        </div>
+
+        <div className="lg:flex-1 lg:min-h-0 flex flex-col">
+          <TrackingTable
+            data={paginatedData}
+            isLoading={loading}
+            total={filteredData.length}
+            page={page}
+            limit={limit}
+            tableContainerRef={tableContainerRef}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
-    </>
+    </div>
   );
 }

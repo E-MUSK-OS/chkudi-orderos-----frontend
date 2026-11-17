@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import {
   UploadCloud,
   CheckCircle2,
@@ -131,6 +131,176 @@ export default function MyntraPicklist() {
       .filter((item) => item.status === "UNMATCHED")
       .map((item) => item.myntraSku);
   }, [picklistItems]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const lowerSectionRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height inside the scroll container so that when scrolled
+  // past the Header Card on desktop (>= 1024px), the Lower Section (Stats + Results Table)
+  // fills the visible viewport exactly, stopping cleanly as shown in user's image.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024 || !hasResults || isProcessing) {
+      setTargetHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+    }
+  }, [hasResults, isProcessing]);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 100);
+    const timer2 = setTimeout(calculateHeight, 300);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      if (scrollContainer) resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight, hasResults, isProcessing]);
+
+  // Reset scroll to top when results first load
+  useEffect(() => {
+    if (hasResults && !isProcessing) {
+      const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 0;
+      }
+    }
+  }, [hasResults, isProcessing]);
+
+  // Scroll table back to top on page or filter change
+  useEffect(() => {
+    tableScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage, itemsPerPage, searchQuery, statusFilter]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until Header Card is hidden and stops firmly at Lower Section (Stats + Table).
+  // 2. Once at the stopped position, scrolling down over the table or lower section scrolls the table rows internally.
+  // 3. When scrolling up, table rows scroll up to the first row; scrolling up further reveals the Header Card.
+  useEffect(() => {
+    if (!hasResults || isProcessing) return;
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+
+      const tableScrollEl = tableScrollRef.current;
+      const lowerSectionEl = lowerSectionRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverLowerSection =
+        lowerSectionEl &&
+        (e.composedPath().includes(lowerSectionEl) ||
+          lowerSectionEl.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the stopped position yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else {
+          // At the stopped position: forward scroll to inner table rows
+          if (tableScrollEl) {
+            const maxTableScroll = tableScrollEl.scrollHeight - tableScrollEl.clientHeight;
+            if (tableScrollEl.scrollTop < maxTableScroll) {
+              e.preventDefault();
+              tableScrollEl.scrollTop = Math.min(
+                maxTableScroll,
+                tableScrollEl.scrollTop + e.deltaY
+              );
+            }
+          }
+        }
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverLowerSection) {
+          // Outside lower section -> scroll outer page up if not at top
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          // Inside lower section
+          const isTableAtTop = !tableScrollEl || tableScrollEl.scrollTop <= 1;
+          if (isTableAtTop && !isPageAtTop) {
+            // Table is at top row -> scroll outer page up to reveal Header Card
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          } else if (tableScrollEl && !isTableAtTop) {
+            // Table rows scroll up internally
+            e.preventDefault();
+            tableScrollEl.scrollTop = Math.max(
+              0,
+              tableScrollEl.scrollTop + e.deltaY
+            );
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, [hasResults, isProcessing]);
 
   // Helper to format file sizes
   const formatFileSize = (bytes: number): string => {
@@ -956,11 +1126,14 @@ export default function MyntraPicklist() {
 
   return (
     <DashboardLayout title="Myntra Picklist">
-      <div className="space-y-4 sm:space-y-6">
+      <div ref={containerRef} className="space-y-4 sm:space-y-6 pb-6 lg:pb-0">
         {/* ===================================================== */}
         {/* HEADER SECTION matching Amazon Order Process */}
         {/* ===================================================== */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div
+          ref={headerCardRef}
+          className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm shrink-0"
+        >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5 min-w-0 max-w-2xl">
               <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
@@ -1017,9 +1190,9 @@ export default function MyntraPicklist() {
 
           {/* Persistent Warning Banner identical to Amazon Order Process */}
           {hasResults && missingMyntraSkus.length > 0 && (
-            <div className="mt-5 rounded-2xl sm:rounded-3xl border border-rose-300 dark:border-rose-900/50 bg-rose-50/90 dark:bg-rose-950/20 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="mt-5 rounded-2xl sm:rounded-3xl border border-rose-300 dark:border-rose-500/30 bg-transparent p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/40">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-transparent text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-500/40">
                   <ShieldAlert className="h-5 w-5 animate-pulse" />
                 </div>
                 <div>
@@ -1039,76 +1212,6 @@ export default function MyntraPicklist() {
                 <Lock className="h-3.5 w-3.5" />
                 <span>Resolve Missing SKUs ({missingMyntraSkus.length})</span>
               </button>
-            </div>
-          )}
-
-          {/* KPI Stats Cards */}
-          {hasResults && (
-            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 border-t border-[#E7E0D2] dark:border-white/[0.08] pt-5 sm:pt-6">
-              {/* Total Orders */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Orders</p>
-                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
-                    {summary.totalOrders.toLocaleString()}
-                  </h3>
-                  <span className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-400">
-                    Orders
-                  </span>
-                </div>
-              </article>
-
-              {/* Total Units */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Units</p>
-                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
-                    {summary.totalUnits.toLocaleString()}
-                  </h3>
-                  <span className="rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-400">
-                    Units
-                  </span>
-                </div>
-              </article>
-
-              {/* Unique SKUs */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unique SKUs</p>
-                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
-                    {summary.uniqueSkus.toLocaleString()}
-                  </h3>
-                  <span className="rounded-xl border border-amber-200/60 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-400">
-                    SKUs
-                  </span>
-                </div>
-              </article>
-
-              {/* Matched SKUs */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Matched SKUs</p>
-                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400">
-                    {summary.matchedSkus.toLocaleString()}
-                  </h3>
-                  <span className="rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                    Matched
-                  </span>
-                </div>
-              </article>
-
-              {/* Unmatched SKUs */}
-              <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between col-span-2 sm:col-span-1">
-                <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unmatched SKUs</p>
-                <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
-                  <h3 className="text-2xl sm:text-3xl font-black text-rose-700 dark:text-rose-400">
-                    {summary.unmatchedSkus.toLocaleString()}
-                  </h3>
-                  <span className="rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-400">
-                    Unmatched
-                  </span>
-                </div>
-              </article>
             </div>
           )}
         </div>
@@ -1353,12 +1456,90 @@ export default function MyntraPicklist() {
         )}
 
         {/* ===================================================== */}
-        {/* RESULTS SECTION: Interactive Table Preview */}
+        {/* RESULTS SECTION: Interactive Table Preview & KPI Cards */}
         {/* ===================================================== */}
         {hasResults && !isProcessing && (
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm space-y-4">
-            {/* Table Toolbar: Search (Left) & Filter Tabs (Right) */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#E7E0D2] dark:border-white/[0.08]">
+          <div
+            ref={lowerSectionRef}
+            className="flex flex-col gap-4 sm:gap-6 min-h-0"
+            style={{
+              height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+            }}
+          >
+            {/* KPI Stats Cards */}
+            <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm shrink-0">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                {/* Total Orders */}
+                <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Orders</p>
+                  <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                    <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
+                      {summary.totalOrders.toLocaleString()}
+                    </h3>
+                    <span className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-400">
+                      Orders
+                    </span>
+                  </div>
+                </article>
+
+                {/* Total Units */}
+                <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Units</p>
+                  <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                    <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
+                      {summary.totalUnits.toLocaleString()}
+                    </h3>
+                    <span className="rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-400">
+                      Units
+                    </span>
+                  </div>
+                </article>
+
+                {/* Unique SKUs */}
+                <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unique SKUs</p>
+                  <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                    <h3 className="text-2xl sm:text-3xl font-black text-[#0A0E1A] dark:text-white">
+                      {summary.uniqueSkus.toLocaleString()}
+                    </h3>
+                    <span className="rounded-xl border border-amber-200/60 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-400">
+                      SKUs
+                    </span>
+                  </div>
+                </article>
+
+                {/* Matched SKUs */}
+                <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Matched SKUs</p>
+                  <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                    <h3 className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400">
+                      {summary.matchedSkus.toLocaleString()}
+                    </h3>
+                    <span className="rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-transparent px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                      Matched
+                    </span>
+                  </div>
+                </article>
+
+                {/* Unmatched SKUs */}
+                <article className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] p-4 sm:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-[#E8C16D]/40 dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between col-span-2 sm:col-span-1">
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unmatched SKUs</p>
+                  <div className="mt-3 sm:mt-4 flex items-end justify-between gap-2">
+                    <h3 className="text-2xl sm:text-3xl font-black text-rose-700 dark:text-rose-400">
+                      {summary.unmatchedSkus.toLocaleString()}
+                    </h3>
+                    <span className="rounded-xl border border-rose-300 dark:border-rose-500/30 bg-transparent px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-400">
+                      Unmatched
+                    </span>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            {/* Results Table Card */}
+            <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm flex-1 min-h-0 flex flex-col">
+              {/* Table Toolbar: Search (Left) & Filter Tabs (Right) */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#E7E0D2] dark:border-white/[0.08] shrink-0">
               {/* Search Box (Left) */}
               <div className="group flex items-center gap-2.5 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 h-11 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:focus-within:bg-[#080B11] w-full sm:w-80 md:w-96">
                 <div className="grid h-6 w-6 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] shrink-0 border border-[#E8C16D]/30">
@@ -1432,8 +1613,8 @@ export default function MyntraPicklist() {
                     <span
                       className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
                         statusFilter === "MATCHED"
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40"
+                          ? "bg-[#FFF9EC]/15 text-[#E8C16D]"
+                          : "bg-transparent text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30"
                       }`}
                     >
                       {summary.matchedSkus}
@@ -1456,8 +1637,8 @@ export default function MyntraPicklist() {
                     <span
                       className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
                         statusFilter === "UNMATCHED"
-                          ? "bg-rose-500/20 text-rose-300"
-                          : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40"
+                          ? "bg-[#FFF9EC]/15 text-[#E8C16D]"
+                          : "bg-transparent text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30"
                       }`}
                     >
                       {summary.unmatchedSkus}
@@ -1469,7 +1650,7 @@ export default function MyntraPicklist() {
                   <button
                     type="button"
                     onClick={() => setIsMissingSkuModalOpen(true)}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-rose-300 dark:border-rose-500/30 bg-transparent hover:bg-slate-50 dark:hover:bg-white/[0.04] text-rose-600 dark:text-rose-400 px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                     title="Click to view Myntra SKUs missing Seller SKU in database"
                   >
                     <span className="whitespace-nowrap">Missing Sku ({missingMyntraSkus.length})</span>
@@ -1479,10 +1660,14 @@ export default function MyntraPicklist() {
             </div>
 
             {/* Table View */}
-            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col">
-              <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="mt-4 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex-1 min-h-0 flex flex-col">
+              <div
+                ref={tableScrollRef}
+                className="w-full flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scrollbar"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
                 <table className="w-full min-w-[750px] border-collapse text-left font-sans">
-                  <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
+                  <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none shadow-xs">
                     <tr>
                       <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[120px]">Rack</th>
                       <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[160px]">Seller SKU</th>
@@ -1508,9 +1693,7 @@ export default function MyntraPicklist() {
                       paginatedItems.map((item) => (
                         <tr
                           key={item.id}
-                          className={`transition-colors ${
-                            item.status === "UNMATCHED" ? "bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-50/70 dark:hover:bg-rose-950/40" : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
-                          }`}
+                          className="transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.04]"
                         >
                           {/* Rack Badge */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
@@ -1571,11 +1754,11 @@ export default function MyntraPicklist() {
                           {/* Status Badge */}
                           <td className="px-3 sm:px-4 py-3.5 text-center">
                             {item.status === "MATCHED" ? (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-transparent px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Matched
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40">
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-transparent px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30">
                                 <AlertCircle className="h-3.5 w-3.5" /> Unmatched
                               </span>
                             )}
@@ -1589,24 +1772,27 @@ export default function MyntraPicklist() {
 
               {/* Footer Pagination Bar */}
               {filteredItems.length > 0 && (
-                <Pagination
-                  page={currentPage}
-                  totalPages={totalPages}
-                  total={filteredItems.length}
-                  limit={itemsPerPage}
-                  itemName="records"
-                  variant="dark"
-                  className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 py-3.5 sm:py-4 mt-auto border-t border-[#F1E8D0] dark:border-white/[0.08]"
-                  onPageChange={setCurrentPage}
-                  onLimitChange={(newLimit) => {
-                    setItemsPerPage(newLimit);
-                    setCurrentPage(1);
-                  }}
-                />
+                <div className="shrink-0">
+                  <Pagination
+                    page={currentPage}
+                    totalPages={totalPages}
+                    total={filteredItems.length}
+                    limit={itemsPerPage}
+                    itemName="records"
+                    variant="dark"
+                    className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 py-3.5 sm:py-4 mt-auto border-t border-[#F1E8D0] dark:border-white/[0.08]"
+                    onPageChange={setCurrentPage}
+                    onLimitChange={(newLimit) => {
+                      setItemsPerPage(newLimit);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
               )}
             </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
 
       {/* Real-time Processing Progress Modal */}

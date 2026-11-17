@@ -15,6 +15,9 @@ interface WebstoreTableViewProps {
   filters: WebstoreFilterState;
   onSortToggle: (field: string) => void;
   pagination?: React.ReactNode;
+  maxHeight?: number | null;
+  isDesktop?: boolean;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function WebstoreTableView({
@@ -27,6 +30,9 @@ export default function WebstoreTableView({
   filters,
   onSortToggle,
   pagination,
+  maxHeight,
+  isDesktop = false,
+  scrollRef,
 }: WebstoreTableViewProps) {
   const columns = [
     { key: "code", label: "Code", width: "w-20" },
@@ -55,10 +61,15 @@ export default function WebstoreTableView({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
-      <div className="overflow-x-auto">
+    <div
+      style={{
+        maxHeight: maxHeight && isDesktop ? `${maxHeight}px` : undefined,
+      }}
+      className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col"
+    >
+      <div ref={scrollRef} className="overflow-auto custom-scrollbar flex-1">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
+          <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none">
             <tr>
               {columns.map((col) => {
                 const isSortable = col.key !== "actions" && col.key !== "code";
@@ -78,7 +89,7 @@ export default function WebstoreTableView({
                         <span>{col.label}</span>
                         <ArrowUpDown
                           className={`h-3 w-3 ${
-                            isSorted ? "opacity-100 text-[#6A4D1D] dark:text-[#F5C451]" : "opacity-40"
+                            isSorted ? "opacity-100 text-[#B88728] dark:text-[#F5C451]" : "opacity-40"
                           }`}
                         />
                       </button>
@@ -205,7 +216,7 @@ export default function WebstoreTableView({
           </tbody>
         </table>
       </div>
-      {pagination}
+      {pagination && <div className="shrink-0">{pagination}</div>}
     </div>
   );
 }

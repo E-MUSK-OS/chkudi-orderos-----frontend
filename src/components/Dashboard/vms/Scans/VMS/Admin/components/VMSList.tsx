@@ -26,7 +26,11 @@ const getFullUrl = (url?: string | null) => {
   return `${API_BASE_URL}${url}`;
 };
 
-const VMSList = () => {
+interface VMSListProps {
+  tableContainerRef?: React.RefObject<HTMLDivElement | null>;
+}
+
+const VMSList: React.FC<VMSListProps> = ({ tableContainerRef }) => {
   // ===========================
   // API
   // ===========================
@@ -311,7 +315,7 @@ const VMSList = () => {
   // ===========================
 
   return (
-    <>
+    <div className="lg:h-full flex flex-col gap-6">
       <Toolbar
         search={search}
         onSearchChange={setSearch}
@@ -331,27 +335,30 @@ const VMSList = () => {
         onDownload={handleDownload}
       />
 
-      <DataTable
-        columns={columns}
-        data={paginatedData}
-        loading={loading}
-        pagination={
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            totalRecords={totalRecords}
-            total={totalRecords}
-            limit={limit}
-            pageSize={limit}
-            itemName="records"
-            variant="light"
-            className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
-            onPageChange={setPage}
-            onPageSizeChange={setLimit}
-            onLimitChange={setLimit}
-          />
-        }
-      />
+      <div className="lg:flex-1 lg:min-h-0 flex flex-col">
+        <DataTable
+          columns={columns}
+          data={paginatedData}
+          loading={loading}
+          tableContainerRef={tableContainerRef}
+          pagination={
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              total={totalRecords}
+              limit={limit}
+              pageSize={limit}
+              itemName="records"
+              variant="light"
+              className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+              onPageChange={setPage}
+              onPageSizeChange={setLimit}
+              onLimitChange={setLimit}
+            />
+          }
+        />
+      </div>
 
       <PreviewDialog
         open={previewOpen}
@@ -377,7 +384,7 @@ const VMSList = () => {
           setSelectedItem(null);
         }}
       />
-    </>
+    </div>
   );
 };
 

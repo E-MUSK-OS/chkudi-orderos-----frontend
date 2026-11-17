@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Edit, Trash2, Store } from "lucide-react";
 import { Account } from "../types/account";
 import Pagination from "@/components/ui/Pagination";
@@ -10,6 +10,7 @@ interface Props {
   loading?: boolean;
   onEdit: (account: Account) => void;
   onDelete: (account: Account) => void;
+  tableContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const AccountTable: React.FC<Props> = ({
@@ -17,13 +18,21 @@ const AccountTable: React.FC<Props> = ({
   loading = false,
   onEdit,
   onDelete,
+  tableContainerRef,
 }) => {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const resolvedRef = tableContainerRef || internalRef;
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
   const total = accounts.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const startIndex = total === 0 ? 0 : (page - 1) * limit;
+
+  useEffect(() => {
+    resolvedRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page, resolvedRef]);
 
   useEffect(() => {
     if (page > totalPages) {
@@ -56,10 +65,14 @@ const AccountTable: React.FC<Props> = ({
   }
 
   return (
-    <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col justify-between">
-      <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+    <div className="flex flex-col min-h-0 max-h-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
+      <div
+        ref={resolvedRef}
+        className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         <table className="w-full min-w-[600px] border-collapse text-left font-sans">
-          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
+          <thead className="sticky top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-[0_1px_0_0_#F5E6BE] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.08)]">
             <tr>
               <th className="px-5 py-3.5 sm:py-4 text-left font-semibold">
                 Account Name
@@ -114,7 +127,7 @@ const AccountTable: React.FC<Props> = ({
         itemName="accounts"
         isLoading={loading}
         variant="dark"
-        className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+        className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
         onPageChange={setPage}
         onLimitChange={(newLimit) => {
           setLimit(newLimit);

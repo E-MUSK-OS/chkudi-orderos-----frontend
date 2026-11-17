@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Plus, Save, ArrowLeft, FileSpreadsheet, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Save, ArrowLeft, FileSpreadsheet, Download, Upload } from "lucide-react";
 import DownloadDropdown, { DownloadOption } from "@/components/ui/DownloadDropdown";
 
 interface ChallanHeaderProps {
@@ -23,6 +24,7 @@ export default function ChallanHeader({
   onDownloadSkuWise,
   saving = false,
 }: ChallanHeaderProps) {
+  const router = useRouter();
   const downloadOptions: DownloadOption[] = [
     ...(onDownloadAll
       ? [
@@ -80,6 +82,15 @@ export default function ChallanHeader({
                   label="Download"
                 />
               )}
+
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/settings/upload-excel?tab=salesChallan")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer min-h-[40px] sm:min-h-[44px]"
+              >
+                <Upload size={16} className="text-[#B88728] dark:text-[#E8C16D]" />
+                <span>Import from Excelsheet</span>
+              </button>
 
               <button
                 type="button"

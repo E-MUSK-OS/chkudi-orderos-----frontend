@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, FileDown, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface DownloadOption {
@@ -16,6 +16,7 @@ export interface DownloadDropdownProps {
   className?: string;
   buttonClassName?: string;
   menuClassName?: string;
+  align?: "left" | "right" | "auto";
 }
 
 export default function DownloadDropdown({
@@ -24,10 +25,19 @@ export default function DownloadDropdown({
   className = "",
   buttonClassName = "",
   menuClassName = "",
+  align = "auto",
 }: DownloadDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({
+    position: "absolute",
+    top: "100%",
+    right: 0,
+    marginTop: "6px",
+    zIndex: 60,
+    width: "max-content",
+    minWidth: "190px",
+  });
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -80,7 +90,7 @@ export default function DownloadDropdown({
 
       const style: React.CSSProperties = {
         position: "absolute",
-        zIndex: 50,
+        zIndex: 60,
         width: "max-content",
         minWidth: `${Math.min(190, maxAvailableWidth)}px`,
         maxWidth: `${maxAvailableWidth}px`,
@@ -96,16 +106,27 @@ export default function DownloadDropdown({
         style.marginTop = "6px";
       }
 
-      if (fitsRight) {
-        style.left = 0;
-        style.right = "auto";
-      } else if (fitsLeft) {
+      if (align === "right") {
         style.right = 0;
         style.left = "auto";
-      } else {
-        const offsetLeft = Math.max(12 - rect.left, -rect.left);
-        style.left = `${offsetLeft}px`;
+      } else if (align === "left") {
+        style.left = 0;
         style.right = "auto";
+      } else {
+        if (fitsLeft && !fitsRight) {
+          style.right = 0;
+          style.left = "auto";
+        } else if (fitsRight) {
+          style.left = 0;
+          style.right = "auto";
+        } else if (fitsLeft) {
+          style.right = 0;
+          style.left = "auto";
+        } else {
+          const offsetLeft = Math.max(12 - rect.left, -rect.left);
+          style.left = `${offsetLeft}px`;
+          style.right = "auto";
+        }
       }
 
       setPanelStyle(style);
@@ -118,7 +139,7 @@ export default function DownloadDropdown({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [isOpen, options.length]);
+  }, [isOpen, options.length, align]);
 
   if (!options || options.length === 0) return null;
 
@@ -131,7 +152,7 @@ export default function DownloadDropdown({
         className
       )}
     >
-      {/* Trigger Button - Matching Amazon Order Process Combined Matched PDF theme */}
+      {/* Trigger Button - Matching OrderOS Theme Header Action Buttons */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
@@ -139,26 +160,27 @@ export default function DownloadDropdown({
         aria-haspopup="true"
         className={cn(
           "inline-flex items-center justify-between gap-2 rounded-2xl border px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer shrink-0 min-h-[40px] sm:min-h-[44px]",
-          "border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#0A0E1A] text-[#6A4D1D] dark:text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#111726] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98]",
-          isOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D]/30",
+          "border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98]",
+          isOpen && "border-[#E8C16D] ring-2 ring-[#E8C16D] dark:border-[#E8C16D] dark:ring-[#E8C16D]/30",
           buttonClassName
         )}
       >
+        <FileDown className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D] shrink-0" />
         <span className="truncate">{label}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-[#6A4D1D] dark:text-[#E8C16D] transition-transform duration-200 shrink-0",
+            "h-4 w-4 text-[#B88728] dark:text-[#E8C16D] transition-transform duration-200 shrink-0",
             isOpen && "rotate-180"
           )}
         />
       </button>
 
-      {/* Menu Panel - Golden Text matching our theme, responsive on all devices */}
+      {/* Menu Panel - Styled exactly like ThemeSelectDropdown & ProfileDropdown */}
       {isOpen && (
         <div
           style={panelStyle}
           className={cn(
-            "rounded-2xl border border-white/[0.12] bg-[#0A0E1A] p-1.5 shadow-2xl ring-1 ring-black/40 animate-in fade-in-0 zoom-in-95 duration-100 select-none overflow-hidden",
+            "rounded-2xl border border-[#F5E6BE] bg-[#FEFAEE] p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-2xl animate-in fade-in-0 zoom-in-95 duration-100 select-none overflow-hidden z-50",
             menuClassName
           )}
         >
@@ -171,9 +193,10 @@ export default function DownloadDropdown({
                   setIsOpen(false);
                   opt.onClick();
                 }}
-                className="w-full text-left px-3.5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold text-[#E8C16D] hover:text-[#FFF8E7] hover:bg-[#161D2E] active:bg-[#1F273D] transition-colors cursor-pointer whitespace-nowrap min-h-[38px] sm:min-h-[42px] flex items-center"
+                className="w-full text-left px-3.5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold text-[#6A4D1D] hover:bg-[#FDF2D1] hover:text-[#0A0E1A] active:bg-[#F7E7BE] dark:text-slate-200 dark:hover:bg-white/[0.08] dark:hover:text-[#F5C451] dark:active:bg-white/[0.12] transition-colors cursor-pointer whitespace-nowrap min-h-[38px] sm:min-h-[42px] flex items-center gap-2.5"
               >
-                <span>{opt.label}</span>
+                <FileSpreadsheet className="h-4 w-4 text-[#B88728] dark:text-[#E8C16D] shrink-0" />
+                <span className="truncate">{opt.label}</span>
               </button>
             ))}
           </div>

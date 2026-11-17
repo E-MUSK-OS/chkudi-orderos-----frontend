@@ -99,20 +99,20 @@ export default function FieldGroupsPanel({
       {/* Field Groups Table */}
       <div className="flex-1 overflow-y-auto max-h-[600px] divide-y divide-[#E7E0D2]/60 dark:divide-white/[0.04]">
         {/* Table Header with interactive sort toggle and reset */}
-        <div className="grid grid-cols-12 px-3.5 py-3 bg-[#0A0E1A] dark:bg-[#080B11] text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#E8C16D] border-b border-[#E7E0D2] dark:border-white/[0.08] sticky top-0 z-10 select-none">
+        <div className="grid grid-cols-12 px-3.5 py-3 bg-[#FEFAEE] dark:bg-[#080B11] text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] sticky top-0 z-10 select-none shadow-xs">
           <div className="col-span-2 text-center">No.</div>
           <div className="col-span-10 flex items-center justify-between pr-2">
             <button
               type="button"
               onClick={handleToggleSort}
-              className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group text-left"
+              className="inline-flex items-center gap-1.5 hover:text-[#0A0E1A] dark:hover:text-white transition-colors cursor-pointer group text-left"
               title={`Sorted ${sortOrder === "asc" ? "A-Z (Click for Z-A)" : "Z-A (Click for A-Z)"}`}
             >
               <span>Field Groups</span>
               {sortOrder === "asc" ? (
-                <ArrowDownAZ className="h-3.5 w-3.5 text-[#E8C16D] group-hover:text-white transition-colors shrink-0" />
+                <ArrowDownAZ className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
               ) : (
-                <ArrowUpZA className="h-3.5 w-3.5 text-[#E8C16D] group-hover:text-white transition-colors shrink-0" />
+                <ArrowUpZA className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D] group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors shrink-0" />
               )}
               <span className="text-[10px] font-normal normal-case opacity-75">
                 ({sortOrder === "asc" ? "A-Z" : "Z-A"})
@@ -123,7 +123,7 @@ export default function FieldGroupsPanel({
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center gap-1 text-[10px] normal-case font-semibold text-slate-400 hover:text-[#E8C16D] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[10px] normal-case font-semibold text-slate-500 hover:text-[#B88728] dark:text-slate-400 dark:hover:text-[#E8C16D] transition-colors cursor-pointer"
                 title="Reset to default (A-Z)"
               >
                 <RotateCcw className="h-3 w-3" />

@@ -25,6 +25,7 @@ interface ReactSelectProps extends Props<
   optionTextColor?: string;
   borderRadius?: number;
   height?: number;
+  indicatorColor?: string;
 }
 
 const emptySubscribe = () => () => {};
@@ -41,6 +42,7 @@ export default function ReactSelect({
   optionTextColor,
   borderRadius = 16,
   height = 44,
+  indicatorColor,
   ...props
 }: ReactSelectProps) {
   const isMounted = useSyncExternalStore(
@@ -155,10 +157,10 @@ export default function ReactSelect({
 
     dropdownIndicator: (base) => ({
       ...base,
-      color: isDark ? "#94A3B8" : resolvedTextColor,
+      color: indicatorColor ?? (isDark ? "#94A3B8" : resolvedTextColor),
       transition: "color 150ms ease",
       "&:hover": {
-        color: isDark ? "#F5C451" : "#B88728",
+        color: isDark ? "#F5C451" : indicatorColor ?? "#B88728",
       },
     }),
 

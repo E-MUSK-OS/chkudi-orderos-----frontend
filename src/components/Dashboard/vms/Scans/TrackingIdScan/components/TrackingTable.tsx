@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CheckCircle2, Clock, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 import type { VMSItem } from "../../VMS/Admin/types";
@@ -14,6 +14,7 @@ interface Props {
   limit: number;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
+  tableContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function TrackingTable({
@@ -24,8 +25,11 @@ export default function TrackingTable({
   limit,
   onPageChange,
   onLimitChange,
+  tableContainerRef,
 }: Props) {
   const [mounted, setMounted] = useState(false);
+  const internalRef = useRef<HTMLDivElement>(null);
+  const resolvedRef = tableContainerRef || internalRef;
 
   useEffect(() => {
     setMounted(true);
@@ -35,10 +39,14 @@ export default function TrackingTable({
   const startIndex = total === 0 ? 0 : (page - 1) * limit;
   const endIndex = Math.min(startIndex + limit, total);
 
+  useEffect(() => {
+    resolvedRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page, limit, data, resolvedRef]);
+
   // Prevent hydration mismatch between server-rendered HTML and client
   if (!mounted) {
     return (
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
+      <div className="lg:h-full flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
         <div className="flex h-64 items-center justify-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-medium gap-2">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
           <span>Loading Tracking records...</span>
@@ -48,17 +56,21 @@ export default function TrackingTable({
   }
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
-      <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-        <table className="w-full min-w-[950px] border-collapse text-left font-sans">
-          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
+    <div className="lg:h-full flex flex-col lg:min-h-0 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
+      <div
+        ref={resolvedRef}
+        className="w-full overflow-x-auto lg:flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        <table className="w-full min-w-[950px] border-collapse text-left font-sans relative">
+          <thead className="lg:sticky lg:top-0 z-10 text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] shadow-xs">
             <tr>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Tracking ID</th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Date</th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Time</th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Operator</th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Account</th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Scan Status</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">Tracking ID</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">Date</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">Time</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">Operator</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">Account</th>
+              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">Scan Status</th>
             </tr>
           </thead>
 
@@ -100,9 +112,7 @@ export default function TrackingTable({
                 return (
                   <tr
                     key={item.id}
-                    className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.06] ${
-                      isScanned ? "bg-emerald-50/20 dark:bg-emerald-950/20" : ""
-                    }`}
+                    className="transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
                   >
                     {/* Tracking ID */}
                     <td className="px-4 py-3.5 text-center font-mono font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap tracking-wider text-xs sm:text-sm">
@@ -132,12 +142,12 @@ export default function TrackingTable({
                     {/* Scan Status */}
                     <td className="px-4 py-3.5 text-center whitespace-nowrap">
                       {isScanned ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 dark:border-emerald-500/30 bg-transparent px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                           <span>SCANNED</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 dark:border-amber-500/30 bg-transparent px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-400">
                           <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />
                           <span>PENDING</span>
                         </span>
@@ -152,21 +162,23 @@ export default function TrackingTable({
       </div>
 
       {/* Pagination Bar */}
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        limit={limit}
-        itemName="records"
-        isLoading={isLoading}
-        variant="dark"
-        className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
-        onPageChange={onPageChange}
-        onLimitChange={(newLimit) => {
-          onLimitChange(newLimit);
-          onPageChange(1);
-        }}
-      />
+      <div className="shrink-0">
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          itemName="records"
+          isLoading={isLoading}
+          variant="dark"
+          className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+          onPageChange={onPageChange}
+          onLimitChange={(newLimit) => {
+            onLimitChange(newLimit);
+            onPageChange(1);
+          }}
+        />
+      </div>
     </div>
   );
 }

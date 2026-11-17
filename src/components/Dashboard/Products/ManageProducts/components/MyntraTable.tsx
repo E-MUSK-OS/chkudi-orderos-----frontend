@@ -9,6 +9,7 @@ interface Props {
   isLoading?: boolean;
   onEdit: (item: MyntraImportItem) => void;
   onDelete: (id: string) => void;
+  tableWrapperClassName?: string;
 }
 
 export default function MyntraTable({
@@ -16,6 +17,7 @@ export default function MyntraTable({
   isLoading = false,
   onEdit,
   onDelete,
+  tableWrapperClassName,
 }: Props) {
   if (!isLoading && items.length === 0) {
     return (
@@ -34,9 +36,12 @@ export default function MyntraTable({
   }
 
   return (
-    <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+    <div
+      className={tableWrapperClassName || "w-full overflow-x-auto"}
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
       <table className="w-full min-w-[850px] lg:min-w-[1000px] border-collapse text-left font-sans">
-        <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
+        <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">
           <tr>
             <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px]">
               Rack Address

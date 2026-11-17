@@ -64,6 +64,112 @@ export default function PurchaseInvoicePage() {
   const filtersRef = useRef(filters);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Scroll & Height coordinator for List View
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerContainerRef = useRef<HTMLDivElement>(null);
+  const filtersContainerRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Calculate table max height so "Purchase Invoice" header + filters remain fixed and only table scrolls
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const isLg = window.innerWidth >= 1024;
+    setIsDesktop(isLg);
+    if (!isLg || viewMode !== "list") {
+      setTableMaxHeight(null);
+      return;
+    }
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+
+    if (available > 320) {
+      const headerHeight = headerContainerRef.current?.offsetHeight || 88;
+      const filtersHeight = filtersContainerRef.current?.offsetHeight || 60;
+      const gap = 40; // 2x gap-5 (20px each)
+      const maxForTable = available - headerHeight - filtersHeight - gap;
+      if (maxForTable > 150) {
+        setTableMaxHeight(Math.floor(maxForTable));
+      }
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [invoices.length, calculateHeight]);
+
+  // Lock outer scroll at top in list mode and forward wheel outside table to table rows
+  useEffect(() => {
+    if (viewMode !== "list") return;
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      const tableContainer = tableContainerRef.current;
+
+      const isOverTable =
+        tableContainer &&
+        (e.composedPath().includes(tableContainer) ||
+          tableContainer.contains(e.target as Node));
+
+      if (!isOverTable && tableContainer) {
+        tableContainer.scrollTop += e.deltaY;
+      }
+
+      if (scrollContainer.scrollTop !== 0) {
+        scrollContainer.scrollTop = 0;
+      }
+    };
+
+    const onScroll = () => {
+      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
+        scrollContainer.scrollTop = 0;
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
+    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+      scrollContainer.removeEventListener("scroll", onScroll);
+    };
+  }, [viewMode]);
+
   // Form View State
   const [activeInvoice, setActiveInvoice] = useState<PurchaseInvoice | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<PurchaseInvoice | null>(null);
@@ -688,52 +794,71 @@ export default function PurchaseInvoicePage() {
 
   return (
     <DashboardLayout title="Purchase Invoice">
-      <div className="space-y-4 sm:space-y-5 pb-12 max-w-[1700px] mx-auto">
+      <div
+        ref={containerRef}
+        className={
+          viewMode === "list"
+            ? "flex flex-col gap-4 sm:gap-5 max-w-[1700px] mx-auto min-h-0"
+            : "space-y-4 sm:space-y-5 pb-12 max-w-[1700px] mx-auto"
+        }
+      >
         {viewMode === "list" ? (
           <>
             {/* List Header */}
-            <PurchaseInvoiceListHeader
-              onAddNew={handleResetToNew}
-              onDownloadDetail={handleDownloadDetail}
-              onDownloadAll={handleDownloadAll}
-              onDownloadSummary={handleDownloadAll}
-              onDownloadSkuWise={handleDownloadSkuWise}
-              onDownloadTally={handleDownloadTally}
-              onCloseInvoice={() => router.push("/dashboard/purchase/finish-goods/challan")}
-            />
+            <div ref={headerContainerRef} className="shrink-0">
+              <PurchaseInvoiceListHeader
+                onAddNew={handleResetToNew}
+                onDownloadDetail={handleDownloadDetail}
+                onDownloadAll={handleDownloadAll}
+                onDownloadSummary={handleDownloadAll}
+                onDownloadSkuWise={handleDownloadSkuWise}
+                onDownloadTally={handleDownloadTally}
+                onCloseInvoice={() => router.push("/dashboard/purchase/finish-goods/challan")}
+              />
+            </div>
 
             {/* Filters */}
-            <PurchaseInvoiceFilters
-              filters={filters}
-              onChange={handleFilterChange}
-              onDateRangeChange={handleDateRangeChange}
-              onSearch={handleFilterSearch}
-              onReset={handleFilterReset}
-            />
+            <div ref={filtersContainerRef} className="shrink-0">
+              <PurchaseInvoiceFilters
+                filters={filters}
+                onChange={handleFilterChange}
+                onDateRangeChange={handleDateRangeChange}
+                onSearch={handleFilterSearch}
+                onReset={handleFilterReset}
+              />
+            </div>
 
             {/* Table */}
-            <PurchaseInvoiceTable
-              invoices={invoices}
-              loading={listLoading}
-              selectedIds={selectedInvoiceIds}
-              onSelectionChange={setSelectedInvoiceIds}
-              onEdit={(inv) => populateFromInvoice(inv)}
-              onDelete={handleDeleteClick}
-              onCreditNote={(inv) => {
-                populateFromInvoice(inv);
-                toast.info(`Editing invoice #${inv.invoiceNo}`);
+            <div
+              className="flex flex-col min-h-0"
+              style={{
+                maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
               }}
-              onPrint={() => {
-                window.print();
-              }}
-              onPrintMultiple={(ids) => {
-                if (ids.length === 0) {
-                  toast.info("Please select at least one invoice to print.");
-                  return;
-                }
-                window.print();
-              }}
-            />
+            >
+              <PurchaseInvoiceTable
+                invoices={invoices}
+                loading={listLoading}
+                tableContainerRef={tableContainerRef}
+                selectedIds={selectedInvoiceIds}
+                onSelectionChange={setSelectedInvoiceIds}
+                onEdit={(inv) => populateFromInvoice(inv)}
+                onDelete={handleDeleteClick}
+                onCreditNote={(inv) => {
+                  populateFromInvoice(inv);
+                  toast.info(`Editing invoice #${inv.invoiceNo}`);
+                }}
+                onPrint={() => {
+                  window.print();
+                }}
+                onPrintMultiple={(ids) => {
+                  if (ids.length === 0) {
+                    toast.info("Please select at least one invoice to print.");
+                    return;
+                  }
+                  window.print();
+                }}
+              />
+            </div>
           </>
         ) : (
           <>

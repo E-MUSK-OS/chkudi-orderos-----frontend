@@ -33,12 +33,14 @@ type OperatorFormProps =
       mode: "create";
       operator?: never;
       loading?: boolean;
+      onClose?: () => void;
       onSubmit: (data: CreateOperatorPayload) => void | Promise<void>;
     }
   | {
       mode: "update";
       operator: Operator | null;
       loading?: boolean;
+      onClose?: () => void;
       onSubmit: (data: UpdateOperatorPayload) => void | Promise<void>;
     };
 
@@ -46,6 +48,7 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
   mode,
   operator,
   loading = false,
+  onClose,
   onSubmit,
 }) => {
   const form = useForm<any>({
@@ -134,7 +137,17 @@ const OperatorForm: React.FC<OperatorFormProps> = ({
         </div>
       )}
 
-      <div className="flex items-center justify-end pt-2 w-full">
+      <div className="flex items-center justify-end gap-3 pt-2 w-full">
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="w-full sm:w-auto px-5 min-h-[42px] sm:min-h-[44px] h-11 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-[#FEFAEE] hover:text-[#6A4D1D] hover:border-[#E8C16D] dark:hover:bg-white/[0.08] dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+        )}
         <Button
           type="submit"
           loading={loading}

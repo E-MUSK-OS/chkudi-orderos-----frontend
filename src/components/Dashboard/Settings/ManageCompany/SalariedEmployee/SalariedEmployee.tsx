@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import SalariedEmployeeHeader from "./components/SalariedEmployeeHeader";
 import SalariedEmployeeFilterBar from "./components/SalariedEmployeeFilterBar";
@@ -58,6 +58,119 @@ export default function SalariedEmployee() {
     bankDetails: true,
     basicSalary: true,
   });
+
+  // Scroll & Height coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Calculate available height on desktop (>= 1024px)
+  // so the table takes only the height needed for available records,
+  // up to the available viewport space, and scrolls internally if there are more records.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      setTableMaxHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+      const headerHeight = headerCardRef.current?.offsetHeight || 88;
+      const filterBarHeight = filterBarRef.current?.offsetHeight || 60;
+      const gap = 32; // 2x gap-4 (16px each)
+      const maxForTable = available - headerHeight - filterBarHeight - gap;
+      if (maxForTable > 150) {
+        setTableMaxHeight(Math.floor(maxForTable));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [employees.length, calculateHeight]);
+
+  // Lock outer scroll at header position on desktop:
+  // Since this page has Header Card + Filter Bar + Table, the Header Card stays fixed at the top,
+  // outer page does not scroll, and scrolling forwards to the internal table.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      scrollContainer.scrollTop = 0;
+
+      const tableContainer = tableContainerRef.current;
+      if (!tableContainer) return;
+
+      // If wheel occurred over the header card or filter bar, scroll the table internally
+      if (!e.composedPath().includes(tableContainer) && !tableContainer.contains(e.target as Node)) {
+        tableContainer.scrollTop += e.deltaY;
+      }
+    };
+
+    const onScroll = () => {
+      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
+        scrollContainer.scrollTop = 0;
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
+    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+      scrollContainer.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -173,44 +286,62 @@ export default function SalariedEmployee() {
 
   return (
     <DashboardLayout title="Salaried Employee">
-      <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8">
+      <div
+        ref={containerRef}
+        className="w-full flex flex-col gap-4 font-sans text-slate-900 dark:text-slate-100 min-h-0"
+        style={{
+          maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+        }}
+      >
         {/* Header matching Employee Profile style */}
-        <SalariedEmployeeHeader
-          onDownloadTemplate={handleDownloadTemplate}
-          onUploadClick={() => setIsUploadModalOpen(true)}
-        />
+        <div ref={headerCardRef} className="shrink-0">
+          <SalariedEmployeeHeader
+            onDownloadTemplate={handleDownloadTemplate}
+            onUploadClick={() => setIsUploadModalOpen(true)}
+          />
+        </div>
 
         {/* Filter Bar */}
-        <SalariedEmployeeFilterBar
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onResetFilters={handleResetFilters}
-          visibleColumns={visibleColumns}
-          onToggleColumn={handleToggleColumn}
-          availableColumns={AVAILABLE_COLUMNS}
-        />
+        <div ref={filterBarRef} className="shrink-0">
+          <SalariedEmployeeFilterBar
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onResetFilters={handleResetFilters}
+            visibleColumns={visibleColumns}
+            onToggleColumn={handleToggleColumn}
+            availableColumns={AVAILABLE_COLUMNS}
+          />
+        </div>
 
         {/* Salaried Employees Table */}
-        <SalariedEmployeeTable
-          employees={employees}
-          loading={loading}
-          selectedIds={selectedIds}
-          onToggleSelect={handleToggleSelect}
-          onToggleSelectAll={handleToggleSelectAll}
-          visibleColumns={visibleColumns}
-          currentPage={filters.page}
-          pageSize={filters.pageSize}
-          pagination={
-            <SalariedEmployeePagination
-              currentPage={filters.page}
-              totalPages={totalPages}
-              totalRecords={totalRecords}
-              pageSize={filters.pageSize}
-              onPageChange={(page) => handleFilterChange({ page })}
-              onPageSizeChange={(pageSize) => handleFilterChange({ pageSize, page: 1 })}
-            />
-          }
-        />
+        <div
+          className="flex flex-col min-h-0"
+          style={{
+            maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
+          }}
+        >
+          <SalariedEmployeeTable
+            employees={employees}
+            loading={loading}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onToggleSelectAll={handleToggleSelectAll}
+            visibleColumns={visibleColumns}
+            currentPage={filters.page}
+            pageSize={filters.pageSize}
+            tableContainerRef={tableContainerRef}
+            pagination={
+              <SalariedEmployeePagination
+                currentPage={filters.page}
+                totalPages={totalPages}
+                totalRecords={totalRecords}
+                pageSize={filters.pageSize}
+                onPageChange={(page) => handleFilterChange({ page })}
+                onPageSizeChange={(pageSize) => handleFilterChange({ pageSize, page: 1 })}
+              />
+            }
+          />
+        </div>
 
         {/* Upload Attendance Modal */}
         <UploadAttendanceModal

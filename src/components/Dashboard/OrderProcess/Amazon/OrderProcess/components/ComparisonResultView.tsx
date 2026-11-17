@@ -1568,6 +1568,140 @@ export default function ComparisonResultView({
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until Header & Stats Cards are hidden and stops at the fixed position (view shown in img).
+  // 2. Once at the fixed position, scrolling down over the table scrolls the table rows internally.
+  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals the Header & Stats Cards.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      const tableContainer = tableContainerRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverTable =
+        tableContainer &&
+        (e.composedPath().includes(tableContainer) ||
+          tableContainer.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the fixed view yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else if (!isOverTable) {
+          // At the fixed point and outside the table -> forward scroll to table
+          if (tableContainer) {
+            tableContainer.scrollTop += e.deltaY;
+          }
+        }
+        // If isPageAtBottom and isOverTable, allow table to scroll natively
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverTable) {
+          // Cursor is outside table -> scroll outer page up if not at top
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          // Cursor is inside table
+          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
+          if (isTableAtTop && !isPageAtTop) {
+            // Table is at top row -> scroll outer page up to reveal Header & Stats Cards
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+          // If table is not at top, allow table to scroll natively upwards
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  useEffect(() => {
+    tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page, limit]);
+
   const handleReset = () => {
     loadedPdfDocsRef.current = null;
     lastVerifiedPrinterRef.current = null;
@@ -3055,11 +3189,11 @@ export default function ComparisonResultView({
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="flex flex-col gap-6">
       {/* ===================================================== */}
       {/* AMAZON ORDER VERIFICATION RESULTS SECTION */}
       {/* ===================================================== */}
-      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+      <div className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1.5">
             <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
@@ -3131,9 +3265,19 @@ export default function ComparisonResultView({
       </div>
 
       {/* ===================================================== */}
-      {/* TOP CONTROLS & TABLE TOOLBAR: UNIFIED 2-COLUMN ALIGNMENT */}
+      {/* LOWER SECTION: TOP CONTROLS & TABLE TOOLBAR & VIEWS */}
       {/* ===================================================== */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-x-3 gap-y-3 items-center">
+      <div
+        className="flex flex-col gap-3 sm:gap-4"
+        style={{
+          height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+          minHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+        }}
+      >
+        {/* ===================================================== */}
+        {/* TOP CONTROLS & TABLE TOOLBAR: UNIFIED 2-COLUMN ALIGNMENT */}
+        {/* ===================================================== */}
+        <div className="shrink-0 grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-x-3 gap-y-3 items-center">
         {/* ROW 1 LEFT: Matched Orders Tab & Unified PDF View Selector */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full justify-start">
           <button
@@ -3439,11 +3583,11 @@ export default function ComparisonResultView({
       {/* TAB 1: COMPARISON TABLE VIEW (TABLE & PAGINATION) */}
       {/* ===================================================== */}
       {activeTab === "table" && (
-        <div className="space-y-4">
+        <div className="lg:flex-1 lg:min-h-0 flex flex-col gap-3">
 
           {/* Active "Show Printed Only" Banner Indicator */}
           {showPrinted && (
-            <div className="flex items-center justify-between rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/90 dark:bg-emerald-950/30 px-4 py-3 text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 shadow-xs">
+            <div className="shrink-0 flex items-center justify-between rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/90 dark:bg-emerald-950/30 px-4 py-3 text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 shadow-xs">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="font-bold">
@@ -3635,15 +3779,37 @@ export default function ComparisonResultView({
                 </div>
               ))
             )}
+
+            {/* Mobile Pagination */}
+            <div className="md:hidden">
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                total={totalRecords}
+                limit={limit}
+                itemName="records"
+                variant="dark"
+                className="border border-[#E7E0D2] dark:border-white/[0.08] rounded-2xl bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 py-3"
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
+              />
+            </div>
           </div>
 
           {/* =================================================== */}
           {/* DESKTOP VIEW: FULL COMPARISON TABLE (>= 768px) */}
           {/* =================================================== */}
-          <div className="hidden md:block w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
-            <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-              <table className="w-full min-w-[940px] lg:min-w-[1000px] border-collapse text-left font-sans">
-                <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
+          <div className="hidden md:flex flex-col flex-1 min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
+            <div
+              ref={tableContainerRef}
+              className="w-full overflow-x-auto flex-1 min-h-0 overflow-y-auto custom-scrollbar"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              <table className="w-full min-w-[940px] lg:min-w-[1000px] border-collapse text-left font-sans relative">
+                <thead className="sticky top-0 z-10 bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] shadow-xs">
                   <tr>
                     <th className="w-12 min-w-[44px] px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center">
@@ -3826,25 +3992,23 @@ export default function ComparisonResultView({
                 </tbody>
               </table>
             </div>
-          </div>
 
-          {/* =================================================== */}
-          {/* PAGINATION */}
-          {/* =================================================== */}
-          <Pagination
-            page={currentPage}
-            totalPages={totalPages}
-            total={totalRecords}
-            limit={limit}
-            itemName="records"
-            variant="dark"
-            className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
-            onPageChange={setPage}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit);
-              setPage(1);
-            }}
-          />
+            {/* Desktop Pinned Pagination */}
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              total={totalRecords}
+              limit={limit}
+              itemName="records"
+              variant="dark"
+              className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
+              onPageChange={setPage}
+              onLimitChange={(newLimit) => {
+                setLimit(newLimit);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -3852,8 +4016,8 @@ export default function ComparisonResultView({
       {/* TAB 2: PDF VIEWER (COMBINED / CONVERTED ZPL / ORIGINAL UPLOADED) */}
       {/* ======================================================== */}
       {activeTab === "pdf" && (
-        <div className="space-y-4 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="lg:flex-1 lg:min-h-0 flex flex-col space-y-4 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white flex items-center gap-2">
                 {selectedPdfType.startsWith("unmatched") ? (
@@ -3899,7 +4063,7 @@ export default function ComparisonResultView({
           </div>
 
           {currentPdfConfig.url ? (
-            <div className="h-[480px] sm:h-[650px] lg:h-[750px] w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11]">
+            <div className="flex-1 min-h-[480px] w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11]">
               <iframe
                 src={`${currentPdfConfig.url}#toolbar=1&navpanes=1&statusbar=1`}
                 className="h-full w-full border-none"
@@ -3913,6 +4077,7 @@ export default function ComparisonResultView({
           )}
         </div>
       )}
+    </div>
 
       {/* Missing Seller SKU Modal */}
       <MissingSkuModal

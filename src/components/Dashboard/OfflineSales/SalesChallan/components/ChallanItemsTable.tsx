@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Plus, Trash2, Printer, Upload, Download, ScanBarcode, Check } from "lucide-react";
 import { SalesChallanItem, ProductSkuSuggestion } from "../types/challan.types";
@@ -34,6 +35,7 @@ export default function ChallanItemsTable({
   deliveryTerms,
   onChangeDeliveryTerms,
 }: ChallanItemsTableProps) {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Active SKU autocomplete dropdown state
@@ -277,7 +279,7 @@ export default function ChallanItemsTable({
 
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => router.push("/dashboard/settings/upload-excel?tab=salesChallan")}
               className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Upload className="w-3.5 h-3.5" />

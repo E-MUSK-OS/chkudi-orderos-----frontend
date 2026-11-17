@@ -56,6 +56,141 @@ export default function PurchaseChallan() {
   const filtersRef = useRef(filters);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Scrolling coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Calculate remaining viewport height for desktop (>= 1024px)
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const isLg = window.innerWidth >= 1024;
+    setIsDesktop(isLg);
+    if (!isLg) {
+      setTargetHeight(null);
+      setTableMaxHeight(null);
+      return;
+    }
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+      const filtersHeight = filterBarRef.current?.offsetHeight || 60;
+      const gap = 20; // gap-4 sm:gap-5
+      const maxForTable = available - filtersHeight - gap;
+      if (maxForTable > 150) {
+        setTableMaxHeight(Math.floor(maxForTable));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [challans.length, calculateHeight]);
+
+  // Seamless scroll coordinator:
+  // 1. When scrolling down, outer page scrolls until PurchaseChallanHeader and PurchaseChallanStats are hidden and stops at the fixed position (PurchaseChallanFilters + PurchaseChallanTable).
+  // 2. Once at the fixed position, scrolling down over the table scrolls the table rows internally.
+  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals PurchaseChallanStats and PurchaseChallanHeader.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      const tableContainer = tableContainerRef.current;
+      const maxPageScroll = Math.max(
+        0,
+        scrollContainer.scrollHeight - scrollContainer.clientHeight
+      );
+      if (maxPageScroll <= 0) return;
+
+      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 2;
+
+      const isOverTable =
+        tableContainer &&
+        (e.composedPath().includes(tableContainer) ||
+          tableContainer.contains(e.target as Node));
+
+      if (e.deltaY > 0) {
+        // Scrolling DOWN
+        if (!isPageAtBottom) {
+          // Outer page has not reached the fixed view yet -> scroll page down
+          e.preventDefault();
+          scrollContainer.scrollTop = Math.min(
+            maxPageScroll,
+            scrollContainer.scrollTop + e.deltaY
+          );
+        } else if (!isOverTable) {
+          // At the fixed point and outside the table (e.g. over PurchaseChallanFilters) -> forward scroll to table
+          if (tableContainer) {
+            tableContainer.scrollTop += e.deltaY;
+          }
+        }
+        // If isPageAtBottom and isOverTable, allow table to scroll natively
+      } else if (e.deltaY < 0) {
+        // Scrolling UP
+        if (!isOverTable) {
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else {
+          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
+          if (isTableAtTop && !isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
   const fetchChallans = useCallback(
     async (customFilters?: PurchaseChallanFiltersState) => {
       try {
@@ -241,44 +376,66 @@ export default function PurchaseChallan() {
 
   return (
     <DashboardLayout title="Purchase Challan">
-      <div className="space-y-4 sm:space-y-5 pb-12 max-w-[1700px] mx-auto font-sans">
+      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-5 max-w-[1700px] mx-auto font-sans">
         {/* Top Header matching Sales Challan */}
-        <PurchaseChallanHeader
-          viewMode={viewMode}
-          onAddNew={handleAddNew}
-          onBack={handleBack}
-          onSave={handleSaveClick}
-          onDownloadAll={handleDownloadAll}
-          onDownloadSkuWise={handleDownloadSkuWise}
-          saving={isSaving}
-        />
+        <div className="shrink-0">
+          <PurchaseChallanHeader
+            viewMode={viewMode}
+            onAddNew={handleAddNew}
+            onBack={handleBack}
+            onSave={handleSaveClick}
+            onDownloadAll={handleDownloadAll}
+            onDownloadSkuWise={handleDownloadSkuWise}
+            saving={isSaving}
+          />
+        </div>
 
         {/* List View */}
         {viewMode === "list" && (
-          <div className="space-y-4 sm:space-y-5">
+          <>
             {/* Live Metrics */}
-            <PurchaseChallanStats challans={challans} />
+            <div className="shrink-0">
+              <PurchaseChallanStats challans={challans} />
+            </div>
 
-            {/* Filter Bar */}
-            <PurchaseChallanFilters
-              filters={filters}
-              onChange={handleFilterChange}
-              onDateRangeChange={handleDateRangeChange}
-              onSearch={handleSearchClick}
-              onReset={handleResetFilters}
-            />
+            {/* Lower Section (PurchaseChallanFilters + PurchaseChallanTable) */}
+            <div
+              className="flex flex-col gap-4 sm:gap-5 min-h-0"
+              style={{
+                maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+              }}
+            >
+              {/* Filter Bar */}
+              <div ref={filterBarRef} className="shrink-0">
+                <PurchaseChallanFilters
+                  filters={filters}
+                  onChange={handleFilterChange}
+                  onDateRangeChange={handleDateRangeChange}
+                  onSearch={handleSearchClick}
+                  onReset={handleResetFilters}
+                />
+              </div>
 
-            {/* Table */}
-            <PurchaseChallanTable
-              challans={challans}
-              loading={loading}
-              selectedIds={selectedChallanIds}
-              onSelectionChange={setSelectedChallanIds}
-              onEdit={handleEdit}
-              onDelete={handleDeleteClick}
-              onView={handleView}
-            />
-          </div>
+              {/* Table Container */}
+              <div
+                className="flex flex-col min-h-0"
+                style={{
+                  maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
+                }}
+              >
+                <PurchaseChallanTable
+                  challans={challans}
+                  loading={loading}
+                  tableContainerRef={tableContainerRef}
+                  selectedIds={selectedChallanIds}
+                  onSelectionChange={setSelectedChallanIds}
+                  onEdit={handleEdit}
+                  onDelete={handleDeleteClick}
+                  onView={handleView}
+                />
+              </div>
+            </div>
+          </>
         )}
 
         {/* Create / Edit View */}

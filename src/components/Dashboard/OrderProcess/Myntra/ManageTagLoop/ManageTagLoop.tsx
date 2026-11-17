@@ -117,22 +117,22 @@ export default function ManageTagLoop() {
                 key={loop.id}
                 className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden transition-all duration-200 hover:border-[#E8C16D]/50 hover:shadow-md dark:hover:border-[#F5C451]/50 dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
               >
-                {/* Header with Dark Accent matching theme */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#1A2235] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] px-5 sm:px-7 py-4">
+                {/* Card Header matching OrderOS theme */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#080B11] px-5 sm:px-7 py-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shrink-0 shadow-xs">
                       <Boxes className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-base sm:text-lg font-black tracking-tight text-[#E8C16D]">
+                        <h3 className="text-base sm:text-lg font-black tracking-tight text-[#0A0E1A] dark:text-[#E8C16D]">
                           Active Tag Range
                         </h3>
-                        <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-bold text-emerald-400">
+                        <span className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
                           Live
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400 font-medium truncate">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                         Continuous Sequence Batch
                       </p>
                     </div>
@@ -141,10 +141,10 @@ export default function ManageTagLoop() {
                   {/* Range Badge & Action Buttons */}
                   <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                     {/* Range Pill */}
-                    <div className="inline-flex items-center gap-2 rounded-xl border border-[#E8C16D]/30 bg-white/5 dark:bg-white/[0.04] px-3.5 py-1.5 text-xs font-mono font-bold text-white shadow-xs">
+                    <div className="inline-flex items-center gap-2 rounded-xl border border-[#E7E0D2] dark:border-[#E8C16D]/30 bg-white dark:bg-white/[0.04] px-3.5 py-1.5 text-xs font-mono font-bold text-[#0A0E1A] dark:text-white shadow-xs">
                       <span>{loop.startTag}</span>
-                      <ArrowRight className="h-3.5 w-3.5 text-[#E8C16D]" />
-                      <span className="text-[#E8C16D]">{loop.endTag}</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-[#B88728] dark:text-[#E8C16D]" />
+                      <span className="text-[#B88728] dark:text-[#E8C16D]">{loop.endTag}</span>
                     </div>
 
                     {/* Download Button */}

@@ -157,6 +157,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 peer-[:not(:placeholder-shown)]:font-medium
                 peer-[:not(:placeholder-shown)]:text-slate-500
                 dark:peer-[:not(:placeholder-shown)]:text-slate-400
+
+                peer-autofill:-top-2
+                peer-autofill:text-[11px]
+                peer-autofill:font-medium
+                peer-autofill:text-slate-500
+                dark:peer-autofill:text-slate-400
               `,
                 hasValue && "-top-2 text-[11px] font-medium text-slate-500 dark:text-slate-400",
                 leftIcon ? "left-12" : "left-4",

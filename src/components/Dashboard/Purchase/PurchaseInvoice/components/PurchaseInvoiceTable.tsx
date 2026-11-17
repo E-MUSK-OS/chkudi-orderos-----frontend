@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Edit2, ArrowUpDown, Printer, FileText, Eye, Trash2 } from "lucide-react";
 import { PurchaseInvoice } from "../types/purchaseInvoice.types";
 import Pagination from "@/components/ui/Pagination";
@@ -16,6 +16,7 @@ interface PurchaseInvoiceTableProps {
   onPrintMultiple?: (invoiceIds: string[]) => void;
   selectedIds?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
+  tableContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 function formatCurrency(num: number | undefined | null): string {
@@ -94,7 +95,10 @@ export default function PurchaseInvoiceTable({
   onPrintMultiple,
   selectedIds: propSelectedIds,
   onSelectionChange,
+  tableContainerRef,
 }: PurchaseInvoiceTableProps) {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const resolvedRef = tableContainerRef || internalRef;
   const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
   const selectedIds = propSelectedIds !== undefined ? propSelectedIds : internalSelectedIds;
 
@@ -108,6 +112,12 @@ export default function PurchaseInvoiceTable({
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
+  useEffect(() => {
+    if (resolvedRef.current) {
+      resolvedRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page, limit, resolvedRef]);
 
   const handleSort = (field: keyof PurchaseInvoice) => {
     if (sortField === field) {
@@ -177,11 +187,15 @@ export default function PurchaseInvoiceTable({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
-      <div className="overflow-x-auto">
+    <div className="flex flex-col min-h-0 max-h-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
+      <div
+        ref={resolvedRef}
+        className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar overscroll-contain"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         <table className="w-full min-w-[1400px] text-left border-collapse">
           {/* Header matching legacy software columns */}
-          <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11]">
+          <thead className="lg:sticky lg:top-0 z-10 border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-[#080B11] dark:border-white/[0.08] select-none text-[#6A4D1D] dark:text-white font-bold shadow-xs">
             <tr>
               <th className="px-4 py-3.5 text-center w-12">
                 <input
@@ -525,27 +539,29 @@ export default function PurchaseInvoiceTable({
 
       {/* Pagination Footer */}
       {!loading && (
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          totalRecords={total}
-          total={total}
-          limit={limit}
-          pageSize={limit}
-          itemName="invoices"
-          variant="dark"
-          options={[10, 20, 50, 100]}
-          className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
-          onPageChange={setPage}
-          onLimitChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
-          onPageSizeChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
-        />
+        <div className="shrink-0">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalRecords={total}
+            total={total}
+            limit={limit}
+            pageSize={limit}
+            itemName="invoices"
+            variant="dark"
+            options={[10, 20, 50, 100]}
+            className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+            onPageSizeChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
+        </div>
       )}
     </div>
   );

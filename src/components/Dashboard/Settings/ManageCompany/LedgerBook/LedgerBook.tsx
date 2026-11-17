@@ -54,6 +54,119 @@ export default function LedgerBook() {
   const filtersRef = useRef(filters);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Scroll & Height coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Calculate available height on desktop (>= 1024px)
+  // so the table takes only the height needed for available records,
+  // up to the available viewport space, and scrolls internally if there are more records.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setTargetHeight(null);
+      setTableMaxHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      setTargetHeight(Math.floor(available));
+      const headerHeight = headerCardRef.current?.offsetHeight || 88;
+      const filterBarHeight = filterBarRef.current?.offsetHeight || 60;
+      const gap = 32; // 2x gap-4 (16px each)
+      const maxForTable = available - headerHeight - filterBarHeight - gap;
+      if (maxForTable > 150) {
+        setTableMaxHeight(Math.floor(maxForTable));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [ledgers.length, calculateHeight]);
+
+  // Lock outer scroll at header position on desktop:
+  // Since this page has Header Card + Filter Bar + Table, the Header Card stays fixed at the top,
+  // outer page does not scroll, and scrolling forwards to the internal table.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      scrollContainer.scrollTop = 0;
+
+      const tableContainer = tableContainerRef.current;
+      if (!tableContainer) return;
+
+      // If wheel occurred over the header card or filter bar, scroll the table internally
+      if (!e.composedPath().includes(tableContainer) && !tableContainer.contains(e.target as Node)) {
+        tableContainer.scrollTop += e.deltaY;
+      }
+    };
+
+    const onScroll = () => {
+      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
+        scrollContainer.scrollTop = 0;
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
+    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+      scrollContainer.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
   const fetchLedgers = useCallback(async (currentFilters?: LedgerFilterState) => {
     try {
       setLoading(true);
@@ -159,45 +272,63 @@ export default function LedgerBook() {
 
   return (
     <DashboardLayout title="Ledger Book">
-      <div className="space-y-4 font-sans text-slate-100 max-w-[1600px] mx-auto pb-6">
+      <div
+        ref={containerRef}
+        className="flex flex-col gap-4 font-sans text-slate-100 max-w-[1600px] mx-auto min-h-0"
+        style={{
+          maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+        }}
+      >
         {/* Header with Title & Action Buttons matching Image 5 */}
-        <LedgerBookHeader
-          onCreateClick={handleCreate}
-          onDownloadTemplate={downloadBlankLedgerTemplate}
-          onUploadClick={() => setUploadModalOpen(true)}
-        />
+        <div ref={headerCardRef} className="shrink-0">
+          <LedgerBookHeader
+            onCreateClick={handleCreate}
+            onDownloadTemplate={downloadBlankLedgerTemplate}
+            onUploadClick={() => setUploadModalOpen(true)}
+          />
+        </div>
 
         {/* Filter Bar with Ledger Name, Account Head, Global Search, Columns toggle matching Image 5 */}
-        <LedgerBookFilterBar
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onResetFilters={handleResetFilters}
-          visibleColumns={visibleColumns}
-          onToggleColumn={handleToggleColumn}
-          totalCount={totalCount}
-        />
+        <div ref={filterBarRef} className="shrink-0">
+          <LedgerBookFilterBar
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onResetFilters={handleResetFilters}
+            visibleColumns={visibleColumns}
+            onToggleColumn={handleToggleColumn}
+            totalCount={totalCount}
+          />
+        </div>
 
         {/* Data Table matching Image 5 */}
-        <LedgerBookTable
-          ledgers={ledgers}
-          loading={loading}
-          visibleColumns={visibleColumns}
-          startIndex={startIndex}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={(item) => setDeletingLedger(item)}
-          pagination={
-            totalCount > 0 ? (
-              <LedgerBookPagination
-                total={totalCount}
-                page={filters.page}
-                pageSize={filters.pageSize}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-              />
-            ) : null
-          }
-        />
+        <div
+          className="flex flex-col min-h-0"
+          style={{
+            maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
+          }}
+        >
+          <LedgerBookTable
+            ledgers={ledgers}
+            loading={loading}
+            visibleColumns={visibleColumns}
+            startIndex={startIndex}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={(item) => setDeletingLedger(item)}
+            tableContainerRef={tableContainerRef}
+            pagination={
+              totalCount > 0 ? (
+                <LedgerBookPagination
+                  total={totalCount}
+                  page={filters.page}
+                  pageSize={filters.pageSize}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handlePageSizeChange}
+                />
+              ) : null
+            }
+          />
+        </div>
       </div>
 
       {/* Upload Ledger Modal */}

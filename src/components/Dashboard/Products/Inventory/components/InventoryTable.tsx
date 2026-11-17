@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import {
   Boxes,
   CheckCircle2,
@@ -21,6 +22,7 @@ interface Props {
   onDelete: (inventory: Inventory) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  tableContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const InventoryTable = ({
@@ -33,10 +35,18 @@ const InventoryTable = ({
   onDelete,
   onPageChange,
   onPageSizeChange,
+  tableContainerRef,
 }: Props) => {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const resolvedRef = tableContainerRef || internalRef;
+
+  useEffect(() => {
+    resolvedRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [pagination?.page, pagination?.limit, resolvedRef]);
+
   if (isLoading) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+      <div className="lg:h-full flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626] p-12">
         <RefreshCw className="h-8 w-8 animate-spin text-[#B88728] dark:text-[#F5C451]" />
         <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-400">
           Loading inventories...
@@ -47,7 +57,7 @@ const InventoryTable = ({
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-rose-200 bg-rose-50/40 p-10 text-center shadow-sm dark:border-rose-500/20 dark:bg-rose-500/10">
+      <div className="lg:h-full flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-rose-200 bg-rose-50/40 p-10 text-center shadow-sm dark:border-rose-500/20 dark:bg-rose-500/10">
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
           <AlertCircle className="h-6 w-6" />
         </div>
@@ -63,7 +73,7 @@ const InventoryTable = ({
 
   if (!inventories.length) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+      <div className="lg:h-full flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30">
           <Boxes className="h-7 w-7" />
         </div>
@@ -78,10 +88,14 @@ const InventoryTable = ({
   }
 
   return (
-    <div className="border border-[#E7E0D2] bg-white shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col dark:border-white/[0.08] dark:bg-[#0F1626]">
-      <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-        <table className="w-full min-w-[950px] lg:min-w-[1100px] border-collapse text-left font-sans">
-          <thead className="bg-[#FEFAEE] dark:bg-none text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#F5C451]">
+    <div className="lg:h-full flex flex-col lg:min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
+      <div
+        ref={resolvedRef}
+        className="w-full overflow-x-auto lg:flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        <table className="w-full min-w-[950px] lg:min-w-[1100px] border-collapse text-left font-sans relative">
+          <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-none text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#F5C451] shadow-xs">
             <tr>
               <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[240px] max-w-[280px]">
                 Product
@@ -295,7 +309,7 @@ const InventoryTable = ({
         pageSize={pagination?.limit ?? 10}
         itemName="inventories"
         variant="dark"
-        className="border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
+        className="shrink-0 border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none dark:border-white/[0.08] dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />

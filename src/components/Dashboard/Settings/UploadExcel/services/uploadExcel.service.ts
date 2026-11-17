@@ -9,6 +9,9 @@ import { salariedEmployeeService } from "@/components/Dashboard/Settings/ManageC
 import { downloadBlankAttendanceTemplate } from "@/components/Dashboard/Settings/ManageCompany/SalariedEmployee/utils/attendanceTemplate";
 import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
 import { employeeService } from "@/components/Dashboard/Settings/ManageCompany/EmployeeProfile/services/employee.service";
+import { downloadAmazonAnalyticsDemoSheet } from "@/components/Dashboard/ProductsAnalytics/Amazon/utils/downloadDemoSheet";
+import { purchaseChallanService } from "@/components/Dashboard/Purchase/PurchaseChallan/services/purchaseChallan.service";
+import { challanService } from "@/components/Dashboard/OfflineSales/SalesChallan/services/challan.service";
 import type { ProfileKey } from "../constants/uploadExcel.constants";
 
 /** Helper to format Excel Header Row matching OrderOS dark/gold theme */
@@ -410,6 +413,84 @@ export async function handleDownloadBlankTemplate(profile: ProfileKey) {
         toast.success("Employee template downloaded successfully!");
         break;
       }
+
+      case "productAnalytics": {
+        await downloadAmazonAnalyticsDemoSheet();
+        toast.success("Product Analytics template downloaded successfully!");
+        break;
+      }
+
+      case "purchaseChallan": {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Purchase Challans");
+        sheet.columns = [
+          { header: "Particulars [SKU]", key: "sku", width: 22 },
+          { header: "Particulars [Name]", key: "name", width: 30 },
+          { header: "Ord.Qty", key: "orderedQty", width: 14 },
+          { header: "Rec.Qty", key: "receivedQty", width: 14 },
+          { header: "Rate", key: "rate", width: 14 },
+          { header: "PO No", key: "poNo", width: 18 },
+          { header: "Challan No", key: "challanNo", width: 18 },
+          { header: "Rec.Date", key: "recDate", width: 16 },
+          { header: "Remarks", key: "remarks", width: 25 },
+        ];
+        styleHeaderRow(sheet.getRow(1));
+
+        const r1 = sheet.addRow({
+          sku: "FAB-COT-WHT-01",
+          name: "Pure Cotton 60s White Fabric",
+          orderedQty: 100,
+          receivedQty: 100,
+          rate: 120,
+          poNo: "PO-2026-001",
+          challanNo: "PC-1001",
+          recDate: today,
+          remarks: "First delivery lot",
+        });
+        r1.height = 22;
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(
+          new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+          `Purchase_Challan_Blank_Template_${today}.xlsx`
+        );
+        toast.success("Purchase Challan template downloaded successfully!");
+        break;
+      }
+
+      case "salesChallan": {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Sales Challans");
+        sheet.columns = [
+          { header: "Particulars [SKU]", key: "sku", width: 22 },
+          { header: "Particulars [Name]", key: "name", width: 30 },
+          { header: "Quantity", key: "quantity", width: 14 },
+          { header: "Rate", key: "rate", width: 14 },
+          { header: "Dis.Date", key: "disDate", width: 16 },
+          { header: "Sub C.N", key: "subCn", width: 16 },
+          { header: "Remarks", key: "remarks", width: 25 },
+        ];
+        styleHeaderRow(sheet.getRow(1));
+
+        const r1 = sheet.addRow({
+          sku: "SHIRT-SLM-BLU-M",
+          name: "Men Slim Fit Cotton Shirt",
+          quantity: 50,
+          rate: 799,
+          disDate: today,
+          subCn: "CN-1",
+          remarks: "Dispatched via surface express",
+        });
+        r1.height = 22;
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(
+          new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+          `Sales_Challan_Blank_Template_${today}.xlsx`
+        );
+        toast.success("Sales Challan template downloaded successfully!");
+        break;
+      }
     }
   } catch (err: any) {
     console.error(err);
@@ -450,17 +531,58 @@ export async function handleDownloadFilteredData({
       ledger: { header: "Ledger Name*", key: "ledgerName", width: 25 },
       employee: { header: "Employee ID*", key: "employeeId", width: 20 },
       salaried: { header: "Employee ID*", key: "employeeId", width: 20 },
+      productAnalytics: { header: "Seller SKU*", key: "sku", width: 25 },
+      purchaseChallan: { header: "Challan No*", key: "challanNo", width: 20 },
+      salesChallan: { header: "Particulars [SKU]*", key: "sku", width: 22 },
     };
 
     const idCol = idColumnMap[profile];
-    const columns: Partial<ExcelJS.Column>[] = [idCol];
+    let columns: Partial<ExcelJS.Column>[] = [];
 
-    if (isRackAddress) {
-      columns.push(
+    if (profile === "purchaseChallan") {
+      const fixed = ["Challan No", "Particulars [SKU]"];
+      const otherSelected = selectedFields.filter((f) => !fixed.includes(f));
+      const orderedFields = [
+        ...fixed.filter((f) => selectedFields.includes(f)),
+        ...otherSelected,
+      ];
+      columns = orderedFields.map((field) => ({
+        header: field,
+        key: field.toLowerCase().replace(/[^a-z0-9]/g, "_"),
+        width: Math.max(field.length + 6, 18),
+      }));
+    } else if (profile === "salesChallan") {
+      const fixed = ["Particulars [SKU]"];
+      const otherSelected = selectedFields.filter((f) => !fixed.includes(f));
+      const orderedFields = [
+        ...fixed.filter((f) => selectedFields.includes(f)),
+        ...otherSelected,
+      ];
+      columns = orderedFields.map((field) => ({
+        header: field,
+        key: field.toLowerCase().replace(/[^a-z0-9]/g, "_"),
+        width: Math.max(field.length + 6, 18),
+      }));
+    } else if (profile === "productAnalytics") {
+      const fixed = ["Seller SKU"];
+      const otherSelected = selectedFields.filter((f) => !fixed.includes(f));
+      const orderedFields = [
+        ...fixed.filter((f) => selectedFields.includes(f)),
+        ...otherSelected,
+      ];
+      columns = orderedFields.map((field) => ({
+        header: field,
+        key: field.toLowerCase().replace(/[^a-z0-9]/g, "_"),
+        width: Math.max(field.length + 6, 20),
+      }));
+    } else if (isRackAddress) {
+      columns = [
+        idCol,
         { header: "Master SKU", key: "masterSku", width: 25 },
-        { header: "Rack Address", key: "rackAddress", width: 22 }
-      );
+        { header: "Rack Address", key: "rackAddress", width: 22 },
+      ];
     } else {
+      columns = [idCol];
       selectedFields.forEach((field) => {
         if (field.toLowerCase() === idCol.header.toLowerCase().replace("*", "")) return;
         columns.push({
@@ -732,16 +854,116 @@ export async function handleDownloadFilteredData({
           row.height = 20;
           rowCount++;
         });
+      } else if (profile === "productAnalytics") {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
+        const params = new URLSearchParams();
+        if (filters.day && filters.day !== "All") params.append("day", String(filters.day));
+        if (filters.operator && filters.operator !== "All") params.append("operator", String(filters.operator));
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/amazon-analytics?${params.toString()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const json = await res.json();
+          let items: any[] = Array.isArray(json?.data) ? json.data : [];
+          if (filters.status && filters.status !== "All") {
+            if (filters.status === "ACTIVE") items = items.filter((i: any) => i.isActive !== false);
+            else if (filters.status === "INACTIVE") items = items.filter((i: any) => i.isActive === false);
+          }
+          items.forEach((item: any) => {
+            const row = sheet.addRow({
+              sku: item.sku || "",
+              seller_sku: item.sku || "",
+              operator_name: item.operatorName || "",
+              day: item.day || "",
+              product_url: item.url || "",
+              amazon_product_url: item.url || "",
+            });
+            row.height = 20;
+            rowCount++;
+          });
+        }
+      } else if (profile === "purchaseChallan") {
+        const res = await purchaseChallanService.getChallans();
+        const challans: any[] = res?.data || [];
+        challans.forEach((ch: any) => {
+          (ch.items || []).forEach((item: any) => {
+            const row = sheet.addRow({
+              challanNo: ch.challanNo || "",
+              challan_no: ch.challanNo || "",
+              challanno: ch.challanNo || "",
+              particulars__sku_: item.sku || "",
+              particulars_sku: item.sku || "",
+              sku: item.sku || "",
+              particulars__name_: item.name || "",
+              particulars_name: item.name || "",
+              name: item.name || "",
+              ord_qty: item.orderedQty ?? 0,
+              ordered_qty: item.orderedQty ?? 0,
+              rec_qty: item.receivedQty ?? 1,
+              received_qty: item.receivedQty ?? 1,
+              rate: item.rate ?? 0,
+              po_no: item.poNo || "",
+              pono: item.poNo || "",
+              rec_date: item.receivedDate || (ch.challanDate ? String(ch.challanDate).split("T")[0] : ""),
+              recdate: item.receivedDate || (ch.challanDate ? String(ch.challanDate).split("T")[0] : ""),
+              remarks: item.remarks || ch.remarks || "",
+            });
+            row.height = 20;
+            rowCount++;
+          });
+        });
+      } else if (profile === "salesChallan") {
+        const res = await challanService.getChallans();
+        const challans: any[] = res?.data || [];
+        challans.forEach((ch: any) => {
+          (ch.items || []).forEach((item: any) => {
+            const row = sheet.addRow({
+              challanNo: ch.challanNo || "",
+              challan_no: ch.challanNo || "",
+              challanno: ch.challanNo || "",
+              particulars__sku_: item.sku || "",
+              particulars_sku: item.sku || "",
+              sku: item.sku || "",
+              particulars__name_: item.name || "",
+              particulars_name: item.name || "",
+              name: item.name || "",
+              quantity: item.quantity ?? 1,
+              rate: item.rate ?? 0,
+              challan_ref_no: ch.challanRefNo || "",
+              challanrefno: ch.challanRefNo || "",
+              dis_date: item.dispatchDate || (ch.challanDate ? String(ch.challanDate).split("T")[0] : ""),
+              disdate: item.dispatchDate || (ch.challanDate ? String(ch.challanDate).split("T")[0] : ""),
+              sub_c_n: item.subCn || "",
+              sub_cn: item.subCn || "",
+              subcn: item.subCn || "",
+              remarks: item.remarks || "",
+            });
+            row.height = 20;
+            rowCount++;
+          });
+        });
       }
     } catch (_) {
       // Fallback if network or offline
     }
 
     if (rowCount === 0) {
-      const sampleRow: Record<string, any> = { [idCol.key]: "SAMPLE-01" };
+      const sampleRow: Record<string, any> = {};
       columns.forEach((col) => {
-        if (col.key && col.key !== idCol.key) sampleRow[col.key] = "-";
+        if (!col.key) return;
+        if (col.key.includes("challan_no") || col.key === "challanno" || col.key === "challanNo") sampleRow[col.key] = "PC-1001";
+        else if (col.key.includes("sku")) sampleRow[col.key] = "SAMPLE-SKU-01";
+        else if (col.key.includes("name")) sampleRow[col.key] = "Pure Cotton White Fabric";
+        else if (col.key.includes("qty") || col.key === "quantity") sampleRow[col.key] = 10;
+        else if (col.key === "rate") sampleRow[col.key] = 100;
+        else if (col.key.includes("date")) sampleRow[col.key] = today;
+        else if (col.key === "seller_sku") sampleRow[col.key] = "SAMPLE-SKU-01";
+        else sampleRow[col.key] = "-";
       });
+      if (idCol?.key && !sampleRow[idCol.key]) {
+        sampleRow[idCol.key] = "SAMPLE-01";
+      }
       const r = sheet.addRow(sampleRow);
       r.height = 20;
     }
@@ -1695,6 +1917,817 @@ export async function handleUploadFile({
         return { success: true, message };
       } catch (err: any) {
         throw new Error(err.message || "Failed to process salaried file.");
+      }
+    }
+
+    case "productAnalytics": {
+      try {
+        const fileExt = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+        if (![".xlsx", ".xls", ".csv"].includes(fileExt)) {
+          throw new Error(
+            `Unsupported file format '${fileExt}'. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.`
+          );
+        }
+
+        const VALID_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const normalizeDay = (rawDay: string): string | null => {
+          const clean = rawDay.trim().toLowerCase();
+          const match = VALID_DAYS.find((d) => d.toLowerCase() === clean);
+          if (match) return match;
+          const abbrevs: Record<string, string> = {
+            sun: "Sunday",
+            mon: "Monday",
+            tue: "Tuesday",
+            tues: "Tuesday",
+            wed: "Wednesday",
+            thu: "Thursday",
+            thur: "Thursday",
+            thurs: "Thursday",
+            fri: "Friday",
+            sat: "Saturday",
+          };
+          return abbrevs[clean] || null;
+        };
+
+        const isCreateSection = sectionId.includes("create");
+        const parsedData: { sku: string; url?: string; operatorName?: string; day?: string }[] = [];
+        const validationErrors: string[] = [];
+        const isCsv = fileExt === ".csv";
+
+        if (isCsv) {
+          const text = await file.text();
+          const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          if (lines.length <= 1) {
+            throw new Error("The uploaded CSV file is empty. Please add at least one record with a valid Seller SKU.");
+          }
+
+          const rawHeaders = splitCsvLine(lines[0]);
+          const headers = rawHeaders.map((h) => h.toLowerCase().trim());
+          const skuIdx = headers.findIndex((h) => h.includes("sku"));
+          const urlIdx = headers.findIndex((h) => h.includes("url") || h.includes("link") || h.includes("amazon"));
+          const opIdx = headers.findIndex((h) => h.includes("operator"));
+          const dayIdx = headers.findIndex((h) => h === "day" || h.includes("day"));
+
+          if (skuIdx === -1) {
+            throw new Error(
+              "Invalid sheet format: Required 'Seller SKU' column was not found. Please ensure your CSV includes a 'Seller SKU' column header."
+            );
+          }
+
+          for (let i = 1; i < lines.length; i++) {
+            const rowNumber = i + 1;
+            const cells = splitCsvLine(lines[i]);
+            // Skip completely empty lines
+            if (cells.every((c) => !c || !c.trim())) continue;
+
+            const sku = (cells[skuIdx] || "").trim();
+            let url = urlIdx >= 0 ? (cells[urlIdx] || "").trim() : undefined;
+            const rawOperator = opIdx >= 0 ? (cells[opIdx] || "").trim() : undefined;
+            const rawDay = dayIdx >= 0 ? (cells[dayIdx] || "").trim() : undefined;
+
+            if (!sku) {
+              validationErrors.push(`Row ${rowNumber}: Missing 'Seller SKU'. Seller SKU is required for every row.`);
+              continue;
+            }
+
+            let validatedDay: string | undefined = undefined;
+            if (rawDay) {
+              const matched = normalizeDay(rawDay);
+              if (!matched) {
+                validationErrors.push(
+                  `Row ${rowNumber} (${sku}): Invalid Day '${rawDay}'. Allowed days are: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday.`
+                );
+              } else {
+                validatedDay = matched;
+              }
+            }
+
+            if (url) {
+              if (url.startsWith("www.")) url = `https://${url}`;
+              if (!/^https?:\/\//i.test(url)) {
+                validationErrors.push(
+                  `Row ${rowNumber} (${sku}): Invalid Product URL '${url}'. Must be a valid web link (e.g. https://www.amazon.in/dp/B0...).`
+                );
+              }
+            } else if (isCreateSection) {
+              validationErrors.push(`Row ${rowNumber} (${sku}): 'Product URL' is required when creating new Product Analytics records.`);
+            }
+
+            parsedData.push({
+              sku,
+              ...(url ? { url } : {}),
+              ...(rawOperator ? { operatorName: rawOperator } : {}),
+              ...(validatedDay ? { day: validatedDay } : {}),
+            });
+          }
+        } else {
+          const arrayBuffer = await file.arrayBuffer();
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.load(arrayBuffer);
+          const worksheet = workbook.worksheets[0];
+
+          if (!worksheet || worksheet.rowCount <= 1) {
+            throw new Error("The uploaded Excel file contains no data rows. Please add at least one record with a valid Seller SKU.");
+          }
+
+          let operatorColIndex = -1;
+          let dayColIndex = -1;
+          let skuColIndex = -1;
+          let urlColIndex = -1;
+
+          const headerRow = worksheet.getRow(1);
+          headerRow.eachCell((cell, colNumber) => {
+            const val = (cell.text || cell.value?.toString() || "").toLowerCase().trim();
+            if (val.includes("operator")) {
+              operatorColIndex = colNumber;
+            } else if (val === "day" || val.includes("day")) {
+              dayColIndex = colNumber;
+            } else if (val.includes("sku")) {
+              skuColIndex = colNumber;
+            } else if (val.includes("url") || val.includes("link") || val.includes("amazon")) {
+              urlColIndex = colNumber;
+            }
+          });
+
+          if (skuColIndex === -1) {
+            throw new Error(
+              "Invalid sheet format: Required 'Seller SKU' column was not found. Please ensure the first row of your Excel sheet contains a 'Seller SKU' header."
+            );
+          }
+
+          worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return;
+
+            // Check if entire row is empty
+            let hasAnyVal = false;
+            row.eachCell((c) => {
+              if (c.value !== null && c.value !== undefined && String(c.value).trim() !== "") {
+                hasAnyVal = true;
+              }
+            });
+            if (!hasAnyVal) return; // Skip blank empty row
+
+            const skuCell = row.getCell(skuColIndex);
+            const skuText = (skuCell.text || skuCell.value?.toString() || "").trim();
+
+            if (!skuText) {
+              validationErrors.push(`Row ${rowNumber}: Missing 'Seller SKU'. Seller SKU is required for every row.`);
+              return;
+            }
+
+            let urlText: string | undefined = undefined;
+            if (urlColIndex > 0) {
+              const urlCell = row.getCell(urlColIndex);
+              if (urlCell.hyperlink) {
+                urlText = urlCell.hyperlink;
+              } else if (urlCell.value && typeof urlCell.value === "object" && "hyperlink" in urlCell.value) {
+                urlText = (urlCell.value as any).hyperlink;
+              } else if (urlCell.text || urlCell.value) {
+                urlText = (urlCell.text || urlCell.value?.toString() || "").trim();
+              }
+            }
+
+            if (!urlText && skuCell.hyperlink) {
+              urlText = skuCell.hyperlink;
+            } else if (!urlText && skuCell.value && typeof skuCell.value === "object" && "hyperlink" in skuCell.value) {
+              urlText = (skuCell.value as any).hyperlink;
+            }
+
+            if (urlText) {
+              if (urlText.startsWith("www.")) urlText = `https://${urlText}`;
+              if (!/^https?:\/\//i.test(urlText)) {
+                validationErrors.push(
+                  `Row ${rowNumber} (${skuText}): Invalid Product URL '${urlText}'. Must be a valid web link (e.g. https://www.amazon.in/dp/B0...).`
+                );
+              }
+            } else if (isCreateSection) {
+              validationErrors.push(
+                `Row ${rowNumber} (${skuText}): 'Product URL' is required when creating new Product Analytics records.`
+              );
+            }
+
+            const rawOperator =
+              operatorColIndex > 0
+                ? (row.getCell(operatorColIndex).text || row.getCell(operatorColIndex).value?.toString() || "").trim()
+                : undefined;
+
+            const rawDay =
+              dayColIndex > 0
+                ? (row.getCell(dayColIndex).text || row.getCell(dayColIndex).value?.toString() || "").trim()
+                : undefined;
+
+            let validatedDay: string | undefined = undefined;
+            if (rawDay) {
+              const matched = normalizeDay(rawDay);
+              if (!matched) {
+                validationErrors.push(
+                  `Row ${rowNumber} (${skuText}): Invalid Day '${rawDay}'. Allowed days are: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday.`
+                );
+              } else {
+                validatedDay = matched;
+              }
+            }
+
+            parsedData.push({
+              sku: skuText,
+              ...(urlText ? { url: urlText } : {}),
+              ...(rawOperator ? { operatorName: rawOperator } : {}),
+              ...(validatedDay ? { day: validatedDay } : {}),
+            });
+          });
+        }
+
+        if (validationErrors.length > 0) {
+          const preview =
+            validationErrors.length <= 3
+              ? validationErrors.join("\n• ")
+              : `${validationErrors.slice(0, 3).join("\n• ")}\n• ...and ${validationErrors.length - 3} more errors.`;
+          throw new Error(`Please fix the following errors in your file:\n• ${preview}`);
+        }
+
+        if (parsedData.length === 0) {
+          throw new Error("No valid data rows found in the uploaded file. Please provide at least one record with a Seller SKU.");
+        }
+
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/amazon-analytics/upload`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ data: parsedData }),
+        });
+
+        const resData = await res.json();
+        if (!res.ok) {
+          throw new Error(resData.message || "Failed to upload Product Analytics data");
+        }
+
+        return {
+          success: true,
+          message: resData.message || `Successfully processed ${parsedData.length} Product Analytics record(s).`,
+        };
+      } catch (err: any) {
+        throw new Error(err.message || "Failed to process Product Analytics file.");
+      }
+    }
+
+    case "purchaseChallan": {
+      try {
+        const lowerName = file.name.toLowerCase();
+        const isCsv = lowerName.endsWith(".csv");
+        const isXlsx = lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls");
+        if (!isCsv && !isXlsx) {
+          const extMatch = file.name.match(/\.[^.]+$/);
+          const ext = extMatch ? extMatch[0] : "";
+          throw new Error(`Invalid file format '${ext}'. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.`);
+        }
+
+        const rows = await parseFileToRows(file);
+        if (rows.length === 0) {
+          throw new Error(
+            "The uploaded Purchase Challan file contains no data rows. Please ensure your sheet includes headers ('Challan No', 'Particulars [SKU]') and at least one record."
+          );
+        }
+
+        const hasChallanNoHeader = rows.some((r) =>
+          hasRowField(r, "challanno", "challan_no", "challan", "challannumber")
+        );
+        const hasSkuHeader = rows.some((r) =>
+          hasRowField(r, "particularssku", "sku", "particulars[sku]", "productsku", "itemsku", "variantsku", "sellersku")
+        );
+
+        if (!hasChallanNoHeader && !hasSkuHeader) {
+          throw new Error(
+            "Invalid sheet format: Required columns 'Challan No' and 'Particulars [SKU]' were not found. Both 'Challan No' and 'Particulars [SKU]' are mandatory."
+          );
+        }
+        if (!hasChallanNoHeader) {
+          throw new Error(
+            "Invalid sheet format: Required column 'Challan No' was not found in the header row. Please include 'Challan No' in your sheet."
+          );
+        }
+        if (!hasSkuHeader) {
+          throw new Error(
+            "Invalid sheet format: Required column 'Particulars [SKU]' was not found in the header row. Please include 'Particulars [SKU]' in your sheet."
+          );
+        }
+
+        const validationErrors: string[] = [];
+        const validRows: Array<{
+          rowNum: number;
+          challanNo: string;
+          sku: string;
+          productName?: string;
+          orderedQty: number;
+          receivedQty: number;
+          rate: number;
+          poNo?: string;
+          recDate?: string;
+          remarks?: string;
+        }> = [];
+
+        for (let i = 0; i < rows.length; i++) {
+          const r = rows[i];
+          const rowNum = i + 2;
+
+          const hasAnyValue = Object.values(r).some(
+            (v) => v !== null && v !== undefined && String(v).trim() !== ""
+          );
+          if (!hasAnyValue) continue;
+
+          const challanNo = getRowVal(r, "challanno", "challan_no", "challan", "challannumber");
+          const sku = getRowVal(
+            r,
+            "particularssku",
+            "particulars[sku]",
+            "sku",
+            "productsku",
+            "itemsku",
+            "variantsku",
+            "sellersku"
+          );
+
+          if (!challanNo) {
+            validationErrors.push(`Row ${rowNum}: Missing 'Challan No'. 'Challan No' is mandatory for every row.`);
+            continue;
+          }
+          if (!sku) {
+            validationErrors.push(
+              `Row ${rowNum} (Challan: ${challanNo}): Missing 'Particulars [SKU]'. 'Particulars [SKU]' is mandatory for every row.`
+            );
+            continue;
+          }
+
+          const rawOrdQty = r["ordqty"] ?? r["orderedqty"] ?? r["ord.qty"];
+          let orderedQty = 0;
+          if (rawOrdQty !== undefined && String(rawOrdQty).trim() !== "") {
+            const parsed = parseNumericValue(rawOrdQty);
+            if (parsed === undefined || isNaN(parsed) || parsed < 0) {
+              validationErrors.push(
+                `Row ${rowNum} (Challan: ${challanNo}, SKU: ${sku}): Invalid Ord.Qty '${rawOrdQty}'. Must be a valid positive number.`
+              );
+            } else {
+              orderedQty = parsed;
+            }
+          }
+
+          const rawRecQty = r["recqty"] ?? r["receivedqty"] ?? r["rec.qty"] ?? r["quantity"] ?? r["qty"];
+          let receivedQty = 1;
+          if (rawRecQty !== undefined && String(rawRecQty).trim() !== "") {
+            const parsed = parseNumericValue(rawRecQty);
+            if (parsed === undefined || isNaN(parsed) || parsed < 0) {
+              validationErrors.push(
+                `Row ${rowNum} (Challan: ${challanNo}, SKU: ${sku}): Invalid Rec.Qty '${rawRecQty}'. Must be a valid positive number.`
+              );
+            } else {
+              receivedQty = parsed;
+            }
+          }
+
+          const rawRate = r["rate"] ?? r["price"] ?? r["cost"];
+          let rate = 0;
+          if (rawRate !== undefined && String(rawRate).trim() !== "") {
+            const parsed = parseNumericValue(rawRate);
+            if (parsed === undefined || isNaN(parsed) || parsed < 0) {
+              validationErrors.push(
+                `Row ${rowNum} (Challan: ${challanNo}, SKU: ${sku}): Invalid Rate '${rawRate}'. Rate must be a valid non-negative number.`
+              );
+            } else {
+              rate = parsed;
+            }
+          }
+
+          validRows.push({
+            rowNum,
+            challanNo,
+            sku,
+            productName:
+              getRowVal(r, "particularsname", "particulars[name]", "productname", "name", "itemname") || sku,
+            orderedQty,
+            receivedQty,
+            rate,
+            poNo: getRowVal(r, "pono", "po_no", "po"),
+            recDate: getRowVal(r, "recdate", "rec.date", "receiveddate", "challandate", "date"),
+            remarks: getRowVal(r, "remarks", "remark"),
+          });
+        }
+
+        if (validationErrors.length > 0) {
+          const preview =
+            validationErrors.length <= 4
+              ? validationErrors.join("\n• ")
+              : `${validationErrors.slice(0, 4).join("\n• ")}\n• ...and ${validationErrors.length - 4} more error(s).`;
+          throw new Error(`Please fix the following error(s) in your Purchase Challan file:\n• ${preview}`);
+        }
+
+        if (validRows.length === 0) {
+          throw new Error(
+            "No valid data rows found in the uploaded file. Please provide at least one record with 'Challan No' and 'Particulars [SKU]'."
+          );
+        }
+
+        let existingChallans: any[] = [];
+        try {
+          const res = await purchaseChallanService.getChallans();
+          existingChallans = res?.data || [];
+        } catch (_) {}
+
+        const grouped = new Map<string, typeof validRows>();
+        for (const r of validRows) {
+          if (!grouped.has(r.challanNo)) {
+            grouped.set(r.challanNo, []);
+          }
+          grouped.get(r.challanNo)!.push(r);
+        }
+
+        let createdCount = 0;
+        let updatedCount = 0;
+        const opErrors: string[] = [];
+
+        for (const [chNo, groupRows] of grouped.entries()) {
+          const firstRow = groupRows[0];
+          const existing = existingChallans.find(
+            (c) => String(c.challanNo || "").trim().toLowerCase() === chNo.toLowerCase()
+          );
+
+          if (existing) {
+            try {
+              const existingItems: any[] = [...(existing.items || [])];
+              groupRows.forEach((r) => {
+                const itemIdx = existingItems.findIndex(
+                  (it) => String(it.sku || "").trim().toLowerCase() === r.sku.toLowerCase()
+                );
+                const updatedItem = {
+                  sku: r.sku,
+                  name: r.productName || (itemIdx >= 0 ? existingItems[itemIdx].name : r.sku),
+                  orderedQty: r.orderedQty,
+                  receivedQty: r.receivedQty,
+                  rate: r.rate,
+                  amount: r.receivedQty * r.rate,
+                  poNo: r.poNo || (itemIdx >= 0 ? existingItems[itemIdx].poNo : undefined),
+                  receivedDate: r.recDate || (itemIdx >= 0 ? existingItems[itemIdx].receivedDate : undefined),
+                  remarks: r.remarks || (itemIdx >= 0 ? existingItems[itemIdx].remarks : undefined),
+                  printBarcode: true,
+                };
+                if (itemIdx >= 0) {
+                  existingItems[itemIdx] = { ...existingItems[itemIdx], ...updatedItem };
+                } else {
+                  existingItems.push({ itemNo: existingItems.length + 1, ...updatedItem });
+                }
+              });
+
+              await purchaseChallanService.updateChallan(existing.id, {
+                items: existingItems,
+              });
+              updatedCount++;
+            } catch (err: any) {
+              opErrors.push(`Challan ${chNo}: ${err.message}`);
+            }
+          } else {
+            try {
+              const items = groupRows.map((r, idx) => ({
+                itemNo: idx + 1,
+                sku: r.sku,
+                name: r.productName || r.sku,
+                orderedQty: r.orderedQty,
+                receivedQty: r.receivedQty,
+                rate: r.rate,
+                amount: r.receivedQty * r.rate,
+                poNo: r.poNo || undefined,
+                receivedDate: r.recDate || undefined,
+                remarks: r.remarks || undefined,
+                printBarcode: true,
+              }));
+
+              await purchaseChallanService.createChallan({
+                challanNo: firstRow.challanNo,
+                supplierName: "General Supplier",
+                challanDate: firstRow.recDate || new Date().toISOString(),
+                challanFor: "Purchase",
+                stockIn: "General",
+                items,
+              });
+              createdCount++;
+            } catch (err: any) {
+              opErrors.push(`Challan ${chNo}: ${err.message}`);
+            }
+          }
+        }
+
+        if (createdCount === 0 && updatedCount === 0 && opErrors.length > 0) {
+          throw new Error(`Failed to process Purchase Challan file: ${opErrors[0]}`);
+        }
+
+        return {
+          success: true,
+          message: `Successfully processed Purchase Challans: ${createdCount} created, ${updatedCount} updated.`,
+        };
+      } catch (err: any) {
+        throw new Error(err.message || "Failed to process Purchase Challan file.");
+      }
+    }
+
+    case "salesChallan": {
+      try {
+        const lowerName = file.name.toLowerCase();
+        const isCsv = lowerName.endsWith(".csv");
+        const isXlsx = lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls");
+        if (!isCsv && !isXlsx) {
+          const extMatch = file.name.match(/\.[^.]+$/);
+          const ext = extMatch ? extMatch[0] : "";
+          throw new Error(`Invalid file format '${ext}'. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.`);
+        }
+
+        const rows = await parseFileToRows(file);
+        if (rows.length === 0) {
+          throw new Error(
+            "The uploaded Sales Challan file contains no data rows. Please ensure your sheet includes headers ('Particulars [SKU]') and at least one record."
+          );
+        }
+
+        const hasSkuHeader = rows.some((r) =>
+          hasRowField(r, "particularssku", "sku", "particulars[sku]", "productsku", "itemsku", "variantsku", "sellersku")
+        );
+
+        if (!hasSkuHeader) {
+          throw new Error(
+            "Invalid sheet format: Required column 'Particulars [SKU]' was not found in the header row. Please include 'Particulars [SKU]' in your sheet."
+          );
+        }
+
+        const validationErrors: string[] = [];
+        const validRows: Array<{
+          rowNum: number;
+          challanNo?: string;
+          sku: string;
+          productName?: string;
+          quantity: number;
+          rate: number;
+          disDate?: string;
+          subCn?: string;
+          remarks?: string;
+        }> = [];
+
+        for (let i = 0; i < rows.length; i++) {
+          const r = rows[i];
+          const rowNum = i + 2;
+
+          const hasAnyValue = Object.values(r).some(
+            (v) => v !== null && v !== undefined && String(v).trim() !== ""
+          );
+          if (!hasAnyValue) continue;
+
+          const sku = getRowVal(
+            r,
+            "particularssku",
+            "particulars[sku]",
+            "sku",
+            "productsku",
+            "itemsku",
+            "variantsku",
+            "sellersku"
+          );
+
+          if (!sku) {
+            validationErrors.push(
+              `Row ${rowNum}: Missing 'Particulars [SKU]'. 'Particulars [SKU]' is mandatory for every row.`
+            );
+            continue;
+          }
+
+          const challanNo = getRowVal(r, "challanno", "challan_no", "challan", "challannumber");
+
+          const rawQty = r["quantity"] ?? r["qty"];
+          let quantity = 1;
+          if (rawQty !== undefined && String(rawQty).trim() !== "") {
+            const parsed = parseNumericValue(rawQty);
+            if (parsed === undefined || isNaN(parsed) || parsed <= 0) {
+              validationErrors.push(
+                `Row ${rowNum} (SKU: ${sku}): Invalid Quantity '${rawQty}'. Quantity must be a valid number greater than 0.`
+              );
+            } else {
+              quantity = parsed;
+            }
+          }
+
+          const rawRate = r["rate"] ?? r["price"] ?? r["salesrate"];
+          let rate = 0;
+          if (rawRate !== undefined && String(rawRate).trim() !== "") {
+            const parsed = parseNumericValue(rawRate);
+            if (parsed === undefined || isNaN(parsed) || parsed < 0) {
+              validationErrors.push(
+                `Row ${rowNum} (SKU: ${sku}): Invalid Rate '${rawRate}'. Rate must be a valid non-negative number.`
+              );
+            } else {
+              rate = parsed;
+            }
+          }
+
+          validRows.push({
+            rowNum,
+            challanNo: challanNo || undefined,
+            sku,
+            productName:
+              getRowVal(r, "particularsname", "particulars[name]", "productname", "name", "itemname") || sku,
+            quantity,
+            rate,
+            disDate: getRowVal(r, "disdate", "dispatchdate", "dis.date", "challandate", "date"),
+            subCn: getRowVal(r, "subcn", "sub_cn", "sub c.n"),
+            remarks: getRowVal(r, "remarks", "remark"),
+          });
+        }
+
+        if (validationErrors.length > 0) {
+          const preview =
+            validationErrors.length <= 4
+              ? validationErrors.join("\n• ")
+              : `${validationErrors.slice(0, 4).join("\n• ")}\n• ...and ${validationErrors.length - 4} more error(s).`;
+          throw new Error(`Please fix the following error(s) in your Sales Challan file:\n• ${preview}`);
+        }
+
+        if (validRows.length === 0) {
+          throw new Error(
+            "No valid data rows found in the uploaded file. Please provide at least one record with 'Particulars [SKU]'."
+          );
+        }
+
+        let existingChallans: any[] = [];
+        try {
+          const res = await challanService.getChallans();
+          existingChallans = res?.data || [];
+        } catch (_) {}
+
+        let createdCount = 0;
+        let updatedCount = 0;
+        const opErrors: string[] = [];
+
+        const hasExplicitChallanNo = validRows.some((r) => Boolean(r.challanNo));
+
+        if (hasExplicitChallanNo) {
+          const grouped = new Map<string, typeof validRows>();
+          for (const r of validRows) {
+            const cNo = r.challanNo || "SC-DEFAULT";
+            if (!grouped.has(cNo)) grouped.set(cNo, []);
+            grouped.get(cNo)!.push(r);
+          }
+
+          for (const [chNo, groupRows] of grouped.entries()) {
+            const firstRow = groupRows[0];
+            const existing = existingChallans.find(
+              (c) => String(c.challanNo || "").trim().toLowerCase() === chNo.toLowerCase()
+            );
+
+            if (existing) {
+              try {
+                const existingItems: any[] = [...(existing.items || [])];
+                groupRows.forEach((r) => {
+                  const itemIdx = existingItems.findIndex(
+                    (it) => String(it.sku || "").trim().toLowerCase() === r.sku.toLowerCase()
+                  );
+                  const updatedItem = {
+                    sku: r.sku,
+                    name: r.productName || (itemIdx >= 0 ? existingItems[itemIdx].name : r.sku),
+                    quantity: r.quantity,
+                    rate: r.rate,
+                    amount: r.quantity * r.rate,
+                    dispatchDate:
+                      r.disDate || (itemIdx >= 0 ? existingItems[itemIdx].dispatchDate : undefined),
+                    subCn: r.subCn || (itemIdx >= 0 ? existingItems[itemIdx].subCn : undefined),
+                    remarks: r.remarks || (itemIdx >= 0 ? existingItems[itemIdx].remarks : undefined),
+                    printBarcode: true,
+                  };
+                  if (itemIdx >= 0) {
+                    existingItems[itemIdx] = { ...existingItems[itemIdx], ...updatedItem };
+                  } else {
+                    existingItems.push({ itemNo: existingItems.length + 1, ...updatedItem });
+                  }
+                });
+
+                await challanService.updateChallan(existing.id, {
+                  items: existingItems,
+                });
+                updatedCount++;
+              } catch (err: any) {
+                opErrors.push(`Challan ${chNo}: ${err.message}`);
+              }
+            } else {
+              try {
+                const items = groupRows.map((r, idx) => ({
+                  itemNo: idx + 1,
+                  sku: r.sku,
+                  name: r.productName || r.sku,
+                  quantity: r.quantity,
+                  rate: r.rate,
+                  amount: r.quantity * r.rate,
+                  dispatchDate: r.disDate || undefined,
+                  subCn: r.subCn || undefined,
+                  remarks: r.remarks || undefined,
+                  printBarcode: true,
+                }));
+
+                await challanService.createChallan({
+                  challanNo: firstRow.challanNo || `SC-${Date.now()}`,
+                  partyName: "General Party",
+                  challanDate: firstRow.disDate || new Date().toISOString(),
+                  challanFor: "Sales",
+                  stockOutFrom: "General",
+                  items,
+                });
+                createdCount++;
+              } catch (err: any) {
+                opErrors.push(`Challan ${chNo}: ${err.message}`);
+              }
+            }
+          }
+        } else {
+          // Process 7-column sheet keyed by Particulars [SKU]
+          const itemsToCreate: typeof validRows = [];
+
+          for (const r of validRows) {
+            const matchedChallan = existingChallans.find((c) =>
+              (c.items || []).some(
+                (it: any) => String(it.sku || "").trim().toLowerCase() === r.sku.toLowerCase()
+              )
+            );
+
+            if (matchedChallan) {
+              try {
+                const existingItems = [...(matchedChallan.items || [])];
+                const itemIdx = existingItems.findIndex(
+                  (it: any) => String(it.sku || "").trim().toLowerCase() === r.sku.toLowerCase()
+                );
+                if (itemIdx >= 0) {
+                  existingItems[itemIdx] = {
+                    ...existingItems[itemIdx],
+                    sku: r.sku,
+                    name: r.productName || existingItems[itemIdx].name || r.sku,
+                    quantity: r.quantity,
+                    rate: r.rate,
+                    amount: r.quantity * r.rate,
+                    dispatchDate: r.disDate || existingItems[itemIdx].dispatchDate,
+                    subCn: r.subCn || existingItems[itemIdx].subCn,
+                    remarks: r.remarks || existingItems[itemIdx].remarks,
+                  };
+                  await challanService.updateChallan(matchedChallan.id, {
+                    items: existingItems,
+                  });
+                  updatedCount++;
+                }
+              } catch (err: any) {
+                opErrors.push(`SKU ${r.sku}: ${err.message}`);
+              }
+            } else {
+              itemsToCreate.push(r);
+            }
+          }
+
+          if (itemsToCreate.length > 0) {
+            try {
+              let nextNo = "1";
+              try {
+                nextNo = await challanService.getNextChallanNo();
+              } catch (_) {}
+
+              const items = itemsToCreate.map((r, idx) => ({
+                itemNo: idx + 1,
+                sku: r.sku,
+                name: r.productName || r.sku,
+                quantity: r.quantity,
+                rate: r.rate,
+                amount: r.quantity * r.rate,
+                dispatchDate: r.disDate || undefined,
+                subCn: r.subCn || undefined,
+                remarks: r.remarks || undefined,
+                printBarcode: true,
+              }));
+
+              await challanService.createChallan({
+                challanNo: `SC-${nextNo}`,
+                partyName: "General Party",
+                challanDate: itemsToCreate[0]?.disDate || new Date().toISOString(),
+                challanFor: "Sales",
+                stockOutFrom: "General",
+                items,
+              });
+              createdCount++;
+            } catch (err: any) {
+              opErrors.push(`Create Challan: ${err.message}`);
+            }
+          }
+        }
+
+        if (createdCount === 0 && updatedCount === 0 && opErrors.length > 0) {
+          throw new Error(`Failed to process Sales Challan file: ${opErrors[0]}`);
+        }
+
+        return {
+          success: true,
+          message: `Successfully processed Sales Challans: ${createdCount} created, ${updatedCount} updated.`,
+        };
+      } catch (err: any) {
+        throw new Error(err.message || "Failed to process Sales Challan file.");
       }
     }
 

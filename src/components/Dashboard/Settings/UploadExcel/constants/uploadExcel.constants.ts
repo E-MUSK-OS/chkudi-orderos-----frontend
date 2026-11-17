@@ -4,7 +4,10 @@ export type ProfileKey =
   | "employee"
   | "salaried"
   | "material"
-  | "product";
+  | "product"
+  | "productAnalytics"
+  | "purchaseChallan"
+  | "salesChallan";
 
 export interface ProfileMeta {
   key: ProfileKey;
@@ -43,6 +46,21 @@ export const PROFILES_LIST: ProfileMeta[] = [
     label: "Product Profile",
     description: "Manage product catalog, variant SKUs, cost pricing, opening stock, and rack locations.",
   },
+  {
+    key: "productAnalytics",
+    label: "Product Analytics",
+    description: "Manage product analytics, ASIN/SKU monitoring links, operator assignments, and daily tracking records.",
+  },
+  {
+    key: "purchaseChallan",
+    label: "Purchase Challan",
+    description: "Manage inward purchase delivery notes, supplier consignments, item quantities, and stock godown.",
+  },
+  {
+    key: "salesChallan",
+    label: "Sales Challan",
+    description: "Manage outbound sales delivery notes, customer consignments, item quantities, and dispatch records.",
+  },
 ];
 
 export interface SectionConfig {
@@ -50,7 +68,8 @@ export interface SectionConfig {
   title: string;
   isCreate?: boolean;
   fields?: string[];
-  filterKeys: ("product" | "category" | "masterSku" | "material" | "company" | "status" | "state" | "accountHead" | "department" | "employee" | "month")[];
+  fixedFields?: string[];
+  filterKeys: ("product" | "category" | "masterSku" | "material" | "company" | "status" | "state" | "accountHead" | "department" | "employee" | "month" | "operator" | "day" | "party")[];
 }
 
 export const PROFILE_SECTIONS: Record<ProfileKey, SectionConfig[]> = {
@@ -381,6 +400,77 @@ export const PROFILE_SECTIONS: Record<ProfileKey, SectionConfig[]> = {
         "Remarks",
       ],
       filterKeys: ["month", "department"],
+    },
+  ],
+
+  productAnalytics: [
+    {
+      id: "product-analytics-create",
+      title: "Upload Product Analytics Records (Excel / CSV)",
+      isCreate: true,
+      filterKeys: [],
+    },
+    {
+      id: "product-analytics-details",
+      title: "Update Product Analytics Operator, Day, SKU & URL Details",
+      fields: [
+        "Seller SKU",
+        "Operator Name",
+        "Day",
+        "Product URL",
+      ],
+      fixedFields: ["Seller SKU"],
+      filterKeys: ["operator", "day"],
+    },
+  ],
+
+  purchaseChallan: [
+    {
+      id: "purchase-challan-create",
+      title: "Upload Purchase Challans / Inward Delivery Notes (Excel / CSV)",
+      isCreate: true,
+      filterKeys: [],
+    },
+    {
+      id: "purchase-challan-details",
+      title: "Update Purchase Challan Details, Items & Quantities",
+      fields: [
+        "Particulars [SKU]",
+        "Particulars [Name]",
+        "Ord.Qty",
+        "Rec.Qty",
+        "Rate",
+        "PO No",
+        "Challan No",
+        "Rec.Date",
+        "Remarks",
+      ],
+      fixedFields: ["Challan No", "Particulars [SKU]"],
+      filterKeys: ["status"],
+    },
+  ],
+
+  salesChallan: [
+    {
+      id: "sales-challan-create",
+      title: "Upload Sales Challans / Outbound Consignments (Excel / CSV)",
+      isCreate: true,
+      filterKeys: [],
+    },
+    {
+      id: "sales-challan-details",
+      title: "Update Sales Challan Details, Items & Quantities",
+      fields: [
+        "Particulars [SKU]",
+        "Particulars [Name]",
+        "Quantity",
+        "Rate",
+        "Dis.Date",
+        "Sub C.N",
+        "Remarks",
+      ],
+      fixedFields: ["Particulars [SKU]"],
+      filterKeys: ["status"],
     },
   ],
 };

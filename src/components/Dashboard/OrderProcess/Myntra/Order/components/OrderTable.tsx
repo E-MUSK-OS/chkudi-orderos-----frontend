@@ -8,12 +8,16 @@ interface Props {
   orders: Order[];
   selectedRows: number[];
   onSelectionChange: (rows: number[]) => void;
+  tableScrollRef?: React.RefObject<HTMLDivElement | null>;
+  pagination?: React.ReactNode;
 }
 
 const OrderTable = ({
   orders,
   selectedRows,
   onSelectionChange,
+  tableScrollRef,
+  pagination,
 }: Props) => {
   const allSelected =
     orders.length > 0 && orders.every((order) => selectedRows.includes(order.id));
@@ -39,10 +43,14 @@ const OrderTable = ({
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
-      <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+    <div className="w-full flex-1 min-h-[380px] lg:min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col">
+      <div
+        ref={tableScrollRef}
+        className="w-full flex-1 min-h-[320px] lg:min-h-0 overflow-y-auto overflow-x-auto custom-scrollbar"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         <table className="w-full min-w-[800px] border-collapse text-left font-sans">
-          <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08]">
+          <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none shadow-xs">
             <tr>
               <th className="w-12 min-w-[44px] px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
                 <div className="flex items-center justify-center">
@@ -154,6 +162,12 @@ const OrderTable = ({
           </tbody>
         </table>
       </div>
+
+      {pagination && (
+        <div className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08]">
+          {pagination}
+        </div>
+      )}
     </div>
   );
 };

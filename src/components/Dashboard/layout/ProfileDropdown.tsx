@@ -163,7 +163,7 @@ export default function ProfileDropdown({ setLogoutOpen }: Props) {
                 duration: 0.2,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="absolute right-0 top-12 z-30 w-[calc(100vw-2rem)] sm:w-72 max-w-xs sm:max-w-sm rounded-2xl origin-top-right border border-[#E7E0D2] bg-white p-2.5 shadow-xl dark:border-white/[0.1] dark:bg-[#0F1626] dark:shadow-2xl"
+              className="absolute right-0 top-12 z-50 w-[calc(100vw-2rem)] sm:w-72 max-w-xs sm:max-w-sm rounded-2xl origin-top-right border border-[#E7E0D2] bg-white p-2.5 shadow-xl dark:border-white/[0.1] dark:bg-[#0F1626] dark:shadow-2xl"
             >
               <div className="border-b border-[#E7E0D2] dark:border-white/[0.08] px-3 py-2.5 flex items-center gap-2.5">
                 {avatarSrc && !avatarError ? (

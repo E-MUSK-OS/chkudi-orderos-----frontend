@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Trash2, Edit2, Tag, Plus, Loader2, Search, X, LayoutGrid, Printer } from "lucide-react";
 import { labelService } from "../services/label.service";
@@ -13,6 +13,7 @@ import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmModal from "./components/ConfirmModal";
 import { TestPrintModal } from "./components/TestPrintModal";
 import ReactSelect from "@/components/ui/ReactSelect";
+import Pagination from "@/components/ui/Pagination";
 
 const DUMMY_PRODUCT: ProductLookupResult = {
   title: "Sample Product Name",
@@ -102,6 +103,19 @@ export function TemplateGallery() {
   const [testPrintTemplate, setTestPrintTemplate] = useState<LabelTemplate | null>(null);
   const isCancelingRename = useRef(false);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Scroll & Height coordinator refs & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerCardRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const cardsScrollRef = useRef<HTMLDivElement>(null);
+
+  const [contentMaxHeight, setContentMaxHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -120,6 +134,108 @@ export function TemplateGallery() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  // Calculate available height on desktop (>= 1024px)
+  // so the header card & toolbar remain fixed at the top,
+  // and the cards grid area scrolls internally.
+  const calculateHeight = useCallback(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) {
+      setContentMaxHeight(null);
+      return;
+    }
+    if (!containerRef.current) return;
+    const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    const available = scrollContainer.clientHeight - paddingTop - paddingBottom;
+    if (available > 320) {
+      const headerHeight = headerCardRef.current?.offsetHeight || 88;
+      const toolbarHeight = toolbarRef.current?.offsetHeight || 60;
+      const paginationHeight = 56;
+      const gaps = 60; // 2x gap-6 (24px each) + mt-3 (12px)
+      const maxForContent = available - headerHeight - toolbarHeight - paginationHeight - gaps;
+      if (maxForContent > 150) {
+        setContentMaxHeight(Math.floor(maxForContent));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    calculateHeight();
+
+    const timer = setTimeout(calculateHeight, 150);
+
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    window.addEventListener("resize", calculateHeight);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (scrollContainer && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        calculateHeight();
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", calculateHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  useEffect(() => {
+    calculateHeight();
+  }, [templates.length, search, calculateHeight]);
+
+  // Lock outer scroll at header position on desktop:
+  // Header Card and Toolbar stay fixed at the top, outer page does not scroll,
+  // and scrolling forwards to the internal cards container.
+  useEffect(() => {
+    const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTop = 0;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+      scrollContainer.scrollTop = 0;
+
+      const cardsContainer = cardsScrollRef.current;
+      if (!cardsContainer) return;
+
+      if (!e.composedPath().includes(cardsContainer) && !cardsContainer.contains(e.target as Node)) {
+        cardsContainer.scrollTop += e.deltaY;
+      }
+    };
+
+    const onScroll = () => {
+      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
+        scrollContainer.scrollTop = 0;
+      }
+    };
+
+    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
+    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scrollContainer.removeEventListener("wheel", onWheel);
+      scrollContainer.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   const handleDuplicate = async (template: LabelTemplate) => {
@@ -213,10 +329,29 @@ export function TemplateGallery() {
     );
   }, [templates, search]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const totalRecords = filteredTemplates.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+  const paginatedTemplates = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredTemplates.slice(start, start + pageSize);
+  }, [filteredTemplates, page, pageSize]);
+
+  useEffect(() => {
+    cardsScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page, pageSize]);
+
   return (
-    <div className="space-y-6">
-      {/* Page Header matching Product Analytics Amazon */}
-      <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+    <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100">
+      {/* 1. Page Header Card (locked at top) */}
+      <div
+        ref={headerCardRef}
+        className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm"
+      >
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1.5">
             <h1 className="text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
@@ -238,8 +373,11 @@ export function TemplateGallery() {
         </div>
       </div>
 
-      {/* Toolbar: Search & Total Templates Badge matching OrderOS Theme */}
-      <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+      {/* 2. Toolbar: Search & Total Templates Badge */}
+      <div
+        ref={toolbarRef}
+        className="shrink-0 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
+      >
         {/* Left side: Searchbar matching OrderOS theme */}
         <div className="w-full sm:max-w-md md:w-96 lg:w-[420px] transition-all">
           <div className="group flex h-10 sm:h-11 items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 shadow-xs transition-all hover:border-[#E8C16D] hover:bg-slate-50/50 dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04] focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30 focus-within:bg-white dark:focus-within:bg-[#080B11]">
@@ -293,7 +431,7 @@ export function TemplateGallery() {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* 3. Main Content Area with internal scrolling & global pagination */}
       {isLoading ? (
         <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-12 text-center shadow-sm">
           <div className="flex flex-col items-center justify-center gap-3">
@@ -321,139 +459,179 @@ export function TemplateGallery() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {/* Create New Card */}
+        <div className="flex flex-col min-h-0 flex-1">
+          {/* Internal Scrollable Cards Grid */}
           <div
-            onClick={() => router.push("/dashboard/settings/labels/label-config?id=new")}
-            className="group cursor-pointer rounded-2xl sm:rounded-3xl border-2 border-dashed border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#0F1626] hover:bg-[#FFFDF5] dark:hover:bg-[#121824] hover:border-[#E8C16D] p-6 flex flex-col items-center justify-center aspect-[4/3] transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5"
+            ref={cardsScrollRef}
+            className="flex-1 min-h-0 overflow-y-auto custom-scrollbar overscroll-contain pr-1 pb-1"
+            style={{
+              maxHeight: isDesktop && contentMaxHeight ? `${contentMaxHeight}px` : undefined,
+              WebkitOverflowScrolling: "touch",
+            }}
           >
-            <div className="w-14 h-14 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/40 group-hover:bg-[#E8C16D] group-hover:text-[#0A0E1A] flex items-center justify-center mb-3 transition-all duration-200 shadow-xs group-hover:scale-110">
-              <Plus className="w-6 h-6 transition-transform duration-200" />
-            </div>
-            <span className="font-bold text-sm sm:text-base text-[#0A0E1A] dark:text-white group-hover:text-[#B88728] dark:group-hover:text-[#E8C16D] transition-colors">
-              New Template
-            </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-              Create custom barcode label
-            </span>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {/* Create New Card (shown on page 1 when not searching) */}
+              {page === 1 && !search.trim() && (
+                <div
+                  onClick={() => router.push("/dashboard/settings/labels/label-config?id=new")}
+                  className="group cursor-pointer rounded-2xl sm:rounded-3xl border-2 border-dashed border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#0F1626] hover:bg-[#FFFDF5] dark:hover:bg-[#121824] hover:border-[#E8C16D] p-6 flex flex-col items-center justify-center aspect-[4/3] transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/40 group-hover:bg-[#E8C16D] group-hover:text-[#0A0E1A] flex items-center justify-center mb-3 transition-all duration-200 shadow-xs group-hover:scale-110">
+                    <Plus className="w-6 h-6 transition-transform duration-200" />
+                  </div>
+                  <span className="font-bold text-sm sm:text-base text-[#0A0E1A] dark:text-white group-hover:text-[#B88728] dark:group-hover:text-[#E8C16D] transition-colors">
+                    New Template
+                  </span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    Create custom barcode label
+                  </span>
+                </div>
+              )}
 
-          {/* Template Cards */}
-          {filteredTemplates.map(template => (
-            <div
-              key={template.id}
-              className="group cursor-pointer rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-hidden hover:border-[#E8C16D] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col relative"
-              onClick={() => router.push(`/dashboard/settings/labels/label-config?id=${template.id}`)}
-            >
-              <div className="aspect-[4/3] border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] relative flex items-center justify-center p-3">
-                <TemplateThumbnail template={template} />
-              </div>
+              {/* Paginated Template Cards */}
+              {paginatedTemplates.map(template => (
+                <div
+                  key={template.id}
+                  className="group cursor-pointer rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-hidden hover:border-[#E8C16D] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col relative"
+                  onClick={() => router.push(`/dashboard/settings/labels/label-config?id=${template.id}`)}
+                >
+                  <div className="aspect-[4/3] border-b border-[#E7E0D2] dark:border-white/[0.08] bg-[#FAF8F5] dark:bg-[#080B11] relative flex items-center justify-center p-3">
+                    <TemplateThumbnail template={template} />
+                  </div>
 
-              <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 relative bg-white dark:bg-[#0F1626]">
-                <div className="pr-8">
-                  {renamingId === template.id ? (
-                    <input
-                      type="text"
-                      autoFocus
-                      className="w-full text-sm font-bold text-[#0A0E1A] dark:text-white border-b-2 border-[#E8C16D] bg-transparent focus:outline-none mb-1.5"
-                      value={renameValue}
-                      onChange={e => setRenameValue(e.target.value)}
-                      onClick={e => e.stopPropagation()}
-                      onBlur={() => {
-                        if (!isCancelingRename.current) submitRename(template.id!);
-                        isCancelingRename.current = false;
-                      }}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') submitRename(template.id!);
-                        if (e.key === 'Escape') {
-                          isCancelingRename.current = true;
-                          setRenamingId(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <h3 className="font-bold text-sm sm:text-base text-[#0A0E1A] dark:text-white group-hover:text-[#B88728] dark:group-hover:text-[#E8C16D] transition-colors truncate" title={template.name}>
-                      {template.name}
-                    </h3>
-                  )}
+                  <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 relative bg-white dark:bg-[#0F1626]">
+                    <div className="pr-8">
+                      {renamingId === template.id ? (
+                        <input
+                          type="text"
+                          autoFocus
+                          className="w-full text-sm font-bold text-[#0A0E1A] dark:text-white border-b-2 border-[#E8C16D] bg-transparent focus:outline-none mb-1.5"
+                          value={renameValue}
+                          onChange={e => setRenameValue(e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          onBlur={() => {
+                            if (!isCancelingRename.current) submitRename(template.id!);
+                            isCancelingRename.current = false;
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') submitRename(template.id!);
+                            if (e.key === 'Escape') {
+                              isCancelingRename.current = true;
+                              setRenamingId(null);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <h3 className="font-bold text-sm sm:text-base text-[#0A0E1A] dark:text-white group-hover:text-[#B88728] dark:group-hover:text-[#E8C16D] transition-colors truncate" title={template.name}>
+                          {template.name}
+                        </h3>
+                      )}
 
-                  {editingMarketplaceId === template.id ? (
-                    <div onClick={e => e.stopPropagation()} className="mt-2">
-                      <ReactSelect
-                        menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
-                        options={[
-                          { label: "No Marketplace", value: "" },
-                          ...marketplaces.filter(m => m.isActive).map(m => ({
-                            label: m.marketplaceName,
-                            value: m.id
-                          }))
+                      {editingMarketplaceId === template.id ? (
+                        <div onClick={e => e.stopPropagation()} className="mt-2">
+                          <ReactSelect
+                            menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
+                            options={[
+                              { label: "No Marketplace", value: "" },
+                              ...marketplaces.filter(m => m.isActive).map(m => ({
+                                label: m.marketplaceName,
+                                value: m.id
+                              }))
+                            ]}
+                            value={
+                              template.marketplaceId 
+                                ? { label: getMarketplaceName(template.marketplaceId) || "", value: template.marketplaceId }
+                                : { label: "No Marketplace", value: "" }
+                            }
+                            onChange={opt => {
+                              if (opt) submitMarketplace(template.id!, String(opt.value));
+                            }}
+                            onBlur={() => setEditingMarketplaceId(null)}
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {template.marketplaceId && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/40">
+                              {getMarketplaceName(template.marketplaceId)}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08]">
+                            {template.settings.widthMm} × {template.settings.heightMm} mm
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card footer action row */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors flex items-center gap-1">
+                        Edit Template
+                        <span className="transition-transform group-hover:translate-x-1">→</span>
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                          {template.layoutJson ? `${template.layoutJson.length} items` : "Custom"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTestPrintTemplate(template);
+                          }}
+                          className="text-slate-400 dark:text-slate-500 hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors p-1 rounded-md hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E]"
+                          title="Test Print"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Action Menu */}
+                    <div 
+                      className="absolute top-4 right-3 opacity-80 sm:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ActionMenu
+                        items={[
+                          { label: "Rename", icon: Edit2, onClick: () => { setRenamingId(template.id!); setRenameValue(template.name); }, disabled: actionInFlight },
+                          { label: "Duplicate", icon: Copy, onClick: () => handleDuplicate(template), disabled: actionInFlight },
+                          { label: "Assign Marketplace", icon: Tag, onClick: () => setEditingMarketplaceId(template.id!), disabled: actionInFlight },
+                          { label: "Delete", icon: Trash2, variant: "danger", onClick: () => triggerDelete(template.id!), disabled: actionInFlight },
                         ]}
-                        value={
-                          template.marketplaceId 
-                            ? { label: getMarketplaceName(template.marketplaceId) || "", value: template.marketplaceId }
-                            : { label: "No Marketplace", value: "" }
-                        }
-                        onChange={opt => {
-                          if (opt) submitMarketplace(template.id!, String(opt.value));
-                        }}
-                        onBlur={() => setEditingMarketplaceId(null)}
                       />
                     </div>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      {template.marketplaceId && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/40">
-                          {getMarketplaceName(template.marketplaceId)}
-                        </span>
-                      )}
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08]">
-                        {template.settings.widthMm} × {template.settings.heightMm} mm
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Card footer action row */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-[#0A0E1A] dark:group-hover:text-white transition-colors flex items-center gap-1">
-                    Edit Template
-                    <span className="transition-transform group-hover:translate-x-1">→</span>
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
-                      {template.layoutJson ? `${template.layoutJson.length} items` : "Custom"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setTestPrintTemplate(template);
-                      }}
-                      className="text-slate-400 dark:text-slate-500 hover:text-[#B88728] dark:hover:text-[#E8C16D] transition-colors p-1 rounded-md hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E]"
-                      title="Test Print"
-                    >
-                      <Printer className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
-
-                {/* Action Menu */}
-                <div 
-                  className="absolute top-4 right-3 opacity-80 sm:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ActionMenu
-                    items={[
-                      { label: "Rename", icon: Edit2, onClick: () => { setRenamingId(template.id!); setRenameValue(template.name); }, disabled: actionInFlight },
-                      { label: "Duplicate", icon: Copy, onClick: () => handleDuplicate(template), disabled: actionInFlight },
-                      { label: "Assign Marketplace", icon: Tag, onClick: () => setEditingMarketplaceId(template.id!), disabled: actionInFlight },
-                      { label: "Delete", icon: Trash2, variant: "danger", onClick: () => triggerDelete(template.id!), disabled: actionInFlight },
-                    ]}
-                  />
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* 4. Global Pagination pinned at bottom */}
+          {!isLoading && totalRecords > 0 && (
+            <div className="shrink-0 relative rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-sm mt-3 overflow-hidden">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                totalRecords={totalRecords}
+                total={totalRecords}
+                limit={pageSize}
+                pageSize={pageSize}
+                itemName="templates"
+                variant="dark"
+                className="border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                onLimitChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 

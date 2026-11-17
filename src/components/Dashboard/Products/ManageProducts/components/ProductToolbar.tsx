@@ -397,10 +397,10 @@ export default function ProductToolbar({
                   window.location.href = "/dashboard/settings/upload-excel?tab=product";
                 }}
                 disabled={isImporting}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] active:scale-[0.98] disabled:opacity-50 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-white dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]"
+                className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] disabled:opacity-50"
                 title="Upload Excel"
               >
-                <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0 dark:bg-white/[0.06] dark:text-slate-300">
+                <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                   <FileSpreadsheet className="h-3.5 w-3.5" />
                 </div>
                 <span>Upload Excel</span>
@@ -410,10 +410,10 @@ export default function ProductToolbar({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 focus-within:border-[#E8C16D] active:scale-[0.98] disabled:opacity-50 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-white dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]"
+                className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] disabled:opacity-50"
                 title={`Import ${importType === "asin" ? "ASIN" : "Myntra"} Excel`}
               >
-                <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0 dark:bg-white/[0.06] dark:text-slate-300">
+                <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                   <Upload className="h-3.5 w-3.5" />
                 </div>
                 <span>{isImporting ? "Importing..." : "Import"}</span>
@@ -426,14 +426,14 @@ export default function ProductToolbar({
             <button
               type="button"
               onClick={handleDownloadData}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D] bg-[#FFF9EC] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs hover:bg-[#FFF3D6] ring-2 ring-[#E8C16D]/30 active:scale-[0.98] cursor-pointer dark:border-[#F5C451]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:ring-[#F5C451]/20 dark:hover:bg-[#F5C451]/25"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] cursor-pointer"
               title={
                 importType === "product" && selectedCount > 0
                   ? `Export ${selectedCount} selected product(s)`
                   : `Export ${importType === "asin" ? "ASIN" : importType === "myntra" ? "Myntra" : "Product"} data`
               }
             >
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#F5C451]/20 dark:text-[#F5C451]">
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                 <Download className="h-3.5 w-3.5" />
               </div>
               <span>
@@ -446,10 +446,10 @@ export default function ProductToolbar({
             <button
               type="button"
               onClick={handleDownloadDemoSheet}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#0A0E1A] transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 active:scale-[0.98] dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-white dark:hover:border-[#F5C451]/50 dark:hover:bg-white/[0.04]"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98]"
               title="Download demo Excel sheet"
             >
-              <div className="grid h-5 w-5 place-items-center rounded-md bg-slate-100 text-slate-700 shrink-0 dark:bg-white/[0.06] dark:text-slate-300">
+              <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                 <Download className="h-3.5 w-3.5" />
               </div>
               <span>Demo Sheet</span>
