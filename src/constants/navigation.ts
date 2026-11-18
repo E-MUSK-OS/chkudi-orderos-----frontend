@@ -382,6 +382,13 @@ export const navItems: NavItem[] = [
         href: "/dashboard/settings/webstore",
         defaultTimeAgo: "3d ago",
       },
+      {
+        label: "Amazon SP-API",
+        icon: Store,
+        href: "/dashboard/settings/amazon",
+        defaultTimeAgo: "Just now",
+        isCore: true,
+      },
     ],
   },
 ];
@@ -394,6 +401,15 @@ export const navItems: NavItem[] = [
  * by search or URL but aren't parent items in the sidebar.
  */
 export const standalonePages: SearchPageItem[] = [
+  {
+    id: "amazon-integration",
+    title: "Amazon SP-API Integration",
+    path: "Settings > Amazon SP-API",
+    href: "/dashboard/settings/amazon",
+    icon: Store,
+    defaultTimeAgo: "Just now",
+    keywords: ["amazon", "sp-api", "seller central", "marketplace", "lwa", "oauth", "orders sync", "amazon store"],
+  },
   {
     id: "add-product",
     title: "Add Product",
