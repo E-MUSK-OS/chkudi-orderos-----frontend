@@ -62,7 +62,7 @@ export default function WebstoreStatsBanner({ stores }: WebstoreStatsBannerProps
   ];
 
   return (
-    <section className="grid gap-2.5 sm:gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
+    <section className="grid gap-2.5 sm:gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 w-full min-w-0">
       {stats.map((stat, i) => {
         const Icon = stat.icon;
         const isLastOnMobile = i === 4;

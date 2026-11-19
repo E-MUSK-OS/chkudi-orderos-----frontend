@@ -31,7 +31,7 @@ export default function WebstoreHeader({
       : "Webstore";
 
   return (
-    <div className="w-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 shadow-sm">
+    <div className="w-full max-w-full min-w-0 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 shadow-sm">
       {/* Title & Breadcrumbs */}
       <div className="flex items-center gap-3.5">
         {viewMode !== "list" && (

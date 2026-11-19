@@ -83,6 +83,7 @@ export default function WebstoreFilterSortBar({
               value={filters.marketplaceName}
               onChange={(val) => onFilterChange("marketplaceName", val)}
               options={channelFilterOptions}
+              className="w-full min-w-0"
               buttonClassName="h-9 px-3 text-xs font-semibold rounded-full border border-[#E7E0D2] dark:border-white/[0.08] w-full"
               menuClassName="w-48"
             />
@@ -95,6 +96,7 @@ export default function WebstoreFilterSortBar({
               value={filters.isActive}
               onChange={(val) => onFilterChange("isActive", val)}
               options={statusFilterOptions}
+              className="w-full min-w-0"
               buttonClassName="h-9 px-3 text-xs font-semibold rounded-full border border-[#E7E0D2] dark:border-white/[0.08] w-full"
               menuClassName="w-40"
             />
@@ -144,7 +146,7 @@ export default function WebstoreFilterSortBar({
 
       {/* Styled Columns Bar matching system standard (Header bar with sort arrows) - Shown in Grid view */}
       {layoutMode === "grid" && (
-        <div className="overflow-x-auto no-scrollbar rounded-xl sm:rounded-2xl bg-[#FEFAEE] dark:bg-[#080B11] border border-[#F5E6BE] dark:border-white/[0.08] shadow-sm">
+        <div className="overflow-x-auto no-scrollbar rounded-xl sm:rounded-2xl bg-[#FEFAEE] dark:bg-[#080B11] border border-[#F5E6BE] dark:border-white/[0.08] shadow-sm w-full max-w-full min-w-0">
           <div className="grid grid-cols-6 min-w-[700px] text-[#6A4D1D] dark:text-[#E8C16D] text-xs font-semibold py-2.5 px-4 select-none">
             {sortColumns.map((col) => {
               const isSorted = filters.sortBy === col.key;
