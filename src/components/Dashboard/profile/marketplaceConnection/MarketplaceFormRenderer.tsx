@@ -18,7 +18,7 @@ export default function MarketplaceFormRenderer({
   switch (account.marketplace.marketplaceCode) {
 
     case "AMAZON":
-      return <AmazonConnectionForm />;
+      return <AmazonConnectionForm accountId={account.id} />;
 
     case "MYNTRA":
       return <MyntraConnectionForm />;
