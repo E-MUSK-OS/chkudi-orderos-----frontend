@@ -16,21 +16,24 @@ export default function LandingFooter({ isLoggedIn = false }: LandingFooterProps
           <span>— Enterprise Commerce Terminal.</span>
         </div>
         <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 sm:gap-5 lg:gap-6">
-          <a href="#features" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          <Link href="/features" className="hover:text-slate-900 dark:hover:text-white transition-colors">
             Features
-          </a>
-          <a href="#marketplaces" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          </Link>
+          <Link href="/marketplaces" className="hover:text-slate-900 dark:hover:text-white transition-colors">
             Marketplaces
-          </a>
-          <a href="#about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          </Link>
+          <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
             About Us
-          </a>
-          <a href="#contact" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          </Link>
+          <Link href="/contact" className="hover:text-slate-900 dark:hover:text-white transition-colors">
             Contact Us
-          </a>
-          <a href="#privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          </Link>
+          <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
             Privacy Policy
-          </a>
+          </Link>
+          <Link href="/terms" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+            Terms & Conditions
+          </Link>
           <Link
             href={isLoggedIn ? "/dashboard" : "/login"}
             className="font-bold hover:text-slate-900 dark:hover:text-white transition-colors"

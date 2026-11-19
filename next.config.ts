@@ -33,6 +33,31 @@ const nextConfig: NextConfig = {
         destination: "/:path+",
         permanent: false,
       },
+      {
+        source: "/about-us",
+        destination: "/about",
+        permanent: false,
+      },
+      {
+        source: "/contact-us",
+        destination: "/contact",
+        permanent: false,
+      },
+      {
+        source: "/privacy-policy",
+        destination: "/privacy",
+        permanent: false,
+      },
+      {
+        source: "/terms-and-conditions",
+        destination: "/terms",
+        permanent: false,
+      },
+      {
+        source: "/terms-conditions",
+        destination: "/terms",
+        permanent: false,
+      },
     ];
   },
   async rewrites() {
@@ -52,7 +77,7 @@ const nextConfig: NextConfig = {
       },
       {
         source:
-          "/:first((?!(?:dashboard|login|forgot-password|reset-password|signup|verify-email|api|_next|static|favicon\\.ico|offline|printbridge)(?:[/#?]|$))[^/]+)/:rest*",
+          "/:first((?!(?:dashboard|login|forgot-password|reset-password|signup|verify-email|api|_next|static|favicon\\.ico|offline|printbridge|features|marketplaces|about|about-us|contact|contact-us|privacy|privacy-policy|terms|terms-and-conditions|terms-conditions)(?:[/#?]|$))[^/]+)/:rest*",
         destination: "/dashboard/:first/:rest*",
       },
     ];

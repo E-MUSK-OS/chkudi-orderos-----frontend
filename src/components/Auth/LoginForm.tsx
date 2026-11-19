@@ -13,6 +13,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
 import { authService } from "@/services/auth/auth.service";
+import { setToken } from "@/utils/auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -43,13 +44,15 @@ export default function LoginForm() {
 
       toast.success(response.message);
 
-      localStorage.setItem("accessToken", response.data.accessToken);
-
+      setToken(response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
-
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      router.push("/dashboard");
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const target = params?.get("redirect");
+      const safeTarget = target && target.startsWith("/") && !target.startsWith("//") ? target : "/dashboard";
+
+      router.push(safeTarget);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);

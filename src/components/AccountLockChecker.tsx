@@ -4,25 +4,8 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 
-import { getToken, logout, handleAuthFailure } from "@/utils/auth";
+import { getToken, logout, handleAuthFailure, isPublicRoute, setToken } from "@/utils/auth";
 import { authService } from "@/services/auth/auth.service";
-
-const AUTH_PAGES = [
-  "/",
-  "/login",
-  "/forgot-password",
-  "/reset-password",
-  "/signup",
-  "/verify-email",
-  "/offline",
-  "/printbridge",
-];
-
-function isPublicAuthPage(pathname: string): boolean {
-  const cleanPath = pathname?.split("?")[0]?.replace(/\/+$/, "") || "/";
-  if (cleanPath === "/" || cleanPath === "") return true;
-  return AUTH_PAGES.some((p) => p !== "/" && (cleanPath === p || cleanPath.startsWith(p + "/")));
-}
 
 export default function AccountLockChecker() {
   const pathname = usePathname();
@@ -30,19 +13,29 @@ export default function AccountLockChecker() {
   useEffect(() => {
     const checkTokensExist = () => {
       if (typeof window === "undefined") return;
-      if (isPublicAuthPage(window.location.pathname)) return;
+      if (isPublicRoute(window.location.pathname)) return;
 
       const token = localStorage.getItem("accessToken");
       const refreshToken = localStorage.getItem("refreshToken");
 
-      if (!token && !refreshToken) {
+      const hasValidToken = Boolean(
+        token && token !== "null" && token !== "undefined" && token.trim() !== ""
+      );
+      const hasValidRefresh = Boolean(
+        refreshToken && refreshToken !== "null" && refreshToken !== "undefined" && refreshToken.trim() !== ""
+      );
+
+      if (!hasValidToken && !hasValidRefresh) {
         handleAuthFailure();
+      } else if (hasValidToken && !document.cookie.includes("accessToken=")) {
+        // Ensure cookie is synchronized for edge middleware
+        setToken(token!);
       }
     };
 
     const checkAccountServer = async () => {
       if (typeof window === "undefined") return;
-      if (isPublicAuthPage(window.location.pathname)) return;
+      if (isPublicRoute(window.location.pathname)) return;
 
       const token = getToken();
       const refreshToken = localStorage.getItem("refreshToken");
@@ -71,6 +64,14 @@ export default function AccountLockChecker() {
           setTimeout(() => {
             logout();
           }, 1000);
+        } else if (
+          message.includes("401") ||
+          message.includes("Unauthorized") ||
+          message.includes("jwt") ||
+          message.includes("token") ||
+          message.includes("Session expired")
+        ) {
+          handleAuthFailure();
         }
       }
     };

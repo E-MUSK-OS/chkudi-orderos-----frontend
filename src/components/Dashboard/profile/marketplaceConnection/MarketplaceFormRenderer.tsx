@@ -10,18 +10,33 @@ import {
 
 interface MarketplaceFormRendererProps {
   account: MarketplaceAccount;
+  connecting?: boolean;
+  setConnecting?: (connecting: boolean) => void;
+  onSuccess?: () => void;
+  onClose?: () => void;
 }
 
 export default function MarketplaceFormRenderer({
   account,
+  connecting,
+  setConnecting,
+  onSuccess,
+  onClose,
 }: MarketplaceFormRendererProps) {
   switch (account.marketplace.marketplaceCode) {
-
     case "AMAZON":
       return <AmazonConnectionForm accountId={account.id} />;
 
     case "MYNTRA":
-      return <MyntraConnectionForm />;
+      return (
+        <MyntraConnectionForm
+          account={account}
+          connecting={connecting}
+          setConnecting={setConnecting}
+          onSuccess={onSuccess}
+          onClose={onClose}
+        />
+      );
 
     case "FLIPKART":
       return <FlipkartConnectionForm />;

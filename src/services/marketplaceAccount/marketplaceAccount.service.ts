@@ -102,3 +102,58 @@ export const toggleMarketplaceAccountStatus = (
     getToken()
   );
 };
+
+// ==================================================================================
+// ====================== CONNECT MYNTRA MARKETPLACE ================================
+// ==================================================================================
+
+export const connectMyntra = (
+  accountId: string,
+  data: { secretKey: string; merchantId: string }
+) => {
+  return api.post<{
+    success: boolean;
+    message: string;
+    data: {
+      myntra_Access_token: string;
+      myntra_Refresh_token: string;
+      tenantKey: string;
+      merchantId: string;
+      connectionStatus: string;
+    };
+  }>(
+    `/marketplace-accounts/${accountId}/connect-myntra`,
+    data,
+    getToken()
+  );
+};
+
+// ==================================================================================
+// ==================== DISCONNECT MARKETPLACE ACCOUNT ==============================
+// ==================================================================================
+
+export const disconnectMarketplace = (accountId: string) => {
+  return api.post<{
+    success: boolean;
+    message: string;
+  }>(
+    `/marketplace-accounts/${accountId}/disconnect`,
+    {},
+    getToken()
+  );
+};
+
+// ==================================================================================
+// ==================== GET MARKETPLACE CONNECTION ==================================
+// ==================================================================================
+
+export const getMarketplaceConnection = (accountId: string) => {
+  return api.get<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(
+    `/marketplace-accounts/${accountId}/connection`,
+    getToken()
+  );
+};

@@ -17,6 +17,8 @@ interface Props {
   onToggleStatus: (account: MarketplaceAccount) => void;
 
   onConnect: (account: MarketplaceAccount) => void;
+
+  onDisconnect?: (account: MarketplaceAccount) => void;
 }
 
 export default function MarketplaceAccountTable({
@@ -25,6 +27,7 @@ export default function MarketplaceAccountTable({
   onDelete,
   onToggleStatus,
   onConnect,
+  onDisconnect,
 }: Props) {
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-xs">
@@ -126,7 +129,7 @@ export default function MarketplaceAccountTable({
                       size="sm"
                       onClick={() => onConnect(account)}
                     >
-                      Reconnect
+                      Disconnect
                     </Button>
                   ) : (
                     <Button
