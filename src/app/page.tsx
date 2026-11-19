@@ -3,11 +3,9 @@
 import React, { useState, useEffect } from "react";
 import LandingHeader from "@/components/Landing/LandingHeader";
 import LandingHero from "@/components/Landing/LandingHero";
+import LandingMarquee from "@/components/Landing/LandingMarquee";
 import LandingFeatures from "@/components/Landing/LandingFeatures";
-import LandingMarketplaces from "@/components/Landing/LandingMarketplaces";
-import LandingAbout from "@/components/Landing/LandingAbout";
-import LandingContact from "@/components/Landing/LandingContact";
-import LandingPrivacy from "@/components/Landing/LandingPrivacy";
+import LandingAnalytics from "@/components/Landing/LandingAnalytics";
 import LandingCTA from "@/components/Landing/LandingCTA";
 import LandingFooter from "@/components/Landing/LandingFooter";
 
@@ -22,7 +20,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F7F5F0] dark:bg-[#080B11] text-slate-800 dark:text-slate-200 transition-colors duration-200 selection:bg-[#E8C170] selection:text-[#080B11] relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#F7F5F0] dark:bg-[#080B11] text-slate-800 dark:text-slate-200 transition-colors duration-200 selection:bg-[#E8C170] selection:text-[#080B11] relative overflow-x-clip flex flex-col justify-between">
       {/* Background Grid Accent */}
       <div
         className="fixed inset-0 pointer-events-none opacity-40 dark:opacity-20"
@@ -36,28 +34,25 @@ export default function HomePage() {
       {/* 1. STICKY TOP HEADER */}
       <LandingHeader />
 
-      {/* 2. HERO SECTION */}
-      <LandingHero />
+      {/* 2. MAIN CONTENT AREA */}
+      <main className="flex-1">
+        {/* 1. HERO SECTION WITH PRODUCT DISPATCH TERMINAL */}
+        <LandingHero />
 
-      {/* 3. CORE FEATURES SECTION */}
-      <LandingFeatures />
+        {/* 2. ONE TERMINAL FOR EVERY CHANNEL - MARQUEE TICKER */}
+        <LandingMarquee />
 
-      {/* 4. DEDICATED MARKETPLACES SECTION */}
-      <LandingMarketplaces />
+        {/* 3. EVERYTHING YOUR WAREHOUSE NEEDS, IN ONE PLACE - 6 FEATURES */}
+        <LandingFeatures />
 
-      {/* 5. ABOUT US SECTION */}
-      <LandingAbout />
+        {/* 4. REAL-TIME ANALYTICS, DISPATCH PIPELINE & KEY STATS */}
+        <LandingAnalytics />
 
-      {/* 6. CONTACT US SECTION */}
-      <LandingContact />
+        {/* 5. READY TO ELEVATE CALL TO ACTION BANNER */}
+        <LandingCTA isLoggedIn={isLoggedIn} />
+      </main>
 
-      {/* 7. PRIVACY POLICY SECTION */}
-      <LandingPrivacy />
-
-      {/* 8. BOTTOM CALL TO ACTION BANNER */}
-      <LandingCTA isLoggedIn={isLoggedIn} />
-
-      {/* 9. FOOTER */}
+      {/* 3. FOOTER */}
       <LandingFooter isLoggedIn={isLoggedIn} />
     </div>
   );

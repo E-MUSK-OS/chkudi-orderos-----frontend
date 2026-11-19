@@ -1,6 +1,6 @@
 import { authService } from "@/services/auth/auth.service";
 import { verifyClientActionPermission } from "@/services/api";
-import { handleAuthFailure } from "@/utils/auth";
+import { handleAuthFailure, setToken } from "@/utils/auth";
 
 export const fetchWithAuth = async (
   url: string,
@@ -41,7 +41,7 @@ export const fetchWithAuth = async (
 
       const newAccessToken = refreshResponse.data.accessToken;
 
-      localStorage.setItem("accessToken", newAccessToken);
+      setToken(newAccessToken);
 
       if (refreshResponse.data.refreshToken) {
         localStorage.setItem(

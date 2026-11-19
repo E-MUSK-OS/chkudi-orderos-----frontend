@@ -16,6 +16,7 @@ import type {
   MarketplaceAccount,
   MarketplaceAccountPayload,
 } from "@/services/marketplaceAccount/marketplaceAccount.types";
+import { disconnectMarketplace } from "@/services/marketplaceAccount/marketplaceAccount.service";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import MarketplaceConnectionModal from "./marketplaceConnection/MarketplaceConnectionModal";
 
@@ -29,6 +30,7 @@ export default function MarketplaceAccounts() {
     editMarketplaceAccount,
     deleteMarketplaceAccount,
     toggleStatus,
+    refresh,
   } = useMarketplaceAccount();
 
   // ======================================================
@@ -126,6 +128,27 @@ export default function MarketplaceAccounts() {
     setConnectionOpen(true);
   };
 
+  const handleDisconnect = async (account: MarketplaceAccount) => {
+    try {
+      await disconnectMarketplace(account.id);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("myntra_Access_token");
+        localStorage.removeItem("myntra_Refresh_token");
+        localStorage.removeItem("tenantKey");
+        localStorage.removeItem("myntra_access_token");
+        localStorage.removeItem("myntra_refresh_token");
+      }
+      toast.success("Marketplace account disconnected successfully.");
+      await refresh();
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Failed to disconnect marketplace.",
+      );
+    }
+  };
+
   return (
     <>
       <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] bg-white p-5 sm:p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
@@ -202,6 +225,7 @@ export default function MarketplaceAccounts() {
               }}
               onToggleStatus={handleToggleStatus}
               onConnect={handleConnect}
+              onDisconnect={handleConnect}
             />
           )}
         </div>
@@ -229,6 +253,7 @@ export default function MarketplaceAccounts() {
           setSelectedAccount(null);
         }}
         account={selectedAccount}
+        onSuccess={refresh}
       />
 
       <DeleteConfirmModal

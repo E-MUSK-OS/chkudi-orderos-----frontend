@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "@/lib/config";
 import { getCurrentUser, getPagePermission, getSlugFromPathname } from "@/utils/pagePermissions";
-import { handleAuthFailure } from "@/utils/auth";
+import { handleAuthFailure, setToken } from "@/utils/auth";
 import { toast } from "sonner";
 
 export function verifyClientActionPermission(endpoint: string, method: string): boolean {
@@ -95,7 +95,7 @@ async function refreshAccessToken(): Promise<string | null> {
       const json = await res.json();
       const newAccessToken = json?.data?.accessToken;
       if (newAccessToken) {
-        localStorage.setItem("accessToken", newAccessToken);
+        setToken(newAccessToken);
         if (json?.data?.refreshToken) {
           localStorage.setItem("refreshToken", json.data.refreshToken);
         }

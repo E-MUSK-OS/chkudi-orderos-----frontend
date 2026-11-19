@@ -12,6 +12,17 @@ export interface Marketplace {
   isActive: boolean;
 }
 
+export interface MarketplaceConnectionData {
+  id: string;
+  marketplaceAccountId: string;
+  credentials?: Record<string, any>;
+  environment?: string;
+  status?: string;
+  tokenMetadata?: Record<string, any>;
+  authorizedAt?: string;
+  lastConnectedAt?: string;
+}
+
 export interface MarketplaceAccount {
   id: string;
 
@@ -32,6 +43,8 @@ export interface MarketplaceAccount {
   updatedAt: string;
 
   marketplace: Marketplace;
+
+  connection?: MarketplaceConnectionData | null;
 }
 
 export interface MarketplaceAccountPayload {

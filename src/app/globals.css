@@ -376,3 +376,21 @@ html.dark input[type="checkbox"],
 .custom-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(245, 196, 81, 0.55);
 }
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+

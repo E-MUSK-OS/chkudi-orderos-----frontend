@@ -34,17 +34,27 @@ export default function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserPermissions | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Direct check: If neither accessToken nor refreshToken exists, redirect immediately to login
+    // Direct check: Verify valid token exists in localStorage
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
 
-    if (!token && !refreshToken) {
+    const hasValidToken = Boolean(
+      token && token !== "null" && token !== "undefined" && token.trim() !== ""
+    );
+    const hasValidRefresh = Boolean(
+      refreshToken && refreshToken !== "null" && refreshToken !== "undefined" && refreshToken.trim() !== ""
+    );
+
+    if (!hasValidToken && !hasValidRefresh) {
+      setIsAuthenticated(false);
       handleAuthFailure();
       return;
     }
 
+    setIsAuthenticated(true);
     setCurrentUser(getCurrentUser());
 
     // Fetch fresh profile from server so permissions are always up-to-date
@@ -64,6 +74,18 @@ export default function DashboardLayout({
         }
       })
       .catch((err) => {
+        const msg = String(err?.message || "").toLowerCase();
+        if (
+          msg.includes("401") ||
+          msg.includes("unauthorized") ||
+          msg.includes("jwt") ||
+          msg.includes("token") ||
+          msg.includes("session expired")
+        ) {
+          setIsAuthenticated(false);
+          handleAuthFailure();
+          return;
+        }
         console.debug("Background user permissions refresh:", err);
       });
 
@@ -87,6 +109,21 @@ export default function DashboardLayout({
   }, []);
 
   const allowed = isRouteAllowed(pathname, currentUser);
+
+  if (isAuthenticated === false) {
+    return null;
+  }
+
+  if (isAuthenticated === null) {
+    return (
+      <main className="h-screen w-screen flex items-center justify-center bg-[#F7F5F0] dark:bg-[#080B11] text-[#0A0E1A] dark:text-slate-100 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#C89B3C] border-t-transparent dark:border-[#F5C451]" />
+          <span className="text-xs font-mono text-slate-500 dark:text-slate-400">Verifying session...</span>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="h-[100dvh] w-full max-w-full overflow-hidden bg-[#F7F5F0] text-[#0A0E1A] dark:bg-[#080B11] dark:text-slate-100 selection:bg-[#E8C16D]/30 selection:text-[#0A0E1A] dark:selection:bg-[#F5C451]/25 dark:selection:text-[#FCD34D] relative font-sans transition-colors duration-200">
