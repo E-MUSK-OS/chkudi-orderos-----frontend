@@ -343,7 +343,7 @@ export default function POViewPage({ id: propId }: POViewPageProps) {
 
   return (
     <DashboardLayout title={`PO #${po.poNumber || "Details"} | OrderOS`}>
-      <div ref={containerRef} className="space-y-4 sm:space-y-6 pb-6 lg:pb-0">
+      <div ref={containerRef} className="space-y-4 sm:space-y-6">
         {/* Top Rounded Header Card matching OrderOS theme and cards below */}
         <div ref={headerCardRef} className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">

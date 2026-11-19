@@ -385,7 +385,7 @@ export default function Webstore() {
     <DashboardLayout title="Webstore">
       <div
         ref={containerRef}
-        className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-6 lg:pb-0 max-w-[1600px] w-full max-w-full min-w-0 mx-auto"
+        className="space-y-4 font-sans text-slate-900 dark:text-slate-100 max-w-[1600px] w-full max-w-full min-w-0 mx-auto"
       >
         {/* Header with Title & Action Buttons */}
         <div ref={headerRef}>

@@ -106,7 +106,7 @@ export default function EmployeeProfileViewPage({
 
   return (
     <DashboardLayout title="Employee Profile">
-      <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4 max-w-[1600px] mx-auto">
+      <div className="w-full font-sans text-slate-900 dark:text-slate-100 space-y-4 max-w-[1600px] mx-auto">
         {/* ========================================================================= */}
         {/* Top Header Bar matching Ledger Book / Company Profile header UI            */}
         {/* ========================================================================= */}

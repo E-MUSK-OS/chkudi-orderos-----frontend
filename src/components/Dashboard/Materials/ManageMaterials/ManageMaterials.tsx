@@ -510,7 +510,7 @@ const ManageMaterials = () => {
 
   return (
     <DashboardLayout title="Material Profile">
-      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100 pb-8">
+      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100">
         {/* Header Information Banner */}
         <div
           ref={headerCardRef}

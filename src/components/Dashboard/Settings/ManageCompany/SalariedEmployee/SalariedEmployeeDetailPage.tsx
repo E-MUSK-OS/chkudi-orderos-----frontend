@@ -42,7 +42,7 @@ export default function SalariedEmployeeDetailPage({
 
   return (
     <DashboardLayout title="Salaried Employee">
-      <div className="w-full space-y-3 sm:space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-8 max-w-[1600px] mx-auto">
+      <div className="w-full space-y-3 sm:space-y-4 font-sans text-slate-900 dark:text-slate-100 max-w-[1600px] mx-auto">
         {/* Top Header Bar matching Employee Profile & Ledger Book */}
         <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3.5">

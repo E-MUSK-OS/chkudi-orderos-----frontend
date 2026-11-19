@@ -288,7 +288,7 @@ export default function SalariedEmployee() {
     <DashboardLayout title="Salaried Employee">
       <div
         ref={containerRef}
-        className="w-full flex flex-col gap-4 font-sans text-slate-900 dark:text-slate-100 min-h-0 max-w-[1600px] mx-auto pb-6"
+        className="w-full flex flex-col gap-4 font-sans text-slate-900 dark:text-slate-100 min-h-0 max-w-[1600px] mx-auto"
         style={{
           maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
         }}

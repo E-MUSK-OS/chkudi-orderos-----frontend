@@ -109,8 +109,8 @@ export default function DashboardLayout({
             setLogoutOpen={setLogoutModalOpen}
           />
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 md:px-8 py-4 sm:py-6 lg:py-8 touch-pan-y [webkit-overflow-scrolling:touch] custom-scrollbar">
-            <div className="w-full max-w-full min-w-0 pb-20 sm:pb-8">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 md:px-8 pt-4 sm:pt-6 lg:pt-8 touch-pan-y [webkit-overflow-scrolling:touch] custom-scrollbar">
+            <div className="w-full max-w-full min-w-0 pb-4 sm:pb-6 lg:pb-8">
               {!allowed ? (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
                   <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center mb-4 shadow-sm">

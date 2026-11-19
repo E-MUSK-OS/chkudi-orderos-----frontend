@@ -122,7 +122,7 @@ export default function ClientConfiguration() {
 
   return (
     <DashboardLayout title="Client Configuration">
-      <div className="space-y-4 sm:space-y-6 w-full pb-16">
+      <div className="space-y-4 sm:space-y-6 w-full">
         {/* Header Card matching UI Theme of Order Process & Amazon Analytics */}
         <ClientConfigHeader
           onSave={handleSave}

@@ -34,7 +34,7 @@ export default function CreateUserPage() {
 
   return (
     <DashboardLayout title="Create User Profile">
-      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-10 max-w-[1600px] mx-auto">
+      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 max-w-[1600px] mx-auto">
         {/* Header Card matching Material Profile & Company Profile */}
         <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 sm:px-7 py-3.5 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 shadow-sm">
           <div className="flex items-center gap-3 sm:gap-3.5">

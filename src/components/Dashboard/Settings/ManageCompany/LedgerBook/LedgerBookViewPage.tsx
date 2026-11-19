@@ -176,7 +176,7 @@ export default function LedgerBookViewPage({ id: propId }: LedgerBookViewPagePro
 
   return (
     <DashboardLayout title="Ledger Book">
-      <div className="w-full font-sans text-slate-900 dark:text-slate-100 pb-8 space-y-4 max-w-[1600px] mx-auto">
+      <div className="w-full font-sans text-slate-900 dark:text-slate-100 space-y-4 max-w-[1600px] mx-auto">
         {/* Top Header Bar matching main Ledger Book page header */}
         <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

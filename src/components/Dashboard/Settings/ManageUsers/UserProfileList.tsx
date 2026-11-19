@@ -235,7 +235,7 @@ export default function UserProfileList() {
   };
 
   return (
-    <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100 pb-8">
+    <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100">
       {/* Top Header Card matching Material Profile & Company Profile */}
       <div
         ref={headerCardRef}

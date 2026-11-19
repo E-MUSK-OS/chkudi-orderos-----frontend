@@ -544,7 +544,7 @@ const ManageProducts = () => {
 
   return (
     <DashboardLayout title="Product Profile">
-      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100 pb-8">
+      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100">
         {/* Header Information Banner matching Material Profile */}
         <div
           ref={headerCardRef}

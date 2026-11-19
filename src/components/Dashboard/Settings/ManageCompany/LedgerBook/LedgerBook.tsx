@@ -274,7 +274,7 @@ export default function LedgerBook() {
     <DashboardLayout title="Ledger Book">
       <div
         ref={containerRef}
-        className="flex flex-col gap-4 font-sans text-slate-100 max-w-[1600px] mx-auto min-h-0 pb-6"
+        className="flex flex-col gap-4 font-sans text-slate-100 max-w-[1600px] mx-auto min-h-0"
         style={{
           maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
         }}

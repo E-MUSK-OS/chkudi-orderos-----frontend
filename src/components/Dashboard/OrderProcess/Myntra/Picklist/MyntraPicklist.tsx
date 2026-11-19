@@ -1126,7 +1126,7 @@ export default function MyntraPicklist() {
 
   return (
     <DashboardLayout title="Myntra Picklist">
-      <div ref={containerRef} className="space-y-4 sm:space-y-6 pb-6 lg:pb-0">
+      <div ref={containerRef} className="space-y-4 sm:space-y-6">
         {/* ===================================================== */}
         {/* HEADER SECTION matching Amazon Order Process */}
         {/* ===================================================== */}
