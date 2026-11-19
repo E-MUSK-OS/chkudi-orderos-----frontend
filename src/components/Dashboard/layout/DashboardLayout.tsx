@@ -89,18 +89,18 @@ export default function DashboardLayout({
   const allowed = isRouteAllowed(pathname, currentUser);
 
   return (
-    <main className="h-screen w-screen overflow-hidden bg-[#F7F5F0] text-[#0A0E1A] dark:bg-[#080B11] dark:text-slate-100 selection:bg-[#E8C16D]/30 selection:text-[#0A0E1A] dark:selection:bg-[#F5C451]/25 dark:selection:text-[#FCD34D] relative font-sans transition-colors duration-200">
+    <main className="h-[100dvh] w-full max-w-full overflow-hidden bg-[#F7F5F0] text-[#0A0E1A] dark:bg-[#080B11] dark:text-slate-100 selection:bg-[#E8C16D]/30 selection:text-[#0A0E1A] dark:selection:bg-[#F5C451]/25 dark:selection:text-[#FCD34D] relative font-sans transition-colors duration-200">
       {/* Ambient top light mesh (dark theme only) */}
       <div className="pointer-events-none fixed inset-x-0 top-0 h-[450px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(245,196,81,0.06),transparent_70%)] z-0 hidden dark:block" />
 
-      <div className="relative z-10 flex h-screen w-full overflow-hidden">
+      <div className="relative z-10 flex h-[100dvh] w-full overflow-hidden">
         <Sidebar
           sidebarOpen={sidebarOpen}
           sidebarCollapsed={sidebarCollapsed}
           setSidebarOpen={setSidebarOpen}
         />
 
-        <section className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
+        <section className="flex min-w-0 flex-1 flex-col h-[100dvh] overflow-hidden">
           <Header
             title={title}
             sidebarCollapsed={sidebarCollapsed}
@@ -109,30 +109,32 @@ export default function DashboardLayout({
             setLogoutOpen={setLogoutModalOpen}
           />
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 md:px-8 py-4 sm:py-6 lg:py-8 custom-scrollbar">
-            {!allowed ? (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-                <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center mb-4 shadow-sm">
-                  <ShieldAlert size={32} />
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 md:px-8 py-4 sm:py-6 lg:py-8 touch-pan-y [webkit-overflow-scrolling:touch] custom-scrollbar">
+            <div className="min-h-full flex flex-col pb-20 sm:pb-8">
+              {!allowed ? (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+                  <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center mb-4 shadow-sm">
+                    <ShieldAlert size={32} />
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#0A0E1A] dark:text-white tracking-tight mb-2">
+                    Access Restricted
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6 leading-relaxed">
+                    You do not have permission to access this module. Please contact your Super Admin if you require access to this page.
+                  </p>
+                  <Link
+                    href={getFirstAllowedRoute(currentUser)}
+                    className="px-5 py-2.5 rounded-2xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] dark:bg-[#F5C451] text-[#6A4D1D] dark:text-black font-bold text-xs sm:text-sm hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 transition-all shadow-sm"
+                  >
+                    Go to Accessible Module
+                  </Link>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#0A0E1A] dark:text-white tracking-tight mb-2">
-                  Access Restricted
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6 leading-relaxed">
-                  You do not have permission to access this module. Please contact your Super Admin if you require access to this page.
-                </p>
-                <Link
-                  href={getFirstAllowedRoute(currentUser)}
-                  className="px-5 py-2.5 rounded-2xl border border-[#E8C16D]/60 dark:border-transparent bg-[#FEFAEE] dark:bg-[#F5C451] text-[#6A4D1D] dark:text-black font-bold text-xs sm:text-sm hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 transition-all shadow-sm"
-                >
-                  Go to Accessible Module
-                </Link>
-              </div>
-            ) : (
-              <DynamicActionShield>
-                {children}
-              </DynamicActionShield>
-            )}
+              ) : (
+                <DynamicActionShield>
+                  {children}
+                </DynamicActionShield>
+              )}
+            </div>
           </div>
         </section>
       </div>

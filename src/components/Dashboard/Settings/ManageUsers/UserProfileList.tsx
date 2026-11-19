@@ -307,7 +307,7 @@ export default function UserProfileList() {
           <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col min-h-0 max-h-full overflow-hidden">
             <div
               ref={cardsContainerRef}
-              className="w-full min-h-0 overflow-y-auto custom-scrollbar overscroll-contain flex-1 p-4 sm:p-7"
+              className="w-full min-h-0 sm:overflow-y-auto custom-scrollbar flex-1 p-4 sm:p-7"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               {isLoading ? (

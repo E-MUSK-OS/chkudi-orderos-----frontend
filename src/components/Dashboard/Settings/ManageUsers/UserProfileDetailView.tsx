@@ -832,7 +832,7 @@ export default function UserProfileDetailView({ userId }: Props) {
                 {/* 4. Permission Rights Table matching OrderOS Amazon theme */}
                 <div
                   ref={tableContainerRef}
-                  className="overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar overscroll-contain flex-1 bg-white dark:bg-[#0F1626]"
+                  className="overflow-x-auto min-h-0 sm:overflow-y-auto custom-scrollbar touch-pan-x flex-1 bg-white dark:bg-[#0F1626]"
                   style={{ WebkitOverflowScrolling: "touch" }}
                 >
                   <table className="w-full text-left text-xs sm:text-sm">

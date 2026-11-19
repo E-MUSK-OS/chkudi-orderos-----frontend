@@ -504,7 +504,7 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 h-screen border-r border-white/[0.08] bg-[#080B11] text-white transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
+        className={`fixed inset-y-0 left-0 z-40 h-[100dvh] border-r border-white/[0.08] bg-[#080B11] text-white transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
   ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
   ${sidebarCollapsed ? "w-[264px] lg:w-[88px]" : "w-[264px]"}`}
       >

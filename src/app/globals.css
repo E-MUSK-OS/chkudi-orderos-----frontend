@@ -184,6 +184,10 @@ body {
   }
 }
 
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
