@@ -85,10 +85,10 @@ export default function AwbTable({
   };
 
   return (
-    <div className="lg:h-full flex flex-col lg:min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
+    <div className="h-full flex flex-col min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
       <div
         ref={resolvedRef}
-        className="w-full overflow-x-auto lg:flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar"
+        className="w-full overflow-x-auto flex-1 min-h-0 overflow-y-auto custom-scrollbar"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         <table className="w-full min-w-[1000px] lg:min-w-[1100px] border-collapse text-left font-sans relative">

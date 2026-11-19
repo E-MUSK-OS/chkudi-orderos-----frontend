@@ -18,6 +18,7 @@ import {
   getFirstAllowedRoute,
   type UserPermissions,
 } from "@/utils/pagePermissions";
+import { pruneExpiredIndexedDB } from "@/utils/indexedDbPruner";
 
 interface DashboardLayoutProps {
   title: string;
@@ -68,6 +69,11 @@ export default function DashboardLayout({
 
     // Silently refresh workspace client configuration
     clientConfigurationService.getClientConfig().catch(() => {});
+
+    // Silently run 7-day auto-cleanup for IndexedDB (Amazon, Flipkart, Myntra & legacy IDB)
+    pruneExpiredIndexedDB().catch((err) => {
+      console.debug("IndexedDB 7-day auto-prune notice:", err);
+    });
 
     const handleStorage = () => {
       setCurrentUser(getCurrentUser());

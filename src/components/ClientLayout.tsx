@@ -75,6 +75,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import AccountLockChecker from "./AccountLockChecker";
 import GlobalConnectionOverlay from "./GlobalConnectionOverlay";
+import { pruneExpiredIndexedDB } from "@/utils/indexedDbPruner";
 
 export default function ClientLayout({
   children,
@@ -85,6 +86,11 @@ export default function ClientLayout({
   const pathname = usePathname();
 
   useEffect(() => {
+    // Silently run 7-day auto-cleanup across entire app (even if not on dashboard)
+    pruneExpiredIndexedDB().catch((err) => {
+      console.debug("IndexedDB 7-day auto-prune notice:", err);
+    });
+
     if (pathname !== "/offline") {
       const currentUrl = window.location.pathname + window.location.search;
 

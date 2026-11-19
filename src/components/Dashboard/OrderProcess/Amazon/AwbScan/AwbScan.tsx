@@ -31,6 +31,8 @@ export default function AwbScan() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const missingTableContainerRef = useRef<HTMLDivElement>(null);
+  const fixedSectionRef = useRef<HTMLDivElement>(null);
   const [targetHeight, setTargetHeight] = useState<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -85,10 +87,10 @@ export default function AwbScan() {
     };
   }, [calculateHeight]);
 
-  // Seamless scroll coordinator:
-  // 1. When scrolling down, outer page scrolls until Header & Toolbar are hidden and stops at the fixed position (view shown in img).
-  // 2. Once at the fixed position, scrolling down over the table scrolls the table rows internally.
-  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals the Toolbar & Header.
+  // Coordinated stop-scrolling handler:
+  // 1. When scrolling down, outer page scrolls until Header & Summary are hidden and stops at the fixed position (Img 2).
+  // 2. Once at the fixed position, Missing Table and Main Table scroll internally.
+  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals Summary & Header.
   useEffect(() => {
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
@@ -96,6 +98,8 @@ export default function AwbScan() {
     const onWheel = (e: WheelEvent) => {
       if (window.innerWidth < 1024) return;
       const tableContainer = tableContainerRef.current;
+      const missingTable = missingTableContainerRef.current;
+
       const maxPageScroll = Math.max(
         0,
         scrollContainer.scrollHeight - scrollContainer.clientHeight
@@ -105,31 +109,52 @@ export default function AwbScan() {
       const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
       const isPageAtTop = scrollContainer.scrollTop <= 2;
 
-      const isOverTable =
+      const path = e.composedPath();
+      const isOverMainTable =
         tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
+        (path.includes(tableContainer) || tableContainer.contains(e.target as Node));
+      const isOverMissingTable =
+        missingTable &&
+        (path.includes(missingTable) || missingTable.contains(e.target as Node));
 
       if (e.deltaY > 0) {
         // Scrolling DOWN
         if (!isPageAtBottom) {
-          // Outer page has not reached the fixed view yet -> scroll page down
+          // Outer page has not reached the fixed section yet -> scroll page down to fixed point
           e.preventDefault();
           scrollContainer.scrollTop = Math.min(
             maxPageScroll,
             scrollContainer.scrollTop + e.deltaY
           );
-        } else if (!isOverTable) {
-          // At the fixed point and outside the table -> forward scroll to table
-          if (tableContainer) {
+        } else {
+          // At the fixed view (Img 2)!
+          if (isOverMissingTable && missingTable) {
+            const maxMissingScroll = missingTable.scrollHeight - missingTable.clientHeight;
+            if (maxMissingScroll > 0) {
+              missingTable.scrollTop += e.deltaY;
+            }
+          } else if (tableContainer) {
             tableContainer.scrollTop += e.deltaY;
           }
         }
-        // If isPageAtBottom and isOverTable, allow table to scroll natively
       } else if (e.deltaY < 0) {
         // Scrolling UP
-        if (!isOverTable) {
-          if (!isPageAtTop) {
+        if (isOverMissingTable && missingTable) {
+          const isMissingAtTop = missingTable.scrollTop <= 1;
+          if (!isMissingAtTop) {
+            missingTable.scrollTop += e.deltaY;
+          } else if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else if (isOverMainTable && tableContainer) {
+          const isMainAtTop = tableContainer.scrollTop <= 1;
+          if (!isMainAtTop) {
+            tableContainer.scrollTop += e.deltaY;
+          } else if (!isPageAtTop) {
             e.preventDefault();
             scrollContainer.scrollTop = Math.max(
               0,
@@ -137,8 +162,7 @@ export default function AwbScan() {
             );
           }
         } else {
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
-          if (isTableAtTop && !isPageAtTop) {
+          if (!isPageAtTop) {
             e.preventDefault();
             scrollContainer.scrollTop = Math.max(
               0,
@@ -446,24 +470,24 @@ export default function AwbScan() {
           />
         </div>
 
-        {/* Lower Section (AwbScanSummary + AwbScanner + AwbMissingTable + AwbTable) */}
+        {/* Stats Summary Cards (Scrolls away with header when scrolling down) */}
+        <div className="shrink-0">
+          <AwbScanSummary
+            total={summaryCounts.total}
+            pending={summaryCounts.pending}
+            scanned={summaryCounts.scanned}
+            missing={missingList.length}
+          />
+        </div>
+
+        {/* Lower Fixed Section (Barcode Scanner + Missing Table + Main Table - Exactly like Img 2) */}
         <div
-          className="flex flex-col gap-4 sm:gap-6"
+          ref={fixedSectionRef}
+          className="flex flex-col gap-3 sm:gap-4 lg:min-h-0"
           style={{
             height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
-            minHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
           }}
         >
-          {/* Stats Summary Cards */}
-          <div className="shrink-0">
-            <AwbScanSummary
-              total={summaryCounts.total}
-              pending={summaryCounts.pending}
-              scanned={summaryCounts.scanned}
-              missing={missingList.length}
-            />
-          </div>
-
           {/* Barcode Scanner Input */}
           <div className="shrink-0">
             <AwbScanner
@@ -476,19 +500,20 @@ export default function AwbScan() {
             />
           </div>
 
-          {/* Missing / Unmatched AWB Scans Table */}
+          {/* Missing / Unmatched AWB Scans Table (Internally scrollable) */}
           {missingList.length > 0 && (
             <div className="shrink-0">
               <AwbMissingTable
                 missingList={missingList}
                 onRemoveItem={removeMissingItem}
                 onClearAll={clearMissingList}
+                tableContainerRef={missingTableContainerRef}
               />
             </div>
           )}
 
-          {/* Orders Data Table */}
-          <div className="lg:flex-1 lg:min-h-0 flex flex-col">
+          {/* Orders Data Table (Internally scrollable) */}
+          <div className="flex-1 min-h-0 flex flex-col">
             <AwbTable
               orders={orders}
               isLoading={isLoading}

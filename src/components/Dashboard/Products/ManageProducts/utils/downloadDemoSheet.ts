@@ -145,6 +145,67 @@ export const downloadDemoSheet = async (type: ImportType) => {
         "asin-import-demo-sheet.xlsx"
       );
       toast.success("ASIN Import demo sheet downloaded successfully!");
+    } else if (type === "flipcart") {
+      const worksheet = workbook.addWorksheet("Flipcart Import");
+
+      worksheet.columns = [
+        { header: "FSN Code", key: "fsn", width: 22 },
+        { header: "SKU", key: "sku", width: 25 },
+        { header: "Rack Address", key: "rackAddress", width: 20 },
+      ];
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = {
+        name: "Calibri",
+        size: 11,
+        bold: true,
+        color: { argb: "FFFFFFFF" },
+      };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF0A0E1A" },
+      };
+      headerRow.alignment = { vertical: "middle", horizontal: "center" };
+      headerRow.height = 28;
+
+      const sampleRows = [
+        {
+          fsn: "FSN0DK9HFD2S",
+          sku: "TOPLOT-002",
+          rackAddress: "RACK002",
+        },
+        {
+          fsn: "FSN0GGYM3WFR",
+          sku: "TOPLOT-003",
+          rackAddress: "RACK003",
+        },
+        {
+          fsn: "FSN0GGYDT9KN",
+          sku: "TOPLOT-004",
+          rackAddress: "RACK004",
+        },
+        {
+          fsn: "FSN0H395B1TY",
+          sku: "TOPLOT-005",
+          rackAddress: "RACK005",
+        },
+      ];
+
+      sampleRows.forEach((item) => {
+        const r = worksheet.addRow(item);
+        r.height = 22;
+        r.alignment = { vertical: "middle" };
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      saveAs(
+        new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        "flipcart-import-demo-sheet.xlsx"
+      );
+      toast.success("Flipcart Import demo sheet downloaded successfully!");
     } else {
       const worksheet = workbook.addWorksheet("Product Variants");
 

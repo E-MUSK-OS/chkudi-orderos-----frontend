@@ -146,6 +146,8 @@ export default function UploadOrderModal({
       router.push("/dashboard/order-process/myntra/myntra-order");
     } else if (ch.includes("amazon")) {
       router.push("/dashboard/order-process/amazon/order-process");
+    } else if (ch.includes("flipcart") || ch.includes("flipkart")) {
+      router.push("/dashboard/order-process/flipcart/order-process");
     } else {
       router.push("/dashboard/order-process");
     }

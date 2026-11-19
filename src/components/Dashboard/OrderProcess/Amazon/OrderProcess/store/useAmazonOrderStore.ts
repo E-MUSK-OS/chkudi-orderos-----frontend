@@ -109,11 +109,17 @@ function openIDB(): Promise<IDBDatabase> {
     if (typeof window === "undefined" || !window.indexedDB) {
       return reject("IndexedDB not available");
     }
-    const request = indexedDB.open(IDB_NAME, 1);
+    const request = indexedDB.open(IDB_NAME, 2);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(IDB_STORE)) {
         db.createObjectStore(IDB_STORE);
+      }
+      if (!db.objectStoreNames.contains("flipcart_files")) {
+        db.createObjectStore("flipcart_files");
+      }
+      if (!db.objectStoreNames.contains("flipcart_batch_blobs")) {
+        db.createObjectStore("flipcart_batch_blobs");
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -139,8 +145,10 @@ export async function saveFilesToIDB(files: AmazonProcessFiles | null): Promise<
     const store = tx.objectStore(IDB_STORE);
     if (files) {
       store.put(files, IDB_KEY);
+      store.put(Date.now(), `${IDB_KEY}_saved_at`);
     } else {
       store.delete(IDB_KEY);
+      store.delete(`${IDB_KEY}_saved_at`);
     }
     return new Promise((resolve, reject) => {
       tx.oncomplete = () => resolve();
@@ -173,6 +181,7 @@ export async function saveBatchBlobToIDB(batchId: string, blob: Blob): Promise<v
     const tx = db.transaction(IDB_STORE, "readwrite");
     const store = tx.objectStore(IDB_STORE);
     store.put(blob, `batch_pdf_${batchId}`);
+    store.put(Date.now(), `batch_pdf_${batchId}_saved_at`);
     return new Promise((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);

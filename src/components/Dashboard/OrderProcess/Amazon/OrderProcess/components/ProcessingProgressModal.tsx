@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Barcode, Sparkles, CheckCheck, FileCheck } from "lucide-react";
+import { FileText, Barcode, CheckCheck, FileCheck } from "lucide-react";
 
 interface ProcessingProgressModalProps {
   isOpen: boolean;
@@ -34,10 +34,6 @@ export default function ProcessingProgressModal({
 
           {/* Top Title Section */}
           <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-2">
-            <span className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#FFF9EC] px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#E8C16D]/15 dark:text-[#E8C16D]">
-              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-pulse text-[#B88728] dark:text-[#E8C16D]" />
-              Amazon Dual-File Match Engine
-            </span>
             <h3 className="text-xl sm:text-3xl font-extrabold tracking-tight text-[#0A0E1A] dark:text-white">
               Processing Orders & Barcodes
             </h3>

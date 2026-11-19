@@ -12,9 +12,11 @@ import ProductTable from "./components/ProductTable";
 import AsinTable from "./components/AsinTable";
 import AsinModal from "./components/AsinModal";
 import MyntraModal from "./components/MyntraModal";
+import FlipcartModal from "./components/FlipcartModal";
 import type { Product } from "./types/product.types";
 import type { AsinImportItem } from "./types/asinImport.types";
 import type { MyntraImportItem } from "./types/myntraImport.types";
+import type { FlipcartImportItem } from "./types/flipcartImport.types";
 import DeleteProductModal from "./components/DeleteProductModal";
 import ProductPagination from "./components/ProductPagination";
 import ProductModal from "./components/ProductModal";
@@ -36,6 +38,12 @@ import {
   useDeleteMyntraImport,
 } from "./hooks/useMyntraImports";
 import MyntraTable from "./components/MyntraTable";
+import FlipcartTable from "./components/FlipcartTable";
+import {
+  useFlipcartImports,
+  useImportFlipcartExcel,
+  useDeleteFlipcartImport,
+} from "./hooks/useFlipcartImports";
 import { useDropdownOptions } from "./hooks/useDropdownOptions";
 import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -53,7 +61,7 @@ const ManageProducts = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const param = new URLSearchParams(window.location.search).get("type");
-      if (param === "myntra" || param === "asin" || param === "product") {
+      if (param === "myntra" || param === "asin" || param === "product" || param === "flipcart") {
         setImportType(param as ImportType);
       }
     }
@@ -79,12 +87,17 @@ const ManageProducts = () => {
   const [myntraModalOpen, setMyntraModalOpen] = useState(false);
   const [selectedMyntra, setSelectedMyntra] = useState<MyntraImportItem | null>(null);
 
+  const [flipcartModalOpen, setFlipcartModalOpen] = useState(false);
+  const [selectedFlipcart, setSelectedFlipcart] = useState<FlipcartImportItem | null>(null);
+
   const updateProductStatusMutation = useUpdateProductStatus();
   const importProductExcelMutation = useImportProductsExcel();
   const importAsinExcelMutation = useImportAsinExcel();
   const deleteAsinMutation = useDeleteAsinImport();
   const importMyntraExcelMutation = useImportMyntraExcel();
   const deleteMyntraMutation = useDeleteMyntraImport();
+  const importFlipcartExcelMutation = useImportFlipcartExcel();
+  const deleteFlipcartMutation = useDeleteFlipcartImport();
 
   // ASIN Queries
   const { data: asinResponse, isLoading: asinLoading, refetch: refetchAsin } = useAsinImports(search);
@@ -93,6 +106,10 @@ const ManageProducts = () => {
   // Myntra Queries
   const { data: myntraResponse, isLoading: myntraLoading, refetch: refetchMyntra } = useMyntraImports(search);
   const myntraItems = myntraResponse?.data ?? [];
+
+  // Flipcart Queries
+  const { data: flipcartResponse, isLoading: flipcartLoading, refetch: refetchFlipcart } = useFlipcartImports(search);
+  const flipcartItems = flipcartResponse?.data ?? [];
 
   const handleImportExcel = async (file: File, type: ImportType) => {
     try {
@@ -103,6 +120,9 @@ const ManageProducts = () => {
       } else if (activeType === "asin") {
         await importAsinExcelMutation.mutateAsync(file);
         await refetchAsin();
+      } else if (activeType === "flipcart") {
+        await importFlipcartExcelMutation.mutateAsync(file);
+        await refetchFlipcart();
       } else {
         await importProductExcelMutation.mutateAsync(file);
         await refetchProducts();
@@ -200,8 +220,10 @@ const ManageProducts = () => {
     importType === "product"
       ? filteredProducts.length
       : importType === "asin"
-      ? asinItems.length
-      : myntraItems.length;
+      ? (asinResponse?.total ?? asinItems.length)
+      : importType === "myntra"
+      ? (myntraResponse?.total ?? myntraItems.length)
+      : (flipcartResponse?.total ?? flipcartItems.length);
   const totalPages = Math.ceil(totalRecords / pageSize);
 
   const paginatedProducts = filteredProducts.slice(
@@ -215,6 +237,11 @@ const ManageProducts = () => {
   );
 
   const paginatedMyntraItems = myntraItems.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
+
+  const paginatedFlipcartItems = flipcartItems.slice(
     (page - 1) * pageSize,
     page * pageSize,
   );
@@ -440,6 +467,19 @@ const ManageProducts = () => {
     setMyntraModalOpen(true);
   };
 
+  const handleEditFlipcart = (item: FlipcartImportItem) => {
+    setSelectedFlipcart(item);
+    setFlipcartModalOpen(true);
+  };
+
+  const handleDeleteFlipcart = async (id: string) => {
+    try {
+      await deleteFlipcartMutation.mutateAsync(id);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleStatus = async (product: Product) => {
     try {
       await updateProductStatusMutation.mutateAsync({
@@ -467,6 +507,8 @@ const ManageProducts = () => {
       refetchMyntra();
     } else if (importType === "asin") {
       refetchAsin();
+    } else if (importType === "flipcart") {
+      refetchFlipcart();
     } else {
       refetchProducts();
     }
@@ -514,6 +556,8 @@ const ManageProducts = () => {
                 ? "Add ASIN"
                 : importType === "myntra"
                 ? "Add Myntra"
+                : importType === "flipcart"
+                ? "Add Flipcart"
                 : "Add Product"
             }
             demoSheetLabel="Demo Sheet"
@@ -525,6 +569,9 @@ const ManageProducts = () => {
               } else if (importType === "myntra") {
                 setSelectedMyntra(null);
                 setMyntraModalOpen(true);
+              } else if (importType === "flipcart") {
+                setSelectedFlipcart(null);
+                setFlipcartModalOpen(true);
               } else if (importType === "product") {
                 router.push("/dashboard/settings/manage-product/product-profile/add-product");
               }
@@ -542,11 +589,15 @@ const ManageProducts = () => {
             asinTotal={asinResponse?.total}
             myntraItems={myntraItems}
             myntraTotal={myntraResponse?.total}
+            flipcartItems={flipcartItems}
+            flipcartTotal={flipcartResponse?.total}
             isLoading={
               importType === "asin"
                 ? asinLoading
                 : importType === "myntra"
                 ? myntraLoading
+                : importType === "flipcart"
+                ? flipcartLoading
                 : productsLoading
             }
           />
@@ -587,11 +638,14 @@ const ManageProducts = () => {
                   ? importMyntraExcelMutation.isPending
                   : importType === "asin"
                   ? importAsinExcelMutation.isPending
+                  : importType === "flipcart"
+                  ? importFlipcartExcelMutation.isPending
                   : importProductExcelMutation.isPending
               }
               productsData={products}
               asinData={asinItems}
               myntraData={myntraItems}
+              flipcartData={flipcartItems}
               selectedCount={selectedProductIds.length}
               onExportProducts={handleExportProducts}
             />
@@ -631,7 +685,7 @@ const ManageProducts = () => {
                     onDelete={handleDeleteAsin}
                     tableWrapperClassName="w-full min-w-max"
                   />
-                ) : (
+                ) : importType === "myntra" ? (
                   <MyntraTable
                     items={paginatedMyntraItems}
                     isLoading={myntraLoading}
@@ -644,6 +698,14 @@ const ManageProducts = () => {
                         console.error(e);
                       }
                     }}
+                  />
+                ) : (
+                  <FlipcartTable
+                    items={paginatedFlipcartItems}
+                    isLoading={flipcartLoading}
+                    onEdit={handleEditFlipcart}
+                    tableWrapperClassName="w-full min-w-max"
+                    onDelete={handleDeleteFlipcart}
                   />
                 )}
               </div>
@@ -659,6 +721,8 @@ const ManageProducts = () => {
                     ? "ASINs"
                     : importType === "myntra"
                     ? "Myntra SKUs"
+                    : importType === "flipcart"
+                    ? "Flipcart FSNs"
                     : "products"
                 }
                 variant="dark"
@@ -708,6 +772,15 @@ const ManageProducts = () => {
           onClose={() => {
             setMyntraModalOpen(false);
             setSelectedMyntra(null);
+          }}
+        />
+
+        <FlipcartModal
+          open={flipcartModalOpen}
+          item={selectedFlipcart}
+          onClose={() => {
+            setFlipcartModalOpen(false);
+            setSelectedFlipcart(null);
           }}
         />
 

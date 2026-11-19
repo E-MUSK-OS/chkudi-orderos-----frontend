@@ -212,7 +212,16 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
       return true;
     }
 
-    // 4. Sub-path match: if item has children
+    // 4. Sub-path match for nested sub-routes (e.g. /result, /create, /edit, /view)
+    if (
+      itemNorm !== "/dashboard" &&
+      itemNorm !== "/order-process" &&
+      (currentNorm.startsWith(itemNorm + "/") || currCanon.startsWith(itemCanon + "/"))
+    ) {
+      return true;
+    }
+
+    // 5. Parent with children sub-path match
     if (item.children && item.children.length > 0 && (currentNorm.startsWith(itemNorm + "/") || currCanon.startsWith(itemCanon + "/"))) {
       return true;
     }

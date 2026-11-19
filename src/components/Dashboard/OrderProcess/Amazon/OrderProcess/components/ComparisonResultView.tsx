@@ -1641,8 +1641,32 @@ export default function ComparisonResultView({
       );
       if (maxPageScroll <= 0) return;
 
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
+      const isPageAtBottom =
+        scrollContainer.scrollTop >= maxPageScroll - 8 ||
+        scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 8;
+      const isPageAtTop = scrollContainer.scrollTop <= 6;
+
+      if (activeTab === "pdf") {
+        // Stop-scrolling coordinator for PDF preview
+        if (e.deltaY > 0) {
+          if (!isPageAtBottom) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.min(
+              maxPageScroll,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else if (e.deltaY < 0) {
+          if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        }
+        return;
+      }
 
       const isOverTable =
         tableContainer &&
@@ -1654,10 +1678,14 @@ export default function ComparisonResultView({
         if (!isPageAtBottom) {
           // Outer page has not reached the fixed view yet -> scroll page down
           e.preventDefault();
+          const prev = scrollContainer.scrollTop;
           scrollContainer.scrollTop = Math.min(
             maxPageScroll,
             scrollContainer.scrollTop + e.deltaY
           );
+          if (scrollContainer.scrollTop === prev && tableContainer) {
+            tableContainer.scrollTop += e.deltaY;
+          }
         } else if (!isOverTable) {
           // At the fixed point and outside the table -> forward scroll to table
           if (tableContainer) {
@@ -1678,7 +1706,7 @@ export default function ComparisonResultView({
           }
         } else {
           // Cursor is inside table
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
+          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 3;
           if (isTableAtTop && !isPageAtTop) {
             // Table is at top row -> scroll outer page up to reveal Header & Stats Cards
             e.preventDefault();
@@ -1696,7 +1724,7 @@ export default function ComparisonResultView({
     return () => {
       scrollContainer.removeEventListener("wheel", onWheel);
     };
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -3268,10 +3296,10 @@ export default function ComparisonResultView({
       {/* LOWER SECTION: TOP CONTROLS & TABLE TOOLBAR & VIEWS */}
       {/* ===================================================== */}
       <div
-        className="flex flex-col gap-3 sm:gap-4"
+        className="flex flex-col gap-3 sm:gap-4 flex-1 min-h-0"
         style={{
-          height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
-          minHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+          height: isDesktop && targetHeight && activeTab === "pdf" ? `${targetHeight}px` : undefined,
+          maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
         }}
       >
         {/* ===================================================== */}
@@ -3583,7 +3611,7 @@ export default function ComparisonResultView({
       {/* TAB 1: COMPARISON TABLE VIEW (TABLE & PAGINATION) */}
       {/* ===================================================== */}
       {activeTab === "table" && (
-        <div className="lg:flex-1 lg:min-h-0 flex flex-col gap-3">
+        <div className="flex-1 min-h-0 flex flex-col gap-3">
 
           {/* Active "Show Printed Only" Banner Indicator */}
           {showPrinted && (
@@ -3805,7 +3833,7 @@ export default function ComparisonResultView({
           <div className="hidden md:flex flex-col flex-1 min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
             <div
               ref={tableContainerRef}
-              className="w-full overflow-x-auto flex-1 min-h-0 overflow-y-auto custom-scrollbar"
+              className="w-full overflow-x-auto flex-1 min-h-0 max-h-[620px] lg:max-h-none overflow-y-auto custom-scrollbar"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               <table className="w-full min-w-[940px] lg:min-w-[1000px] border-collapse text-left font-sans relative">
@@ -4001,7 +4029,7 @@ export default function ComparisonResultView({
               limit={limit}
               itemName="records"
               variant="dark"
-              className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5 mt-auto"
+              className="shrink-0 border-t border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] px-4 sm:px-6 py-3 sm:py-3.5"
               onPageChange={setPage}
               onLimitChange={(newLimit) => {
                 setLimit(newLimit);
@@ -4016,7 +4044,7 @@ export default function ComparisonResultView({
       {/* TAB 2: PDF VIEWER (COMBINED / CONVERTED ZPL / ORIGINAL UPLOADED) */}
       {/* ======================================================== */}
       {activeTab === "pdf" && (
-        <div className="lg:flex-1 lg:min-h-0 flex flex-col space-y-4 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm">
+        <div className="flex-1 min-h-0 flex flex-col space-y-4 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white flex items-center gap-2">

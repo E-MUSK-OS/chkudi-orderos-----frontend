@@ -4,6 +4,7 @@ import type { ImportType } from "./ProductToolbar";
 import type { ProductStats as ProductStatsType } from "../types/product.types";
 import type { AsinImportItem } from "../types/asinImport.types";
 import type { MyntraImportItem } from "../types/myntraImport.types";
+import type { FlipcartImportItem } from "../types/flipcartImport.types";
 
 interface Props {
   importType?: ImportType;
@@ -13,6 +14,8 @@ interface Props {
   asinTotal?: number;
   myntraItems?: MyntraImportItem[];
   myntraTotal?: number;
+  flipcartItems?: FlipcartImportItem[];
+  flipcartTotal?: number;
   isLoading?: boolean;
 }
 
@@ -24,6 +27,8 @@ export default function ProductStats({
   asinTotal,
   myntraItems = [],
   myntraTotal,
+  flipcartItems = [],
+  flipcartTotal,
   isLoading = false,
 }: Props) {
   let cards: {
@@ -116,6 +121,50 @@ export default function ProductStats({
         badgeText: "Racks",
         badgeClass: "border-purple-200/60 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-400",
         valueClass: "text-purple-600",
+      },
+    ];
+  } else if (importType === "flipcart") {
+    const totalFlipcart = flipcartTotal ?? flipcartItems.length;
+    const mappedSkus = flipcartItems.filter((item) =>
+      Boolean(item.sku && item.sku.trim())
+    ).length;
+    const withRack = flipcartItems.filter((item) =>
+      Boolean(item.rackAddress && item.rackAddress.trim())
+    ).length;
+    const unassignedRack = totalFlipcart - withRack;
+
+    cards = [
+      {
+        title: "Total Flipcart FSNs",
+        value: totalFlipcart,
+        badgeText: "FSNs",
+        badgeClass:
+          "border-blue-200/60 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400",
+        valueClass: "text-[#0A0E1A]",
+      },
+      {
+        title: "Mapped SKUs",
+        value: mappedSkus,
+        badgeText: "Matched",
+        badgeClass:
+          "border-emerald-200/60 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400",
+        valueClass: "text-emerald-600",
+      },
+      {
+        title: "With Rack Location",
+        value: withRack,
+        badgeText: "Racks",
+        badgeClass:
+          "border-purple-200/60 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-400",
+        valueClass: "text-purple-600",
+      },
+      {
+        title: "Unassigned Racks",
+        value: Math.max(0, unassignedRack),
+        badgeText: "Pending",
+        badgeClass:
+          "border-amber-200/60 bg-[#FFF9EC] text-[#B88728] dark:border-[#F5C451]/30 dark:bg-[#F5C451]/15 dark:text-[#F5C451]",
+        valueClass: "text-amber-600",
       },
     ];
   } else {

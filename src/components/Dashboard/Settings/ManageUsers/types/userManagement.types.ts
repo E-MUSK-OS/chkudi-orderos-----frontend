@@ -138,6 +138,7 @@ export const PAGE_ACCESS_OPTIONS = [
   { id: "order-process/myntra/invoice-formatter", label: "Myntra - Invoice Formatter" },
   { id: "order-process/amazon/order-process", label: "Amazon - Order Process" },
   { id: "order-process/amazon/awb-scan", label: "Amazon - AWB Scan" },
+  { id: "order-process/flipcart/order-process", label: "Flipcart - Order Process" },
   { id: "products-analytics/amazon", label: "Products Analytics - Amazon" },
   { id: "transaction/sales/po-based", label: "Transaction - Sales PO Based" },
   { id: "offline-sales/sales-challan", label: "Offline Sales - Sales Challan" },

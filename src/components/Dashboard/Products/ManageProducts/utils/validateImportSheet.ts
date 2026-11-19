@@ -140,6 +140,30 @@ export async function validateImportSheetFormat(
           message: "Please upload the appropriate sheet format for ASIN Import! You can download the demo sheet for reference.",
         };
       }
+    } else if (type === "flipcart") {
+      // Must contain FSN and SKU
+      const hasFsn = normalizedHeaders.some((h) =>
+        ["fsn", "fsncode", "flipkartfsn", "flipcartfsn"].includes(h)
+      );
+      const hasSku = normalizedHeaders.some((h) =>
+        ["sku", "mastersku", "productsku", "sellersku"].includes(h)
+      );
+
+      // Check if user accidentally uploaded Product, Myntra, or ASIN sheet
+      const hasProductName = normalizedHeaders.includes("productname");
+      const hasMyntraSku = normalizedHeaders.some((h) =>
+        ["myntrasku", "myntraskucode"].includes(h)
+      );
+      const isDedicatedAsinSheet =
+        normalizedHeaders.includes("asin") && !hasFsn;
+
+      if (!hasFsn || !hasSku || hasProductName || hasMyntraSku || isDedicatedAsinSheet) {
+        return {
+          valid: false,
+          message:
+            "Please upload the appropriate sheet format for Flipcart Import! You can download the demo sheet for reference.",
+        };
+      }
     } else {
       // product import: supports the exported/demo sheet format (Variant SKU, Asin, Myntra SKU, FSN Code, Rack Address, attributes)
       // as well as legacy product sheet format (Product Name, Master SKU)
