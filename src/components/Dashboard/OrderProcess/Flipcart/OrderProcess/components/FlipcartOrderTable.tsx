@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import {
   Printer,
   FileText,
@@ -29,7 +29,7 @@ export interface FlipcartOrderTableProps {
   allPageSelected: boolean;
   onSelectRow: (index: number, selected: boolean) => void;
   onToggleAllPage: () => void;
-  skuDetailsMap: Map<string, { fsn?: string; rackAddress?: string }>;
+  skuDetailsMap: Map<string, { fsn?: string; asin?: string; rackAddress?: string }>;
 
   // Search & Filters
   searchQuery: string;
@@ -116,14 +116,22 @@ export default function FlipcartOrderTable({
 }: FlipcartOrderTableProps) {
   const autoScanTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const selectThemeStyles = {
-    controlBg: isDark ? "#0A0E1A" : "#FFFFFF",
-    controlBorder: isDark ? "rgba(255, 255, 255, 0.12)" : "#E2E8F0",
-    menuBg: isDark ? "#0F172A" : "#FFFFFF",
-    menuBorder: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
-    textColor: isDark ? "#F8FAFC" : "#0F172A",
-    optionHoverBg: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-  };
+  const selectThemeStyles = useMemo(
+    () => ({
+      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#E7E0D2",
+      backgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      textColor: isDark ? "#E8C16D" : "#0A0E1A",
+      placeholderColor: isDark ? "#E8C16D" : "#64748B",
+      indicatorColor: isDark ? "#E8C16D" : "#0A0E1A",
+      menuBackgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      optionHoverColor: isDark ? "#161D2E" : "#FFF9EC",
+      optionSelectedColor: "#E8C16D",
+      optionSelectedTextColor: "#0A0E1A",
+      optionTextColor: isDark ? "#ffffff" : "#0A0E1A",
+      menuPortalTarget: typeof window !== "undefined" ? document.body : undefined,
+    }),
+    [isDark]
+  );
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3">
@@ -478,7 +486,11 @@ export default function FlipcartOrderTable({
                   </div>
                 </div>
 
-                {/* FSN Code */}
+                {/* 
+                // =========================================================================
+                // PREVIOUS FSN CODE DISPLAY
+                // (Commented out: uncomment when switching back to FSN Code from FlipcartImport)
+                // =========================================================================
                 <div className="rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
                   <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
                     FSN Code
@@ -494,6 +506,50 @@ export default function FlipcartOrderTable({
                   ) : (
                     <span className="font-medium text-[#0A0E1A] dark:text-white truncate block">
                       {item.fsn || "—"}
+                    </span>
+                  )}
+                </div>
+                */}
+
+                {/* ASIN Code from AsinImport */}
+                <div className="rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
+                    ASIN
+                  </span>
+                  {item.items && item.items.length > 1 ? (
+                    <div className="flex flex-col gap-0.5 font-medium text-[#0A0E1A] dark:text-white">
+                      {item.items.map((i, idx) => (
+                        <span key={idx} className="truncate">
+                          {i.asin || skuDetailsMap.get((i.sku || "").trim().toLowerCase())?.asin || i.fsn || skuDetailsMap.get((i.sku || "").trim().toLowerCase())?.fsn || "—"}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="font-medium text-[#0A0E1A] dark:text-white truncate block">
+                      {item.asin || item.fsn || "—"}
+                    </span>
+                  )}
+                </div>
+
+                {/* Rack Address from AsinImport */}
+                <div className="rounded-xl bg-[#FAF8F5] dark:bg-white/[0.02] border border-[#E7E0D2]/60 dark:border-white/[0.06] p-2 space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
+                    Rack Address
+                  </span>
+                  {item.items && item.items.length > 1 ? (
+                    <div className="flex flex-col gap-0.5 font-medium text-[#0A0E1A] dark:text-white">
+                      {item.items.map((i, idx) => {
+                        const rack = i.rackAddress || skuDetailsMap.get((i.sku || "").trim().toLowerCase())?.rackAddress || "—";
+                        return (
+                          <span key={idx} className={`truncate ${rack && rack !== "—" && rack !== "Not assigned" ? "font-semibold text-emerald-700 dark:text-emerald-400" : ""}`}>
+                            {rack && rack !== "Not assigned" ? rack : "—"}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <span className={`font-medium truncate block ${item.rackAddress && item.rackAddress !== "—" && item.rackAddress !== "Not assigned" ? "font-semibold text-emerald-700 dark:text-emerald-400 text-[#0A0E1A] dark:text-white" : "text-[#0A0E1A] dark:text-white"}`}>
+                      {item.rackAddress && item.rackAddress !== "Not assigned" ? item.rackAddress : "—"}
                     </span>
                   )}
                 </div>
@@ -554,8 +610,20 @@ export default function FlipcartOrderTable({
                 <th className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                   AWB Tracking
                 </th>
+                {/* 
+                // =========================================================================
+                // PREVIOUS FSN CODE HEADER
+                // (Commented out: uncomment when switching back to FSN Code from FlipcartImport)
+                // =========================================================================
                 <th className="w-36 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                   FSN Code
+                </th>
+                */}
+                <th className="w-36 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  ASIN
+                </th>
+                <th className="w-32 min-w-[110px] px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap">
+                  Rack
                 </th>
                 <th className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap">
                   SKU
@@ -570,7 +638,7 @@ export default function FlipcartOrderTable({
             <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-sans">
               {paginatedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                       <p className="font-bold text-[#0A0E1A] dark:text-white">
@@ -637,7 +705,11 @@ export default function FlipcartOrderTable({
                       </div>
                     </td>
 
-                    {/* FSN Code matched from DB */}
+                    {/* 
+                    // =========================================================================
+                    // PREVIOUS FSN CODE COLUMN
+                    // (Commented out: uncomment when switching back to FSN Code from FlipcartImport)
+                    // =========================================================================
                     <td className="w-36 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-medium text-slate-900 dark:text-white">
                       {item.items && item.items.length > 0 ? (
                         <div className="flex flex-col items-center justify-center gap-0.5 py-0.5">
@@ -662,6 +734,69 @@ export default function FlipcartOrderTable({
                         </div>
                       ) : (
                         <span>{item.fsn || "—"}</span>
+                      )}
+                    </td>
+                    */}
+
+                    {/* ASIN matched from DB (AsinImport) */}
+                    <td className="w-36 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-medium text-slate-900 dark:text-white">
+                      {item.items && item.items.length > 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-0.5 py-0.5">
+                          {item.items.map((i, idx) => {
+                            const isNotLast = idx < (item.items?.length || 1) - 1;
+                            const displayAsin =
+                              i.asin ||
+                              skuDetailsMap.get((i.sku || "").trim().toLowerCase())?.asin ||
+                              i.fsn ||
+                              skuDetailsMap.get((i.sku || "").trim().toLowerCase())?.fsn ||
+                              "—";
+                            return (
+                              <div
+                                key={idx}
+                                className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
+                              >
+                                <span>{displayAsin}</span>
+                                {isNotLast ? (
+                                  <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span>{item.asin || item.fsn || "—"}</span>
+                      )}
+                    </td>
+
+                    {/* Rack Address matched from DB (AsinImport) */}
+                    <td className="w-32 min-w-[110px] px-3 sm:px-4 py-3.5 text-center font-medium text-slate-900 dark:text-white">
+                      {item.items && item.items.length > 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-0.5 py-0.5">
+                          {item.items.map((i, idx) => {
+                            const isNotLast = idx < (item.items?.length || 1) - 1;
+                            const displayRack =
+                              i.rackAddress ||
+                              skuDetailsMap.get((i.sku || "").trim().toLowerCase())?.rackAddress ||
+                              "—";
+                            return (
+                              <div
+                                key={idx}
+                                className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
+                              >
+                                <span className={displayRack && displayRack !== "—" && displayRack !== "Not assigned" ? "font-semibold text-emerald-700 dark:text-emerald-400" : ""}>
+                                  {displayRack && displayRack !== "Not assigned" ? displayRack : "—"}
+                                </span>
+                                {isNotLast ? (
+                                  <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span className={item.rackAddress && item.rackAddress !== "—" && item.rackAddress !== "Not assigned" ? "font-semibold text-emerald-700 dark:text-emerald-400" : ""}>
+                          {item.rackAddress && item.rackAddress !== "Not assigned" ? item.rackAddress : "—"}
+                        </span>
                       )}
                     </td>
 

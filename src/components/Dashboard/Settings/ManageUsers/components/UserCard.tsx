@@ -21,7 +21,7 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
   const [imgError, setImgError] = useState(false);
   const { canUpdate, canDelete } = usePagePermissions("settings/manage-users");
   const isSuperAdminCard = user.role === "SUPERADMIN";
-  const canModify = isSuperAdminCard ? currentUser?.role === "SUPERADMIN" : (currentUser?.role === "ADMIN" || currentUser?.role === "SUPERADMIN");
+  const canModify = isSuperAdminCard ? currentUser?.role === "SUPERADMIN" : true;
   // Initials fallback (e.g. Elon Musk -> EM)
   const initials = getInitials(user.fullName, user.email);
 
@@ -158,16 +158,16 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
       <div className="flex items-center justify-between gap-1.5 sm:gap-2 pt-2 border-t border-slate-100 dark:border-white/[0.06] mt-auto min-w-0">
         <button
           type="button"
-          disabled={!canModify}
-          onClick={() => canModify && onToggleStatus(user)}
+          disabled={!canModify || !canUpdate}
+          onClick={() => canModify && canUpdate && onToggleStatus(user)}
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all shrink-0 ${
-            canModify ? "cursor-pointer" : "cursor-default opacity-85"
+            canModify && canUpdate ? "cursor-pointer" : "cursor-default opacity-85"
           } ${
             user.isActive
               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
           }`}
-          title={canModify ? "Toggle User Status" : "Super Admin status cannot be toggled by Admin"}
+          title={!canModify ? "Super Admin status cannot be toggled" : !canUpdate ? "You do not have update permission" : "Toggle User Status"}
         >
           <span
             className={`w-1.5 h-1.5 rounded-full ${
@@ -198,7 +198,7 @@ export default function UserCard({ user, onView, onEdit, onToggleStatus, onDelet
             </button>
           )}
 
-          {!isSuperAdminCard && canModify && canDelete && onDelete && (
+          {canModify && canDelete && onDelete && user.id !== currentUser?.id && (
             <button
               type="button"
               onClick={() => onDelete(user)}

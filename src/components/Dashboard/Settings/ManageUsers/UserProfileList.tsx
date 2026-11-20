@@ -9,7 +9,7 @@ import UserViewModal from "./components/UserViewModal";
 import Pagination from "@/components/ui/Pagination";
 import { useUsers, useUpdateUserStatus, useDeleteUser } from "./hooks/useManageUsers";
 import type { ManagedUser } from "./types/userManagement.types";
-import { usePagePermissions } from "@/utils/pagePermissions";
+import { usePagePermissions, getCurrentUser } from "@/utils/pagePermissions";
 import { toast } from "sonner";
 
 export default function UserProfileList() {
@@ -205,9 +205,15 @@ export default function UserProfileList() {
     }
   };
 
+  const currentUser = React.useMemo(() => getCurrentUser(), []);
+
   const handleDeleteClick = (user: ManagedUser) => {
-    if (user.role === "SUPERADMIN") {
-      toast.error("Super Admin accounts cannot be deleted.");
+    if (user.role === "SUPERADMIN" && currentUser?.role !== "SUPERADMIN") {
+      toast.error("Access denied. Only SuperAdmin can delete a SuperAdmin profile.");
+      return;
+    }
+    if (user.id === currentUser?.id) {
+      toast.error("You cannot delete your own account.");
       return;
     }
     setUserToDelete(user);
@@ -216,8 +222,8 @@ export default function UserProfileList() {
 
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
-    if (userToDelete.role === "SUPERADMIN") {
-      toast.error("Super Admin accounts cannot be deleted.");
+    if (userToDelete.role === "SUPERADMIN" && currentUser?.role !== "SUPERADMIN") {
+      toast.error("Access denied. Only SuperAdmin can delete a SuperAdmin profile.");
       setDeleteModalOpen(false);
       setUserToDelete(null);
       return;

@@ -14,7 +14,7 @@ export default function ScanSummary({ total, pending, scanned, missing = 0 }: Pr
 
   return (
     <div
-      className={`mb-6 grid grid-cols-1 gap-3 sm:gap-4 ${
+      className={`grid grid-cols-1 gap-3 sm:gap-4 ${
         hasMissing ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
       }`}
     >

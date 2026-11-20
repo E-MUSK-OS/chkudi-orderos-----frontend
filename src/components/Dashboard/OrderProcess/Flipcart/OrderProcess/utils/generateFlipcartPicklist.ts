@@ -3,6 +3,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FlipcartOrderItem } from "../types";
+import { isSkuBidirectionalMatch } from "./flipcartSkuMatch";
 
 export interface FlipcartPicklistItem {
   sku: string;
@@ -84,7 +85,7 @@ export const compareRackAddresses = (
 export const generateFlipcartPicklist = (
   orders: FlipcartOrderItem[],
   selectedRows?: Set<number>,
-  skuDetailsMap?: Map<string, { fsn?: string; rackAddress?: string }>
+  skuDetailsMap?: Map<string, { fsn?: string; asin?: string; rackAddress?: string }>
 ): FlipcartPicklistResult => {
   const targetOrders =
     selectedRows && selectedRows.size > 0
@@ -162,7 +163,18 @@ export const generateFlipcartPicklist = (
         if (!rawSku) continue;
 
         const normKey = rawSku.toLowerCase();
-        const mapped = skuDetailsMap?.get(normKey);
+        let mapped = skuDetailsMap?.get(normKey);
+        if (!mapped && skuDetailsMap) {
+          for (const [dbSku, d] of skuDetailsMap.entries()) {
+            if (
+              (d.asin || d.rackAddress) &&
+              isSkuBidirectionalMatch(dbSku, normKey)
+            ) {
+              mapped = d;
+              break;
+            }
+          }
+        }
         const rackAddress =
           mapped?.rackAddress || item.rackAddress || order.rackAddress || "";
         const qty = item.quantity || 1;

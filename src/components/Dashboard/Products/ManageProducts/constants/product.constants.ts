@@ -125,6 +125,37 @@ export const defaultShoeSizes: string[] = [
   "UK 12",
 ];
 
+export const getSizeRank = (sz: string, definedSizes: string[] = []): number => {
+  const clean = String(sz || "").trim().toLowerCase();
+  if (!clean) return 9999;
+
+  // 1. User-defined sequence (e.g. from sizeList "28, XL, 40")
+  const definedIdx = definedSizes.findIndex(
+    (d) => String(d || "").trim().toLowerCase() === clean
+  );
+  if (definedIdx !== -1) {
+    return definedIdx;
+  }
+
+  // 2. Numeric fallback if pure numbers (e.g. 26, 28, 30)
+  const num = Number(clean);
+  if (!isNaN(num)) {
+    return 1000 + num;
+  }
+
+  // 3. Fallback position for other custom sizes
+  return 2000;
+};
+
+export const sortSizes = (sizes: string[], definedSizes: string[] = []): string[] => {
+  return [...sizes].sort((a, b) => {
+    const rankA = getSizeRank(a, definedSizes);
+    const rankB = getSizeRank(b, definedSizes);
+    if (rankA !== rankB) return rankA - rankB;
+    return a.localeCompare(b);
+  });
+};
+
 export interface CategoryOption {
   label: string;
   value: string;

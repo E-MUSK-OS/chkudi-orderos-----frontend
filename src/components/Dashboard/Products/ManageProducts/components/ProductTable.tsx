@@ -7,7 +7,7 @@ import type { Product } from "../types/product.types";
 import ProductStatusBadge from "./ProductStatusBadge";
 import ProductActionMenu from "./ProductActionMenu";
 import ProductVariantInline from "./ProductVariantInline";
-import { getDefaultAttributesForCategory } from "../constants/product.constants";
+import { getDefaultAttributesForCategory, sortSizes } from "../constants/product.constants";
 
 interface Props {
   products: Product[];
@@ -168,9 +168,14 @@ const getProductAttributeItems = (product: Product) => {
         sizes = attr.attributeValue.split(",").map((s) => s.trim()).filter(Boolean);
       }
 
+      const definedSizes = product.sizeList
+        ? product.sizeList.split(",").map((s) => s.trim()).filter(Boolean)
+        : [];
+      const sortedSizes = sortSizes(sizes, definedSizes);
+
       return {
         name: attrName,
-        values: sizes,
+        values: sortedSizes,
       };
     }
 
@@ -243,7 +248,7 @@ export default function ProductTable({
       <table className="w-full min-w-[1050px] border-collapse text-left font-sans">
         <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:text-[#E8C16D] select-none shadow-xs">
           <tr>
-            <th className="px-3 sm:px-4 py-3.5 text-center w-12">
+            <th className="px-4 py-3.5 text-center w-12">
               <div className="flex items-center justify-center">
                 <input
                   type="checkbox"
@@ -258,36 +263,31 @@ export default function ProductTable({
               </div>
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[200px]">
+            <th className="px-4 py-3.5 text-left font-semibold min-w-[240px]">
               Product Details
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[120px]">
+            <th className="px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[150px]">
               Master SKU
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[100px]">
+            <th className="px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[130px]">
               Brand & Unit
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px]">
+            <th className="px-4 py-3.5 text-left font-semibold min-w-[200px]">
               Category
             </th>
 
-            {/* Kardex Pricing (Cost / MRP / Dealer / Retail) */}
-            <th className="px-3 sm:px-4 py-3.5 text-left font-semibold whitespace-nowrap min-w-[140px]">
-              Kardex Pricing
-            </th>
-
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap min-w-[90px]">
+            <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-28">
               Status
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
+            <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
               Actions
             </th>
 
-            <th className="px-3 sm:px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
+            <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-20">
               Variants
             </th>
           </tr>
@@ -305,7 +305,7 @@ export default function ProductTable({
                       : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
                   }`}
                 >
-                  <td className="px-3 sm:px-4 py-3.5 text-center w-12 align-middle">
+                  <td className="px-4 py-3.5 text-center w-12 align-middle">
                     <div className="flex items-center justify-center">
                       <input
                         type="checkbox"
@@ -318,21 +318,23 @@ export default function ProductTable({
                   </td>
 
                   {/* Product Details (Name, SKU, Description, Party) */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle min-w-[200px] max-w-[260px]">
+                  <td className="px-4 py-3.5 align-middle min-w-[240px]">
                     <div>
                       <p className="font-bold text-[#0A0E1A] truncate dark:text-white" title={product.productName}>
                         {product.productName}
                       </p>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
                         {product.sku && (
-                          <span className="inline-flex items-center gap-1 font-mono rounded bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/[0.08]">
-                            SKU: {product.sku}
+                          <span className="inline-flex items-center gap-1 font-mono text-slate-500 dark:text-slate-400">
+                            <span className="text-slate-400 dark:text-slate-500 font-normal">SKU:</span>
+                            <span className="font-medium text-slate-700 dark:text-slate-300">{product.sku}</span>
                           </span>
                         )}
                         {product.referenceParty && (
-                          <span className="inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/20">
-                            Party: {product.referenceParty}
+                          <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                            <span className="text-slate-400 dark:text-slate-500 font-normal">Party:</span>
+                            <span className="font-medium text-blue-600 dark:text-blue-400">{product.referenceParty}</span>
                           </span>
                         )}
                         {(() => {
@@ -356,8 +358,9 @@ export default function ProductTable({
                           }
                           if (!effGender) return null;
                           return (
-                            <span className="inline-flex items-center gap-1 rounded bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 text-[10px] text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20 font-semibold">
-                              Gender: {effGender}
+                            <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                              <span className="text-slate-400 dark:text-slate-500 font-normal">Gender:</span>
+                              <span className="font-medium text-purple-700 dark:text-purple-300">{effGender}</span>
                             </span>
                           );
                         })()}
@@ -372,10 +375,10 @@ export default function ProductTable({
                           if (mkts.length === 0) return null;
                           return (
                             <span
-                              className="inline-flex items-center gap-1 rounded bg-[#FFF9EC] dark:bg-[#F5C451]/10 px-1.5 py-0.5 text-[10px] text-[#B88728] dark:text-[#F5C451] border border-[#E8C16D]/40 dark:border-[#F5C451]/20 font-semibold"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#B88728] dark:text-[#F5C451]"
                               title={`Marketplace: ${mkts.join(", ")}`}
                             >
-                              <Store className="h-2.5 w-2.5" />
+                              <Store className="h-3 w-3" />
                               <span>{mkts.join(", ")}</span>
                             </span>
                           );
@@ -385,14 +388,14 @@ export default function ProductTable({
                   </td>
 
                   {/* Master SKU */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle whitespace-nowrap">
+                  <td className="px-4 py-3.5 align-middle whitespace-nowrap w-[150px]">
                     <span className="font-semibold text-slate-900 font-mono dark:text-slate-200">
                       {product.masterSku}
                     </span>
                   </td>
 
                   {/* Brand & Unit */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle whitespace-nowrap">
+                  <td className="px-4 py-3.5 align-middle whitespace-nowrap w-[130px]">
                     <div>
                       <span className="font-medium text-slate-800 dark:text-slate-200">
                         {product.brand || "No Brand"}
@@ -406,29 +409,26 @@ export default function ProductTable({
                   </td>
 
                   {/* Category & Attributes */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle min-w-[160px]">
+                  <td className="px-4 py-3.5 align-middle min-w-[200px]">
                     <div>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {product.category}
                       </span>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
                         {getProductAttributeItems(product).map((attr, idx) => {
                           const hasValues = attr.values.length > 0;
                           return (
                             <span
                               key={idx}
-                              className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-[#F5C451]/10 px-1.5 py-0.5 text-[10px] sm:text-[11px] font-mono border border-amber-200/60 dark:border-[#F5C451]/20 shadow-2xs"
+                              className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 dark:text-slate-400"
                             >
-                              <span className="text-slate-600 dark:text-slate-400 font-medium">
-                                {attr.name}
+                              <span className="text-slate-400 dark:text-slate-500 font-normal">
+                                {attr.name}:
                               </span>
                               {hasValues && (
-                                <>
-                                  <span className="text-slate-400 dark:text-slate-500 font-normal">:</span>
-                                  <span className="font-bold text-[#B88728] dark:text-[#F5C451]">
-                                    {attr.values.join(", ")}
-                                  </span>
-                                </>
+                                <span className="font-medium text-slate-700 dark:text-slate-200">
+                                  {attr.values.join(", ")}
+                                </span>
                               )}
                             </span>
                           );
@@ -437,38 +437,14 @@ export default function ProductTable({
                     </div>
                   </td>
 
-                  {/* Kardex Pricing (Product Cost, MRP, Dealer Rate, Retail Rate) */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle whitespace-nowrap">
-                    <div className="space-y-0.5 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-400 dark:text-slate-500 w-9 shrink-0">Cost:</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          ₹{product.productCost ?? 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-400 dark:text-slate-500 w-9 shrink-0">MRP:</span>
-                        <span className="font-semibold text-[#B88728] dark:text-[#F5C451]">
-                          ₹{product.mrp || 0}
-                        </span>
-                      </div>
-                      {(Boolean(product.dealerRate) || Boolean(product.retailRate)) && (
-                        <div className="text-[10px] text-slate-400 pt-0.5">
-                          D: ₹{product.dealerRate ?? 0} | R: ₹{product.retailRate ?? 0}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle text-center whitespace-nowrap">
+                  <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap w-28">
                     <div className="flex items-center justify-center">
                       <ProductStatusBadge isActive={product.isActive} />
                     </div>
                   </td>
 
                   {/* Actions */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle text-center">
+                  <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap w-20">
                     <div className="flex items-center justify-center">
                       <ProductActionMenu
                         product={product}
@@ -481,7 +457,7 @@ export default function ProductTable({
                   </td>
 
                   {/* Variants */}
-                  <td className="px-3 sm:px-4 py-3.5 align-middle text-center">
+                  <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap w-20">
                     <div className="flex items-center justify-center">
                       <button
                         type="button"
@@ -502,7 +478,7 @@ export default function ProductTable({
                 {expandedProductId === product.id && (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="border-t border-[#E7E0D2] bg-slate-50/60 p-2 sm:p-4 md:p-5 dark:border-white/[0.08] dark:bg-[#080B11]/50"
                     >
                       <ProductVariantInline

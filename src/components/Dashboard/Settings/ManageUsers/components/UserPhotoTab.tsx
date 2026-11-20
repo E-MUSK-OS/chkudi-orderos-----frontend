@@ -61,6 +61,11 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "settings/labels/label-config": "settings/labels/label-config",
   "settings/labels/label-print": "settings/labels/label-print",
   "settings/manage-users": "settings/manage-users",
+  "/dashboard/settings/manage-users/user-profile": "settings/manage-users",
+  "/dashboard/settings/manage-users/user-profile/create-user": "settings/manage-users",
+  "settings/manage-users/user-profile": "settings/manage-users",
+  "settings/manage-users/user-profile/create-user": "settings/manage-users",
+  "manage-users": "settings/manage-users",
   // Legacy aliases
   vms_tracking: "vms/scans/trackingid-scan",
   products_profile: "settings/manage-product",
@@ -171,6 +176,10 @@ export default function UserPhotoTab({
     if (allowedPages && allowedPages.length > 0) {
       return dynamicDefs.map((def) => {
         const slug = PERMISSION_ID_TO_PAGE_SLUG[def.id] || def.id;
+        const isManageUsers =
+          def.id.includes("manage-users") ||
+          def.id.includes("user-profile") ||
+          (def.path && def.path.toLowerCase().includes("manage users"));
         const isGranted =
           allowedPages.includes("ALL") ||
           allowedPages.includes(slug) ||
@@ -180,10 +189,10 @@ export default function UserPhotoTab({
           );
         return {
           ...def,
-          create: isGranted,
+          create: isManageUsers && !allowedPages.includes("ALL") ? false : isGranted,
           read: isGranted,
-          update: isGranted,
-          delete: isGranted,
+          update: isManageUsers && !allowedPages.includes("ALL") ? false : isGranted,
+          delete: isManageUsers && !allowedPages.includes("ALL") ? false : isGranted,
         };
       });
     }
@@ -244,6 +253,10 @@ export default function UserPhotoTab({
       setPermissions(
         dynamicDefs.map((def) => {
           const slug = PERMISSION_ID_TO_PAGE_SLUG[def.id] || def.id;
+          const isManageUsers =
+            def.id.includes("manage-users") ||
+            def.id.includes("user-profile") ||
+            (def.path && def.path.toLowerCase().includes("manage users"));
           const isGranted =
             allowedPages.includes("ALL") ||
             allowedPages.includes(slug) ||
@@ -253,10 +266,10 @@ export default function UserPhotoTab({
             );
           return {
             ...def,
-            create: isGranted,
+            create: isManageUsers && !allowedPages.includes("ALL") ? false : isGranted,
             read: isGranted,
-            update: isGranted,
-            delete: isGranted,
+            update: isManageUsers && !allowedPages.includes("ALL") ? false : isGranted,
+            delete: isManageUsers && !allowedPages.includes("ALL") ? false : isGranted,
           };
         })
       );
@@ -647,8 +660,8 @@ export default function UserPhotoTab({
         )}
 
         {/* Permission Rights Table matching View Mode exactly */}
-        <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] shadow-2xs">
-          <table className="w-full text-left text-xs sm:text-sm">
+        <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] shadow-2xs" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
+          <table className="w-full min-w-[720px] text-left text-xs sm:text-sm">
             <thead className="border-b border-[#F5E6BE] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] font-bold uppercase text-[11px] sm:text-xs tracking-wider">
               <tr>
                 <th className="py-3.5 px-4 w-12 text-center">No.</th>
@@ -683,10 +696,10 @@ export default function UserPhotoTab({
                 const isRowAllGranted = row.create && row.read && row.update && row.delete;
                 const slug = PERMISSION_ID_TO_PAGE_SLUG[row.id];
 
-                // Admin downstream permission restriction
+                // Downstream permission restriction for non-SuperAdmins
                 const isRestrictedForAdmin =
-                  currentUser?.role === "ADMIN" &&
-                  currentUser.allowedPages &&
+                  currentUser?.role !== "SUPERADMIN" &&
+                  currentUser?.allowedPages &&
                   currentUser.allowedPages.length > 0 &&
                   !currentUser.allowedPages.includes("ALL") &&
                   slug &&

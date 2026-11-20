@@ -120,11 +120,6 @@ export function isRouteAllowed(
     }
   }
 
-  // Manage users protection (strictly Admin / SuperAdmin only)
-  if (subPath.startsWith("settings/manage-users") && user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return false;
-  }
-
   // 1. Primary source of truth: granular rights JSON matrix
   if (user.rights) {
     try {
@@ -230,7 +225,12 @@ export function isRouteAllowed(
       return allowed.includes("settings/configuration") || allowed.includes("configuration") || allowed.includes("settings");
     }
     if (subPath.startsWith("settings/manage-users")) {
-      return allowed.includes("manage-users") || allowed.includes("settings/manage-users") || allowed.includes("settings");
+      return (
+        allowed.includes("manage-users") ||
+        allowed.includes("settings/manage-users") ||
+        allowed.includes("settings") ||
+        allowed.some((p) => p.includes("manage-users") || p.includes("user-profile"))
+      );
     }
     if (subPath.startsWith("settings/labels")) {
       return allowed.includes("labels") || allowed.includes("settings/labels") || allowed.includes("settings");
@@ -306,8 +306,25 @@ export function isNavItemAllowed(
   if (label.includes("offline sales")) return allowed.some((p) => p.startsWith("offline-sales") || p === "challan");
   if (label.includes("purchase")) return allowed.some((p) => p.startsWith("purchase"));
   if (label.includes("manage users")) {
-    if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return false;
-    return allowed.some((p) => p.includes("manage-users") || p === "settings");
+    if (user.role === "SUPERADMIN") return true;
+    if (allowed.includes("ALL")) return true;
+    if (user.rights) {
+      try {
+        const rightsList = typeof user.rights === "string" ? JSON.parse(user.rights) : user.rights;
+        if (Array.isArray(rightsList)) {
+          const hasRight = rightsList.some((p: any) => {
+            if (!p || (!p.read && !p.create && !p.update && !p.delete)) return false;
+            const id = (p.id || "").toLowerCase();
+            const path = (p.path || "").toLowerCase();
+            return id.includes("manage-users") || path.includes("manage-users") || id.includes("user-profile");
+          });
+          if (hasRight) return true;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return allowed.some((p) => p.includes("manage-users") || p === "settings" || p.includes("user-profile"));
   }
   if (label.includes("barcode") || label.includes("labels")) return allowed.some((p) => p.includes("labels") || p === "settings");
   if (label.includes("configuration")) {
@@ -502,6 +519,11 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "settings/labels/label-config": "settings/labels/label-config",
   "settings/labels/label-print": "settings/labels/label-print",
   "settings/manage-users": "settings/manage-users",
+  "/dashboard/settings/manage-users/user-profile": "settings/manage-users",
+  "/dashboard/settings/manage-users/user-profile/create-user": "settings/manage-users",
+  "settings/manage-users/user-profile": "settings/manage-users",
+  "settings/manage-users/user-profile/create-user": "settings/manage-users",
+  "manage-users": "settings/manage-users",
   profile: "profile",
   warehouse: "warehouse",
   wallet: "wallet",
@@ -549,41 +571,31 @@ export function getPagePermission(
       if (Array.isArray(rightsList) && rightsList.length > 0) {
         const cleanQuery = pageSlug.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
 
-        // 1. Exact match
-        let match = rightsList.find((p: any) => {
+        // Match all relevant permission rows (e.g. parent and sub-action rows)
+        const matchingPerms = rightsList.filter((p: any) => {
           if (!p || !p.id) return false;
           const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
           const cleanPath = (p.path || "").replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
           const mapped = (PERMISSION_ID_TO_PAGE_SLUG[p.id] || "").toLowerCase();
-          return cleanId === cleanQuery || cleanPath === cleanQuery || mapped === cleanQuery;
+          return (
+            cleanId === cleanQuery ||
+            cleanPath === cleanQuery ||
+            mapped === cleanQuery ||
+            cleanId.startsWith(cleanQuery) ||
+            cleanQuery.startsWith(cleanId) ||
+            cleanPath.startsWith(cleanQuery) ||
+            cleanQuery.startsWith(cleanPath) ||
+            cleanId.includes(cleanQuery) ||
+            cleanQuery.includes(cleanId)
+          );
         });
 
-        // 2. Prefix / StartsWith match
-        if (!match) {
-          match = rightsList.find((p: any) => {
-            if (!p || !p.id) return false;
-            const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
-            const cleanPath = (p.path || "").replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
-            return cleanId.startsWith(cleanQuery) || cleanQuery.startsWith(cleanId) ||
-                   cleanPath.startsWith(cleanQuery) || cleanQuery.startsWith(cleanPath);
-          });
-        }
-
-        // 3. Substring match
-        if (!match) {
-          match = rightsList.find((p: any) => {
-            if (!p || !p.id) return false;
-            const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
-            return cleanId.includes(cleanQuery) || cleanQuery.includes(cleanId);
-          });
-        }
-
-        if (match) {
+        if (matchingPerms.length > 0) {
           return {
-            create: Boolean(match.create),
-            read: Boolean(match.read),
-            update: Boolean(match.update),
-            delete: Boolean(match.delete),
+            create: matchingPerms.some((p: any) => Boolean(p.create)),
+            read: matchingPerms.some((p: any) => Boolean(p.read)),
+            update: matchingPerms.some((p: any) => Boolean(p.update)),
+            delete: matchingPerms.some((p: any) => Boolean(p.delete)),
           };
         }
       }

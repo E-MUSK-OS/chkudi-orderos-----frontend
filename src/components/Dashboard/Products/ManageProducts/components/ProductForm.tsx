@@ -32,6 +32,8 @@ import {
   getAttributePlaceholder,
   defaultShoeSizes,
   defaultNumericSizes,
+  sortSizes,
+  getSizeRank,
 } from "../constants/product.constants";
 
 import {
@@ -147,6 +149,11 @@ export default function ProductForm({
   const [isSubmittingVariants, setIsSubmittingVariants] = useState(false);
   const queryClient = useQueryClient();
 
+  // Cost & MRP state for each variant
+  const [variantPricing, setVariantPricing] = useState<
+    Record<string, { cost: number | string; mrp: number | string; id?: string }>
+  >({});
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema) as never,
     defaultValues,
@@ -185,6 +192,187 @@ export default function ProductForm({
   const categoryConfig = useMemo(() => {
     return getCategoryAttributeConfig(watchedCategory);
   }, [watchedCategory]);
+
+  const watchedColors = watch("colors") || [];
+  const watchedSizeList = watch("sizeList") || "";
+  const watchedMasterSku = watch("masterSku") || "";
+  const watchedMrp = watch("mrp");
+  const watchedProductCost = watch("productCost");
+
+  // Auto-generate variants from colors and sizes (matching Cartesian SKU logic)
+  const computedVariants = useMemo(() => {
+    const sizeParts = watchedSizeList
+      ? watchedSizeList
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+    const colorParts = Array.isArray(watchedColors) ? watchedColors : [];
+    const masterSku = (watchedMasterSku || "").trim();
+
+    if (colorParts.length === 0 && sizeParts.length === 0) {
+      if (!masterSku) return [];
+      return [{ sku: masterSku, color: "", size: "" }];
+    }
+
+    const effectiveColors = colorParts.length > 0 ? colorParts : [undefined];
+    const effectiveSizes = sizeParts.length > 0 ? sizeParts : [undefined];
+
+    const list: { sku: string; color: string; size: string }[] = [];
+    for (const col of effectiveColors) {
+      for (const sz of effectiveSizes) {
+        const skuParts: string[] = [];
+        if (col) skuParts.push(col);
+        if (sz) skuParts.push(sz);
+
+        const targetSku =
+          skuParts.length > 0 && masterSku
+            ? `${masterSku}-${skuParts.join("-")}`
+            : skuParts.length > 0
+            ? skuParts.join("-")
+            : masterSku;
+
+        list.push({
+          sku: targetSku,
+          color: col || "",
+          size: sz || "",
+        });
+      }
+    }
+    return list;
+  }, [watchedColors, watchedSizeList, watchedMasterSku]);
+
+  // Load existing variant pricing into variantPricing state in edit mode
+  useEffect(() => {
+    if (mode === "edit") {
+      const activeProd = singleProductResponse?.data ?? product;
+      const allVars: any[] = [
+        ...(Array.isArray(activeProd?.variants) ? activeProd.variants : []),
+        ...(Array.isArray(variantsResponse?.data) ? variantsResponse.data : []),
+      ];
+
+      if (allVars.length > 0) {
+        const baseProductCost =
+          activeProd?.productCost !== undefined && activeProd?.productCost !== null
+            ? Number(activeProd.productCost)
+            : null;
+        const baseMrp =
+          activeProd?.mrp !== undefined &&
+          activeProd?.mrp !== null &&
+          String(activeProd.mrp).trim() !== ""
+            ? Number(activeProd.mrp)
+            : null;
+
+        setVariantPricing((prev) => {
+          const next = { ...prev };
+          allVars.forEach((v) => {
+            const costNum = v.cost !== undefined && v.cost !== null ? Number(v.cost) : 0;
+            const costVal =
+              baseProductCost !== null && costNum !== baseProductCost && costNum > 0
+                ? v.cost
+                : "";
+
+            const mrpNum = v.mrp !== undefined && v.mrp !== null ? Number(v.mrp) : 0;
+            const mrpVal =
+              baseMrp !== null && mrpNum !== baseMrp && mrpNum > 0
+                ? v.mrp
+                : "";
+
+            if (v.variantSku && next[v.variantSku] === undefined) {
+              next[v.variantSku] = { cost: costVal, mrp: mrpVal, id: v.id };
+            }
+            if (v.id && next[v.id] === undefined) {
+              next[v.id] = { cost: costVal, mrp: mrpVal, id: v.id };
+            }
+          });
+          return next;
+        });
+      }
+    }
+  }, [mode, singleProductResponse, product, variantsResponse]);
+
+  // Default Cost & MRP automatically derived from Kardex (Product Cost) and General (MRP)
+  const defaultCost = useMemo(() => {
+    if (
+      watchedProductCost !== undefined &&
+      watchedProductCost !== null &&
+      Number(watchedProductCost) > 0
+    ) {
+      return watchedProductCost;
+    }
+    return "";
+  }, [watchedProductCost]);
+
+  const defaultMrp = useMemo(() => {
+    if (
+      watchedMrp !== undefined &&
+      watchedMrp !== null &&
+      String(watchedMrp).trim() !== "" &&
+      Number(watchedMrp) > 0
+    ) {
+      return String(watchedMrp).trim();
+    }
+    return "";
+  }, [watchedMrp]);
+
+  const getVariantCost = (sku: string, fallbackCost?: number) => {
+    const custom = variantPricing[sku]?.cost;
+    if (custom !== undefined && custom !== "" && Number(custom) >= 0) return Number(custom);
+    if (
+      watchedProductCost !== undefined &&
+      watchedProductCost !== null &&
+      Number(watchedProductCost) > 0
+    ) {
+      return Number(watchedProductCost);
+    }
+    if (fallbackCost !== undefined && fallbackCost !== null && fallbackCost > 0)
+      return fallbackCost;
+    return 0;
+  };
+
+  const getVariantMrp = (sku: string, fallbackMrp?: number) => {
+    const custom = variantPricing[sku]?.mrp;
+    if (custom !== undefined && custom !== "" && Number(custom) >= 0) return Number(custom);
+    if (
+      watchedMrp !== undefined &&
+      watchedMrp !== null &&
+      String(watchedMrp).trim() !== "" &&
+      Number(watchedMrp) > 0
+    ) {
+      return Number(watchedMrp);
+    }
+    if (fallbackMrp !== undefined && fallbackMrp !== null && fallbackMrp > 0)
+      return fallbackMrp;
+    return 0;
+  };
+
+  const handleVariantPriceChange = (
+    sku: string,
+    field: "cost" | "mrp",
+    value: string
+  ) => {
+    setVariantPricing((prev) => {
+      const current = prev[sku];
+      return {
+        ...prev,
+        [sku]: {
+          id: current?.id,
+          cost:
+            field === "cost"
+              ? value
+              : current?.cost !== undefined
+              ? current.cost
+              : defaultCost,
+          mrp:
+            field === "mrp"
+              ? value
+              : current?.mrp !== undefined
+              ? current.mrp
+              : defaultMrp,
+        },
+      };
+    });
+  };
 
   const saveOptionMutation = useSaveDropdownOption();
 
@@ -589,7 +777,7 @@ export default function ProductForm({
         }
       }
 
-      // 2. Extract sizeList
+      // 2. Extract sizeList with preserved sequence and extra variant sizes included
       let initialSizeList = (activeProduct.sizeList || "").trim();
       if (!initialSizeList) {
         const sizeAttr = (activeProduct.attributes || []).find((a: any) =>
@@ -599,43 +787,47 @@ export default function ProductForm({
           initialSizeList = sizeAttr.attributeValue.trim();
         }
       }
-      if (!initialSizeList && uniqueVariants.length > 0) {
-        const sizeAttrIds = (activeProduct.attributes || [])
-          .filter((a: any) => ["size"].includes((a.attributeName || "").toLowerCase().trim()))
-          .map((a: any) => a.id)
-          .filter(Boolean);
 
-        const variantSizes = uniqueVariants.flatMap((v: any) =>
-          (v.attributes || [])
-            .filter((va: any) => {
-              if (va.productAttributeId && sizeAttrIds.includes(va.productAttributeId)) return true;
-              const attrName = (va.productAttribute?.attributeName || "").toLowerCase().trim();
-              return ["size"].includes(attrName);
-            })
-            .flatMap((va: any) => {
-              const val = va.attributeValue?.trim();
-              return val ? val.split(",").map((s: string) => s.trim()) : [];
-            })
-            .filter(Boolean)
-        );
-        if (variantSizes.length > 0) {
-          initialSizeList = Array.from(new Set(variantSizes)).join(", ");
-        }
-      }
+      const sizeAttrIds = (activeProduct.attributes || [])
+        .filter((a: any) => ["size"].includes((a.attributeName || "").toLowerCase().trim()))
+        .map((a: any) => a.id)
+        .filter(Boolean);
 
-      // Try extracting size from variant SKUs
-      if (!initialSizeList && uniqueVariants.length > 0) {
-        const sizeRegex = /[-_](XS|S|M|L|XL|XXL|XXXL|2XL|4XL|28|30|32|34|36|38|40|42|44|46|48)$/i;
-        const skuSizes = uniqueVariants
-          .map((v) => {
-            const m = (v.variantSku || "").match(sizeRegex);
-            return m ? m[1].toUpperCase() : null;
+      const variantSizes: string[] = uniqueVariants.flatMap((v: any) =>
+        (v.attributes || [])
+          .filter((va: any) => {
+            if (va.productAttributeId && sizeAttrIds.includes(va.productAttributeId)) return true;
+            const attrName = (va.productAttribute?.attributeName || "").toLowerCase().trim();
+            return ["size"].includes(attrName);
           })
-          .filter((s): s is string => Boolean(s));
+          .flatMap((va: any) => {
+            const val = va.attributeValue?.trim();
+            return val ? val.split(",").map((s: string) => s.trim()) : [];
+          })
+          .filter(Boolean)
+      );
 
-        if (skuSizes.length > 0) {
-          initialSizeList = Array.from(new Set(skuSizes)).join(", ");
+      // Also extract size from variant SKUs
+      const sizeRegex = /[-_](XS|S|M|L|XL|XXL|XXXL|2XL|4XL|28|30|32|34|36|38|40|42|44|46|48)$/i;
+      uniqueVariants.forEach((v: any) => {
+        const m = (v.variantSku || "").match(sizeRegex);
+        if (m && m[1]) {
+          variantSizes.push(m[1].toUpperCase());
         }
+      });
+
+      if (initialSizeList) {
+        const definedParts = initialSizeList.split(",").map((s) => s.trim()).filter(Boolean);
+        const extraSizes = Array.from(new Set(variantSizes)).filter(
+          (vs) => !definedParts.some((dp) => dp.toLowerCase() === vs.toLowerCase())
+        );
+        if (extraSizes.length > 0) {
+          const sortedExtras = sortSizes(extraSizes, definedParts);
+          initialSizeList = [...definedParts, ...sortedExtras].join(", ");
+        }
+      } else if (variantSizes.length > 0) {
+        const uniqueSizes = Array.from(new Set(variantSizes));
+        initialSizeList = sortSizes(uniqueSizes).join(", ");
       }
 
       // 3. Extract SKU
@@ -763,11 +955,14 @@ export default function ProductForm({
       const initialMrp =
         activeProduct.mrp !== null &&
         activeProduct.mrp !== undefined &&
-        String(activeProduct.mrp).trim() !== ""
+        String(activeProduct.mrp).trim() !== "" &&
+        String(activeProduct.mrp).trim() !== "0"
           ? String(activeProduct.mrp)
-          : uniqueVariants[0]?.mrp !== undefined && uniqueVariants[0]?.mrp !== null
+          : uniqueVariants[0]?.mrp !== undefined &&
+            uniqueVariants[0]?.mrp !== null &&
+            Number(uniqueVariants[0].mrp) > 0
           ? String(uniqueVariants[0].mrp)
-          : "0";
+          : "";
 
       const allVariantAttrs = uniqueVariants.flatMap((v: any) => v.attributes || []);
 
@@ -1000,7 +1195,20 @@ export default function ProductForm({
 
         if (createdProduct?.id && (values.colors?.length > 0 || values.sizeList?.trim())) {
           const freshVariants = createdProduct.variants || [];
-          if (freshVariants.length === 0) {
+          if (freshVariants.length > 0) {
+            // Update cost and mrp for each created variant if set in variantPricing or default
+            const updateCostPromises = freshVariants.map((v: any) => {
+              const newCost = getVariantCost(v.variantSku);
+              const newMrp = getVariantMrp(v.variantSku);
+              if (newCost > 0 || newMrp > 0) {
+                return productVariantService
+                  .update(v.id, { cost: newCost, mrp: newMrp }, token)
+                  .catch((e) => console.warn("Update created variant cost/mrp error:", e));
+              }
+              return Promise.resolve();
+            });
+            await Promise.allSettled(updateCostPromises);
+          } else {
             const createdAttrs = createdProduct.attributes || [];
             const colorAttr = createdAttrs.find((a: any) =>
               ["colour", "color"].includes((a.attributeName || "").toLowerCase().trim())
@@ -1075,11 +1283,16 @@ export default function ProductForm({
                   ? `${masterSku}-${combo.skuParts.join("-")}`
                   : masterSku;
 
+              const itemCost = getVariantCost(targetVariantSku);
+              const itemMrp = getVariantMrp(targetVariantSku);
+
               return productVariantService
                 .create(
                   {
                     productId: createdProduct.id,
                     variantSku: targetVariantSku,
+                    cost: itemCost,
+                    mrp: itemMrp,
                     asin: sanitizedPayload.asin || undefined,
                     myntraSku: (sanitizedPayload as any).myntraSku || undefined,
                     fsnCode: (sanitizedPayload as any).fsnCode || undefined,
@@ -1128,7 +1341,20 @@ export default function ProductForm({
               )
             ));
 
-        if (!backendAlreadyHandled) {
+        if (backendAlreadyHandled) {
+          // Update cost and mrp for existing variants if set in variantPricing or default
+          const updateCostPromises = freshVariants.map((v: any) => {
+            const newCost = getVariantCost(v.variantSku, v.cost);
+            const newMrp = getVariantMrp(v.variantSku, v.mrp);
+            if (newCost !== (v.cost ?? 0) || newMrp !== (v.mrp ?? 0)) {
+              return productVariantService
+                .update(v.id, { cost: newCost, mrp: newMrp }, token)
+                .catch((e) => console.warn("Update variant cost/mrp error:", e));
+            }
+            return Promise.resolve();
+          });
+          await Promise.allSettled(updateCostPromises);
+        } else {
           try {
             const freshAttrs = (activeUpdatedProduct?.attributes || combinedAttributes) as any[];
 
@@ -1245,12 +1471,17 @@ export default function ProductForm({
                     ? `${masterSku}-${combo.skuParts.join("-")}`
                     : masterSku;
 
+                const itemCost = getVariantCost(targetVariantSku, matched.cost);
+                const itemMrp = getVariantMrp(targetVariantSku, matched.mrp);
+
                 syncPromises.push(
                   productVariantService
                     .update(
                       matched.id,
                       {
                         variantSku: targetVariantSku,
+                        cost: itemCost,
+                        mrp: itemMrp,
                         attributes: combo.attributeList,
                         rackAddress: values.rackAddress || undefined,
                         asin: values.asin || undefined,
@@ -1295,12 +1526,17 @@ export default function ProductForm({
                   ? `${masterSku}-${combo.skuParts.join("-")}`
                   : masterSku;
 
+              const itemCost = getVariantCost(targetVariantSku, variant.cost);
+              const itemMrp = getVariantMrp(targetVariantSku, variant.mrp);
+
               syncPromises.push(
                 productVariantService
                   .update(
                     variant.id,
                     {
                       variantSku: targetVariantSku,
+                      cost: itemCost,
+                      mrp: itemMrp,
                       attributes: combo.attributeList,
                       rackAddress: values.rackAddress || undefined,
                       asin: values.asin || undefined,
@@ -1331,12 +1567,17 @@ export default function ProductForm({
                   ? `${masterSku}-${combo.skuParts.join("-")}`
                   : masterSku;
 
+              const itemCost = getVariantCost(targetVariantSku);
+              const itemMrp = getVariantMrp(targetVariantSku);
+
               syncPromises.push(
                 productVariantService
                   .create(
                     {
                       productId: product.id,
                       variantSku: targetVariantSku,
+                      cost: itemCost,
+                      mrp: itemMrp,
                       asin: values.asin || undefined,
                       myntraSku: (values as any).myntraSku || undefined,
                       fsnCode: (values as any).fsnCode || undefined,
@@ -1873,6 +2114,24 @@ export default function ProductForm({
                   <input
                     {...field}
                     value={field.value ?? ""}
+                    onFocus={(e) => {
+                      if (
+                        e.target.value === "0" ||
+                        e.target.value === "0.00" ||
+                        Number(e.target.value) === 0
+                      ) {
+                        field.onChange("");
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (
+                        e.currentTarget.value === "0" ||
+                        e.currentTarget.value === "0.00" ||
+                        Number(e.currentTarget.value) === 0
+                      ) {
+                        field.onChange("");
+                      }
+                    }}
                     placeholder="0.00"
                     className={`w-full min-h-[44px] sm:min-h-[48px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border ${
                       errors.mrp ? "border-rose-500" : "border-slate-200 dark:border-white/[0.08]"
@@ -1991,8 +2250,30 @@ export default function ProductForm({
                       type="number"
                       step="0.01"
                       {...field}
-                      value={field.value ?? 0}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      value={field.value ?? ""}
+                      onFocus={(e) => {
+                        if (
+                          e.target.value === "0" ||
+                          e.target.value === "0.00" ||
+                          Number(e.target.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (
+                          e.currentTarget.value === "0" ||
+                          e.currentTarget.value === "0.00" ||
+                          Number(e.currentTarget.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? "" : parseFloat(e.target.value)
+                        )
+                      }
                       placeholder="0.00"
                       className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
                     />
@@ -2016,8 +2297,30 @@ export default function ProductForm({
                       type="number"
                       step="0.01"
                       {...field}
-                      value={field.value ?? 0}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      value={field.value ?? ""}
+                      onFocus={(e) => {
+                        if (
+                          e.target.value === "0" ||
+                          e.target.value === "0.00" ||
+                          Number(e.target.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (
+                          e.currentTarget.value === "0" ||
+                          e.currentTarget.value === "0.00" ||
+                          Number(e.currentTarget.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? "" : parseFloat(e.target.value)
+                        )
+                      }
                       placeholder="0.00"
                       className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
                     />
@@ -2041,8 +2344,30 @@ export default function ProductForm({
                       type="number"
                       step="1"
                       {...field}
-                      value={field.value ?? 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                      value={field.value ?? ""}
+                      onFocus={(e) => {
+                        if (
+                          e.target.value === "0" ||
+                          Number(e.target.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (
+                          e.currentTarget.value === "0" ||
+                          Number(e.currentTarget.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? ""
+                            : parseInt(e.target.value, 10)
+                        )
+                      }
                       placeholder="0"
                       className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
                     />
@@ -2066,8 +2391,30 @@ export default function ProductForm({
                       type="number"
                       step="1"
                       {...field}
-                      value={field.value ?? 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                      value={field.value ?? ""}
+                      onFocus={(e) => {
+                        if (
+                          e.target.value === "0" ||
+                          Number(e.target.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (
+                          e.currentTarget.value === "0" ||
+                          Number(e.currentTarget.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? ""
+                            : parseInt(e.target.value, 10)
+                        )
+                      }
                       placeholder="0"
                       className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
                     />
@@ -2126,8 +2473,32 @@ export default function ProductForm({
                         type="number"
                         step="0.01"
                         {...field}
-                        value={field.value ?? 0}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        value={field.value ?? ""}
+                        onFocus={(e) => {
+                          if (
+                            e.target.value === "0" ||
+                            e.target.value === "0.00" ||
+                            Number(e.target.value) === 0
+                          ) {
+                            field.onChange("");
+                          }
+                        }}
+                        onClick={(e) => {
+                          if (
+                            e.currentTarget.value === "0" ||
+                            e.currentTarget.value === "0.00" ||
+                            Number(e.currentTarget.value) === 0
+                          ) {
+                            field.onChange("");
+                          }
+                        }}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? ""
+                              : parseFloat(e.target.value)
+                          )
+                        }
                         placeholder="0.00"
                         className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs pr-10"
                       />
@@ -2155,8 +2526,30 @@ export default function ProductForm({
                       type="number"
                       step="1"
                       {...field}
-                      value={field.value ?? 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                      value={field.value ?? ""}
+                      onFocus={(e) => {
+                        if (
+                          e.target.value === "0" ||
+                          Number(e.target.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (
+                          e.currentTarget.value === "0" ||
+                          Number(e.currentTarget.value) === 0
+                        ) {
+                          field.onChange("");
+                        }
+                      }}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? ""
+                            : parseInt(e.target.value, 10)
+                        )
+                      }
                       placeholder="0"
                       className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
                     />
@@ -2220,6 +2613,166 @@ export default function ProductForm({
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* COST & MRP TAB CONTENT                                       */}
+      {/* ============================================================ */}
+      {activeTab === "cost_mrp" && (
+        <div className="space-y-5 animate-in fade-in-50 duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-white/[0.08] pb-3.5">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <span>Cost & MRP Configuration</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#F5C451]/10 dark:text-[#F5C451] dark:border-[#F5C451]/20">
+                  {computedVariants.length} Variant{computedVariants.length === 1 ? "" : "s"}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Automatically pre-filled from General (MRP) and Kardex (Cost). You can customize each variant below as needed.
+              </p>
+            </div>
+          </div>
+
+          {computedVariants.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[#E7E0D2] dark:border-white/[0.08] p-8 text-center bg-[#FEFAEE]/40 dark:bg-[#0B0F17]/40">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                No variants generated yet
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                Please enter a Master SKU, select at least one Color, and specify Sizes in the{" "}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("general")}
+                  className="font-bold text-[#B88728] dark:text-[#F5C451] underline hover:opacity-80"
+                >
+                  General
+                </button>{" "}
+                tab. Variants will automatically appear here for Cost and MRP pricing.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#0F1626]">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[600px] border-collapse text-left font-sans">
+                  <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] text-xs font-bold tracking-wider text-[#6A4D1D] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#E8C16D]">
+                    <tr>
+                      <th className="px-4 py-3 text-center w-[60px] uppercase">#</th>
+                      <th className="px-4 py-3 text-left uppercase min-w-[220px]">Variant SKU</th>
+                      <th className="px-4 py-3 text-left uppercase min-w-[150px]">Cost (₹)</th>
+                      <th className="px-4 py-3 text-left uppercase min-w-[150px]">MRP (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] text-xs sm:text-sm">
+                    {computedVariants.map((item, idx) => {
+                      const pricing = variantPricing[item.sku] || {};
+                      const currentCost =
+                        pricing.cost !== undefined && pricing.cost !== ""
+                          ? pricing.cost
+                          : defaultCost;
+                      const currentMrp =
+                        pricing.mrp !== undefined && pricing.mrp !== ""
+                          ? pricing.mrp
+                          : defaultMrp;
+
+                      return (
+                        <tr
+                          key={item.sku}
+                          className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors"
+                        >
+                          <td className="px-4 py-3 text-center text-slate-400 dark:text-slate-500 font-mono text-xs">
+                            {idx + 1}
+                          </td>
+                          <td className="px-4 py-3 font-mono font-semibold text-slate-900 dark:text-white">
+                            <div className="flex items-center gap-2">
+                              <span>{item.sku}</span>
+                              {item.color && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300 font-sans font-normal">
+                                  {item.color}
+                                </span>
+                              )}
+                              {item.size && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/20 font-mono font-bold">
+                                  {item.size}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="relative flex items-center max-w-[160px]">
+                              <span className="absolute left-3 text-xs font-semibold text-slate-400">₹</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={currentCost ?? ""}
+                                onFocus={(e) => {
+                                  if (
+                                    e.target.value === "0" ||
+                                    e.target.value === "0.00" ||
+                                    Number(e.target.value) === 0
+                                  ) {
+                                    handleVariantPriceChange(item.sku, "cost", "");
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  if (
+                                    e.currentTarget.value === "0" ||
+                                    e.currentTarget.value === "0.00" ||
+                                    Number(e.currentTarget.value) === 0
+                                  ) {
+                                    handleVariantPriceChange(item.sku, "cost", "");
+                                  }
+                                }}
+                                onChange={(e) =>
+                                  handleVariantPriceChange(item.sku, "cost", e.target.value)
+                                }
+                                className="w-full h-9 pl-7 pr-3 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-slate-900 dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 transition shadow-2xs"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="relative flex items-center max-w-[160px]">
+                              <span className="absolute left-3 text-xs font-semibold text-slate-400">₹</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={currentMrp ?? ""}
+                                onFocus={(e) => {
+                                  if (
+                                    e.target.value === "0" ||
+                                    e.target.value === "0.00" ||
+                                    Number(e.target.value) === 0
+                                  ) {
+                                    handleVariantPriceChange(item.sku, "mrp", "");
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  if (
+                                    e.currentTarget.value === "0" ||
+                                    e.currentTarget.value === "0.00" ||
+                                    Number(e.currentTarget.value) === 0
+                                  ) {
+                                    handleVariantPriceChange(item.sku, "mrp", "");
+                                  }
+                                }}
+                                onChange={(e) =>
+                                  handleVariantPriceChange(item.sku, "mrp", e.target.value)
+                                }
+                                className="w-full h-9 pl-7 pr-3 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-slate-900 dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 transition shadow-2xs"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -685,16 +685,22 @@ export function getDynamicPermissionDefinitions(): PagePermission[] {
 
     const name = page.path ? page.path.replace(/ > /g, " - ") : page.title;
 
+    // Manage Users defaults to read-only when creating permissions
+    const isManageUsers =
+      cleanId.includes("manage-users") ||
+      cleanId.includes("user-profile") ||
+      (page.path && page.path.toLowerCase().includes("manage users"));
+
     result.push({
       id: cleanId,
       name,
       description: `Access, create, edit and delete permissions for ${page.title}`,
       category: "dashboard" as const,
       path: page.href,
-      create: true,
+      create: isManageUsers ? false : true,
       read: true,
-      update: true,
-      delete: true,
+      update: isManageUsers ? false : true,
+      delete: isManageUsers ? false : true,
     });
   }
 

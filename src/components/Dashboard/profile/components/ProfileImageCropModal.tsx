@@ -13,6 +13,8 @@ import {
   Eye,
   Move,
   Sparkles,
+  Minimize2,
+  Maximize2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { userManagementService } from "@/components/Dashboard/Settings/ManageUsers/services/userManagement.service";
@@ -51,6 +53,32 @@ export default function ProfileImageCropModal({
   const [isUploading, setIsUploading] = useState(false);
 
   const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  const MIN_ZOOM = 0.1;
+  const MAX_ZOOM = 3;
+
+  // Compute base dimensions to match canvas coordinate system exactly
+  const baseScale = imageObj
+    ? Math.max(CROP_SIZE / imageObj.width, CROP_SIZE / imageObj.height)
+    : 1;
+  const baseWidth = imageObj ? imageObj.width * baseScale : CROP_SIZE;
+  const baseHeight = imageObj ? imageObj.height * baseScale : CROP_SIZE;
+
+  // Fit entire image inside the frame (contain)
+  const handleFit = () => {
+    if (!imageObj) return;
+    const containScale = Math.min(CROP_SIZE / imageObj.width, CROP_SIZE / imageObj.height);
+    const coverScale = Math.max(CROP_SIZE / imageObj.width, CROP_SIZE / imageObj.height);
+    const fitZoom = parseFloat((containScale / coverScale).toFixed(2));
+    setZoom(Math.max(MIN_ZOOM, fitZoom));
+    setPan({ x: 0, y: 0 });
+  };
+
+  // Fill frame (100% cover)
+  const handleFill = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -122,7 +150,6 @@ export default function ProfileImageCropModal({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      // Background fill
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, outputSize, outputSize);
 
@@ -133,13 +160,13 @@ export default function ProfileImageCropModal({
       // Apply rotation
       ctx.rotate((rotation * Math.PI) / 180);
 
-      // Calculate scale
+      // Calculate scale - matches the DOM editor coordinate system
       const scaleMultiplier = outputSize / CROP_SIZE;
-      const baseScale = Math.max(
+      const canvasBaseScale = Math.max(
         outputSize / imageObj.width,
         outputSize / imageObj.height
       );
-      const effectiveScale = baseScale * zoom;
+      const effectiveScale = canvasBaseScale * zoom;
 
       // Draw image with pan and scale
       ctx.scale(effectiveScale, effectiveScale);
@@ -212,11 +239,11 @@ export default function ProfileImageCropModal({
     setIsDragging(false);
   };
 
-  // Wheel Zoom support
+  // Wheel Zoom support (allows zooming out down to MIN_ZOOM)
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.08 : -0.08;
-    setZoom((prev) => Math.min(3, Math.max(1, parseFloat((prev + delta).toFixed(2)))));
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    setZoom((prev) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, parseFloat((prev + delta).toFixed(2)))));
   };
 
   const handleReset = () => {
@@ -344,7 +371,7 @@ export default function ProfileImageCropModal({
               onTouchEnd={handleTouchEnd}
               onWheel={handleWheel}
               style={{ width: `${CROP_SIZE}px`, height: `${CROP_SIZE}px` }}
-              className={`relative rounded-3xl overflow-hidden border-2 border-[#E8C16D] shadow-inner bg-slate-900 select-none touch-none ${
+              className={`relative rounded-3xl overflow-hidden border-2 border-[#E8C16D] shadow-inner select-none touch-none bg-slate-900 ${
                 isDragging ? "cursor-grabbing" : "cursor-grab"
               }`}
             >
@@ -361,8 +388,8 @@ export default function ProfileImageCropModal({
                     alt="Adjustment Preview"
                     className="max-w-none pointer-events-none select-none"
                     style={{
-                      width: `${CROP_SIZE}px`,
-                      height: "auto",
+                      width: `${baseWidth}px`,
+                      height: `${baseHeight}px`,
                     }}
                     draggable={false}
                   />
@@ -393,22 +420,32 @@ export default function ProfileImageCropModal({
             </div>
 
             {/* Zoom Slider & Controls */}
-            <div className="w-full max-w-[300px] space-y-2.5 pt-1">
-              <div className="flex items-center gap-2.5">
+            <div className="w-full max-w-[320px] space-y-2.5 pt-1">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
+                <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                  <ZoomIn size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
+                  Zoom Level
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#E8C16D]/15 text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
+                  {Math.round(zoom * 100)}%
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setZoom((z) => Math.max(1, parseFloat((z - 0.1).toFixed(2))))}
+                  onClick={() => setZoom((z) => Math.max(MIN_ZOOM, parseFloat((z - 0.1).toFixed(2))))}
                   className="p-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-600 dark:text-slate-300 transition cursor-pointer"
-                  title="Zoom Out"
+                  title="Zoom Out (Down to 10%)"
                 >
                   <ZoomOut size={15} />
                 </button>
 
                 <input
                   type="range"
-                  min="1"
-                  max="3"
-                  step="0.05"
+                  min={MIN_ZOOM}
+                  max={MAX_ZOOM}
+                  step="0.01"
                   value={zoom}
                   onChange={(e) => setZoom(parseFloat(e.target.value))}
                   className="flex-1 accent-[#E8C16D] cursor-pointer"
@@ -416,7 +453,7 @@ export default function ProfileImageCropModal({
 
                 <button
                   type="button"
-                  onClick={() => setZoom((z) => Math.min(3, parseFloat((z + 0.1).toFixed(2))))}
+                  onClick={() => setZoom((z) => Math.min(MAX_ZOOM, parseFloat((z + 0.1).toFixed(2))))}
                   className="p-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-600 dark:text-slate-300 transition cursor-pointer"
                   title="Zoom In"
                 >
@@ -424,21 +461,43 @@ export default function ProfileImageCropModal({
                 </button>
               </div>
 
-              {/* Action Buttons: Rotate & Reset */}
-              <div className="flex items-center justify-between gap-2 pt-0.5">
+              {/* Quick Preset Buttons: Fit, Fill, Rotate & Reset */}
+              <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+                <button
+                  type="button"
+                  onClick={handleFit}
+                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                  title="Fit whole image inside circle"
+                >
+                  <Minimize2 size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
+                  <span>Fit</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleFill}
+                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                  title="Fill 100% frame"
+                >
+                  <Maximize2 size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
+                  <span>Fill</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleRotate}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                  title="Rotate 90 degrees"
                 >
                   <RotateCw size={12} className="text-[#B88728] dark:text-[#E8C16D]" />
-                  <span>Rotate 90°</span>
+                  <span>Rotate</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-500 dark:text-slate-400 transition cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-500 dark:text-slate-400 transition cursor-pointer"
+                  title="Reset zoom & position"
                 >
                   <RotateCcw size={12} />
                   <span>Reset</span>

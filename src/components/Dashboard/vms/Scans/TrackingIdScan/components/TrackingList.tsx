@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useVMS } from "../../VMS/Admin/hooks/useVMS";
 import { useTrackingScanner } from "../hooks/useTrackingScanner";
 import TrackingScanner from "./TrackingScanner";
@@ -32,8 +32,11 @@ export default function TrackingList() {
   const { operators, fetchOperators } = useOperators();
   const { accounts, fetchAccounts } = useAccounts();
   const [limit, setLimit] = useState(10);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const missingTableContainerRef = useRef<HTMLDivElement>(null);
+  const fixedSectionRef = useRef<HTMLDivElement>(null);
   const [targetHeight, setTargetHeight] = useState<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -88,14 +91,19 @@ export default function TrackingList() {
     };
   }, [calculateHeight]);
 
+  // Coordinated stop-scrolling handler (Exact same as Amazon AwbScan):
+  // 1. When scrolling down, outer page scrolls until Header & Summary are hidden and stops at the fixed position.
+  // 2. Once at the fixed position, Missing Table and Main Table scroll internally.
+  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals Summary & Header.
   useEffect(() => {
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
       if (window.innerWidth < 1024) return;
-
       const tableContainer = tableContainerRef.current;
+      const missingTable = missingTableContainerRef.current;
+
       const maxPageScroll = Math.max(
         0,
         scrollContainer.scrollHeight - scrollContainer.clientHeight
@@ -105,24 +113,52 @@ export default function TrackingList() {
       const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
       const isPageAtTop = scrollContainer.scrollTop <= 2;
 
-      const isOverTable =
+      const path = e.composedPath();
+      const isOverMainTable =
         tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
+        (path.includes(tableContainer) || tableContainer.contains(e.target as Node));
+      const isOverMissingTable =
+        missingTable &&
+        (path.includes(missingTable) || missingTable.contains(e.target as Node));
 
       if (e.deltaY > 0) {
+        // Scrolling DOWN
         if (!isPageAtBottom) {
+          // Outer page has not reached the fixed section yet -> scroll page down to fixed point
           e.preventDefault();
           scrollContainer.scrollTop = Math.min(
             maxPageScroll,
             scrollContainer.scrollTop + e.deltaY
           );
-        } else if (!isOverTable) {
-          e.preventDefault();
+        } else {
+          // At the fixed view
+          if (isOverMissingTable && missingTable) {
+            const maxMissingScroll = missingTable.scrollHeight - missingTable.clientHeight;
+            if (maxMissingScroll > 0) {
+              missingTable.scrollTop += e.deltaY;
+            }
+          } else if (tableContainer) {
+            tableContainer.scrollTop += e.deltaY;
+          }
         }
       } else if (e.deltaY < 0) {
-        if (!isOverTable) {
-          if (!isPageAtTop) {
+        // Scrolling UP
+        if (isOverMissingTable && missingTable) {
+          const isMissingAtTop = missingTable.scrollTop <= 1;
+          if (!isMissingAtTop) {
+            missingTable.scrollTop += e.deltaY;
+          } else if (!isPageAtTop) {
+            e.preventDefault();
+            scrollContainer.scrollTop = Math.max(
+              0,
+              scrollContainer.scrollTop + e.deltaY
+            );
+          }
+        } else if (isOverMainTable && tableContainer) {
+          const isMainAtTop = tableContainer.scrollTop <= 1;
+          if (!isMainAtTop) {
+            tableContainer.scrollTop += e.deltaY;
+          } else if (!isPageAtTop) {
             e.preventDefault();
             scrollContainer.scrollTop = Math.max(
               0,
@@ -130,8 +166,7 @@ export default function TrackingList() {
             );
           }
         } else {
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
-          if (isTableAtTop && !isPageAtTop) {
+          if (!isPageAtTop) {
             e.preventDefault();
             scrollContainer.scrollTop = Math.max(
               0,
@@ -237,36 +272,55 @@ export default function TrackingList() {
   );
 
   return (
-    <div ref={containerRef}>
-      <TrackingToolbar
-        search={search}
-        onSearchChange={setSearch}
-        operator={operator}
-        onOperatorChange={setOperator}
-        operatorOptions={operatorOptions}
-        account={account}
-        onAccountChange={setAccount}
-        accountOptions={accountOptions}
-        selectedDate={selectedDate}
-        onSelectedDateChange={setSelectedDate}
-      />
+    <div ref={containerRef} className="flex flex-col gap-6">
+      {/* Page Header */}
+      <div className="shrink-0 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
+        <div className="space-y-1.5">
+          <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+            TrackingId Scans
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Verify packed orders by scanning Tracking IDs.
+          </p>
+        </div>
+      </div>
 
-      {/* Lower Section (ScanSummary + TrackingScanner + MissingTrackingList + TrackingTable) */}
+      {/* Toolbar */}
+      <div className="shrink-0">
+        <TrackingToolbar
+          search={search}
+          onSearchChange={setSearch}
+          operator={operator}
+          onOperatorChange={setOperator}
+          operatorOptions={operatorOptions}
+          account={account}
+          onAccountChange={setAccount}
+          accountOptions={accountOptions}
+          selectedDate={selectedDate}
+          onSelectedDateChange={setSelectedDate}
+        />
+      </div>
+
+      {/* Stats Summary Cards (Scrolls away with header when scrolling down) */}
+      <div className="shrink-0">
+        <ScanSummary
+          total={scanSummary.total}
+          pending={scanSummary.pending}
+          scanned={scanSummary.scanned}
+          missing={missingIds.length}
+        />
+      </div>
+
+      {/* Lower Fixed Section (Barcode Scanner + Missing Table + Main Table - Exactly like Amazon AwbScan) */}
       <div
+        ref={fixedSectionRef}
+        className="flex flex-col gap-3 sm:gap-4 lg:min-h-0"
         style={{
           height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
-          minHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
         }}
-        className="flex flex-col"
       >
+        {/* Barcode Scanner Input */}
         <div className="shrink-0">
-          <ScanSummary
-            total={scanSummary.total}
-            pending={scanSummary.pending}
-            scanned={scanSummary.scanned}
-            missing={missingIds.length}
-          />
-
           <TrackingScanner
             value={scanValue}
             onChange={setScanValue}
@@ -278,15 +332,22 @@ export default function TrackingList() {
               handleScan(code);
             }}
           />
-
-          <MissingTrackingList
-            trackingIds={missingIds}
-            onRemoveItem={removeMissingId}
-            onClearAll={clearMissingIds}
-          />
         </div>
 
-        <div className="lg:flex-1 lg:min-h-0 flex flex-col">
+        {/* Missing Tracking IDs Table (Internally scrollable) */}
+        {missingIds.length > 0 && (
+          <div className="shrink-0">
+            <MissingTrackingList
+              trackingIds={missingIds}
+              onRemoveItem={removeMissingId}
+              onClearAll={clearMissingIds}
+              tableContainerRef={missingTableContainerRef}
+            />
+          </div>
+        )}
+
+        {/* Orders Data Table (Internally scrollable) */}
+        <div className="flex-1 min-h-0 flex flex-col">
           <TrackingTable
             data={paginatedData}
             isLoading={loading}

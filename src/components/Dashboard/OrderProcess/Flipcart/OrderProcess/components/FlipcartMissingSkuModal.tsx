@@ -35,8 +35,12 @@ export default function FlipcartMissingSkuModal({
   if (!isOpen || missingSkus.length === 0) return null;
 
   const handleGoToManageProducts = () => {
-    // Open directly to Flipcart Import in a new tab so user does not lose their current uploaded PDF batch!
+    // Open directly to ASIN Import in a new tab so user does not lose their current uploaded PDF batch!
+    window.open("/dashboard/settings/manage-product?type=asin", "_blank");
+    /*
+    // PREVIOUS LINK (Uncomment to switch back to Flipcart Import):
     window.open("/dashboard/settings/manage-product?type=flipcart", "_blank");
+    */
   };
 
   const handleRefresh = async () => {
@@ -49,7 +53,7 @@ export default function FlipcartMissingSkuModal({
         onClose();
       } else {
         toast.warning(
-          `Still ${res.remainingCount} SKU(s) missing from Flipcart Imports. Please add them in Products before proceeding.`
+          `Still ${res.remainingCount} SKU(s) missing from ASIN Imports. Please add them in Products before proceeding.`
         );
       }
     } catch (err) {
@@ -71,15 +75,27 @@ export default function FlipcartMissingSkuModal({
   const handleDownloadExcel = async () => {
     try {
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Flipcart Import");
+      const worksheet = workbook.addWorksheet("ASIN Import");
 
-      // Columns matching system format for Flipcart Import:
-      // FSN Code | SKU | Rack Address
+      // Columns matching system format for ASIN Import:
+      // ASIN | SKU | Rack Address
+      worksheet.columns = [
+        { header: "ASIN", key: "asin", width: 24 },
+        { header: "SKU", key: "sku", width: 24 },
+        { header: "Rack Address", key: "rackAddress", width: 20 },
+      ];
+
+      /*
+      // =========================================================================
+      // PREVIOUS FLIPCART IMPORT EXCEL COLUMNS:
+      // (Uncomment when switching back to Flipcart Import logic)
+      // =========================================================================
       worksheet.columns = [
         { header: "FSN Code", key: "fsn", width: 24 },
         { header: "SKU", key: "sku", width: 24 },
         { header: "Rack Address", key: "rackAddress", width: 20 },
       ];
+      */
 
       // Style header row (blue table header style matching product import)
       const headerRow = worksheet.getRow(1);
@@ -91,10 +107,10 @@ export default function FlipcartMissingSkuModal({
       };
       headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
-      // Add missing SKU rows with empty FSN Code & Rack Address
+      // Add missing SKU rows with empty ASIN & Rack Address
       missingSkus.forEach((sku) => {
         worksheet.addRow({
-          fsn: "",
+          asin: "",
           sku,
           rackAddress: "",
         });

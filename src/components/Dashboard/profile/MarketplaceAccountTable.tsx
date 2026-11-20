@@ -31,8 +31,8 @@ export default function MarketplaceAccountTable({
 }: Props) {
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] shadow-xs">
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
+      <div className="overflow-x-auto custom-scrollbar" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
+        <table className="w-full min-w-[720px]">
           <thead className="bg-[#FEFAEE] dark:bg-none dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] font-bold">
             <tr>
               <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">

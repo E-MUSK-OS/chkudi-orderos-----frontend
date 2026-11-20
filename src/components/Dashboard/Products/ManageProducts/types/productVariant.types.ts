@@ -26,6 +26,8 @@ export interface ProductVariant {
   imageUrl?: string | null;
 
   imgfileurl?: string | null;
+  cost?: number | null;
+  mrp?: number | null;
 
   isActive: boolean;
 
@@ -45,6 +47,8 @@ export interface CreateProductVariantPayload {
   fsnCode?: string;
 
   rackAddress?: string;
+  cost?: number;
+  mrp?: number;
 
   isActive: boolean;
 

@@ -188,6 +188,15 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Enable smooth touch scrolling on mobile for all tables and horizontal containers */
+.overflow-x-auto,
+[class*="overflow-x-auto"],
+table {
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;

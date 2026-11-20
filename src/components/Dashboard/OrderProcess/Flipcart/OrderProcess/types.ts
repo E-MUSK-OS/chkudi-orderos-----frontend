@@ -8,6 +8,7 @@ export interface FlipcartOrderLineItem {
   description?: string;
   quantity: number;
   fsn?: string;
+  asin?: string;
   rackAddress?: string;
 }
 
@@ -23,8 +24,9 @@ export interface FlipcartOrderItem {
   totalQuantity?: number;
   customerName?: string;
   customerAddress?: string;
-  // Matched from DB (FlipcartImports)
+  // Matched from DB (AsinImport or FlipcartImports)
   fsn?: string;
+  asin?: string;
   rackAddress?: string;
   isMatched?: boolean;
   orderType?: "single_quantity" | "multiple_pieces" | "multiple_sku";

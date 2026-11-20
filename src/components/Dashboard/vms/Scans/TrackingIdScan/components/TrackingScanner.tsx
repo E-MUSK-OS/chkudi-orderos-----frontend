@@ -154,7 +154,7 @@ export default function TrackingScanner({
   const isError = message && !isSuccess && !isWarning;
 
   return (
-    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm mb-6">
+    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm">
       <div className="space-y-4">
         {/* Live Feedback Banner - Displayed on TOP */}
         {message && (

@@ -314,15 +314,16 @@ export default function ComparisonResultView({
 
   const selectThemeStyles = useMemo(
     () => ({
-      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#0A0E1A",
-      backgroundColor: "#0A0E1A",
-      textColor: "#E8C16D",
-      placeholderColor: "#E8C16D",
-      menuBackgroundColor: "#0A0E1A",
-      optionHoverColor: "#161D2E",
+      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#E7E0D2",
+      backgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      textColor: isDark ? "#E8C16D" : "#0A0E1A",
+      placeholderColor: isDark ? "#E8C16D" : "#64748B",
+      indicatorColor: isDark ? "#E8C16D" : "#0A0E1A",
+      menuBackgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      optionHoverColor: isDark ? "#161D2E" : "#FFF9EC",
       optionSelectedColor: "#E8C16D",
       optionSelectedTextColor: "#0A0E1A",
-      optionTextColor: "#ffffff",
+      optionTextColor: isDark ? "#ffffff" : "#0A0E1A",
       menuPortalTarget: typeof window !== "undefined" ? document.body : undefined,
     }),
     [isDark]
@@ -3317,7 +3318,7 @@ export default function ComparisonResultView({
             className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 sm:px-5 items-center justify-center gap-2 rounded-2xl border text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 cursor-pointer ${
               activeTab === "table"
                 ? "border-transparent bg-[#E8C16D] text-[#0A0E1A] shadow-xs"
-                : "border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D]"
+                : "border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A]"
             }`}
           >
             Matched Orders ({showPrinted ? summary.matchedCount : remainingMatchedCount})
@@ -3325,7 +3326,9 @@ export default function ComparisonResultView({
 
           {/* Unified PDF Viewer Dropdown Selector (Matched, All ZPL, Original, Unmatched PDF, Unmatched ZPL) */}
           <div
-            className="w-full sm:w-72 md:w-80 lg:w-88 xl:w-80 transition-all outline-none"
+            className={`w-full sm:w-72 md:w-80 lg:w-88 xl:w-80 transition-all outline-none rounded-2xl shrink-0 ${
+              activeTab === "pdf" ? "ring-2 ring-[#E8C16D] shadow-xs" : ""
+            }`}
             onClick={() => {
               if (activeTab !== "pdf") {
                 setActiveTab("pdf");

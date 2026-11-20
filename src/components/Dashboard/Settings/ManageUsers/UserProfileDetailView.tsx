@@ -74,6 +74,11 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "settings/labels/label-config": "settings/labels/label-config",
   "settings/labels/label-print": "settings/labels/label-print",
   "settings/manage-users": "settings/manage-users",
+  "/dashboard/settings/manage-users/user-profile": "settings/manage-users",
+  "/dashboard/settings/manage-users/user-profile/create-user": "settings/manage-users",
+  "settings/manage-users/user-profile": "settings/manage-users",
+  "settings/manage-users/user-profile/create-user": "settings/manage-users",
+  "manage-users": "settings/manage-users",
   // Legacy aliases
   vms_tracking: "vms/scans/trackingid-scan",
   products_profile: "settings/manage-product",
@@ -109,10 +114,10 @@ export default function UserProfileDetailView({ userId }: Props) {
 
   const currentUser = React.useMemo(() => getCurrentUser(), []);
   const isSuperAdminUser = user?.role === "SUPERADMIN";
-  const canEditOrDelete = !(currentUser?.role === "ADMIN" && isSuperAdminUser);
+  const canEditOrDelete = isSuperAdminUser ? currentUser?.role === "SUPERADMIN" : true;
   const { canUpdate, canDelete } = usePagePermissions("settings/manage-users");
   const canEditUser = canEditOrDelete && canUpdate;
-  const canDeleteUser = canEditOrDelete && canDelete;
+  const canDeleteUser = canEditOrDelete && canDelete && user?.id !== currentUser?.id;
 
   const resolvedSuperAdmin =
     user?.superAdmin ||
@@ -356,6 +361,10 @@ export default function UserProfileDetailView({ userId }: Props) {
       setPermissions(
         dynamicDefs.map((def) => {
           const slug = PERMISSION_ID_TO_PAGE_SLUG[def.id] || def.id;
+          const isManageUsers =
+            def.id.includes("manage-users") ||
+            def.id.includes("user-profile") ||
+            (def.path && def.path.toLowerCase().includes("manage users"));
           const isGranted =
             resolvedAllowedPages.includes("ALL") ||
             resolvedAllowedPages.includes(slug) ||
@@ -365,10 +374,10 @@ export default function UserProfileDetailView({ userId }: Props) {
             );
           return {
             ...def,
-            create: isGranted,
+            create: isManageUsers && !resolvedAllowedPages.includes("ALL") ? false : isGranted,
             read: isGranted,
-            update: isGranted,
-            delete: isGranted,
+            update: isManageUsers && !resolvedAllowedPages.includes("ALL") ? false : isGranted,
+            delete: isManageUsers && !resolvedAllowedPages.includes("ALL") ? false : isGranted,
           };
         })
       );
@@ -379,6 +388,7 @@ export default function UserProfileDetailView({ userId }: Props) {
   }, [user]);
 
   const handleToggleRow = (permId: string) => {
+    if (!canEditUser) return;
     setPermissions((prev) =>
       prev.map((p) => {
         if (p.id !== permId) return p;
@@ -390,6 +400,7 @@ export default function UserProfileDetailView({ userId }: Props) {
   };
 
   const handleTogglePermission = (permId: string, action: "create" | "read" | "update" | "delete") => {
+    if (!canEditUser) return;
     setPermissions((prev) =>
       prev.map((p) => (p.id === permId ? { ...p, [action]: !p[action] } : p))
     );
@@ -400,6 +411,7 @@ export default function UserProfileDetailView({ userId }: Props) {
     permissions.every((p) => p.create && p.read && p.update && p.delete);
 
   const handleToggleAllCategory = () => {
+    if (!canEditUser) return;
     const nextVal = !isAllCategoryGranted;
     setPermissions((prev) =>
       prev.map((p) => ({
@@ -413,13 +425,14 @@ export default function UserProfileDetailView({ userId }: Props) {
   };
 
   const handleResetToDefault = () => {
+    if (!canEditUser) return;
     const dynamicDefs = getDynamicPermissionDefinitions();
     setPermissions(dynamicDefs);
     toast.info("Permissions reset to default.");
   };
 
   const handleSaveRights = async () => {
-    if (!user) return;
+    if (!user || !canEditUser) return;
     try {
       const isAllGranted = permissions.every((p) => p.create && p.read && p.update && p.delete);
       const newAllowedPages = isAllGranted
@@ -652,14 +665,16 @@ export default function UserProfileDetailView({ userId }: Props) {
                         {initials}
                       </div>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/dashboard/settings/manage-users/user-profile/edit-user/${user.id}`)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-black/70 hover:bg-black text-white flex items-center justify-center cursor-pointer transition-colors shadow-xs"
-                      title="Edit Photo"
-                    >
-                      <Edit2 size={11} />
-                    </button>
+                    {canEditUser && (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/dashboard/settings/manage-users/user-profile/edit-user/${user.id}`)}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-black/70 hover:bg-black text-white flex items-center justify-center cursor-pointer transition-colors shadow-xs"
+                        title="Edit Photo"
+                      >
+                        <Edit2 size={11} />
+                      </button>
+                    )}
                   </div>
 
                   {/* Info details */}
@@ -760,16 +775,18 @@ export default function UserProfileDetailView({ userId }: Props) {
                 </div>
 
                 {/* Right Button: Reset Password */}
-                <div className="shrink-0 self-end lg:self-center">
-                  <button
-                    type="button"
-                    onClick={() => setResetModalOpen(true)}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-[#0A0E1A] dark:text-white px-5 sm:px-6 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-[0.97]"
-                  >
-                    <KeyRound size={15} className="text-[#B88728] dark:text-[#E8C16D]" />
-                    <span>Reset Password</span>
-                  </button>
-                </div>
+                {canEditUser && (
+                  <div className="shrink-0 self-end lg:self-center">
+                    <button
+                      type="button"
+                      onClick={() => setResetModalOpen(true)}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-[#0A0E1A] dark:text-white px-5 sm:px-6 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-[0.97]"
+                    >
+                      <KeyRound size={15} className="text-[#B88728] dark:text-[#E8C16D]" />
+                      <span>Reset Password</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -805,14 +822,16 @@ export default function UserProfileDetailView({ userId }: Props) {
 
                     {/* Right Action Buttons */}
                     <div className="flex items-center gap-2.5 self-end md:self-center">
-                      <button
-                        type="button"
-                        onClick={handleResetToDefault}
-                        className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-                      >
-                        <RotateCcw size={14} className="text-[#B88728] dark:text-[#E8C16D]" />
-                        <span>Reset to Default</span>
-                      </button>
+                      {canEditUser && (
+                        <button
+                          type="button"
+                          onClick={handleResetToDefault}
+                          className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+                        >
+                          <RotateCcw size={14} className="text-[#B88728] dark:text-[#E8C16D]" />
+                          <span>Reset to Default</span>
+                        </button>
+                      )}
 
                       {canEditUser && (
                         <button
@@ -832,10 +851,10 @@ export default function UserProfileDetailView({ userId }: Props) {
                 {/* 4. Permission Rights Table matching OrderOS Amazon theme */}
                 <div
                   ref={tableContainerRef}
-                  className="overflow-x-auto min-h-0 sm:overflow-y-auto custom-scrollbar touch-pan-x flex-1 bg-white dark:bg-[#0F1626]"
-                  style={{ WebkitOverflowScrolling: "touch" }}
+                  className="overflow-x-auto min-h-0 sm:overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-[#0F1626]"
+                  style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}
                 >
-                  <table className="w-full text-left text-xs sm:text-sm">
+                  <table className="w-full min-w-[720px] text-left text-xs sm:text-sm">
                     <thead className="lg:sticky lg:top-0 z-10 border-b border-[#F5E6BE] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#0F1626] text-[#6A4D1D] dark:text-[#E8C16D] font-bold uppercase text-[11px] sm:text-xs tracking-wider shadow-xs">
                       <tr>
                         <th className="py-3.5 px-4 w-12 text-center">No.</th>
@@ -843,8 +862,11 @@ export default function UserProfileDetailView({ userId }: Props) {
                         <th className="py-3.5 px-4 text-center min-w-[120px]">
                           <button
                             type="button"
+                            disabled={!canEditUser}
                             onClick={handleToggleAllCategory}
-                            className="inline-flex items-center gap-1.5 cursor-pointer font-bold uppercase hover:opacity-80 transition"
+                            className={`inline-flex items-center gap-1.5 font-bold uppercase transition ${
+                              canEditUser ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-80"
+                            }`}
                           >
                             <div
                               className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
@@ -914,8 +936,11 @@ export default function UserProfileDetailView({ userId }: Props) {
                             <td className="py-3.5 px-4 text-center">
                               <button
                                 type="button"
+                                disabled={!canEditUser}
                                 onClick={() => handleToggleRow(row.id)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                } ${
                                   isRowAllGranted
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
@@ -938,8 +963,11 @@ export default function UserProfileDetailView({ userId }: Props) {
                             <td className="py-3.5 px-4 text-center">
                               <button
                                 type="button"
+                                disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "create")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                } ${
                                   row.create
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
@@ -962,8 +990,11 @@ export default function UserProfileDetailView({ userId }: Props) {
                             <td className="py-3.5 px-4 text-center">
                               <button
                                 type="button"
+                                disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "read")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                } ${
                                   row.read
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
@@ -986,8 +1017,11 @@ export default function UserProfileDetailView({ userId }: Props) {
                             <td className="py-3.5 px-4 text-center">
                               <button
                                 type="button"
+                                disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "update")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                } ${
                                   row.update
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
@@ -1010,8 +1044,11 @@ export default function UserProfileDetailView({ userId }: Props) {
                             <td className="py-3.5 px-4 text-center">
                               <button
                                 type="button"
+                                disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "delete")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                } ${
                                   row.delete
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"

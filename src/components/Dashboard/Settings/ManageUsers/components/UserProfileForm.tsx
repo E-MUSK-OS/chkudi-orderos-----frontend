@@ -8,6 +8,7 @@ import { useCreateUser, useUpdateUser } from "../hooks/useManageUsers";
 import type { ManagedUser, UserFormValues } from "../types/userManagement.types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getDynamicPermissionDefinitions } from "@/constants/navigation";
 
 interface Props {
   initialData?: ManagedUser | null;
@@ -19,25 +20,41 @@ interface Props {
 export default function UserProfileForm({ initialData, mode, onSuccess, onCancel }: Props) {
   const [activeTab, setActiveTab] = useState<"general" | "photo">("general");
 
-  const [values, setValues] = useState<UserFormValues>({
-    firstName: initialData?.firstName || "",
-    middleName: initialData?.middleName || "",
-    lastName: initialData?.lastName || "",
-    email: initialData?.email || "",
-    phone: initialData?.phone || "",
-    password: "",
-    dob: initialData?.dob ? initialData.dob.split("T")[0] : "",
-    gender: initialData?.gender || "",
-    departments: initialData?.departments || initialData?.userMapping?.departments || [],
-    companies: initialData?.companies || initialData?.userMapping?.companies || [],
-    role: initialData?.role || "USER",
-    allowedPages:
-      initialData?.allowedPages && initialData.allowedPages.length > 0
-        ? initialData.allowedPages
-        : initialData?.userMapping?.allowedPages || [],
-    rights: initialData?.rights || "",
-    avatar: initialData?.avatar || "",
-    isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
+  const [values, setValues] = useState<UserFormValues>(() => {
+    const defaultDefs = getDynamicPermissionDefinitions();
+    const defaultRights = JSON.stringify(defaultDefs);
+    const defaultAllowed = Array.from(
+      new Set(
+        defaultDefs
+          .filter((p) => p.read || p.create || p.update || p.delete)
+          .flatMap((p) => [
+            p.id,
+            p.path ? p.path.replace(/^\/dashboard\/?/, "") : p.id,
+            "settings/manage-users",
+          ])
+      )
+    );
+
+    return {
+      firstName: initialData?.firstName || "",
+      middleName: initialData?.middleName || "",
+      lastName: initialData?.lastName || "",
+      email: initialData?.email || "",
+      phone: initialData?.phone || "",
+      password: "",
+      dob: initialData?.dob ? initialData.dob.split("T")[0] : "",
+      gender: initialData?.gender || "",
+      departments: initialData?.departments || initialData?.userMapping?.departments || [],
+      companies: initialData?.companies || initialData?.userMapping?.companies || [],
+      role: initialData?.role || "USER",
+      allowedPages:
+        initialData?.allowedPages && initialData.allowedPages.length > 0
+          ? initialData.allowedPages
+          : initialData?.userMapping?.allowedPages || (mode === "create" ? defaultAllowed : []),
+      rights: initialData?.rights || (mode === "create" ? defaultRights : ""),
+      avatar: initialData?.avatar || "",
+      isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
+    };
   });
 
   React.useEffect(() => {

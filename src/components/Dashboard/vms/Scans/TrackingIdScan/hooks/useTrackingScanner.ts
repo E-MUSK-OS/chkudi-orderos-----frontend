@@ -74,7 +74,7 @@ export const useTrackingScanner = (
           ...old,
           data: old.data.map((item) =>
             item.id === existing.id ||
-            item.trackingId.trim().toLowerCase() === value.toLowerCase()
+              item.trackingId.trim().toLowerCase() === value.toLowerCase()
               ? { ...item, packingScanStatus: "SCANNED" }
               : item,
           ),

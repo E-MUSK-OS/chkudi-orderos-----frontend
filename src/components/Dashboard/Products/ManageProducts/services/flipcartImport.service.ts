@@ -10,7 +10,7 @@ export const flipcartImportService = {
   resolveSkus(skus: string[], token?: string) {
     return api.post<{
       success: boolean;
-      data: Array<{ fsn?: string; sku?: string; rackAddress?: string }>;
+      data: Array<{ fsn?: string; asin?: string; sku?: string; rackAddress?: string }>;
       count: number;
     }>(`${BASE_URL}/resolve-skus`, { skus }, token);
   },

@@ -6,7 +6,7 @@ import { ArrowLeft, Users } from "lucide-react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import UserProfileForm from "@/components/Dashboard/Settings/ManageUsers/components/UserProfileForm";
 import { useUser } from "@/components/Dashboard/Settings/ManageUsers/hooks/useManageUsers";
-import { usePagePermissions } from "@/utils/pagePermissions";
+import { usePagePermissions, getCurrentUser } from "@/utils/pagePermissions";
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -14,17 +14,23 @@ export default function EditUserPage() {
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id as string);
   const returnPath = "/dashboard/settings/manage-users/user-profile";
 
+  const currentUser = React.useMemo(() => getCurrentUser(), []);
   const { canUpdate } = usePagePermissions("settings/manage-users");
   const { data: response, isLoading, error } = useUser(id);
   const user = response?.data;
 
-  if (!canUpdate) {
+  const isSuperAdminTarget = user?.role === "SUPERADMIN";
+  const isSuperAdminRequester = currentUser?.role === "SUPERADMIN";
+
+  if (!canUpdate || (isSuperAdminTarget && !isSuperAdminRequester)) {
     return (
       <DashboardLayout title="Edit User Profile">
         <div className="rounded-3xl border border-red-200 dark:border-red-500/20 bg-red-50/30 dark:bg-red-500/5 p-8 text-center space-y-3">
           <h2 className="text-lg font-bold text-red-600 dark:text-red-400">Access Denied</h2>
           <p className="text-xs text-slate-600 dark:text-slate-400">
-            You do not have permission to edit users.
+            {isSuperAdminTarget
+              ? "SuperAdmin profile can only be edited by SuperAdmin strictly. You have read-only access."
+              : "You do not have permission to edit users."}
           </p>
           <button
             type="button"

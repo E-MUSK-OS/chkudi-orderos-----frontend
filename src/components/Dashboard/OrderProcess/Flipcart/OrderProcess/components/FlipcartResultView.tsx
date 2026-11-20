@@ -46,6 +46,7 @@ import {
   invalidatePrinterCache,
 } from "@/components/Dashboard/Labels/services/printAgent.service";
 import { flipcartImportService } from "@/components/Dashboard/Products/ManageProducts/services/flipcartImport.service";
+import { asinImportService } from "@/components/Dashboard/Products/ManageProducts/services/asinImport.service";
 import {
   generateFlipcartPicklist,
   downloadFlipcartPicklistExcel,
@@ -69,6 +70,7 @@ import {
 export interface OrderItemRequirement {
   sku: string;
   fsn?: string;
+  asin?: string;
   requiredQty: number;
   scannedQty: number;
 }
@@ -101,6 +103,13 @@ export const getOrderTypeLabel = (type: string): string => {
       return "Single Quantity";
   }
 };
+
+import {
+  extractCoreTail,
+  isSkuBidirectionalMatch,
+} from "../utils/flipcartSkuMatch";
+
+export { extractCoreTail, isSkuBidirectionalMatch };
 
 export default function FlipcartResultView() {
   const router = useRouter();
@@ -146,9 +155,9 @@ export default function FlipcartResultView() {
 
   // Database SKU Mappings
   const [skuDetailsMap, setSkuDetailsMap] = useState<
-    Map<string, { fsn?: string; rackAddress?: string }>
+    Map<string, { fsn?: string; asin?: string; rackAddress?: string }>
   >(new Map());
-  const skuDetailsMapRef = useRef<Map<string, { fsn?: string; rackAddress?: string }>>(new Map());
+  const skuDetailsMapRef = useRef<Map<string, { fsn?: string; asin?: string; rackAddress?: string }>>(new Map());
   const [isMappingsLoading, setIsMappingsLoading] = useState(true);
   const [isGeneratingPicklist, setIsGeneratingPicklist] = useState(false);
   const [isMissingSkuModalOpen, setIsMissingSkuModalOpen] = useState(false);
@@ -284,7 +293,7 @@ export default function FlipcartResultView() {
 
   // Strictly compute unique missing SKUs across all orders
   const computeMissingSkus = useCallback(
-    (detailsMap: Map<string, { fsn?: string; rackAddress?: string }>) => {
+    (detailsMap: Map<string, { fsn?: string; asin?: string; rackAddress?: string }>) => {
       const missing = new Set<string>();
       const orders = summary?.orders || [];
 
@@ -293,6 +302,11 @@ export default function FlipcartResultView() {
 
         if (order.items && order.items.length > 0) {
           order.items.forEach((it) => {
+            const hasExistingAsin =
+              it.asin &&
+              it.asin.trim() !== "" &&
+              it.asin.trim() !== "—" &&
+              it.asin.trim() !== "-";
             const hasExistingFsn =
               it.fsn &&
               it.fsn.trim() !== "" &&
@@ -304,7 +318,7 @@ export default function FlipcartResultView() {
               it.rackAddress.trim() !== "Not assigned" &&
               it.rackAddress.trim() !== "-";
 
-            if (hasExistingFsn || hasExistingRack) {
+            if (hasExistingAsin || hasExistingFsn || hasExistingRack) {
               return;
             }
 
@@ -317,6 +331,11 @@ export default function FlipcartResultView() {
             }
           });
         } else if (order.sku) {
+          const hasExistingAsin =
+            order.asin &&
+            order.asin.trim() !== "" &&
+            order.asin.trim() !== "—" &&
+            order.asin.trim() !== "-";
           const hasExistingFsn =
             order.fsn &&
             order.fsn.trim() !== "" &&
@@ -328,7 +347,7 @@ export default function FlipcartResultView() {
             order.rackAddress.trim() !== "Not assigned" &&
             order.rackAddress.trim() !== "-";
 
-          if (hasExistingFsn || hasExistingRack) {
+          if (hasExistingAsin || hasExistingFsn || hasExistingRack) {
             return;
           }
 
@@ -343,8 +362,20 @@ export default function FlipcartResultView() {
           const raw = t.trim();
           if (!raw || raw === "N/A" || raw === "-" || /^OD\d+/i.test(raw)) return;
           const lower = raw.toLowerCase();
-          const mapped = detailsMap.get(lower);
-          if (!mapped || (!mapped.fsn && !mapped.rackAddress)) {
+          let mapped = detailsMap.get(lower);
+          if (!mapped || (!mapped.asin && !mapped.fsn && !mapped.rackAddress)) {
+            // Bidirectional check for Flipkart labels (Prefix on DB or Prefix on Label)
+            for (const [dbSku, details] of detailsMap.entries()) {
+              if (
+                (details.asin || details.rackAddress) &&
+                isSkuBidirectionalMatch(dbSku, lower)
+              ) {
+                mapped = details;
+                break;
+              }
+            }
+          }
+          if (!mapped || (!mapped.asin && !mapped.fsn && !mapped.rackAddress)) {
             missing.add(raw);
           }
         });
@@ -355,30 +386,33 @@ export default function FlipcartResultView() {
     [summary?.orders]
   );
 
-  // Fetch FlipcartImports from DB to match FSN & RackAddress by SKU (Primary: FlipcartImports, Fallback: Products, Variants)
+  // Fetch AsinImports/FlipcartImports from DB to match ASIN & RackAddress by SKU (Primary: AsinImports, Fallback: Products, Variants)
   const fetchFlipcartMappings = useCallback(async (): Promise<{
     success: boolean;
     remainingCount: number;
-    map: Map<string, { fsn?: string; rackAddress?: string }>;
+    map: Map<string, { fsn?: string; asin?: string; rackAddress?: string }>;
   }> => {
     try {
       setIsMappingsLoading(true);
       const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
-      const map = new Map<string, { fsn?: string; rackAddress?: string }>();
+      const map = new Map<string, { fsn?: string; asin?: string; rackAddress?: string }>();
 
-      const mergeMapping = (key?: string | null, fsn?: string | null, rack?: string | null) => {
+      const mergeMapping = (key?: string | null, asin?: string | null, rack?: string | null, fsn?: string | null) => {
         if (!key) return;
         const cleanKey = String(key).trim();
         const lowerKey = cleanKey.toLowerCase();
         if (!lowerKey || lowerKey === "n/a" || lowerKey === "-" || lowerKey === "—") return;
 
-        const cleanFsn = fsn && typeof fsn === "string" ? fsn.trim() : "";
+        const cleanAsin = asin && typeof asin === "string" ? asin.trim() : "";
+        const cleanFsn = fsn && typeof fsn === "string" ? fsn.trim() : (cleanAsin || "");
         const cleanRack = rack && typeof rack === "string" ? rack.trim() : "";
 
-        const existing = map.get(lowerKey) || { fsn: "", rackAddress: "" };
+        const existing = map.get(lowerKey) || { asin: "", fsn: "", rackAddress: "" };
+        // Never overwrite an already matched valid ASIN or Rack
         const updated = {
-          fsn: cleanFsn || existing.fsn || "",
-          rackAddress: cleanRack || existing.rackAddress || "",
+          asin: existing.asin || cleanAsin || existing.fsn || cleanFsn || "",
+          fsn: existing.fsn || cleanFsn || existing.asin || cleanAsin || "",
+          rackAddress: existing.rackAddress || cleanRack || "",
         };
 
         map.set(lowerKey, updated);
@@ -389,7 +423,7 @@ export default function FlipcartResultView() {
 
       // ==========================================
       // FAST TARGETED RESOLUTION: Query backend for only the batch's specific SKUs
-      // across FlipcartImports, Products, and ProductVariants in < 30ms
+      // across AsinImports, Products, and ProductVariants in < 30ms
       // ==========================================
       const initialMissing = computeMissingSkus(map);
       if (initialMissing.length > 0) {
@@ -398,29 +432,49 @@ export default function FlipcartResultView() {
           if (res?.data && Array.isArray(res.data)) {
             res.data.forEach((item: any) => {
               const rawSku = item.sku || "";
-              const rawFsn = item.fsn || "";
+              const rawAsin = item.asin || item.fsn || "";
+              const rawFsn = item.fsn || item.asin || "";
               const rawRack = item.rackAddress || "";
-              if (rawSku) mergeMapping(rawSku, rawFsn, rawRack);
-              if (rawFsn) mergeMapping(rawFsn, rawFsn, rawRack);
+              if (rawSku) mergeMapping(rawSku, rawAsin, rawRack, rawFsn);
+              if (rawAsin) mergeMapping(rawAsin, rawAsin, rawRack, rawFsn);
+              if (rawFsn && rawFsn !== rawAsin) mergeMapping(rawFsn, rawAsin, rawRack, rawFsn);
             });
           }
         } catch (resolveErr) {
           console.warn("Targeted SKU resolution fallback:", resolveErr);
-          // Graceful fallback: targeted single-SKU queries for top unresolved items
+          // Graceful fallback: targeted single-SKU queries for top unresolved items from AsinImport
           const urgentSkus = initialMissing.slice(0, 15);
           await Promise.all(
             urgentSkus.map(async (sku) => {
               try {
-                const res = await flipcartImportService.getAll(sku, token);
+                // Fetch ASIN and Rack from AsinImport
+                const res = await asinImportService.getAll(sku, token);
                 if (res?.data && Array.isArray(res.data)) {
                   res.data.forEach((item: any) => {
                     const rawSku = item.sku || "";
-                    const rawFsn = item.fsn || "";
+                    const rawAsin = item.asin || "";
                     const rawRack = item.rackAddress || "";
-                    if (rawSku) mergeMapping(rawSku, rawFsn, rawRack);
-                    if (rawFsn) mergeMapping(rawFsn, rawFsn, rawRack);
+                    if (rawSku) mergeMapping(rawSku, rawAsin, rawRack, rawAsin);
+                    if (rawAsin) mergeMapping(rawAsin, rawAsin, rawRack, rawAsin);
                   });
                 }
+
+                /*
+                // =========================================================================
+                // PREVIOUS FLIPCARTIMPORT FALLBACK: Fetching FSN Code from FlipcartImport
+                // (Commented out: uncomment when restoring FlipcartImport logic)
+                // =========================================================================
+                const resFlipcart = await flipcartImportService.getAll(sku, token);
+                if (resFlipcart?.data && Array.isArray(resFlipcart.data)) {
+                  resFlipcart.data.forEach((item: any) => {
+                    const rawSku = item.sku || "";
+                    const rawFsn = item.fsn || "";
+                    const rawRack = item.rackAddress || "";
+                    if (rawSku) mergeMapping(rawSku, rawFsn, rawRack, rawFsn);
+                    if (rawFsn) mergeMapping(rawFsn, rawFsn, rawRack, rawFsn);
+                  });
+                }
+                */
               } catch (e) {
                 console.warn(`Fallback fetch failed for ${sku}:`, e);
               }
@@ -469,7 +523,7 @@ export default function FlipcartResultView() {
     }
   }, [isMappingsLoading, modalMissingSkus.length, summary]);
 
-  // Merge orders from PDF with DB mappings (FSN, RackAddress)
+  // Merge orders from PDF with DB mappings (ASIN, RackAddress, FSN)
   const mappedOrders = useMemo<FlipcartOrderItem[]>(() => {
     const orders = summary?.orders || [];
     return orders.map((order, idx) => {
@@ -484,6 +538,7 @@ export default function FlipcartResultView() {
                 sku: s.trim(),
                 quantity: 1,
                 description: order.description,
+                asin: "",
                 fsn: "",
                 rackAddress: "",
               }))
@@ -492,19 +547,54 @@ export default function FlipcartResultView() {
       const mappedItems: FlipcartOrderLineItem[] = rawItems.map((it) => {
         const cleanItemSku = (it.sku || "").trim();
         const normItemSku = cleanItemSku.toLowerCase();
-        const itemMapped =
+        let itemMapped =
           skuDetailsMap.get(normItemSku) || skuDetailsMap.get(cleanItemSku);
+        if (!itemMapped || (!itemMapped.asin && !itemMapped.rackAddress)) {
+          // Bidirectional matching for Flipkart labels (Prefix in DB or Prefix on Label)
+          for (const [dbSku, details] of skuDetailsMap.entries()) {
+            if (
+              (details.asin || details.rackAddress) &&
+              isSkuBidirectionalMatch(dbSku, normItemSku)
+            ) {
+              itemMapped = details;
+              break;
+            }
+          }
+        }
+        const resolvedAsin = itemMapped?.asin || it.asin || itemMapped?.fsn || it.fsn || "";
+        const resolvedFsn = itemMapped?.fsn || it.fsn || itemMapped?.asin || "";
+        const resolvedRack = itemMapped?.rackAddress || it.rackAddress || "";
         return {
           ...it,
           sku: cleanItemSku,
-          fsn: itemMapped?.fsn || it.fsn || "",
-          rackAddress: itemMapped?.rackAddress || it.rackAddress || "",
+          asin: resolvedAsin,
+          fsn: resolvedFsn,
+          rackAddress: resolvedRack,
         };
       });
 
-      // Combined FSN:
-      // For single SKU: "FSN1"
-      // For multiple SKUs (2, 3, 4, etc.): "FSN1 / FSN2 / FSN3"
+      // Combined ASIN (from AsinImport):
+      // For single SKU: "ASIN1"
+      // For multiple SKUs (2, 3, 4, etc.): "ASIN1 / ASIN2 / ASIN3"
+      let combinedAsin = "";
+      if (mappedItems.length > 0) {
+        combinedAsin = mappedItems.map((it) => it.asin || it.fsn || "—").join(" / ");
+      } else {
+        const cleanSku = (order.sku || "").trim();
+        const mapped =
+          skuDetailsMap.get(cleanSku.toLowerCase()) ||
+          skuDetailsMap.get(cleanSku);
+        combinedAsin = mapped?.asin || mapped?.fsn || order.asin || order.fsn || "—";
+      }
+      if (!combinedAsin || combinedAsin === "—") {
+        combinedAsin = order.asin || order.fsn || "—";
+      }
+
+      /*
+      // =========================================================================
+      // PREVIOUS COMBINED FSN LOGIC (from FlipcartImport)
+      // (Commented out: uncomment when restoring FlipcartImport logic)
+      // =========================================================================
       let combinedFsn = "";
       if (mappedItems.length > 0) {
         combinedFsn = mappedItems.map((it) => it.fsn || "—").join(" / ");
@@ -518,6 +608,8 @@ export default function FlipcartResultView() {
       if (!combinedFsn || combinedFsn === "—") {
         combinedFsn = order.fsn || "—";
       }
+      */
+      const combinedFsn = combinedAsin;
 
       // Combined RackAddress
       const rackList = mappedItems
@@ -535,6 +627,7 @@ export default function FlipcartResultView() {
         mappedItems.length > 0
           ? mappedItems.every((it) =>
               Boolean(
+                (it.asin && it.asin !== "—" && it.asin !== "-") ||
                 (it.fsn && it.fsn !== "—" && it.fsn !== "-") ||
                   (it.rackAddress &&
                     it.rackAddress !== "Not assigned" &&
@@ -542,6 +635,7 @@ export default function FlipcartResultView() {
               )
             )
           : Boolean(
+              (order.asin && order.asin !== "—" && order.asin !== "-") ||
               (order.fsn && order.fsn !== "—" && order.fsn !== "-") ||
                 (order.rackAddress &&
                   order.rackAddress !== "Not assigned" &&
@@ -552,6 +646,7 @@ export default function FlipcartResultView() {
       return {
         ...order,
         index: typeof order.index === "number" ? order.index : idx,
+        asin: combinedAsin || "—",
         fsn: combinedFsn || "—",
         rackAddress: combinedRack,
         isMatched,
@@ -1037,15 +1132,16 @@ export default function FlipcartResultView() {
 
   const selectThemeStyles = useMemo(
     () => ({
-      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#0A0E1A",
-      backgroundColor: "#0A0E1A",
-      textColor: "#E8C16D",
-      placeholderColor: "#E8C16D",
-      menuBackgroundColor: "#0A0E1A",
-      optionHoverColor: "#161D2E",
+      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#E7E0D2",
+      backgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      textColor: isDark ? "#E8C16D" : "#0A0E1A",
+      placeholderColor: isDark ? "#E8C16D" : "#64748B",
+      indicatorColor: isDark ? "#E8C16D" : "#0A0E1A",
+      menuBackgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      optionHoverColor: isDark ? "#161D2E" : "#FFF9EC",
       optionSelectedColor: "#E8C16D",
       optionSelectedTextColor: "#0A0E1A",
-      optionTextColor: "#ffffff",
+      optionTextColor: isDark ? "#ffffff" : "#0A0E1A",
       menuPortalTarget: typeof window !== "undefined" ? document.body : undefined,
     }),
     [isDark]
@@ -1705,11 +1801,25 @@ export default function FlipcartResultView() {
     if (!qL) return false;
     const skuL = (req.sku || "").trim().toLowerCase();
     const fsnL = (req.fsn || "").trim().toLowerCase();
+    const asinL = (req.asin || "").trim().toLowerCase();
 
     if (skuL === qL || skuL.includes(qL) || qL.includes(skuL)) return true;
+    if (asinL === qL || asinL.includes(qL) || qL.includes(asinL)) return true;
     if (fsnL === qL || fsnL.includes(qL) || qL.includes(fsnL)) return true;
 
-    const details = skuDetailsMap.get(skuL) || skuDetailsMap.get((req.sku || "").trim());
+    let details = skuDetailsMap.get(skuL) || skuDetailsMap.get((req.sku || "").trim());
+    if (!details) {
+      for (const [dbSku, d] of skuDetailsMap.entries()) {
+        if (
+          (d.asin || d.rackAddress) &&
+          isSkuBidirectionalMatch(dbSku, skuL)
+        ) {
+          details = d;
+          break;
+        }
+      }
+    }
+    if (details?.asin && details.asin.toLowerCase().includes(qL)) return true;
     if (details?.fsn && details.fsn.toLowerCase().includes(qL)) return true;
 
     return false;
@@ -2128,11 +2238,12 @@ export default function FlipcartResultView() {
         const matchOrder = (item.orderId || "").toLowerCase().includes(q);
         const matchAwb = (item.awb || "").toLowerCase().includes(q);
         const matchSku = (item.sku || "").toLowerCase().includes(q);
+        const matchAsin = (item.asin || "").toLowerCase().includes(q);
         const matchFsn = (item.fsn || "").toLowerCase().includes(q);
         const matchRack = (item.rackAddress || "").toLowerCase().includes(q);
         const matchCust = (item.customerName || "").toLowerCase().includes(q);
         const matchNum = String(item.orderNumber) === q;
-        if (!matchOrder && !matchAwb && !matchSku && !matchFsn && !matchRack && !matchCust && !matchNum) {
+        if (!matchOrder && !matchAwb && !matchSku && !matchAsin && !matchFsn && !matchRack && !matchCust && !matchNum) {
           return false;
         }
       }
@@ -2339,7 +2450,7 @@ export default function FlipcartResultView() {
                 className={`inline-flex h-11 sm:h-12 w-full sm:w-auto sm:min-w-[180px] px-4 sm:px-5 items-center justify-center gap-2 rounded-2xl border text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeTab === "table"
                     ? "border-transparent bg-[#E8C16D] text-[#0A0E1A] shadow-xs"
-                    : "border-[#0A0E1A] dark:border-white/[0.15] bg-[#0A0E1A] dark:bg-[#080B11] text-[#E8C16D] hover:bg-[#E8C16D] hover:text-[#0A0E1A] hover:border-[#E8C16D]"
+                    : "border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A]"
                 }`}
               >
                 Shipping Data ({showPrinted ? summary.totalOrders : remainingCount})

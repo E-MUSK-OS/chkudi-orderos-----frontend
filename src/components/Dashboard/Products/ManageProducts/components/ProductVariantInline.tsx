@@ -14,7 +14,7 @@ import {
   useProductVariants,
   useUpdateProductVariant,
 } from "../hooks/useProductVariants";
-import { defaultColorPresets } from "../constants/product.constants";
+import { defaultColorPresets, getSizeRank } from "../constants/product.constants";
 import {
   Pencil,
   Trash2,
@@ -25,8 +25,10 @@ import {
   ChevronUp,
   ImagePlus,
   Camera,
+  Crop,
 } from "lucide-react";
 import DeleteVariantModal from "./DeleteVariantModal";
+import ProductImageAdjustModal from "./ProductImageAdjustModal";
 import { toast } from "sonner";
 
 interface Props {
@@ -125,6 +127,10 @@ export default function ProductVariantInline({
   // Color images state & upload
   const [localImages, setLocalImages] = useState<Record<string, string>>({});
   const [uploadingColor, setUploadingColor] = useState<string | null>(null);
+  const [adjustingImage, setAdjustingImage] = useState<{
+    url: string;
+    color: string;
+  } | null>(null);
   const [dragOverColor, setDragOverColor] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<{ url: string; color: string } | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -190,6 +196,8 @@ export default function ProductVariantInline({
   // Single variant editing state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editSku, setEditSku] = useState("");
+  const [editCost, setEditCost] = useState<number | string>("");
+  const [editMrp, setEditMrp] = useState<number | string>("");
   const [editSize, setEditSize] = useState("");
   const [editAsin, setEditAsin] = useState("");
   const [editMyntraSku, setEditMyntraSku] = useState("");
@@ -204,6 +212,8 @@ export default function ProductVariantInline({
   const [isAdding, setIsAdding] = useState(false);
   const [newColor, setNewColor] = useState("");
   const [newSizesInput, setNewSizesInput] = useState("");
+  const [newCost, setNewCost] = useState<number | string>("");
+  const [newMrp, setNewMrp] = useState<number | string>("");
   const [customBaseSku, setCustomBaseSku] = useState("");
   const [newAsin, setNewAsin] = useState("");
   const [newMyntraSku, setNewMyntraSku] = useState("");
@@ -224,7 +234,26 @@ export default function ProductVariantInline({
         (a.productAttribute?.attributeName || "").toLowerCase().trim()
       )
     );
-    return (sizeAttr?.attributeValue || "").trim();
+    if (sizeAttr?.attributeValue?.trim()) {
+      return sizeAttr.attributeValue.trim();
+    }
+
+    // Fallback: parse size from variantSku
+    const sku = variant.variantSku || "";
+    if (sku) {
+      const parts = sku.split("-");
+      if (parts.length >= 2) {
+        const lastPart = parts[parts.length - 1].trim();
+        if (product?.sizeList) {
+          const knownSizes = product.sizeList.split(",").map((s) => s.trim().toLowerCase());
+          if (knownSizes.includes(lastPart.toLowerCase())) {
+            return lastPart;
+          }
+        }
+        return lastPart;
+      }
+    }
+    return "";
   };
 
   const getColorValue = (variant: ProductVariant): string => {
@@ -233,7 +262,21 @@ export default function ProductVariantInline({
         (a.productAttribute?.attributeName || "").toLowerCase().trim()
       )
     );
-    return (colAttr?.attributeValue || "").trim();
+    if (colAttr?.attributeValue?.trim()) {
+      return colAttr.attributeValue.trim();
+    }
+
+    // Fallback: parse color from variantSku against product colors
+    const sku = variant.variantSku || "";
+    if (sku && Array.isArray(product?.colors) && product.colors.length > 0) {
+      const skuParts = sku.toLowerCase().split("-");
+      for (const c of product.colors) {
+        if (skuParts.includes(c.toLowerCase().trim())) {
+          return c;
+        }
+      }
+    }
+    return "";
   };
 
   // Resolve existing Gender value for the product
@@ -393,7 +436,52 @@ export default function ProductVariantInline({
     return false;
   }, [attributes, product, data]);
 
-  // Group variants by Color
+  // Canonical size sequence extracted from product.sizeList and attributes
+  const definedSizes = useMemo(() => {
+    const list: string[] = [];
+    const rawList = (product?.sizeList || "").trim();
+    if (rawList) {
+      rawList.split(",").forEach((s) => {
+        const trimmed = s.trim();
+        if (
+          trimmed &&
+          !list.some((x) => x.toLowerCase() === trimmed.toLowerCase())
+        ) {
+          list.push(trimmed);
+        }
+      });
+    }
+    const sizeAttr = (attributes || []).find((a) =>
+      ["size"].includes((a.attributeName || "").toLowerCase().trim())
+    );
+    if (sizeAttr?.attributeValue) {
+      sizeAttr.attributeValue.split(",").forEach((s) => {
+        const trimmed = s.trim();
+        if (
+          trimmed &&
+          !list.some((x) => x.toLowerCase() === trimmed.toLowerCase())
+        ) {
+          list.push(trimmed);
+        }
+      });
+    }
+
+    // Also collect any custom sizes from actual variants in order of appearance
+    const vList = data?.data || [];
+    vList.forEach((v) => {
+      const sz = getSizeValue(v).trim();
+      if (
+        sz &&
+        !list.some((x) => x.toLowerCase() === sz.toLowerCase())
+      ) {
+        list.push(sz);
+      }
+    });
+
+    return list;
+  }, [product?.sizeList, attributes, data?.data]);
+
+  // Group variants by Color with consistent size ordering across all colors
   const colorGroups = useMemo<ColorGroup[]>(() => {
     const list = data?.data || [];
     if (!list.length) return [];
@@ -423,8 +511,43 @@ export default function ProductVariantInline({
       groupsMap.get(colorKey)!.variants.push(v);
     });
 
-    return Array.from(groupsMap.values());
-  }, [data]);
+    // 1. Sort variants within every color group strictly by the defined size sequence
+    groupsMap.forEach((group) => {
+      group.variants.sort((a, b) => {
+        const szA = getSizeValue(a).trim();
+        const szB = getSizeValue(b).trim();
+        const rankA = getSizeRank(szA, definedSizes);
+        const rankB = getSizeRank(szB, definedSizes);
+        if (rankA !== rankB) return rankA - rankB;
+        return (a.variantSku || "").localeCompare(b.variantSku || "");
+      });
+    });
+
+    const groups = Array.from(groupsMap.values());
+
+    // 2. Sort color groups according to product.colors sequence
+    const definedColors: string[] = [];
+    if (Array.isArray(product?.colors)) {
+      product.colors.forEach((c) => {
+        if (typeof c === "string" && c.trim()) {
+          definedColors.push(c.trim().toLowerCase());
+        }
+      });
+    }
+
+    groups.sort((a, b) => {
+      if (a.colorKey === "standard") return 1;
+      if (b.colorKey === "standard") return -1;
+      const idxA = definedColors.indexOf(a.colorKey);
+      const idxB = definedColors.indexOf(b.colorKey);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.colorName.localeCompare(b.colorName);
+    });
+
+    return groups;
+  }, [data, definedSizes, product?.colors]);
 
   // Generate SKU for a color & size combination
   const generateVariantSku = (
@@ -486,6 +609,12 @@ export default function ProductVariantInline({
   const handleStartEdit = (variant: ProductVariant) => {
     setEditingId(variant.id);
     setEditSku(variant.variantSku);
+    setEditCost(
+      variant.cost !== undefined && variant.cost !== null ? variant.cost : ""
+    );
+    setEditMrp(
+      variant.mrp !== undefined && variant.mrp !== null ? variant.mrp : ""
+    );
     setEditSize(getSizeValue(variant));
     setEditAsin(variant.asin || "");
     setEditMyntraSku(variant.myntraSku || "");
@@ -514,7 +643,11 @@ export default function ProductVariantInline({
   };
 
   // Save single variant edit
-  const handleSaveEdit = async (variantId: string) => {
+  const handleSaveEdit = async (
+    variantId: string,
+    groupColorName?: string,
+    groupColorAttrId?: string
+  ) => {
     const currentVariant = data?.data?.find((v) => v.id === variantId);
     if (!currentVariant) return;
 
@@ -523,20 +656,39 @@ export default function ProductVariantInline({
       attributeValue: string;
     }[] = [];
 
-    // Color
-    const existingCol = getColorValue(currentVariant);
-    if (resolvedColorAttrId && existingCol) {
+    // 1. Color: use groupColorName, existingCol, or parse from SKU
+    const existingCol =
+      (groupColorName && groupColorName !== "Standard" ? groupColorName : "") ||
+      getColorValue(currentVariant);
+
+    const effectiveColorAttrId =
+      groupColorAttrId ||
+      resolvedColorAttrId ||
+      colorAttrProp?.id ||
+      (product?.attributes || []).find((a: any) =>
+        ["colour", "color"].includes((a.attributeName || "").toLowerCase().trim())
+      )?.id;
+
+    if (effectiveColorAttrId && existingCol) {
       formattedAttrs.push({
-        productAttributeId: resolvedColorAttrId,
+        productAttributeId: effectiveColorAttrId,
         attributeValue: existingCol,
       });
     }
 
-    // Size
-    if (resolvedSizeAttrId && editSize.trim()) {
+    // 2. Size: use editSize, existing size, or parse from SKU
+    const effectiveSizeVal = editSize.trim() || getSizeValue(currentVariant);
+    const effectiveSizeAttrId =
+      resolvedSizeAttrId ||
+      sizeAttrProp?.id ||
+      (product?.attributes || []).find((a: any) =>
+        ["size"].includes((a.attributeName || "").toLowerCase().trim())
+      )?.id;
+
+    if (effectiveSizeAttrId && effectiveSizeVal) {
       formattedAttrs.push({
-        productAttributeId: resolvedSizeAttrId,
-        attributeValue: editSize.trim(),
+        productAttributeId: effectiveSizeAttrId,
+        attributeValue: effectiveSizeVal,
       });
     }
 
@@ -575,6 +727,8 @@ export default function ProductVariantInline({
       data: {
         productId,
         variantSku: editSku.trim(),
+        cost: editCost !== "" ? Number(editCost) : 0,
+        mrp: editMrp !== "" ? Number(editMrp) : 0,
         asin: editAsin.trim() || undefined,
         myntraSku: editMyntraSku.trim() || undefined,
         fsnCode: editFsnCode.trim() || undefined,
@@ -667,6 +821,8 @@ export default function ProductVariantInline({
         return createVariant.mutateAsync({
           productId,
           variantSku: targetSku,
+          cost: newCost !== "" ? Number(newCost) : 0,
+          mrp: newMrp !== "" ? Number(newMrp) : 0,
           asin: newAsin.trim() || undefined,
           myntraSku: newMyntraSku.trim() || undefined,
           fsnCode: newFsnCode.trim() || undefined,
@@ -688,6 +844,8 @@ export default function ProductVariantInline({
       setIsAdding(false);
       setNewColor("");
       setNewSizesInput("");
+      setNewCost("");
+      setNewMrp("");
       setCustomBaseSku("");
       setNewAsin("");
       setNewMyntraSku("");
@@ -789,6 +947,8 @@ export default function ProductVariantInline({
         return createVariant.mutateAsync({
           productId,
           variantSku: targetSku,
+          cost: sample?.cost || 0,
+          mrp: sample?.mrp || 0,
           asin: sample?.asin || undefined,
           rackAddress: sample?.rackAddress || undefined,
           isActive: true,
@@ -810,7 +970,7 @@ export default function ProductVariantInline({
     }
   };
 
-  const tableColSpan = (hasSizeAttribute ? 7 : 6) + extraAttributes.length + (showAsin ? 1 : 0) + (showMyntraSku ? 1 : 0) + (showFsnCode ? 1 : 0);
+  const tableColSpan = (hasSizeAttribute ? 9 : 8) + extraAttributes.length + (showAsin ? 1 : 0) + (showMyntraSku ? 1 : 0) + (showFsnCode ? 1 : 0);
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#0F1626]">
@@ -819,32 +979,42 @@ export default function ProductVariantInline({
           <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none text-xs font-bold tracking-wider text-[#6A4D1D] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#E8C16D]">
             <tr>
               {/* Img column */}
-              <th className="px-3.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[70px]">
+              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[72px] min-w-[72px]">
                 Img
               </th>
 
               {/* Colour column */}
-              <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[110px] min-w-[110px]">
                 Color
               </th>
 
               {/* Size column */}
               {hasSizeAttribute && (
-                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[110px]">
+                <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[75px] min-w-[75px]">
                   Size
                 </th>
               )}
 
               {/* Variant SKU column */}
-              <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[180px]">
+              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[210px] min-w-[200px]">
                 Variant SKU
+              </th>
+
+              {/* Cost column */}
+              <th className="px-2.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[100px] min-w-[95px]">
+                Cost
+              </th>
+
+              {/* MRP column */}
+              <th className="px-2.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[100px] min-w-[95px]">
+                MRP
               </th>
 
               {/* Extra Attributes (e.g. Gender, Material) */}
               {extraAttributes.map((attr) => (
                 <th
                   key={attr.id || attr.attributeName}
-                  className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap"
+                  className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[95px] min-w-[90px]"
                 >
                   {attr.attributeName}
                 </th>
@@ -852,35 +1022,35 @@ export default function ProductVariantInline({
 
               {/* Dynamic Marketplace Identifiers */}
               {showAsin && (
-                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                <th className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[110px] min-w-[105px]">
                   ASIN
                 </th>
               )}
 
               {showMyntraSku && (
-                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                <th className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[110px] min-w-[105px]">
                   Myntra SKU
                 </th>
               )}
 
               {showFsnCode && (
-                <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+                <th className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[110px] min-w-[105px]">
                   FSN Code
                 </th>
               )}
 
               {/* Rack Address */}
-              <th className="px-3.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[130px]">
+              <th className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[110px] min-w-[105px]">
                 Rack Address
               </th>
 
               {/* Status */}
-              <th className="px-3.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[90px]">
+              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[85px] min-w-[80px]">
                 Status
               </th>
 
               {/* Action */}
-              <th className="px-3.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap min-w-[100px]">
+              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[85px] min-w-[80px]">
                 Action
               </th>
             </tr>
@@ -918,7 +1088,7 @@ export default function ProductVariantInline({
                     className="transition-colors hover:bg-slate-50/60 dark:hover:bg-white/[0.03]"
                   >
                     {/* 0. Img Column */}
-                    <td className="px-3.5 py-3.5 align-top w-[70px]">
+                    <td className="px-2 py-3.5 align-top w-[72px] min-w-[72px] text-center">
                       {(() => {
                         const dbImageUrl = group.variants.find((v) => v.imageUrl)?.imageUrl;
                         const formattedDbUrl = toFullImageUrl(dbImageUrl);
@@ -936,127 +1106,152 @@ export default function ProductVariantInline({
                         const hasImage = Boolean(localImages[group.colorName] || formattedDbUrl);
 
                         return (
-                          <div
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              setDragOverColor(group.colorName);
-                            }}
-                            onDragLeave={(e) => {
-                              e.preventDefault();
-                              setDragOverColor(null);
-                            }}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              setDragOverColor(null);
-                              const droppedFiles = e.dataTransfer.files;
-                              if (droppedFiles && droppedFiles.length > 0) {
-                                handleUploadImage(droppedFiles[0], group.colorName);
-                              }
-                            }}
-                            className={`relative group flex h-12 w-12 items-center justify-center rounded-lg border transition-all ${
-                              dragOverColor === group.colorName
-                                ? "border-[#E8C16D] bg-[#E8C16D]/20 ring-2 ring-[#E8C16D]"
-                                : hasImage
-                                ? "border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.04]"
-                                : "border-dashed border-slate-300 dark:border-white/20 bg-slate-50/50 hover:border-[#E8C16D] dark:bg-white/[0.02]"
-                            }`}
-                          >
-                            {isUploadingThis ? (
-                              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
-                            ) : hasImage ? (
-                              <>
-                                <img
-                                  src={currentImgUrl}
-                                  alt={group.colorName}
-                                  className="h-full w-full rounded-lg object-cover cursor-pointer"
-                                  onClick={() =>
-                                    currentImgUrl &&
-                                    setPreviewImage({
-                                      url: currentImgUrl,
-                                      color: group.colorName,
-                                    })
-                                  }
-                                />
+                          <div className="flex flex-col items-center">
+                            <div
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                setDragOverColor(group.colorName);
+                              }}
+                              onDragLeave={(e) => {
+                                e.preventDefault();
+                                setDragOverColor(null);
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                setDragOverColor(null);
+                                const droppedFiles = e.dataTransfer.files;
+                                if (droppedFiles && droppedFiles.length > 0) {
+                                  const file = droppedFiles[0];
+                                  const objectUrl = URL.createObjectURL(file);
+                                  setAdjustingImage({ url: objectUrl, color: group.colorName });
+                                }
+                              }}
+                              className={`relative group flex h-12 w-12 items-center justify-center rounded-lg border transition-all ${
+                                dragOverColor === group.colorName
+                                  ? "border-[#E8C16D] bg-[#E8C16D]/20 ring-2 ring-[#E8C16D]"
+                                  : hasImage
+                                  ? "border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.04]"
+                                  : "border-dashed border-slate-300 dark:border-white/20 bg-slate-50/50 hover:border-[#E8C16D] dark:bg-white/[0.02]"
+                              }`}
+                            >
+                              {isUploadingThis ? (
+                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
+                              ) : hasImage ? (
+                                <>
+                                  <img
+                                    src={currentImgUrl}
+                                    alt={group.colorName}
+                                    className="h-full w-full rounded-lg object-cover cursor-pointer"
+                                    onClick={() =>
+                                      currentImgUrl &&
+                                      setPreviewImage({
+                                        url: currentImgUrl,
+                                        color: group.colorName,
+                                      })
+                                    }
+                                  />
+                                  <div
+                                    onClick={() =>
+                                      fileInputRefs.current[group.colorName]?.click()
+                                    }
+                                    className="absolute inset-0 hidden group-hover:flex items-center justify-center rounded-lg bg-black/60 text-white cursor-pointer transition-opacity"
+                                    title="Click to replace image"
+                                  >
+                                    <Camera size={16} className="text-[#E8C16D]" />
+                                  </div>
+                                </>
+                              ) : (
                                 <div
                                   onClick={() =>
                                     fileInputRefs.current[group.colorName]?.click()
                                   }
-                                  className="absolute inset-0 hidden group-hover:flex items-center justify-center rounded-lg bg-black/60 text-white cursor-pointer transition-opacity"
-                                  title="Drag image here or click to replace"
+                                  className="flex flex-col items-center justify-center text-slate-400 hover:text-[#E8C16D] cursor-pointer"
+                                  title="Click to upload image"
                                 >
-                                  <Camera size={16} className="text-[#E8C16D]" />
+                                  <ImagePlus size={18} />
                                 </div>
-                              </>
-                            ) : (
-                              <div
-                                onClick={() =>
-                                  fileInputRefs.current[group.colorName]?.click()
-                                }
-                                className="flex flex-col items-center justify-center text-slate-400 hover:text-[#E8C16D] cursor-pointer"
-                                title="Drag & drop image here or click to upload"
-                              >
-                                <ImagePlus size={18} />
-                              </div>
-                            )}
+                              )}
 
-                            <input
-                              type="file"
-                              accept="image/*"
-                              ref={(el) => {
-                                fileInputRefs.current[group.colorName] = el;
-                              }}
-                              className="hidden"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files.length > 0) {
-                                  handleUploadImage(e.target.files[0], group.colorName);
-                                  e.target.value = "";
+                              <input
+                                type="file"
+                                accept="image/*"
+                                ref={(el) => {
+                                  fileInputRefs.current[group.colorName] = el;
+                                }}
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files.length > 0) {
+                                    const file = e.target.files[0];
+                                    const objectUrl = URL.createObjectURL(file);
+                                    setAdjustingImage({ url: objectUrl, color: group.colorName });
+                                    e.target.value = "";
+                                  }
+                                }}
+                              />
+                            </div>
+
+                            {/* Adjust button just below the image */}
+                            {hasImage && currentImgUrl && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setAdjustingImage({
+                                    url: currentImgUrl,
+                                    color: group.colorName,
+                                  })
                                 }
-                              }}
-                            />
+                                disabled={isUploadingThis}
+                                className="mt-1.5 inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border border-[#E8C16D]/60 bg-[#FEFAEE] dark:bg-[#1A160E] text-[#6A4D1D] dark:text-[#E8C16D] hover:bg-[#F5E6BE] dark:hover:bg-[#262014] transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                title="Adjust, crop, move or zoom image"
+                              >
+                                <Crop size={11} className="text-[#B88728] dark:text-[#E8C16D]" />
+                                <span>Adjust</span>
+                              </button>
+                            )}
                           </div>
                         );
                       })()}
                     </td>
 
                     {/* 1. Colour Column */}
-                    <td className="px-3.5 py-3.5 align-top">
-                      <div className="flex flex-col items-start gap-1.5">
-                        <div className="flex items-center gap-2">
+                    <td className="px-3 py-3.5 align-top w-[110px] min-w-[110px]">
+                      <div className="flex flex-col items-start gap-1">
+                        <div className="flex items-center gap-1.5">
                           <span
-                            className="inline-block h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-white/20 shadow-2xs shrink-0"
+                            className="inline-block h-3 w-3 rounded-full border border-slate-300 dark:border-white/20 shadow-2xs shrink-0"
                             style={{
                               backgroundColor: getColorHex(group.colorName),
                             }}
                           />
-                          <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+                          <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate max-w-[85px]" title={group.colorName}>
                             {group.colorName}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
-                            {group.variants.length}{" "}
-                            {hasSizeAttribute
-                              ? (group.variants.length === 1 ? "size" : "sizes")
-                              : (group.variants.length === 1 ? "variant" : "variants")}
-                          </span>
+                        {/* Sizes count text */}
+                        <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                          {group.variants.length}{" "}
+                          {hasSizeAttribute
+                            ? (group.variants.length === 1 ? "size" : "sizes")
+                            : (group.variants.length === 1 ? "variant" : "variants")}
+                        </span>
 
-                          {hasSizeAttribute && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setQuickAddColorKey(
-                                  isQuickAddOpen ? null : group.colorKey
-                                )
-                              }
-                              className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer"
-                              title="Add more sizes to this color"
-                            >
-                              <Plus size={11} className="stroke-[3]" />
-                              <span>Add Size</span>
-                            </button>
-                          )}
-                        </div>
+                        {/* + Add Size button placed directly below the sizes text */}
+                        {hasSizeAttribute && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setQuickAddColorKey(
+                                isQuickAddOpen ? null : group.colorKey
+                              )
+                            }
+                            className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer pt-0.5"
+                            title="Add more sizes to this color"
+                          >
+                            <Plus size={11} className="stroke-[3]" />
+                            <span>Add Size</span>
+                          </button>
+                        )}
 
                         {/* Quick Add Sizes Inline Popup for this Color */}
                         {isQuickAddOpen && (
@@ -1130,7 +1325,7 @@ export default function ProductVariantInline({
 
                     {/* 2. Size Column - Vertically Stacked Line by Line */}
                     {hasSizeAttribute && (
-                      <td className="px-3.5 py-3.5 align-top">
+                      <td className="px-2 py-3.5 align-top w-[75px] min-w-[75px] text-center">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1168,7 +1363,7 @@ export default function ProductVariantInline({
                     )}
 
                     {/* 3. Variant SKU Column - Line by Line paired with each size */}
-                    <td className="px-3.5 py-3.5 align-top">
+                    <td className="px-3 py-3.5 align-top w-[210px] min-w-[200px]">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1195,11 +1390,115 @@ export default function ProductVariantInline({
                       </div>
                     </td>
 
+                    {/* Cost Column */}
+                    <td className="px-2.5 py-3.5 align-top w-[100px] min-w-[95px]">
+                      <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
+                        {group.variants.map((variant) => {
+                          const isEditing = editingId === variant.id;
+
+                          return (
+                            <div
+                              key={variant.id}
+                              className="min-h-[42px] py-1 flex items-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm"
+                            >
+                              {isEditing ? (
+                                <div className="relative flex items-center">
+                                  <span className="absolute left-2 text-xs text-slate-400">₹</span>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editCost}
+                                    onFocus={(e) => {
+                                      if (
+                                        e.target.value === "0" ||
+                                        e.target.value === "0.00" ||
+                                        Number(e.target.value) === 0
+                                      ) {
+                                        setEditCost("");
+                                      }
+                                    }}
+                                    onClick={(e) => {
+                                      if (
+                                        e.currentTarget.value === "0" ||
+                                        e.currentTarget.value === "0.00" ||
+                                        Number(e.currentTarget.value) === 0
+                                      ) {
+                                        setEditCost("");
+                                      }
+                                    }}
+                                    onChange={(e) => setEditCost(e.target.value)}
+                                    className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                  {variant.cost !== undefined && variant.cost !== null && Number(variant.cost) > 0 ? `₹${variant.cost}` : product?.productCost !== undefined && product?.productCost !== null && Number(product.productCost) > 0 ? `₹${product.productCost}` : "₹0"}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+
+                    {/* MRP Column */}
+                    <td className="px-2.5 py-3.5 align-top w-[100px] min-w-[95px]">
+                      <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
+                        {group.variants.map((variant) => {
+                          const isEditing = editingId === variant.id;
+
+                          return (
+                            <div
+                              key={variant.id}
+                              className="min-h-[42px] py-1 flex items-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm"
+                            >
+                              {isEditing ? (
+                                <div className="relative flex items-center">
+                                  <span className="absolute left-2 text-xs text-slate-400">₹</span>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editMrp}
+                                    onFocus={(e) => {
+                                      if (
+                                        e.target.value === "0" ||
+                                        e.target.value === "0.00" ||
+                                        Number(e.target.value) === 0
+                                      ) {
+                                        setEditMrp("");
+                                      }
+                                    }}
+                                    onClick={(e) => {
+                                      if (
+                                        e.currentTarget.value === "0" ||
+                                        e.currentTarget.value === "0.00" ||
+                                        Number(e.currentTarget.value) === 0
+                                      ) {
+                                        setEditMrp("");
+                                      }
+                                    }}
+                                    onChange={(e) => setEditMrp(e.target.value)}
+                                    className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                  {variant.mrp !== undefined && variant.mrp !== null && Number(variant.mrp) > 0 ? `₹${variant.mrp}` : product?.mrp !== undefined && product?.mrp !== null && Number(product.mrp) > 0 ? `₹${product.mrp}` : "₹0"}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+
                     {/* Extra Attributes Columns (including Gender) */}
                     {extraAttributes.map((attr) => (
                       <td
                         key={attr.id || attr.attributeName}
-                        className="px-3.5 py-3.5 align-top"
+                        className="px-2.5 py-3.5 align-top w-[95px] min-w-[90px] text-center"
                       >
                         <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                           {group.variants.map((variant) => {
@@ -1264,7 +1563,7 @@ export default function ProductVariantInline({
 
                     {/* Dynamic Marketplace Columns */}
                     {showAsin && (
-                      <td className="px-3.5 py-3.5 align-top">
+                      <td className="px-2.5 py-3.5 align-top w-[110px] min-w-[105px] text-center">
                         <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                           {group.variants.map((variant) => {
                             const isEditing = editingId === variant.id;
@@ -1292,7 +1591,7 @@ export default function ProductVariantInline({
                     )}
 
                     {showMyntraSku && (
-                      <td className="px-3.5 py-3.5 align-top">
+                      <td className="px-2.5 py-3.5 align-top w-[110px] min-w-[105px] text-center">
                         <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                           {group.variants.map((variant) => {
                             const isEditing = editingId === variant.id;
@@ -1320,7 +1619,7 @@ export default function ProductVariantInline({
                     )}
 
                     {showFsnCode && (
-                      <td className="px-3.5 py-3.5 align-top">
+                      <td className="px-2.5 py-3.5 align-top w-[110px] min-w-[105px] text-center">
                         <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                           {group.variants.map((variant) => {
                             const isEditing = editingId === variant.id;
@@ -1348,7 +1647,7 @@ export default function ProductVariantInline({
                     )}
 
                     {/* 5. Rack Address Column */}
-                    <td className="px-3.5 py-3.5 align-top">
+                    <td className="px-2.5 py-3.5 align-top w-[110px] min-w-[105px] text-center">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1377,7 +1676,7 @@ export default function ProductVariantInline({
                     </td>
 
                     {/* 6. Status Column */}
-                    <td className="px-3.5 py-3.5 align-top text-center">
+                    <td className="px-2 py-3.5 align-top text-center w-[85px] min-w-[80px]">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1410,7 +1709,7 @@ export default function ProductVariantInline({
                     </td>
 
                     {/* 7. Action Column */}
-                    <td className="px-3.5 py-3.5 align-top text-center">
+                    <td className="px-2 py-3.5 align-top text-center w-[85px] min-w-[80px]">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1424,7 +1723,13 @@ export default function ProductVariantInline({
                                 <>
                                   <Button
                                     size="sm"
-                                    onClick={() => handleSaveEdit(variant.id)}
+                                    onClick={() =>
+                                      handleSaveEdit(
+                                        variant.id,
+                                        group.colorName,
+                                        group.colorAttrId
+                                      )
+                                    }
                                     disabled={updateVariant.isPending}
                                   >
                                     Save
@@ -1474,14 +1779,14 @@ export default function ProductVariantInline({
             {/* ADD VARIANT ROW / BATCH FORM */}
             <tr className="bg-slate-50/70 dark:bg-white/[0.02] border-t-2 border-[#E8C16D]/30">
               {/* Empty Img placeholder cell */}
-              <td className="px-3.5 py-3 align-top text-center text-slate-400 dark:text-slate-600">
+              <td className="px-2 py-3 align-top text-center w-[72px] min-w-[72px] text-slate-400 dark:text-slate-600">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-auto text-slate-300 dark:text-slate-600">
                   <ImagePlus size={14} />
                 </div>
               </td>
 
               {/* Colour input */}
-              <td className="px-3.5 py-3 align-top">
+              <td className="px-3 py-3 align-top w-[110px] min-w-[110px]">
                 {isAdding ? (
                   <div className="space-y-1">
                     <input
@@ -1519,7 +1824,7 @@ export default function ProductVariantInline({
 
               {/* Size input (Comma-separated sizes) */}
               {hasSizeAttribute && (
-                <td className="px-3.5 py-3 align-top">
+                <td className="px-2 py-3 align-top text-center w-[75px] min-w-[75px]">
                   {isAdding ? (
                     <div className="space-y-1">
                       <input
@@ -1578,7 +1883,7 @@ export default function ProductVariantInline({
               )}
 
               {/* Variant SKU - Live preview */}
-              <td className="px-3.5 py-3 align-top">
+              <td className="px-3 py-3 align-top w-[210px] min-w-[200px]">
                 {isAdding ? (
                   <div className="space-y-1">
                     {hasSizeAttribute ? (
@@ -1629,6 +1934,90 @@ export default function ProductVariantInline({
                 )}
               </td>
 
+              {/* Cost input */}
+              <td className="px-2.5 py-3 align-top w-[100px] min-w-[95px]">
+                {isAdding ? (
+                  <div className="relative flex items-center">
+                    <span className="absolute left-2 text-xs text-slate-400">₹</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newCost}
+                      onFocus={(e) => {
+                        if (
+                          e.target.value === "0" ||
+                          e.target.value === "0.00" ||
+                          Number(e.target.value) === 0
+                        ) {
+                          setNewCost("");
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (
+                          e.currentTarget.value === "0" ||
+                          e.currentTarget.value === "0.00" ||
+                          Number(e.currentTarget.value) === 0
+                        ) {
+                          setNewCost("");
+                        }
+                      }}
+                      onChange={(e) => setNewCost(e.target.value)}
+                      placeholder="0.00"
+                      className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                    />
+                  </div>
+                ) : (
+                  <span
+                    onClick={() => setIsAdding(true)}
+                    className="cursor-pointer text-slate-400 text-xs"
+                  >
+                    --
+                  </span>
+                )}
+              </td>
+
+              {/* MRP input */}
+              <td className="px-2.5 py-3 align-top w-[100px] min-w-[95px]">
+                {isAdding ? (
+                  <div className="relative flex items-center">
+                    <span className="absolute left-2 text-xs text-slate-400">₹</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newMrp}
+                      onFocus={(e) => {
+                        if (
+                          e.target.value === "0" ||
+                          e.target.value === "0.00" ||
+                          Number(e.target.value) === 0
+                        ) {
+                          setNewMrp("");
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (
+                          e.currentTarget.value === "0" ||
+                          e.currentTarget.value === "0.00" ||
+                          Number(e.currentTarget.value) === 0
+                        ) {
+                          setNewMrp("");
+                        }
+                      }}
+                      onChange={(e) => setNewMrp(e.target.value)}
+                      placeholder="0.00"
+                      className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                    />
+                  </div>
+                ) : (
+                  <span
+                    onClick={() => setIsAdding(true)}
+                    className="cursor-pointer text-slate-400 text-xs"
+                  >
+                    --
+                  </span>
+                )}
+              </td>
+
               {/* Extra Attributes (including Gender) */}
               {extraAttributes.map((attr) => {
                 const isGender =
@@ -1641,7 +2030,7 @@ export default function ProductVariantInline({
                 return (
                   <td
                     key={attr.id || attr.attributeName}
-                    className="px-3.5 py-3 align-top text-xs"
+                    className="px-2.5 py-3 align-top text-center text-xs w-[95px] min-w-[90px]"
                   >
                     {isGender && displayVal !== "--" ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20">
@@ -1656,7 +2045,7 @@ export default function ProductVariantInline({
 
               {/* Dynamic Marketplace Columns */}
               {showAsin && (
-                <td className="px-3.5 py-3 align-top">
+                <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                   {isAdding ? (
                     <input
                       value={newAsin}
@@ -1676,7 +2065,7 @@ export default function ProductVariantInline({
               )}
 
               {showMyntraSku && (
-                <td className="px-3.5 py-3 align-top">
+                <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                   {isAdding ? (
                     <input
                       value={newMyntraSku}
@@ -1696,7 +2085,7 @@ export default function ProductVariantInline({
               )}
 
               {showFsnCode && (
-                <td className="px-3.5 py-3 align-top">
+                <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                   {isAdding ? (
                     <input
                       value={newFsnCode}
@@ -1716,7 +2105,7 @@ export default function ProductVariantInline({
               )}
 
               {/* Rack Address */}
-              <td className="px-3.5 py-3 align-top">
+              <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                 {isAdding ? (
                   <input
                     value={newRackAddress}
@@ -1735,7 +2124,7 @@ export default function ProductVariantInline({
               </td>
 
               {/* Status */}
-              <td className="px-3.5 py-3 align-top text-center">
+              <td className="px-2 py-3 align-top text-center w-[85px] min-w-[80px]">
                 {isAdding ? (
                   <div className="flex items-center justify-center pt-1">
                     <Switch
@@ -1749,7 +2138,7 @@ export default function ProductVariantInline({
               </td>
 
               {/* Actions */}
-              <td className="px-3.5 py-3 align-top text-center">
+              <td className="px-2 py-3 align-top text-center w-[85px] min-w-[80px]">
                 <div className="flex items-center justify-center gap-2">
                   {isAdding ? (
                     <>
@@ -1845,6 +2234,24 @@ export default function ProductVariantInline({
             </div>
           </div>
         </div>
+      )}
+
+      {adjustingImage && (
+        <ProductImageAdjustModal
+          isOpen={Boolean(adjustingImage)}
+          onClose={() => setAdjustingImage(null)}
+          imageSrc={adjustingImage.url}
+          colorName={adjustingImage.color}
+          masterSku={effectiveMasterSku}
+          productName={product?.productName}
+          category={product?.category}
+          onConfirm={async (file: File) => {
+            const color = adjustingImage.color;
+            await handleUploadImage(file, color);
+            setAdjustingImage(null);
+          }}
+          isUploading={uploadingColor === adjustingImage.color}
+        />
       )}
 
       <DeleteVariantModal

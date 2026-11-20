@@ -37,14 +37,22 @@ export default function FlipcartPdfPreview({
   previewCardRef,
   isDark = false,
 }: FlipcartPdfPreviewProps) {
-  const selectThemeStyles = {
-    controlBg: isDark ? "#0A0E1A" : "#FFFFFF",
-    controlBorder: isDark ? "rgba(255, 255, 255, 0.12)" : "#E2E8F0",
-    menuBg: isDark ? "#0F172A" : "#FFFFFF",
-    menuBorder: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
-    textColor: isDark ? "#F8FAFC" : "#0F172A",
-    optionHoverBg: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-  };
+  const selectThemeStyles = useMemo(
+    () => ({
+      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#E7E0D2",
+      backgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      textColor: isDark ? "#E8C16D" : "#0A0E1A",
+      placeholderColor: isDark ? "#E8C16D" : "#64748B",
+      indicatorColor: isDark ? "#E8C16D" : "#0A0E1A",
+      menuBackgroundColor: isDark ? "#0A0E1A" : "#FFFFFF",
+      optionHoverColor: isDark ? "#161D2E" : "#FFF9EC",
+      optionSelectedColor: "#E8C16D",
+      optionSelectedTextColor: "#0A0E1A",
+      optionTextColor: isDark ? "#ffffff" : "#0A0E1A",
+      menuPortalTarget: typeof window !== "undefined" ? document.body : undefined,
+    }),
+    [isDark]
+  );
 
   const viewOptions: SelectOption[] = useMemo(
     () => [

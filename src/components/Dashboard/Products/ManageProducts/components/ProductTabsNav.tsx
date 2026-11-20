@@ -4,7 +4,7 @@ import React from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ProductActiveTab = "general" | "kardex";
+export type ProductActiveTab = "general" | "kardex" | "cost_mrp";
 
 interface ProductTabsNavProps {
   activeTab: ProductActiveTab;
@@ -28,6 +28,10 @@ export default function ProductTabsNav({
     {
       id: "kardex",
       label: "Kardex",
+    },
+    {
+      id: "cost_mrp",
+      label: "Cost & MRP",
     },
   ];
 
