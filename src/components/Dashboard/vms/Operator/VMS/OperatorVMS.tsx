@@ -49,7 +49,11 @@ const OperatorVMS = () => {
     const isExistingTab = sessionStorage.getItem("operatorTabActive");
 
     if (!isExistingTab) {
-      // New tab opened — wipe operator session from localStorage
+      // New tab opened — wipe operator session from localStorage and notify backend
+      const token = localStorage.getItem("operatorAccessToken");
+      if (token) {
+        void operatorLogout(token).catch(() => {});
+      }
       localStorage.removeItem("operatorAccessToken");
       localStorage.removeItem("operator");
       localStorage.removeItem("selectedAccount");
@@ -62,10 +66,16 @@ const OperatorVMS = () => {
   }, []);
 
   const handleLogout = async () => {
-    // 1. Instantly release Flipkart lock in real time so login screen unlocks immediately
+    // 1. Capture the operator access token BEFORE wiping storage so we can notify backend
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("operatorAccessToken")
+        : null;
+
+    // 2. Instantly release Flipkart lock in real time so login screen unlocks immediately
     setIsFlipkartLocked(false);
 
-    // 2. Clear all credentials & order-process routing flags from storage
+    // 3. Clear all credentials & order-process routing flags from storage
     localStorage.removeItem("operatorAccessToken");
     localStorage.removeItem("operator");
     localStorage.removeItem("selectedAccount");
@@ -75,24 +85,28 @@ const OperatorVMS = () => {
     sessionStorage.removeItem("vms_source");
     sessionStorage.removeItem("vms_from_order_process");
 
-    // 3. Immediately strip query parameters (?source=flipkart&from=order_process) from URL bar
+    // 4. Immediately strip query parameters (?source=flipkart&from=order_process) from URL bar
     if (typeof window !== "undefined") {
       const cleanPath = window.location.pathname;
       window.history.replaceState(null, "", cleanPath);
     }
 
-    // 4. Update Next.js router
+    // 5. Update Next.js router
     router.replace(pathname || "/vms/operator/vms");
 
-    // 5. Instantly transition UI to unauthenticated (login form)
+    // 6. Instantly transition UI to unauthenticated (login form)
     setIsAuthenticated(false);
 
-    // 6. Notify backend of logout
-    try {
-      const response = await operatorLogout();
-      toast.success(response.message || "Operator logged out successfully.");
-    } catch (error) {
-      // Local session already cleared
+    // 7. Notify backend of logout with the captured token to clear sessionId & lastSeen in DB!
+    if (token) {
+      try {
+        const response = await operatorLogout(token);
+        if (response?.message) {
+          toast.success(response.message);
+        }
+      } catch (error) {
+        console.error("Backend logout error:", error);
+      }
     }
   };
 
@@ -112,7 +126,7 @@ const OperatorVMS = () => {
     return () => {
       const token = localStorage.getItem("operatorAccessToken");
       if (token) {
-        void operatorLogout().catch(() => {});
+        void operatorLogout(token).catch(() => {});
         localStorage.removeItem("operatorAccessToken");
         localStorage.removeItem("operator");
         localStorage.removeItem("selectedAccount");

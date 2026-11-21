@@ -10,8 +10,10 @@ import {
 // const BASE_URL = "http://localhost:5000/api/v1/operator-auth";
 const BASE_URL = `${API_BASE_URL}/operator-auth`;
 
-const getHeaders = (): HeadersInit => {
-  const token = localStorage.getItem("operatorAccessToken");
+const getHeaders = (customToken?: string): HeadersInit => {
+  const token =
+    customToken ||
+    (typeof window !== "undefined" ? localStorage.getItem("operatorAccessToken") : null);
 
   return {
     "Content-Type": "application/json",
@@ -93,10 +95,10 @@ export const heartbeat = async (): Promise<OperatorResponse> => {
   return data;
 };
 
-export const logout = async (): Promise<OperatorResponse> => {
+export const logout = async (customToken?: string): Promise<OperatorResponse> => {
   const response = await fetch(`${BASE_URL}/logout`, {
     method: "POST",
-    headers: getHeaders(),
+    headers: getHeaders(customToken),
   });
 
   const data: OperatorResponse = await response.json();

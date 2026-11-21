@@ -77,8 +77,15 @@ export const useOperatorAuth = () => {
   };
 
   const logout = async () => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("operatorAccessToken")
+        : null;
+
     try {
-      await logoutApi();
+      if (token) {
+        await logoutApi(token);
+      }
     } catch {
       // Ignore API errors during logout
     } finally {

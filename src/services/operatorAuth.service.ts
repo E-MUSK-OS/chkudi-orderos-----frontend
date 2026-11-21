@@ -5,16 +5,23 @@ interface LogoutResponse {
   message: string;
 }
 
-export const operatorLogout = async (): Promise<LogoutResponse> => {
-  const token = localStorage.getItem("operatorAccessToken");
+export const operatorLogout = async (explicitToken?: string): Promise<LogoutResponse> => {
+  const token =
+    explicitToken ||
+    (typeof window !== "undefined" ? localStorage.getItem("operatorAccessToken") : null);
 
   if (!token) {
-    throw new Error("Operator access token not found.");
+    return { success: true, message: "Operator logged out." };
   }
 
-  return api.post<LogoutResponse>(
-    "/operator-auth/logout",
-    undefined,
-    token,
-  );
+  try {
+    return await api.post<LogoutResponse>(
+      "/operator-auth/logout",
+      undefined,
+      token,
+    );
+  } catch (error) {
+    console.warn("Operator backend logout warning:", error);
+    return { success: true, message: "Operator logged out." };
+  }
 };

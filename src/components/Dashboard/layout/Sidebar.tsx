@@ -281,7 +281,7 @@ export default function Sidebar({
 
     if (token) {
       try {
-        await operatorLogout();
+        await operatorLogout(token);
       } catch (error) {
         console.error(error);
       } finally {
