@@ -296,6 +296,7 @@ export default function Sidebar({
       sessionStorage.removeItem("vms_from_order_process");
       sessionStorage.removeItem("vms_source");
       localStorage.removeItem("vms_source");
+      localStorage.removeItem("vms_from_order_process");
     }
 
     setSidebarOpen(false);

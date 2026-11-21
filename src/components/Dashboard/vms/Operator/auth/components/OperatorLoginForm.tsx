@@ -56,7 +56,10 @@ const OperatorLoginForm: React.FC<OperatorLoginFormProps> = ({
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   const isFkCheck = React.useMemo(() => {
-    if (propIsFlipkartSource) return true;
+    // If explicitly provided by parent as a boolean, obey it strictly (false after logout, true on Flipkart flow)
+    if (typeof propIsFlipkartSource === "boolean") {
+      return propIsFlipkartSource;
+    }
     if (typeof window === "undefined") return false;
     const fromSession =
       /(flip|filp)[kc]art/i.test(sessionStorage.getItem("vms_source") || "") ||

@@ -1373,7 +1373,19 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
           {/* Logout Button */}
           <button
             type="button"
-            onClick={onLogout}
+            onClick={async () => {
+              if (recorder?.isRecording) {
+                recorder.stopRecording();
+              }
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("vms_source");
+                localStorage.removeItem("vms_from_order_process");
+                sessionStorage.removeItem("vms_source");
+                sessionStorage.removeItem("vms_from_order_process");
+                window.history.replaceState(null, "", window.location.pathname);
+              }
+              await onLogout();
+            }}
             className="h-11 sm:h-12 flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 shadow-xs transition-colors cursor-pointer shrink-0"
             title="Logout Operator"
           >

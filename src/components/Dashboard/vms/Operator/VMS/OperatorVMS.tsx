@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 
@@ -16,6 +16,33 @@ const OperatorVMS = () => {
   const searchParams = useSearchParams();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const pathname = usePathname();
+
+  // Reactive state for whether Flipkart account is locked on login
+  const [isFlipkartLocked, setIsFlipkartLocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const searchStr = window.location.search || "";
+    const params = new URLSearchParams(searchStr);
+    const fromSearch =
+      /(flip|filp)[kc]art/i.test(params.get("source") || "") ||
+      params.get("from") === "order_process";
+    const fromSession =
+      /(flip|filp)[kc]art/i.test(sessionStorage.getItem("vms_source") || "") ||
+      sessionStorage.getItem("vms_from_order_process") === "true";
+    const fromLocal =
+      /(flip|filp)[kc]art/i.test(localStorage.getItem("vms_source") || "") ||
+      localStorage.getItem("vms_from_order_process") === "true";
+    return Boolean(fromSearch || fromSession || fromLocal);
+  });
+
+  // Keep lock state synchronized if searchParams specifically indicates Flipkart from order process
+  useEffect(() => {
+    const fromSearch =
+      /(flip|filp)[kc]art/i.test(searchParams?.get("source") || "") ||
+      searchParams?.get("from") === "order_process";
+    if (fromSearch) {
+      setIsFlipkartLocked(true);
+    }
+  }, [searchParams]);
 
   // On mount: detect new tab vs refresh using sessionStorage "tab marker"
   useEffect(() => {
@@ -35,30 +62,37 @@ const OperatorVMS = () => {
   }, []);
 
   const handleLogout = async () => {
+    // 1. Instantly release Flipkart lock in real time so login screen unlocks immediately
+    setIsFlipkartLocked(false);
+
+    // 2. Clear all credentials & order-process routing flags from storage
+    localStorage.removeItem("operatorAccessToken");
+    localStorage.removeItem("operator");
+    localStorage.removeItem("selectedAccount");
+    localStorage.removeItem("vms_source");
+    localStorage.removeItem("vms_from_order_process");
+    sessionStorage.removeItem("operatorTabActive");
+    sessionStorage.removeItem("vms_source");
+    sessionStorage.removeItem("vms_from_order_process");
+
+    // 3. Immediately strip query parameters (?source=flipkart&from=order_process) from URL bar
+    if (typeof window !== "undefined") {
+      const cleanPath = window.location.pathname;
+      window.history.replaceState(null, "", cleanPath);
+    }
+
+    // 4. Update Next.js router
+    router.replace(pathname || "/vms/operator/vms");
+
+    // 5. Instantly transition UI to unauthenticated (login form)
+    setIsAuthenticated(false);
+
+    // 6. Notify backend of logout
     try {
       const response = await operatorLogout();
-
-      toast.success(response.message);
+      toast.success(response.message || "Operator logged out successfully.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Logout failed.");
-    } finally {
-      localStorage.removeItem("operatorAccessToken");
-      localStorage.removeItem("operator");
-      localStorage.removeItem("selectedAccount");
-      localStorage.removeItem("vms_source");
-      localStorage.removeItem("vms_from_order_process");
-      sessionStorage.removeItem("operatorTabActive");
-      sessionStorage.removeItem("vms_source");
-      sessionStorage.removeItem("vms_from_order_process");
-
-      // Strip query parameters (?source=flipkart, ?from=order_process) from URL so account name is not locked on next login
-      if (typeof window !== "undefined") {
-        const cleanPath = window.location.pathname;
-        window.history.replaceState({}, "", cleanPath);
-      }
-      router.replace(pathname || "/vms/operator/vms");
-
-      setIsAuthenticated(false);
+      // Local session already cleared
     }
   };
 
@@ -87,29 +121,6 @@ const OperatorVMS = () => {
     };
   }, []);
 
-  const isFlipkartSource = useMemo(() => {
-    const fromSearch =
-      /(flip|filp)[kc]art/i.test(searchParams?.get("source") || "") ||
-      searchParams?.get("from") === "order_process";
-
-    const fromWindowSearch =
-      typeof window !== "undefined" &&
-      (/(flip|filp)[kc]art/i.test(new URLSearchParams(window.location.search).get("source") || "") ||
-        new URLSearchParams(window.location.search).get("from") === "order_process");
-
-    const fromSession =
-      typeof window !== "undefined" &&
-      (/(flip|filp)[kc]art/i.test(sessionStorage.getItem("vms_source") || "") ||
-        sessionStorage.getItem("vms_from_order_process") === "true");
-
-    const fromLocal =
-      typeof window !== "undefined" &&
-      (/(flip|filp)[kc]art/i.test(localStorage.getItem("vms_source") || "") ||
-        localStorage.getItem("vms_from_order_process") === "true");
-
-    return Boolean(fromSearch || fromWindowSearch || fromSession || fromLocal);
-  }, [searchParams]);
-
   return (
     <DashboardLayout title="Operator VMS">
       {isAuthenticated === null ? (
@@ -129,7 +140,7 @@ const OperatorVMS = () => {
             </div>
             <div className="p-5 sm:p-7">
               <OperatorLoginForm
-                isFlipkartSource={isFlipkartSource}
+                isFlipkartSource={isFlipkartLocked}
                 onSuccess={(account: Account) => {
                   localStorage.setItem("selectedAccount", JSON.stringify(account));
                   sessionStorage.setItem("operatorTabActive", "true");
