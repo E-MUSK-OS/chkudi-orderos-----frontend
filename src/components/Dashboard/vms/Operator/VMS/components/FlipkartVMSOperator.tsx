@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   RotateCcw,
-  Square,
   ArrowLeft,
   X,
   Layers,
@@ -907,6 +906,8 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
             return;
           }
 
+          setBarcodeInput(result.trackingId);
+
           const stream = camera.streamRef.current;
           if (stream) {
             if (recorder.isRecorderRunning()) {
@@ -994,6 +995,8 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
       // Sort FIFO by index
       unprinted.sort((a, b) => a.index - b.index);
       const targetOrder = unprinted[0];
+      const trackingId = (targetOrder.awb || targetOrder.orderId || code).trim();
+      setBarcodeInput(trackingId);
 
       // =========================================================================
       // STAGE 1: SINGLE QUANTITY ORDERS
@@ -1152,7 +1155,20 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
     inputRef.current?.focus();
   }, []);
 
-  // Keyboard capture for hardware barcode scanner (exact same as other VMS accounts)
+  // Handle final stop recording (e.g. on Enter key when recording is active)
+  const handleStopCurrentRecording = useCallback(() => {
+    if (recorder.isRecorderRunning()) {
+      recorder.clearNextRecording();
+      recorder.stopRecording();
+      setBarcodeInput("");
+      toast.success("Stopped VMS recording. Video saved to upload queue.");
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+    }
+  }, [recorder]);
+
+  // Keyboard capture for hardware barcode scanner and Enter key to end VMS
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (transitionModal.open) return;
@@ -1161,7 +1177,7 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
         event.preventDefault();
       }
 
-      scanner.processKeyboardInput(
+      const isScannerScan = scanner.processKeyboardInput(
         event.key,
         async (barcode) => {
           setBarcodeInput(barcode);
@@ -1169,22 +1185,34 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
         },
         handleManualTypingBlocked
       );
+
+      // Enter key functionality: end VMS recording if active, or submit pending barcode
+      if (event.key === "Enter" && !isScannerScan) {
+        event.preventDefault();
+        if (recorder.isRecorderRunning()) {
+          handleStopCurrentRecording();
+        } else {
+          const raw = barcodeInput.trim();
+          if (raw) {
+            void handleBarcodeScan(raw);
+          }
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [scanner.processKeyboardInput, transitionModal.open, handleManualTypingBlocked, handleBarcodeScan]);
+  }, [
+    scanner.processKeyboardInput,
+    transitionModal.open,
+    handleManualTypingBlocked,
+    handleBarcodeScan,
+    recorder,
+    handleStopCurrentRecording,
+    barcodeInput,
+  ]);
 
   const [isReturning, setIsReturning] = useState(false);
-
-  // Handle final stop recording
-  const handleStopCurrentRecording = () => {
-    if (recorder.isRecorderRunning()) {
-      recorder.clearNextRecording();
-      recorder.stopRecording();
-      toast.success("Stopped VMS recording. Video saved to upload queue.");
-    }
-  };
 
   const handleReturnToFlipkartResult = async () => {
     if (isReturning) return;
@@ -1242,8 +1270,6 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      const raw = barcodeInput.trim();
-                      if (raw) void handleBarcodeScan(raw);
                       return;
                     }
                     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -1275,10 +1301,14 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  if (recorder.isRecorderRunning()) {
+                    handleStopCurrentRecording();
+                    return;
+                  }
                   const raw = barcodeInput.trim();
                   if (raw) handleBarcodeScan(raw);
                 }}
-                disabled={isProcessingPrint || !barcodeInput.trim()}
+                disabled={isProcessingPrint || (!barcodeInput.trim() && !recorder.isRecorderRunning())}
                 className="h-11 sm:h-12 shrink-0 flex items-center justify-center gap-2 bg-[#0A0E1A] dark:bg-[#080B11] hover:bg-[#161D2E] dark:hover:bg-[#131926] border border-[#0A0E1A] dark:border-white/[0.08] px-4 sm:px-5 font-semibold text-xs sm:text-sm text-white dark:text-[#E8C16D] transition disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-xs rounded-xl sm:rounded-2xl"
               >
                 <span>Submit</span>
@@ -1331,19 +1361,6 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
               {selectedAccount?.accountName ?? "Flipkart"}
             </p>
           </div>
-
-          {/* Stop Recording Button (Visible while actively recording) */}
-          {recorder.isRecorderRunning() && (
-            <button
-              type="button"
-              onClick={handleStopCurrentRecording}
-              className="h-11 sm:h-12 flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 shadow-xs transition-colors cursor-pointer animate-pulse shrink-0"
-              title="Stop Recording"
-            >
-              <Square className="h-3.5 w-3.5 fill-rose-600 text-rose-600" />
-              <span className="hidden sm:inline">Stop</span>
-            </button>
-          )}
 
           {/* Logout Button */}
           <button

@@ -162,7 +162,7 @@ export const useScanner = () => {
       key: string,
       onComplete: (trackingId: string) => void,
       onManualTypingAttempt?: () => void,
-    ) => {
+    ): boolean => {
       // Barcode scanners send keys in rapid bursts (10-35ms).
       // Any delay > 150ms between consecutive keys indicates manual human typing.
       const MAX_SCANNER_INTERVAL = 150; // ms
@@ -188,19 +188,19 @@ export const useScanner = () => {
           if (wasHuman || code.length > 0) {
             onManualTypingAttempt?.();
           }
-          return;
+          return false;
         }
 
         // Valid hardware barcode scanner input
         updateScannerStatus("usb");
         resetScannerTimeout();
         onComplete(code);
-        return;
+        return true;
       }
 
       // Ignore non-character keys (Shift, Control, Alt, CapsLock, Tab, Arrow keys, etc.)
       if (key.length !== 1) {
-        return;
+        return false;
       }
 
       const now = Date.now();
@@ -229,7 +229,7 @@ export const useScanner = () => {
             onManualTypingAttempt?.();
           }
         }, SCAN_FINISH_TIMEOUT);
-        return;
+        return false;
       }
 
       // 2nd, 3rd, 4th... characters:
@@ -243,7 +243,7 @@ export const useScanner = () => {
           scanTimer.current = null;
         }
         onManualTypingAttempt?.();
-        return;
+        return false;
       }
 
       // Fast keystrokes from barcode scanner
@@ -263,6 +263,8 @@ export const useScanner = () => {
           onComplete(finalCode);
         }
       }, SCAN_FINISH_TIMEOUT);
+
+      return false;
     },
     [updateScannerStatus, resetScannerTimeout],
   );
