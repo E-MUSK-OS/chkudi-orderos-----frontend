@@ -1173,6 +1173,15 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (transitionModal.open) return;
 
+      // Ignore if user is typing inside another input (e.g. table search filter or modal)
+      const isOtherInput =
+        document.activeElement &&
+        document.activeElement !== inputRef.current &&
+        (document.activeElement.tagName === "INPUT" ||
+          document.activeElement.tagName === "TEXTAREA" ||
+          (document.activeElement as HTMLElement).isContentEditable);
+      if (isOtherInput) return;
+
       if (document.activeElement === inputRef.current) {
         event.preventDefault();
       }
@@ -1274,7 +1283,6 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
                     }
                     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
                       e.preventDefault();
-                      handleManualTypingBlocked();
                     }
                   }}
                   onPaste={(e) => {
