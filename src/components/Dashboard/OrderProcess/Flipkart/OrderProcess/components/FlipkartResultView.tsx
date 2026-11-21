@@ -2236,6 +2236,15 @@ export default function FlipkartResultView() {
     await executePrintForOrders(targetOrders, true);
   };
 
+  // All eligible orders for picklist across all order types (Unprinted in unprinted view, printed in showPrinted view)
+  const allPicklistOrders = useMemo(() => {
+    const unprintedMatched = mappedOrders.filter((r) => !printedOrders.has(r.pageIndex));
+    if (!showPrinted) {
+      return unprintedMatched;
+    }
+    return mappedOrders.filter((r) => printedOrders.has(r.pageIndex));
+  }, [mappedOrders, printedOrders, showPrinted]);
+
   // Picklist Generation (Supports Excel, PDF download, PDF open, and Interactive print tab)
   const handlePicklistAction = async (
     action: "excel" | "pdf_download" | "pdf_open" | "tab_open" = "excel"
@@ -2251,9 +2260,9 @@ export default function FlipkartResultView() {
     const targetSet =
       selectedRows.size > 0
         ? selectedRows
-        : new Set(mappedOrders.filter((o) => !printedOrders.has(o.pageIndex)).map((o) => o.index));
+        : new Set(allPicklistOrders.map((o) => o.index));
 
-    if (targetSet.size === 0 && mappedOrders.length === 0) {
+    if (targetSet.size === 0 && allPicklistOrders.length === 0) {
       toast.error("No orders available to generate picklist.");
       return;
     }
@@ -2266,7 +2275,7 @@ export default function FlipkartResultView() {
         skuDetailsMap
       );
 
-      const count = targetSet.size > 0 ? targetSet.size : mappedOrders.length;
+      const count = targetSet.size > 0 ? targetSet.size : allPicklistOrders.length;
 
       if (action === "excel") {
         await downloadFlipkartPicklistExcel(picklist, summary?.pdfFileName);
@@ -2753,9 +2762,9 @@ export default function FlipkartResultView() {
                   {/* Picklist Button */}
                   <button
                     type="button"
-                    disabled={isMappingsLoading || isGeneratingPicklist}
+                    disabled={isMappingsLoading || isGeneratingPicklist || (allPicklistOrders.length === 0 && selectedRows.size === 0)}
                     onClick={() => handlePicklistAction("excel")}
-                    className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-2xl border px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] ${isMappingsLoading || isGeneratingPicklist
+                    className={`inline-flex h-11 sm:h-12 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-2xl border px-3.5 sm:px-4 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] ${isMappingsLoading || isGeneratingPicklist || (allPicklistOrders.length === 0 && selectedRows.size === 0)
                       ? "cursor-not-allowed border-[#E8C16D]/30 bg-[#FEFAEE]/60 text-[#6A4D1D]/60 dark:border-[#0A0E1A]/40 dark:bg-[#0A0E1A]/60 dark:text-[#E8C16D]/60"
                       : "cursor-pointer border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0"
                       }`}
@@ -2777,7 +2786,7 @@ export default function FlipkartResultView() {
                           Picklist{" "}
                           {selectedRows.size > 0
                             ? `(${selectedRows.size})`
-                            : `(All ${mappedOrders.length})`}
+                            : `(All ${allPicklistOrders.length})`}
                         </span>
                       </>
                     )}
@@ -3347,6 +3356,18 @@ export default function FlipkartResultView() {
         missingSkus={modalMissingSkus}
         onRefreshMappings={fetchFlipkartMappings}
         onReset={handleReset}
+      />
+
+      {/* Picklist Format & Option Modal */}
+      <FlipkartPicklistModal
+        isOpen={isPicklistModalOpen}
+        onClose={() => setIsPicklistModalOpen(false)}
+        targetCount={selectedRows.size > 0 ? selectedRows.size : allPicklistOrders.length}
+        totalOrders={mappedOrders.length}
+        isSelectionActive={selectedRows.size > 0}
+        isGenerating={isGeneratingPicklist}
+        onAction={handlePicklistAction}
+        pdfFileName={summary?.pdfFileName}
       />
     </DashboardLayout>
   );

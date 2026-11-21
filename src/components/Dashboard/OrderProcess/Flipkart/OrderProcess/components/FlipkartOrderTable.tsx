@@ -312,7 +312,7 @@ export default function FlipkartOrderTable({
                   Picklist{" "}
                   {selectedRows.size > 0
                     ? `(${selectedRows.size})`
-                    : `(All ${mappedOrdersCount})`}
+                    : `(All ${showPrinted ? printedCountVal : remainingCount})`}
                 </span>
               </>
             )}
