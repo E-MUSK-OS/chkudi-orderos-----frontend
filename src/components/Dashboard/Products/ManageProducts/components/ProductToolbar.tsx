@@ -29,7 +29,7 @@ interface Option {
   value: string;
 }
 
-export type ImportType = "product" | "asin" | "myntra" | "flipcart";
+export type ImportType = "product" | "asin" | "myntra" | "flipkart";
 
 interface Props {
   search: string;
@@ -62,7 +62,7 @@ interface Props {
   productsData?: any[];
   asinData?: any[];
   myntraData?: any[];
-  flipcartData?: any[];
+  flipkartData?: any[];
 
   selectedCount?: number;
   onExportProducts?: () => void;
@@ -97,8 +97,8 @@ const importTypeOptions: { label: string; value: ImportType }[] = [
     value: "myntra",
   },
   {
-    label: "Flipcart Import",
-    value: "flipcart",
+    label: "Flipkart Import",
+    value: "flipkart",
   },
 ];
 
@@ -132,7 +132,7 @@ export default function ProductToolbar({
   productsData = [],
   asinData = [],
   myntraData = [],
-  flipcartData = [],
+  flipkartData = [],
   selectedCount = 0,
   onExportProducts,
 }: Props) {
@@ -157,12 +157,12 @@ export default function ProductToolbar({
         currentType === "myntra"
           ? "Myntra"
           : currentType === "asin"
-          ? "ASIN"
-          : "Product";
+            ? "ASIN"
+            : "Product";
 
       toast.error(
         validation.message ||
-          `Please upload the appropriate sheet format for ${label} Import!`
+        `Please upload the appropriate sheet format for ${label} Import!`
       );
       e.target.value = "";
       return;
@@ -254,8 +254,8 @@ export default function ProductToolbar({
           "asin-data.xlsx"
         );
         toast.success("ASIN data downloaded successfully!");
-      } else if (selectedTypeRef.current === "flipcart") {
-        const worksheet = workbook.addWorksheet("Flipcart Import");
+      } else if (selectedTypeRef.current === "flipkart") {
+        const worksheet = workbook.addWorksheet("Flipkart Import");
         worksheet.columns = [
           { header: "FSN Code", key: "fsn", width: 22 },
           { header: "SKU", key: "sku", width: 25 },
@@ -267,7 +267,7 @@ export default function ProductToolbar({
         headerRow.alignment = { vertical: "middle", horizontal: "center" };
         headerRow.height = 28;
 
-        (flipcartData || []).forEach((item: any) => {
+        (flipkartData || []).forEach((item: any) => {
           const r = worksheet.addRow({
             fsn: item.fsn || "",
             sku: item.sku || "",
@@ -280,9 +280,9 @@ export default function ProductToolbar({
         const buffer = await workbook.xlsx.writeBuffer();
         saveAs(
           new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-          "flipcart-data.xlsx"
+          "flipkart-data.xlsx"
         );
-        toast.success("Flipcart data downloaded successfully!");
+        toast.success("Flipkart data downloaded successfully!");
       } else {
         if (onExportProducts) {
           onExportProducts();
@@ -304,7 +304,7 @@ export default function ProductToolbar({
     (importType === "asin" && (asinData?.length ?? 0) > 0) ||
     (importType === "product" && (productsData?.length ?? 0) > 0) ||
     (importType === "myntra" && (myntraData?.length ?? 0) > 0) ||
-    (importType === "flipcart" && (flipcartData?.length ?? 0) > 0);
+    (importType === "flipkart" && (flipkartData?.length ?? 0) > 0);
 
   return (
     <>
@@ -321,10 +321,10 @@ export default function ProductToolbar({
                 importType === "asin"
                   ? "Search ASIN, SKU, Rack..."
                   : importType === "myntra"
-                  ? "Search Myntra SKU, Seller SKU, Rack..."
-                  : importType === "flipcart"
-                  ? "Search FSN, SKU, Rack..."
-                  : "Search Product / SKU..."
+                    ? "Search Myntra SKU, Seller SKU, Rack..."
+                    : importType === "flipkart"
+                      ? "Search FSN, SKU, Rack..."
+                      : "Search Product / SKU..."
               }
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -433,7 +433,7 @@ export default function ProductToolbar({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
                 className="order-1 sm:order-none inline-flex flex-1 sm:flex-initial w-[calc(50%-4px)] sm:w-auto min-w-[calc(50%-4px)] sm:min-w-0 justify-center items-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.15] bg-[#FEFAEE] dark:bg-[#080B11] px-3.5 sm:px-4 h-9 sm:h-10 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#E8C16D] transition-all shadow-xs cursor-pointer hover:bg-[#FDF2D1] hover:border-[#E8C16D] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 active:scale-[0.98] disabled:opacity-50"
-                title={`Import ${importType === "asin" ? "ASIN" : importType === "myntra" ? "Myntra" : importType === "flipcart" ? "Flipcart" : "Product"} Excel`}
+                title={`Import ${importType === "asin" ? "ASIN" : importType === "myntra" ? "Myntra" : importType === "flipkart" ? "Flipkart" : "Product"} Excel`}
               >
                 <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">
                   <Upload className="h-3.5 w-3.5" />
@@ -444,7 +444,7 @@ export default function ProductToolbar({
           )}
 
           {/* Export / Demo Button */}
-          {(hasData || importType === "asin" || importType === "myntra" || importType === "flipcart") ? (
+          {(hasData || importType === "asin" || importType === "myntra" || importType === "flipkart") ? (
             <button
               type="button"
               onClick={handleDownloadData}
@@ -452,7 +452,7 @@ export default function ProductToolbar({
               title={
                 importType === "product" && selectedCount > 0
                   ? `Export ${selectedCount} selected product(s)`
-                  : `Export ${importType === "asin" ? "ASIN" : importType === "myntra" ? "Myntra" : importType === "flipcart" ? "Flipcart" : "Product"} data`
+                  : `Export ${importType === "asin" ? "ASIN" : importType === "myntra" ? "Myntra" : importType === "flipkart" ? "Flipkart" : "Product"} data`
               }
             >
               <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF3D6] text-[#B88728] shrink-0 dark:bg-[#E8C16D]/20 dark:text-[#E8C16D]">

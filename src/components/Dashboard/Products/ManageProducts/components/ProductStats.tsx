@@ -4,7 +4,7 @@ import type { ImportType } from "./ProductToolbar";
 import type { ProductStats as ProductStatsType } from "../types/product.types";
 import type { AsinImportItem } from "../types/asinImport.types";
 import type { MyntraImportItem } from "../types/myntraImport.types";
-import type { FlipcartImportItem } from "../types/flipcartImport.types";
+import type { FlipkartImportItem } from "../types/flipkartImport.types";
 
 interface Props {
   importType?: ImportType;
@@ -14,8 +14,8 @@ interface Props {
   asinTotal?: number;
   myntraItems?: MyntraImportItem[];
   myntraTotal?: number;
-  flipcartItems?: FlipcartImportItem[];
-  flipcartTotal?: number;
+  flipkartItems?: FlipkartImportItem[];
+  flipkartTotal?: number;
   isLoading?: boolean;
 }
 
@@ -27,8 +27,8 @@ export default function ProductStats({
   asinTotal,
   myntraItems = [],
   myntraTotal,
-  flipcartItems = [],
-  flipcartTotal,
+  flipkartItems = [],
+  flipkartTotal,
   isLoading = false,
 }: Props) {
   let cards: {
@@ -123,20 +123,20 @@ export default function ProductStats({
         valueClass: "text-purple-600",
       },
     ];
-  } else if (importType === "flipcart") {
-    const totalFlipcart = flipcartTotal ?? flipcartItems.length;
-    const mappedSkus = flipcartItems.filter((item) =>
+  } else if (importType === "flipkart") {
+    const totalFlipkart = flipkartTotal ?? flipkartItems.length;
+    const mappedSkus = flipkartItems.filter((item) =>
       Boolean(item.sku && item.sku.trim())
     ).length;
-    const withRack = flipcartItems.filter((item) =>
+    const withRack = flipkartItems.filter((item) =>
       Boolean(item.rackAddress && item.rackAddress.trim())
     ).length;
-    const unassignedRack = totalFlipcart - withRack;
+    const unassignedRack = totalFlipkart - withRack;
 
     cards = [
       {
-        title: "Total Flipcart FSNs",
-        value: totalFlipcart,
+        title: "Total Flipkart FSNs",
+        value: totalFlipkart,
         badgeText: "FSNs",
         badgeClass:
           "border-blue-200/60 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400",

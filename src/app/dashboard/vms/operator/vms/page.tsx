@@ -1,11 +1,11 @@
 import OperatorVMS from '@/components/Dashboard/vms/Operator/VMS/OperatorVMS'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 const page = () => {
   return (
-    <div>
+    <Suspense fallback={null}>
       <OperatorVMS />
-    </div>
+    </Suspense>
   )
 }
 

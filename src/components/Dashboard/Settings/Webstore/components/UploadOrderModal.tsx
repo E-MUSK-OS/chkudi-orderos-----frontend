@@ -146,8 +146,8 @@ export default function UploadOrderModal({
       router.push("/dashboard/order-process/myntra/myntra-order");
     } else if (ch.includes("amazon")) {
       router.push("/dashboard/order-process/amazon/order-process");
-    } else if (ch.includes("flipcart") || ch.includes("flipkart")) {
-      router.push("/dashboard/order-process/flipcart/order-process");
+    } else if (ch.includes("flipkart") || ch.includes("flipkart")) {
+      router.push("/dashboard/order-process/flipkart/order-process");
     } else {
       router.push("/dashboard/order-process");
     }
@@ -209,11 +209,10 @@ export default function UploadOrderModal({
                       key={s.id}
                       type="button"
                       onClick={() => setSelectedStoreId(s.id)}
-                      className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                        isSelected
+                      className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${isSelected
                           ? "border-[#E8C16D] bg-[#FFF9EC] text-[#0A0E1A] ring-1 ring-[#E8C16D]/40 dark:border-[#E8C16D] dark:bg-[#1A160E] dark:text-[#E8C16D]"
                           : "border-[#E7E0D2] dark:border-white/[0.08] hover:border-[#E8C16D]/50 dark:hover:border-white/[0.15]"
-                      }`}
+                        }`}
                     >
                       <MarketplaceLogo
                         name={s.marketplaceName}
@@ -273,11 +272,10 @@ export default function UploadOrderModal({
                 onDragLeave={() => setIsDragOver(false)}
                 onDrop={handleFileDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
-                  isDragOver
+                className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isDragOver
                     ? "border-[#E8C16D] bg-[#FFF9EC]/50 dark:border-[#E8C16D] dark:bg-[#1A160E]"
                     : "border-[#E7E0D2] hover:border-[#E8C16D]/50 dark:border-white/[0.15] dark:hover:border-white/[0.25] bg-[#FAF8F5]/50 dark:bg-black/20"
-                }`}
+                  }`}
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/20 mb-2">
                   <FileSpreadsheet className="h-6 w-6" />

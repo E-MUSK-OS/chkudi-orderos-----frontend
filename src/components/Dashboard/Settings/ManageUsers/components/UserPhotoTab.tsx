@@ -50,7 +50,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "order-process/myntra/invoice-formatter": "order-process/myntra/invoice-formatter",
   "order-process/amazon/order-process": "order-process/amazon/order-process",
   "order-process/amazon/awb-scan": "order-process/amazon/awb-scan",
-  "order-process/flipcart/order-process": "order-process/flipcart/order-process",
+  "order-process/flipkart/order-process": "order-process/flipkart/order-process",
   "products-analytics/amazon": "products-analytics/amazon",
   "transaction/sales/po-based": "transaction/sales/po-based",
   "offline-sales/sales-challan": "offline-sales/sales-challan",
@@ -70,7 +70,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   vms_tracking: "vms/scans/trackingid-scan",
   products_profile: "settings/manage-product",
   order_process_amazon: "order-process/amazon/order-process",
-  order_process_flipcart: "order-process/flipcart/order-process",
+  order_process_flipkart: "order-process/flipkart/order-process",
   order_process_myntra: "order-process/myntra/myntra-picklist",
   warehouse_inventory: "products/inventory",
   sku_mapping: "settings/labels/label-print",
@@ -126,11 +126,11 @@ export default function UserPhotoTab({
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(" ").trim() || "User Name";
   const initials = fullName
     ? fullName
-        .split(" ")
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase()
     : "U";
 
   // Initialize dynamic permissions from navigation
@@ -151,12 +151,12 @@ export default function UserPhotoTab({
             );
             return found
               ? {
-                  ...def,
-                  create: typeof found.create === "boolean" ? found.create : def.create,
-                  read: typeof found.read === "boolean" ? found.read : def.read,
-                  update: typeof found.update === "boolean" ? found.update : def.update,
-                  delete: typeof found.delete === "boolean" ? found.delete : def.delete,
-                }
+                ...def,
+                create: typeof found.create === "boolean" ? found.create : def.create,
+                read: typeof found.read === "boolean" ? found.read : def.read,
+                update: typeof found.update === "boolean" ? found.update : def.update,
+                delete: typeof found.delete === "boolean" ? found.delete : def.delete,
+              }
               : def;
           });
         }
@@ -222,12 +222,12 @@ export default function UserPhotoTab({
               );
               return found
                 ? {
-                    ...def,
-                    create: typeof found.create === "boolean" ? found.create : def.create,
-                    read: typeof found.read === "boolean" ? found.read : def.read,
-                    update: typeof found.update === "boolean" ? found.update : def.update,
-                    delete: typeof found.delete === "boolean" ? found.delete : def.delete,
-                  }
+                  ...def,
+                  create: typeof found.create === "boolean" ? found.create : def.create,
+                  read: typeof found.read === "boolean" ? found.read : def.read,
+                  update: typeof found.update === "boolean" ? found.update : def.update,
+                  delete: typeof found.delete === "boolean" ? found.delete : def.delete,
+                }
                 : def;
             })
           );
@@ -673,11 +673,10 @@ export default function UserPhotoTab({
                     className="inline-flex items-center gap-1.5 cursor-pointer font-bold uppercase hover:text-white transition"
                   >
                     <div
-                      className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
-                        isAllCategoryGranted
-                          ? "bg-[#E8C16D] border-[#E8C16D] text-[#0A0E1A]"
-                          : "border-slate-400 dark:border-white/[0.3] bg-transparent"
-                      }`}
+                      className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${isAllCategoryGranted
+                        ? "bg-[#E8C16D] border-[#E8C16D] text-[#0A0E1A]"
+                        : "border-slate-400 dark:border-white/[0.3] bg-transparent"
+                        }`}
                     >
                       {isAllCategoryGranted && <Check size={10} strokeWidth={3} />}
                     </div>
@@ -709,9 +708,8 @@ export default function UserPhotoTab({
                 return (
                   <tr
                     key={`${row.id}-${index}`}
-                    className={`hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.04] transition-colors ${
-                      isRestrictedForAdmin ? "opacity-40 pointer-events-none bg-slate-50/50 dark:bg-black/20" : ""
-                    }`}
+                    className={`hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.04] transition-colors ${isRestrictedForAdmin ? "opacity-40 pointer-events-none bg-slate-50/50 dark:bg-black/20" : ""
+                      }`}
                   >
                     {/* No */}
                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">
@@ -739,18 +737,16 @@ export default function UserPhotoTab({
                         type="button"
                         disabled={Boolean(isRestrictedForAdmin)}
                         onClick={() => handleToggleRow(row.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
-                          isRowAllGranted
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
-                            : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${isRowAllGranted
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
+                          : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
+                          }`}
                       >
                         <div
-                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                            isRowAllGranted
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                          }`}
+                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${isRowAllGranted
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                            }`}
                         >
                           {isRowAllGranted && <Check size={10} strokeWidth={3} />}
                         </div>
@@ -764,18 +760,16 @@ export default function UserPhotoTab({
                         type="button"
                         disabled={Boolean(isRestrictedForAdmin)}
                         onClick={() => handleTogglePermission(row.id, "create")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
-                          row.create
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
-                            : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${row.create
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
+                          : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
+                          }`}
                       >
                         <div
-                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                            row.create
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                          }`}
+                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.create
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                            }`}
                         >
                           {row.create && <Check size={10} strokeWidth={3} />}
                         </div>
@@ -789,18 +783,16 @@ export default function UserPhotoTab({
                         type="button"
                         disabled={Boolean(isRestrictedForAdmin)}
                         onClick={() => handleTogglePermission(row.id, "read")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
-                          row.read
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
-                            : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${row.read
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
+                          : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
+                          }`}
                       >
                         <div
-                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                            row.read
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                          }`}
+                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.read
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                            }`}
                         >
                           {row.read && <Check size={10} strokeWidth={3} />}
                         </div>
@@ -814,18 +806,16 @@ export default function UserPhotoTab({
                         type="button"
                         disabled={Boolean(isRestrictedForAdmin)}
                         onClick={() => handleTogglePermission(row.id, "update")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
-                          row.update
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
-                            : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${row.update
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
+                          : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
+                          }`}
                       >
                         <div
-                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                            row.update
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                          }`}
+                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.update
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                            }`}
                         >
                           {row.update && <Check size={10} strokeWidth={3} />}
                         </div>
@@ -839,18 +829,16 @@ export default function UserPhotoTab({
                         type="button"
                         disabled={Boolean(isRestrictedForAdmin)}
                         onClick={() => handleTogglePermission(row.id, "delete")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
-                          row.delete
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
-                            : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${row.delete
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
+                          : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
+                          }`}
                       >
                         <div
-                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                            row.delete
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                          }`}
+                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.delete
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                            }`}
                         >
                           {row.delete && <Check size={10} strokeWidth={3} />}
                         </div>

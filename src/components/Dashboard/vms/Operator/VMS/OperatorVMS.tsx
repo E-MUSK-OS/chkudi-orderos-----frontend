@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 
@@ -9,9 +9,11 @@ import OperatorLoginForm from "../auth/components/OperatorLoginForm";
 import { Account } from "@/components/Dashboard/vms/Admin/Account/types/account";
 import { operatorLogout } from "@/services/operatorAuth.service";
 import { toast } from "sonner";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const OperatorVMS = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const pathname = usePathname();
 
@@ -43,7 +45,18 @@ const OperatorVMS = () => {
       localStorage.removeItem("operatorAccessToken");
       localStorage.removeItem("operator");
       localStorage.removeItem("selectedAccount");
+      localStorage.removeItem("vms_source");
+      localStorage.removeItem("vms_from_order_process");
       sessionStorage.removeItem("operatorTabActive");
+      sessionStorage.removeItem("vms_source");
+      sessionStorage.removeItem("vms_from_order_process");
+
+      // Strip query parameters (?source=flipkart, ?from=order_process) from URL so account name is not locked on next login
+      if (typeof window !== "undefined") {
+        const cleanPath = window.location.pathname;
+        window.history.replaceState({}, "", cleanPath);
+      }
+      router.replace(pathname || "/vms/operator/vms");
 
       setIsAuthenticated(false);
     }
@@ -51,10 +64,51 @@ const OperatorVMS = () => {
 
   // Route change cleanup: if operator navigates away from VMS, auto-logout
   useEffect(() => {
-    if (isAuthenticated && pathname !== "/dashboard/vms/operator/vms") {
+    if (
+      isAuthenticated &&
+      pathname !== "/dashboard/vms/operator/vms" &&
+      pathname !== "/vms/operator/vms"
+    ) {
       void handleLogout();
     }
-  }, [pathname]);
+  }, [pathname, isAuthenticated]);
+
+  // Unmount cleanup: if operator leaves page without explicit logout, release session
+  useEffect(() => {
+    return () => {
+      const token = localStorage.getItem("operatorAccessToken");
+      if (token) {
+        void operatorLogout().catch(() => {});
+        localStorage.removeItem("operatorAccessToken");
+        localStorage.removeItem("operator");
+        localStorage.removeItem("selectedAccount");
+        sessionStorage.removeItem("operatorTabActive");
+      }
+    };
+  }, []);
+
+  const isFlipkartSource = useMemo(() => {
+    const fromSearch =
+      /(flip|filp)[kc]art/i.test(searchParams?.get("source") || "") ||
+      searchParams?.get("from") === "order_process";
+
+    const fromWindowSearch =
+      typeof window !== "undefined" &&
+      (/(flip|filp)[kc]art/i.test(new URLSearchParams(window.location.search).get("source") || "") ||
+        new URLSearchParams(window.location.search).get("from") === "order_process");
+
+    const fromSession =
+      typeof window !== "undefined" &&
+      (/(flip|filp)[kc]art/i.test(sessionStorage.getItem("vms_source") || "") ||
+        sessionStorage.getItem("vms_from_order_process") === "true");
+
+    const fromLocal =
+      typeof window !== "undefined" &&
+      (/(flip|filp)[kc]art/i.test(localStorage.getItem("vms_source") || "") ||
+        localStorage.getItem("vms_from_order_process") === "true");
+
+    return Boolean(fromSearch || fromWindowSearch || fromSession || fromLocal);
+  }, [searchParams]);
 
   return (
     <DashboardLayout title="Operator VMS">
@@ -75,6 +129,7 @@ const OperatorVMS = () => {
             </div>
             <div className="p-5 sm:p-7">
               <OperatorLoginForm
+                isFlipkartSource={isFlipkartSource}
                 onSuccess={(account: Account) => {
                   localStorage.setItem("selectedAccount", JSON.stringify(account));
                   sessionStorage.setItem("operatorTabActive", "true");

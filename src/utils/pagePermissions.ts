@@ -141,7 +141,7 @@ export function isRouteAllowed(
             const cleanId = p.id.replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
             const cleanPath = (p.path || "").replace(/^\/dashboard\/?/, "").replace(/\/+$/, "").toLowerCase();
             return cleanId.startsWith(cleanQuery) || cleanQuery.startsWith(cleanId) ||
-                   cleanPath.startsWith(cleanQuery) || cleanQuery.startsWith(cleanPath);
+              cleanPath.startsWith(cleanQuery) || cleanQuery.startsWith(cleanPath);
           });
         }
 
@@ -391,10 +391,10 @@ export function filterNavItemsForUser(
       const labelKey = item.label.toLowerCase().replace(/\s+/g, "-");
       const nodeId = item.href
         ? item.href
-            .replace(/^\/dashboard\/?/, "")
-            .replace(/[^a-zA-Z0-9]+/g, "_")
-            .replace(/_+$/, "")
-            .toLowerCase() || "dashboard"
+          .replace(/^\/dashboard\/?/, "")
+          .replace(/[^a-zA-Z0-9]+/g, "_")
+          .replace(/_+$/, "")
+          .toLowerCase() || "dashboard"
         : labelKey.replace(/-/g, "_");
 
       if (!isClientConfigItem) {
@@ -507,8 +507,8 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "order-process/myntra/invoice-formatter": "order-process/myntra/invoice-formatter",
   "order-process/amazon/order-process": "order-process/amazon/order-process",
   "order-process/amazon/awb-scan": "order-process/amazon/awb-scan",
-  "order-process/flipcart/order-process": "order-process/flipcart/order-process",
-  "order-process/flipcart/awb-scan": "order-process/flipcart/awb-scan",
+  "order-process/flipkart/order-process": "order-process/flipkart/order-process",
+  "order-process/flipkart/awb-scan": "order-process/flipkart/awb-scan",
   "products-analytics/amazon": "products-analytics/amazon",
   "transaction/sales/po-based": "transaction/sales/po-based",
   "offline-sales/sales-challan": "offline-sales/sales-challan",
@@ -535,7 +535,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   vms_tracking: "vms/scans/trackingid-scan",
   products_profile: "settings/manage-product",
   order_process_amazon: "order-process/amazon/order-process",
-  order_process_flipcart: "order-process/flipcart/order-process",
+  order_process_flipkart: "order-process/flipkart/order-process",
   order_process_myntra: "order-process/myntra/myntra-picklist",
   warehouse_inventory: "products/inventory",
   sku_mapping: "settings/labels/label-print",
@@ -694,11 +694,11 @@ export function getSlugFromPathname(pathname: string): string {
   if (clean.startsWith("order-process/amazon/awb-scan")) {
     return "order-process/amazon/awb-scan";
   }
-  if (clean.startsWith("order-process/flipcart/order-process")) {
-    return "order-process/flipcart/order-process";
+  if (clean.startsWith("order-process/flipkart/order-process")) {
+    return "order-process/flipkart/order-process";
   }
-  if (clean.startsWith("order-process/flipcart/awb-scan")) {
-    return "order-process/flipcart/awb-scan";
+  if (clean.startsWith("order-process/flipkart/awb-scan")) {
+    return "order-process/flipkart/awb-scan";
   }
   if (clean.startsWith("products/inventory")) {
     return "products/inventory";

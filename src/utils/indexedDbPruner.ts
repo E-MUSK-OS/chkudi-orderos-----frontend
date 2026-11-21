@@ -9,8 +9,8 @@
  * Automatically cleans:
  * 1. chkudi_orderos_idb_v2:
  *    - amazon_files: removes batch PDFs and files older than 7 days
- *    - flipcart_files: removes files older than 7 days
- *    - flipcart_batch_blobs: removes batch blobs older than 7 days
+ *    - flipkart_files: removes files older than 7 days
+ *    - flipkart_batch_blobs: removes batch blobs older than 7 days
  * 2. myntra_picklist_idb_v1:
  *    - picklist_cache: removes cached picklist state older than 7 days
  * 3. Legacy Databases:
@@ -126,7 +126,7 @@ async function pruneStore(db: IDBDatabase, storeName: string, now: number): Prom
     }
 
     // Case 2: Latest uploaded files (inspect File.lastModified if available)
-    if (key === "latest_files" || key === "latest_flipcart_files") {
+    if (key === "latest_files" || key === "latest_flipkart_files") {
       const val = entry.value;
       let fileDate = 0;
       if (val && typeof val === "object") {
@@ -288,7 +288,7 @@ export async function pruneExpiredIndexedDB(force = false): Promise<void> {
     // 2. Prune Amazon & Flipkart stores in chkudi_orderos_idb_v2
     const mainDb = await openDatabase("chkudi_orderos_idb_v2", 2);
     if (mainDb) {
-      const stores = ["amazon_files", "flipcart_files", "flipcart_batch_blobs"];
+      const stores = ["amazon_files", "flipkart_files", "flipkart_batch_blobs"];
       for (const storeName of stores) {
         await pruneStore(mainDb, storeName, now);
       }

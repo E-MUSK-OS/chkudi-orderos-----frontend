@@ -88,13 +88,13 @@ let currentBatchSessionKey = `session_${Date.now()}`;
 export const getBatchKey = (summary: any, resultsLen: number, batchId?: string | null): string => {
   const effectiveBatchId = batchId || summary?.id || summary?.batchId;
   if (effectiveBatchId) return `batch_${effectiveBatchId}`;
-  
+
   const metrics = `${resultsLen}_${summary?.totalPdfOrders ?? 0}`;
   if (metrics !== lastSessionMetrics && metrics !== "0_0") {
     lastSessionMetrics = metrics;
     currentBatchSessionKey = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
-  
+
   return currentBatchSessionKey;
 };
 
@@ -115,11 +115,11 @@ function openIDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(IDB_STORE)) {
         db.createObjectStore(IDB_STORE);
       }
-      if (!db.objectStoreNames.contains("flipcart_files")) {
-        db.createObjectStore("flipcart_files");
+      if (!db.objectStoreNames.contains("flipkart_files")) {
+        db.createObjectStore("flipkart_files");
       }
-      if (!db.objectStoreNames.contains("flipcart_batch_blobs")) {
-        db.createObjectStore("flipcart_batch_blobs");
+      if (!db.objectStoreNames.contains("flipkart_batch_blobs")) {
+        db.createObjectStore("flipkart_batch_blobs");
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -306,14 +306,14 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
 
     const updatedSummary = data.summary
       ? {
-          ...data.summary,
-          id: activeBatchId || undefined,
-          batchId: activeBatchId || undefined,
-          batchSessionId:
-            activeBatchId ||
-            (data.summary as any).batchSessionId ||
-            `session_${Date.now()}`,
-        }
+        ...data.summary,
+        id: activeBatchId || undefined,
+        batchId: activeBatchId || undefined,
+        batchSessionId:
+          activeBatchId ||
+          (data.summary as any).batchSessionId ||
+          `session_${Date.now()}`,
+      }
       : null;
 
     // 2. Save metadata (summary + results) with safe quota overflow handling
@@ -375,7 +375,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
                 activeHistoryBatchId: activeBatchId,
               })
             );
-          } catch {}
+          } catch { }
         }
 
         if (activeBatchId) {
@@ -570,7 +570,7 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         localStorage.removeItem(ACTIVE_HISTORY_BATCH_STORAGE_KEY);
         sessionStorage.removeItem("amazon_show_printed_active");
       }
-    } catch (e) {}
+    } catch (e) { }
 
     saveFilesToIDB(null);
 
@@ -619,11 +619,11 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
 
       const updatedSummary = batch.summary
         ? {
-            ...batch.summary,
-            id: batch.id,
-            batchId: batch.id,
-            printedIndices: batch.summary.printedIndices || [],
-          }
+          ...batch.summary,
+          id: batch.id,
+          batchId: batch.id,
+          printedIndices: batch.summary.printedIndices || [],
+        }
         : batch.summary;
 
       // 1. INSTANT RESULT RENDERING (<1s): Set summary & results immediately into state
@@ -864,8 +864,8 @@ export const useAmazonOrderStore = create<AmazonOrderState>((set, get) => ({
         r.pdfInvoice && r.pdfInvoice !== "Not Found in PDF"
           ? r.pdfInvoice
           : r.zplInvoice && r.zplInvoice !== "Not Found in ZPL" && r.zplInvoice !== "N/A"
-          ? r.zplInvoice
-          : "N/A";
+            ? r.zplInvoice
+            : "N/A";
 
       return {
         "Sr No": r.index,

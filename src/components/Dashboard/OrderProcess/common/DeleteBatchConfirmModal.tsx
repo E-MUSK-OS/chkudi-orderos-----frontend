@@ -19,7 +19,7 @@ export interface DeleteBatchInfo {
   totalOrders: number;
   printedCount?: number;
   fileName?: string;
-  platform?: "flipcart" | "amazon";
+  platform?: "flipkart" | "amazon";
 }
 
 interface DeleteBatchConfirmModalProps {

@@ -145,8 +145,8 @@ export const downloadDemoSheet = async (type: ImportType) => {
         "asin-import-demo-sheet.xlsx"
       );
       toast.success("ASIN Import demo sheet downloaded successfully!");
-    } else if (type === "flipcart") {
-      const worksheet = workbook.addWorksheet("Flipcart Import");
+    } else if (type === "flipkart") {
+      const worksheet = workbook.addWorksheet("Flipkart Import");
 
       worksheet.columns = [
         { header: "FSN Code", key: "fsn", width: 22 },
@@ -203,9 +203,9 @@ export const downloadDemoSheet = async (type: ImportType) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        "flipcart-import-demo-sheet.xlsx"
+        "flipkart-import-demo-sheet.xlsx"
       );
-      toast.success("Flipcart Import demo sheet downloaded successfully!");
+      toast.success("Flipkart Import demo sheet downloaded successfully!");
     } else {
       const worksheet = workbook.addWorksheet("Product Variants");
 

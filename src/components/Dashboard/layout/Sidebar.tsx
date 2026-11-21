@@ -216,6 +216,8 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
     if (
       itemNorm !== "/dashboard" &&
       itemNorm !== "/order-process" &&
+      itemNorm !== "/vms" &&
+      item.label !== "Dashboard" &&
       (currentNorm.startsWith(itemNorm + "/") || currCanon.startsWith(itemCanon + "/"))
     ) {
       return true;
@@ -288,6 +290,12 @@ export default function Sidebar({
         localStorage.removeItem("selectedAccount");
         sessionStorage.removeItem("operatorTabActive");
       }
+    }
+
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("vms_from_order_process");
+      sessionStorage.removeItem("vms_source");
+      localStorage.removeItem("vms_source");
     }
 
     setSidebarOpen(false);

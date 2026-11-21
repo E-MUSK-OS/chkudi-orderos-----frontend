@@ -196,19 +196,19 @@ export const navItems: NavItem[] = [
         ],
       },
       {
-        label: "Flipcart",
+        label: "Flipkart",
         children: [
           {
             label: "Order Process",
-            href: "/dashboard/order-process/flipcart/order-process",
+            href: "/dashboard/order-process/flipkart/order-process",
             defaultTimeAgo: "1d ago",
-            keywords: ["flipcart", "flipkart", "pdf", "order process", "shipping label"],
+            keywords: ["flipkart", "flipkart", "pdf", "order process", "shipping label"],
           },
           {
             label: "AWB Scan",
-            href: "/dashboard/order-process/flipcart/awb-scan",
+            href: "/dashboard/order-process/flipkart/awb-scan",
             defaultTimeAgo: "1d ago",
-            keywords: ["flipcart", "flipkart", "awb scan", "barcode", "packing scan"],
+            keywords: ["flipkart", "flipkart", "awb scan", "barcode", "packing scan"],
           },
         ],
       },

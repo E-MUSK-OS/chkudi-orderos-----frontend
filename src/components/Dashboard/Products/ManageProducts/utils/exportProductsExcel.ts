@@ -318,7 +318,7 @@ export const exportProductsExcel = async (
         hasAsin = true;
       } else if (filterLower.includes("myntra")) {
         hasMyntraSku = true;
-      } else if (filterLower.includes("flipkart") || filterLower.includes("flipcart")) {
+      } else if (filterLower.includes("flipkart") || filterLower.includes("flipkart")) {
         hasFsnCode = true;
       }
     } else {
@@ -345,7 +345,7 @@ export const exportProductsExcel = async (
 
         hasFsnCode = productsToExport.some((product) => {
           const mkts = getProductMarketplaces(product);
-          return mkts.includes("flipkart") || mkts.includes("flipcart");
+          return mkts.includes("flipkart") || mkts.includes("flipkart");
         });
       }
     }

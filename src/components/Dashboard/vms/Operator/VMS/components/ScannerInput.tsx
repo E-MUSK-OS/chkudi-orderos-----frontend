@@ -221,9 +221,9 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
 
   return (
     <div className="">
-      <div className="space-y-3">
-        <div className="flex gap-3">
-          <div className="w-[85%]">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2.5">
+          <div className="flex-1 min-w-0">
             <Input
               ref={inputRef}
               type="text"
@@ -240,7 +240,7 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
                     className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
                     title="Clear Tracking ID"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 ) : undefined
               }
@@ -265,21 +265,21 @@ const ScannerInput = ({ camera, recorder, scanner }: ScannerInputProps) => {
               autoComplete="off"
               spellCheck={false}
               floatingLabel={false}
-              placeholder="Scan barcode with scanner (Manual typing disabled)..."
-              className="flex-1 px-4 py-3 w-full bg-white dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white font-mono font-bold text-sm sm:text-base border-2 border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D] outline-none shadow-xs rounded-lg placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 cursor-default"
+              placeholder="Scan tracking ID with scanner (Manual typing disabled)..."
+              containerClassName="space-y-0"
+              className="!h-11 sm:!h-12 w-full px-3.5 sm:px-4 bg-white dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white font-mono font-bold text-xs sm:text-sm border-2 border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D] outline-none shadow-xs rounded-xl sm:rounded-2xl placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 cursor-default"
             />
           </div>
 
-          <div className="w-[15%]">
-            <button
-              onClick={() => handleSubmit()}
-              disabled={isProcessing || !trackingId.trim()}
-              className="w-full h-full flex gap-3 justify-center items-center bg-[#0A0E1A] dark:bg-[#080B11] hover:bg-[#161D2E] dark:hover:bg-[#131926] border border-[#0A0E1A] dark:border-white/[0.08] px-6 py-3 font-semibold text-white dark:text-[#E8C16D] transition disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm rounded-lg"
-            >
-              Submit
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleSubmit()}
+            disabled={isProcessing || !trackingId.trim()}
+            className="h-11 sm:h-12 shrink-0 flex items-center justify-center gap-2 bg-[#0A0E1A] dark:bg-[#080B11] hover:bg-[#161D2E] dark:hover:bg-[#131926] border border-[#0A0E1A] dark:border-white/[0.08] px-4 sm:px-5 font-semibold text-xs sm:text-sm text-white dark:text-[#E8C16D] transition disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-xs rounded-xl sm:rounded-2xl"
+          >
+            <span>Submit</span>
+            <Send className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         {/* Inline Error Notice */}

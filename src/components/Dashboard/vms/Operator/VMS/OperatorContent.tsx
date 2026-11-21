@@ -16,6 +16,8 @@ import { useRecorder } from "./hooks/useRecorder";
 import { useScanner } from "./hooks/useScanner";
 import { useHeartbeat } from "../auth/hooks/useHeartbeat";
 import { useVMSStore } from "./store/vmsStore";
+import FlipkartVMSOperator from "./components/FlipkartVMSOperator";
+import { isFlipkartAccountName } from "../auth/components/OperatorLoginForm";
 
 interface OperatorContentProps {
   onLogout: () => void;
@@ -50,6 +52,41 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
     }
   }, []);
 
+  const isFromOrderProcess = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const fromUrl = new URLSearchParams(window.location.search).get("from") === "order_process";
+    const fromSession = sessionStorage.getItem("vms_from_order_process") === "true";
+    const fromLocal = localStorage.getItem("vms_from_order_process") === "true";
+    return Boolean(fromUrl || fromSession || fromLocal);
+  }, []);
+
+  const isFlipkartAutomated = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const isSourceFlipkart =
+      /(flip|filp)[kc]art/i.test(sessionStorage.getItem("vms_source") || "") ||
+      /(flip|filp)[kc]art/i.test(localStorage.getItem("vms_source") || "") ||
+      /(flip|filp)[kc]art/i.test(window.location.search);
+
+    const isFlipkartAccount = isFlipkartAccountName(selectedAccount?.accountName);
+
+    // Flipkart Automated Order Process integration ONLY activates when navigating from Order Process
+    return Boolean((isSourceFlipkart || isFlipkartAccount) && isFromOrderProcess);
+  }, [selectedAccount, isFromOrderProcess]);
+
+  if (isFlipkartAutomated) {
+    return (
+      <FlipkartVMSOperator
+        camera={camera}
+        recorder={recorder}
+        scanner={scanner}
+        onLogout={onLogout}
+        operator={operator}
+        selectedAccount={selectedAccount}
+        isFromOrderProcess={isFromOrderProcess}
+      />
+    );
+  }
+
   return (
     <>
       {/* <div className="mb-4 flex justify-between">
@@ -57,23 +94,23 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
           <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
         </div>
       </div> */}
-      <div className="mb-6 flex flex-col lg:flex-row gap-4 items-stretch">
+      <div className="mb-6 flex flex-col lg:flex-row gap-2.5 items-stretch lg:items-center">
         {/* Scanner */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <ScannerInput camera={camera} recorder={recorder} scanner={scanner} />
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap gap-3 shrink-0">
-          <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 py-3.5 min-w-[140px] shadow-sm flex flex-col justify-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Operator</p>
-            <p className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white truncate">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+          <div className="h-11 sm:h-12 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 min-w-[120px] shadow-xs flex flex-col justify-center shrink-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-none">Operator</p>
+            <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white truncate leading-tight mt-0.5">
               {operator?.operatorName ?? "-"}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 py-3.5 min-w-[140px] shadow-sm flex flex-col justify-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Account</p>
-            <p className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white truncate">
+          <div className="h-11 sm:h-12 rounded-xl sm:rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 min-w-[120px] shadow-xs flex flex-col justify-center shrink-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-none">Account</p>
+            <p className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white truncate leading-tight mt-0.5">
               {selectedAccount?.accountName ?? "-"}
             </p>
           </div>
@@ -81,10 +118,10 @@ const OperatorContent = ({ onLogout }: OperatorContentProps) => {
           <button
             type="button"
             onClick={onLogout}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 px-4 py-3.5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 shadow-sm transition-colors cursor-pointer"
+            className="h-11 sm:h-12 flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 shadow-xs transition-colors cursor-pointer shrink-0"
             title="Logout Operator"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Logout</span>
           </button>
         </div>

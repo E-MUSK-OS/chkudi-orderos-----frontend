@@ -52,10 +52,27 @@ export const useTrackingScanner = (
 
     setScanValue("");
 
+    // Block Flipkart Order ID format immediately (e.g. OD...)
+    if (/^OD\d+/i.test(value)) {
+      setMessage("Order ID scan is blocked. Only FSN and AWB Tracking ID are allowed for Flipkart.");
+      await playSound(warningSound);
+      return;
+    }
+
     // Look for item in current VMS data
     const existing = data.find(
       (item) => item.trackingId.trim().toLowerCase() === value.toLowerCase(),
     );
+
+    // If item is found but belongs to Flipkart and is an Order ID, block it
+    if (existing) {
+      const isFlipkart = existing.account?.accountName?.toLowerCase().includes("flipkart");
+      if (isFlipkart && /^OD\d+/i.test(existing.trackingId)) {
+        setMessage("Order ID scan is blocked. Only FSN and AWB Tracking ID are allowed for Flipkart.");
+        await playSound(warningSound);
+        return;
+      }
+    }
 
     // If item is already marked as SCANNED
     if (existing && existing.packingScanStatus === "SCANNED") {
@@ -124,7 +141,10 @@ export const useTrackingScanner = (
       });
 
       // Found and scanned on server!
-      setMessage(result.message || "Tracking scanned successfully.");
+      const resolvedMsg = result.resolvedTrackingId && result.resolvedTrackingId !== value
+        ? `FSN resolved → AWB "${result.resolvedTrackingId}" scanned successfully.`
+        : (result.message || "Tracking scanned successfully.");
+      setMessage(resolvedMsg);
       await playSound(successSound);
 
       // Add to cache or update
@@ -161,6 +181,11 @@ export const useTrackingScanner = (
         if (error.message.toLowerCase().includes("already scanned")) {
           setMessage("Tracking ID already scanned.");
           await playSound(alreadyScannedSound);
+          return;
+        }
+        if (error.message.toLowerCase().includes("blocked")) {
+          setMessage(error.message);
+          await playSound(warningSound);
           return;
         }
       }

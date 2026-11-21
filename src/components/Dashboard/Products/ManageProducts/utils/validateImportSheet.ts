@@ -140,10 +140,10 @@ export async function validateImportSheetFormat(
           message: "Please upload the appropriate sheet format for ASIN Import! You can download the demo sheet for reference.",
         };
       }
-    } else if (type === "flipcart") {
+    } else if (type === "flipkart") {
       // Must contain FSN and SKU
       const hasFsn = normalizedHeaders.some((h) =>
-        ["fsn", "fsncode", "flipkartfsn", "flipcartfsn"].includes(h)
+        ["fsn", "fsncode", "flipkartfsn", "flipkartfsn"].includes(h)
       );
       const hasSku = normalizedHeaders.some((h) =>
         ["sku", "mastersku", "productsku", "sellersku"].includes(h)
@@ -161,7 +161,7 @@ export async function validateImportSheetFormat(
         return {
           valid: false,
           message:
-            "Please upload the appropriate sheet format for Flipcart Import! You can download the demo sheet for reference.",
+            "Please upload the appropriate sheet format for Flipkart Import! You can download the demo sheet for reference.",
         };
       }
     } else {

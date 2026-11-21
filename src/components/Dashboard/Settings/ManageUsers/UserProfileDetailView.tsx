@@ -63,7 +63,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "order-process/myntra/invoice-formatter": "order-process/myntra/invoice-formatter",
   "order-process/amazon/order-process": "order-process/amazon/order-process",
   "order-process/amazon/awb-scan": "order-process/amazon/awb-scan",
-  "order-process/flipcart/order-process": "order-process/flipcart/order-process",
+  "order-process/flipkart/order-process": "order-process/flipkart/order-process",
   "products-analytics/amazon": "products-analytics/amazon",
   "transaction/sales/po-based": "transaction/sales/po-based",
   "offline-sales/sales-challan": "offline-sales/sales-challan",
@@ -83,7 +83,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   vms_tracking: "vms/scans/trackingid-scan",
   products_profile: "settings/manage-product",
   order_process_amazon: "order-process/amazon/order-process",
-  order_process_flipcart: "order-process/flipcart/order-process",
+  order_process_flipkart: "order-process/flipkart/order-process",
   order_process_myntra: "order-process/myntra/myntra-picklist",
   warehouse_inventory: "products/inventory",
   sku_mapping: "settings/labels/label-print",
@@ -325,12 +325,12 @@ export default function UserProfileDetailView({ userId }: Props) {
             );
             return found
               ? {
-                  ...def,
-                  create: typeof found.create === "boolean" ? found.create : def.create,
-                  read: typeof found.read === "boolean" ? found.read : def.read,
-                  update: typeof found.update === "boolean" ? found.update : def.update,
-                  delete: typeof found.delete === "boolean" ? found.delete : def.delete,
-                }
+                ...def,
+                create: typeof found.create === "boolean" ? found.create : def.create,
+                read: typeof found.read === "boolean" ? found.read : def.read,
+                update: typeof found.update === "boolean" ? found.update : def.update,
+                delete: typeof found.delete === "boolean" ? found.delete : def.delete,
+              }
               : def;
           });
           setPermissions(merged);
@@ -438,16 +438,16 @@ export default function UserProfileDetailView({ userId }: Props) {
       const newAllowedPages = isAllGranted
         ? ["ALL"]
         : Array.from(
-            new Set(
-              permissions
-                .filter((p) => p.read || p.create || p.update || p.delete)
-                .flatMap((p) => [
-                  PERMISSION_ID_TO_PAGE_SLUG[p.id] || p.id,
-                  p.id,
-                  p.path ? p.path.replace(/^\/dashboard\/?/, "") : p.id,
-                ])
-            )
-          );
+          new Set(
+            permissions
+              .filter((p) => p.read || p.create || p.update || p.delete)
+              .flatMap((p) => [
+                PERMISSION_ID_TO_PAGE_SLUG[p.id] || p.id,
+                p.id,
+                p.path ? p.path.replace(/^\/dashboard\/?/, "") : p.id,
+              ])
+          )
+        );
 
       await updateUserMutation.mutateAsync({
         id: user.id,
@@ -484,11 +484,11 @@ export default function UserProfileDetailView({ userId }: Props) {
 
   const initials = user?.fullName
     ? user.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase()
     : "U";
 
   const createdDateStr = user?.createdAt
@@ -684,11 +684,10 @@ export default function UserProfileDetailView({ userId }: Props) {
                         {user.fullName}
                       </h2>
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                          user.isActive
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-                            : "bg-slate-200 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${user.isActive
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                          : "bg-slate-200 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400"
+                          }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
                         {user.isActive ? "Active" : "Inactive"}
@@ -864,16 +863,14 @@ export default function UserProfileDetailView({ userId }: Props) {
                             type="button"
                             disabled={!canEditUser}
                             onClick={handleToggleAllCategory}
-                            className={`inline-flex items-center gap-1.5 font-bold uppercase transition ${
-                              canEditUser ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-80"
-                            }`}
+                            className={`inline-flex items-center gap-1.5 font-bold uppercase transition ${canEditUser ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-80"
+                              }`}
                           >
                             <div
-                              className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
-                                isAllCategoryGranted
-                                  ? "bg-[#E8C16D] border-[#E8C16D] text-[#0A0E1A]"
-                                  : "border-slate-400 dark:border-white/[0.3] bg-transparent"
-                              }`}
+                              className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${isAllCategoryGranted
+                                ? "bg-[#E8C16D] border-[#E8C16D] text-[#0A0E1A]"
+                                : "border-slate-400 dark:border-white/[0.3] bg-transparent"
+                                }`}
                             >
                               {isAllCategoryGranted && <Check size={10} strokeWidth={3} />}
                             </div>
@@ -938,20 +935,17 @@ export default function UserProfileDetailView({ userId }: Props) {
                                 type="button"
                                 disabled={!canEditUser}
                                 onClick={() => handleToggleRow(row.id)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
-                                } ${
-                                  isRowAllGranted
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                  } ${isRowAllGranted
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                                }`}
+                                  }`}
                               >
                                 <div
-                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                                    isRowAllGranted
-                                      ? "bg-emerald-500 border-emerald-500 text-white"
-                                      : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                                  }`}
+                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${isRowAllGranted
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                                    }`}
                                 >
                                   {isRowAllGranted && <Check size={10} strokeWidth={3} />}
                                 </div>
@@ -965,20 +959,17 @@ export default function UserProfileDetailView({ userId }: Props) {
                                 type="button"
                                 disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "create")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
-                                } ${
-                                  row.create
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                  } ${row.create
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                                }`}
+                                  }`}
                               >
                                 <div
-                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                                    row.create
-                                      ? "bg-emerald-500 border-emerald-500 text-white"
-                                      : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                                  }`}
+                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.create
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                                    }`}
                                 >
                                   {row.create && <Check size={10} strokeWidth={3} />}
                                 </div>
@@ -992,20 +983,17 @@ export default function UserProfileDetailView({ userId }: Props) {
                                 type="button"
                                 disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "read")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
-                                } ${
-                                  row.read
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                  } ${row.read
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                                }`}
+                                  }`}
                               >
                                 <div
-                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                                    row.read
-                                      ? "bg-emerald-500 border-emerald-500 text-white"
-                                      : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                                  }`}
+                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.read
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                                    }`}
                                 >
                                   {row.read && <Check size={10} strokeWidth={3} />}
                                 </div>
@@ -1019,20 +1007,17 @@ export default function UserProfileDetailView({ userId }: Props) {
                                 type="button"
                                 disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "update")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
-                                } ${
-                                  row.update
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                  } ${row.update
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                                }`}
+                                  }`}
                               >
                                 <div
-                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                                    row.update
-                                      ? "bg-emerald-500 border-emerald-500 text-white"
-                                      : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                                  }`}
+                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.update
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                                    }`}
                                 >
                                   {row.update && <Check size={10} strokeWidth={3} />}
                                 </div>
@@ -1046,20 +1031,17 @@ export default function UserProfileDetailView({ userId }: Props) {
                                 type="button"
                                 disabled={!canEditUser}
                                 onClick={() => handleTogglePermission(row.id, "delete")}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                                  canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
-                                } ${
-                                  row.delete
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${canEditUser ? "cursor-pointer" : "cursor-default opacity-85"
+                                  } ${row.delete
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                                     : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
-                                }`}
+                                  }`}
                               >
                                 <div
-                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                                    row.delete
-                                      ? "bg-emerald-500 border-emerald-500 text-white"
-                                      : "border-slate-400 dark:border-white/[0.2] bg-transparent"
-                                  }`}
+                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${row.delete
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : "border-slate-400 dark:border-white/[0.2] bg-transparent"
+                                    }`}
                                 >
                                   {row.delete && <Check size={10} strokeWidth={3} />}
                                 </div>
