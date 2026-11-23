@@ -18,7 +18,7 @@ import {
   resolveCurrentlyConnectedPrinter,
   isThermalOrLabelPrinter,
   PrinterDetail,
-} from "../../services/printAgent.service";
+} from "@/components/Dashboard/Labels/services/printAgent.service";
 import { renderLabelToCanvas, renderLabelToVectorPdf, ProductLookupResult, printLabelsViaBrowser, rotateCanvas } from "@/lib/labelRenderer";
 import { getEffectiveCanvasDimensions } from "../utils/coordinateMath";
 import { labelService } from "../../services/label.service";

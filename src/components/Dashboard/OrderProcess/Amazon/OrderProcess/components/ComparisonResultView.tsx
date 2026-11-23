@@ -1571,6 +1571,7 @@ export default function ComparisonResultView({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const previewCardRef = useRef<HTMLDivElement>(null);
   const [targetHeight, setTargetHeight] = useState<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -1648,16 +1649,26 @@ export default function ComparisonResultView({
       const isPageAtTop = scrollContainer.scrollTop <= 6;
 
       if (activeTab === "pdf") {
-        // Stop-scrolling coordinator for PDF preview
+        // Distance from top of scroll container to the PDF Preview Card
+        const previewRect = previewCardRef.current?.getBoundingClientRect();
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        const distanceToPreview = previewRect && containerRect ? previewRect.top - containerRect.top : maxPageScroll;
+        const isPreviewAtTop = distanceToPreview <= 2;
+
         if (e.deltaY > 0) {
-          if (!isPageAtBottom) {
+          // Scrolling DOWN: scroll outer page down until the Preview Card reaches the top
+          if (!isPreviewAtTop && scrollContainer.scrollTop < maxPageScroll) {
             e.preventDefault();
             scrollContainer.scrollTop = Math.min(
               maxPageScroll,
-              scrollContainer.scrollTop + e.deltaY
+              scrollContainer.scrollTop + Math.min(e.deltaY, Math.max(1, distanceToPreview))
             );
+          } else {
+            // Preview Card is docked at top: strictly stop scrolling that page down
+            e.preventDefault();
           }
         } else if (e.deltaY < 0) {
+          // Scrolling UP: reveal Header/Cards
           if (!isPageAtTop) {
             e.preventDefault();
             scrollContainer.scrollTop = Math.max(
@@ -4047,7 +4058,14 @@ export default function ComparisonResultView({
       {/* TAB 2: PDF VIEWER (COMBINED / CONVERTED ZPL / ORIGINAL UPLOADED) */}
       {/* ======================================================== */}
       {activeTab === "pdf" && (
-        <div className="flex-1 min-h-0 flex flex-col space-y-4 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm">
+        <div
+          ref={previewCardRef}
+          className="flex flex-col flex-1 min-h-0 space-y-4 border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm"
+          style={{
+            height: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+            minHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
+          }}
+        >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white flex items-center gap-2">
@@ -4064,7 +4082,7 @@ export default function ComparisonResultView({
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-              <div className="w-full sm:w-72">
+              <div className="w-full sm:w-72 md:w-80 shrink-0">
                 <ReactSelect
                   borderRadius={16}
                   options={pdfViewOptions}
@@ -4086,7 +4104,7 @@ export default function ComparisonResultView({
                 type="button"
                 onClick={currentPdfConfig.onDownload}
                 leftIcon={<Download className="h-4 w-4" />}
-                className="h-11 sm:h-12 w-full sm:w-auto rounded-2xl border-transparent bg-[#E8C16D] text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a]"
+                className="h-11 sm:h-12 w-full sm:w-auto rounded-2xl border-transparent bg-[#E8C16D] text-xs sm:text-sm font-bold text-[#0A0E1A] hover:bg-[#d4af5a] px-4 cursor-pointer shrink-0"
               >
                 {currentPdfConfig.downloadText}
               </Button>
@@ -4094,15 +4112,15 @@ export default function ComparisonResultView({
           </div>
 
           {currentPdfConfig.url ? (
-            <div className="flex-1 min-h-[480px] w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11]">
+            <div className="relative w-full flex-1 min-h-[300px] overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-[#0A0E1A] dark:bg-[#080B11] shadow-inner">
               <iframe
                 src={`${currentPdfConfig.url}#toolbar=1&navpanes=1&statusbar=1`}
-                className="h-full w-full border-none"
+                className="absolute inset-0 w-full h-full border-none"
                 title={currentPdfConfig.title}
               />
             </div>
           ) : (
-            <div className="py-16 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <div className="py-20 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               {currentPdfConfig.unavailableText}
             </div>
           )}

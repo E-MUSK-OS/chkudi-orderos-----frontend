@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { LabelTemplate, PrintQueueItem } from "../types/label.types";
-import { chromeExtensionPrintService } from "../services/printAgent.service";
+import { chromeExtensionPrintService } from "@/components/Dashboard/Labels/services/printAgent.service";
 import { labelService } from "../services/label.service";
 import { renderLabelToCanvas, renderLabelToVectorPdf, printLabelsViaBrowser, rotateCanvas } from "@/lib/labelRenderer";
 import { getEffectiveCanvasDimensions } from "../Designer/utils/coordinateMath";
