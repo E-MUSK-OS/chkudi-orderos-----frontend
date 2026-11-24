@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "../../layout/DashboardLayout";
 import WebstoreHeader from "./components/WebstoreHeader";
 import WebstoreStatsBanner from "./components/WebstoreStatsBanner";
@@ -114,8 +115,6 @@ export default function Webstore() {
     const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTop = 0;
-
     const style = window.getComputedStyle(scrollContainer);
     const paddingTop = parseFloat(style.paddingTop) || 0;
     const paddingBottom = parseFloat(style.paddingBottom) || 0;
@@ -160,44 +159,29 @@ export default function Webstore() {
     calculateHeight();
   }, [stores.length, layoutMode, calculateHeight]);
 
-  // Lock outer scroll at header position on desktop:
-  // Header, stats banner, and filter bar stay fixed at the top, outer page does not scroll,
-  // and wheel events outside the content container forward to the active content container.
+  // Seamless scroll coordinator in list mode:
+  // 1. Content (grid/table) scrolls internally when scrolling down/up.
+  // 2. If content finishes scrolling or reaches top, page scrolls smoothly up or down.
+  // 3. Wheel events outside content container forward to active content container.
   useEffect(() => {
     if (viewMode !== "list") return;
 
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTop = 0;
-
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      scrollContainer.scrollTop = 0;
-
       const activeContentContainer =
         layoutMode === "grid" ? gridScrollRef.current : tableScrollRef.current;
-      if (!activeContentContainer) return;
-
-      if (
-        !e.composedPath().includes(activeContentContainer) &&
-        !activeContentContainer.contains(e.target as Node)
-      ) {
-        activeContentContainer.scrollTop += e.deltaY;
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: activeContentContainer,
+      });
     };
 
-    const onScroll = () => {
-      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
-        scrollContainer.scrollTop = 0;
-      }
-    };
-
-    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
-    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       scrollContainer.removeEventListener("wheel", onWheel);
-      scrollContainer.removeEventListener("scroll", onScroll);
     };
   }, [viewMode, layoutMode]);
 

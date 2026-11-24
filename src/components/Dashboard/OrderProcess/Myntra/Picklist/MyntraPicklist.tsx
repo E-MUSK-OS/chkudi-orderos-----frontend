@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect, useCallback } from "react";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import {
   UploadCloud,
   CheckCircle2,
@@ -222,78 +223,12 @@ export default function MyntraPicklist() {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
       if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-
-      const tableScrollEl = tableScrollRef.current;
-      const lowerSectionEl = lowerSectionRef.current;
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
-
-      const isOverLowerSection =
-        lowerSectionEl &&
-        (e.composedPath().includes(lowerSectionEl) ||
-          lowerSectionEl.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the stopped position yet -> scroll page down
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-        } else {
-          // At the stopped position: forward scroll to inner table rows
-          if (tableScrollEl) {
-            const maxTableScroll = tableScrollEl.scrollHeight - tableScrollEl.clientHeight;
-            if (tableScrollEl.scrollTop < maxTableScroll) {
-              e.preventDefault();
-              tableScrollEl.scrollTop = Math.min(
-                maxTableScroll,
-                tableScrollEl.scrollTop + e.deltaY
-              );
-            }
-          }
-        }
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverLowerSection) {
-          // Outside lower section -> scroll outer page up if not at top
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          // Inside lower section
-          const isTableAtTop = !tableScrollEl || tableScrollEl.scrollTop <= 1;
-          if (isTableAtTop && !isPageAtTop) {
-            // Table is at top row -> scroll outer page up to reveal Header Card
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          } else if (tableScrollEl && !isTableAtTop) {
-            // Table rows scroll up internally
-            e.preventDefault();
-            tableScrollEl.scrollTop = Math.max(
-              0,
-              tableScrollEl.scrollTop + e.deltaY
-            );
-          }
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: tableScrollRef.current,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });

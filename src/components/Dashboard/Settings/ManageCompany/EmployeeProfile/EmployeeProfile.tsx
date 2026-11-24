@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import EmployeeProfileHeader from "./components/EmployeeProfileHeader";
 import EmployeeProfileFilterBar from "./components/EmployeeProfileFilterBar";
@@ -80,8 +81,6 @@ export default function EmployeeProfile() {
     const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTop = 0;
-
     const style = window.getComputedStyle(scrollContainer);
     const paddingTop = parseFloat(style.paddingTop) || 0;
     const paddingBottom = parseFloat(style.paddingBottom) || 0;
@@ -135,39 +134,25 @@ export default function EmployeeProfile() {
     calculateHeight();
   }, [employees.length, calculateHeight]);
 
-  // Lock outer scroll at header position on desktop:
-  // Since this page has Header Card + Filter Bar + Table, the Header Card stays fixed at the top,
-  // outer page does not scroll, and scrolling forwards to the internal table.
+  // Seamless scroll coordinator:
+  // 1. Table scrolls internally when scrolling down/up.
+  // 2. If table finishes scrolling or reaches top, page scrolls smoothly up or down.
+  // 3. Wheel events outside table (over header card / filter bar) forward to table.
   useEffect(() => {
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTop = 0;
-
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      scrollContainer.scrollTop = 0;
-
-      const tableContainer = tableContainerRef.current;
-      if (!tableContainer) return;
-
-      // If wheel occurred over the header card or filter bar, scroll the table internally
-      if (!e.composedPath().includes(tableContainer) && !tableContainer.contains(e.target as Node)) {
-        tableContainer.scrollTop += e.deltaY;
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: tableContainerRef.current,
+      });
     };
 
-    const onScroll = () => {
-      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
-        scrollContainer.scrollTop = 0;
-      }
-    };
-
-    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
-    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       scrollContainer.removeEventListener("wheel", onWheel);
-      scrollContainer.removeEventListener("scroll", onScroll);
     };
   }, []);
 

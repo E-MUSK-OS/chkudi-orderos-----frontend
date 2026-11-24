@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import CompanyProfileHeader from "./components/CompanyProfileHeader";
 import CompanyStatsBanner from "./components/CompanyStatsBanner";
@@ -132,59 +133,12 @@ export default function CompanyProfile() {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
       const contentContainer = layoutMode === "grid" ? gridScrollRef.current : tableScrollRef.current;
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
-
-      const isOverContent =
-        contentContainer &&
-        (e.composedPath().includes(contentContainer) ||
-          contentContainer.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the fixed view yet -> scroll page down
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-        } else if (!isOverContent) {
-          // At the fixed point and outside the content -> forward scroll to content
-          if (contentContainer) {
-            contentContainer.scrollTop += e.deltaY;
-          }
-        }
-        // If isPageAtBottom and isOverContent, allow content to scroll natively
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverContent) {
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          const isContentAtTop = !contentContainer || contentContainer.scrollTop <= 1;
-          if (isContentAtTop && !isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: contentContainer,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });

@@ -7,6 +7,7 @@ import { Download, Eye, Trash2 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config";
 
 import Button from "@/components/ui/Button";
+import CopyButton from "@/components/ui/CopyButton";
 
 const getFullUrl = (url?: string | null) => {
   if (!url) return undefined;
@@ -33,9 +34,12 @@ export const getColumns = ({
       cellClassName: "w-48 min-w-[170px] text-center",
     },
     cell: ({ row }) => (
-      <span className="font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm whitespace-nowrap">
-        {row.original.trackingId}
-      </span>
+      <div className="inline-flex items-center justify-center gap-1">
+        <span className="font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm whitespace-nowrap">
+          {row.original.trackingId}
+        </span>
+        <CopyButton text={row.original.trackingId} />
+      </div>
     ),
   },
 

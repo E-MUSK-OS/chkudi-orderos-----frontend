@@ -1,64 +1,67 @@
-export type DatePreset = "today" | "yesterday" | "7d" | "30d" | "custom";
+export type OrderProcessChannel = "all" | "amazon" | "flipkart";
 
-export type Marketplace = "amazon" | "myntra";
-
-export interface AmazonDashboardStats {
-  kpis: {
-    totalOrdersProcessed: number;
-    scannedOrders: number;
-    pendingOrders: number;
-    scanRatePercentage: number;
-    totalBatches: number;
-    totalMatched: number;
-    totalMismatched: number;
-    averageMatchRate: number;
-  };
-  dailyBreakdown: Array<{
-    date: string;
-    totalOrders: number;
-    scanned: number;
-    pending: number;
-    batchesCount: number;
-  }>;
-  recentBatches: Array<{
-    id: string;
-    batchNumber: string | null;
-    batchDate: string;
-    totalOrders: number;
-    matchedCount: number;
-    mismatchCount: number;
-    matchPercentage: number;
-    summary?: any;
-    combinedPdfUrl: string | null;
-    zplPdfUrl: string | null;
-    originalPdfUrl: string | null;
-    createdAt: string;
-  }>;
-}
-
-export interface AmazonOrderItem {
-  id: string;
-  invoice: string;
-  orderId: string;
-  awb: string;
-  asin: string;
-  sellerSku: string;
-  customer: string;
-  packingScanStatus: "PENDING" | "SCANNED";
-  batchId?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface GetOrdersResponse {
-  success: boolean;
-  data: AmazonOrderItem[];
+export interface DailyOrderSummaryCounts {
   total: number;
-  summary?: {
-    total: number;
-    pending: number;
-    scanned: number;
+  scanned: number;
+  pending: number;
+}
+
+export interface DailyOrderSummaryData {
+  date: string | null;
+  channel?: OrderProcessChannel;
+  totalOrders: number;
+  todayOrders?: number;
+  scannedOrders: number;
+  pendingOrders: number;
+  breakdown?: {
+    amazon?: DailyOrderSummaryCounts;
+    flipkart?: DailyOrderSummaryCounts;
   };
-  page: number;
-  totalPages: number;
+  isLive?: boolean;
+  isPermanent?: boolean;
+}
+
+export interface GetDailySummaryResponse {
+  success: boolean;
+  data: DailyOrderSummaryData;
+}
+
+export interface BatchProgressItem {
+  id: string;
+  batchNumber: string;
+  channel: "amazon" | "flipkart";
+  total: number;
+  scanned: number;
+  pending: number;
+  percentage: number;
+  createdAt: string;
+}
+
+export interface HourlyVelocityItem {
+  hour: string;
+  hourNum?: number;
+  hourShort?: string;
+  timeRange?: string;
+  total: number;
+  amazon: number;
+  flipkart: number;
+}
+
+export interface TopDispatchedSkuItem {
+  sku: string;
+  count: number;
+  channel: "all" | "amazon" | "flipkart";
+}
+
+export interface DashboardAnalyticsData {
+  date: string;
+  channel: OrderProcessChannel;
+  batches: BatchProgressItem[];
+  hourlyVelocity: HourlyVelocityItem[];
+  topSkus: TopDispatchedSkuItem[];
+}
+
+export interface GetDashboardAnalyticsResponse {
+  success: boolean;
+  data: DashboardAnalyticsData;
 }

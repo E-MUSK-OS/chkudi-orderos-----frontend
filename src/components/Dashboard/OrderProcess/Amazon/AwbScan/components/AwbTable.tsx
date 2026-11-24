@@ -12,6 +12,7 @@ import {
 import { formatToIST } from "../timeUtils";
 import { AmazonOrderItem } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 import Pagination from "@/components/ui/Pagination";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface Props {
   orders: AmazonOrderItem[];
@@ -59,36 +60,42 @@ export default function AwbTable({
     const items = Array.from(new Set(rawItems));
 
     if (items.length <= 1) {
+      const chipVal = items[0] || value;
       return (
-        <span
-          className={`text-sm sm:text-base font-semibold ${isAsin ? "font-mono text-[#0A0E1A] dark:text-white" : "text-slate-800 dark:text-slate-200"
-            }`}
-        >
-          {items[0] || value}
-        </span>
+        <div className="inline-flex items-center justify-center gap-1">
+          <span
+            className={`text-sm sm:text-base font-semibold ${isAsin ? "font-mono text-[#0A0E1A] dark:text-white" : "text-slate-800 dark:text-slate-200"
+              }`}
+          >
+            {chipVal}
+          </span>
+          <CopyButton text={chipVal} />
+        </div>
       );
     }
 
     return (
       <div className="flex flex-col items-center justify-center gap-1 py-1">
         {items.map((it, idx) => (
-          <span
-            key={idx}
-            className={`rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#131926] px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white ${isAsin ? "font-mono" : ""
-              }`}
-          >
-            {it}
-          </span>
+          <div key={idx} className="inline-flex items-center gap-1">
+            <span
+              className={`rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#131926] px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white ${isAsin ? "font-mono" : ""
+                }`}
+            >
+              {it}
+            </span>
+            <CopyButton text={it} />
+          </div>
         ))}
       </div>
     );
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
+    <div className="h-full flex flex-col min-h-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm w-full max-w-full min-w-0">
       <div
         ref={resolvedRef}
-        className="w-full overflow-x-auto flex-1 min-h-0 overflow-y-auto custom-scrollbar"
+        className="w-full max-w-full min-w-0 overflow-x-auto flex-1 min-h-0 sm:overflow-y-auto custom-scrollbar touch-pan-x touch-pan-y"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         <table className="w-full min-w-[1000px] lg:min-w-[1100px] border-collapse text-left font-sans relative">
@@ -141,19 +148,30 @@ export default function AwbTable({
                   >
                     {/* Invoice */}
                     <td className="px-4 py-3.5 text-center font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap text-xs sm:text-sm">
-                      {item.invoice || "N/A"}
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span>{item.invoice || "N/A"}</span>
+                        {item.invoice && item.invoice !== "N/A" && (
+                          <CopyButton text={item.invoice} />
+                        )}
+                      </div>
                     </td>
 
                     {/* Amazon Order ID */}
                     <td className="px-4 py-3.5 text-center font-mono font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap text-xs sm:text-sm">
-                      {item.orderId}
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span>{item.orderId}</span>
+                        <CopyButton text={item.orderId} />
+                      </div>
                     </td>
 
                     {/* AWB Tracking */}
                     <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                      <span className="font-mono font-bold text-slate-900 dark:text-white tracking-wider text-xs sm:text-sm">
-                        {item.awb}
-                      </span>
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span className="font-mono font-bold text-slate-900 dark:text-white tracking-wider text-xs sm:text-sm">
+                          {item.awb}
+                        </span>
+                        <CopyButton text={item.awb} />
+                      </div>
                     </td>
 
                     {/* ASIN */}

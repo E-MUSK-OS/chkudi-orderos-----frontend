@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -311,63 +312,11 @@ const ManageMaterials = () => {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      const tableContainer = tableContainerRef.current;
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
-
-      const isOverTable =
-        tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the fixed view yet -> scroll page down
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-        } else if (!isOverTable) {
-          // At the fixed point and outside the table -> forward scroll to table
-          if (tableContainer) {
-            tableContainer.scrollTop += e.deltaY;
-          }
-        }
-        // If isPageAtBottom and isOverTable, allow table to scroll natively
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverTable) {
-          // Cursor is outside table -> scroll outer page up if not at top
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          // Cursor is inside table
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
-          if (isTableAtTop && !isPageAtTop) {
-            // Table is at top row -> scroll outer page up to reveal Header Card
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-          // If table is not at top, allow table to scroll natively upwards
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: tableContainerRef.current,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });
@@ -510,7 +459,7 @@ const ManageMaterials = () => {
 
   return (
     <DashboardLayout title="Material Profile">
-      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100">
+      <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 font-sans text-slate-900 dark:text-slate-100 w-full max-w-full min-w-0">
         {/* Header Information Banner */}
         <div
           ref={headerCardRef}
@@ -562,7 +511,7 @@ const ManageMaterials = () => {
 
         {/* Lower Section (Toolbar + MaterialTable) - stops scrolling from Toolbar as shown in img */}
         <div
-          className="flex flex-col gap-4 sm:gap-6 min-h-0"
+          className="flex flex-col gap-4 sm:gap-6 min-h-0 w-full max-w-full min-w-0"
           style={{
             maxHeight: isDesktop && targetHeight ? `${targetHeight}px` : undefined,
           }}
@@ -607,15 +556,15 @@ const ManageMaterials = () => {
 
           {/* Table Container */}
           <div
-            className="flex flex-col min-h-0 flex-1"
+            className="flex flex-col min-h-0 flex-1 w-full max-w-full min-w-0"
             style={{
               maxHeight: isDesktop && tableMaxHeight ? `${tableMaxHeight}px` : undefined,
             }}
           >
-            <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col min-h-0 max-h-full">
+            <div className="border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden rounded-2xl sm:rounded-3xl flex flex-col min-h-0 max-h-full w-full max-w-full min-w-0">
               <div
                 ref={tableContainerRef}
-                className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar overscroll-contain flex-1"
+                className="w-full max-w-full min-w-0 overflow-x-auto min-h-0 sm:overflow-y-auto custom-scrollbar overscroll-contain flex-1 touch-pan-x touch-pan-y"
                 style={{ WebkitOverflowScrolling: "touch" }}
               >
                 {importType === "material" ? (

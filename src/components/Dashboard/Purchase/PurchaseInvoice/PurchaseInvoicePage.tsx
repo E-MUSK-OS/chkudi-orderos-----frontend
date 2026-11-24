@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import PurchaseInvoiceHeader from "./components/PurchaseInvoiceHeader";
 import PurchaseInvoiceListHeader from "./components/PurchaseInvoiceListHeader";
@@ -128,45 +129,27 @@ export default function PurchaseInvoicePage() {
     calculateHeight();
   }, [invoices.length, calculateHeight]);
 
-  // Lock outer scroll at top in list mode and forward wheel outside table to table rows
+  // Seamless scroll coordinator in list mode:
+  // 1. Table scrolls internally when scrolling down/up.
+  // 2. If table finishes scrolling or reaches top, page scrolls smoothly up or down.
+  // 3. Wheel events outside table forward to table.
   useEffect(() => {
     if (viewMode !== "list") return;
 
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTop = 0;
-
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      const tableContainer = tableContainerRef.current;
-
-      const isOverTable =
-        tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
-
-      if (!isOverTable && tableContainer) {
-        tableContainer.scrollTop += e.deltaY;
-      }
-
-      if (scrollContainer.scrollTop !== 0) {
-        scrollContainer.scrollTop = 0;
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: tableContainerRef.current,
+      });
     };
 
-    const onScroll = () => {
-      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
-        scrollContainer.scrollTop = 0;
-      }
-    };
-
-    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
-    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
-
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       scrollContainer.removeEventListener("wheel", onWheel);
-      scrollContainer.removeEventListener("scroll", onScroll);
     };
   }, [viewMode]);
 

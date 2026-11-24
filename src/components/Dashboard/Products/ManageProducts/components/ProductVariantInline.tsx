@@ -37,6 +37,7 @@ interface Props {
   masterSku?: string;
   product?: Product;
   marketplace?: string | string[];
+  parentScrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 interface ColorGroup {
@@ -72,11 +73,52 @@ export default function ProductVariantInline({
   masterSku,
   product,
   marketplace,
+  parentScrollRef,
 }: Props) {
   const { data, isLoading } = useProductVariants(productId);
   const createVariant = useCreateProductVariant();
   const updateVariant = useUpdateProductVariant();
   const deleteVariant = useDeleteProductVariant();
+
+  const innerScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Synchronize horizontal scrolling 1:1 between outer table and inner variant table
+  useEffect(() => {
+    const inner = innerScrollRef.current;
+    const outer = parentScrollRef?.current;
+    if (!inner || !outer) return;
+
+    let isSyncing = false;
+
+    // Initially match outer scroll position
+    inner.scrollLeft = outer.scrollLeft;
+
+    const handleInnerScroll = () => {
+      if (isSyncing) return;
+      isSyncing = true;
+      outer.scrollLeft = inner.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncing = false;
+      });
+    };
+
+    const handleOuterScroll = () => {
+      if (isSyncing) return;
+      isSyncing = true;
+      inner.scrollLeft = outer.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncing = false;
+      });
+    };
+
+    inner.addEventListener("scroll", handleInnerScroll, { passive: true });
+    outer.addEventListener("scroll", handleOuterScroll, { passive: true });
+
+    return () => {
+      inner.removeEventListener("scroll", handleInnerScroll);
+      outer.removeEventListener("scroll", handleOuterScroll);
+    };
+  }, [parentScrollRef]);
 
   // Delete modal state
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -214,6 +256,7 @@ export default function ProductVariantInline({
   const [newSizesInput, setNewSizesInput] = useState("");
   const [newCost, setNewCost] = useState<number | string>("");
   const [newMrp, setNewMrp] = useState<number | string>("");
+  const [newGender, setNewGender] = useState("");
   const [customBaseSku, setCustomBaseSku] = useState("");
   const [newAsin, setNewAsin] = useState("");
   const [newMyntraSku, setNewMyntraSku] = useState("");
@@ -243,7 +286,20 @@ export default function ProductVariantInline({
     if (sku) {
       const parts = sku.split("-");
       if (parts.length >= 2) {
-        const lastPart = parts[parts.length - 1].trim();
+        let lastPart = parts[parts.length - 1].trim();
+        // If lastPart is a digit counter (e.g. "1", "2") from duplicate SKU suffixes, check second-to-last
+        if (/^\d+$/.test(lastPart) && parts.length >= 3) {
+          const secondLast = parts[parts.length - 2].trim();
+          if (product?.sizeList) {
+            const knownSizes = product.sizeList.split(",").map((s) => s.trim().toLowerCase());
+            if (knownSizes.includes(secondLast.toLowerCase())) {
+              return secondLast;
+            }
+          }
+          if (/^(XS|S|M|L|XL|XXL|XXXL|2XL|4XL|\d{2})$/i.test(secondLast)) {
+            return secondLast;
+          }
+        }
         if (product?.sizeList) {
           const knownSizes = product.sizeList.split(",").map((s) => s.trim().toLowerCase());
           if (knownSizes.includes(lastPart.toLowerCase())) {
@@ -277,6 +333,18 @@ export default function ProductVariantInline({
       }
     }
     return "";
+  };
+
+  const getGenderValue = (variant: ProductVariant): string => {
+    const genderAttr = variant.attributes?.find(
+      (a) =>
+        (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
+        "gender"
+    );
+    if (genderAttr?.attributeValue?.trim()) {
+      return genderAttr.attributeValue.trim();
+    }
+    return existingGender || "";
   };
 
   // Resolve existing Gender value for the product
@@ -316,6 +384,66 @@ export default function ProductVariantInline({
 
     return "";
   }, [data, product, attributes]);
+
+  // List of all distinct genders available for this product
+  const availableGenders = useMemo(() => {
+    const set = new Set<string>();
+    if (product?.gender) {
+      if (Array.isArray(product.gender)) {
+        product.gender.forEach((g: any) => g && set.add(String(g).trim()));
+      } else if (typeof product.gender === "string" && product.gender.trim()) {
+        product.gender.split(",").forEach((s) => s.trim() && set.add(s.trim()));
+      }
+    }
+    for (const v of data?.data || []) {
+      const matched = v.attributes?.find(
+        (a) =>
+          (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
+          "gender"
+      );
+      if (matched?.attributeValue?.trim()) {
+        set.add(matched.attributeValue.trim());
+      }
+    }
+    if (existingGender) {
+      existingGender.split(",").forEach((s) => s.trim() && set.add(s.trim()));
+    }
+    return Array.from(set);
+  }, [product, data, existingGender]);
+
+  // Map of gender to known Cost and MRP from existing variants
+  const genderPricingMap = useMemo(() => {
+    const map: Record<string, { cost: number; mrp: number }> = {};
+    for (const v of data?.data || []) {
+      const matched = v.attributes?.find(
+        (a) =>
+          (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
+          "gender"
+      );
+      const gen = matched?.attributeValue?.trim() || "";
+      if (gen && (!map[gen] || (map[gen].cost === 0 && Number(v.cost) > 0))) {
+        map[gen] = {
+          cost: v.cost !== undefined && v.cost !== null ? Number(v.cost) : 0,
+          mrp: v.mrp !== undefined && v.mrp !== null ? Number(v.mrp) : 0,
+        };
+      }
+    }
+    return map;
+  }, [data]);
+
+  const handleNewGenderChange = (selectedGen: string) => {
+    setNewGender(selectedGen);
+    // Real-time update Cost & MRP according to the selected gender!
+    if (genderPricingMap[selectedGen]) {
+      const pricing = genderPricingMap[selectedGen];
+      if (pricing.cost > 0) {
+        setNewCost(pricing.cost);
+      }
+      if (pricing.mrp > 0) {
+        setNewMrp(pricing.mrp);
+      }
+    }
+  };
 
   // Resolve productAttributeId for Gender
   const resolvedGenderAttrId = useMemo(() => {
@@ -559,34 +687,62 @@ export default function ProductVariantInline({
     const c = (colorName || "").trim();
     const s = (sizeVal || "").trim();
 
-    const allKnownColors = new Set<string>();
-    if (Array.isArray(product?.colors)) {
-      product.colors.forEach((col) =>
-        allKnownColors.add(col.toLowerCase().trim())
-      );
-    }
-    colorGroups.forEach((g) =>
-      allKnownColors.add(g.colorName.toLowerCase().trim())
-    );
-    if (c && c.toLowerCase() !== "standard") {
-      allKnownColors.add(c.toLowerCase());
-    }
+    const isNonStandardColor = c && c.toLowerCase() !== "standard";
 
-    const hasMultipleColors = allKnownColors.size > 1;
-
-    if (hasMultipleColors && c && c.toLowerCase() !== "standard" && s) {
-      return base ? `${base}-${c}-${s}` : `${c}-${s}`;
+    if (base && isNonStandardColor && s) {
+      return `${base}-${c}-${s}`;
     }
 
     if (base && s) {
       return `${base}-${s}`;
     }
 
-    if (base && c && c.toLowerCase() !== "standard") {
+    if (base && isNonStandardColor) {
       return `${base}-${c}`;
     }
 
-    return base || s || "SKU";
+    if (isNonStandardColor && s) {
+      return `${c}-${s}`;
+    }
+
+    return base || s || c || "SKU";
+  };
+
+  // Compute clean original SKU without any internal duplicate counters (-1, -2, etc.)
+  const getCleanVariantSku = (
+    variant: ProductVariant,
+    groupColorName?: string
+  ): string => {
+    const sz = getSizeValue(variant);
+    const col =
+      (groupColorName && groupColorName.toLowerCase() !== "standard"
+        ? groupColorName
+        : "") || getColorValue(variant);
+    const base = (customBaseSku || masterSku || "").trim();
+
+    if (base && (col || sz)) {
+      return generateVariantSku(col, sz, base);
+    }
+
+    const rawSku = (variant.variantSku || "").trim();
+    if (!rawSku) return "";
+
+    // If rawSku ends with -{sz}-\d+, strip the trailing counter
+    if (sz) {
+      const sizeSuffixRegex = new RegExp(`(-${sz})-\\d+$`, "i");
+      if (sizeSuffixRegex.test(rawSku)) {
+        return rawSku.replace(/-\d+$/, "");
+      }
+    }
+
+    // Match any known size followed by -\d+ at the end of the SKU
+    const match = rawSku.match(/^(.*?-(?:XS|S|M|L|XL|XXL|XXXL|2XL|4XL|\d{2}))-\d+$/i);
+    if (match && match[1]) {
+      return match[1];
+    }
+
+    // Fallback: strip any trailing -\d+ if preceded by letters/hyphen
+    return rawSku.replace(/(?<=[a-zA-Z])-\d+$/, "");
   };
 
   // Parsed sizes for adding new color row
@@ -606,9 +762,12 @@ export default function ProductVariantInline({
   }, [quickAddSizesInput]);
 
   // Start editing a single variant
-  const handleStartEdit = (variant: ProductVariant) => {
+  const handleStartEdit = (
+    variant: ProductVariant,
+    groupColorName?: string
+  ) => {
     setEditingId(variant.id);
-    setEditSku(variant.variantSku);
+    setEditSku(getCleanVariantSku(variant, groupColorName));
     setEditCost(
       variant.cost !== undefined && variant.cost !== null ? variant.cost : ""
     );
@@ -722,11 +881,46 @@ export default function ProductVariantInline({
       });
     }
 
+    // Validate duplicate: Color, Size AND Gender cannot all be identical to an existing variant
+    const effectiveColor = (groupColorName && groupColorName !== "Standard" ? groupColorName : "") || getColorValue(currentVariant);
+    const effectiveSize = effectiveSizeVal.trim();
+    const isGenderAttr = extraAttributes.find((a) => (a.attributeName || "").toLowerCase().trim() === "gender");
+    const effectiveGender = (
+      isGenderAttr ? (editOtherAttrs[isGenderAttr.id || ""] || editOtherAttrs[isGenderAttr.attributeName] || "") : ""
+    ).trim() || existingGender;
+
+    const isDuplicate = (data?.data || []).some((v) => {
+      if (v.id === variantId) return false;
+      const vCol = (getColorValue(v) || "standard").trim().toLowerCase();
+      const vSz = getSizeValue(v).trim().toLowerCase();
+      const vGen = (getGenderValue(v) || "").trim().toLowerCase();
+
+      return (
+        vCol === (effectiveColor || "standard").trim().toLowerCase() &&
+        vSz === effectiveSize.toLowerCase() &&
+        vGen === (effectiveGender || "").trim().toLowerCase()
+      );
+    });
+
+    if (isDuplicate) {
+      toast.error(
+        `Duplicate record: Variant with Color "${effectiveColor}", Size "${effectiveSize}" and Gender "${effectiveGender || 'N/A'}" already exists.`
+      );
+      return;
+    }
+
+    const cleanCurrent = getCleanVariantSku(currentVariant, groupColorName);
+    const isCleanSkuUnchanged =
+      editSku.trim().toLowerCase() === cleanCurrent.toLowerCase();
+    const effectiveSkuToSend = isCleanSkuUnchanged
+      ? currentVariant.variantSku
+      : editSku.trim();
+
     await updateVariant.mutateAsync({
       id: variantId,
       data: {
         productId,
-        variantSku: editSku.trim(),
+        variantSku: effectiveSkuToSend,
         cost: editCost !== "" ? Number(editCost) : 0,
         mrp: editMrp !== "" ? Number(editMrp) : 0,
         asin: editAsin.trim() || undefined,
@@ -768,10 +962,48 @@ export default function ProductVariantInline({
     }
 
     const targetSizes = hasSizeAttribute ? parsedNewSizes : [""];
+    const targetGender = newGender.trim() || availableGenders[0] || existingGender;
+
+    // Validate duplicate: Color, Size AND Gender cannot all be identical to an existing variant
+    const duplicateSizes: string[] = [];
+    const validSizes: string[] = [];
+
+    for (const sz of targetSizes) {
+      const isDup = (data?.data || []).some((v) => {
+        const vCol = (getColorValue(v) || "standard").trim().toLowerCase();
+        const vSz = getSizeValue(v).trim().toLowerCase();
+        const vGen = (getGenderValue(v) || "").trim().toLowerCase();
+
+        const tCol = (colVal || "standard").trim().toLowerCase();
+        const tSz = sz.trim().toLowerCase();
+        const tGen = (targetGender || "").trim().toLowerCase();
+
+        return vCol === tCol && vSz === tSz && vGen === tGen;
+      });
+
+      if (isDup) {
+        duplicateSizes.push(sz);
+      } else {
+        validSizes.push(sz);
+      }
+    }
+
+    if (duplicateSizes.length > 0 && validSizes.length === 0) {
+      toast.error(
+        `Duplicate record: Variant with Color "${colVal}", Size "${duplicateSizes.join(", ")}" and Gender "${targetGender || 'N/A'}" already exists.`
+      );
+      return;
+    }
+
+    if (duplicateSizes.length > 0) {
+      toast.warning(
+        `Skipped duplicate size(s) for "${colVal}" (${targetGender}): ${duplicateSizes.join(", ")} already exists.`
+      );
+    }
 
     setIsSavingBatch(true);
     try {
-      const promises = targetSizes.map((sz) => {
+      const promises = validSizes.map((sz) => {
         const formattedAttrs: {
           productAttributeId: string;
           attributeValue: string;
@@ -793,12 +1025,13 @@ export default function ProductVariantInline({
 
         // Include any extra attributes from product default, explicitly ensuring Gender
         let addedGender = false;
+        const targetGender = newGender.trim() || availableGenders[0] || existingGender;
         extraAttributes.forEach((attr) => {
           const isGender =
             (attr.attributeName || "").toLowerCase().trim() === "gender";
           let val = (attr.attributeValue || "").trim();
-          if (isGender && !val) {
-            val = existingGender;
+          if (isGender) {
+            val = targetGender;
           }
           if (attr.id && val) {
             formattedAttrs.push({
@@ -809,10 +1042,10 @@ export default function ProductVariantInline({
           }
         });
 
-        if (!addedGender && resolvedGenderAttrId && existingGender) {
+        if (!addedGender && resolvedGenderAttrId && targetGender) {
           formattedAttrs.push({
             productAttributeId: resolvedGenderAttrId,
-            attributeValue: existingGender,
+            attributeValue: targetGender,
           });
         }
 
@@ -922,7 +1155,46 @@ export default function ProductVariantInline({
         });
       }
 
-      const promises = parsedQuickSizes.map((sz) => {
+      const targetCol = colVal || group.colorName;
+      const targetGender = existingGender;
+
+      const duplicateSizes: string[] = [];
+      const validSizes: string[] = [];
+
+      for (const sz of parsedQuickSizes) {
+        const isDup = (data?.data || []).some((v) => {
+          const vCol = (getColorValue(v) || "standard").trim().toLowerCase();
+          const vSz = getSizeValue(v).trim().toLowerCase();
+          const vGen = (getGenderValue(v) || "").trim().toLowerCase();
+
+          const tCol = (targetCol || "standard").trim().toLowerCase();
+          const tSz = sz.trim().toLowerCase();
+          const tGen = (targetGender || "").trim().toLowerCase();
+
+          return vCol === tCol && vSz === tSz && vGen === tGen;
+        });
+
+        if (isDup) {
+          duplicateSizes.push(sz);
+        } else {
+          validSizes.push(sz);
+        }
+      }
+
+      if (duplicateSizes.length > 0 && validSizes.length === 0) {
+        toast.error(
+          `Duplicate record: Variant with Color "${targetCol}", Size "${duplicateSizes.join(", ")}" and Gender "${targetGender || 'N/A'}" already exists.`
+        );
+        return;
+      }
+
+      if (duplicateSizes.length > 0) {
+        toast.warning(
+          `Skipped duplicate size(s) for "${targetCol}": ${duplicateSizes.join(", ")} already exists.`
+        );
+      }
+
+      const promises = validSizes.map((sz) => {
         const formattedAttrs: {
           productAttributeId: string;
           attributeValue: string;
@@ -973,10 +1245,14 @@ export default function ProductVariantInline({
   const tableColSpan = (hasSizeAttribute ? 9 : 8) + extraAttributes.length + (showAsin ? 1 : 0) + (showMyntraSku ? 1 : 0) + (showFsnCode ? 1 : 0);
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#0F1626]">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] border-collapse text-left font-sans">
-          <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] dark:bg-none text-xs font-bold tracking-wider text-[#6A4D1D] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#E8C16D]">
+    <div className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-[#E7E0D2] bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#0F1626]">
+      <div
+        ref={innerScrollRef}
+        className="w-full max-w-full min-w-0 overflow-x-auto max-h-[420px] overflow-y-auto custom-scrollbar touch-pan-x touch-pan-y"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        <table className="w-full min-w-[1250px] border-collapse text-left font-sans">
+          <thead className="sticky top-0 z-10 border-b border-[#F5E6BE] bg-[#FEFAEE] text-xs font-bold tracking-wider text-[#6A4D1D] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#E8C16D] shadow-2xs">
             <tr>
               {/* Img column */}
               <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[72px] min-w-[72px]">
@@ -984,7 +1260,7 @@ export default function ProductVariantInline({
               </th>
 
               {/* Colour column */}
-              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[110px] min-w-[110px]">
+              <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[110px] min-w-[110px]">
                 Color
               </th>
 
@@ -996,17 +1272,17 @@ export default function ProductVariantInline({
               )}
 
               {/* Variant SKU column */}
-              <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[210px] min-w-[200px]">
+              <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[210px] min-w-[200px]">
                 Variant SKU
               </th>
 
               {/* Cost column */}
-              <th className="px-2.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[100px] min-w-[95px]">
+              <th className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[100px] min-w-[95px]">
                 Cost
               </th>
 
               {/* MRP column */}
-              <th className="px-2.5 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[100px] min-w-[95px]">
+              <th className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[100px] min-w-[95px]">
                 MRP
               </th>
 
@@ -1050,7 +1326,7 @@ export default function ProductVariantInline({
               </th>
 
               {/* Action */}
-              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[85px] min-w-[80px]">
+              <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] whitespace-nowrap w-[150px] min-w-[145px]">
                 Action
               </th>
             </tr>
@@ -1213,9 +1489,9 @@ export default function ProductVariantInline({
                     </td>
 
                     {/* 1. Colour Column */}
-                    <td className="px-3 py-3.5 align-top w-[110px] min-w-[110px]">
-                      <div className="flex flex-col items-start gap-1">
-                        <div className="flex items-center gap-1.5">
+                    <td className="px-3 py-3.5 align-top w-[110px] min-w-[110px] text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5">
                           <span
                             className="inline-block h-3 w-3 rounded-full border border-slate-300 dark:border-white/20 shadow-2xs shrink-0"
                             style={{
@@ -1227,34 +1503,35 @@ export default function ProductVariantInline({
                           </span>
                         </div>
 
-                        {/* Sizes count text */}
-                        <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
-                          {group.variants.length}{" "}
-                          {hasSizeAttribute
-                            ? (group.variants.length === 1 ? "size" : "sizes")
-                            : (group.variants.length === 1 ? "variant" : "variants")}
-                        </span>
+                        {/* Sizes count & Add Size in one line */}
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center justify-center rounded-md bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                            {group.variants.length}{" "}
+                            {hasSizeAttribute
+                              ? (group.variants.length === 1 ? "size" : "sizes")
+                              : (group.variants.length === 1 ? "variant" : "variants")}
+                          </span>
 
-                        {/* + Add Size button placed directly below the sizes text */}
-                        {hasSizeAttribute && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setQuickAddColorKey(
-                                isQuickAddOpen ? null : group.colorKey
-                              )
-                            }
-                            className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer pt-0.5"
-                            title="Add more sizes to this color"
-                          >
-                            <Plus size={11} className="stroke-[3]" />
-                            <span>Add Size</span>
-                          </button>
-                        )}
+                          {hasSizeAttribute && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setQuickAddColorKey(
+                                  isQuickAddOpen ? null : group.colorKey
+                                )
+                              }
+                              className="inline-flex items-center justify-center gap-0.5 text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer whitespace-nowrap pt-0.5"
+                              title="Add more sizes to this color"
+                            >
+                              <Plus size={11} className="stroke-[3]" />
+                              <span>Add Size</span>
+                            </button>
+                          )}
+                        </div>
 
                         {/* Quick Add Sizes Inline Popup for this Color */}
                         {isQuickAddOpen && (
-                          <div className="mt-2 w-full max-w-[210px] p-2 rounded-xl bg-amber-50/80 dark:bg-[#F5C451]/10 border border-amber-200/70 dark:border-[#F5C451]/20 space-y-1.5">
+                          <div className="mt-2 w-full max-w-[210px] p-2 rounded-xl bg-amber-50/80 dark:bg-[#F5C451]/10 border border-amber-200/70 dark:border-[#F5C451]/20 space-y-1.5 text-left">
                             <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300">
                               Sizes (comma separated):
                             </label>
@@ -1333,7 +1610,7 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center"
+                                className="min-h-[42px] py-1 flex items-center justify-center"
                               >
                                 {isEditing ? (
                                   <input
@@ -1346,7 +1623,7 @@ export default function ProductVariantInline({
                                         generateVariantSku(col, nextSz)
                                       );
                                     }}
-                                    className="h-8 w-20 px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    className="h-8 w-20 px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                     placeholder="Size"
                                   />
                                 ) : (
@@ -1362,7 +1639,7 @@ export default function ProductVariantInline({
                     )}
 
                     {/* 3. Variant SKU Column - Line by Line paired with each size */}
-                    <td className="px-3 py-3.5 align-top w-[210px] min-w-[200px]">
+                    <td className="px-3 py-3.5 align-top w-[210px] min-w-[200px] text-center">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1370,17 +1647,20 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm"
+                              className="min-h-[42px] py-1 flex items-center justify-center font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm text-center"
                             >
                               {isEditing ? (
                                 <input
                                   value={editSku}
                                   onChange={(e) => setEditSku(e.target.value)}
-                                  className="h-8 w-full max-w-[260px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                  className="h-8 w-full max-w-[260px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                 />
                               ) : (
-                                <span className="truncate" title={variant.variantSku}>
-                                  {variant.variantSku}
+                                <span
+                                  className="truncate text-center"
+                                  title={getCleanVariantSku(variant, group.colorName)}
+                                >
+                                  {getCleanVariantSku(variant, group.colorName)}
                                 </span>
                               )}
                             </div>
@@ -1390,7 +1670,7 @@ export default function ProductVariantInline({
                     </td>
 
                     {/* Cost Column */}
-                    <td className="px-2.5 py-3.5 align-top w-[100px] min-w-[95px]">
+                    <td className="px-2.5 py-3.5 align-top w-[100px] min-w-[95px] text-center">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1398,10 +1678,10 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm"
+                              className="min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm text-center"
                             >
                               {isEditing ? (
-                                <div className="relative flex items-center">
+                                <div className="relative flex items-center justify-center">
                                   <span className="absolute left-2 text-xs text-slate-400">₹</span>
                                   <input
                                     type="number"
@@ -1426,12 +1706,12 @@ export default function ProductVariantInline({
                                       }
                                     }}
                                     onChange={(e) => setEditCost(e.target.value)}
-                                    className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                     placeholder="0.00"
                                   />
                                 </div>
                               ) : (
-                                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                <span className="font-semibold text-slate-700 dark:text-slate-300 text-center">
                                   {variant.cost !== undefined && variant.cost !== null && Number(variant.cost) > 0 ? `₹${variant.cost}` : product?.productCost !== undefined && product?.productCost !== null && Number(product.productCost) > 0 ? `₹${product.productCost}` : "₹0"}
                                 </span>
                               )}
@@ -1442,7 +1722,7 @@ export default function ProductVariantInline({
                     </td>
 
                     {/* MRP Column */}
-                    <td className="px-2.5 py-3.5 align-top w-[100px] min-w-[95px]">
+                    <td className="px-2.5 py-3.5 align-top w-[100px] min-w-[95px] text-center">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1450,10 +1730,10 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm"
+                              className="min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm text-center"
                             >
                               {isEditing ? (
-                                <div className="relative flex items-center">
+                                <div className="relative flex items-center justify-center">
                                   <span className="absolute left-2 text-xs text-slate-400">₹</span>
                                   <input
                                     type="number"
@@ -1478,12 +1758,12 @@ export default function ProductVariantInline({
                                       }
                                     }}
                                     onChange={(e) => setEditMrp(e.target.value)}
-                                    className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                     placeholder="0.00"
                                   />
                                 </div>
                               ) : (
-                                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                <span className="font-semibold text-slate-700 dark:text-slate-300 text-center">
                                   {variant.mrp !== undefined && variant.mrp !== null && Number(variant.mrp) > 0 ? `₹${variant.mrp}` : product?.mrp !== undefined && product?.mrp !== null && Number(product.mrp) > 0 ? `₹${product.mrp}` : "₹0"}
                                 </span>
                               )}
@@ -1522,32 +1802,40 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center text-slate-700 dark:text-slate-300 text-xs"
+                                className="min-h-[42px] py-1 flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs text-center"
                               >
                                 {isEditing ? (
                                   <input
                                     value={
-                                      editOtherAttrs[attr.id || ""] ||
-                                      editOtherAttrs[attr.attributeName] ||
-                                      (isGender ? existingGender : "") ||
-                                      ""
+                                      editOtherAttrs[attr.id || ""] !== undefined
+                                        ? editOtherAttrs[attr.id || ""]
+                                        : editOtherAttrs[attr.attributeName] !== undefined
+                                        ? editOtherAttrs[attr.attributeName]
+                                        : (isGender ? existingGender : "") ||
+                                          ""
                                     }
-                                    onChange={(e) =>
+                                    onChange={(e) => {
+                                      const nextVal = e.target.value;
                                       setEditOtherAttrs((prev) => ({
                                         ...prev,
-                                        [attr.id || ""]: e.target.value,
-                                        [attr.attributeName]: e.target.value,
-                                      }))
-                                    }
+                                        [attr.id || ""]: nextVal,
+                                        [attr.attributeName]: nextVal,
+                                      }));
+                                      if (isGender && genderPricingMap[nextVal]) {
+                                        const pricing = genderPricingMap[nextVal];
+                                        if (pricing.cost > 0) setEditCost(pricing.cost);
+                                        if (pricing.mrp > 0) setEditMrp(pricing.mrp);
+                                      }
+                                    }}
                                     placeholder={attr.attributeName}
-                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                   />
                                 ) : (
                                   <span
                                     className={
                                       isGender && val !== "--"
-                                        ? "inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20 font-sans"
-                                        : ""
+                                        ? "inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20 font-sans text-center"
+                                        : "text-center"
                                     }
                                   >
                                     {val}
@@ -1570,17 +1858,17 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
+                                className="min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center"
                               >
                                 {isEditing ? (
                                   <input
                                     value={editAsin}
                                     onChange={(e) => setEditAsin(e.target.value)}
                                     placeholder="ASIN"
-                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                   />
                                 ) : (
-                                  <span>{variant.asin || "--"}</span>
+                                  <span className="text-center">{variant.asin || "--"}</span>
                                 )}
                               </div>
                             );
@@ -1598,17 +1886,17 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
+                                className="min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center"
                               >
                                 {isEditing ? (
                                   <input
                                     value={editMyntraSku}
                                     onChange={(e) => setEditMyntraSku(e.target.value)}
                                     placeholder="Myntra SKU"
-                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                   />
                                 ) : (
-                                  <span>{variant.myntraSku || "--"}</span>
+                                  <span className="text-center">{variant.myntraSku || "--"}</span>
                                 )}
                               </div>
                             );
@@ -1626,17 +1914,17 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center font-mono text-slate-700 dark:text-slate-300 text-xs"
+                                className="min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center"
                               >
                                 {isEditing ? (
                                   <input
                                     value={editFsnCode}
                                     onChange={(e) => setEditFsnCode(e.target.value)}
                                     placeholder="FSN Code"
-                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                    className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                   />
                                 ) : (
-                                  <span>{variant.fsnCode || "--"}</span>
+                                  <span className="text-center">{variant.fsnCode || "--"}</span>
                                 )}
                               </div>
                             );
@@ -1654,7 +1942,7 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-medium text-slate-700 dark:text-slate-300 text-xs"
+                              className="min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-700 dark:text-slate-300 text-xs text-center"
                             >
                               {isEditing ? (
                                 <input
@@ -1663,10 +1951,10 @@ export default function ProductVariantInline({
                                     setEditRackAddress(e.target.value)
                                   }
                                   placeholder="Rack Address"
-                                  className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                                  className="h-8 w-full min-w-[90px] max-w-[140px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                                 />
                               ) : (
-                                <span>{variant.rackAddress || "--"}</span>
+                                <span className="text-center">{variant.rackAddress || "--"}</span>
                               )}
                             </div>
                           );
@@ -1707,7 +1995,7 @@ export default function ProductVariantInline({
                     </td>
 
                     {/* 7. Action Column */}
-                    <td className="px-2 py-3.5 align-top text-center w-[85px] min-w-[80px]">
+                    <td className="px-2 py-3.5 align-top text-center w-[150px] min-w-[145px]">
                       <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {group.variants.map((variant) => {
                           const isEditing = editingId === variant.id;
@@ -1718,9 +2006,11 @@ export default function ProductVariantInline({
                               className="min-h-[42px] py-1 flex items-center justify-center gap-1.5"
                             >
                               {isEditing ? (
-                                <>
+                                <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                                   <Button
                                     size="sm"
+                                    fullWidth={false}
+                                    className="!h-8 !w-[64px] !min-w-[64px] !px-0 text-xs font-bold rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
                                     onClick={() =>
                                       handleSaveEdit(
                                         variant.id,
@@ -1734,17 +2024,19 @@ export default function ProductVariantInline({
                                   </Button>
                                   <Button
                                     size="sm"
-                                    variant="secondary"
+                                    variant="outline"
+                                    fullWidth={false}
+                                    className="!h-8 !w-[64px] !min-w-[64px] !px-0 text-xs font-bold rounded-lg flex items-center justify-center shrink-0 cursor-pointer border border-slate-300 dark:border-white/20 bg-white dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.1]"
                                     onClick={() => setEditingId(null)}
                                   >
                                     Cancel
                                   </Button>
-                                </>
+                                </div>
                               ) : (
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handleStartEdit(variant)}
+                                    onClick={() => handleStartEdit(variant, group.colorName)}
                                     className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] dark:hover:bg-[#E8C16D]/10 dark:hover:text-[#F5C451] transition-all shadow-2xs active:scale-95 cursor-pointer"
                                     title="Edit variant"
                                   >
@@ -1775,28 +2067,55 @@ export default function ProductVariantInline({
             )}
 
             {/* ADD VARIANT ROW / BATCH FORM */}
-            <tr className="bg-slate-50/70 dark:bg-white/[0.02] border-t-2 border-[#E8C16D]/30">
-              {/* Empty Img placeholder cell */}
-              <td className="px-2 py-3 align-top text-center w-[72px] min-w-[72px] text-slate-400 dark:text-slate-600">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-auto text-slate-300 dark:text-slate-600">
-                  <ImagePlus size={14} />
-                </div>
-              </td>
+            {!isAdding ? (
+              <tr className="bg-slate-50/70 dark:bg-white/[0.02] border-t-2 border-[#E8C16D]/30">
+                <td colSpan={tableColSpan} className="py-2.5 px-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAdding(true);
+                      if (availableGenders.length > 0 && !newGender) {
+                        const defaultGen = availableGenders[0];
+                        setNewGender(defaultGen);
+                        if (genderPricingMap[defaultGen]) {
+                          if (genderPricingMap[defaultGen].cost > 0) {
+                            setNewCost(genderPricingMap[defaultGen].cost);
+                          }
+                          if (genderPricingMap[defaultGen].mrp > 0) {
+                            setNewMrp(genderPricingMap[defaultGen].mrp);
+                          }
+                        }
+                      }
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#E8C16D]/10 px-4 py-1.5 text-xs font-bold text-[#0A0E1A] dark:text-[#F5C451] hover:bg-[#FFF3D6] dark:hover:bg-[#E8C16D]/20 ring-1 ring-[#E8C16D]/30 transition-all shadow-2xs active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                  >
+                    <Plus className="h-4 w-4 stroke-[2.5]" />
+                    <span>Add Variant</span>
+                  </button>
+                </td>
+              </tr>
+            ) : (
+              <tr className="bg-slate-50/70 dark:bg-white/[0.02] border-t-2 border-[#E8C16D]/30">
+                {/* Empty Img placeholder cell */}
+                <td className="px-2 py-3 align-top text-center w-[72px] min-w-[72px] text-slate-400 dark:text-slate-600">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-auto text-slate-300 dark:text-slate-600">
+                    <ImagePlus size={14} />
+                  </div>
+                </td>
 
-              {/* Colour input */}
-              <td className="px-3 py-3 align-top w-[110px] min-w-[110px]">
-                {isAdding ? (
+                {/* Colour input */}
+                <td className="px-3 py-3 align-top w-[110px] min-w-[110px] text-center">
                   <div className="space-y-1">
                     <input
                       autoFocus
                       value={newColor}
                       onChange={(e) => setNewColor(e.target.value)}
                       placeholder="Colour (e.g. Black)"
-                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs sm:text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs sm:text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                     />
                     {Array.isArray(product?.colors) &&
                       product.colors.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
+                        <div className="flex flex-wrap justify-center gap-1 pt-1">
                           {product.colors.map((c) => (
                             <button
                               key={c}
@@ -1810,29 +2129,20 @@ export default function ProductVariantInline({
                         </div>
                       )}
                   </div>
-                ) : (
-                  <span
-                    onClick={() => setIsAdding(true)}
-                    className="cursor-pointer text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 italic text-xs"
-                  >
-                    + Add Color
-                  </span>
-                )}
-              </td>
+                </td>
 
-              {/* Size input (Comma-separated sizes) */}
-              {hasSizeAttribute && (
-                <td className="px-2 py-3 align-top text-center w-[75px] min-w-[75px]">
-                  {isAdding ? (
+                {/* Size input (Comma-separated sizes) */}
+                {hasSizeAttribute && (
+                  <td className="px-2 py-3 align-top text-center w-[75px] min-w-[75px]">
                     <div className="space-y-1">
                       <input
                         value={newSizesInput}
                         onChange={(e) => setNewSizesInput(e.target.value)}
                         placeholder="e.g. M, L, XL, 32"
-                        className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs sm:text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                        className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs sm:text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                       />
                       {product?.sizeList && (
-                        <div className="flex flex-wrap gap-1 pt-1">
+                        <div className="flex flex-wrap justify-center gap-1 pt-1">
                           {product.sizeList
                             .split(",")
                             .map((s) => s.trim())
@@ -1868,28 +2178,19 @@ export default function ProductVariantInline({
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <span
-                      onClick={() => setIsAdding(true)}
-                      className="cursor-pointer text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 italic text-xs"
-                    >
-                      --
-                    </span>
-                  )}
-                </td>
-              )}
+                  </td>
+                )}
 
-              {/* Variant SKU - Live preview */}
-              <td className="px-3 py-3 align-top w-[210px] min-w-[200px]">
-                {isAdding ? (
+                {/* Variant SKU - Live preview */}
+                <td className="px-3 py-3 align-top w-[210px] min-w-[200px] text-center">
                   <div className="space-y-1">
                     {hasSizeAttribute ? (
                       parsedNewSizes.length === 0 ? (
-                        <span className="text-slate-400 italic text-xs">
+                        <span className="text-slate-400 italic text-xs block text-center">
                           Enter sizes to preview SKUs
                         </span>
                       ) : (
-                        <div className="flex flex-col space-y-1">
+                        <div className="flex flex-col space-y-1 items-center">
                           {parsedNewSizes.map((sz) => {
                             const previewSku = generateVariantSku(
                               newColor,
@@ -1899,7 +2200,7 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={sz}
-                                className="h-7 flex items-center gap-2 font-mono text-xs"
+                                className="h-7 flex items-center justify-center gap-2 font-mono text-xs text-center"
                               >
                                 <span className="inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 font-bold rounded bg-amber-50 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/20">
                                   {sz}
@@ -1914,27 +2215,18 @@ export default function ProductVariantInline({
                         </div>
                       )
                     ) : (
-                      <div className="h-7 flex items-center font-mono text-xs">
+                      <div className="h-7 flex items-center justify-center font-mono text-xs text-center">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {generateVariantSku(newColor, "", customBaseSku)}
                         </span>
                       </div>
                     )}
                   </div>
-                ) : (
-                  <span
-                    onClick={() => setIsAdding(true)}
-                    className="cursor-pointer font-semibold text-slate-700 dark:text-slate-300 font-mono text-xs"
-                  >
-                    {masterSku || "--"}
-                  </span>
-                )}
-              </td>
+                </td>
 
-              {/* Cost input */}
-              <td className="px-2.5 py-3 align-top w-[100px] min-w-[95px]">
-                {isAdding ? (
-                  <div className="relative flex items-center">
+                {/* Cost input */}
+                <td className="px-2.5 py-3 align-top w-[100px] min-w-[95px] text-center">
+                  <div className="relative flex items-center justify-center">
                     <span className="absolute left-2 text-xs text-slate-400">₹</span>
                     <input
                       type="number"
@@ -1960,23 +2252,14 @@ export default function ProductVariantInline({
                       }}
                       onChange={(e) => setNewCost(e.target.value)}
                       placeholder="0.00"
-                      className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                      className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                     />
                   </div>
-                ) : (
-                  <span
-                    onClick={() => setIsAdding(true)}
-                    className="cursor-pointer text-slate-400 text-xs"
-                  >
-                    --
-                  </span>
-                )}
-              </td>
+                </td>
 
-              {/* MRP input */}
-              <td className="px-2.5 py-3 align-top w-[100px] min-w-[95px]">
-                {isAdding ? (
-                  <div className="relative flex items-center">
+                {/* MRP input */}
+                <td className="px-2.5 py-3 align-top w-[100px] min-w-[95px] text-center">
+                  <div className="relative flex items-center justify-center">
                     <span className="absolute left-2 text-xs text-slate-400">₹</span>
                     <input
                       type="number"
@@ -2002,188 +2285,132 @@ export default function ProductVariantInline({
                       }}
                       onChange={(e) => setNewMrp(e.target.value)}
                       placeholder="0.00"
-                      className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                      className="h-8 w-24 pl-5 pr-2 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                     />
                   </div>
-                ) : (
-                  <span
-                    onClick={() => setIsAdding(true)}
-                    className="cursor-pointer text-slate-400 text-xs"
-                  >
-                    --
-                  </span>
-                )}
-              </td>
+                </td>
 
-              {/* Extra Attributes (including Gender) */}
-              {extraAttributes.map((attr) => {
-                const isGender =
-                  (attr.attributeName || "").toLowerCase().trim() === "gender";
-                const displayVal =
-                  (isGender ? existingGender : "") ||
-                  attr.attributeValue ||
-                  "--";
+                {/* Extra Attributes (including Gender) */}
+                {extraAttributes.map((attr) => {
+                  const isGender =
+                    (attr.attributeName || "").toLowerCase().trim() === "gender";
+                  const displayVal =
+                    (isGender ? (newGender || existingGender) : "") ||
+                    attr.attributeValue ||
+                    "--";
 
-                return (
-                  <td
-                    key={attr.id || attr.attributeName}
-                    className="px-2.5 py-3 align-top text-center text-xs w-[95px] min-w-[90px]"
-                  >
-                    {isGender && displayVal !== "--" ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20">
-                        {displayVal}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">{displayVal}</span>
-                    )}
-                  </td>
-                );
-              })}
+                  return (
+                    <td
+                      key={attr.id || attr.attributeName}
+                      className="px-2.5 py-3 align-top text-center text-xs w-[110px] min-w-[100px]"
+                    >
+                      {isGender ? (
+                        <input
+                          value={newGender !== "" ? newGender : existingGender}
+                          onChange={(e) => handleNewGenderChange(e.target.value)}
+                          placeholder="Gender"
+                          className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
+                        />
+                      ) : (
+                        <span className="text-slate-400">{displayVal}</span>
+                      )}
+                    </td>
+                  );
+                })}
 
-              {/* Dynamic Marketplace Columns */}
-              {showAsin && (
-                <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
-                  {isAdding ? (
+                {/* Dynamic Marketplace Columns */}
+                {showAsin && (
+                  <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                     <input
                       value={newAsin}
                       onChange={(e) => setNewAsin(e.target.value)}
                       placeholder="ASIN (optional)"
-                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                     />
-                  ) : (
-                    <span
-                      onClick={() => setIsAdding(true)}
-                      className="cursor-pointer text-slate-400 text-xs"
-                    >
-                      --
-                    </span>
-                  )}
-                </td>
-              )}
+                  </td>
+                )}
 
-              {showMyntraSku && (
-                <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
-                  {isAdding ? (
+                {showMyntraSku && (
+                  <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                     <input
                       value={newMyntraSku}
                       onChange={(e) => setNewMyntraSku(e.target.value)}
                       placeholder="Myntra SKU (optional)"
-                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                     />
-                  ) : (
-                    <span
-                      onClick={() => setIsAdding(true)}
-                      className="cursor-pointer text-slate-400 text-xs"
-                    >
-                      --
-                    </span>
-                  )}
-                </td>
-              )}
+                  </td>
+                )}
 
-              {showFsnCode && (
-                <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
-                  {isAdding ? (
+                {showFsnCode && (
+                  <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                     <input
                       value={newFsnCode}
                       onChange={(e) => setNewFsnCode(e.target.value)}
                       placeholder="FSN Code (optional)"
-                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                      className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                     />
-                  ) : (
-                    <span
-                      onClick={() => setIsAdding(true)}
-                      className="cursor-pointer text-slate-400 text-xs"
-                    >
-                      --
-                    </span>
-                  )}
-                </td>
-              )}
+                  </td>
+                )}
 
-              {/* Rack Address */}
-              <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
-                {isAdding ? (
+                {/* Rack Address */}
+                <td className="px-2.5 py-3 align-top text-center w-[110px] min-w-[105px]">
                   <input
                     value={newRackAddress}
                     onChange={(e) => setNewRackAddress(e.target.value)}
                     placeholder="Rack Address"
-                    className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
+                    className="h-8 w-full px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
                   />
-                ) : (
-                  <span
-                    onClick={() => setIsAdding(true)}
-                    className="cursor-pointer text-slate-400 text-xs"
-                  >
-                    --
-                  </span>
-                )}
-              </td>
+                </td>
 
-              {/* Status */}
-              <td className="px-2 py-3 align-top text-center w-[85px] min-w-[80px]">
-                {isAdding ? (
+                {/* Status */}
+                <td className="px-2 py-3 align-top text-center w-[85px] min-w-[80px]">
                   <div className="flex items-center justify-center pt-1">
                     <Switch
                       checked={newIsActive}
                       onCheckedChange={setNewIsActive}
                     />
                   </div>
-                ) : (
-                  <span className="text-slate-400 text-xs">--</span>
-                )}
-              </td>
+                </td>
 
-              {/* Actions */}
-              <td className="px-2 py-3 align-top text-center w-[85px] min-w-[80px]">
-                <div className="flex items-center justify-center gap-2">
-                  {isAdding ? (
-                    <>
-                      <Button
-                        size="sm"
-                        fullWidth={false}
-                        onClick={handleBatchSave}
-                        disabled={
-                          isSavingBatch || parsedNewSizes.length === 0
-                        }
-                      >
-                        {isSavingBatch
-                          ? "Saving..."
-                          : `Save ${parsedNewSizes.length > 0 ? `(${parsedNewSizes.length})` : ""}`}
-                      </Button>
-
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        fullWidth={false}
-                        onClick={() => {
-                          setIsAdding(false);
-                          setNewColor("");
-                          setNewSizesInput("");
-                          setCustomBaseSku("");
-                          setNewAsin("");
-                          setNewMyntraSku("");
-                          setNewFsnCode("");
-                          setNewRackAddress("");
-                          setNewIsActive(true);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsAdding(true)}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#E8C16D]/10 px-3 py-1.5 text-xs font-bold text-[#0A0E1A] dark:text-[#F5C451] hover:bg-[#FFF3D6] dark:hover:bg-[#E8C16D]/20 ring-1 ring-[#E8C16D]/30 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
+                {/* Actions */}
+                <td className="px-2 py-3 align-top text-center w-[150px] min-w-[145px]">
+                  <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <Button
+                      size="sm"
+                      fullWidth={false}
+                      className="!h-8 !w-[64px] !min-w-[64px] !px-0 text-xs font-bold rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
+                      onClick={handleBatchSave}
+                      disabled={
+                        isSavingBatch || parsedNewSizes.length === 0
+                      }
                     >
-                      <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                      <span>Add Variant</span>
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
+                      {isSavingBatch ? "..." : "Save"}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      fullWidth={false}
+                      className="!h-8 !w-[64px] !min-w-[64px] !px-0 text-xs font-bold rounded-lg flex items-center justify-center shrink-0 cursor-pointer border border-slate-300 dark:border-white/20 bg-white dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.1]"
+                      onClick={() => {
+                        setIsAdding(false);
+                        setNewColor("");
+                        setNewSizesInput("");
+                        setNewGender("");
+                        setCustomBaseSku("");
+                        setNewAsin("");
+                        setNewMyntraSku("");
+                        setNewFsnCode("");
+                        setNewRackAddress("");
+                        setNewIsActive(true);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

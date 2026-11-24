@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "../../layout/DashboardLayout";
 import PurchaseChallanHeader from "./components/PurchaseChallanHeader";
 import PurchaseChallanStats from "./components/PurchaseChallanStats";
@@ -130,59 +131,11 @@ export default function PurchaseChallan() {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      const tableContainer = tableContainerRef.current;
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
-
-      const isOverTable =
-        tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the fixed view yet -> scroll page down
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-        } else if (!isOverTable) {
-          // At the fixed point and outside the table (e.g. over PurchaseChallanFilters) -> forward scroll to table
-          if (tableContainer) {
-            tableContainer.scrollTop += e.deltaY;
-          }
-        }
-        // If isPageAtBottom and isOverTable, allow table to scroll natively
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverTable) {
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
-          if (isTableAtTop && !isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: tableContainerRef.current,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });

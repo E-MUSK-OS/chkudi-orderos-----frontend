@@ -51,6 +51,7 @@ import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 
 import DropdownWithOther, { type DropdownOption } from "./DropdownWithOther";
 import MarketplaceMultiSelect from "./MarketplaceMultiSelect";
+import GenderMultiSelect from "./GenderMultiSelect";
 import ColorMultiSelect from "./ColorMultiSelect";
 import SizeMultiSelect from "./SizeMultiSelect";
 import ProductTabsNav, { type ProductActiveTab } from "./ProductTabsNav";
@@ -110,7 +111,7 @@ const defaultValues: ProductFormValues = {
   unit: "Pcs",
   sizeList: "",
   colors: [],
-  gender: "",
+  gender: [],
   referenceParty: "",
   description: "",
   asin: "",
@@ -198,8 +199,20 @@ export default function ProductForm({
   const watchedMasterSku = watch("masterSku") || "";
   const watchedMrp = watch("mrp");
   const watchedProductCost = watch("productCost");
+  const watchedGender = watch("gender");
 
-  // Auto-generate variants from colors and sizes (matching Cartesian SKU logic)
+  const selectedGenders: string[] = useMemo(() => {
+    const raw: any = watchedGender;
+    if (Array.isArray(raw)) {
+      return raw.map((g: any) => String(g).trim()).filter(Boolean);
+    }
+    if (typeof raw === "string" && raw.trim()) {
+      return raw.split(",").map((s: string) => s.trim()).filter(Boolean);
+    }
+    return [];
+  }, [watchedGender]);
+
+  // Auto-generate variants from colors and sizes (matching Cartesian SKU logic: MasterSKU-Color-Size)
   const computedVariants = useMemo(() => {
     const sizeParts = watchedSizeList
       ? watchedSizeList
@@ -218,7 +231,7 @@ export default function ProductForm({
     const effectiveColors = colorParts.length > 0 ? colorParts : [undefined];
     const effectiveSizes = sizeParts.length > 0 ? sizeParts : [undefined];
 
-    const list: { sku: string; color: string; size: string }[] = [];
+    const list: { sku: string; color: string; size: string; id?: string }[] = [];
     for (const col of effectiveColors) {
       for (const sz of effectiveSizes) {
         const skuParts: string[] = [];
@@ -239,8 +252,72 @@ export default function ProductForm({
         });
       }
     }
+
+    // Include any existing custom variants from database that might not match standard Cartesian grid
+    if (mode === "edit") {
+      const activeProd = singleProductResponse?.data ?? product;
+      const allVars: any[] = [
+        ...(Array.isArray(activeProd?.variants) ? activeProd.variants : []),
+        ...(Array.isArray(variantsResponse?.data) ? variantsResponse.data : []),
+      ];
+
+      allVars.forEach((v) => {
+        if (!v?.variantSku) return;
+        const rawSku = String(v.variantSku).trim();
+        // Check if list already has this SKU (case-insensitive)
+        const exists = list.some(
+          (item) => item.sku.toLowerCase() === rawSku.toLowerCase()
+        );
+        if (!exists) {
+          const colAttr = (v.attributes || []).find((a: any) =>
+            ["colour", "color"].includes(
+              (a.productAttribute?.attributeName || a.attributeName || "").toLowerCase().trim()
+            )
+          );
+          const szAttr = (v.attributes || []).find((a: any) =>
+            ["size"].includes(
+              (a.productAttribute?.attributeName || a.attributeName || "").toLowerCase().trim()
+            )
+          );
+          let col = colAttr?.attributeValue?.trim() || "";
+          let sz = szAttr?.attributeValue?.trim() || "";
+
+          if (!col || !sz) {
+            if (masterSku && rawSku.startsWith(masterSku + "-")) {
+              const remainder = rawSku.slice(masterSku.length + 1);
+              const parts = remainder.split("-");
+              if (parts.length >= 2) {
+                if (!col) col = parts[0];
+                if (!sz) sz = parts[1];
+              }
+            }
+          }
+
+          const productColors = Array.isArray(product?.colors) ? product.colors : [];
+          const isFromProductColor = productColors.length === 0 || productColors.some((pc: string) => pc.toLowerCase() === col.toLowerCase());
+
+          // If this variant belongs to a product color and its size was removed from sizeParts:
+          if (sz && sizeParts.length > 0 && isFromProductColor && !sizeParts.some((sp) => sp.toLowerCase() === sz.toLowerCase())) {
+            return;
+          }
+
+          // If this variant's color was a product color, but that color was removed from colorParts:
+          if (col && isFromProductColor && colorParts.length > 0 && !colorParts.some((cp) => cp.toLowerCase() === col.toLowerCase())) {
+            return;
+          }
+
+          list.push({
+            id: v.id,
+            sku: rawSku,
+            color: col,
+            size: sz,
+          });
+        }
+      });
+    }
+
     return list;
-  }, [watchedColors, watchedSizeList, watchedMasterSku]);
+  }, [watchedColors, watchedSizeList, watchedMasterSku, mode, singleProductResponse, product, variantsResponse]);
 
   // Load existing variant pricing into variantPricing state in edit mode
   useEffect(() => {
@@ -714,64 +791,74 @@ export default function ProductForm({
         .map((a: any) => a.id)
         .filter(Boolean);
 
-      // Fallback colors from variants
-      if (initialColors.length === 0 && uniqueVariants.length > 0) {
-        const variantColors = uniqueVariants.flatMap((v: any) =>
-          (v.attributes || [])
-            .filter((va: any) => {
-              if (va.productAttributeId && colorAttrIds.includes(va.productAttributeId)) return true;
-              const attrName = (va.productAttribute?.attributeName || "").toLowerCase().trim();
-              return ["colour", "color"].includes(attrName);
-            })
-            .flatMap((va: any) => {
-              const val = va.attributeValue?.trim();
-              return val ? val.split(",").map((s: string) => s.trim()) : [];
-            })
-            .filter(Boolean)
-        );
-        if (variantColors.length > 0) {
-          initialColors = Array.from(new Set(variantColors));
+      // Extract all colors from uniqueVariants (including custom added variants)
+      const variantColors: string[] = [];
+      const mSku = (activeProduct.masterSku || activeProduct.sku || "").trim();
+
+      uniqueVariants.forEach((v: any) => {
+        // 1. Check variant attributes
+        (v.attributes || []).forEach((va: any) => {
+          const attrName = (
+            va.productAttribute?.attributeName ||
+            va.attributeName ||
+            ""
+          ).toLowerCase().trim();
+          if (["colour", "color"].includes(attrName) && va.attributeValue?.trim()) {
+            va.attributeValue
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter(Boolean)
+              .forEach((c: string) => variantColors.push(c));
+          }
+        });
+
+        // 2. Parse color from variantSku
+        const rawSku = (v.variantSku || "").trim();
+        if (rawSku && mSku && rawSku.startsWith(mSku + "-")) {
+          const remainder = rawSku.slice(mSku.length + 1);
+          const parts = remainder.split("-");
+          // If remainder is "Marron-S" or "Maroon-S-1"
+          if (parts.length >= 2) {
+            const colorPart = parts[0].trim();
+            const sizeRegex = /^(XS|S|M|L|XL|XXL|XXXL|2XL|4XL|28|30|32|34|36|38|40|42|44|46|48|\d+)$/i;
+            if (colorPart && !sizeRegex.test(colorPart)) {
+              variantColors.push(colorPart);
+            }
+          }
         }
+      });
+
+      // Match against known colors in variant SKUs
+      const allKnownColors = Array.from(
+        new Set([
+          ...dynamicColors,
+          "Magenta", "Black", "White", "Navy", "Red", "Blue", "Green", "Yellow",
+          "Orange", "Grey", "Gray", "Purple", "Pink", "Maroon", "Marron", "Beige",
+          "Brown", "Teal", "Olive", "Lavender", "Peach", "Charcoal", "Cream", "Aqua"
+        ])
+      );
+
+      uniqueVariants.forEach((v: any) => {
+        const skuStr = v.variantSku || "";
+        allKnownColors.forEach((col) => {
+          const regex = new RegExp(`(^|[-_\\s/])${col}([-_\\s/]|$)`, "i");
+          if (regex.test(skuStr)) {
+            variantColors.push(col);
+          }
+        });
+      });
+
+      // Merge extra colors from variants into initialColors ONLY if product has NO colors defined
+      if (initialColors.length === 0 && variantColors.length > 0) {
+        initialColors = Array.from(new Set(variantColors));
       }
 
-      // Fallback colors from product title, master SKU or variant SKUs against known colors
       if (initialColors.length === 0) {
-        const allKnownColors = Array.from(
-          new Set([
-            ...dynamicColors,
-            "Magenta",
-            "Black",
-            "White",
-            "Navy",
-            "Red",
-            "Blue",
-            "Green",
-            "Yellow",
-            "Orange",
-            "Grey",
-            "Gray",
-            "Purple",
-            "Pink",
-            "Maroon",
-            "Beige",
-            "Brown",
-            "Teal",
-            "Olive",
-            "Lavender",
-            "Peach",
-            "Charcoal",
-          ])
-        );
-
-        const textToSearch = `${activeProduct.productName || ""} ${activeProduct.masterSku || ""} ${uniqueVariants
-          .map((v) => v.variantSku || "")
-          .join(" ")}`;
-
+        const textToSearch = `${activeProduct.productName || ""} ${activeProduct.masterSku || ""}`;
         const matchedColors = allKnownColors.filter((col) => {
           const regex = new RegExp(`(^|[-_\\s/])${col}([-_\\s/]|$)`, "i");
           return regex.test(textToSearch);
         });
-
         if (matchedColors.length > 0) {
           initialColors = matchedColors;
         }
@@ -816,16 +903,8 @@ export default function ProductForm({
         }
       });
 
-      if (initialSizeList) {
-        const definedParts = initialSizeList.split(",").map((s) => s.trim()).filter(Boolean);
-        const extraSizes = Array.from(new Set(variantSizes)).filter(
-          (vs) => !definedParts.some((dp) => dp.toLowerCase() === vs.toLowerCase())
-        );
-        if (extraSizes.length > 0) {
-          const sortedExtras = sortSizes(extraSizes, definedParts);
-          initialSizeList = [...definedParts, ...sortedExtras].join(", ");
-        }
-      } else if (variantSizes.length > 0) {
+      // Only set initialSizeList from variantSizes if product has NO sizes defined
+      if (!initialSizeList && variantSizes.length > 0) {
         const uniqueSizes = Array.from(new Set(variantSizes));
         initialSizeList = sortSizes(uniqueSizes).join(", ");
       }
@@ -836,38 +915,47 @@ export default function ProductForm({
         (activeProduct.sku || "").trim();
 
       // 4. Extract Gender
-      let initialGender = (activeProduct.gender || "").trim();
-      if (!initialGender) {
+      let initialGender: string[] = [];
+      const rawGender = activeProduct.gender;
+      if (Array.isArray(rawGender)) {
+        initialGender = rawGender.map((g: any) => String(g).trim()).filter(Boolean);
+      } else if (typeof rawGender === "string" && rawGender.trim()) {
+        initialGender = rawGender.split(",").map((s) => s.trim()).filter(Boolean);
+      } else {
         const genderAttr = (activeProduct.attributes || []).find(
           (a: any) => (a.attributeName || "").toLowerCase().trim() === "gender"
         );
         if (genderAttr?.attributeValue?.trim()) {
-          initialGender = genderAttr.attributeValue.trim();
+          initialGender = genderAttr.attributeValue.split(",").map((s: string) => s.trim()).filter(Boolean);
         }
       }
-      if (!initialGender && uniqueVariants.length > 0) {
-        const variantGender = uniqueVariants.flatMap((v: any) =>
-          (v.attributes || [])
-            .filter((va: any) => (va.productAttribute?.attributeName || "").toLowerCase().trim() === "gender")
-            .map((va: any) => va.attributeValue?.trim())
-            .filter(Boolean)
+      // Also extract any genders present on custom variants
+      const variantGenders = uniqueVariants.flatMap((v: any) =>
+        (v.attributes || [])
+          .filter((va: any) => (va.productAttribute?.attributeName || va.attributeName || "").toLowerCase().trim() === "gender")
+          .flatMap((va: any) => (va.attributeValue || "").split(",").map((s: string) => s.trim()))
+          .filter(Boolean)
+      );
+      if (variantGenders.length > 0) {
+        const extraGenders = Array.from(new Set(variantGenders)).filter(
+          (vg) => !initialGender.some((ig) => ig.toLowerCase() === vg.toLowerCase())
         );
-        if (variantGender.length > 0) {
-          initialGender = variantGender[0];
+        if (extraGenders.length > 0) {
+          initialGender = [...initialGender, ...extraGenders];
         }
       }
-      if (!initialGender) {
+      if (initialGender.length === 0) {
         const text = `${activeProduct.productName || ""} ${activeProduct.category || ""} ${
           activeProduct.subCategory || ""
         }`.toLowerCase();
         if (/\b(women|woman|ladies|lady|kurti|saree|lehenga|gown|dress|top|skirt|girl|girls)\b/.test(text)) {
-          initialGender = "Women";
+          initialGender = ["Women"];
         } else if (/\b(men|man|mens|polo|shirt|t-shirt|trouser|pant|jeans|boy|boys)\b/.test(text)) {
-          initialGender = "Men";
+          initialGender = ["Men"];
         } else if (/\b(kid|kids|baby|child|children|infant)\b/.test(text)) {
-          initialGender = "Kids";
+          initialGender = ["Kids"];
         } else {
-          initialGender = "Unisex";
+          initialGender = ["Unisex"];
         }
       }
 
@@ -1109,7 +1197,11 @@ export default function ProductForm({
       }
 
       // 3. Gender (Preset attribute)
-      const genderVal = (values.gender || "").trim();
+      const genderVal = Array.isArray(values.gender)
+        ? values.gender.join(", ").trim()
+        : values.gender
+        ? String(values.gender).trim()
+        : "";
       const genderName = existingGenderAttr?.attributeName || "Gender";
       if (genderVal || existingGenderAttr?.id) {
         combinedAttributes.push({
@@ -1161,7 +1253,11 @@ export default function ProductForm({
         unit: values.unit ? values.unit.trim() : "Pcs",
         sizeList: values.sizeList ? values.sizeList.trim() : "",
         colors: values.colors || [],
-        gender: values.gender ? values.gender.trim() : "",
+        gender: Array.isArray(values.gender)
+          ? values.gender.join(", ").trim()
+          : values.gender
+          ? String(values.gender).trim()
+          : "",
         referenceParty: values.referenceParty ? values.referenceParty.trim() : "",
         description: values.description ? values.description.trim() : "",
         asin: values.asin ? values.asin.trim() : "",
@@ -1228,7 +1324,11 @@ export default function ProductForm({
               ? values.sizeList.split(",").map((s) => s.trim()).filter(Boolean)
               : [];
             const colorParts = values.colors || [];
-            const genderVal = values.gender ? values.gender.trim() : "";
+            const genderVal = Array.isArray(values.gender)
+              ? values.gender.join(", ").trim()
+              : values.gender
+              ? String(values.gender).trim()
+              : "";
 
             const otherAttrs = createdAttrs
               .filter((a: any) => {
@@ -1241,7 +1341,7 @@ export default function ProductForm({
               }))
               .filter((a: any) => Boolean(a.attributeValue));
 
-            // Generate Cartesian combinations: ALL sizes for ALL colors!
+            // Generate Cartesian combinations: ALL sizes for ALL colors
             const effectiveColors = colorParts.length > 0 ? colorParts : [undefined];
             const effectiveSizes = sizeParts.length > 0 ? sizeParts : [undefined];
 
@@ -1322,28 +1422,11 @@ export default function ProductForm({
         const activeUpdatedProduct = updateRes?.data ?? activeProduct;
         const freshVariants = Array.isArray(activeUpdatedProduct?.variants)
           ? activeUpdatedProduct.variants
-          : [];
+          : (Array.isArray(product?.variants) ? product.variants : []);
 
-        const sizeParts = values.sizeList
-          ? values.sizeList.split(",").map((s) => s.trim()).filter(Boolean)
-          : [];
-        const colorParts = values.colors || [];
-        const expectedVariantCount = Math.max(1, (colorParts.length || 1) * (sizeParts.length || 1));
-
-        const backendAlreadyHandled =
-          freshVariants.length >= expectedVariantCount &&
-          (colorParts.length === 0 ||
-            colorParts.every((c) =>
-              freshVariants.some((v: any) =>
-                (v.attributes || []).some(
-                  (a: any) => a.attributeValue?.trim().toLowerCase() === c.trim().toLowerCase()
-                )
-              )
-            ));
-
-        if (backendAlreadyHandled) {
-          // Update cost and mrp for existing variants if set in variantPricing or default
-          const updateCostPromises = freshVariants.map((v: any) => {
+        // Update cost and mrp for variants where custom pricing or master pricing changed
+        const updateCostPromises = freshVariants
+          .map((v: any) => {
             const newCost = getVariantCost(v.variantSku, v.cost);
             const newMrp = getVariantMrp(v.variantSku, v.mrp);
             if (newCost !== (v.cost ?? 0) || newMrp !== (v.mrp ?? 0)) {
@@ -1351,261 +1434,12 @@ export default function ProductForm({
                 .update(v.id, { cost: newCost, mrp: newMrp }, token)
                 .catch((e) => console.warn("Update variant cost/mrp error:", e));
             }
-            return Promise.resolve();
-          });
+            return null;
+          })
+          .filter(Boolean);
+
+        if (updateCostPromises.length > 0) {
           await Promise.allSettled(updateCostPromises);
-        } else {
-          try {
-            const freshAttrs = (activeUpdatedProduct?.attributes || combinedAttributes) as any[];
-
-            const colorAttr = freshAttrs.find((a: any) =>
-              ["colour", "color"].includes((a.attributeName || "").toLowerCase().trim())
-            );
-            const sizeAttr = freshAttrs.find((a: any) =>
-              ["size"].includes((a.attributeName || "").toLowerCase().trim())
-            );
-            const genderAttr = freshAttrs.find((a: any) =>
-              ["gender"].includes((a.attributeName || "").toLowerCase().trim())
-            );
-
-            const colorId = colorAttr?.id || existingColorAttr?.id;
-            const sizeId = sizeAttr?.id || existingSizeAttr?.id;
-            const genderId = genderAttr?.id || existingGenderAttr?.id;
-
-            const allChildVariants = [
-              ...freshVariants,
-              ...(Array.isArray(product.variants) ? product.variants : []),
-              ...(Array.isArray(variantsResponse?.data) ? variantsResponse.data : []),
-            ];
-
-            const uniqueVarMap = new Map<string, any>();
-            allChildVariants.forEach((v) => {
-              if (v?.id && !uniqueVarMap.has(v.id)) {
-                uniqueVarMap.set(v.id, v);
-              }
-            });
-            const childVars = Array.from(uniqueVarMap.values());
-
-            const genderVal = values.gender ? values.gender.trim() : "";
-
-            const otherAttrs = freshAttrs
-              .filter((a: any) => {
-                const aId = a.id;
-                return aId && aId !== colorId && aId !== sizeId && aId !== genderId && a.attributeValue;
-              })
-              .map((a: any) => ({
-                productAttributeId: a.id,
-                attributeValue: String(a.attributeValue).trim(),
-              }))
-              .filter((a: any) => Boolean(a.attributeValue));
-
-            const effectiveColors = colorParts.length > 0 ? colorParts : [undefined];
-            const effectiveSizes = sizeParts.length > 0 ? sizeParts : [undefined];
-
-            const targetCombinations: {
-              color?: string;
-              size?: string;
-              skuParts: string[];
-              attributeList: { productAttributeId: string; attributeValue: string }[];
-            }[] = [];
-
-            for (const col of effectiveColors) {
-              for (const sz of effectiveSizes) {
-                const skuParts: string[] = [];
-                const attributeList: { productAttributeId: string; attributeValue: string }[] = [];
-
-                if (col && colorId) {
-                  attributeList.push({ productAttributeId: colorId, attributeValue: col });
-                  skuParts.push(col);
-                }
-                if (sz && sizeId) {
-                  attributeList.push({ productAttributeId: sizeId, attributeValue: sz });
-                  skuParts.push(sz);
-                }
-                if (genderVal && genderId) {
-                  attributeList.push({ productAttributeId: genderId, attributeValue: genderVal });
-                }
-                attributeList.push(...otherAttrs);
-
-                targetCombinations.push({
-                  color: col,
-                  size: sz,
-                  skuParts,
-                  attributeList,
-                });
-              }
-            }
-
-            const masterSku = (values.masterSku || product.masterSku || "").trim();
-            const matchedVariantIds = new Set<string>();
-            const usedComboIndices = new Set<number>();
-            const syncPromises: Promise<any>[] = [];
-
-            // Pass 1: Match existing child variants that have the exact same color and size
-            for (let cIdx = 0; cIdx < targetCombinations.length; cIdx++) {
-              const combo = targetCombinations[cIdx];
-              const matched = childVars.find((v) => {
-                if (!v?.id || matchedVariantIds.has(v.id)) return false;
-                const vAttrs = v.attributes || [];
-                const vCol = vAttrs.find((a: any) => {
-                  const aId = a.productAttributeId || a.productAttribute?.id;
-                  return aId === colorId;
-                })?.attributeValue?.trim().toLowerCase();
-                const vSz = vAttrs.find((a: any) => {
-                  const aId = a.productAttributeId || a.productAttribute?.id;
-                  return aId === sizeId;
-                })?.attributeValue?.trim().toLowerCase();
-
-                const targetCol = combo.color ? combo.color.trim().toLowerCase() : undefined;
-                const targetSz = combo.size ? combo.size.trim().toLowerCase() : undefined;
-
-                return vCol === targetCol && vSz === targetSz;
-              });
-
-              if (matched) {
-                matchedVariantIds.add(matched.id);
-                usedComboIndices.add(cIdx);
-
-                const targetVariantSku =
-                  combo.skuParts.length > 0 && masterSku
-                    ? `${masterSku}-${combo.skuParts.join("-")}`
-                    : masterSku;
-
-                const itemCost = getVariantCost(targetVariantSku, matched.cost);
-                const itemMrp = getVariantMrp(targetVariantSku, matched.mrp);
-
-                syncPromises.push(
-                  productVariantService
-                    .update(
-                      matched.id,
-                      {
-                        variantSku: targetVariantSku,
-                        cost: itemCost,
-                        mrp: itemMrp,
-                        attributes: combo.attributeList,
-                        rackAddress: values.rackAddress || undefined,
-                        asin: values.asin || undefined,
-                      myntraSku: (values as any).myntraSku || undefined,
-                      fsnCode: (values as any).fsnCode || undefined,
-
-
-  
-  
-
-
-  
-  
-
-
-  
-  
-                      },
-                      token
-                    )
-                    .catch((err) => console.warn("Update matched variant warning:", err))
-                );
-              }
-            }
-
-            // Pass 2: Reuse unmatched existing variants for remaining combos
-            const remainingComboIndices = targetCombinations
-              .map((_, idx) => idx)
-              .filter((idx) => !usedComboIndices.has(idx));
-
-            const unmatchedVariants = childVars.filter((v) => v?.id && !matchedVariantIds.has(v.id));
-
-            for (let i = 0; i < Math.min(remainingComboIndices.length, unmatchedVariants.length); i++) {
-              const combo = targetCombinations[remainingComboIndices[i]];
-              const variant = unmatchedVariants[i];
-
-              matchedVariantIds.add(variant.id);
-              usedComboIndices.add(remainingComboIndices[i]);
-
-              const targetVariantSku =
-                combo.skuParts.length > 0 && masterSku
-                  ? `${masterSku}-${combo.skuParts.join("-")}`
-                  : masterSku;
-
-              const itemCost = getVariantCost(targetVariantSku, variant.cost);
-              const itemMrp = getVariantMrp(targetVariantSku, variant.mrp);
-
-              syncPromises.push(
-                productVariantService
-                  .update(
-                    variant.id,
-                    {
-                      variantSku: targetVariantSku,
-                      cost: itemCost,
-                      mrp: itemMrp,
-                      attributes: combo.attributeList,
-                      rackAddress: values.rackAddress || undefined,
-                      asin: values.asin || undefined,
-                      myntraSku: (values as any).myntraSku || undefined,
-                      fsnCode: (values as any).fsnCode || undefined,
-
-
-
-
-
-
-                    },
-                    token
-                  )
-                  .catch((err) => console.warn("Update unmatched variant warning:", err))
-              );
-            }
-
-            // Pass 3: Create missing combination variants
-            const stillUnusedComboIndices = targetCombinations
-              .map((_, idx) => idx)
-              .filter((idx) => !usedComboIndices.has(idx));
-
-            for (const cIdx of stillUnusedComboIndices) {
-              const combo = targetCombinations[cIdx];
-              const targetVariantSku =
-                combo.skuParts.length > 0 && masterSku
-                  ? `${masterSku}-${combo.skuParts.join("-")}`
-                  : masterSku;
-
-              const itemCost = getVariantCost(targetVariantSku);
-              const itemMrp = getVariantMrp(targetVariantSku);
-
-              syncPromises.push(
-                productVariantService
-                  .create(
-                    {
-                      productId: product.id,
-                      variantSku: targetVariantSku,
-                      cost: itemCost,
-                      mrp: itemMrp,
-                      asin: values.asin || undefined,
-                      myntraSku: (values as any).myntraSku || undefined,
-                      fsnCode: (values as any).fsnCode || undefined,
-
-
-
-
-
-
-                      rackAddress: values.rackAddress || undefined,
-                      isActive: values.isActive ?? true,
-                      attributes: combo.attributeList,
-                    },
-                    token
-                  )
-                  .catch((err) => console.warn("Create new combination variant warning:", err))
-              );
-            }
-
-            if (syncPromises.length > 0) {
-              await Promise.race([
-                Promise.allSettled(syncPromises),
-                new Promise((res) => setTimeout(res, 2000)),
-              ]);
-            }
-          } catch (variantSyncErr) {
-            console.warn("Child variants sync non-fatal error:", variantSyncErr);
-          }
         }
       }
 
@@ -1922,13 +1756,12 @@ export default function ProductForm({
                         name="gender"
                         control={control}
                         render={({ field }) => (
-                          <DropdownWithOther
+                          <GenderMultiSelect
                             label={categoryConfig.genderLabel || "Gender"}
-                            value={field.value || ""}
+                            value={field.value || []}
                             options={genderOptions}
                             onChange={field.onChange}
                             placeholder="Select Gender..."
-                            fieldKey="gender"
                             error={errors.gender?.message}
                           />
                         )}
@@ -2659,14 +2492,17 @@ export default function ProductForm({
                   <thead className="border-b border-[#F5E6BE] bg-[#FEFAEE] text-xs font-bold tracking-wider text-[#6A4D1D] dark:border-white/[0.08] dark:bg-[#080B11] dark:text-[#E8C16D]">
                     <tr>
                       <th className="px-4 py-3 text-center w-[60px] uppercase">#</th>
-                      <th className="px-4 py-3 text-left uppercase min-w-[220px]">Variant SKU</th>
+                      <th className="px-4 py-3 text-left uppercase min-w-[200px]">Variant SKU</th>
+                      {(categoryConfig.hasGender || selectedGenders.length > 0) && (
+                        <th className="px-4 py-3 text-center uppercase min-w-[100px]">Gender</th>
+                      )}
                       <th className="px-4 py-3 text-left uppercase min-w-[150px]">Cost (₹)</th>
                       <th className="px-4 py-3 text-left uppercase min-w-[150px]">MRP (₹)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] text-xs sm:text-sm">
                     {computedVariants.map((item, idx) => {
-                      const pricing = variantPricing[item.sku] || {};
+                      const pricing = variantPricing[item.sku] || (item.id ? variantPricing[item.id] : {}) || {};
                       const currentCost =
                         pricing.cost !== undefined && pricing.cost !== ""
                           ? pricing.cost
@@ -2699,6 +2535,24 @@ export default function ProductForm({
                               )}
                             </div>
                           </td>
+                          {(categoryConfig.hasGender || selectedGenders.length > 0) && (
+                            <td className="px-4 py-3 text-center">
+                              <div className="flex flex-wrap items-center justify-center gap-1">
+                                {selectedGenders.length > 0 ? (
+                                  selectedGenders.map((gen) => (
+                                    <span
+                                      key={gen}
+                                      className="px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20 font-sans"
+                                    >
+                                      {gen}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-xs text-slate-400">--</span>
+                                )}
+                              </div>
+                            </td>
+                          )}
                           <td className="px-4 py-3">
                             <div className="relative flex items-center max-w-[160px]">
                               <span className="absolute left-3 text-xs font-semibold text-slate-400">₹</span>

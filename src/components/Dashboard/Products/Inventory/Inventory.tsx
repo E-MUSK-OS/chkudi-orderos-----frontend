@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import {
   Package,
   CheckCircle2,
@@ -96,63 +97,11 @@ const InventoryPage = () => {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      const tableContainer = tableContainerRef.current;
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
-
-      const isOverTable =
-        tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the fixed view yet -> scroll page down
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-        } else if (!isOverTable) {
-          // At the fixed point and outside the table -> forward scroll to table
-          if (tableContainer) {
-            tableContainer.scrollTop += e.deltaY;
-          }
-        }
-        // If isPageAtBottom and isOverTable, allow table to scroll natively
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverTable) {
-          // Cursor is outside table -> scroll outer page up if not at top
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          // Cursor is inside table
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 1;
-          if (isTableAtTop && !isPageAtTop) {
-            // Table is at top row -> scroll outer page up to reveal Header Card
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-          // If table is not at top, allow table to scroll natively upwards
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: tableContainerRef.current,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });

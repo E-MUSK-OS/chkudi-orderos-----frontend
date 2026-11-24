@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Pagination from "@/components/ui/Pagination";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
 import { FlipkartOrderItem } from "../types";
+import CopyButton from "@/components/ui/CopyButton";
 
 export interface FlipkartOrderTableProps {
   // Data
@@ -676,15 +677,23 @@ export default function FlipkartOrderTable({
 
                     {/* Order ID */}
                     <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-                      <span>{item.orderId}</span>
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span>{item.orderId}</span>
+                        <CopyButton text={item.orderId} />
+                      </div>
                     </td>
 
                     {/* AWB Tracking + Printed status */}
                     <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-medium whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
-                        <span className="font-semibold text-slate-900 dark:text-white">
-                          {item.awb || "—"}
-                        </span>
+                        <div className="inline-flex items-center gap-1">
+                          <span className="font-semibold text-slate-900 dark:text-white">
+                            {item.awb || "—"}
+                          </span>
+                          {item.awb && item.awb !== "—" && (
+                            <CopyButton text={item.awb} />
+                          )}
+                        </div>
                         {printedOrders.has(item.pageIndex) && (
                           <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
                             <CheckCircle2 className="h-3 w-3" /> Printed
@@ -742,6 +751,7 @@ export default function FlipkartOrderTable({
                                 className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
                               >
                                 <span>{displayFsn}</span>
+                                {displayFsn !== "—" && <CopyButton text={displayFsn} />}
                                 {isNotLast ? (
                                    <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
                                 ) : null}
@@ -750,7 +760,10 @@ export default function FlipkartOrderTable({
                           })}
                         </div>
                       ) : (
-                        <span>{item.fsn || "—"}</span>
+                        <div className="inline-flex items-center justify-center gap-1">
+                          <span>{item.fsn || "—"}</span>
+                          {item.fsn && item.fsn !== "—" && <CopyButton text={item.fsn} />}
+                        </div>
                       )}
                     </td>
 
@@ -772,6 +785,9 @@ export default function FlipkartOrderTable({
                                 <span className={displayRack && displayRack !== "—" && displayRack !== "Not assigned" ? "font-semibold text-emerald-700 dark:text-emerald-400" : ""}>
                                   {displayRack && displayRack !== "Not assigned" ? displayRack : "—"}
                                 </span>
+                                {displayRack && displayRack !== "—" && displayRack !== "Not assigned" && (
+                                  <CopyButton text={displayRack} />
+                                )}
                                 {isNotLast ? (
                                   <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
                                 ) : null}
@@ -780,9 +796,14 @@ export default function FlipkartOrderTable({
                           })}
                         </div>
                       ) : (
-                        <span className={item.rackAddress && item.rackAddress !== "—" && item.rackAddress !== "Not assigned" ? "font-semibold text-emerald-700 dark:text-emerald-400" : ""}>
-                          {item.rackAddress && item.rackAddress !== "Not assigned" ? item.rackAddress : "—"}
-                        </span>
+                        <div className="inline-flex items-center justify-center gap-1">
+                          <span className={item.rackAddress && item.rackAddress !== "—" && item.rackAddress !== "Not assigned" ? "font-semibold text-emerald-700 dark:text-emerald-400" : ""}>
+                            {item.rackAddress && item.rackAddress !== "Not assigned" ? item.rackAddress : "—"}
+                          </span>
+                          {item.rackAddress && item.rackAddress !== "—" && item.rackAddress !== "Not assigned" && (
+                            <CopyButton text={item.rackAddress} />
+                          )}
+                        </div>
                       )}
                     </td>
 
@@ -799,6 +820,7 @@ export default function FlipkartOrderTable({
                                 className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
                               >
                                 <span>{i.sku}</span>
+                                {i.sku && <CopyButton text={i.sku} />}
                                 {itemQty > 1 && (
                                   <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 ml-0.5">
                                     {itemQty} Pieces
@@ -812,7 +834,10 @@ export default function FlipkartOrderTable({
                           })
                         ) : (
                           <div className="flex flex-col items-center justify-center gap-0.5">
-                            <span className="break-all sm:break-normal sm:whitespace-nowrap">{item.sku || "—"}</span>
+                            <div className="inline-flex items-center justify-center gap-1">
+                              <span className="break-all sm:break-normal sm:whitespace-nowrap">{item.sku || "—"}</span>
+                              {item.sku && item.sku !== "—" && <CopyButton text={item.sku} />}
+                            </div>
                             {Boolean(item.totalQuantity && item.totalQuantity > 1) && (
                               <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 ml-0.5">
                                 {item.totalQuantity} Pieces

@@ -35,7 +35,17 @@ export const productSchema = z.object({
   unit: z.string().optional().default("Pcs"),
   sizeList: z.string().optional().default(""),
   colors: z.array(z.string()).default([]),
-  gender: z.string().optional().default(""),
+  gender: z
+    .array(z.string().trim())
+    .or(
+      z
+        .string()
+        .transform((val) =>
+          val ? val.split(",").map((s) => s.trim()).filter(Boolean) : []
+        )
+    )
+    .optional()
+    .default([]),
   referenceParty: z.string().optional().default(""),
 
   description: z.string().optional().default(""),

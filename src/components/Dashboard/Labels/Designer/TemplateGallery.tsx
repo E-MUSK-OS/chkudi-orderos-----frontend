@@ -7,6 +7,7 @@ import { labelService } from "../services/label.service";
 import { LabelTemplate, ProductLookupResult } from "../types/label.types";
 import { renderLabelToCanvas } from "@/lib/labelRenderer";
 import { toast } from "sonner";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import { getMarketplaces } from "@/services/marketplaceAccount/marketplaceAccount.service";
 import { Marketplace } from "@/services/marketplaceAccount/marketplaceAccount.types";
 import ActionMenu from "@/components/ui/ActionMenu";
@@ -157,8 +158,6 @@ export function TemplateGallery() {
     const scrollContainer = containerRef.current.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTop = 0;
-
     const style = window.getComputedStyle(scrollContainer);
     const paddingTop = parseFloat(style.paddingTop) || 0;
     const paddingBottom = parseFloat(style.paddingBottom) || 0;
@@ -203,38 +202,25 @@ export function TemplateGallery() {
     calculateHeight();
   }, [templates.length, search, calculateHeight]);
 
-  // Lock outer scroll at header position on desktop:
-  // Header Card and Toolbar stay fixed at the top, outer page does not scroll,
-  // and scrolling forwards to the internal cards container.
+  // Seamless scroll coordinator:
+  // 1. Cards container scrolls internally when scrolling down/up.
+  // 2. If cards container finishes scrolling or reaches top, page scrolls smoothly up or down.
+  // 3. Wheel events outside cards container (over header / toolbar) forward to cards container.
   useEffect(() => {
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTop = 0;
-
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      scrollContainer.scrollTop = 0;
-
-      const cardsContainer = cardsScrollRef.current;
-      if (!cardsContainer) return;
-
-      if (!e.composedPath().includes(cardsContainer) && !cardsContainer.contains(e.target as Node)) {
-        cardsContainer.scrollTop += e.deltaY;
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: cardsScrollRef.current,
+      });
     };
 
-    const onScroll = () => {
-      if (window.innerWidth >= 1024 && scrollContainer.scrollTop !== 0) {
-        scrollContainer.scrollTop = 0;
-      }
-    };
-
-    scrollContainer.addEventListener("wheel", onWheel, { passive: true });
-    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    scrollContainer.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       scrollContainer.removeEventListener("wheel", onWheel);
-      scrollContainer.removeEventListener("scroll", onScroll);
     };
   }, []);
 

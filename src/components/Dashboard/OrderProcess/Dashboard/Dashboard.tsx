@@ -3,23 +3,42 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import OrderProcessSummary from "./components/OrderProcessSummary";
+import BatchProgressSection from "./components/BatchProgressSection";
+import HourlyVelocityChart from "./components/HourlyVelocityChart";
+import TopDispatchedSkus from "./components/TopDispatchedSkus";
 import { amazonOrderService } from "@/components/Dashboard/OrderProcess/Amazon/OrderProcess/services/amazonOrder.service";
 import { getTodayDateStringIST } from "@/components/Dashboard/OrderProcess/Amazon/AwbScan/timeUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, RefreshCw, X } from "lucide-react";
+import { Calendar as CalendarIcon, RefreshCw, X, Lock, CheckCircle2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { socket } from "@/lib/socket";
+import { OrderProcessChannel, DashboardAnalyticsData } from "./types";
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedChannel, setSelectedChannel] = useState<OrderProcessChannel>("all");
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateStringIST);
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [summaryCounts, setSummaryCounts] = useState({
-    total: 0,
+    totalOrders: 0,
+    todayOrders: 0,
     pending: 0,
     scanned: 0,
   });
+  const [analyticsData, setAnalyticsData] = useState<DashboardAnalyticsData>({
+    date: getTodayDateStringIST(),
+    channel: "all",
+    batches: [],
+    hourlyVelocity: [],
+    topSkus: [],
+  });
+
+  const todayStr = useMemo(() => getTodayDateStringIST(), []);
+
+  const isToday = Boolean(selectedDate && selectedDate === todayStr);
+  const isPastDay = Boolean(selectedDate && selectedDate < todayStr);
 
   const formattedDate = useMemo(() => {
     if (!selectedDate) return "All Dates";
@@ -40,30 +59,79 @@ export default function Dashboard() {
     }
   }, [selectedDate]);
 
+  const channelLabel = useMemo(() => {
+    if (selectedChannel === "amazon") return "Amazon";
+    if (selectedChannel === "flipkart") return "Flipkart";
+    return "All Channels";
+  }, [selectedChannel]);
+
   const fetchSummary = useCallback(
     async (silent = false) => {
       if (!silent) setIsLoading(true);
       try {
-        const res = await amazonOrderService.getDailySummary(selectedDate || undefined);
-        if (res && res.success && res.data) {
+        const [summaryRes, analyticsRes] = await Promise.allSettled([
+          amazonOrderService.getDailySummary(selectedDate || undefined, selectedChannel),
+          amazonOrderService.getDashboardAnalytics(selectedDate || undefined, selectedChannel),
+        ]);
+
+        if (summaryRes.status === "fulfilled" && summaryRes.value?.success && summaryRes.value.data) {
+          const sData = summaryRes.value.data;
           setSummaryCounts({
-            total: res.data.totalOrders ?? 0,
-            pending: res.data.pendingOrders ?? 0,
-            scanned: res.data.scannedOrders ?? 0,
+            totalOrders: sData.totalOrders ?? 0,
+            todayOrders: sData.todayOrders ?? sData.totalOrders ?? 0,
+            pending: sData.pendingOrders ?? 0,
+            scanned: sData.scannedOrders ?? 0,
           });
         }
+
+        if (analyticsRes.status === "fulfilled" && analyticsRes.value?.success && analyticsRes.value.data) {
+          setAnalyticsData(analyticsRes.value.data);
+        }
       } catch (err) {
-        console.warn("Failed to fetch Amazon orders daily summary:", err);
+        console.warn("Failed to fetch orders daily summary or analytics:", err);
       } finally {
         if (!silent) setIsLoading(false);
       }
     },
-    [selectedDate]
+    [selectedDate, selectedChannel]
   );
 
+  // Initial fetch and fetch on date or channel change
   useEffect(() => {
     fetchSummary(false);
   }, [fetchSummary]);
+
+  // Real-time WebSocket connection & event handlers for Today
+  useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const handleOrderEvent = () => {
+      // Re-fetch silently on print or scan status change for real-time consistency
+      if (!selectedDate || selectedDate === todayStr) {
+        fetchSummary(true);
+      }
+    };
+
+    socket.on("amazonDailySummaryUpdated", handleOrderEvent);
+    socket.on("amazonOrderStatusUpdated", handleOrderEvent);
+    socket.on("amazonOrderPrinted", handleOrderEvent);
+    socket.on("flipkartDailySummaryUpdated", handleOrderEvent);
+    socket.on("flipkartOrderStatusUpdated", handleOrderEvent);
+    socket.on("flipkartOrderPrinted", handleOrderEvent);
+    socket.on("orderProcessSummaryUpdated", handleOrderEvent);
+
+    return () => {
+      socket.off("amazonDailySummaryUpdated", handleOrderEvent);
+      socket.off("amazonOrderStatusUpdated", handleOrderEvent);
+      socket.off("amazonOrderPrinted", handleOrderEvent);
+      socket.off("flipkartDailySummaryUpdated", handleOrderEvent);
+      socket.off("flipkartOrderStatusUpdated", handleOrderEvent);
+      socket.off("flipkartOrderPrinted", handleOrderEvent);
+      socket.off("orderProcessSummaryUpdated", handleOrderEvent);
+    };
+  }, [selectedDate, todayStr, fetchSummary]);
 
   const handleRefresh = useCallback(() => {
     fetchSummary(false);
@@ -72,49 +140,114 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Order Process">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header Card matching UI Theme */}
-        <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-7 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1.5">
-              <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
-                Order Process Dashboard
-              </h1>
+        <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 md:p-7 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <h1 className="text-lg sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
+                  Order Process Dashboard
+                </h1>
+
+                {/* Status Badge */}
+                {isToday && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 shadow-xs">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Live Today ({channelLabel})
+                  </span>
+                )}
+
+                {isPastDay && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 shadow-xs">
+                    <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                    Permanent Record ({channelLabel})
+                  </span>
+                )}
+
+                {!selectedDate && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 shadow-xs">
+                    <CheckCircle2 className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                    All-Time ({channelLabel})
+                  </span>
+                )}
+              </div>
+
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-                Amazon order processing and packing scan throughput.
+                Unified order processing and packing scan throughput across Amazon and Flipkart.
               </p>
             </div>
 
-            {/* Date Filter & Refresh Controls */}
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
-              {/* Date Filter Popover matching AwbToolbar */}
-              <div className="relative flex items-center">
+            {/* Channel Tabs & Date Filter Controls */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              {/* Channel Switcher: All (Default) | Amazon | Flipkart */}
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 dark:bg-white/[0.04] p-1 rounded-xl sm:rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedChannel("all")}
+                  className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+                    selectedChannel === "all"
+                      ? "bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white shadow-xs border border-slate-200/80 dark:border-white/[0.08]"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChannel("amazon")}
+                  className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+                    selectedChannel === "amazon"
+                      ? "bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white shadow-xs border border-slate-200/80 dark:border-white/[0.08]"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  Amazon
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChannel("flipkart")}
+                  className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+                    selectedChannel === "flipkart"
+                      ? "bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white shadow-xs border border-slate-200/80 dark:border-white/[0.08]"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  Flipkart
+                </button>
+              </div>
+
+              {/* Date Filter Popover */}
+              <div className="relative flex items-center shrink-0">
                 <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-                  <PopoverTrigger className="inline-flex h-10 sm:h-11 items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 dark:hover:bg-white/[0.06] dark:hover:border-[#F5C451]/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
-                    <div className="grid h-5 w-5 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#E8C16D]/10 text-[#B88728] dark:text-[#F5C451] shrink-0 border border-[#E8C16D]/30 dark:border-[#E8C16D]/20">
-                      <CalendarIcon className="h-3.5 w-3.5" />
+                  <PopoverTrigger className="inline-flex h-9 sm:h-11 items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] px-2.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white transition-all shadow-xs cursor-pointer hover:border-[#E8C16D] hover:bg-slate-50 dark:hover:bg-white/[0.06] dark:hover:border-[#F5C451]/50 focus-within:border-[#E8C16D] focus-within:ring-2 focus-within:ring-[#E8C16D]/30">
+                    <div className="grid h-4 w-4 sm:h-5 sm:w-5 place-items-center rounded-md bg-[#FFF9EC] dark:bg-[#E8C16D]/10 text-[#B88728] dark:text-[#F5C451] shrink-0 border border-[#E8C16D]/30 dark:border-[#E8C16D]/20">
+                      <CalendarIcon className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
                     </div>
-                    <span className="text-left font-bold whitespace-nowrap min-w-[85px] sm:min-w-[95px]">
+                    <span className="text-left font-bold whitespace-nowrap min-w-[75px] sm:min-w-[95px]">
                       {formattedDate}
                     </span>
-                    {selectedDate && (
+                    {selectedDate !== todayStr && (
                       <span
                         role="button"
                         tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedDate("");
+                          setSelectedDate(todayStr);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.stopPropagation();
-                            setSelectedDate("");
+                            setSelectedDate(todayStr);
                           }
                         }}
-                        className="ml-1 p-0.5 text-slate-400 dark:text-slate-500 hover:text-red-600 transition cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-white/[0.05]"
-                        title="Clear date filter"
+                        className="ml-0.5 sm:ml-1 p-0.5 text-slate-400 dark:text-slate-500 hover:text-amber-600 transition cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-white/[0.05]"
+                        title="Reset to today"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
                       </span>
                     )}
                   </PopoverTrigger>
@@ -146,8 +279,7 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => {
-                          const today = format(new Date(), "yyyy-MM-dd");
-                          setSelectedDate(today);
+                          setSelectedDate(todayStr);
                           setIsDatePopoverOpen(false);
                         }}
                         className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] hover:text-[#0A0E1A] dark:hover:text-white transition cursor-pointer px-2.5 py-1 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-[#E8C16D]/10"
@@ -159,15 +291,15 @@ export default function Dashboard() {
                 </Popover>
               </div>
 
-              {/* Refresh Button matching AwbToolbar */}
+              {/* Refresh Button */}
               <button
                 type="button"
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="group inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#131926] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#F5C451] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 hover:shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                className="group inline-flex h-9 sm:h-11 items-center justify-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-[#E8C16D]/60 dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#131926] px-3 sm:px-4 text-xs sm:text-sm font-bold text-[#6A4D1D] dark:text-[#F5C451] transition-all duration-200 shadow-xs hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] ring-1 ring-[#E8C16D]/20 dark:ring-0 hover:shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-50 shrink-0"
               >
                 <RefreshCw
-                  className={`h-4 w-4 text-[#6A4D1D] dark:text-[#E8C16D] transition-colors group-hover:text-[#4A3514] dark:group-hover:text-[#0A0E1A] ${
+                  className={`h-3.5 sm:h-4 w-3.5 sm:w-4 text-[#6A4D1D] dark:text-[#E8C16D] transition-colors group-hover:text-[#4A3514] dark:group-hover:text-[#0A0E1A] ${
                     isLoading ? "animate-spin" : ""
                   }`}
                 />
@@ -177,13 +309,32 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Summary Cards matching AwbScanSummary */}
+        {/* Stats Summary Cards (Total, Today, Scanned, Pending) */}
         <OrderProcessSummary
-          total={summaryCounts.total}
+          totalOrders={summaryCounts.totalOrders}
+          todayOrders={summaryCounts.todayOrders}
           scanned={summaryCounts.scanned}
           pending={summaryCounts.pending}
           isLoading={isLoading}
         />
+
+        {/* Batch-Wise Progress Cards */}
+        <BatchProgressSection
+          batches={analyticsData.batches}
+          isLoading={isLoading}
+        />
+
+        {/* 2-Column Grid: Hourly Velocity Chart & Top Dispatched SKUs (Same Height) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+          <HourlyVelocityChart
+            batches={analyticsData.batches}
+            isLoading={isLoading}
+          />
+          <TopDispatchedSkus
+            topSkus={analyticsData.topSkus}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

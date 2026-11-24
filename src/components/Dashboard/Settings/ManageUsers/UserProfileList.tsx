@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import { Plus, Trash2, X, AlertTriangle, RotateCcw, Users } from "lucide-react";
 import UserCard from "./components/UserCard";
 import UserToolbar from "./components/UserToolbar";
@@ -119,61 +120,11 @@ export default function UserProfileList() {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      const cardsContainer = cardsContainerRef.current;
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
-
-      const isOverCards =
-        cardsContainer &&
-        (e.composedPath().includes(cardsContainer) ||
-          cardsContainer.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the fixed view yet -> scroll page down
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-        } else if (!isOverCards) {
-          // At the fixed point and outside the cards -> forward scroll to cards
-          if (cardsContainer) {
-            cardsContainer.scrollTop += e.deltaY;
-          }
-        }
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverCards) {
-          // Cursor is outside cards -> scroll outer page up if not at top
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          // Cursor is inside cards
-          const isCardsAtTop = !cardsContainer || cardsContainer.scrollTop <= 1;
-          if (isCardsAtTop && !isPageAtTop) {
-            // Cards is at top row -> scroll outer page up to reveal Header Card
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: cardsContainerRef.current,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });

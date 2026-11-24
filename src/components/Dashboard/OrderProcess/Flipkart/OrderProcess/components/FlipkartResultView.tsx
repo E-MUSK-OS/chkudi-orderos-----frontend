@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import { useTheme } from "@/providers/ThemeProvider";
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
@@ -61,6 +62,7 @@ import FlipkartMissingSkuModal from "./FlipkartMissingSkuModal";
 import FlipkartOrderTable from "./FlipkartOrderTable";
 import FlipkartPdfPreview from "./FlipkartPdfPreview";
 import FlipkartPicklistModal from "./FlipkartPicklistModal";
+import CopyButton from "@/components/ui/CopyButton";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
 import { productVariantService } from "@/components/Dashboard/Products/ManageProducts/services/productVariant.service";
 import {
@@ -711,9 +713,10 @@ export default function FlipkartResultView() {
   }, [calculateHeight, summary, isLoading]);
 
   // Seamless scroll coordinator:
-  // 1. When scrolling down, outer page scrolls until Header & Stats Cards are hidden and stops at the fixed position.
-  // 2. Once at the fixed position, scrolling down over the table scrolls the table rows internally.
-  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals the Header & Stats Cards.
+  // 1. When scrolling down, outer page scrolls until Header & Stats Cards are hidden and docks at Row 1 ("Shipping Data").
+  // 2. Once docked, scrolling down over the table scrolls the table rows internally.
+  // 3. When table rows finish scrolling down, scrolling down continues scrolling the outer page.
+  // 4. When scrolling up, table scrolls up to the first row; then scrolling up reveals the Header & Stats Cards.
   useEffect(() => {
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
@@ -767,48 +770,13 @@ export default function FlipkartResultView() {
       }
 
       // For Table view:
-      const isOverTable =
-        tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isRow1AtTop && scrollContainer.scrollTop < maxPageScroll) {
-          // Outer page has not reached "Shipping Data" at top yet -> scroll page down
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + Math.min(e.deltaY, Math.max(1, distanceToRow1))
-          );
-        } else if (!isOverTable) {
-          // "Shipping Data" reached the top and mouse is outside table -> forward scroll to table
-          if (tableContainer) {
-            tableContainer.scrollTop += e.deltaY;
-          }
-        }
-        // If isRow1AtTop and isOverTable, allow table to scroll natively
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverTable) {
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 3;
-          if (isTableAtTop && !isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer,
+        maxPageScroll,
+        isDocked: isRow1AtTop,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });
@@ -3168,15 +3136,23 @@ export default function FlipkartResultView() {
 
                             {/* Flipkart Order ID */}
                             <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-                              <span>{item.orderId}</span>
+                              <div className="inline-flex items-center justify-center gap-1">
+                                <span>{item.orderId}</span>
+                                <CopyButton text={item.orderId} />
+                              </div>
                             </td>
 
                             {/* AWB Tracking + Printed status */}
                             <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-medium whitespace-nowrap">
                               <div className="flex items-center justify-center gap-1.5">
-                                <span className="font-semibold text-slate-900 dark:text-white">
-                                  {item.awb || "—"}
-                                </span>
+                                <div className="inline-flex items-center gap-1">
+                                  <span className="font-semibold text-slate-900 dark:text-white">
+                                    {item.awb || "—"}
+                                  </span>
+                                  {item.awb && item.awb !== "—" && (
+                                    <CopyButton text={item.awb} />
+                                  )}
+                                </div>
                                 {printedOrders.has(item.pageIndex) && (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
                                     <CheckCircle2 className="h-3 w-3" /> Printed
@@ -3201,6 +3177,7 @@ export default function FlipkartResultView() {
                                         className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
                                       >
                                         <span>{displayFsn}</span>
+                                        {displayFsn !== "—" && <CopyButton text={displayFsn} />}
                                         {isNotLast ? (
                                           <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
                                         ) : null}
@@ -3209,7 +3186,10 @@ export default function FlipkartResultView() {
                                   })}
                                 </div>
                               ) : (
-                                <span>{item.fsn || "—"}</span>
+                                <div className="inline-flex items-center justify-center gap-1">
+                                  <span>{item.fsn || "—"}</span>
+                                  {item.fsn && item.fsn !== "—" && <CopyButton text={item.fsn} />}
+                                </div>
                               )}
                             </td>
 
@@ -3226,6 +3206,7 @@ export default function FlipkartResultView() {
                                         className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
                                       >
                                         <span>{i.sku}</span>
+                                        {i.sku && <CopyButton text={i.sku} />}
                                         {itemQty > 1 && (
                                           <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 ml-0.5">
                                             {itemQty} Pieces
@@ -3239,7 +3220,10 @@ export default function FlipkartResultView() {
                                   })
                                 ) : (
                                   <div className="flex flex-col items-center justify-center gap-0.5">
-                                    <span className="break-all sm:break-normal sm:whitespace-nowrap">{item.sku || "—"}</span>
+                                    <div className="inline-flex items-center justify-center gap-1">
+                                      <span className="break-all sm:break-normal sm:whitespace-nowrap">{item.sku || "—"}</span>
+                                      {item.sku && item.sku !== "—" && <CopyButton text={item.sku} />}
+                                    </div>
                                     {Boolean(item.totalQuantity && item.totalQuantity > 1) && (
                                       <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 ml-0.5">
                                         {item.totalQuantity} Pieces

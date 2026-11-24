@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import MissingSkuModal from "./MissingSkuModal";
 import Pagination from "@/components/ui/Pagination";
 import { socket } from "@/lib/socket";
@@ -45,6 +46,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import Button from "@/components/ui/Button";
 import ReactSelect, { SelectOption } from "@/components/ui/ReactSelect";
+import CopyButton from "@/components/ui/CopyButton";
 import { useTheme } from "@/providers/ThemeProvider";
 import {
   useAmazonOrderStore,
@@ -153,7 +155,13 @@ function renderItemListCell(val?: string) {
   const items = Array.from(new Set(rawItems));
 
   if (items.length <= 1) {
-    return items[0] || val;
+    const text = items[0] || val;
+    return (
+      <div className="inline-flex items-center justify-center gap-1">
+        <span>{text}</span>
+        <CopyButton text={text} />
+      </div>
+    );
   }
 
   return (
@@ -166,8 +174,9 @@ function renderItemListCell(val?: string) {
             className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
           >
             <span>{item}</span>
+            <CopyButton text={item} />
             {isNotLast ? (
-              <span className="font-bold text-slate-400 text-[11px]">/</span>
+              <span className="font-bold text-slate-400 text-[11px] ml-0.5">/</span>
             ) : null}
           </div>
         );
@@ -1572,6 +1581,7 @@ export default function ComparisonResultView({
   const containerRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const previewCardRef = useRef<HTMLDivElement>(null);
+  const row1Ref = useRef<HTMLDivElement>(null);
   const [targetHeight, setTargetHeight] = useState<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -1627,9 +1637,10 @@ export default function ComparisonResultView({
   }, [calculateHeight]);
 
   // Seamless scroll coordinator:
-  // 1. When scrolling down, outer page scrolls until Header & Stats Cards are hidden and stops at the fixed position (view shown in img).
-  // 2. Once at the fixed position, scrolling down over the table scrolls the table rows internally.
-  // 3. When scrolling up, table scrolls up to the first row; then scrolling up reveals the Header & Stats Cards.
+  // 1. When scrolling down, outer page scrolls until Header & Stats Cards are hidden and docks at row 1.
+  // 2. Once docked, scrolling down over the table scrolls the table rows internally.
+  // 3. When table rows finish scrolling down, scrolling down continues scrolling the outer page.
+  // 4. When scrolling up, table scrolls up to the first row; then scrolling up reveals the Header & Stats Cards.
   useEffect(() => {
     const scrollContainer = containerRef.current?.closest(".overflow-y-auto") as HTMLElement | null;
     if (!scrollContainer) return;
@@ -1643,16 +1654,16 @@ export default function ComparisonResultView({
       );
       if (maxPageScroll <= 0) return;
 
-      const isPageAtBottom =
-        scrollContainer.scrollTop >= maxPageScroll - 8 ||
-        scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 8;
-      const isPageAtTop = scrollContainer.scrollTop <= 6;
+      const row1Rect = row1Ref.current?.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const distanceToRow1 = row1Rect ? row1Rect.top - containerRect.top : maxPageScroll;
+      const isRow1AtTop = distanceToRow1 <= 2;
+      const isPageAtTop = scrollContainer.scrollTop <= 4;
 
       if (activeTab === "pdf") {
         // Distance from top of scroll container to the PDF Preview Card
         const previewRect = previewCardRef.current?.getBoundingClientRect();
-        const containerRect = containerRef.current?.getBoundingClientRect();
-        const distanceToPreview = previewRect && containerRect ? previewRect.top - containerRect.top : maxPageScroll;
+        const distanceToPreview = previewRect ? previewRect.top - containerRect.top : maxPageScroll;
         const isPreviewAtTop = distanceToPreview <= 2;
 
         if (e.deltaY > 0) {
@@ -1680,63 +1691,20 @@ export default function ComparisonResultView({
         return;
       }
 
-      const isOverTable =
-        tableContainer &&
-        (e.composedPath().includes(tableContainer) ||
-          tableContainer.contains(e.target as Node));
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the fixed view yet -> scroll page down
-          e.preventDefault();
-          const prev = scrollContainer.scrollTop;
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-          if (scrollContainer.scrollTop === prev && tableContainer) {
-            tableContainer.scrollTop += e.deltaY;
-          }
-        } else if (!isOverTable) {
-          // At the fixed point and outside the table -> forward scroll to table
-          if (tableContainer) {
-            tableContainer.scrollTop += e.deltaY;
-          }
-        }
-        // If isPageAtBottom and isOverTable, allow table to scroll natively
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (!isOverTable) {
-          // Cursor is outside table -> scroll outer page up if not at top
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          // Cursor is inside table
-          const isTableAtTop = !tableContainer || tableContainer.scrollTop <= 3;
-          if (isTableAtTop && !isPageAtTop) {
-            // Table is at top row -> scroll outer page up to reveal Header & Stats Cards
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-          // If table is not at top, allow table to scroll natively upwards
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer,
+        maxPageScroll,
+        isDocked: isRow1AtTop,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       scrollContainer.removeEventListener("wheel", onWheel);
     };
-  }, [activeTab]);
+  }, [summary, results, activeTab]);
 
   useEffect(() => {
     tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -3317,7 +3285,7 @@ export default function ComparisonResultView({
         {/* ===================================================== */}
         {/* TOP CONTROLS & TABLE TOOLBAR: UNIFIED 2-COLUMN ALIGNMENT */}
         {/* ===================================================== */}
-        <div className="shrink-0 grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-x-3 gap-y-3 items-center">
+        <div ref={row1Ref} className="shrink-0 grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-x-3 gap-y-3 items-center">
         {/* ROW 1 LEFT: Matched Orders Tab & Unified PDF View Selector */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full justify-start">
           <button
@@ -3929,24 +3897,36 @@ export default function ComparisonResultView({
                         <td className="w-36 min-w-[130px] px-3 sm:px-4 py-3.5 text-center font-medium whitespace-nowrap">
                           {item.isMatch ? (
                             item.pdfInvoice && item.pdfInvoice !== "Not Found in PDF" ? (
-                              <span className="font-semibold text-slate-900 dark:text-white">{item.pdfInvoice}</span>
+                              <div className="inline-flex items-center justify-center gap-1">
+                                <span className="font-semibold text-slate-900 dark:text-white">{item.pdfInvoice}</span>
+                                <CopyButton text={item.pdfInvoice} />
+                              </div>
                             ) : item.zplInvoice &&
                               item.zplInvoice !== "Not Found in ZPL" &&
                               item.zplInvoice !== "N/A" ? (
-                              <span className="font-semibold text-slate-900 dark:text-white">{item.zplInvoice}</span>
+                              <div className="inline-flex items-center justify-center gap-1">
+                                <span className="font-semibold text-slate-900 dark:text-white">{item.zplInvoice}</span>
+                                <CopyButton text={item.zplInvoice} />
+                              </div>
                             ) : (
                               <span className="italic text-slate-400 dark:text-slate-500">N/A</span>
                             )
                           ) : item.zplInvoice === "Not Found in ZPL" ? (
                             <div className="flex flex-col items-center gap-1">
-                              <span className="font-semibold text-slate-900 dark:text-white">{item.pdfInvoice || "N/A"}</span>
+                              <div className="inline-flex items-center justify-center gap-1">
+                                <span className="font-semibold text-slate-900 dark:text-white">{item.pdfInvoice || "N/A"}</span>
+                                {item.pdfInvoice && item.pdfInvoice !== "N/A" && <CopyButton text={item.pdfInvoice} />}
+                              </div>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300">
                                 Missing in ZPL
                               </span>
                             </div>
                           ) : (
                             <div className="flex flex-col items-center gap-1">
-                              <span className="font-semibold text-slate-900 dark:text-white">{item.zplInvoice || "N/A"}</span>
+                              <div className="inline-flex items-center justify-center gap-1">
+                                <span className="font-semibold text-slate-900 dark:text-white">{item.zplInvoice || "N/A"}</span>
+                                {item.zplInvoice && item.zplInvoice !== "N/A" && <CopyButton text={item.zplInvoice} />}
+                              </div>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
                                 Missing in PDF
                               </span>
@@ -3954,11 +3934,17 @@ export default function ComparisonResultView({
                           )}
                         </td>
                         <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-                          <span>{item.orderNumber}</span>
+                          <div className="inline-flex items-center justify-center gap-1">
+                            <span>{item.orderNumber}</span>
+                            <CopyButton text={item.orderNumber} />
+                          </div>
                         </td>
                         <td className="w-44 min-w-[150px] px-3 sm:px-4 py-3.5 text-center font-medium whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
-                            <span className="font-semibold text-slate-900 dark:text-white">{item.awb}</span>
+                            <div className="inline-flex items-center gap-1">
+                              <span className="font-semibold text-slate-900 dark:text-white">{item.awb}</span>
+                              <CopyButton text={item.awb} />
+                            </div>
                             {printedRows.has(item.index) && (
                               <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
                                 <CheckCircle2 className="h-3 w-3" /> Printed
@@ -3978,6 +3964,7 @@ export default function ComparisonResultView({
                                     className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
                                   >
                                     <span>{displayAsin}</span>
+                                    {displayAsin !== "--" && <CopyButton text={displayAsin} />}
                                     {isNotLast ? (
                                        <span className="font-bold text-slate-400 dark:text-slate-500 text-[11px] ml-1">/</span>
                                     ) : null}
@@ -4002,6 +3989,7 @@ export default function ComparisonResultView({
                                     className="break-all sm:break-normal sm:whitespace-nowrap flex flex-wrap sm:flex-nowrap items-center justify-center gap-1"
                                   >
                                     <span>{displaySku}</span>
+                                    {displaySku !== "UNKNOWN-SKU" && <CopyButton text={displaySku} />}
                                     {i.qty > 1 && (
                                       <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 ml-0.5">
                                         {i.qty} Pieces

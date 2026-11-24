@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import { useVMS } from "../../VMS/Admin/hooks/useVMS";
 import { useTrackingScanner } from "../hooks/useTrackingScanner";
 import TrackingScanner from "./TrackingScanner";
@@ -100,81 +101,18 @@ export default function TrackingList() {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
-      const tableContainer = tableContainerRef.current;
-      const missingTable = missingTableContainerRef.current;
-
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-      const isPageAtTop = scrollContainer.scrollTop <= 2;
-
       const path = e.composedPath();
-      const isOverMainTable =
-        tableContainer &&
-        (path.includes(tableContainer) || tableContainer.contains(e.target as Node));
+      const missingTable = missingTableContainerRef.current;
       const isOverMissingTable =
         missingTable &&
         (path.includes(missingTable) || missingTable.contains(e.target as Node));
+      const activeTable = isOverMissingTable && missingTable ? missingTable : tableContainerRef.current;
 
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the fixed section yet -> scroll page down to fixed point
-          e.preventDefault();
-          scrollContainer.scrollTop = Math.min(
-            maxPageScroll,
-            scrollContainer.scrollTop + e.deltaY
-          );
-        } else {
-          // At the fixed view
-          if (isOverMissingTable && missingTable) {
-            const maxMissingScroll = missingTable.scrollHeight - missingTable.clientHeight;
-            if (maxMissingScroll > 0) {
-              missingTable.scrollTop += e.deltaY;
-            }
-          } else if (tableContainer) {
-            tableContainer.scrollTop += e.deltaY;
-          }
-        }
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (isOverMissingTable && missingTable) {
-          const isMissingAtTop = missingTable.scrollTop <= 1;
-          if (!isMissingAtTop) {
-            missingTable.scrollTop += e.deltaY;
-          } else if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else if (isOverMainTable && tableContainer) {
-          const isMainAtTop = tableContainer.scrollTop <= 1;
-          if (!isMainAtTop) {
-            tableContainer.scrollTop += e.deltaY;
-          } else if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        } else {
-          if (!isPageAtTop) {
-            e.preventDefault();
-            scrollContainer.scrollTop = Math.max(
-              0,
-              scrollContainer.scrollTop + e.deltaY
-            );
-          }
-        }
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: activeTable,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });

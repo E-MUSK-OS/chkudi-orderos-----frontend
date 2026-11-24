@@ -5,6 +5,7 @@ import { Operator } from "../Admin/User/operator/types/operator";
 import { useVMS } from "../../vms/Scans/VMS/Admin/hooks/useVMS";
 import type { VMSItem } from "../../vms/Scans/VMS/Admin/types";
 import Pagination from "@/components/ui/Pagination";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface Props {
   operators: Operator[];
@@ -248,9 +249,12 @@ const OperatorTable: React.FC<Props> = ({
 
                   {/* Operator Code */}
                   <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] rounded-lg border border-slate-200 dark:border-white/[0.08]">
-                      {operator.employeeCode}
-                    </span>
+                    <div className="inline-flex items-center justify-center gap-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] rounded-lg border border-slate-200 dark:border-white/[0.08]">
+                        {operator.employeeCode}
+                      </span>
+                      <CopyButton text={operator.employeeCode} />
+                    </div>
                   </td>
 
                   {/* Status */}

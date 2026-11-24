@@ -5,6 +5,7 @@ import { Edit, Trash2, Users } from "lucide-react";
 
 import { Operator } from "../types/operator";
 import Pagination from "@/components/ui/Pagination";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface Props {
   operators: Operator[];
@@ -105,7 +106,10 @@ const OperatorTable: React.FC<Props> = ({
                 </td>
 
                 <td className="px-4 sm:px-5 py-2.5 sm:py-3.5 font-mono text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                  {operator.employeeCode}
+                  <div className="inline-flex items-center gap-1">
+                    <span>{operator.employeeCode}</span>
+                    <CopyButton text={operator.employeeCode} />
+                  </div>
                 </td>
 
                 <td className="px-4 sm:px-5 py-2.5 sm:py-3.5">

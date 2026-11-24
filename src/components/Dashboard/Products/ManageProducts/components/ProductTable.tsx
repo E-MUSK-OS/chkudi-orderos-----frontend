@@ -20,6 +20,7 @@ interface Props {
   onToggleSelect?: (productId: string) => void;
   onToggleSelectAll?: () => void;
   tableWrapperClassName?: string;
+  parentScrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const getProductAttributeItems = (product: Product) => {
@@ -219,6 +220,7 @@ export default function ProductTable({
   onToggleSelect,
   onToggleSelectAll,
   tableWrapperClassName,
+  parentScrollRef,
 }: Props) {
   const isAllCurrentPageSelected =
     products.length > 0 &&
@@ -244,8 +246,8 @@ export default function ProductTable({
   }
 
   return (
-    <div className={tableWrapperClassName || "w-full min-w-max"}>
-      <table className="w-full min-w-[1050px] border-collapse text-left font-sans">
+    <div className={tableWrapperClassName || "w-full min-w-0"}>
+      <table className="w-full min-w-[1250px] border-collapse text-left font-sans">
         <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] border-b border-[#F5E6BE] dark:border-white/[0.08] dark:text-[#E8C16D] select-none shadow-xs">
           <tr>
             <th className="px-4 py-3.5 text-center w-12">
@@ -263,19 +265,19 @@ export default function ProductTable({
               </div>
             </th>
 
-            <th className="px-4 py-3.5 text-left font-semibold min-w-[240px]">
+            <th className="px-4 py-3.5 text-center font-semibold min-w-[240px]">
               Product Details
             </th>
 
-            <th className="px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[150px]">
+            <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-[150px]">
               Master SKU
             </th>
 
-            <th className="px-4 py-3.5 text-left font-semibold whitespace-nowrap w-[130px]">
+            <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap w-[130px]">
               Brand & Unit
             </th>
 
-            <th className="px-4 py-3.5 text-left font-semibold min-w-[200px]">
+            <th className="px-4 py-3.5 text-center font-semibold min-w-[200px]">
               Category
             </th>
 
@@ -318,13 +320,13 @@ export default function ProductTable({
                   </td>
 
                   {/* Product Details (Name, SKU, Description, Party) */}
-                  <td className="px-4 py-3.5 align-middle min-w-[240px]">
-                    <div>
-                      <p className="font-bold text-[#0A0E1A] truncate dark:text-white" title={product.productName}>
+                  <td className="px-4 py-3.5 align-middle text-center min-w-[240px]">
+                    <div className="flex flex-col items-center">
+                      <p className="font-bold text-[#0A0E1A] truncate dark:text-white text-center" title={product.productName}>
                         {product.productName}
                       </p>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
+                      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[11px]">
                         {product.sku && (
                           <span className="inline-flex items-center gap-1 font-mono text-slate-500 dark:text-slate-400">
                             <span className="text-slate-400 dark:text-slate-500 font-normal">SKU:</span>
@@ -388,20 +390,20 @@ export default function ProductTable({
                   </td>
 
                   {/* Master SKU */}
-                  <td className="px-4 py-3.5 align-middle whitespace-nowrap w-[150px]">
+                  <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap w-[150px]">
                     <span className="font-semibold text-slate-900 font-mono dark:text-slate-200">
                       {product.masterSku}
                     </span>
                   </td>
 
                   {/* Brand & Unit */}
-                  <td className="px-4 py-3.5 align-middle whitespace-nowrap w-[130px]">
-                    <div>
-                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                  <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap w-[130px]">
+                    <div className="flex flex-col items-center">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 text-center">
                         {product.brand || "No Brand"}
                       </span>
                       {product.unit && (
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center">
                           Unit: {product.unit}
                         </p>
                       )}
@@ -409,12 +411,12 @@ export default function ProductTable({
                   </td>
 
                   {/* Category & Attributes */}
-                  <td className="px-4 py-3.5 align-middle min-w-[200px]">
-                    <div>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <td className="px-4 py-3.5 align-middle text-center min-w-[200px]">
+                    <div className="flex flex-col items-center">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 text-center">
                         {product.category}
                       </span>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
                         {getProductAttributeItems(product).map((attr, idx) => {
                           const hasValues = attr.values.length > 0;
                           return (
@@ -492,7 +494,7 @@ export default function ProductTable({
                         }
                         masterSku={product.masterSku}
                         product={product}
-
+                        parentScrollRef={parentScrollRef}
                       />
                     </td>
                   </tr>

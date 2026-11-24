@@ -1,5 +1,6 @@
 import { api } from "@/services/api";
 import { AmazonComparisonResult, AmazonOrderSummary } from "../types";
+import { GetDashboardAnalyticsResponse } from "@/components/Dashboard/OrderProcess/Dashboard/types";
 
 const BASE_URL = "/amazon-orders";
 
@@ -60,9 +61,17 @@ export interface UpdateScanStatusResponse {
 
 export interface DailyOrderSummaryData {
   date: string | null;
+  channel?: "all" | "amazon" | "flipkart";
   totalOrders: number;
+  todayOrders?: number;
   scannedOrders: number;
   pendingOrders: number;
+  breakdown?: {
+    amazon?: { totalOrders: number; scannedOrders: number; pendingOrders: number };
+    flipkart?: { totalOrders: number; scannedOrders: number; pendingOrders: number };
+  };
+  isLive?: boolean;
+  isPermanent?: boolean;
 }
 
 export interface GetDailySummaryResponse {
@@ -383,17 +392,45 @@ export const amazonOrderService = {
 
   /**
    * Get permanent daily order summary by date (preserved beyond 7-day retention)
+   * Supports channel filtering: "all" (default), "amazon", "flipkart"
    */
   async getDailySummary(
     date?: string,
+    channel: "all" | "amazon" | "flipkart" = "all",
     token?: string
   ): Promise<GetDailySummaryResponse> {
     const userToken =
       token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
 
-    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    const params = new URLSearchParams();
+    if (date) params.append("date", date);
+    if (channel) params.append("channel", channel);
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+
     return api.get<GetDailySummaryResponse>(
-      `${BASE_URL}/summary${query}`,
+      `${BASE_URL}/summary${queryString}`,
+      userToken
+    );
+  },
+
+  /**
+   * Get dashboard analytics: batch-wise progress, hourly velocity, top SKUs
+   */
+  async getDashboardAnalytics(
+    date?: string,
+    channel: "all" | "amazon" | "flipkart" = "all",
+    token?: string
+  ): Promise<GetDashboardAnalyticsResponse> {
+    const userToken =
+      token || (typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "");
+
+    const params = new URLSearchParams();
+    if (date) params.append("date", date);
+    if (channel) params.append("channel", channel);
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+
+    return api.get<GetDashboardAnalyticsResponse>(
+      `${BASE_URL}/dashboard-analytics${queryString}`,
       userToken
     );
   },

@@ -9,6 +9,7 @@ import {
 import { formatToIST } from "../timeUtils";
 import { FlipkartAwbOrderItem } from "@/components/Dashboard/OrderProcess/Flipkart/OrderProcess/services/flipkartOrder.service";
 import Pagination from "@/components/ui/Pagination";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface Props {
   orders: FlipkartAwbOrderItem[];
@@ -54,36 +55,42 @@ export default function AwbTable({
     const items = Array.from(new Set(rawItems));
 
     if (items.length <= 1) {
+      const chipVal = items[0] || value;
       return (
-        <span
-          className={`text-sm sm:text-base font-semibold ${isFsn ? "font-mono text-[#0A0E1A] dark:text-white" : "text-slate-800 dark:text-slate-200"
-            }`}
-        >
-          {items[0] || value}
-        </span>
+        <div className="inline-flex items-center justify-center gap-1">
+          <span
+            className={`text-sm sm:text-base font-semibold ${isFsn ? "font-mono text-[#0A0E1A] dark:text-white" : "text-slate-800 dark:text-slate-200"
+              }`}
+          >
+            {chipVal}
+          </span>
+          <CopyButton text={chipVal} />
+        </div>
       );
     }
 
     return (
       <div className="flex flex-col items-center justify-center gap-1 py-1">
         {items.map((it, idx) => (
-          <span
-            key={idx}
-            className={`rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#131926] px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white ${isFsn ? "font-mono" : ""
-              }`}
-          >
-            {it}
-          </span>
+          <div key={idx} className="inline-flex items-center gap-1">
+            <span
+              className={`rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#131926] px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white ${isFsn ? "font-mono" : ""
+                }`}
+            >
+              {it}
+            </span>
+            <CopyButton text={it} />
+          </div>
         ))}
       </div>
     );
   };
 
   return (
-    <div className="h-full flex flex-col min-h-[300px] sm:min-h-[340px] flex-1 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
+    <div className="h-full flex flex-col min-h-[300px] sm:min-h-[340px] flex-1 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm w-full max-w-full min-w-0">
       <div
         ref={resolvedRef}
-        className="w-full overflow-x-auto flex-1 min-h-0 overflow-y-auto custom-scrollbar"
+        className="w-full max-w-full min-w-0 overflow-x-auto flex-1 min-h-0 sm:overflow-y-auto custom-scrollbar touch-pan-x touch-pan-y"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         <table className="w-full min-w-[1000px] lg:min-w-[1100px] border-collapse text-left font-sans relative">
@@ -94,7 +101,6 @@ export default function AwbTable({
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">AWB Tracking</th>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">FSN Code</th>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">SKU</th>
-              <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Qty</th>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Customer</th>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Packing Scan Status</th>
               <th className="px-4 py-3.5 text-center font-semibold whitespace-nowrap">Time</th>
@@ -104,7 +110,7 @@ export default function AwbTable({
           <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm">
             {isLoading && orders.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-16 text-center text-slate-400">
+                <td colSpan={8} className="py-16 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
                     <span className="text-sm font-bold text-[#0A0E1A] dark:text-white">
@@ -115,7 +121,7 @@ export default function AwbTable({
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-16 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={8} className="py-16 text-center text-slate-500 dark:text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <div className="mb-1 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF9EC] dark:bg-[#E8C16D]/10 border border-[#E8C16D]/30 dark:border-[#E8C16D]/20">
                       <PackageCheck className="h-8 w-8 text-[#B88728] dark:text-[#F5C451]" />
@@ -147,14 +153,20 @@ export default function AwbTable({
 
                     {/* Flipkart Order ID */}
                     <td className="px-4 py-3.5 text-center font-mono font-bold text-[#0A0E1A] dark:text-white whitespace-nowrap text-xs sm:text-sm">
-                      {item.orderId}
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span>{item.orderId}</span>
+                        <CopyButton text={item.orderId} />
+                      </div>
                     </td>
 
                     {/* AWB Tracking */}
                     <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                      <span className="font-mono font-bold text-slate-900 dark:text-white tracking-wider text-xs sm:text-sm">
-                        {item.awb}
-                      </span>
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span className="font-mono font-bold text-slate-900 dark:text-white tracking-wider text-xs sm:text-sm">
+                          {item.awb}
+                        </span>
+                        <CopyButton text={item.awb} />
+                      </div>
                     </td>
 
                     {/* FSN */}
@@ -165,11 +177,6 @@ export default function AwbTable({
                     {/* SKU */}
                     <td className="px-4 py-3.5 text-center whitespace-nowrap">
                       {renderChips(item.sku, false)}
-                    </td>
-
-                    {/* Qty */}
-                    <td className="px-4 py-3.5 text-center font-bold text-slate-900 dark:text-white whitespace-nowrap text-xs sm:text-sm">
-                      {item.totalQuantity ?? 1}
                     </td>
 
                     {/* Customer */}

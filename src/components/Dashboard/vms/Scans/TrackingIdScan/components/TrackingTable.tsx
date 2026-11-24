@@ -5,6 +5,7 @@ import { CheckCircle2, Clock, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 import type { VMSItem } from "../../VMS/Admin/types";
 import Pagination from "@/components/ui/Pagination";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface Props {
   data: VMSItem[];
@@ -108,9 +109,12 @@ export default function TrackingTable({
 
                     {/* Tracking ID */}
                     <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                      <span className="font-mono font-bold text-slate-900 dark:text-white tracking-wider text-xs sm:text-sm">
-                        {item.trackingId}
-                      </span>
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span className="font-mono font-bold text-slate-900 dark:text-white tracking-wider text-xs sm:text-sm">
+                          {item.trackingId}
+                        </span>
+                        <CopyButton text={item.trackingId} />
+                      </div>
                     </td>
 
                     {/* Date */}

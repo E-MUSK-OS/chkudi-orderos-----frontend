@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 
 import DashboardLayout from "@/components/Dashboard/layout/DashboardLayout";
 
@@ -103,53 +104,12 @@ const Dashboard = () => {
     if (!scrollContainer) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth < 1024) return;
       if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-
-      const tableScrollEl = tableContainerRef.current;
-      const lowerSectionEl = lowerSectionRef.current;
-      const maxPageScroll = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight
-      );
-      if (maxPageScroll <= 0) return;
-
-      const isPageAtBottom = scrollContainer.scrollTop >= maxPageScroll - 2;
-
-      const path = e.composedPath();
-      const isOverLowerSection = lowerSectionEl && path.includes(lowerSectionEl);
-      const isOverTable = tableScrollEl && path.includes(tableScrollEl);
-
-      if (e.deltaY > 0) {
-        // Scrolling DOWN
-        if (!isPageAtBottom) {
-          // Outer page has not reached the stopped view yet -> let outer page scroll down
-          return;
-        }
-
-        // Once at stopped position, scroll table internally if table has overflow
-        if (isOverLowerSection && tableScrollEl) {
-          const maxTableScroll = tableScrollEl.scrollHeight - tableScrollEl.clientHeight;
-          if (maxTableScroll > 0) {
-            e.preventDefault();
-            tableScrollEl.scrollTop = Math.min(
-              maxTableScroll,
-              tableScrollEl.scrollTop + e.deltaY
-            );
-          }
-        }
-      } else if (e.deltaY < 0) {
-        // Scrolling UP
-        if (isOverTable && tableScrollEl) {
-          if (tableScrollEl.scrollTop > 0) {
-            e.preventDefault();
-            tableScrollEl.scrollTop = Math.max(0, tableScrollEl.scrollTop + e.deltaY);
-            return;
-          }
-        }
-
-        // When table is at top (scrollTop === 0), let outer page scroll back up to reveal Header Card
-      }
+      coordinateTableWheelScroll({
+        e,
+        scrollContainer,
+        tableContainer: tableContainerRef.current,
+      });
     };
 
     scrollContainer.addEventListener("wheel", onWheel, { passive: false });
