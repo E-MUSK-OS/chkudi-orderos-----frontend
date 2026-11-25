@@ -163,6 +163,34 @@ export interface CategoryOption {
 
 export const productCategoryOptions: CategoryOption[] = [
   { label: "Clothing & Apparel", value: "Clothing & Apparel" },
+  { label: "Dress", value: "Dress" },
+  { label: "Tank Top", value: "Tank Top" },
+  { label: "T-Shirt", value: "T-Shirt" },
+  { label: "Shirt", value: "Shirt" },
+  { label: "Top", value: "Top" },
+  { label: "Crop Top", value: "Crop Top" },
+  { label: "Kurti & Kurta", value: "Kurti & Kurta" },
+  { label: "Ethnic Wear", value: "Ethnic Wear" },
+  { label: "Saree & Lehenga", value: "Saree & Lehenga" },
+  { label: "Jeans", value: "Jeans" },
+  { label: "Trousers & Pants", value: "Trousers & Pants" },
+  { label: "Track Pant", value: "Track Pant" },
+  { label: "Jogger", value: "Jogger" },
+  { label: "Cargo", value: "Cargo" },
+  { label: "Shorts", value: "Shorts" },
+  { label: "Skirt", value: "Skirt" },
+  { label: "Palazzo & Leggings", value: "Palazzo & Leggings" },
+  { label: "Co-ord Set", value: "Co-ord Set" },
+  { label: "Jumpsuit & Romper", value: "Jumpsuit & Romper" },
+  { label: "Jacket", value: "Jacket" },
+  { label: "Hoodie", value: "Hoodie" },
+  { label: "Sweatshirt", value: "Sweatshirt" },
+  { label: "Sweater & Cardigan", value: "Sweater & Cardigan" },
+  { label: "Blazer & Coat", value: "Blazer & Coat" },
+  { label: "Sportswear & Activewear", value: "Sportswear & Activewear" },
+  { label: "Innerwear & Loungewear", value: "Innerwear & Loungewear" },
+  { label: "Nightwear", value: "Nightwear" },
+  { label: "Kids Wear", value: "Kids Wear" },
   { label: "Footwear & Shoes", value: "Footwear & Shoes" },
   { label: "Electronics & Gadgets", value: "Electronics & Gadgets" },
   { label: "Bags, Wallets & Luggage", value: "Bags, Wallets & Luggage" },
@@ -986,9 +1014,34 @@ export const getCategoryAttributeConfig = (category?: string): CategoryAttribute
     trimmed.includes("apparel") ||
     trimmed.includes("trouser") ||
     trimmed.includes("co ord") ||
+    trimmed.includes("co-ord") ||
     trimmed.includes("fashion") ||
     trimmed.includes("dress") ||
-    trimmed.includes("wear")
+    trimmed.includes("wear") ||
+    trimmed.includes("shirt") ||
+    trimmed.includes("top") ||
+    trimmed.includes("kurti") ||
+    trimmed.includes("kurta") ||
+    trimmed.includes("saree") ||
+    trimmed.includes("lehenga") ||
+    trimmed.includes("jean") ||
+    trimmed.includes("pant") ||
+    trimmed.includes("jogger") ||
+    trimmed.includes("cargo") ||
+    trimmed.includes("short") ||
+    trimmed.includes("skirt") ||
+    trimmed.includes("palazzo") ||
+    trimmed.includes("legging") ||
+    trimmed.includes("jumpsuit") ||
+    trimmed.includes("romper") ||
+    trimmed.includes("jacket") ||
+    trimmed.includes("hoodie") ||
+    trimmed.includes("sweat") ||
+    trimmed.includes("cardigan") ||
+    trimmed.includes("blazer") ||
+    trimmed.includes("coat") ||
+    trimmed.includes("ethnic") ||
+    trimmed.includes("track")
   ) {
     return CATEGORY_ATTRIBUTE_CONFIGS.clothing;
   }

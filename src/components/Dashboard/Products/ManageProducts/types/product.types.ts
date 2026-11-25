@@ -114,6 +114,13 @@ export interface ProductStatsResponse {
   data: ProductStats;
 }
 
+export interface WarehouseStockAllocation {
+  warehouseId: string;
+  openingStock: number;
+  reorderLevelStock: number;
+  minimumStock: number;
+}
+
 export interface CreateProductPayload {
   productName: string;
   masterSku: string;

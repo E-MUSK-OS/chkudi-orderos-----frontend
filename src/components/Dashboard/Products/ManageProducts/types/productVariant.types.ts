@@ -58,7 +58,9 @@ export interface CreateProductVariantPayload {
   }[];
 }
 
-export type UpdateProductVariantPayload = Partial<CreateProductVariantPayload>;
+export type UpdateProductVariantPayload = Partial<CreateProductVariantPayload> & {
+  expectedUpdatedAt?: string;
+};
 
 export interface ProductVariantResponse {
   success: boolean;

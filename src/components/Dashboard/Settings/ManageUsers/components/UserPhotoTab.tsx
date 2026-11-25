@@ -53,6 +53,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "order-process/flipkart/order-process": "order-process/flipkart/order-process",
   "products-analytics/amazon": "products-analytics/amazon",
   "transaction/sales/po-based": "transaction/sales/po-based",
+  "offline-sales/product-gallery": "offline-sales/product-gallery",
   "offline-sales/sales-challan": "offline-sales/sales-challan",
   "offline-sales/sales-invoice": "offline-sales/sales-invoice",
   "purchase/finish-goods/challan": "purchase/finish-goods/challan",

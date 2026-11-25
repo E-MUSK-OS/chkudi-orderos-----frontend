@@ -60,6 +60,7 @@ interface ColorMultiSelectProps {
   colorHexMap?: Record<string, string>;
   error?: string;
   className?: string;
+  singleSelect?: boolean;
 }
 
 export default function ColorMultiSelect({
@@ -71,6 +72,7 @@ export default function ColorMultiSelect({
   colorHexMap = {},
   error,
   className,
+  singleSelect = false,
 }: ColorMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openDirection, setOpenDirection] = useState<"down" | "up">("down");
@@ -203,6 +205,11 @@ export default function ColorMultiSelect({
 
   const toggleColor = (name: string) => {
     const exists = value.some((v) => v.toLowerCase() === name.toLowerCase());
+    if (singleSelect) {
+      onChange(exists ? [] : [name]);
+      setIsOpen(false);
+      return;
+    }
     let next: string[];
     if (exists) {
       next = value.filter((v) => v.toLowerCase() !== name.toLowerCase());
@@ -221,7 +228,10 @@ export default function ColorMultiSelect({
     const trimmed = newColorName.trim();
     if (!trimmed) return;
 
-    if (!value.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
+    if (singleSelect) {
+      onChange([trimmed]);
+      setIsOpen(false);
+    } else if (!value.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
       onChange([...value, trimmed]);
     }
 
@@ -288,7 +298,7 @@ export default function ColorMultiSelect({
         >
           {value.length === 0 ? (
             <span className="text-slate-400 dark:text-slate-500">
-              Select colors...
+              {singleSelect ? "Select color..." : "Select colors..."}
             </span>
           ) : (
             value.map((colorName) => {

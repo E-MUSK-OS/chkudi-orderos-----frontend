@@ -15,6 +15,7 @@ interface SizeMultiSelectProps {
   className?: string;
   additionalSizes?: string[];
   disabledSizes?: string[];
+  singleSelect?: boolean;
 }
 
 export default function SizeMultiSelect({
@@ -26,6 +27,7 @@ export default function SizeMultiSelect({
   className,
   additionalSizes = [],
   disabledSizes = [],
+  singleSelect = false,
 }: SizeMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openDirection, setOpenDirection] = useState<"down" | "up">("down");
@@ -99,6 +101,11 @@ export default function SizeMultiSelect({
 
   const toggleSize = (size: string) => {
     const exists = selectedSizes.some((s) => s.toLowerCase() === size.toLowerCase());
+    if (singleSelect) {
+      onChange(exists ? "" : size);
+      setIsOpen(false);
+      return;
+    }
     let next: string[];
     if (exists) {
       next = selectedSizes.filter((s) => s.toLowerCase() !== size.toLowerCase());
@@ -144,7 +151,10 @@ export default function SizeMultiSelect({
     const trimmed = newSizeName.trim().toUpperCase();
     if (!trimmed) return;
 
-    if (!selectedSizes.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+    if (singleSelect) {
+      onChange(trimmed);
+      setIsOpen(false);
+    } else if (!selectedSizes.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
       onChange([...selectedSizes, trimmed].join(", "));
     }
 
@@ -211,7 +221,9 @@ export default function SizeMultiSelect({
         >
           {selectedSizes.length === 0 ? (
             <span className="text-slate-400 dark:text-slate-500">
-              Select sizes (XS to 4XL, 28 to 48)...
+              {singleSelect
+                ? "Select size (XS to 4XL, 28 to 48)..."
+                : "Select sizes (XS to 4XL, 28 to 48)..."}
             </span>
           ) : (
             selectedSizes.map((size) => (
@@ -251,38 +263,46 @@ export default function SizeMultiSelect({
             )}
           >
             {/* Quick Actions Bar */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] bg-slate-50/60 dark:bg-[#0B0F17]/40 text-[11px] font-bold">
-              <span className="text-slate-500 dark:text-slate-400">Quick Select:</span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={selectAllAlpha}
-                  className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
-                >
-                  XS–4XL
-                </button>
-                <span className="text-slate-300 dark:text-slate-600">|</span>
-                <button
-                  type="button"
-                  onClick={selectAllNumeric}
-                  className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
-                >
-                  28–48
-                </button>
-                {selectedSizes.length > 0 && (
-                  <>
-                    <span className="text-slate-300 dark:text-slate-600">|</span>
-                    <button
-                      type="button"
-                      onClick={clearAllSizes}
-                      className="px-2 py-0.5 rounded-md text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  </>
-                )}
+            {(!singleSelect || selectedSizes.length > 0) && (
+              <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] bg-slate-50/60 dark:bg-[#0B0F17]/40 text-[11px] font-bold">
+                <span className="text-slate-500 dark:text-slate-400">
+                  {singleSelect ? "Size Options:" : "Quick Select:"}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {!singleSelect && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={selectAllAlpha}
+                        className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
+                      >
+                        XS–4XL
+                      </button>
+                      <span className="text-slate-300 dark:text-slate-600">|</span>
+                      <button
+                        type="button"
+                        onClick={selectAllNumeric}
+                        className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
+                      >
+                        28–48
+                      </button>
+                    </>
+                  )}
+                  {selectedSizes.length > 0 && (
+                    <>
+                      {!singleSelect && <span className="text-slate-300 dark:text-slate-600">|</span>}
+                      <button
+                        type="button"
+                        onClick={clearAllSizes}
+                        className="px-2 py-0.5 rounded-md text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="max-h-64 overflow-y-auto custom-scrollbar p-3 space-y-3">
               {/* Section 1: Standard Alpha Sizes (XS to 4XL) */}

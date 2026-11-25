@@ -3,22 +3,14 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronDown, Plus, Check, X } from "lucide-react";
 import { cn, getAvailableVerticalSpace } from "@/lib/utils";
-import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
+import { useDropdownOptions, useSaveDropdownOption } from "../hooks/useDropdownOptions";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 import { toast } from "sonner";
 
 export interface GenderOption {
   label: string;
   value: string;
 }
-
-const DEFAULT_GENDER_PRESETS: GenderOption[] = [
-  { label: "Men", value: "Men" },
-  { label: "Women", value: "Women" },
-  { label: "Boys", value: "Boys" },
-  { label: "Girls", value: "Girls" },
-  { label: "Kids", value: "Kids" },
-  { label: "Unisex", value: "Unisex" },
-];
 
 interface GenderMultiSelectProps {
   label?: string;
@@ -29,6 +21,7 @@ interface GenderMultiSelectProps {
   required?: boolean;
   error?: string;
   className?: string;
+  singleSelect?: boolean;
 }
 
 export default function GenderMultiSelect({
@@ -40,6 +33,7 @@ export default function GenderMultiSelect({
   required = false,
   error,
   className,
+  singleSelect = false,
 }: GenderMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openDirection, setOpenDirection] = useState<"down" | "up">("down");
@@ -70,23 +64,39 @@ export default function GenderMultiSelect({
   const customInputRef = useRef<HTMLInputElement>(null);
 
   const saveOptionMutation = useSaveDropdownOption();
+  const { data: dropdownResponse } = useDropdownOptions();
+  const dropdownData = dropdownResponse?.data;
 
-  // Normalize incoming value to string[]
+  // Load gender options dynamically from Setting Master
+  const settingMasterOptions: GenderOption[] = useMemo(() => {
+    const merged = buildMergedOptions(
+      "gender",
+      [],
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.genders
+    );
+    return merged.map((m) => ({ label: m.label, value: m.value }));
+  }, [dropdownData]);
+
+  // Normalize incoming value to string[] (splitting any comma-joined entries)
   const selectedValues: string[] = useMemo(() => {
-    if (Array.isArray(value)) {
-      return value.map((v) => String(v).trim()).filter(Boolean);
-    }
-    if (typeof value === "string" && value.trim()) {
-      return value.split(",").map((s) => s.trim()).filter(Boolean);
-    }
-    return [];
+    const rawList = Array.isArray(value)
+      ? value
+      : typeof value === "string" && value.trim()
+        ? [value]
+        : [];
+    return rawList
+      .flatMap((v) => String(v).split(","))
+      .map((s) => s.trim())
+      .filter(Boolean);
   }, [value]);
 
-  // Merge presets + incoming options + custom options
+  // Merge options strictly from Setting Master (or passed options) + custom options + selected values
   const mergedOptions: GenderOption[] = useMemo(() => {
     const map = new Map<string, GenderOption>();
+    const baseList = options && options.length > 0 ? options : settingMasterOptions;
 
-    [...DEFAULT_GENDER_PRESETS, ...(options || []), ...localCustomOptions].forEach((opt) => {
+    [...baseList, ...localCustomOptions].forEach((opt) => {
       const v = String(opt.value || opt.label || "").trim();
       if (v && !map.has(v.toLowerCase())) {
         map.set(v.toLowerCase(), { label: opt.label || v, value: v });
@@ -102,7 +112,7 @@ export default function GenderMultiSelect({
     });
 
     return Array.from(map.values());
-  }, [options, localCustomOptions, selectedValues]);
+  }, [options, settingMasterOptions, localCustomOptions, selectedValues]);
 
   // Click outside listener
   useEffect(() => {
@@ -118,6 +128,11 @@ export default function GenderMultiSelect({
 
   const toggleOption = (val: string) => {
     const exists = selectedValues.some((v) => v.toLowerCase() === val.toLowerCase());
+    if (singleSelect) {
+      onChange(exists ? [] : [val]);
+      setIsOpen(false);
+      return;
+    }
 
     let next: string[];
     if (exists) {
@@ -152,7 +167,9 @@ export default function GenderMultiSelect({
       ]);
     }
 
-    if (!selectedValues.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
+    if (singleSelect) {
+      onChange([trimmed]);
+    } else if (!selectedValues.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
       onChange([...selectedValues, trimmed]);
     }
 

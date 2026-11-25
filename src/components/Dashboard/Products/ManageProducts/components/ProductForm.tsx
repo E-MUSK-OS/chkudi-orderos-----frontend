@@ -19,13 +19,16 @@ import {
   ListFilter,
   CheckCircle2,
   Check,
-
+  ChevronDown,
+  X,
+  Warehouse as WarehouseIcon,
   Trash2,
   Tags,
   Plus,
 } from "lucide-react";
 
 import type { Product } from "../types/product.types";
+import { useWarehouses } from "@/components/Dashboard/Warehouse/hooks/useWarehouse";
 import {
   productCategoryOptions,
   getCategoryAttributeConfig,
@@ -200,6 +203,110 @@ export default function ProductForm({
   const watchedMrp = watch("mrp");
   const watchedProductCost = watch("productCost");
   const watchedGender = watch("gender");
+
+  // Warehouses Multi-Select & Per-Warehouse Stock State
+  const { data: warehousesResponse } = useWarehouses();
+  const availableWarehouses = useMemo(
+    () => (warehousesResponse?.data || []).filter((w) => w.isActive !== false),
+    [warehousesResponse]
+  );
+  const [selectedWarehouseIds, setSelectedWarehouseIds] = useState<string[]>([]);
+  const [warehouseAllocations, setWarehouseAllocations] = useState<
+    Record<
+      string,
+      {
+        openingStock: number | "";
+        reorderLevelStock: number | "";
+        minimumStock: number | "";
+      }
+    >
+  >({});
+  const [warehouseDropdownOpen, setWarehouseDropdownOpen] = useState(false);
+  const warehouseDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!warehouseDropdownOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (
+        warehouseDropdownRef.current &&
+        !warehouseDropdownRef.current.contains(e.target as Node)
+      ) {
+        setWarehouseDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [warehouseDropdownOpen]);
+
+  const syncStockTotalsFromWarehouses = (
+    ids: string[],
+    allocs: Record<
+      string,
+      {
+        openingStock: number | "";
+        reorderLevelStock: number | "";
+        minimumStock: number | "";
+      }
+    >
+  ) => {
+    if (ids.length === 0) return;
+    const totalOpening = ids.reduce(
+      (sum, id) => sum + (Number(allocs[id]?.openingStock) || 0),
+      0
+    );
+    const totalReorder = ids.reduce(
+      (sum, id) => sum + (Number(allocs[id]?.reorderLevelStock) || 0),
+      0
+    );
+    const totalMin = ids.reduce(
+      (sum, id) => sum + (Number(allocs[id]?.minimumStock) || 0),
+      0
+    );
+    setValue("openingStock", totalOpening);
+    setValue("reorderLevelStock", totalReorder);
+    setValue("minimumStock", totalMin);
+  };
+
+  const toggleWarehouseSelection = (warehouseId: string) => {
+    const exists = selectedWarehouseIds.includes(warehouseId);
+    const nextIds = exists
+      ? selectedWarehouseIds.filter((id) => id !== warehouseId)
+      : [...selectedWarehouseIds, warehouseId];
+
+    const nextAllocs = { ...warehouseAllocations };
+    if (!exists && !nextAllocs[warehouseId]) {
+      nextAllocs[warehouseId] = {
+        openingStock: Number(watch("openingStock")) || 0,
+        reorderLevelStock: Number(watch("reorderLevelStock")) || 0,
+        minimumStock: Number(watch("minimumStock")) || 0,
+      };
+    }
+    setSelectedWarehouseIds(nextIds);
+    setWarehouseAllocations(nextAllocs);
+    syncStockTotalsFromWarehouses(nextIds, nextAllocs);
+  };
+
+  const updateWarehouseStockField = (
+    warehouseId: string,
+    field: "openingStock" | "reorderLevelStock" | "minimumStock",
+    rawVal: string
+  ) => {
+    const parsed = rawVal === "" ? "" : Math.max(0, parseInt(rawVal, 10) || 0);
+    const existing = warehouseAllocations[warehouseId] || {
+      openingStock: 0,
+      reorderLevelStock: 0,
+      minimumStock: 0,
+    };
+    const nextAllocs = {
+      ...warehouseAllocations,
+      [warehouseId]: {
+        ...existing,
+        [field]: parsed,
+      },
+    };
+    setWarehouseAllocations(nextAllocs);
+    syncStockTotalsFromWarehouses(selectedWarehouseIds, nextAllocs);
+  };
 
   const selectedGenders: string[] = useMemo(() => {
     const raw: any = watchedGender;
@@ -944,20 +1051,6 @@ export default function ProductForm({
           initialGender = [...initialGender, ...extraGenders];
         }
       }
-      if (initialGender.length === 0) {
-        const text = `${activeProduct.productName || ""} ${activeProduct.category || ""} ${
-          activeProduct.subCategory || ""
-        }`.toLowerCase();
-        if (/\b(women|woman|ladies|lady|kurti|saree|lehenga|gown|dress|top|skirt|girl|girls)\b/.test(text)) {
-          initialGender = ["Women"];
-        } else if (/\b(men|man|mens|polo|shirt|t-shirt|trouser|pant|jeans|boy|boys)\b/.test(text)) {
-          initialGender = ["Men"];
-        } else if (/\b(kid|kids|baby|child|children|infant)\b/.test(text)) {
-          initialGender = ["Kids"];
-        } else {
-          initialGender = ["Unisex"];
-        }
-      }
 
       // 4.5 Extract Marketplace
       let initialMarketplace: string[] = ["All"];
@@ -1144,6 +1237,32 @@ export default function ProductForm({
         isActive: activeProduct.isActive ?? true,
         attributes: customExistingAttrs,
       });
+
+      // Hydrate per-warehouse stock allocations from existing variant inventories if present
+      const existingInventories = ((activeProduct as any).variants?.[0]?.inventories || []) as Array<{
+        warehouseId: string;
+        availableStock?: number;
+        reorderLevel?: number;
+      }>;
+      if (existingInventories.length > 0) {
+        const initIds: string[] = [];
+        const initAllocs: Record<
+          string,
+          { openingStock: number | ""; reorderLevelStock: number | ""; minimumStock: number | "" }
+        > = {};
+        for (const inv of existingInventories) {
+          if (inv.warehouseId && !initIds.includes(inv.warehouseId)) {
+            initIds.push(inv.warehouseId);
+            initAllocs[inv.warehouseId] = {
+              openingStock: Number(inv.availableStock) || 0,
+              reorderLevelStock: Number(inv.reorderLevel) || 0,
+              minimumStock: initialMinimumStock || 0,
+            };
+          }
+        }
+        setSelectedWarehouseIds(initIds);
+        setWarehouseAllocations(initAllocs);
+      }
     } else if (mode === "create") {
       if (!lastSyncedKeyRef.current) {
         lastSyncedKeyRef.current = "create-initialized";
@@ -1277,6 +1396,16 @@ export default function ProductForm({
         isPaired: Boolean(values.isPaired),
         availability: values.availability || "Public",
         attributes: combinedAttributes,
+        ...(selectedWarehouseIds.length > 0
+          ? {
+              warehouseStocks: selectedWarehouseIds.map((whId) => ({
+                warehouseId: whId,
+                openingStock: Number(warehouseAllocations[whId]?.openingStock) || 0,
+                reorderLevelStock: Number(warehouseAllocations[whId]?.reorderLevelStock) || 0,
+                minimumStock: Number(warehouseAllocations[whId]?.minimumStock) || 0,
+              })),
+            }
+          : {}),
       };
 
       const token =
@@ -2445,6 +2574,238 @@ export default function ProductForm({
                 )}
               />
             </div>
+          </div>
+
+          {/* Warehouse-Wise Stock Allocation (Multi-Select Warehouses for Opening, Minimum & Re-Order Stock) */}
+          <div className="pt-4 border-t border-slate-200/80 dark:border-white/[0.08] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                  <WarehouseIcon size={14} className="text-[#B88728] dark:text-[#F5C451]" />
+                  <span>Warehouses (Multi-Select Stock Allocation)</span>
+                </label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Select warehouses to set Opening Stock, Minimum Stock, and Re-Order Level Stock per warehouse.
+                </p>
+              </div>
+              {availableWarehouses.length > 0 && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allIds = availableWarehouses.map((w) => w.id);
+                      const nextAllocs = { ...warehouseAllocations };
+                      for (const id of allIds) {
+                        if (!nextAllocs[id]) {
+                          nextAllocs[id] = {
+                            openingStock: Number(watch("openingStock")) || 0,
+                            reorderLevelStock: Number(watch("reorderLevelStock")) || 0,
+                            minimumStock: Number(watch("minimumStock")) || 0,
+                          };
+                        }
+                      }
+                      setSelectedWarehouseIds(allIds);
+                      setWarehouseAllocations(nextAllocs);
+                      syncStockTotalsFromWarehouses(allIds, nextAllocs);
+                    }}
+                    className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer"
+                  >
+                    Select All
+                  </button>
+                  {selectedWarehouseIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedWarehouseIds([]);
+                      }}
+                      className="text-[11px] font-semibold text-slate-400 hover:text-rose-500 cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Multi-Select Dropdown */}
+            <div className="relative" ref={warehouseDropdownRef}>
+              <div
+                onClick={() => setWarehouseDropdownOpen((o) => !o)}
+                className="min-h-11 sm:min-h-12 w-full px-3.5 py-2 rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] flex items-center justify-between gap-2 cursor-pointer hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 transition-all shadow-xs"
+              >
+                <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                  {selectedWarehouseIds.length === 0 ? (
+                    <span className="text-xs sm:text-sm text-slate-400">
+                      {availableWarehouses.length === 0
+                        ? "No warehouses added yet"
+                        : "Select Warehouses..."}
+                    </span>
+                  ) : (
+                    selectedWarehouseIds.map((whId) => {
+                      const wh = availableWarehouses.find((w) => w.id === whId);
+                      if (!wh) return null;
+                      return (
+                        <span
+                          key={whId}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#FFF9EC] text-[#7A581F] border border-[#E8C16D]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30"
+                        >
+                          <span>{wh.warehouseName}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleWarehouseSelection(whId)}
+                            className="hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
+                            aria-label={`Remove ${wh.warehouseName}`}
+                          >
+                            <X size={11} />
+                          </button>
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={cn(
+                    "text-slate-400 shrink-0 transition-transform",
+                    warehouseDropdownOpen && "rotate-180"
+                  )}
+                />
+              </div>
+
+              {warehouseDropdownOpen && availableWarehouses.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-40 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-1.5 shadow-2xl max-h-56 overflow-y-auto custom-scrollbar space-y-0.5">
+                  {availableWarehouses.map((wh) => {
+                    const isSelected = selectedWarehouseIds.includes(wh.id);
+                    return (
+                      <button
+                        key={wh.id}
+                        type="button"
+                        onClick={() => toggleWarehouseSelection(wh.id)}
+                        className={cn(
+                          "w-full px-3 py-2 rounded-xl flex items-center justify-between gap-2 text-left text-xs font-semibold transition-colors cursor-pointer",
+                          isSelected
+                            ? "bg-[#FFF9EC] text-[#7A581F] dark:bg-[#F5C451]/15 dark:text-[#F5C451]"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04]"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="truncate">{wh.warehouseName}</span>
+                          {wh.warehouseCode && (
+                            <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                              ({wh.warehouseCode})
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className={cn(
+                            "h-4 w-4 rounded flex items-center justify-center border shrink-0",
+                            isSelected
+                              ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
+                              : "border-slate-300 dark:border-white/20"
+                          )}
+                        >
+                          {isSelected && <Check size={11} strokeWidth={3} />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Selected Warehouses Stock Quantities */}
+            {selectedWarehouseIds.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                {selectedWarehouseIds.map((whId) => {
+                  const wh = availableWarehouses.find((w) => w.id === whId);
+                  if (!wh) return null;
+                  const alloc = warehouseAllocations[whId] || {
+                    openingStock: 0,
+                    reorderLevelStock: 0,
+                    minimumStock: 0,
+                  };
+                  return (
+                    <div
+                      key={whId}
+                      className="rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/70 dark:bg-[#0B0F17] p-3 space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-xs font-bold text-[#0A0E1A] dark:text-white truncate">
+                            {wh.warehouseName}
+                          </span>
+                          {wh.warehouseCode && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300">
+                              {wh.warehouseCode}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleWarehouseSelection(whId)}
+                          className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                          title={`Remove ${wh.warehouseName}`}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                            Opening Qty
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={alloc.openingStock}
+                            onChange={(e) =>
+                              updateWarehouseStockField(whId, "openingStock", e.target.value)
+                            }
+                            placeholder="0"
+                            className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                            Min Stock
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={alloc.minimumStock}
+                            onChange={(e) =>
+                              updateWarehouseStockField(whId, "minimumStock", e.target.value)
+                            }
+                            placeholder="0"
+                            className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                            Re-Order Qty
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={alloc.reorderLevelStock}
+                            onChange={(e) =>
+                              updateWarehouseStockField(whId, "reorderLevelStock", e.target.value)
+                            }
+                            placeholder="0"
+                            className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

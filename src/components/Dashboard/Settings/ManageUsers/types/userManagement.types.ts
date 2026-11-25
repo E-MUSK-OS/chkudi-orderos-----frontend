@@ -141,6 +141,7 @@ export const PAGE_ACCESS_OPTIONS = [
   { id: "order-process/flipkart/order-process", label: "Flipkart - Order Process" },
   { id: "products-analytics/amazon", label: "Products Analytics - Amazon" },
   { id: "transaction/sales/po-based", label: "Transaction - Sales PO Based" },
+  { id: "offline-sales/product-gallery", label: "Offline Sales - Product Gallery" },
   { id: "offline-sales/sales-challan", label: "Offline Sales - Sales Challan" },
   { id: "offline-sales/sales-invoice", label: "Offline Sales - Sales Invoice" },
   { id: "purchase/finish-goods/challan", label: "Purchase - Purchase Challan" },

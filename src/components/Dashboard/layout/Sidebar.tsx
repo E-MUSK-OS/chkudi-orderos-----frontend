@@ -167,6 +167,12 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
       return true;
     }
     if (
+      (itemNorm === "/offline-sales/product-gallery" || itemNorm === "/product-gallery") &&
+      (currentNorm === "/offline-sales/product-gallery" || currentNorm === "/product-gallery" || currentNorm.startsWith("/product-gallery/"))
+    ) {
+      return true;
+    }
+    if (
       (itemNorm === "/offline-sales/sales-invoice" || itemNorm === "/sales-invoice") &&
       (currentNorm === "/offline-sales/sales-invoice" || currentNorm === "/sales-invoice" || currentNorm.startsWith("/sales-invoice/"))
     ) {

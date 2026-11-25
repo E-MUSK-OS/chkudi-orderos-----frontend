@@ -47,6 +47,7 @@ import {
 } from "./hooks/useFlipkartImports";
 import { useDropdownOptions } from "./hooks/useDropdownOptions";
 import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
+import { productCategoryOptions } from "./constants/product.constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadDemoSheet } from "./utils/downloadDemoSheet";
 import { exportProductsExcel } from "./utils/exportProductsExcel";
@@ -63,7 +64,10 @@ const ManageProducts = () => {
     if (typeof window !== "undefined") {
       const param = new URLSearchParams(window.location.search).get("type");
       if (param === "myntra" || param === "asin" || param === "product" || param === "flipkart") {
-        setImportType(param as ImportType);
+        const id = setTimeout(() => {
+          setImportType(param as ImportType);
+        }, 0);
+        return () => clearTimeout(id);
       }
     }
   }, []);
@@ -150,7 +154,12 @@ const ManageProducts = () => {
   // Category Options dynamically from Setting Masters / DB
   const categoryOptions = useMemo(() => [
     { label: "All Categories", value: "" },
-    ...buildMergedOptions("category", [], dropdownData?.savedOptions, dropdownData?.distinctFromProducts?.categories),
+    ...buildMergedOptions(
+      "category",
+      productCategoryOptions,
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.categories
+    ),
   ], [dropdownData]);
 
   // Brand Options dynamically from Setting Masters / DB
@@ -352,6 +361,36 @@ const ManageProducts = () => {
 
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const restoredExpandRef = useRef(false);
+
+  // Restore expanded product row when returning from edit-product variant page
+  useEffect(() => {
+    if (restoredExpandRef.current || filteredProducts.length === 0) return;
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem("orderos_return_expanded_product");
+      if (!raw) return;
+      sessionStorage.removeItem("orderos_return_expanded_product");
+      restoredExpandRef.current = true;
+      let targetId = raw;
+      if (raw.startsWith("{")) {
+        const parsed = JSON.parse(raw);
+        targetId = parsed?.productId || "";
+      }
+      if (!targetId) return;
+      const idx = filteredProducts.findIndex((p) => p.id === targetId);
+      if (idx !== -1) {
+        const targetPage = Math.floor(idx / pageSize) + 1;
+        const frameId = requestAnimationFrame(() => {
+          setPage(targetPage);
+          setExpandedProductId(targetId);
+        });
+        return () => cancelAnimationFrame(frameId);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [filteredProducts, pageSize]);
 
   const handleToggleSelect = (productId: string) => {
     setSelectedProductIds((prev) =>

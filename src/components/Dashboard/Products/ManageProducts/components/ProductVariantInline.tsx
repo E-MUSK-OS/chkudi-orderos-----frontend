@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { productService } from "../services/product.service";
-import { API_BASE_URL } from "@/lib/config";
 import Button from "@/components/ui/Button";
 import { Switch } from "@/components/ui/switch";
 import type { Product, ProductAttribute } from "../types/product.types";
@@ -14,15 +14,31 @@ import {
   useProductVariants,
   useUpdateProductVariant,
 } from "../hooks/useProductVariants";
-import { defaultColorPresets, getSizeRank } from "../constants/product.constants";
+import { getSizeRank } from "../constants/product.constants";
+import { usePagePermissions } from "@/utils/pagePermissions";
+import {
+  buildExtraAttributes,
+  buildGenderPricingMap,
+  checkHasSizeAttribute,
+  findDuplicateVariant,
+  generateVariantSku as buildVariantSku,
+  getActiveMarketplacesInfo,
+  getCleanVariantSku as buildCleanVariantSku,
+  getColorHex,
+  getColorValue as extractColorValue,
+  getDefinedSizes,
+  getGenderValue as extractGenderValue,
+  getSizeValue as extractSizeValue,
+  resolveAttributeId,
+  resolveAvailableGenders,
+  resolveExistingGender,
+  toFullImageUrl,
+} from "../utils/productVariant.utils";
 import {
   Pencil,
   Trash2,
   Plus,
   X,
-  Check,
-  ChevronDown,
-  ChevronUp,
   ImagePlus,
   Camera,
   Crop,
@@ -47,26 +63,6 @@ interface ColorGroup {
   variants: ProductVariant[];
 }
 
-const getColorHex = (name: string): string => {
-  if (!name) return "#64748B";
-  const clean = name.toLowerCase().trim();
-  const found = defaultColorPresets.find(
-    (p) => p.name.toLowerCase() === name.toLowerCase().trim()
-  );
-  if (found) return found.hex;
-  if (/^#([0-9A-F]{3}){1,2}$/i.test(name.trim())) return name.trim();
-  if (typeof window !== "undefined") {
-    try {
-      const stored = localStorage.getItem("orderos_custom_color_hexes");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed[clean]) return parsed[clean];
-      }
-    } catch { }
-  }
-  return "#64748B";
-};
-
 export default function ProductVariantInline({
   productId,
   attributes,
@@ -75,6 +71,8 @@ export default function ProductVariantInline({
   marketplace,
   parentScrollRef,
 }: Props) {
+  const router = useRouter();
+  const { canUpdate } = usePagePermissions("settings/manage-product");
   const { data, isLoading } = useProductVariants(productId);
   const createVariant = useCreateProductVariant();
   const updateVariant = useUpdateProductVariant();
@@ -129,45 +127,13 @@ export default function ProductVariantInline({
   const effectiveMasterSku = (masterSku || product?.masterSku || "").trim();
 
   // Normalize active marketplace selection
-  const activeMarketplaces = useMemo(() => {
-    const raw = marketplace ?? product?.marketplace ?? "All";
-    if (Array.isArray(raw)) {
-      return raw.map((m) => String(m).trim().toLowerCase());
-    }
-    if (typeof raw === "string") {
-      return raw
-        .split(",")
-        .map((m) => m.trim().toLowerCase())
-        .filter(Boolean);
-    }
-    return ["all"];
-  }, [marketplace, product?.marketplace]);
-
-  const isAllMarketplace =
-    activeMarketplaces.length === 0 || activeMarketplaces.includes("all");
-  const showAsin =
-    isAllMarketplace || activeMarketplaces.includes("amazon");
-  const showMyntraSku =
-    isAllMarketplace || activeMarketplaces.includes("myntra");
-  const showFsnCode =
-    isAllMarketplace ||
-    activeMarketplaces.includes("flipkart") ||
-    activeMarketplaces.includes("flipkart");
-
-  // Helper to ensure clean absolute image URLs without duplicate /api/v1 prefixes
-  const toFullImageUrl = (url?: string | null) => {
-    if (!url) return undefined;
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    const cleanBase = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
-    let cleanPath = url.startsWith("/") ? url : `/${url}`;
-    if (!cleanPath.startsWith("/api/v1")) {
-      cleanPath = `/api/v1${cleanPath}`;
-    }
-    return `${cleanBase}${cleanPath}`;
-  };
+  const { showAsin, showMyntraSku, showFsnCode } = useMemo(
+    () => getActiveMarketplacesInfo(marketplace, product),
+    [marketplace, product]
+  );
 
   // Color images state & upload
-  const [localImages, setLocalImages] = useState<Record<string, string>>({});
+  const [uploadedImages, setUploadedImages] = useState<Record<string, string>>({});
   const [uploadingColor, setUploadingColor] = useState<string | null>(null);
   const [adjustingImage, setAdjustingImage] = useState<{
     url: string;
@@ -190,16 +156,20 @@ export default function ProductVariantInline({
     staleTime: 1000 * 60 * 5,
   });
 
-  useEffect(() => {
-    if (imagesResponse?.data) {
-      const formatted: Record<string, string> = {};
-      for (const [color, pathUrl] of Object.entries(imagesResponse.data)) {
-        const full = toFullImageUrl(pathUrl);
-        if (full) formatted[color] = full;
-      }
-      setLocalImages((prev) => ({ ...formatted, ...prev }));
+  const serverImages = useMemo(() => {
+    if (!imagesResponse?.data) return {};
+    const formatted: Record<string, string> = {};
+    for (const [color, pathUrl] of Object.entries(imagesResponse.data)) {
+      const full = toFullImageUrl(pathUrl as string);
+      if (full) formatted[color] = full;
     }
+    return formatted;
   }, [imagesResponse]);
+
+  const effectiveImages = useMemo(() => ({
+    ...serverImages,
+    ...uploadedImages,
+  }), [serverImages, uploadedImages]);
 
   const handleUploadImage = async (file: File, colorName: string) => {
     if (!file.type.startsWith("image/")) {
@@ -223,13 +193,14 @@ export default function ProductVariantInline({
       toast.success(`Image for ${colorName} uploaded successfully!`);
       const rawUrl = res.data.imageUrl;
       const cacheBustedUrl = `${toFullImageUrl(rawUrl)}&t=${Date.now()}`;
-      setLocalImages((prev) => ({
+      setUploadedImages((prev) => ({
         ...prev,
         [colorName]: cacheBustedUrl,
       }));
       refetchImages();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to upload image.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to upload image.";
+      toast.error(msg);
     } finally {
       setUploadingColor(null);
     }
@@ -237,6 +208,8 @@ export default function ProductVariantInline({
 
   // Single variant editing state
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const inlineFieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const [editSku, setEditSku] = useState("");
   const [editCost, setEditCost] = useState<number | string>("");
   const [editMrp, setEditMrp] = useState<number | string>("");
@@ -249,6 +222,23 @@ export default function ProductVariantInline({
   const [editOtherAttrs, setEditOtherAttrs] = useState<Record<string, string>>(
     {}
   );
+
+  // Focus the double-clicked field once inline editing activates
+  useEffect(() => {
+    if (!editingId || !focusedField) return;
+    const fieldKey = focusedField;
+    requestAnimationFrame(() => {
+      const target = inlineFieldRefs.current[`${editingId}:${fieldKey}`];
+      if (target) {
+        if (fieldKey === "status") {
+          target.querySelector<HTMLElement>('[data-slot="switch"]')?.focus();
+        } else {
+          target.focus();
+        }
+      }
+      setFocusedField(null);
+    });
+  }, [editingId, focusedField]);
 
   // Adding new color row state
   const [isAdding, setIsAdding] = useState(false);
@@ -270,166 +260,33 @@ export default function ProductVariantInline({
   const [quickAddSizesInput, setQuickAddSizesInput] = useState("");
   const [isQuickAdding, setIsQuickAdding] = useState(false);
 
-  // Extract helper for attribute values
-  const getSizeValue = (variant: ProductVariant): string => {
-    const sizeAttr = variant.attributes?.find((a) =>
-      ["size"].includes(
-        (a.productAttribute?.attributeName || "").toLowerCase().trim()
-      )
-    );
-    if (sizeAttr?.attributeValue?.trim()) {
-      return sizeAttr.attributeValue.trim();
-    }
+  // Extract helpers bound to product context
+  const getSizeValue = (variant: ProductVariant): string =>
+    extractSizeValue(variant, product);
 
-    // Fallback: parse size from variantSku
-    const sku = variant.variantSku || "";
-    if (sku) {
-      const parts = sku.split("-");
-      if (parts.length >= 2) {
-        let lastPart = parts[parts.length - 1].trim();
-        // If lastPart is a digit counter (e.g. "1", "2") from duplicate SKU suffixes, check second-to-last
-        if (/^\d+$/.test(lastPart) && parts.length >= 3) {
-          const secondLast = parts[parts.length - 2].trim();
-          if (product?.sizeList) {
-            const knownSizes = product.sizeList.split(",").map((s) => s.trim().toLowerCase());
-            if (knownSizes.includes(secondLast.toLowerCase())) {
-              return secondLast;
-            }
-          }
-          if (/^(XS|S|M|L|XL|XXL|XXXL|2XL|4XL|\d{2})$/i.test(secondLast)) {
-            return secondLast;
-          }
-        }
-        if (product?.sizeList) {
-          const knownSizes = product.sizeList.split(",").map((s) => s.trim().toLowerCase());
-          if (knownSizes.includes(lastPart.toLowerCase())) {
-            return lastPart;
-          }
-        }
-        return lastPart;
-      }
-    }
-    return "";
-  };
-
-  const getColorValue = (variant: ProductVariant): string => {
-    const colAttr = variant.attributes?.find((a) =>
-      ["colour", "color"].includes(
-        (a.productAttribute?.attributeName || "").toLowerCase().trim()
-      )
-    );
-    if (colAttr?.attributeValue?.trim()) {
-      return colAttr.attributeValue.trim();
-    }
-
-    // Fallback: parse color from variantSku against product colors
-    const sku = variant.variantSku || "";
-    if (sku && Array.isArray(product?.colors) && product.colors.length > 0) {
-      const skuParts = sku.toLowerCase().split("-");
-      for (const c of product.colors) {
-        if (skuParts.includes(c.toLowerCase().trim())) {
-          return c;
-        }
-      }
-    }
-    return "";
-  };
-
-  const getGenderValue = (variant: ProductVariant): string => {
-    const genderAttr = variant.attributes?.find(
-      (a) =>
-        (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
-        "gender"
-    );
-    if (genderAttr?.attributeValue?.trim()) {
-      return genderAttr.attributeValue.trim();
-    }
-    return existingGender || "";
-  };
+  const getColorValue = (variant: ProductVariant): string =>
+    extractColorValue(variant, product);
 
   // Resolve existing Gender value for the product
-  const existingGender = useMemo(() => {
-    // 1. Check all existing variants in data?.data
-    for (const v of data?.data || []) {
-      const matched = v.attributes?.find(
-        (a) =>
-          (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
-          "gender"
-      );
-      if (matched?.attributeValue?.trim()) {
-        return matched.attributeValue.trim();
-      }
-    }
+  const existingGender = useMemo(
+    () => resolveExistingGender(data?.data || [], product, attributes),
+    [data, product, attributes]
+  );
 
-    // 2. Check product.gender
-    if (product?.gender && product.gender.trim()) {
-      return product.gender.trim();
-    }
-
-    // 3. Check attributes prop
-    const attrGender = attributes.find(
-      (a) => (a.attributeName || "").toLowerCase().trim() === "gender"
-    );
-    if (attrGender?.attributeValue && attrGender.attributeValue.trim()) {
-      return attrGender.attributeValue.trim();
-    }
-
-    // 4. Check product.attributes
-    const prodAttrGender = product?.attributes?.find(
-      (a) => (a.attributeName || "").toLowerCase().trim() === "gender"
-    );
-    if (prodAttrGender?.attributeValue && prodAttrGender.attributeValue.trim()) {
-      return prodAttrGender.attributeValue.trim();
-    }
-
-    return "";
-  }, [data, product, attributes]);
+  const getGenderValue = (variant: ProductVariant): string =>
+    extractGenderValue(variant, existingGender);
 
   // List of all distinct genders available for this product
-  const availableGenders = useMemo(() => {
-    const set = new Set<string>();
-    if (product?.gender) {
-      if (Array.isArray(product.gender)) {
-        product.gender.forEach((g: any) => g && set.add(String(g).trim()));
-      } else if (typeof product.gender === "string" && product.gender.trim()) {
-        product.gender.split(",").forEach((s) => s.trim() && set.add(s.trim()));
-      }
-    }
-    for (const v of data?.data || []) {
-      const matched = v.attributes?.find(
-        (a) =>
-          (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
-          "gender"
-      );
-      if (matched?.attributeValue?.trim()) {
-        set.add(matched.attributeValue.trim());
-      }
-    }
-    if (existingGender) {
-      existingGender.split(",").forEach((s) => s.trim() && set.add(s.trim()));
-    }
-    return Array.from(set);
-  }, [product, data, existingGender]);
+  const availableGenders = useMemo(
+    () => resolveAvailableGenders(data?.data || [], product, existingGender),
+    [product, data, existingGender]
+  );
 
   // Map of gender to known Cost and MRP from existing variants
-  const genderPricingMap = useMemo(() => {
-    const map: Record<string, { cost: number; mrp: number }> = {};
-    for (const v of data?.data || []) {
-      const matched = v.attributes?.find(
-        (a) =>
-          (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
-          "gender"
-      );
-      const gen = matched?.attributeValue?.trim() || "";
-      if (gen && (!map[gen] || (map[gen].cost === 0 && Number(v.cost) > 0))) {
-        map[gen] = {
-          cost: v.cost !== undefined && v.cost !== null ? Number(v.cost) : 0,
-          mrp: v.mrp !== undefined && v.mrp !== null ? Number(v.mrp) : 0,
-        };
-      }
-    }
-    return map;
-  }, [data]);
+  const genderPricingMap = useMemo(
+    () => buildGenderPricingMap(data?.data || []),
+    [data]
+  );
 
   const handleNewGenderChange = (selectedGen: string) => {
     setNewGender(selectedGen);
@@ -446,168 +303,44 @@ export default function ProductVariantInline({
   };
 
   // Resolve productAttributeId for Gender
-  const resolvedGenderAttrId = useMemo(() => {
-    // 1. Check attributes prop
-    const attrGender = attributes.find(
-      (a) => (a.attributeName || "").toLowerCase().trim() === "gender"
-    );
-    if (attrGender?.id) return attrGender.id;
-
-    // 2. Check product.attributes
-    const prodAttrGender = product?.attributes?.find(
-      (a) => (a.attributeName || "").toLowerCase().trim() === "gender"
-    );
-    if (prodAttrGender?.id) return prodAttrGender.id;
-
-    // 3. Check all existing variants in data?.data
-    for (const v of data?.data || []) {
-      for (const a of v.attributes || []) {
-        if (
-          (a.productAttribute?.attributeName || "").toLowerCase().trim() ===
-          "gender"
-        ) {
-          return a.productAttributeId || a.productAttribute?.id;
-        }
-      }
-    }
-
-    return undefined;
-  }, [attributes, product, data]);
+  const resolvedGenderAttrId = useMemo(
+    () => resolveAttributeId(["gender"], attributes, product, data?.data || []),
+    [attributes, product, data]
+  );
 
   // Extra attributes (other than Colour and Size)
-  const extraAttributes = useMemo(() => {
-    const list = attributes.filter(
-      (a) =>
-        !["colour", "color", "size"].includes(
-          (a.attributeName || "").toLowerCase().trim()
-        )
-    );
-
-    // Ensure Gender is included if we have existingGender or resolvedGenderAttrId
-    const hasGender = list.some(
-      (a) => (a.attributeName || "").toLowerCase().trim() === "gender"
-    );
-    if (!hasGender && (existingGender || resolvedGenderAttrId)) {
-      list.push({
-        id: resolvedGenderAttrId,
-        attributeName: "Gender",
-        attributeValue: existingGender,
-      });
-    }
-
-    return list;
-  }, [attributes, existingGender, resolvedGenderAttrId]);
-
-  // Attribute IDs
-  const colorAttrProp = attributes.find((a) =>
-    ["colour", "color"].includes((a.attributeName || "").toLowerCase().trim())
-  );
-  const sizeAttrProp = attributes.find((a) =>
-    ["size"].includes((a.attributeName || "").toLowerCase().trim())
+  const extraAttributes = useMemo(
+    () => buildExtraAttributes(attributes, existingGender, resolvedGenderAttrId),
+    [attributes, existingGender, resolvedGenderAttrId]
   );
 
-  const resolvedColorAttrId = useMemo(() => {
-    if (colorAttrProp?.id) return colorAttrProp.id;
-    for (const v of data?.data || []) {
-      for (const a of v.attributes || []) {
-        if (
-          ["colour", "color"].includes(
-            (a.productAttribute?.attributeName || "").toLowerCase().trim()
-          )
-        ) {
-          return a.productAttributeId || a.productAttribute?.id;
-        }
-      }
-    }
-    return undefined;
-  }, [colorAttrProp, data]);
+  const resolvedColorAttrId = useMemo(
+    () =>
+      resolveAttributeId(
+        ["colour", "color"],
+        attributes,
+        product,
+        data?.data || []
+      ),
+    [attributes, product, data]
+  );
 
-  const resolvedSizeAttrId = useMemo(() => {
-    if (sizeAttrProp?.id) return sizeAttrProp.id;
-    for (const v of data?.data || []) {
-      for (const a of v.attributes || []) {
-        if (
-          ["size"].includes(
-            (a.productAttribute?.attributeName || "").toLowerCase().trim()
-          )
-        ) {
-          return a.productAttributeId || a.productAttribute?.id;
-        }
-      }
-    }
-    return undefined;
-  }, [sizeAttrProp, data]);
+  const resolvedSizeAttrId = useMemo(
+    () => resolveAttributeId(["size"], attributes, product, data?.data || []),
+    [attributes, product, data]
+  );
 
   // Check if this product actually has a Size attribute
-  const hasSizeAttribute = useMemo(() => {
-    const inAttrs = attributes.some((a) =>
-      ["size"].includes((a.attributeName || "").toLowerCase().trim())
-    );
-    if (inAttrs) return true;
-
-    const inProdAttrs = (product?.attributes || []).some((a) =>
-      ["size"].includes((a.attributeName || "").toLowerCase().trim())
-    );
-    if (inProdAttrs) return true;
-
-    if (product?.sizeList && product.sizeList.trim().length > 0) return true;
-
-    const inVariants = (data?.data || []).some((v) =>
-      (v.attributes || []).some(
-        (a) =>
-          (a.productAttribute?.attributeName || "").toLowerCase().trim() === "size" &&
-          Boolean(a.attributeValue && a.attributeValue.trim())
-      )
-    );
-    if (inVariants) return true;
-
-    return false;
-  }, [attributes, product, data]);
+  const hasSizeAttribute = useMemo(
+    () => checkHasSizeAttribute(attributes, product, data?.data || []),
+    [attributes, product, data]
+  );
 
   // Canonical size sequence extracted from product.sizeList and attributes
-  const definedSizes = useMemo(() => {
-    const list: string[] = [];
-    const rawList = (product?.sizeList || "").trim();
-    if (rawList) {
-      rawList.split(",").forEach((s) => {
-        const trimmed = s.trim();
-        if (
-          trimmed &&
-          !list.some((x) => x.toLowerCase() === trimmed.toLowerCase())
-        ) {
-          list.push(trimmed);
-        }
-      });
-    }
-    const sizeAttr = (attributes || []).find((a) =>
-      ["size"].includes((a.attributeName || "").toLowerCase().trim())
-    );
-    if (sizeAttr?.attributeValue) {
-      sizeAttr.attributeValue.split(",").forEach((s) => {
-        const trimmed = s.trim();
-        if (
-          trimmed &&
-          !list.some((x) => x.toLowerCase() === trimmed.toLowerCase())
-        ) {
-          list.push(trimmed);
-        }
-      });
-    }
-
-    // Also collect any custom sizes from actual variants in order of appearance
-    const vList = data?.data || [];
-    vList.forEach((v) => {
-      const sz = getSizeValue(v).trim();
-      if (
-        sz &&
-        !list.some((x) => x.toLowerCase() === sz.toLowerCase())
-      ) {
-        list.push(sz);
-      }
-    });
-
-    return list;
-  }, [product?.sizeList, attributes, data?.data]);
+  const definedSizes = useMemo(
+    () => getDefinedSizes(product, attributes, data?.data || []),
+    [product, attributes, data]
+  );
 
   // Group variants by Color with consistent size ordering across all colors
   const colorGroups = useMemo<ColorGroup[]>(() => {
@@ -617,7 +350,7 @@ export default function ProductVariantInline({
     const groupsMap = new Map<string, ColorGroup>();
 
     list.forEach((v) => {
-      const colVal = getColorValue(v);
+      const colVal = extractColorValue(v, product);
       const colorName = colVal || "Standard";
       const colorKey = colorName.toLowerCase();
 
@@ -642,8 +375,8 @@ export default function ProductVariantInline({
     // 1. Sort variants within every color group strictly by the defined size sequence
     groupsMap.forEach((group) => {
       group.variants.sort((a, b) => {
-        const szA = getSizeValue(a).trim();
-        const szB = getSizeValue(b).trim();
+        const szA = extractSizeValue(a, product).trim();
+        const szB = extractSizeValue(b, product).trim();
         const rankA = getSizeRank(szA, definedSizes);
         const rankB = getSizeRank(szB, definedSizes);
         if (rankA !== rankB) return rankA - rankB;
@@ -675,75 +408,31 @@ export default function ProductVariantInline({
     });
 
     return groups;
-  }, [data, definedSizes, product?.colors]);
+  }, [data, definedSizes, product]);
 
   // Generate SKU for a color & size combination
   const generateVariantSku = (
     colorName: string,
     sizeVal: string,
     baseSkuOverride?: string
-  ): string => {
-    const base = (baseSkuOverride || customBaseSku || masterSku || "").trim();
-    const c = (colorName || "").trim();
-    const s = (sizeVal || "").trim();
-
-    const isNonStandardColor = c && c.toLowerCase() !== "standard";
-
-    if (base && isNonStandardColor && s) {
-      return `${base}-${c}-${s}`;
-    }
-
-    if (base && s) {
-      return `${base}-${s}`;
-    }
-
-    if (base && isNonStandardColor) {
-      return `${base}-${c}`;
-    }
-
-    if (isNonStandardColor && s) {
-      return `${c}-${s}`;
-    }
-
-    return base || s || c || "SKU";
-  };
+  ): string =>
+    buildVariantSku(
+      colorName,
+      sizeVal,
+      baseSkuOverride || customBaseSku || masterSku || ""
+    );
 
   // Compute clean original SKU without any internal duplicate counters (-1, -2, etc.)
   const getCleanVariantSku = (
     variant: ProductVariant,
     groupColorName?: string
-  ): string => {
-    const sz = getSizeValue(variant);
-    const col =
-      (groupColorName && groupColorName.toLowerCase() !== "standard"
-        ? groupColorName
-        : "") || getColorValue(variant);
-    const base = (customBaseSku || masterSku || "").trim();
-
-    if (base && (col || sz)) {
-      return generateVariantSku(col, sz, base);
-    }
-
-    const rawSku = (variant.variantSku || "").trim();
-    if (!rawSku) return "";
-
-    // If rawSku ends with -{sz}-\d+, strip the trailing counter
-    if (sz) {
-      const sizeSuffixRegex = new RegExp(`(-${sz})-\\d+$`, "i");
-      if (sizeSuffixRegex.test(rawSku)) {
-        return rawSku.replace(/-\d+$/, "");
-      }
-    }
-
-    // Match any known size followed by -\d+ at the end of the SKU
-    const match = rawSku.match(/^(.*?-(?:XS|S|M|L|XL|XXL|XXXL|2XL|4XL|\d{2}))-\d+$/i);
-    if (match && match[1]) {
-      return match[1];
-    }
-
-    // Fallback: strip any trailing -\d+ if preceded by letters/hyphen
-    return rawSku.replace(/(?<=[a-zA-Z])-\d+$/, "");
-  };
+  ): string =>
+    buildCleanVariantSku(
+      variant,
+      groupColorName,
+      customBaseSku || masterSku || "",
+      product
+    );
 
   // Parsed sizes for adding new color row
   const parsedNewSizes = useMemo(() => {
@@ -761,12 +450,42 @@ export default function ProductVariantInline({
       .filter(Boolean);
   }, [quickAddSizesInput]);
 
-  // Start editing a single variant
+  // Open dedicated edit-product page for a variant
+  const handleOpenEditPage = (variant: ProductVariant) => {
+    if (!canUpdate) {
+      toast.error(
+        "Access denied. You do not have permission to update data in this module."
+      );
+      return;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("orderos_return_expanded_product", productId);
+      } catch {
+        // ignore storage errors
+      }
+    }
+    router.push(
+      `/dashboard/settings/manage-product/product-profile/edit-product-varient/${variant.id}`
+    );
+  };
+
+  // Start inline editing a single variant (via double-click on any row field)
   const handleStartEdit = (
     variant: ProductVariant,
-    groupColorName?: string
+    groupColorName?: string,
+    fieldToFocus?: string
   ) => {
+    if (!canUpdate) {
+      toast.error(
+        "Access denied. You do not have permission to update data in this module."
+      );
+      return;
+    }
     setEditingId(variant.id);
+    if (fieldToFocus) {
+      setFocusedField(fieldToFocus);
+    }
     setEditSku(getCleanVariantSku(variant, groupColorName));
     setEditCost(
       variant.cost !== undefined && variant.cost !== null ? variant.cost : ""
@@ -788,7 +507,7 @@ export default function ProductVariantInline({
           (attr.id && a.productAttributeId === attr.id) ||
           (a.productAttribute?.attributeName &&
             a.productAttribute.attributeName.toLowerCase() ===
-            attr.attributeName.toLowerCase())
+              attr.attributeName.toLowerCase())
       );
       const isGender =
         (attr.attributeName || "").toLowerCase().trim() === "gender";
@@ -820,13 +539,7 @@ export default function ProductVariantInline({
       (groupColorName && groupColorName !== "Standard" ? groupColorName : "") ||
       getColorValue(currentVariant);
 
-    const effectiveColorAttrId =
-      groupColorAttrId ||
-      resolvedColorAttrId ||
-      colorAttrProp?.id ||
-      (product?.attributes || []).find((a: any) =>
-        ["colour", "color"].includes((a.attributeName || "").toLowerCase().trim())
-      )?.id;
+    const effectiveColorAttrId = groupColorAttrId || resolvedColorAttrId;
 
     if (effectiveColorAttrId && existingCol) {
       formattedAttrs.push({
@@ -837,12 +550,7 @@ export default function ProductVariantInline({
 
     // 2. Size: use editSize, existing size, or parse from SKU
     const effectiveSizeVal = editSize.trim() || getSizeValue(currentVariant);
-    const effectiveSizeAttrId =
-      resolvedSizeAttrId ||
-      sizeAttrProp?.id ||
-      (product?.attributes || []).find((a: any) =>
-        ["size"].includes((a.attributeName || "").toLowerCase().trim())
-      )?.id;
+    const effectiveSizeAttrId = resolvedSizeAttrId;
 
     if (effectiveSizeAttrId && effectiveSizeVal) {
       formattedAttrs.push({
@@ -882,29 +590,34 @@ export default function ProductVariantInline({
     }
 
     // Validate duplicate: Color, Size AND Gender cannot all be identical to an existing variant
-    const effectiveColor = (groupColorName && groupColorName !== "Standard" ? groupColorName : "") || getColorValue(currentVariant);
+    const effectiveColor =
+      (groupColorName && groupColorName !== "Standard" ? groupColorName : "") ||
+      getColorValue(currentVariant);
     const effectiveSize = effectiveSizeVal.trim();
-    const isGenderAttr = extraAttributes.find((a) => (a.attributeName || "").toLowerCase().trim() === "gender");
-    const effectiveGender = (
-      isGenderAttr ? (editOtherAttrs[isGenderAttr.id || ""] || editOtherAttrs[isGenderAttr.attributeName] || "") : ""
-    ).trim() || existingGender;
+    const isGenderAttr = extraAttributes.find(
+      (a) => (a.attributeName || "").toLowerCase().trim() === "gender"
+    );
+    const effectiveGender =
+      (isGenderAttr
+        ? editOtherAttrs[isGenderAttr.id || ""] ||
+          editOtherAttrs[isGenderAttr.attributeName] ||
+          ""
+        : ""
+      ).trim() || existingGender;
 
-    const isDuplicate = (data?.data || []).some((v) => {
-      if (v.id === variantId) return false;
-      const vCol = (getColorValue(v) || "standard").trim().toLowerCase();
-      const vSz = getSizeValue(v).trim().toLowerCase();
-      const vGen = (getGenderValue(v) || "").trim().toLowerCase();
+    const duplicate = findDuplicateVariant(
+      data?.data || [],
+      variantId,
+      effectiveColor,
+      effectiveSize,
+      effectiveGender,
+      existingGender,
+      product
+    );
 
-      return (
-        vCol === (effectiveColor || "standard").trim().toLowerCase() &&
-        vSz === effectiveSize.toLowerCase() &&
-        vGen === (effectiveGender || "").trim().toLowerCase()
-      );
-    });
-
-    if (isDuplicate) {
+    if (duplicate) {
       toast.error(
-        `Duplicate record: Variant with Color "${effectiveColor}", Size "${effectiveSize}" and Gender "${effectiveGender || 'N/A'}" already exists.`
+        `Duplicate record: Variant with Color "${effectiveColor}", Size "${effectiveSize}" and Gender "${effectiveGender || "N/A"}" already exists.`
       );
       return;
     }
@@ -1085,8 +798,9 @@ export default function ProductVariantInline({
       setNewFsnCode("");
       setNewRackAddress("");
       setNewIsActive(true);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to create variants");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to create variants";
+      toast.error(msg);
     } finally {
       setIsSavingBatch(false);
     }
@@ -1235,8 +949,9 @@ export default function ProductVariantInline({
 
       setQuickAddColorKey(null);
       setQuickAddSizesInput("");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to add sizes");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to add sizes";
+      toast.error(msg);
     } finally {
       setIsQuickAdding(false);
     }
@@ -1369,7 +1084,7 @@ export default function ProductVariantInline({
                         const dbImageUrl = group.variants.find((v) => v.imageUrl)?.imageUrl;
                         const formattedDbUrl = toFullImageUrl(dbImageUrl);
                         const currentImgUrl =
-                          toFullImageUrl(localImages[group.colorName]) ||
+                          toFullImageUrl(effectiveImages[group.colorName]) ||
                           formattedDbUrl ||
                           (effectiveMasterSku
                             ? toFullImageUrl(
@@ -1379,7 +1094,7 @@ export default function ProductVariantInline({
                             )
                             : undefined);
                         const isUploadingThis = uploadingColor === group.colorName;
-                        const hasImage = Boolean(localImages[group.colorName] || formattedDbUrl);
+                        const hasImage = Boolean(effectiveImages[group.colorName] || formattedDbUrl);
 
                         return (
                           <div className="flex flex-col items-center">
@@ -1610,10 +1325,23 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center justify-center"
+                                onDoubleClick={() => {
+                                  if (!isEditing) {
+                                    handleStartEdit(variant, group.colorName, "size");
+                                  }
+                                }}
+                                title={!isEditing ? "Double-click to edit" : undefined}
+                                className={`min-h-[42px] py-1 flex items-center justify-center ${
+                                  !isEditing
+                                    ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                    : ""
+                                }`}
                               >
                                 {isEditing ? (
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:size`] = el;
+                                    }}
                                     value={editSize}
                                     onChange={(e) => {
                                       const nextSz = e.target.value;
@@ -1647,10 +1375,27 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center justify-center font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm text-center"
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, group.colorName, "sku");
+                                }
+                              }}
+                              title={
+                                !isEditing
+                                  ? `${getCleanVariantSku(variant, group.colorName)} (Double-click to edit)`
+                                  : undefined
+                              }
+                              className={`min-h-[42px] py-1 flex items-center justify-center font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm text-center ${
+                                !isEditing
+                                  ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                  : ""
+                              }`}
                             >
                               {isEditing ? (
                                 <input
+                                  ref={(el) => {
+                                    inlineFieldRefs.current[`${variant.id}:sku`] = el;
+                                  }}
                                   value={editSku}
                                   onChange={(e) => setEditSku(e.target.value)}
                                   className="h-8 w-full max-w-[260px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs text-center"
@@ -1678,12 +1423,25 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm text-center"
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, group.colorName, "cost");
+                                }
+                              }}
+                              title={!isEditing ? "Double-click to edit" : undefined}
+                              className={`min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm text-center ${
+                                !isEditing
+                                  ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                  : ""
+                              }`}
                             >
                               {isEditing ? (
                                 <div className="relative flex items-center justify-center">
                                   <span className="absolute left-2 text-xs text-slate-400">₹</span>
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:cost`] = el;
+                                    }}
                                     type="number"
                                     step="0.01"
                                     value={editCost}
@@ -1730,12 +1488,25 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm text-center"
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, group.colorName, "mrp");
+                                }
+                              }}
+                              title={!isEditing ? "Double-click to edit" : undefined}
+                              className={`min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-900 dark:text-white text-xs sm:text-sm text-center ${
+                                !isEditing
+                                  ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                  : ""
+                              }`}
                             >
                               {isEditing ? (
                                 <div className="relative flex items-center justify-center">
                                   <span className="absolute left-2 text-xs text-slate-400">₹</span>
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:mrp`] = el;
+                                    }}
                                     type="number"
                                     step="0.01"
                                     value={editMrp}
@@ -1774,7 +1545,9 @@ export default function ProductVariantInline({
                     </td>
 
                     {/* Extra Attributes Columns (including Gender) */}
-                    {extraAttributes.map((attr) => (
+                    {extraAttributes.map((attr) => {
+                      const attrFieldKey = `extra:${attr.id || attr.attributeName}`;
+                      return (
                       <td
                         key={attr.id || attr.attributeName}
                         className="px-2.5 py-3.5 align-top w-[95px] min-w-[90px] text-center"
@@ -1802,10 +1575,23 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs text-center"
+                                onDoubleClick={() => {
+                                  if (!isEditing) {
+                                    handleStartEdit(variant, group.colorName, attrFieldKey);
+                                  }
+                                }}
+                                title={!isEditing ? "Double-click to edit" : undefined}
+                                className={`min-h-[42px] py-1 flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs text-center ${
+                                  !isEditing
+                                    ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                    : ""
+                                }`}
                               >
                                 {isEditing ? (
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:${attrFieldKey}`] = el;
+                                    }}
                                     value={
                                       editOtherAttrs[attr.id || ""] !== undefined
                                         ? editOtherAttrs[attr.id || ""]
@@ -1846,7 +1632,8 @@ export default function ProductVariantInline({
                           })}
                         </div>
                       </td>
-                    ))}
+                      );
+                    })}
 
                     {/* Dynamic Marketplace Columns */}
                     {showAsin && (
@@ -1858,10 +1645,23 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center"
+                                onDoubleClick={() => {
+                                  if (!isEditing) {
+                                    handleStartEdit(variant, group.colorName, "asin");
+                                  }
+                                }}
+                                title={!isEditing ? "Double-click to edit" : undefined}
+                                className={`min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center ${
+                                  !isEditing
+                                    ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                    : ""
+                                }`}
                               >
                                 {isEditing ? (
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:asin`] = el;
+                                    }}
                                     value={editAsin}
                                     onChange={(e) => setEditAsin(e.target.value)}
                                     placeholder="ASIN"
@@ -1886,10 +1686,23 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center"
+                                onDoubleClick={() => {
+                                  if (!isEditing) {
+                                    handleStartEdit(variant, group.colorName, "myntraSku");
+                                  }
+                                }}
+                                title={!isEditing ? "Double-click to edit" : undefined}
+                                className={`min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center ${
+                                  !isEditing
+                                    ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                    : ""
+                                }`}
                               >
                                 {isEditing ? (
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:myntraSku`] = el;
+                                    }}
                                     value={editMyntraSku}
                                     onChange={(e) => setEditMyntraSku(e.target.value)}
                                     placeholder="Myntra SKU"
@@ -1914,10 +1727,23 @@ export default function ProductVariantInline({
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center"
+                                onDoubleClick={() => {
+                                  if (!isEditing) {
+                                    handleStartEdit(variant, group.colorName, "fsnCode");
+                                  }
+                                }}
+                                title={!isEditing ? "Double-click to edit" : undefined}
+                                className={`min-h-[42px] py-1 flex items-center justify-center font-mono text-slate-700 dark:text-slate-300 text-xs text-center ${
+                                  !isEditing
+                                    ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                    : ""
+                                }`}
                               >
                                 {isEditing ? (
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:fsnCode`] = el;
+                                    }}
                                     value={editFsnCode}
                                     onChange={(e) => setEditFsnCode(e.target.value)}
                                     placeholder="FSN Code"
@@ -1942,10 +1768,23 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-700 dark:text-slate-300 text-xs text-center"
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, group.colorName, "rackAddress");
+                                }
+                              }}
+                              title={!isEditing ? "Double-click to edit" : undefined}
+                              className={`min-h-[42px] py-1 flex items-center justify-center font-medium text-slate-700 dark:text-slate-300 text-xs text-center ${
+                                !isEditing
+                                  ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                  : ""
+                              }`}
                             >
                               {isEditing ? (
                                 <input
+                                  ref={(el) => {
+                                    inlineFieldRefs.current[`${variant.id}:rackAddress`] = el;
+                                  }}
                                   value={editRackAddress}
                                   onChange={(e) =>
                                     setEditRackAddress(e.target.value)
@@ -1971,7 +1810,20 @@ export default function ProductVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center justify-center"
+                              ref={(el) => {
+                                inlineFieldRefs.current[`${variant.id}:status`] = el;
+                              }}
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, group.colorName, "status");
+                                }
+                              }}
+                              title={!isEditing ? "Double-click to edit" : undefined}
+                              className={`min-h-[42px] py-1 flex items-center justify-center ${
+                                !isEditing
+                                  ? "cursor-pointer hover:bg-amber-50/40 dark:hover:bg-white/[0.03] rounded-md transition-colors"
+                                  : ""
+                              }`}
                             >
                               {isEditing ? (
                                 <Switch
@@ -2036,7 +1888,7 @@ export default function ProductVariantInline({
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handleStartEdit(variant, group.colorName)}
+                                    onClick={() => handleOpenEditPage(variant)}
                                     className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] dark:hover:bg-[#E8C16D]/10 dark:hover:text-[#F5C451] transition-all shadow-2xs active:scale-95 cursor-pointer"
                                     title="Edit variant"
                                   >

@@ -208,6 +208,7 @@ export function isRouteAllowed(
   }
 
   if (subPath.startsWith("offline-sales") || subPath.startsWith("sales-")) {
+    if (subPath.includes("gallery") && (allowed.includes("product-gallery") || allowed.includes("offline-sales/product-gallery") || allowed.includes("offline-sales"))) return true;
     if (subPath.includes("challan") && (allowed.includes("challan") || allowed.includes("offline-sales/sales-challan") || allowed.includes("sales-challan"))) return true;
     if (subPath.includes("invoice") && (allowed.includes("invoice") || allowed.includes("offline-sales/sales-invoice") || allowed.includes("sales-invoice"))) return true;
     if (allowed.includes("offline-sales")) return true;
@@ -511,6 +512,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "order-process/flipkart/awb-scan": "order-process/flipkart/awb-scan",
   "products-analytics/amazon": "products-analytics/amazon",
   "transaction/sales/po-based": "transaction/sales/po-based",
+  "offline-sales/product-gallery": "offline-sales/product-gallery",
   "offline-sales/sales-challan": "offline-sales/sales-challan",
   "offline-sales/sales-invoice": "offline-sales/sales-invoice",
   "purchase/finish-goods/challan": "purchase/finish-goods/challan",

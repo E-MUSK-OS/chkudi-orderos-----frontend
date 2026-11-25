@@ -51,9 +51,10 @@ export default function EditProduct({
       await deleteProductMutation.mutateAsync(product.id);
       setDeleteModalOpen(false);
       router.push(returnPath);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete product:", err);
-      toast.error(err?.message || "Failed to delete product");
+      const message = err instanceof Error ? err.message : "Failed to delete product";
+      toast.error(message);
     } finally {
       setDeleteLoading(false);
     }
@@ -165,7 +166,10 @@ export default function EditProduct({
               Product Not Found
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              {(error as any)?.message || "The requested product profile could not be loaded or may have been deleted."}
+              {(error instanceof Error
+                ? error.message
+                : (error as unknown as { message?: string })?.message) ||
+                "The requested product profile could not be loaded or may have been deleted."}
             </p>
             <div className="pt-2 flex items-center justify-center gap-2.5">
               <button
