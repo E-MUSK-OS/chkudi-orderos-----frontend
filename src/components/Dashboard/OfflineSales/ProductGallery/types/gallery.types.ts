@@ -44,6 +44,7 @@ export interface GalleryColorCardItem {
   masterSku: string;
   cardSku: string;
   category: string;
+  subCategory?: string;
   availability: string;
   color: string;
   imageUrl?: string;

@@ -163,34 +163,6 @@ export interface CategoryOption {
 
 export const productCategoryOptions: CategoryOption[] = [
   { label: "Clothing & Apparel", value: "Clothing & Apparel" },
-  { label: "Dress", value: "Dress" },
-  { label: "Tank Top", value: "Tank Top" },
-  { label: "T-Shirt", value: "T-Shirt" },
-  { label: "Shirt", value: "Shirt" },
-  { label: "Top", value: "Top" },
-  { label: "Crop Top", value: "Crop Top" },
-  { label: "Kurti & Kurta", value: "Kurti & Kurta" },
-  { label: "Ethnic Wear", value: "Ethnic Wear" },
-  { label: "Saree & Lehenga", value: "Saree & Lehenga" },
-  { label: "Jeans", value: "Jeans" },
-  { label: "Trousers & Pants", value: "Trousers & Pants" },
-  { label: "Track Pant", value: "Track Pant" },
-  { label: "Jogger", value: "Jogger" },
-  { label: "Cargo", value: "Cargo" },
-  { label: "Shorts", value: "Shorts" },
-  { label: "Skirt", value: "Skirt" },
-  { label: "Palazzo & Leggings", value: "Palazzo & Leggings" },
-  { label: "Co-ord Set", value: "Co-ord Set" },
-  { label: "Jumpsuit & Romper", value: "Jumpsuit & Romper" },
-  { label: "Jacket", value: "Jacket" },
-  { label: "Hoodie", value: "Hoodie" },
-  { label: "Sweatshirt", value: "Sweatshirt" },
-  { label: "Sweater & Cardigan", value: "Sweater & Cardigan" },
-  { label: "Blazer & Coat", value: "Blazer & Coat" },
-  { label: "Sportswear & Activewear", value: "Sportswear & Activewear" },
-  { label: "Innerwear & Loungewear", value: "Innerwear & Loungewear" },
-  { label: "Nightwear", value: "Nightwear" },
-  { label: "Kids Wear", value: "Kids Wear" },
   { label: "Footwear & Shoes", value: "Footwear & Shoes" },
   { label: "Electronics & Gadgets", value: "Electronics & Gadgets" },
   { label: "Bags, Wallets & Luggage", value: "Bags, Wallets & Luggage" },
@@ -208,6 +180,265 @@ export const productCategoryOptions: CategoryOption[] = [
 ];
 
 export const subCategoryOptions: OptionItem[] = [];
+
+const CLOTHING_SUBCATEGORIES: OptionItem[] = [
+  { label: "Pant", value: "Pant" },
+  { label: "Cargo", value: "Cargo" },
+  { label: "Top", value: "Top" },
+  { label: "T-Shirt", value: "T-Shirt" },
+  { label: "Trousers", value: "Trousers" },
+  { label: "Jeans", value: "Jeans" },
+  { label: "Shirt", value: "Shirt" },
+  { label: "Crop Top", value: "Crop Top" },
+  { label: "Tank Top", value: "Tank Top" },
+  { label: "Kurti", value: "Kurti" },
+  { label: "Kurta", value: "Kurta" },
+  { label: "Kurta Set", value: "Kurta Set" },
+  { label: "Dress", value: "Dress" },
+  { label: "Maxi Dress", value: "Maxi Dress" },
+  { label: "Midi Dress", value: "Midi Dress" },
+  { label: "Mini Dress", value: "Mini Dress" },
+  { label: "Skirt", value: "Skirt" },
+  { label: "Saree", value: "Saree" },
+  { label: "Lehenga", value: "Lehenga" },
+  { label: "Blouse", value: "Blouse" },
+  { label: "Dupatta", value: "Dupatta" },
+  { label: "Ethnic Wear", value: "Ethnic Wear" },
+  { label: "Co-ord Set", value: "Co-ord Set" },
+  { label: "Jumpsuit & Romper", value: "Jumpsuit & Romper" },
+  { label: "Palazzo", value: "Palazzo" },
+  { label: "Leggings", value: "Leggings" },
+  { label: "Jeggings", value: "Jeggings" },
+  { label: "Track Pant", value: "Track Pant" },
+  { label: "Jogger", value: "Jogger" },
+  { label: "Chinos", value: "Chinos" },
+  { label: "Shorts", value: "Shorts" },
+  { label: "Jacket", value: "Jacket" },
+  { label: "Denim Jacket", value: "Denim Jacket" },
+  { label: "Hoodie", value: "Hoodie" },
+  { label: "Sweatshirt", value: "Sweatshirt" },
+  { label: "Sweater & Cardigan", value: "Sweater & Cardigan" },
+  { label: "Blazer & Coat", value: "Blazer & Coat" },
+  { label: "Shrug", value: "Shrug" },
+  { label: "Nightwear & Pyjama", value: "Nightwear & Pyjama" },
+  { label: "Innerwear & Loungewear", value: "Innerwear & Loungewear" },
+  { label: "Sportswear & Activewear", value: "Sportswear & Activewear" },
+  { label: "Swimwear", value: "Swimwear" },
+  { label: "Maternity Wear", value: "Maternity Wear" },
+];
+
+export const SUBCATEGORY_BY_CATEGORY: Record<string, OptionItem[]> = {
+  clothing: CLOTHING_SUBCATEGORIES,
+  "clothing & apparel": CLOTHING_SUBCATEGORIES,
+  apparel: CLOTHING_SUBCATEGORIES,
+  dress: [
+    { label: "A-Line Dress", value: "A-Line Dress" },
+    { label: "Bodycon Dress", value: "Bodycon Dress" },
+    { label: "Maxi Dress", value: "Maxi Dress" },
+    { label: "Midi Dress", value: "Midi Dress" },
+    { label: "Mini Dress", value: "Mini Dress" },
+    { label: "Wrap Dress", value: "Wrap Dress" },
+    { label: "Shirt Dress", value: "Shirt Dress" },
+    { label: "Sundress", value: "Sundress" },
+    { label: "Party Dress", value: "Party Dress" },
+    { label: "Gown", value: "Gown" },
+  ],
+  "ethnic wear": [
+    { label: "Kurti", value: "Kurti" },
+    { label: "Kurta Set", value: "Kurta Set" },
+    { label: "Saree", value: "Saree" },
+    { label: "Lehenga Choli", value: "Lehenga Choli" },
+    { label: "Salwar Suit", value: "Salwar Suit" },
+    { label: "Anarkali", value: "Anarkali" },
+    { label: "Sharara Set", value: "Sharara Set" },
+    { label: "Dupatta", value: "Dupatta" },
+    { label: "Sherwani", value: "Sherwani" },
+    { label: "Nehru Jacket", value: "Nehru Jacket" },
+  ],
+  "kurti & kurta": [
+    { label: "Straight Kurti", value: "Straight Kurti" },
+    { label: "Anarkali Kurti", value: "Anarkali Kurti" },
+    { label: "A-Line Kurti", value: "A-Line Kurti" },
+    { label: "Kurta Pant Set", value: "Kurta Pant Set" },
+    { label: "Kurta Palazzo Set", value: "Kurta Palazzo Set" },
+    { label: "Short Kurti", value: "Short Kurti" },
+  ],
+  "kids wear": [
+    { label: "T-Shirt", value: "T-Shirt" },
+    { label: "Frock & Dress", value: "Frock & Dress" },
+    { label: "Co-ord Set", value: "Co-ord Set" },
+    { label: "Jeans & Pant", value: "Jeans & Pant" },
+    { label: "Shorts", value: "Shorts" },
+    { label: "Ethnic Wear", value: "Ethnic Wear" },
+    { label: "Nightwear", value: "Nightwear" },
+    { label: "Winterwear", value: "Winterwear" },
+  ],
+  "footwear & shoes": [
+    { label: "Sneakers", value: "Sneakers" },
+    { label: "Running Shoes", value: "Running Shoes" },
+    { label: "Casual Shoes", value: "Casual Shoes" },
+    { label: "Formal Shoes", value: "Formal Shoes" },
+    { label: "Heels", value: "Heels" },
+    { label: "Flats & Ballerinas", value: "Flats & Ballerinas" },
+    { label: "Sandals & Floaters", value: "Sandals & Floaters" },
+    { label: "Slippers & Flip Flops", value: "Slippers & Flip Flops" },
+    { label: "Boots", value: "Boots" },
+    { label: "Loafers", value: "Loafers" },
+    { label: "Ethnic Footwear / Jutti", value: "Ethnic Footwear / Jutti" },
+    { label: "Sports Shoes", value: "Sports Shoes" },
+  ],
+  "electronics & gadgets": [
+    { label: "Smartphones", value: "Smartphones" },
+    { label: "Earbuds & Headphones", value: "Earbuds & Headphones" },
+    { label: "Smartwatches", value: "Smartwatches" },
+    { label: "Power Banks", value: "Power Banks" },
+    { label: "Chargers & Cables", value: "Chargers & Cables" },
+    { label: "Mobile Cases & Covers", value: "Mobile Cases & Covers" },
+    { label: "Speakers", value: "Speakers" },
+    { label: "Computer Accessories", value: "Computer Accessories" },
+    { label: "Cameras & Accessories", value: "Cameras & Accessories" },
+  ],
+  "bags, wallets & luggage": [
+    { label: "Handbag", value: "Handbag" },
+    { label: "Tote Bag", value: "Tote Bag" },
+    { label: "Sling Bag", value: "Sling Bag" },
+    { label: "Backpack", value: "Backpack" },
+    { label: "Clutch & Potli", value: "Clutch & Potli" },
+    { label: "Wallet", value: "Wallet" },
+    { label: "Laptop Bag", value: "Laptop Bag" },
+    { label: "Duffle Bag", value: "Duffle Bag" },
+    { label: "Trolley & Suitcase", value: "Trolley & Suitcase" },
+  ],
+  "jewellery & watches": [
+    { label: "Earrings", value: "Earrings" },
+    { label: "Necklace & Pendant", value: "Necklace & Pendant" },
+    { label: "Bangles & Bracelets", value: "Bangles & Bracelets" },
+    { label: "Rings", value: "Rings" },
+    { label: "Anklets", value: "Anklets" },
+    { label: "Mangalsutra", value: "Mangalsutra" },
+    { label: "Bridal Set", value: "Bridal Set" },
+    { label: "Analog Watch", value: "Analog Watch" },
+    { label: "Digital Watch", value: "Digital Watch" },
+  ],
+  "beauty & personal care": [
+    { label: "Skincare", value: "Skincare" },
+    { label: "Haircare", value: "Haircare" },
+    { label: "Makeup & Lipstick", value: "Makeup & Lipstick" },
+    { label: "Perfume & Fragrance", value: "Perfume & Fragrance" },
+    { label: "Grooming & Trimmers", value: "Grooming & Trimmers" },
+    { label: "Bath & Body", value: "Bath & Body" },
+  ],
+  "home & kitchen": [
+    { label: "Bedsheets & Bedding", value: "Bedsheets & Bedding" },
+    { label: "Curtains", value: "Curtains" },
+    { label: "Cushions & Covers", value: "Cushions & Covers" },
+    { label: "Kitchen Storage", value: "Kitchen Storage" },
+    { label: "Cookware", value: "Cookware" },
+    { label: "Home Decor", value: "Home Decor" },
+    { label: "Lighting & Lamps", value: "Lighting & Lamps" },
+    { label: "Cleaning Supplies", value: "Cleaning Supplies" },
+  ],
+  "sports & fitness": [
+    { label: "Gym Wear", value: "Gym Wear" },
+    { label: "Yoga Mats", value: "Yoga Mats" },
+    { label: "Dumbbells & Weights", value: "Dumbbells & Weights" },
+    { label: "Cricket & Badminton", value: "Cricket & Badminton" },
+    { label: "Fitness Trackers", value: "Fitness Trackers" },
+    { label: "Water Bottles & Shakers", value: "Water Bottles & Shakers" },
+  ],
+  "baby & kids care": [
+    { label: "Diapers & Wipes", value: "Diapers & Wipes" },
+    { label: "Baby Clothing", value: "Baby Clothing" },
+    { label: "Feeding & Nursing", value: "Feeding & Nursing" },
+    { label: "Baby Gear & Strollers", value: "Baby Gear & Strollers" },
+    { label: "Baby Bath & Skin", value: "Baby Bath & Skin" },
+  ],
+  "toys & games": [
+    { label: "Soft Toys", value: "Soft Toys" },
+    { label: "Educational Toys", value: "Educational Toys" },
+    { label: "Board Games & Puzzles", value: "Board Games & Puzzles" },
+    { label: "Action Figures", value: "Action Figures" },
+    { label: "Remote Control Toys", value: "Remote Control Toys" },
+  ],
+  "health & wellness": [
+    { label: "Vitamins & Supplements", value: "Vitamins & Supplements" },
+    { label: "Protein & Nutrition", value: "Protein & Nutrition" },
+    { label: "Medical Devices", value: "Medical Devices" },
+    { label: "Ayurvedic & Herbal", value: "Ayurvedic & Herbal" },
+  ],
+  "books & stationery": [
+    { label: "Notebooks & Diaries", value: "Notebooks & Diaries" },
+    { label: "Pens & Art Supplies", value: "Pens & Art Supplies" },
+    { label: "Books", value: "Books" },
+    { label: "School Bags & Boxes", value: "School Bags & Boxes" },
+  ],
+  automotive: [
+    { label: "Car Accessories", value: "Car Accessories" },
+    { label: "Bike Accessories", value: "Bike Accessories" },
+    { label: "Helmets & Riding Gear", value: "Helmets & Riding Gear" },
+    { label: "Car Care & Cleaning", value: "Car Care & Cleaning" },
+  ],
+  "pet supplies": [
+    { label: "Dog Food & Treats", value: "Dog Food & Treats" },
+    { label: "Cat Food & Litter", value: "Cat Food & Litter" },
+    { label: "Pet Toys & Collars", value: "Pet Toys & Collars" },
+    { label: "Pet Grooming", value: "Pet Grooming" },
+  ],
+  "office products": [
+    { label: "Desk Organizers", value: "Desk Organizers" },
+    { label: "Printers & Paper", value: "Printers & Paper" },
+    { label: "Packaging Materials", value: "Packaging Materials" },
+    { label: "Barcode Labels & Ribbons", value: "Barcode Labels & Ribbons" },
+  ],
+};
+
+export function getSubCategoryOptionsForCategory(category: string): OptionItem[] {
+  const key = String(category || "").trim().toLowerCase();
+  if (!key) {
+    return CLOTHING_SUBCATEGORIES;
+  }
+  if (SUBCATEGORY_BY_CATEGORY[key]) {
+    return SUBCATEGORY_BY_CATEGORY[key];
+  }
+  if (
+    key.includes("cloth") ||
+    key.includes("apparel") ||
+    key.includes("wear") ||
+    key.includes("top") ||
+    key.includes("shirt") ||
+    key.includes("pant") ||
+    key.includes("jeans") ||
+    key.includes("cargo") ||
+    key.includes("saree") ||
+    key.includes("kurti") ||
+    key.includes("jacket") ||
+    key.includes("hoodie")
+  ) {
+    return CLOTHING_SUBCATEGORIES;
+  }
+  if (key.includes("shoe") || key.includes("foot")) {
+    return SUBCATEGORY_BY_CATEGORY["footwear & shoes"];
+  }
+  if (key.includes("bag") || key.includes("wallet") || key.includes("luggage")) {
+    return SUBCATEGORY_BY_CATEGORY["bags, wallets & luggage"];
+  }
+  if (key.includes("jewel") || key.includes("watch")) {
+    return SUBCATEGORY_BY_CATEGORY["jewellery & watches"];
+  }
+  if (key.includes("electr") || key.includes("gadget")) {
+    return SUBCATEGORY_BY_CATEGORY["electronics & gadgets"];
+  }
+  if (key.includes("beauty") || key.includes("care")) {
+    return SUBCATEGORY_BY_CATEGORY["beauty & personal care"];
+  }
+  if (key.includes("home") || key.includes("kitchen")) {
+    return SUBCATEGORY_BY_CATEGORY["home & kitchen"];
+  }
+  if (key.includes("sport") || key.includes("fit")) {
+    return SUBCATEGORY_BY_CATEGORY["sports & fitness"];
+  }
+  return CLOTHING_SUBCATEGORIES;
+}
 
 export const categoryOptions: CategoryOption[] = productCategoryOptions.filter(
   (opt) => opt.value !== "other"

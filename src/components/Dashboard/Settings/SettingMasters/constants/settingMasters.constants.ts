@@ -3,6 +3,7 @@ import { FieldGroup } from "../types/settingMasters.types";
 export const normalizeFieldKey = (key: string): string => {
   const clean = String(key || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   if (clean === "productcategory") return "category";
+  if (clean === "productsubcategory") return "subcategory";
   if (clean === "colour" || clean === "colours") return "color";
   if (clean === "brandname") return "brand";
   if (clean === "companyname") return "company";
@@ -54,6 +55,7 @@ export const KNOWN_FIELD_LABELS: Record<string, string> = {
   materialcategory: "Material Category",
   materialsubcategory: "Material Sub-Category",
   category: "Product Category",
+  subcategory: "Product Sub Category",
   purchasetype: "Purchase Type",
   rackaddress: "Rack Address",
   referenceparty: "Reference Party",
@@ -172,6 +174,7 @@ export const INITIAL_FIELD_GROUPS: FieldGroup[] = [
   { id: "materialcategory", no: 38, field: "materialcategory", label: "Material Category", totalCount: 9, activeCount: 9 },
   { id: "materialsubcategory", no: 39, field: "materialsubcategory", label: "Material Sub-Category", totalCount: 9, activeCount: 9 },
   { id: "category", no: 40, field: "category", label: "Product Category", totalCount: 15, activeCount: 15 },
+  { id: "subcategory", no: 41, field: "subcategory", label: "Product Sub Category", totalCount: 31, activeCount: 31 },
   { id: "purchasetype", no: 41, field: "purchasetype", label: "Purchase Type", totalCount: 8, activeCount: 8 },
   { id: "rackaddress", no: 42, field: "rackaddress", label: "Rack Address", totalCount: 0, activeCount: 0 },
   { id: "referenceparty", no: 43, field: "referenceparty", label: "Reference Party", totalCount: 0, activeCount: 0 },

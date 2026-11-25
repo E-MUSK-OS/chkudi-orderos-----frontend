@@ -19,6 +19,9 @@ import {
   Download,
   Check,
   Printer,
+  Menu,
+  ReceiptText,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -42,6 +45,8 @@ import type { Product } from "../../Products/ManageProducts/types/product.types"
 import { challanService } from "../SalesChallan/services/challan.service";
 import type { Party } from "../SalesChallan/types/challan.types";
 import { companyService } from "../../Settings/ManageCompany/CompanyProfile/services/company.service";
+import GallerySalesReportModal from "./components/GallerySalesReportModal";
+import GalleryCollectionReportModal from "./components/GalleryCollectionReportModal";
 
 import GalleryProductCard from "./components/GalleryProductCard";
 import GalleryCartSidebar from "./components/GalleryCartSidebar";
@@ -118,6 +123,23 @@ export default function ProductGalleryPage() {
   const [printItemsOverride, setPrintItemsOverride] = useState<
     GalleryColorCardItem[] | null
   >(null);
+
+  // Top-Right Reports Menu (Sales Report & Collection Report)
+  const [reportsMenuOpen, setReportsMenuOpen] = useState(false);
+  const reportsMenuRef = useRef<HTMLDivElement | null>(null);
+  const [salesReportOpen, setSalesReportOpen] = useState(false);
+  const [collectionReportOpen, setCollectionReportOpen] = useState(false);
+
+  useEffect(() => {
+    if (!reportsMenuOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (reportsMenuRef.current && !reportsMenuRef.current.contains(e.target as Node)) {
+        setReportsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [reportsMenuOpen]);
 
   // Cart & UI Panels State
   const [carts, setCarts] = useState<GalleryCart[]>([
@@ -316,14 +338,14 @@ export default function ProductGalleryPage() {
               : product.masterSku || product.productName;
 
           const rawFallbackImg =
-            toFullImageUrl(product.imageUrl) ||
             (product.masterSku
               ? toFullImageUrl(
                   `/products/image?masterSku=${encodeURIComponent(
                     product.masterSku
                   )}&color=${encodeURIComponent(cleanCol)}`
                 )
-              : undefined);
+              : undefined) ||
+            (cleanCol === "Standard" ? toFullImageUrl(product.imageUrl) : undefined);
           const fallbackImg =
             rawFallbackImg &&
             galleryUpdatedAt &&
@@ -340,6 +362,7 @@ export default function ProductGalleryPage() {
             masterSku: product.masterSku,
             cardSku,
             category: product.category || "Uncategorized",
+            subCategory: (product.subCategory || "").trim(),
             availability: prodAvailability,
             color: cleanCol,
             imageUrl: fallbackImg,
@@ -410,14 +433,14 @@ export default function ProductGalleryPage() {
         const firstWithImage = sortedGroup.find((v) => Boolean(v.imageUrl));
         const rawImgUrl =
           toFullImageUrl(firstWithImage?.imageUrl) ||
-          toFullImageUrl(product.imageUrl) ||
           (product.masterSku
             ? toFullImageUrl(
                 `/products/image?masterSku=${encodeURIComponent(
                   product.masterSku
                 )}&color=${encodeURIComponent(colorName)}`
               )
-            : undefined);
+            : undefined) ||
+          (colorName === "Standard" ? toFullImageUrl(product.imageUrl) : undefined);
         const imgUrl =
           rawImgUrl &&
           galleryUpdatedAt &&
@@ -449,6 +472,7 @@ export default function ProductGalleryPage() {
           masterSku: product.masterSku,
           cardSku,
           category: product.category || "Uncategorized",
+          subCategory: (product.subCategory || "").trim(),
           availability: prodAvailability,
           color: colorName,
           imageUrl: imgUrl,
@@ -1018,7 +1042,7 @@ export default function ProductGalleryPage() {
     <DashboardLayout title="Product Gallery">
       <div className="space-y-4 sm:space-y-5 font-sans">
         {/* Top Header Card */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm">
+        <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm flex items-center justify-between gap-3">
           <div>
             <h1 className="text-lg sm:text-2xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Product Gallery
@@ -1026,6 +1050,50 @@ export default function ProductGalleryPage() {
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               Manage offline sales product gallery, filter & revise prices, print catalog, and build quick carts.
             </p>
+          </div>
+
+          {/* Top-Right Menu Icon -> Sales Report & Collection Report (img-1) */}
+          <div className="relative shrink-0" ref={reportsMenuRef}>
+            <button
+              type="button"
+              onClick={() => setReportsMenuOpen((p) => !p)}
+              title="Reports"
+              aria-label="Open Reports Menu"
+              className={`h-9.5 w-9.5 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+                reportsMenuOpen
+                  ? "border-[#E8C16D] bg-[#FFF9EC] text-[#B88728] dark:border-[#F5C451] dark:bg-[#1A160E] dark:text-[#F5C451]"
+                  : "border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171A22] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D]"
+              }`}
+            >
+              <Menu size={16} />
+            </button>
+
+            {reportsMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-1.5 shadow-2xl space-y-1 text-xs animate-in fade-in zoom-in-95 duration-150">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportsMenuOpen(false);
+                    setSalesReportOpen(true);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl flex items-center gap-2 text-left font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer"
+                >
+                  <ReceiptText size={14} className="text-[#B88728] dark:text-[#F5C451]" />
+                  <span>Sales Report</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportsMenuOpen(false);
+                    setCollectionReportOpen(true);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl flex items-center gap-2 text-left font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer"
+                >
+                  <Wallet size={14} className="text-[#B88728] dark:text-[#F5C451]" />
+                  <span>Collection Report</span>
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
@@ -1997,6 +2065,17 @@ export default function ProductGalleryPage() {
           queryClient.invalidateQueries({ queryKey: ["gallery-parties"] });
           updateActiveCart((c) => ({ ...c, party: newParty }));
         }}
+      />
+
+      {/* Sales Report & Collection Report Modals */}
+      <GallerySalesReportModal
+        open={salesReportOpen}
+        onClose={() => setSalesReportOpen(false)}
+      />
+
+      <GalleryCollectionReportModal
+        open={collectionReportOpen}
+        onClose={() => setCollectionReportOpen(false)}
       />
     </DashboardLayout>
   );

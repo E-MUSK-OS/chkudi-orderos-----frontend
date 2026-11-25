@@ -32,6 +32,7 @@ import { useWarehouses } from "@/components/Dashboard/Warehouse/hooks/useWarehou
 import {
   productCategoryOptions,
   getCategoryAttributeConfig,
+  getSubCategoryOptionsForCategory,
   getAttributePlaceholder,
   defaultShoeSizes,
   defaultNumericSizes,
@@ -683,6 +684,15 @@ export default function ProductForm({
       dropdownData?.distinctFromProducts?.categories
     );
   }, [dropdownData]);
+
+  const subCategoryOptions: DropdownOption[] = useMemo(() => {
+    return buildMergedOptions(
+      "subcategory",
+      getSubCategoryOptionsForCategory(watchedCategory),
+      dropdownData?.savedOptions,
+      dropdownData?.distinctFromProducts?.subCategories || []
+    );
+  }, [watchedCategory, dropdownData]);
 
   const brandOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
@@ -1528,7 +1538,10 @@ export default function ProductForm({
                     rackAddress: sanitizedPayload.rackAddress || undefined,
                     isActive: sanitizedPayload.isActive ?? true,
                     attributes: combo.attributeList,
-                  },
+                    ...(sanitizedPayload.warehouseStocks
+                      ? { warehouseStocks: sanitizedPayload.warehouseStocks }
+                      : {}),
+                  } as any,
                   token
                 )
                 .catch((e) => console.error("Initial variant create error:", e));
@@ -1746,7 +1759,7 @@ export default function ProductForm({
             />
           </div>
 
-          {/* Row 2: Category * | Unit | HSN Code * */}
+          {/* Row 2: Category * | Sub Category | Unit */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Controller
               name="category"
@@ -1766,6 +1779,23 @@ export default function ProductForm({
             />
 
             <Controller
+              name="subCategory"
+              control={control}
+              render={({ field }) => (
+                <DropdownWithOther
+                  label="Sub Category"
+                  value={field.value || ""}
+                  options={subCategoryOptions}
+                  onChange={field.onChange}
+                  placeholder="Select Sub Category..."
+                  fieldKey="subcategory"
+                  allowOther={true}
+                  error={errors.subCategory?.message}
+                />
+              )}
+            />
+
+            <Controller
               name="unit"
               control={control}
               render={({ field }) => (
@@ -1778,27 +1808,6 @@ export default function ProductForm({
                   fieldKey="unit"
                   error={errors.unit?.message}
                 />
-              )}
-            />
-
-            <Controller
-              name="hsnCode"
-              control={control}
-              render={({ field }) => (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                    HSN Code <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    {...field}
-                    value={field.value ?? ""}
-                    placeholder="e.g. 61091000"
-                    className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
-                  />
-                  {errors.hsnCode && (
-                    <p className="text-[11px] text-rose-500">{errors.hsnCode.message}</p>
-                  )}
-                </div>
               )}
             />
           </div>
@@ -2047,7 +2056,7 @@ export default function ProductForm({
                 </div>
               )}
 
-          {/* Row 4: GST (%) | MRP | Brand Name */}
+          {/* Row 4: GST (%) | MRP | HSN Code * */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Controller
               name="gstRate"
@@ -2105,18 +2114,23 @@ export default function ProductForm({
             />
 
             <Controller
-              name="brand"
+              name="hsnCode"
               control={control}
               render={({ field }) => (
-                <DropdownWithOther
-                  label="Brand Name"
-                  value={field.value || "No Brand"}
-                  options={brandOptions}
-                  onChange={field.onChange}
-                  placeholder="Select Brand..."
-                  fieldKey="brand"
-                  error={errors.brand?.message}
-                />
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                    HSN Code <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder="e.g. 61091000"
+                    className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] text-[#0A0E1A] dark:text-white outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] focus:ring-2 focus:ring-[#E8C16D]/20 dark:focus:ring-[#F5C451]/20 transition-all placeholder:text-slate-400 shadow-xs"
+                  />
+                  {errors.hsnCode && (
+                    <p className="text-[11px] text-rose-500">{errors.hsnCode.message}</p>
+                  )}
+                </div>
               )}
             />
           </div>
@@ -2144,8 +2158,24 @@ export default function ProductForm({
             )}
           </div>
 
-          {/* Row 6: Reference Party * */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Row 6: Brand Name | Reference Party | Status */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Controller
+              name="brand"
+              control={control}
+              render={({ field }) => (
+                <DropdownWithOther
+                  label="Brand Name"
+                  value={field.value || "No Brand"}
+                  options={brandOptions}
+                  onChange={field.onChange}
+                  placeholder="Select Brand..."
+                  fieldKey="brand"
+                  error={errors.brand?.message}
+                />
+              )}
+            />
+
             <Controller
               name="referenceParty"
               control={control}
@@ -2293,8 +2323,238 @@ export default function ProductForm({
                 )}
               />
 
-              {/* Opening Stock */}
-              <Controller
+              {/* Warehouse-Wise Stock Allocation (Multi-Select Warehouses above Opening Stock) */}
+              <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                    <WarehouseIcon size={14} className="text-[#B88728] dark:text-[#F5C451]" />
+                    <span>Warehouses</span>
+                  </label>
+                  {availableWarehouses.length > 0 && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allIds = availableWarehouses.map((w) => w.id);
+                          const nextAllocs = { ...warehouseAllocations };
+                          for (const id of allIds) {
+                            if (!nextAllocs[id]) {
+                              nextAllocs[id] = {
+                                openingStock: Number(watch("openingStock")) || 0,
+                                reorderLevelStock: Number(watch("reorderLevelStock")) || 0,
+                                minimumStock: Number(watch("minimumStock")) || 0,
+                              };
+                            }
+                          }
+                          setSelectedWarehouseIds(allIds);
+                          setWarehouseAllocations(nextAllocs);
+                          syncStockTotalsFromWarehouses(allIds, nextAllocs);
+                        }}
+                        className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer"
+                      >
+                        Select All
+                      </button>
+                      {selectedWarehouseIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedWarehouseIds([]);
+                          }}
+                          className="text-[11px] font-semibold text-slate-400 hover:text-rose-500 cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Multi-Select Dropdown */}
+                <div className="relative" ref={warehouseDropdownRef}>
+                  <div
+                    onClick={() => setWarehouseDropdownOpen((o) => !o)}
+                    className="min-h-11 sm:min-h-12 w-full px-3.5 py-2 rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] flex items-center justify-between gap-2 cursor-pointer hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 transition-all shadow-xs"
+                  >
+                    <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                      {selectedWarehouseIds.length === 0 ? (
+                        <span className="text-xs sm:text-sm text-slate-400">
+                          {availableWarehouses.length === 0
+                            ? "No warehouses added yet"
+                            : "Select Warehouses..."}
+                        </span>
+                      ) : (
+                        selectedWarehouseIds.map((whId) => {
+                          const wh = availableWarehouses.find((w) => w.id === whId);
+                          if (!wh) return null;
+                          return (
+                            <span
+                              key={whId}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#FFF9EC] text-[#7A581F] border border-[#E8C16D]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30"
+                            >
+                              <span>{wh.warehouseName}</span>
+                              <button
+                                type="button"
+                                onClick={() => toggleWarehouseSelection(whId)}
+                                className="hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
+                                aria-label={`Remove ${wh.warehouseName}`}
+                              >
+                                <X size={11} />
+                              </button>
+                            </span>
+                          );
+                        })
+                      )}
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={cn(
+                        "text-slate-400 shrink-0 transition-transform",
+                        warehouseDropdownOpen && "rotate-180"
+                      )}
+                    />
+                  </div>
+
+                  {warehouseDropdownOpen && availableWarehouses.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-40 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-1.5 shadow-2xl max-h-56 overflow-y-auto custom-scrollbar space-y-0.5">
+                      {availableWarehouses.map((wh) => {
+                        const isSelected = selectedWarehouseIds.includes(wh.id);
+                        return (
+                          <button
+                            key={wh.id}
+                            type="button"
+                            onClick={() => toggleWarehouseSelection(wh.id)}
+                            className={cn(
+                              "w-full px-3 py-2 rounded-xl flex items-center justify-between gap-2 text-left text-xs font-semibold transition-colors cursor-pointer",
+                              isSelected
+                                ? "bg-[#FFF9EC] text-[#7A581F] dark:bg-[#F5C451]/15 dark:text-[#F5C451]"
+                                : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04]"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="truncate">{wh.warehouseName}</span>
+                              {wh.warehouseCode && (
+                                <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                                  ({wh.warehouseCode})
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={cn(
+                                "h-4 w-4 rounded flex items-center justify-center border shrink-0",
+                                isSelected
+                                  ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
+                                  : "border-slate-300 dark:border-white/20"
+                              )}
+                            >
+                              {isSelected && <Check size={11} strokeWidth={3} />}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Warehouses Stock Quantities */}
+                {selectedWarehouseIds.length > 0 && (
+                  <div className="space-y-2.5 pt-1">
+                    {selectedWarehouseIds.map((whId) => {
+                      const wh = availableWarehouses.find((w) => w.id === whId);
+                      if (!wh) return null;
+                      const alloc = warehouseAllocations[whId] || {
+                        openingStock: 0,
+                        reorderLevelStock: 0,
+                        minimumStock: 0,
+                      };
+                      return (
+                        <div
+                          key={whId}
+                          className="rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/70 dark:bg-[#0B0F17] p-3 space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-xs font-bold text-[#0A0E1A] dark:text-white truncate">
+                                {wh.warehouseName}
+                              </span>
+                              {wh.warehouseCode && (
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300">
+                                  {wh.warehouseCode}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleWarehouseSelection(whId)}
+                              className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                              title={`Remove ${wh.warehouseName}`}
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                                Opening Qty
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={alloc.openingStock}
+                                onChange={(e) =>
+                                  updateWarehouseStockField(whId, "openingStock", e.target.value)
+                                }
+                                placeholder="0"
+                                className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                                Min Stock
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={alloc.minimumStock}
+                                onChange={(e) =>
+                                  updateWarehouseStockField(whId, "minimumStock", e.target.value)
+                                }
+                                placeholder="0"
+                                className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                                Re-Order Qty
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={alloc.reorderLevelStock}
+                                onChange={(e) =>
+                                  updateWarehouseStockField(whId, "reorderLevelStock", e.target.value)
+                                }
+                                placeholder="0"
+                                className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Opening Stock & Minimum Stock (shown when no specific warehouse is selected) */}
+              {selectedWarehouseIds.length === 0 && (
+                <>
+                  {/* Opening Stock */}
+                  <Controller
                 name="openingStock"
                 control={control}
                 render={({ field }) => (
@@ -2386,6 +2646,8 @@ export default function ProductForm({
                   </div>
                 )}
               />
+                </>
+              )}
 
               {/* Product Points (for worker incentive) */}
               <Controller
@@ -2475,10 +2737,11 @@ export default function ProductForm({
                 )}
               />
 
-              {/* Re-Order Level Stock */}
-              <Controller
-                name="reorderLevelStock"
-                control={control}
+              {/* Re-Order Level Stock (shown when no specific warehouse is selected) */}
+              {selectedWarehouseIds.length === 0 && (
+                <Controller
+                  name="reorderLevelStock"
+                  control={control}
                 render={({ field }) => (
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
@@ -2521,6 +2784,7 @@ export default function ProductForm({
                   </div>
                 )}
               />
+              )}
 
               {/* Rack Address */}
               <Controller
@@ -2574,238 +2838,6 @@ export default function ProductForm({
                 )}
               />
             </div>
-          </div>
-
-          {/* Warehouse-Wise Stock Allocation (Multi-Select Warehouses for Opening, Minimum & Re-Order Stock) */}
-          <div className="pt-4 border-t border-slate-200/80 dark:border-white/[0.08] space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                  <WarehouseIcon size={14} className="text-[#B88728] dark:text-[#F5C451]" />
-                  <span>Warehouses (Multi-Select Stock Allocation)</span>
-                </label>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Select warehouses to set Opening Stock, Minimum Stock, and Re-Order Level Stock per warehouse.
-                </p>
-              </div>
-              {availableWarehouses.length > 0 && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const allIds = availableWarehouses.map((w) => w.id);
-                      const nextAllocs = { ...warehouseAllocations };
-                      for (const id of allIds) {
-                        if (!nextAllocs[id]) {
-                          nextAllocs[id] = {
-                            openingStock: Number(watch("openingStock")) || 0,
-                            reorderLevelStock: Number(watch("reorderLevelStock")) || 0,
-                            minimumStock: Number(watch("minimumStock")) || 0,
-                          };
-                        }
-                      }
-                      setSelectedWarehouseIds(allIds);
-                      setWarehouseAllocations(nextAllocs);
-                      syncStockTotalsFromWarehouses(allIds, nextAllocs);
-                    }}
-                    className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer"
-                  >
-                    Select All
-                  </button>
-                  {selectedWarehouseIds.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedWarehouseIds([]);
-                      }}
-                      className="text-[11px] font-semibold text-slate-400 hover:text-rose-500 cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Multi-Select Dropdown */}
-            <div className="relative" ref={warehouseDropdownRef}>
-              <div
-                onClick={() => setWarehouseDropdownOpen((o) => !o)}
-                className="min-h-11 sm:min-h-12 w-full px-3.5 py-2 rounded-xl sm:rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0F17] flex items-center justify-between gap-2 cursor-pointer hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 transition-all shadow-xs"
-              >
-                <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                  {selectedWarehouseIds.length === 0 ? (
-                    <span className="text-xs sm:text-sm text-slate-400">
-                      {availableWarehouses.length === 0
-                        ? "No warehouses added yet"
-                        : "Select Warehouses..."}
-                    </span>
-                  ) : (
-                    selectedWarehouseIds.map((whId) => {
-                      const wh = availableWarehouses.find((w) => w.id === whId);
-                      if (!wh) return null;
-                      return (
-                        <span
-                          key={whId}
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#FFF9EC] text-[#7A581F] border border-[#E8C16D]/50 dark:bg-[#F5C451]/15 dark:text-[#F5C451] dark:border-[#F5C451]/30"
-                        >
-                          <span>{wh.warehouseName}</span>
-                          <button
-                            type="button"
-                            onClick={() => toggleWarehouseSelection(whId)}
-                            className="hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
-                            aria-label={`Remove ${wh.warehouseName}`}
-                          >
-                            <X size={11} />
-                          </button>
-                        </span>
-                      );
-                    })
-                  )}
-                </div>
-                <ChevronDown
-                  size={16}
-                  className={cn(
-                    "text-slate-400 shrink-0 transition-transform",
-                    warehouseDropdownOpen && "rotate-180"
-                  )}
-                />
-              </div>
-
-              {warehouseDropdownOpen && availableWarehouses.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1.5 z-40 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-1.5 shadow-2xl max-h-56 overflow-y-auto custom-scrollbar space-y-0.5">
-                  {availableWarehouses.map((wh) => {
-                    const isSelected = selectedWarehouseIds.includes(wh.id);
-                    return (
-                      <button
-                        key={wh.id}
-                        type="button"
-                        onClick={() => toggleWarehouseSelection(wh.id)}
-                        className={cn(
-                          "w-full px-3 py-2 rounded-xl flex items-center justify-between gap-2 text-left text-xs font-semibold transition-colors cursor-pointer",
-                          isSelected
-                            ? "bg-[#FFF9EC] text-[#7A581F] dark:bg-[#F5C451]/15 dark:text-[#F5C451]"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04]"
-                        )}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="truncate">{wh.warehouseName}</span>
-                          {wh.warehouseCode && (
-                            <span className="text-[10px] font-mono text-slate-400 shrink-0">
-                              ({wh.warehouseCode})
-                            </span>
-                          )}
-                        </div>
-                        <span
-                          className={cn(
-                            "h-4 w-4 rounded flex items-center justify-center border shrink-0",
-                            isSelected
-                              ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
-                              : "border-slate-300 dark:border-white/20"
-                          )}
-                        >
-                          {isSelected && <Check size={11} strokeWidth={3} />}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Selected Warehouses Stock Quantities */}
-            {selectedWarehouseIds.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                {selectedWarehouseIds.map((whId) => {
-                  const wh = availableWarehouses.find((w) => w.id === whId);
-                  if (!wh) return null;
-                  const alloc = warehouseAllocations[whId] || {
-                    openingStock: 0,
-                    reorderLevelStock: 0,
-                    minimumStock: 0,
-                  };
-                  return (
-                    <div
-                      key={whId}
-                      className="rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/70 dark:bg-[#0B0F17] p-3 space-y-2.5"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-xs font-bold text-[#0A0E1A] dark:text-white truncate">
-                            {wh.warehouseName}
-                          </span>
-                          {wh.warehouseCode && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300">
-                              {wh.warehouseCode}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => toggleWarehouseSelection(whId)}
-                          className="text-slate-400 hover:text-rose-500 cursor-pointer"
-                          title={`Remove ${wh.warehouseName}`}
-                        >
-                          <X size={13} />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                            Opening Qty
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={alloc.openingStock}
-                            onChange={(e) =>
-                              updateWarehouseStockField(whId, "openingStock", e.target.value)
-                            }
-                            placeholder="0"
-                            className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                            Min Stock
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={alloc.minimumStock}
-                            onChange={(e) =>
-                              updateWarehouseStockField(whId, "minimumStock", e.target.value)
-                            }
-                            placeholder="0"
-                            className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                            Re-Order Qty
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={alloc.reorderLevelStock}
-                            onChange={(e) =>
-                              updateWarehouseStockField(whId, "reorderLevelStock", e.target.value)
-                            }
-                            placeholder="0"
-                            className="w-full h-9 px-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -218,10 +218,10 @@ export default function GalleryProductCard({
             )}
           </button>
 
-          {/* Category Pill */}
+          {/* Category / Sub-Category Pill */}
           <div className="flex items-center gap-1 flex-wrap">
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-200/70 dark:bg-white/[0.05] dark:text-slate-300 dark:border-white/[0.08]">
-              {card.category || "Uncategorized"}
+              {card.subCategory || card.category || "Uncategorized"}
             </span>
             {displayOptions.showReorderStock && (
               <span

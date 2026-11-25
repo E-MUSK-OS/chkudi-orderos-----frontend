@@ -179,6 +179,7 @@ export interface DropdownOptionsData {
   parties: string[];
   distinctFromProducts: {
     categories: string[];
+    subCategories?: string[];
     brands: string[];
     units: string[];
     genders: string[];

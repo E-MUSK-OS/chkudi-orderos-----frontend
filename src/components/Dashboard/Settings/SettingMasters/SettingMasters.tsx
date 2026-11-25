@@ -27,11 +27,6 @@ export default function SettingMasters() {
   const rawGroups = groupsData || INITIAL_FIELD_GROUPS;
   const groups = React.useMemo(() => {
     return rawGroups
-      .filter(
-        (g) =>
-          g.field.toLowerCase() !== "subcategory" &&
-          g.field.toLowerCase() !== "productsubcategory"
-      )
       .slice()
       .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }))
       .map((g, idx) => ({ ...g, no: idx + 1 }));

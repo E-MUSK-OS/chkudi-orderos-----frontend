@@ -251,13 +251,6 @@ export const navItems: NavItem[] = [
     icon: FileSpreadsheet,
     children: [
       {
-        label: "Product Gallery",
-        href: "/dashboard/offline-sales/product-gallery",
-        defaultTimeAgo: "1h ago",
-        isCore: true,
-        keywords: ["product gallery", "gallery", "offline sales", "cart", "cards"],
-      },
-      {
         label: "Sales Challan",
         href: "/dashboard/offline-sales/sales-challan",
         defaultTimeAgo: "4h ago",
@@ -268,6 +261,13 @@ export const navItems: NavItem[] = [
         href: "/dashboard/offline-sales/sales-invoice",
         defaultTimeAgo: "2h ago",
         isCore: true,
+      },
+      {
+        label: "Product Gallery",
+        href: "/dashboard/offline-sales/product-gallery",
+        defaultTimeAgo: "1h ago",
+        isCore: true,
+        keywords: ["product gallery", "gallery", "offline sales", "cart", "cards"],
       },
     ],
   },
