@@ -271,7 +271,7 @@ export default function FlipkartResultView() {
           });
         }
       } catch (e) {
-        console.warn("Could not load local printers:", e);
+        console.warn("Could not load local printers via QZ Tray:", e);
       }
     }
     loadPrinters();
@@ -1278,35 +1278,22 @@ export default function FlipkartResultView() {
     };
   }, [files?.shippingLabelsPdfBase64, mappedOrders, activeBatchKey]);
 
-  // Strict printer resolution and silent printing verification (matching Amazon Order Process)
+  // Strict printer resolution and silent printing verification via QZ Tray
   const resolvePrinter = async (): Promise<string | null> => {
-    // 1. Verify PrintBridge extension is reachable
-    const extCheck = await chromeExtensionPrintService.checkExtension();
-    if (!extCheck.ok) {
+    const qzCheck = await chromeExtensionPrintService.checkExtension();
+    if (!qzCheck.ok) {
       lastVerifiedPrinterRef.current = null;
-      toast.error("PrintBridge is not running or not detected. Please setup PrintBridge.", {
+      toast.error("QZ Tray is not running or not detected. Please launch QZ Tray.", {
         id: "flipkart-print",
         duration: 8000,
-        action: {
-          label: "Setup PrintBridge",
-          onClick: () => window.open("/printbridge", "_blank"),
-        },
       });
       return null;
     }
 
-    if (extCheck.response?.silentPrinting === false) {
-      toast.warning(
-        "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
-        { duration: 8000 }
-      );
-    }
-
-    // 2. Fetch live detailed printers directly connected to the PC right now
     const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
-    const extPrinters = detailedPrinters.map((p) => p.name).filter(Boolean);
-    if (extPrinters.length > 0) {
-      setAvailablePrinters(extPrinters);
+    const qzPrinters = detailedPrinters.map((p) => p.name).filter(Boolean);
+    if (qzPrinters.length > 0) {
+      setAvailablePrinters(qzPrinters);
     }
 
     let targetPrinter: string | null =
@@ -1318,7 +1305,7 @@ export default function FlipkartResultView() {
         : null);
 
     if (targetPrinter) {
-      const matched = extPrinters.find(
+      const matched = qzPrinters.find(
         (p) => p.toLowerCase().trim() === targetPrinter?.toLowerCase().trim()
       );
       if (matched) {
@@ -1328,13 +1315,13 @@ export default function FlipkartResultView() {
 
     if (!targetPrinter || !isPrinterConnectedAndOnline(targetPrinter, detailedPrinters)) {
       const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(
-        extPrinters,
+        qzPrinters,
         detailedPrinters
       );
       if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
         targetPrinter = onlineConnected;
-      } else if (extPrinters.length > 0) {
-        targetPrinter = extPrinters[0];
+      } else if (qzPrinters.length > 0) {
+        targetPrinter = qzPrinters[0];
       }
     }
 
@@ -1343,10 +1330,6 @@ export default function FlipkartResultView() {
       toast.error("No printer connected. Print cancelled to avoid queuing.", {
         id: "flipkart-print",
         duration: 8000,
-        action: {
-          label: "Setup PrintBridge",
-          onClick: () => window.open("/printbridge", "_blank"),
-        },
       });
       return null;
     }
@@ -1374,21 +1357,20 @@ export default function FlipkartResultView() {
     invalidatePrinterCache();
 
     const msg = String(err?.message || err || "");
-    const isPrintBridgeIssue =
-      msg.includes("PrintBridge") ||
-      msg.toLowerCase().includes("extension") ||
-      msg.includes("Receiving end does not exist") ||
-      msg.includes("Could not establish connection") ||
-      msg.includes("runtime is not available") ||
-      msg.includes("Failed to communicate");
+    const isQzTrayIssue =
+      msg.includes("QZ Tray") ||
+      msg.toLowerCase().includes("websocket") ||
+      msg.includes("Unable to establish connection") ||
+      msg.includes("Connection refused") ||
+      msg.includes("Could not establish connection");
 
-    if (isPrintBridgeIssue) {
-      toast.error("PrintBridge is not running or not detected. Please setup PrintBridge.", {
+    if (isQzTrayIssue) {
+      toast.error("QZ Tray is not running or not detected. Please launch QZ Tray.", {
         id: "flipkart-print",
         duration: 9000,
         action: {
-          label: "Setup PrintBridge",
-          onClick: () => window.open("/printbridge", "_blank"),
+          label: "Download QZ Tray",
+          onClick: () => window.open("https://qz.io/download/", "_blank"),
         },
       });
       return;
@@ -1400,8 +1382,7 @@ export default function FlipkartResultView() {
       msg.includes("not connected") ||
       msg.includes("disconnected") ||
       msg.includes("No connected printer") ||
-      msg.includes("not ready") ||
-      msg.includes("SumatraPDF");
+      msg.includes("not ready");
 
     toast.error(
       isConnectionIssue
@@ -1410,10 +1391,6 @@ export default function FlipkartResultView() {
       {
         id: "flipkart-print",
         duration: 8000,
-        action: {
-          label: "Setup PrintBridge",
-          onClick: () => window.open("/printbridge", "_blank"),
-        },
       }
     );
   };
@@ -1473,7 +1450,7 @@ export default function FlipkartResultView() {
     const targetPrinter = await resolvePrinter();
     if (!targetPrinter) return;
 
-    // Helper to print with automatic raster canvas fallback for thermal printers
+    // Helper to print with automatic raster canvas fallback for thermal printers via QZ Tray
     const printWithRasterFallback = async (pdfBase64: string): Promise<void> => {
       try {
         const extRes = await chromeExtensionPrintService.printPdf(
@@ -1516,7 +1493,7 @@ export default function FlipkartResultView() {
           } else {
             throw vectorErr;
           }
-        } catch (rasterErr) {
+        } catch {
           throw vectorErr;
         }
       }

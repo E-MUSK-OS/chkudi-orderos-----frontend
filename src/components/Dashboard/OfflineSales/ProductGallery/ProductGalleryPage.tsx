@@ -31,7 +31,7 @@ import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 import { productService } from "../../Products/ManageProducts/services/product.service";
 import { useDropdownOptions } from "../../Products/ManageProducts/hooks/useDropdownOptions";
 import {
-  productCategoryOptions,
+  getSubCategoryOptionsForCategory,
   sortSizes,
 } from "../../Products/ManageProducts/constants/product.constants";
 import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
@@ -272,15 +272,15 @@ export default function ProductGalleryPage() {
     [productsResponse]
   );
 
-  // Category Options (clothing & all categories)
+  // Category Dropdown Options (uses Sub Category options from Setting Master & products)
   const categoryOptions = useMemo(
     () => [
       { label: "All Categories", value: "" },
       ...buildMergedOptions(
-        "category",
-        productCategoryOptions,
+        "subcategory",
+        getSubCategoryOptionsForCategory(""),
         dropdownData?.savedOptions,
-        dropdownData?.distinctFromProducts?.categories
+        dropdownData?.distinctFromProducts?.subCategories || []
       ),
     ],
     [dropdownData]
@@ -533,8 +533,9 @@ export default function ProductGalleryPage() {
         card.availability.toLowerCase() === availability.toLowerCase();
       if (!matchesAvail) return false;
 
+      const effectiveCardCat = (card.subCategory || card.category || "").toLowerCase();
       const matchesCategory =
-        !category || card.category.toLowerCase() === category.toLowerCase();
+        !category || effectiveCardCat === category.toLowerCase();
       if (!matchesCategory) return false;
 
       if (stockFilter === "in-stock" && card.totalPcs <= 0) return false;

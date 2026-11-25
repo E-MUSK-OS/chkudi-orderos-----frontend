@@ -1560,7 +1560,7 @@ export default function ComparisonResultView({
           });
         }
       } catch (e) {
-        console.warn("Failed to load initial printers:", e);
+        console.warn("Failed to load initial printers via QZ Tray:", e);
       }
     }
     loadPrinters();
@@ -2007,6 +2007,91 @@ export default function ComparisonResultView({
         ? localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter")
         : null);
 
+    // [COMMENTED OUT - PrintBridge Silent Printing Disabled]
+    // if (targetPrinter) {
+    //   lastVerifiedPrinterRef.current = {
+    //     printerName: targetPrinter,
+    //     timestamp: now,
+    //   };
+    //   if (!selectedPrinter) {
+    //     setSelectedPrinter(targetPrinter);
+    //   }
+    // } else {
+    //   // Verify PrintBridge extension is reachable
+    //   const extCheck = await chromeExtensionPrintService.checkExtension();
+    //   if (!extCheck.ok) {
+    //     lastVerifiedPrinterRef.current = null;
+    //     toast.error("PrintBridge is not running or not detected. Please setup PrintBridge.", {
+    //       id: 'print-prep',
+    //       duration: 8000,
+    //       action: {
+    //         label: 'Setup PrintBridge',
+    //         onClick: () => window.open('/printbridge', '_blank'),
+    //       },
+    //     });
+    //     return;
+    //   }
+    //
+    //   if (extCheck.response?.silentPrinting === false) {
+    //     toast.warning(
+    //       "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
+    //       { duration: 8000 }
+    //     );
+    //   }
+    //
+    //   // Fetch live printers directly connected to the PC right now
+    //   const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
+    //   const extPrinters = detailedPrinters.map((p) => p.name);
+    //   if (extPrinters.length > 0) {
+    //     setAvailablePrinters(extPrinters);
+    //   }
+    //
+    //   // Strictly resolve target printer
+    //   const saved = typeof window !== 'undefined'
+    //     ? (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
+    //     : null;
+    //   if (saved) {
+    //     const matched = extPrinters.find(p => p.toLowerCase().trim() === saved.toLowerCase().trim());
+    //     if (matched) {
+    //       targetPrinter = matched;
+    //       setSelectedPrinter(matched);
+    //     }
+    //   }
+    //   if (!targetPrinter) {
+    //     const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+    //     if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
+    //       targetPrinter = onlineConnected;
+    //       setSelectedPrinter(onlineConnected);
+    //       if (typeof window !== 'undefined') {
+    //         localStorage.setItem('amazon_selected_printer', onlineConnected);
+    //         localStorage.setItem('lastUsedPrinter', onlineConnected);
+    //       }
+    //     } else if (extPrinters.length > 0) {
+    //       targetPrinter = extPrinters[0];
+    //       setSelectedPrinter(extPrinters[0]);
+    //     }
+    //   }
+    //
+    //   // STRICT REQUIREMENT: If no physical printer is connected and online, DO NOT SEND TO QUEUE!
+    //   if (!targetPrinter) {
+    //     lastVerifiedPrinterRef.current = null;
+    //     toast.error("No printer connected. Print cancelled to avoid queuing.", {
+    //       id: 'print-prep',
+    //       duration: 8000,
+    //       action: {
+    //         label: 'Setup PrintBridge',
+    //         onClick: () => window.open('/printbridge', '_blank'),
+    //       },
+    //     });
+    //     return;
+    //   }
+    //
+    //   lastVerifiedPrinterRef.current = {
+    //     printerName: targetPrinter,
+    //     timestamp: Date.now(),
+    //   };
+    // }
+    // Silent Printing via QZ Tray
     if (targetPrinter) {
       lastVerifiedPrinterRef.current = {
         printerName: targetPrinter,
@@ -2016,48 +2101,34 @@ export default function ComparisonResultView({
         setSelectedPrinter(targetPrinter);
       }
     } else {
-      // Verify PrintBridge extension is reachable
-      const extCheck = await chromeExtensionPrintService.checkExtension();
-      if (!extCheck.ok) {
+      const qzCheck = await chromeExtensionPrintService.checkExtension();
+      if (!qzCheck.ok) {
         lastVerifiedPrinterRef.current = null;
-        toast.error("PrintBridge is not running or not detected. Please setup PrintBridge.", {
+        toast.error("QZ Tray is not running or not detected. Please launch QZ Tray.", {
           id: 'print-prep',
           duration: 8000,
-          action: {
-            label: 'Setup PrintBridge',
-            onClick: () => window.open('/printbridge', '_blank'),
-          },
         });
         return;
       }
 
-      if (extCheck.response?.silentPrinting === false) {
-        toast.warning(
-          "Silent Printing is OFF in the PrintBridge extension. Click the extension icon in the Chrome toolbar and switch 'Silent Printing' to ON.",
-          { duration: 8000 }
-        );
-      }
-
-      // Fetch live printers directly connected to the PC right now
       const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
-      const extPrinters = detailedPrinters.map((p) => p.name);
-      if (extPrinters.length > 0) {
-        setAvailablePrinters(extPrinters);
+      const qzPrinters = detailedPrinters.map((p) => p.name);
+      if (qzPrinters.length > 0) {
+        setAvailablePrinters(qzPrinters);
       }
 
-      // Strictly resolve target printer
       const saved = typeof window !== 'undefined'
         ? (localStorage.getItem("amazon_selected_printer") || localStorage.getItem("lastUsedPrinter"))
         : null;
       if (saved) {
-        const matched = extPrinters.find(p => p.toLowerCase().trim() === saved.toLowerCase().trim());
+        const matched = qzPrinters.find(p => p.toLowerCase().trim() === saved.toLowerCase().trim());
         if (matched) {
           targetPrinter = matched;
           setSelectedPrinter(matched);
         }
       }
       if (!targetPrinter) {
-        const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(extPrinters, detailedPrinters);
+        const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(qzPrinters, detailedPrinters);
         if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
           targetPrinter = onlineConnected;
           setSelectedPrinter(onlineConnected);
@@ -2065,22 +2136,17 @@ export default function ComparisonResultView({
             localStorage.setItem('amazon_selected_printer', onlineConnected);
             localStorage.setItem('lastUsedPrinter', onlineConnected);
           }
-        } else if (extPrinters.length > 0) {
-          targetPrinter = extPrinters[0];
-          setSelectedPrinter(extPrinters[0]);
+        } else if (qzPrinters.length > 0) {
+          targetPrinter = qzPrinters[0];
+          setSelectedPrinter(qzPrinters[0]);
         }
       }
 
-      // STRICT REQUIREMENT: If no physical printer is connected and online, DO NOT SEND TO QUEUE!
       if (!targetPrinter) {
         lastVerifiedPrinterRef.current = null;
         toast.error("No printer connected. Print cancelled to avoid queuing.", {
           id: 'print-prep',
           duration: 8000,
-          action: {
-            label: 'Setup PrintBridge',
-            onClick: () => window.open('/printbridge', '_blank'),
-          },
         });
         return;
       }
@@ -2374,23 +2440,22 @@ export default function ComparisonResultView({
       invalidatePrinterCache();
 
       const msg = String(err?.message || err || '');
-      const isPrintBridgeIssue =
-        msg.includes("PrintBridge") ||
-        msg.toLowerCase().includes("extension") ||
-        msg.includes("Receiving end does not exist") ||
-        msg.includes("Could not establish connection") ||
-        msg.includes("runtime is not available") ||
-        msg.includes("Failed to communicate");
+      const isQzTrayIssue =
+        msg.includes("QZ Tray") ||
+        msg.toLowerCase().includes("websocket") ||
+        msg.includes("Unable to establish connection") ||
+        msg.includes("Connection refused") ||
+        msg.includes("Could not establish connection");
 
-      if (isPrintBridgeIssue) {
+      if (isQzTrayIssue) {
         toast.error(
-          "PrintBridge is not running or not detected. Please setup PrintBridge.",
+          "QZ Tray is not running or not detected. Please launch QZ Tray.",
           {
             id: 'print-prep',
             duration: 9000,
             action: {
-              label: 'Setup PrintBridge',
-              onClick: () => window.open('/printbridge', '_blank'),
+              label: 'Download QZ Tray',
+              onClick: () => window.open('https://qz.io/download/', '_blank'),
             },
           }
         );
@@ -2403,8 +2468,7 @@ export default function ComparisonResultView({
         msg.includes("not connected") ||
         msg.includes("disconnected") ||
         msg.includes("No connected printer") ||
-        msg.includes("not ready") ||
-        msg.includes("SumatraPDF");
+        msg.includes("not ready");
 
       toast.error(
         isConnectionIssue
@@ -2413,10 +2477,6 @@ export default function ComparisonResultView({
         {
           id: 'print-prep',
           duration: 8000,
-          action: {
-            label: 'Setup PrintBridge',
-            onClick: () => window.open('/printbridge', '_blank'),
-          },
         }
       );
     }

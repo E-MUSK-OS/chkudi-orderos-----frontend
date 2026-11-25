@@ -176,9 +176,9 @@ export default function PrintExecutionModal({
 
         {helperStatus === "extension-missing" && (
           <div className="bg-amber-900/20 border border-amber-900/50 text-amber-400 p-4 rounded-2xl text-sm space-y-1">
-            <p className="font-semibold">Chrome Print Extension (PrintBridge) Not Detected</p>
+            <p className="font-semibold">QZ Tray Not Detected</p>
             <p>
-              Please make sure the PrintBridge Chrome extension is installed and enabled in Google Chrome or Microsoft Edge.
+              Please make sure QZ Tray is installed and running on this computer.
             </p>
           </div>
         )}
