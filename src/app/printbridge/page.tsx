@@ -20,7 +20,7 @@ export default function PrintBridgePage() {
   const [extensionId, setExtensionId] = useState(DEFAULT_EXTENSION_ID);
   const [isChecking, setIsChecking] = useState(false);
   const [isWindows, setIsWindows] = useState(true);
-  const [siteHost, setSiteHost] = useState("chakudee.com");
+  const [siteHost, setSiteHost] = useState("netuorderos.in");
 
   const [rows, setRows] = useState<{
     ext: DiagnosticRow;
@@ -43,7 +43,7 @@ export default function PrintBridgePage() {
   useEffect(() => {
     setIsWindows(looksLikeWindows());
     if (typeof window !== "undefined") {
-      setSiteHost(window.location.host || "chakudee.com");
+      setSiteHost(window.location.host || "netuorderos.in");
     }
   }, []);
 
