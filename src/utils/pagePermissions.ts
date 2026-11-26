@@ -207,11 +207,11 @@ export function isRouteAllowed(
     if (allowed.includes("transaction")) return true;
   }
 
-  if (subPath.startsWith("offline-sales") || subPath.startsWith("sales-")) {
-    if (subPath.includes("gallery") && (allowed.includes("product-gallery") || allowed.includes("offline-sales/product-gallery") || allowed.includes("offline-sales"))) return true;
-    if (subPath.includes("challan") && (allowed.includes("challan") || allowed.includes("offline-sales/sales-challan") || allowed.includes("sales-challan"))) return true;
-    if (subPath.includes("invoice") && (allowed.includes("invoice") || allowed.includes("offline-sales/sales-invoice") || allowed.includes("sales-invoice"))) return true;
-    if (allowed.includes("offline-sales")) return true;
+  if (subPath.startsWith("sales") || subPath.startsWith("sales-")) {
+    if (subPath.includes("gallery") && (allowed.includes("product-gallery") || allowed.includes("sales/product-gallery") || allowed.includes("sales"))) return true;
+    if (subPath.includes("challan") && (allowed.includes("challan") || allowed.includes("sales/sales-challan") || allowed.includes("sales-challan"))) return true;
+    if (subPath.includes("invoice") && (allowed.includes("invoice") || allowed.includes("sales/sales-invoice") || allowed.includes("sales-invoice"))) return true;
+    if (allowed.includes("sales")) return true;
   }
 
   if (subPath.startsWith("purchase")) {
@@ -304,7 +304,7 @@ export function isNavItemAllowed(
   if (label.includes("product")) return allowed.some((p) => p.startsWith("products") || p.startsWith("settings/manage-product"));
   if (label.includes("order process")) return allowed.some((p) => p.startsWith("order-process") || p === "orderprocess");
   if (label.includes("transaction")) return allowed.some((p) => p.startsWith("transaction"));
-  if (label.includes("offline sales")) return allowed.some((p) => p.startsWith("offline-sales") || p === "challan");
+  if (label === "sales" || label.includes("offline sales")) return allowed.some((p) => p.startsWith("sales") || p === "challan");
   if (label.includes("purchase")) return allowed.some((p) => p.startsWith("purchase"));
   if (label.includes("manage users")) {
     if (user.role === "SUPERADMIN") return true;
@@ -454,7 +454,7 @@ export function getFirstAllowedRoute(user?: UserPermissions | null): string {
     "/dashboard/order-process",
     "/dashboard/products-analytics/amazon",
     "/dashboard/transaction/sales/po-based/upload-requested-po",
-    "/dashboard/offline-sales/sales-challan",
+    "/dashboard/sales/sales-challan",
     "/dashboard/purchase/finish-goods/challan",
     "/dashboard/settings/configuration/client",
     "/dashboard/settings/manage-users/user-profile",
@@ -512,9 +512,9 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "order-process/flipkart/awb-scan": "order-process/flipkart/awb-scan",
   "products-analytics/amazon": "products-analytics/amazon",
   "transaction/sales/po-based": "transaction/sales/po-based",
-  "offline-sales/product-gallery": "offline-sales/product-gallery",
-  "offline-sales/sales-challan": "offline-sales/sales-challan",
-  "offline-sales/sales-invoice": "offline-sales/sales-invoice",
+  "sales/product-gallery": "sales/product-gallery",
+  "sales/sales-challan": "sales/sales-challan",
+  "sales/sales-invoice": "sales/sales-invoice",
   "purchase/finish-goods/challan": "purchase/finish-goods/challan",
   "purchase/finish-goods/invoice": "purchase/finish-goods/invoice",
   "settings/webstore": "settings/webstore",
@@ -546,7 +546,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   order_purchase_mat: "purchase/finish-goods/challan",
   challan_purchase_mat: "purchase/finish-goods/challan",
   invoice_purchase_mat: "purchase/finish-goods/invoice",
-  debit_note_mat: "offline-sales/sales-invoice",
+  debit_note_mat: "sales/sales-invoice",
   order_desk_purchase_mat: "purchase/finish-goods/challan",
 };
 

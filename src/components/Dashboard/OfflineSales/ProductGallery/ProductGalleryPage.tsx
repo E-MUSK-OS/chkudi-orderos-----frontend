@@ -146,7 +146,7 @@ export default function ProductGalleryPage() {
     { id: "cart-1", name: "Cart", party: null, items: [] },
   ]);
   const [activeCartId, setActiveCartId] = useState("cart-1");
-  const [showCartSidebar, setShowCartSidebar] = useState(true);
+  const [showCartSidebar, setShowCartSidebar] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [addPartyOpen, setAddPartyOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -340,18 +340,18 @@ export default function ProductGalleryPage() {
           const rawFallbackImg =
             (product.masterSku
               ? toFullImageUrl(
-                  `/products/image?masterSku=${encodeURIComponent(
-                    product.masterSku
-                  )}&color=${encodeURIComponent(cleanCol)}`
-                )
+                `/products/image?masterSku=${encodeURIComponent(
+                  product.masterSku
+                )}&color=${encodeURIComponent(cleanCol)}`
+              )
               : undefined) ||
             (cleanCol === "Standard" ? toFullImageUrl(product.imageUrl) : undefined);
           const fallbackImg =
             rawFallbackImg &&
-            galleryUpdatedAt &&
-            rawFallbackImg.includes("/products/image") &&
-            !rawFallbackImg.includes("&t=") &&
-            !rawFallbackImg.includes("?t=")
+              galleryUpdatedAt &&
+              rawFallbackImg.includes("/products/image") &&
+              !rawFallbackImg.includes("&t=") &&
+              !rawFallbackImg.includes("?t=")
               ? `${rawFallbackImg}${rawFallbackImg.includes("?") ? "&" : "?"}t=${galleryUpdatedAt}`
               : rawFallbackImg;
 
@@ -435,18 +435,18 @@ export default function ProductGalleryPage() {
           toFullImageUrl(firstWithImage?.imageUrl) ||
           (product.masterSku
             ? toFullImageUrl(
-                `/products/image?masterSku=${encodeURIComponent(
-                  product.masterSku
-                )}&color=${encodeURIComponent(colorName)}`
-              )
+              `/products/image?masterSku=${encodeURIComponent(
+                product.masterSku
+              )}&color=${encodeURIComponent(colorName)}`
+            )
             : undefined) ||
           (colorName === "Standard" ? toFullImageUrl(product.imageUrl) : undefined);
         const imgUrl =
           rawImgUrl &&
-          galleryUpdatedAt &&
-          rawImgUrl.includes("/products/image") &&
-          !rawImgUrl.includes("&t=") &&
-          !rawImgUrl.includes("?t=")
+            galleryUpdatedAt &&
+            rawImgUrl.includes("/products/image") &&
+            !rawImgUrl.includes("&t=") &&
+            !rawImgUrl.includes("?t=")
             ? `${rawImgUrl}${rawImgUrl.includes("?") ? "&" : "?"}t=${galleryUpdatedAt}`
             : rawImgUrl;
 
@@ -519,8 +519,8 @@ export default function ProductGalleryPage() {
     : maxPriceBound;
   const isPriceRangeActive = Boolean(
     customPriceRange &&
-      (customPriceRange.min > minPriceBound ||
-        customPriceRange.max < maxPriceBound)
+    (customPriceRange.min > minPriceBound ||
+      customPriceRange.max < maxPriceBound)
   );
 
   // Filtered & Sorted Cards
@@ -657,8 +657,7 @@ export default function ProductGalleryPage() {
       query.set("mode", "color");
     }
     router.push(
-      `/dashboard/settings/manage-product/product-profile/edit-product-varient/${
-        variantId || "new"
+      `/dashboard/settings/manage-product/product-profile/edit-product-varient/${variantId || "new"
       }?${query.toString()}`
     );
   };
@@ -809,8 +808,7 @@ export default function ProductGalleryPage() {
       }))
     );
     toast.info(
-      `Cart rate switched to ${
-        nextMode === "RR" ? "Retail Rate (RR)" : "Dealer Rate (DR)"
+      `Cart rate switched to ${nextMode === "RR" ? "Retail Rate (RR)" : "Dealer Rate (DR)"
       }`
     );
   };
@@ -985,10 +983,10 @@ export default function ProductGalleryPage() {
 
       if (openInvoice && res?.data?.id) {
         router.push(
-          `/dashboard/offline-sales/sales-invoice?challanId=${res.data.id}`
+          `/dashboard/sales/sales-invoice?challanId=${res.data.id}`
         );
       } else {
-        router.push("/dashboard/offline-sales/sales-challan");
+        router.push("/dashboard/sales/sales-challan");
       }
     } catch (err: unknown) {
       const msg =
@@ -1043,13 +1041,13 @@ export default function ProductGalleryPage() {
     <DashboardLayout title="Product Gallery">
       <div className="space-y-4 sm:space-y-5 font-sans">
         {/* Top Header Card */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg sm:text-2xl font-black tracking-tight text-[#0A0E1A] dark:text-white">
+        <section className="rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 sm:px-7 py-3.5 sm:py-5 shadow-sm flex items-start sm:items-center justify-between gap-3">
+          <div className="space-y-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0A0E1A] dark:text-white">
               Product Gallery
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Manage offline sales product gallery, filter & revise prices, print catalog, and build quick carts.
+              Manage sales product gallery, filter & revise prices, print catalog, and build quick carts.
             </p>
           </div>
 
@@ -1060,11 +1058,10 @@ export default function ProductGalleryPage() {
               onClick={() => setReportsMenuOpen((p) => !p)}
               title="Reports"
               aria-label="Open Reports Menu"
-              className={`h-9.5 w-9.5 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
-                reportsMenuOpen
+              className={`h-9.5 w-9.5 sm:h-10 sm:w-10 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-xs ${reportsMenuOpen
                   ? "border-[#E8C16D] bg-[#FFF9EC] text-[#B88728] dark:border-[#F5C451] dark:bg-[#1A160E] dark:text-[#F5C451]"
-                  : "border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171A22] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D]"
-              }`}
+                  : "border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-slate-200 hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#F5C451]"
+                }`}
             >
               <Menu size={16} />
             </button>
@@ -1100,11 +1097,10 @@ export default function ProductGalleryPage() {
 
         {/* Main Workspace Split: Gallery Grid (Left) + Right Panel (Selected Products / Carts / Slim Rail) */}
         <div
-          className={`grid grid-cols-1 gap-3.5 items-stretch ${
-            selectionMode || showCartSidebar
+          className={`grid grid-cols-1 gap-3.5 items-stretch ${selectionMode || showCartSidebar
               ? "xl:grid-cols-[1fr_320px] 2xl:grid-cols-[1fr_350px]"
               : "xl:grid-cols-[1fr_54px]"
-          }`}
+            }`}
         >
           {/* Left Main Content */}
           <div className="space-y-3.5 min-w-0">
@@ -1112,7 +1108,7 @@ export default function ProductGalleryPage() {
             <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-2.5 sm:p-3 shadow-xs">
               <div className="flex flex-wrap xl:flex-nowrap items-center gap-2">
                 {/* Search */}
-                <div className="relative flex-1 min-w-[150px]">
+                <div className="relative w-full sm:w-52 md:w-60 lg:w-56 xl:w-64 2xl:w-72 shrink-0">
                   <Search
                     size={14}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -1183,7 +1179,7 @@ export default function ProductGalleryPage() {
                 />
 
                 {/* Refresh & Count */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="w-[calc(50%-4px)] sm:w-auto flex items-center justify-start gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => refetch()}
@@ -1202,8 +1198,8 @@ export default function ProductGalleryPage() {
                   </span>
                 </div>
 
-                {/* Right Utility Group matching img-1 & img-2: [Select Pointer] [₹ Price Range] [... Menu] + Mobile Icon */}
-                <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                {/* Right Utility Group matching img-1 & img-2: [Select Pointer] [₹ Price Range] [... Menu] */}
+                <div className="w-full sm:w-auto flex items-center justify-start sm:justify-end gap-1.5 sm:ml-auto shrink-0">
                   {/* Left button of Price: Selection Mode Toggle (img-2) */}
                   <button
                     type="button"
@@ -1214,11 +1210,10 @@ export default function ProductGalleryPage() {
                     }}
                     title="Select Products for Revised Prices or PDF"
                     aria-label="Select Products"
-                    className={`relative h-9.5 w-9.5 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
-                      selectionMode
+                    className={`relative h-9.5 w-9.5 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${selectionMode
                         ? "border-[#0A0E1A] bg-[#0A0E1A] text-white dark:border-white dark:bg-white dark:text-[#0A0E1A] shadow-xs"
                         : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#F5C451]"
-                    }`}
+                      }`}
                   >
                     <MousePointerClick size={15} />
                     {selectedCardIds.length > 0 && (
@@ -1237,11 +1232,10 @@ export default function ProductGalleryPage() {
                         setMoreMenuOpen(false);
                       }}
                       title="Filter by Price Range"
-                      className={`h-9.5 px-3 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                        pricePopoverOpen || isPriceRangeActive
+                      className={`h-9.5 px-3 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer ${pricePopoverOpen || isPriceRangeActive
                           ? "border-[#E8C16D] bg-[#FFF9EC] text-[#6A4D1D] dark:border-[#F5C451] dark:bg-[#1A160E] dark:text-[#E8C16D]"
                           : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white hover:border-[#E8C16D]"
-                      }`}
+                        }`}
                     >
                       <IndianRupee
                         size={13}
@@ -1254,7 +1248,7 @@ export default function ProductGalleryPage() {
                     </button>
 
                     {pricePopoverOpen && (
-                      <div className="absolute right-0 top-full mt-2 z-50">
+                      <div className="absolute -left-10 sm:left-auto sm:right-0 top-full mt-2 z-50">
                         <GalleryPriceRangePopover
                           minBound={minPriceBound}
                           maxBound={maxPriceBound}
@@ -1283,11 +1277,10 @@ export default function ProductGalleryPage() {
                         setPricePopoverOpen(false);
                       }}
                       title="Display Options, Filters & Print Gallery"
-                      className={`relative h-9.5 w-9.5 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
-                        moreMenuOpen || hasActiveMoreFilters
+                      className={`relative h-9.5 w-9.5 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${moreMenuOpen || hasActiveMoreFilters
                           ? "border-[#E8C16D] bg-[#FFF9EC] text-[#B88728] dark:border-[#F5C451] dark:bg-[#1A160E] dark:text-[#F5C451]"
                           : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D]"
-                      }`}
+                        }`}
                     >
                       <MoreHorizontal size={15} />
                       {hasActiveMoreFilters && (
@@ -1296,7 +1289,7 @@ export default function ProductGalleryPage() {
                     </button>
 
                     {moreMenuOpen && (
-                      <div className="absolute right-0 top-full mt-2 z-50 w-60 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-2 shadow-2xl space-y-1 text-xs animate-in fade-in zoom-in-95 duration-150">
+                      <div className="absolute -left-32 sm:left-auto sm:right-0 top-full mt-2 z-50 w-60 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-2 shadow-2xl space-y-1 text-xs animate-in fade-in zoom-in-95 duration-150">
                         <p className="px-2.5 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                           Show / Hide on Cards
                         </p>
@@ -1314,11 +1307,10 @@ export default function ProductGalleryPage() {
                         >
                           <span>Cost</span>
                           <span
-                            className={`h-4 w-4 rounded flex items-center justify-center border ${
-                              displayOptions.showCost
+                            className={`h-4 w-4 rounded flex items-center justify-center border ${displayOptions.showCost
                                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                                 : "border-slate-300 dark:border-white/20"
-                            }`}
+                              }`}
                           >
                             {displayOptions.showCost && <Check size={11} strokeWidth={3} />}
                           </span>
@@ -1337,11 +1329,10 @@ export default function ProductGalleryPage() {
                         >
                           <span>Dealer Rate</span>
                           <span
-                            className={`h-4 w-4 rounded flex items-center justify-center border ${
-                              displayOptions.showDealerRate
+                            className={`h-4 w-4 rounded flex items-center justify-center border ${displayOptions.showDealerRate
                                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                                 : "border-slate-300 dark:border-white/20"
-                            }`}
+                              }`}
                           >
                             {displayOptions.showDealerRate && (
                               <Check size={11} strokeWidth={3} />
@@ -1362,11 +1353,10 @@ export default function ProductGalleryPage() {
                         >
                           <span>Stock</span>
                           <span
-                            className={`h-4 w-4 rounded flex items-center justify-center border ${
-                              displayOptions.showStock
+                            className={`h-4 w-4 rounded flex items-center justify-center border ${displayOptions.showStock
                                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                                 : "border-slate-300 dark:border-white/20"
-                            }`}
+                              }`}
                           >
                             {displayOptions.showStock && <Check size={11} strokeWidth={3} />}
                           </span>
@@ -1385,11 +1375,10 @@ export default function ProductGalleryPage() {
                         >
                           <span>Reorder Level Stock</span>
                           <span
-                            className={`h-4 w-4 rounded flex items-center justify-center border ${
-                              displayOptions.showReorderStock
+                            className={`h-4 w-4 rounded flex items-center justify-center border ${displayOptions.showReorderStock
                                 ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A]"
                                 : "border-slate-300 dark:border-white/20"
-                            }`}
+                              }`}
                           >
                             {displayOptions.showReorderStock && (
                               <Check size={11} strokeWidth={3} />
@@ -1486,21 +1475,6 @@ export default function ProductGalleryPage() {
                     )}
                   </div>
 
-                  {/* Mobile-only Cart / Selected Icon Button */}
-                  <button
-                    type="button"
-                    onClick={() => setMobileCartOpen(true)}
-                    title={selectionMode ? "Selected Products" : "Carts"}
-                    aria-label="Carts"
-                    className="xl:hidden relative h-9.5 w-9.5 rounded-xl border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#F5C451] flex items-center justify-center cursor-pointer"
-                  >
-                    <ShoppingCart size={16} />
-                    {(selectionMode ? selectedCardIds.length : totalCartPcs) > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-1 rounded-full bg-[#E8C16D] text-[#0A0E1A] text-[10px] font-black flex items-center justify-center shadow-2xs">
-                        {selectionMode ? selectedCardIds.length : totalCartPcs}
-                      </span>
-                    )}
-                  </button>
                 </div>
               </div>
             </div>
@@ -1508,9 +1482,8 @@ export default function ProductGalleryPage() {
             {/* Cards Grid (Smaller 5-column cards) */}
             {isLoading ? (
               <div
-                className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 ${
-                  !selectionMode && !showCartSidebar ? "2xl:grid-cols-6" : ""
-                }`}
+                className={`grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 ${!selectionMode && !showCartSidebar ? "2xl:grid-cols-6" : ""
+                  }`}
               >
                 {Array.from({ length: 10 }).map((_, i) => (
                   <div
@@ -1555,9 +1528,8 @@ export default function ProductGalleryPage() {
             ) : (
               <>
                 <div
-                  className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 ${
-                    !selectionMode && !showCartSidebar ? "2xl:grid-cols-6" : ""
-                  }`}
+                  className={`grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 ${!selectionMode && !showCartSidebar ? "2xl:grid-cols-6" : ""
+                    }`}
                 >
                   {paginatedCards.map((card) => (
                     <GalleryProductCard
@@ -1579,7 +1551,7 @@ export default function ProductGalleryPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 py-3 text-xs">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-3 sm:px-4 py-2.5 sm:py-3 text-xs">
                     <span className="font-semibold text-slate-500 dark:text-slate-400">
                       Showing{" "}
                       <strong className="text-[#0A0E1A] dark:text-white">
@@ -1626,169 +1598,184 @@ export default function ProductGalleryPage() {
           {selectionMode ? (
             <aside className="hidden xl:block h-full">
               <div className="sticky top-4 max-h-[calc(100vh-140px)] h-full">
-              <GallerySelectedProductsSidebar
-                selectedCards={selectedCards}
-                revisedPriceInputs={revisedPriceInputs}
-                rateTarget={rateTarget}
-                onChangeRateTarget={setRateTarget}
-                onChangeRevisedPrice={(productId, val) =>
-                  setRevisedPriceInputs((prev) => ({
-                    ...prev,
-                    [productId]: val,
-                  }))
-                }
-                onRemoveSelectedCard={(card) =>
-                  setSelectedCardIds((prev) =>
-                    prev.filter((id) => id !== card.cardId)
-                  )
-                }
-                onClearAll={() => {
-                  setSelectedCardIds([]);
-                  setRevisedPriceInputs({});
-                }}
-                onCloseMode={() => setSelectionMode(false)}
-                onUpdatePrices={handleUpdateSelectedPrices}
-                onExportPdf={() => {
-                  setPrintItemsOverride(selectedCards);
-                  setPrintPreviewOpen(true);
-                }}
-                updating={updatingPrices}
-              />
+                <GallerySelectedProductsSidebar
+                  selectedCards={selectedCards}
+                  revisedPriceInputs={revisedPriceInputs}
+                  rateTarget={rateTarget}
+                  onChangeRateTarget={setRateTarget}
+                  onChangeRevisedPrice={(productId, val) =>
+                    setRevisedPriceInputs((prev) => ({
+                      ...prev,
+                      [productId]: val,
+                    }))
+                  }
+                  onRemoveSelectedCard={(card) =>
+                    setSelectedCardIds((prev) =>
+                      prev.filter((id) => id !== card.cardId)
+                    )
+                  }
+                  onClearAll={() => {
+                    setSelectedCardIds([]);
+                    setRevisedPriceInputs({});
+                  }}
+                  onCloseMode={() => setSelectionMode(false)}
+                  onUpdatePrices={handleUpdateSelectedPrices}
+                  onExportPdf={() => {
+                    setPrintItemsOverride(selectedCards);
+                    setPrintPreviewOpen(true);
+                  }}
+                  updating={updatingPrices}
+                />
               </div>
             </aside>
           ) : showCartSidebar ? (
             <aside className="hidden xl:block h-full">
               <div className="sticky top-4 max-h-[calc(100vh-140px)] h-full">
-              <GalleryCartSidebar
-                carts={carts}
-                activeCartId={activeCart?.id || "cart-1"}
-                parties={parties}
-                priceMode={priceMode}
-                onChangePriceMode={handlePriceModeChange}
-                onSelectCart={setActiveCartId}
-                onAddCart={handleAddCartTab}
-                onRemoveCart={handleRemoveCartTab}
-                onSelectParty={(party) =>
-                  updateActiveCart((c) => ({ ...c, party }))
-                }
-                onOpenAddParty={() => setAddPartyOpen(true)}
-                onScanSku={handleScanSku}
-                onUpdateItemQty={(variantId, delta) => {
-                  updateActiveCart((cart) => {
-                    const nextItems = [...cart.items];
-                    const idx = nextItems.findIndex(
-                      (i) => i.variantId === variantId
-                    );
-                    if (idx !== -1) {
-                      const nextQty = nextItems[idx].quantity + delta;
-                      if (nextQty <= 0) {
-                        nextItems.splice(idx, 1);
-                      } else if (nextQty <= nextItems[idx].availableStock) {
-                        nextItems[idx] = { ...nextItems[idx], quantity: nextQty };
+                <GalleryCartSidebar
+                  carts={carts}
+                  activeCartId={activeCart?.id || "cart-1"}
+                  parties={parties}
+                  priceMode={priceMode}
+                  onChangePriceMode={handlePriceModeChange}
+                  onSelectCart={setActiveCartId}
+                  onAddCart={handleAddCartTab}
+                  onRemoveCart={handleRemoveCartTab}
+                  onSelectParty={(party) =>
+                    updateActiveCart((c) => ({ ...c, party }))
+                  }
+                  onOpenAddParty={() => setAddPartyOpen(true)}
+                  onScanSku={handleScanSku}
+                  onUpdateItemQty={(variantId, delta) => {
+                    updateActiveCart((cart) => {
+                      const nextItems = [...cart.items];
+                      const idx = nextItems.findIndex(
+                        (i) => i.variantId === variantId
+                      );
+                      if (idx !== -1) {
+                        const nextQty = nextItems[idx].quantity + delta;
+                        if (nextQty <= 0) {
+                          nextItems.splice(idx, 1);
+                        } else if (nextQty <= nextItems[idx].availableStock) {
+                          nextItems[idx] = { ...nextItems[idx], quantity: nextQty };
+                        }
                       }
-                    }
-                    return { ...cart, items: nextItems };
-                  });
-                }}
-                onUpdateItemRate={(variantId, rate) => {
-                  updateActiveCart((cart) => ({
-                    ...cart,
-                    items: cart.items.map((i) =>
-                      i.variantId === variantId ? { ...i, rate } : i
-                    ),
-                  }));
-                }}
-                onRemoveItem={(variantId) => {
-                  updateActiveCart((cart) => ({
-                    ...cart,
-                    items: cart.items.filter((i) => i.variantId !== variantId),
-                  }));
-                }}
-                onClearCart={() =>
-                  updateActiveCart((cart) => ({ ...cart, items: [] }))
-                }
-                onCheckout={handleCheckoutClick}
-                onOpenVariantEdit={handleOpenVariantEdit}
-                onCollapse={() => setShowCartSidebar(false)}
-              />
+                      return { ...cart, items: nextItems };
+                    });
+                  }}
+                  onUpdateItemRate={(variantId, rate) => {
+                    updateActiveCart((cart) => ({
+                      ...cart,
+                      items: cart.items.map((i) =>
+                        i.variantId === variantId ? { ...i, rate } : i
+                      ),
+                    }));
+                  }}
+                  onRemoveItem={(variantId) => {
+                    updateActiveCart((cart) => ({
+                      ...cart,
+                      items: cart.items.filter((i) => i.variantId !== variantId),
+                    }));
+                  }}
+                  onClearCart={() =>
+                    updateActiveCart((cart) => ({ ...cart, items: [] }))
+                  }
+                  onCheckout={handleCheckoutClick}
+                  onOpenVariantEdit={handleOpenVariantEdit}
+                  onCollapse={() => setShowCartSidebar(false)}
+                />
               </div>
             </aside>
           ) : (
             <aside className="hidden xl:block h-full">
               <div className="sticky top-4 max-h-[calc(100vh-140px)] h-full flex flex-col items-center rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowCartSidebar(true)}
-                title="Expand Carts Panel"
-                aria-label="Expand Carts"
-                className="w-full py-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.03] flex flex-col items-center justify-center gap-1.5 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer group shrink-0"
-              >
-                <div className="relative">
-                  <ShoppingCart
-                    size={17}
-                    className="group-hover:text-[#B88728] dark:group-hover:text-[#F5C451] transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setShowCartSidebar(true)}
+                  title="Expand Carts Panel"
+                  aria-label="Expand Carts"
+                  className="w-full py-3.5 border-b border-[#E7E0D2] dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.03] flex flex-col items-center justify-center gap-1.5 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer group shrink-0"
+                >
+                  <div className="relative">
+                    <ShoppingCart
+                      size={17}
+                      className="group-hover:text-[#B88728] dark:group-hover:text-[#F5C451] transition-colors"
+                    />
+                    {totalCartPcs > 0 && (
+                      <span className="absolute -top-2 -right-2.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#E8C16D] text-[#0A0E1A] text-[9px] font-black flex items-center justify-center">
+                        {totalCartPcs}
+                      </span>
+                    )}
+                  </div>
+                  <ChevronLeft
+                    size={12}
+                    className="text-slate-400 group-hover:text-[#B88728] dark:group-hover:text-[#F5C451] transition-colors"
                   />
-                  {totalCartPcs > 0 && (
-                    <span className="absolute -top-2 -right-2.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#E8C16D] text-[#0A0E1A] text-[9px] font-black flex items-center justify-center">
-                      {totalCartPcs}
-                    </span>
-                  )}
-                </div>
-                <ChevronLeft
-                  size={12}
-                  className="text-slate-400 group-hover:text-[#B88728] dark:group-hover:text-[#F5C451] transition-colors"
-                />
-              </button>
+                </button>
 
-              {/* Vertical Cart Tab Pills */}
-              <div className="flex-1 w-full py-3 flex flex-col items-center gap-2.5 overflow-y-auto">
-                {carts.map((cartTab) => {
-                  const isActiveCart = cartTab.id === (activeCart?.id || carts[0]?.id);
-                  const cartPcs = cartTab.items.reduce((sum, i) => sum + i.quantity, 0);
-                  return (
-                    <div key={cartTab.id} className="relative w-full flex items-center justify-center">
-                      {isActiveCart && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-[#0A0E1A] dark:bg-white" />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveCartId(cartTab.id);
-                          setShowCartSidebar(true);
-                        }}
-                        title={`${cartTab.name}${cartTab.party ? ` • ${cartTab.party.partyName}` : ""}`}
-                        aria-label={`Open ${cartTab.name}`}
-                        className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                          isActiveCart
-                            ? "bg-[#0A0E1A] text-white dark:bg-slate-100 dark:text-[#0A0E1A] shadow-sm"
-                            : "border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D]"
-                        }`}
-                      >
-                        <ShoppingCart size={15} />
-                        {cartPcs > 0 && (
-                          <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-[#E8C16D] text-[#0A0E1A] text-[9px] font-black flex items-center justify-center">
-                            {cartPcs}
-                          </span>
+                {/* Vertical Cart Tab Pills */}
+                <div className="flex-1 w-full py-3 flex flex-col items-center gap-2.5 overflow-y-auto">
+                  {carts.map((cartTab) => {
+                    const isActiveCart = cartTab.id === (activeCart?.id || carts[0]?.id);
+                    const cartPcs = cartTab.items.reduce((sum, i) => sum + i.quantity, 0);
+                    return (
+                      <div key={cartTab.id} className="relative w-full flex items-center justify-center">
+                        {isActiveCart && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-[#0A0E1A] dark:bg-white" />
                         )}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveCartId(cartTab.id);
+                            setShowCartSidebar(true);
+                          }}
+                          title={`${cartTab.name}${cartTab.party ? ` • ${cartTab.party.partyName}` : ""}`}
+                          aria-label={`Open ${cartTab.name}`}
+                          className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${isActiveCart
+                              ? "bg-[#0A0E1A] text-white dark:bg-slate-100 dark:text-[#0A0E1A] shadow-sm"
+                              : "border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D]"
+                            }`}
+                        >
+                          <ShoppingCart size={15} />
+                          {cartPcs > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-[#E8C16D] text-[#0A0E1A] text-[9px] font-black flex items-center justify-center">
+                              {cartPcs}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </aside>
           )}
         </div>
       </div>
 
+      {/* Floating Bottom-Right Cart Button on Mobile/Tablet (below xl) */}
+      <button
+        type="button"
+        onClick={() => setMobileCartOpen(true)}
+        title={selectionMode ? "Selected Products" : "Carts"}
+        aria-label="Open Carts"
+        className="fixed bottom-5 right-5 z-40 xl:hidden h-12 w-12 rounded-full border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white shadow-xl flex items-center justify-center cursor-pointer hover:border-[#E8C16D] active:scale-95 transition-all"
+      >
+        <ShoppingCart size={20} />
+        {(selectionMode ? selectedCardIds.length : totalCartPcs) > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E8C16D] text-[#0A0E1A] text-[10px] font-black flex items-center justify-center shadow-2xs">
+            {selectionMode ? selectedCardIds.length : totalCartPcs}
+          </span>
+        )}
+      </button>
+
       {/* Mobile Drawer (Selected Products or Carts) */}
       {mobileCartOpen && (
         <div
-          className="fixed inset-0 z-50 xl:hidden flex justify-end bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-50 xl:hidden flex items-center justify-end p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setMobileCartOpen(false)}
         >
           <div
-            className="w-full max-w-sm h-full p-3 bg-slate-50 dark:bg-[#080B11]"
+            className="w-full max-w-[360px] h-[82dvh] max-h-[620px]"
             onClick={(e) => e.stopPropagation()}
           >
             {selectionMode ? (

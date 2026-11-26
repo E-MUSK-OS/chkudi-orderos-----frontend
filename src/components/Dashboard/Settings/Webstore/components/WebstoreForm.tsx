@@ -81,7 +81,7 @@ export default function WebstoreForm({
     initialData?.marketplaceLogo || ""
   );
   const [storeName, setStoreName] = useState<string>(
-    initialData?.storeName ?? "Chakudee Fashion - DROPSHIP"
+    initialData?.storeName ?? "NetuFashion - DROPSHIP"
   );
   const [parentOrChild, setParentOrChild] = useState<string>(
     initialData?.parentOrChild || "Parent"
@@ -106,7 +106,7 @@ export default function WebstoreForm({
 
   // 2. Address Fields
   const [billTo, setBillTo] = useState<string>(
-    initialData?.billTo ?? "Chakudee Fashion Pvt Ltd"
+    initialData?.billTo ?? "NetuFashion Pvt Ltd"
   );
   const [address1, setAddress1] = useState<string>(
     initialData?.address1 ?? "101, Textile Market"
@@ -284,14 +284,14 @@ export default function WebstoreForm({
       setCode(nextCode);
       setMarketplaceName("Amazon");
       setMarketplaceLogo("");
-      setStoreName(nextCode > 1 ? `Chakudee Fashion - DROPSHIP ${nextCode}` : "Chakudee Fashion - DROPSHIP");
+      setStoreName(nextCode > 1 ? `NetuFashion - DROPSHIP ${nextCode}` : "NetuFashion - DROPSHIP");
       setParentOrChild("Parent");
       setRegisteredEmail("seller@domain.com");
       setContactUsEmail("support@domain.com");
       setRegisteredPhone("+91 9876543210");
       setContactUsPhone("+91 9876543210");
       setRegistrationDate(new Date().toISOString().split("T")[0]);
-      setBillTo("Chakudee Fashion Pvt Ltd");
+      setBillTo("NetuFashion Pvt Ltd");
       setAddress1("101, Textile Market");
       setAddress2("Ring Road");
       setCity("Surat");
@@ -415,14 +415,14 @@ export default function WebstoreForm({
 
   const handleFillDemoData = () => {
     setMarketplaceName("Amazon");
-    setStoreName("Chakudee Fashion - DROPSHIP");
+    setStoreName("NetuFashion - DROPSHIP");
     setParentOrChild("Parent");
     setRegisteredEmail("seller@domain.com");
     setContactUsEmail("support@domain.com");
     setRegisteredPhone("+91 9876543210");
     setContactUsPhone("+91 9876543210");
     setRegistrationDate(new Date().toISOString().split("T")[0]);
-    setBillTo("Chakudee Fashion Pvt Ltd");
+    setBillTo("NetuFashion Pvt Ltd");
     setAddress1("101, Textile Market");
     setAddress2("Ring Road");
     setCity("Surat");
@@ -662,7 +662,7 @@ export default function WebstoreForm({
                   type="text"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="e.g. Chakudee Fashion-DROPSHIP"
+                  placeholder="e.g. NetuFashion-DROPSHIP"
                   required
                   className={inputClass}
                 />
@@ -1270,11 +1270,10 @@ export default function WebstoreForm({
           {/* Test Result Message */}
           {spapiTestResult && (
             <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${
-                spapiTestResult.success
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${spapiTestResult.success
                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40"
                   : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/40"
-              }`}
+                }`}
             >
               {spapiTestResult.success ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />

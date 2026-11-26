@@ -29,7 +29,7 @@ export default function ChallanStats({ challans }: ChallanStatsProps) {
     {
       title: "TOTAL CHALLANS",
       value: totalChallans,
-      subtext: "All-time offline sales notes",
+      subtext: "All-time sales notes",
       icon: FileText,
     },
     {

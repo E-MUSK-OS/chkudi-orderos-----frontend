@@ -104,11 +104,11 @@ export default function GalleryCartSidebar({
   };
 
   return (
-    <div className="flex flex-col h-full rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full font-sans rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3.5 border-b border-slate-100 dark:border-white/[0.08] flex items-center justify-between gap-2">
+      <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-white/[0.08] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold text-[#0A0E1A] dark:text-white">
+          <h2 className="text-sm font-black tracking-tight text-[#0A0E1A] dark:text-white">
             Carts
           </h2>
           {totalPcs > 0 && (
@@ -123,7 +123,7 @@ export default function GalleryCartSidebar({
               type="button"
               onClick={onCollapse}
               title="Hide Carts Panel"
-              className="h-7 w-7 rounded-lg border border-slate-200 dark:border-white/[0.08] flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+              className="h-7 w-7 rounded-lg border border-[#E7E0D2] dark:border-white/[0.08] flex items-center justify-center text-slate-500 hover:text-[#0A0E1A] dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
             >
               <ChevronRight size={14} />
             </button>
@@ -132,7 +132,7 @@ export default function GalleryCartSidebar({
       </div>
 
       {/* Cart Tabs (img-1 connected tab strip) */}
-      <div className="px-3 pt-2.5 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] flex items-end gap-1 overflow-x-auto custom-scrollbar bg-slate-50/40 dark:bg-[#0B0F17]/40">
+      <div className="px-3 pt-2 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] flex items-end gap-1 overflow-x-auto overflow-y-hidden custom-scrollbar bg-slate-50/40 dark:bg-[#0B0F17]/40 shrink-0">
         {carts.map((cart) => {
           const isActive = cart.id === activeCart?.id;
           const itemCount = cart.items.reduce((s, i) => s + i.quantity, 0);
@@ -189,16 +189,16 @@ export default function GalleryCartSidebar({
       </div>
 
       {/* Party (+ Icon + Dropdown) & Scan Row matching img-1 */}
-      <div className="p-3 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5">
+      <div className="p-2.5 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5 shrink-0">
         {/* Add Party Icon Button (+icon opening img-2 modal) */}
         <button
           type="button"
           onClick={() => onOpenAddParty?.()}
           title="Add New Party"
           aria-label="Add Party"
-          className="h-9 w-9 shrink-0 rounded-xl border border-[#E7E0D2] dark:border-white/[0.1] bg-slate-50/70 dark:bg-[#080B11] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] dark:hover:border-[#F5C451]/60 dark:hover:bg-[#1A160E] dark:hover:text-[#F5C451] flex items-center justify-center transition-all cursor-pointer"
+          className="h-8 w-8 shrink-0 rounded-xl border border-[#E7E0D2] dark:border-white/[0.1] bg-slate-50/70 dark:bg-[#080B11] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] dark:hover:border-[#F5C451]/60 dark:hover:bg-[#1A160E] dark:hover:text-[#F5C451] flex items-center justify-center transition-all cursor-pointer"
         >
-          <UserPlus size={15} />
+          <UserPlus size={14} />
         </button>
 
         {/* Party Dropdown */}
@@ -206,7 +206,7 @@ export default function GalleryCartSidebar({
           <button
             type="button"
             onClick={() => setPartyOpen((p) => !p)}
-            className={`w-full h-9 px-2.5 flex items-center gap-1.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+            className={`w-full h-8 px-2.5 flex items-center gap-1.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
               activeCart?.party
                 ? "border-[#E8C16D]/70 bg-[#FFF9EC]/60 text-[#0A0E1A] dark:border-[#F5C451]/40 dark:bg-[#1A160E] dark:text-[#F5C451]"
                 : "border-[#E7E0D2] dark:border-white/[0.1] bg-slate-50/70 dark:bg-[#080B11] text-slate-500 dark:text-slate-400 hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50"
@@ -304,10 +304,10 @@ export default function GalleryCartSidebar({
       </div>
 
       {/* Cart Items Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar min-h-[260px]">
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 custom-scrollbar min-h-[150px]">
         {!activeCart || activeCart.items.length === 0 ? (
-          <div className="h-full min-h-[240px] flex flex-col items-center justify-center text-center gap-2 text-slate-400 dark:text-slate-500">
-            <ShoppingCart className="h-7 w-7 opacity-40" />
+          <div className="h-full min-h-[140px] flex flex-col items-center justify-center text-center gap-1.5 text-slate-400 dark:text-slate-500">
+            <ShoppingCart className="h-6 w-6 opacity-40" />
             <p className="text-xs font-semibold">Cart is empty</p>
           </div>
         ) : (
@@ -316,14 +316,14 @@ export default function GalleryCartSidebar({
             return (
               <div
                 key={item.variantId}
-                className="rounded-xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/50 dark:bg-[#0B0F17] p-2.5 space-y-2"
+                className="rounded-xl border border-[#E7E0D2]/80 dark:border-white/[0.08] bg-slate-50/50 dark:bg-[#0B0F17] p-2 space-y-1.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <button
                       type="button"
                       onClick={() => onOpenVariantEdit(item.variantId)}
-                      className="text-xs font-mono font-bold text-[#0A0E1A] dark:text-white hover:text-[#B88728] dark:hover:text-[#F5C451] truncate block cursor-pointer"
+                      className="text-xs font-bold text-[#0A0E1A] dark:text-white hover:text-[#B88728] dark:hover:text-[#F5C451] truncate block cursor-pointer"
                     >
                       {item.variantSku}
                     </button>
@@ -401,7 +401,7 @@ export default function GalleryCartSidebar({
       </div>
 
       {/* Footer Summary + Actions */}
-      <div className="p-3 border-t border-slate-100 dark:border-white/[0.08] bg-slate-50/50 dark:bg-[#0B0F17]/60 space-y-2.5">
+      <div className="p-2.5 border-t border-slate-100 dark:border-white/[0.08] bg-slate-50/50 dark:bg-[#0B0F17]/60 space-y-2 shrink-0">
         {totalPcs > 0 && (
           <div className="flex items-center justify-between text-xs px-1">
             <span className="font-semibold text-slate-500 dark:text-slate-400">

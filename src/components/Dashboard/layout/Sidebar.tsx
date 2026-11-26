@@ -167,20 +167,20 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
       return true;
     }
     if (
-      (itemNorm === "/offline-sales/product-gallery" || itemNorm === "/product-gallery") &&
-      (currentNorm === "/offline-sales/product-gallery" || currentNorm === "/product-gallery" || currentNorm.startsWith("/product-gallery/"))
+      (itemNorm === "/sales/product-gallery" || itemNorm === "/product-gallery") &&
+      (currentNorm === "/sales/product-gallery" || currentNorm === "/product-gallery" || currentNorm.startsWith("/product-gallery/"))
     ) {
       return true;
     }
     if (
-      (itemNorm === "/offline-sales/sales-invoice" || itemNorm === "/sales-invoice") &&
-      (currentNorm === "/offline-sales/sales-invoice" || currentNorm === "/sales-invoice" || currentNorm.startsWith("/sales-invoice/"))
+      (itemNorm === "/sales/sales-invoice" || itemNorm === "/sales-invoice") &&
+      (currentNorm === "/sales/sales-invoice" || currentNorm === "/sales-invoice" || currentNorm.startsWith("/sales-invoice/"))
     ) {
       return true;
     }
     if (
-      (itemNorm === "/offline-sales/sales-challan" || itemNorm === "/sales-challan") &&
-      (currentNorm === "/offline-sales/sales-challan" || currentNorm === "/sales-challan" || currentNorm.startsWith("/sales-challan/"))
+      (itemNorm === "/sales/sales-challan" || itemNorm === "/sales-challan") &&
+      (currentNorm === "/sales/sales-challan" || currentNorm === "/sales-challan" || currentNorm.startsWith("/sales-challan/"))
     ) {
       return true;
     }
@@ -387,13 +387,12 @@ export default function Sidebar({
                 }
               }}
               className={`group flex ${itemHeight} w-full items-center justify-between cursor-pointer transition-all duration-300 ease-out ${itemFontSize}
-              ${
-                isSelfActive
+              ${isSelfActive
                   ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
                   : active
-                  ? "text-white bg-white/[0.06] font-medium"
-                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
-              }`}
+                    ? "text-white bg-white/[0.06] font-medium"
+                    : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
+                }`}
               style={{
                 paddingLeft: `${sidebarCollapsed ? 16 : 10 + level * 14}px`,
                 paddingRight: "10px",
@@ -403,11 +402,10 @@ export default function Sidebar({
                 {item.icon && (
                   <item.icon
                     size={iconSize}
-                    className={`shrink-0 transition-colors ${
-                      isSelfActive || active
+                    className={`shrink-0 transition-colors ${isSelfActive || active
                         ? "text-[#F5C451]"
                         : "text-slate-400 group-hover:text-slate-200"
-                    }`}
+                      }`}
                   />
                 )}
 
@@ -476,25 +474,23 @@ export default function Sidebar({
           type="button"
           onClick={() => handleNavigation(item.href!)}
           className={`group flex ${itemHeight} w-full items-center cursor-pointer transition-all duration-300 ease-out ${itemFontSize}
-  ${
-    active
-      ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
-      : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
-  }`}
+  ${active
+              ? "bg-gradient-to-r from-[#F5C451]/20 via-[#F5C451]/5 to-transparent text-white border-l-2 border-[#F5C451] font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
+              : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 font-normal"
+            }`}
           style={{
             paddingLeft: `${sidebarCollapsed ? 16 : 10 + level * 14}px`,
-                paddingRight: "10px",
+            paddingRight: "10px",
           }}
         >
           <div className="flex items-center gap-2.5">
             {item.icon && (
               <item.icon
                 size={iconSize}
-                className={`shrink-0 transition-colors ${
-                  active
+                className={`shrink-0 transition-colors ${active
                     ? "text-[#F5C451]"
                     : "text-slate-400 group-hover:text-slate-200"
-                }`}
+                  }`}
               />
             )}
 
@@ -539,11 +535,10 @@ export default function Sidebar({
 
               <div
                 className={`min-w-0 overflow-hidden transition-all duration-300
-              ${
-                sidebarCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
-              }`}
+              ${sidebarCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
+                  }`}
               >
-                <p className="text-xs uppercase font-bold tracking-wider text-[#F5C451]">Chakudee</p>
+                <p className="text-xs uppercase font-bold tracking-wider text-[#F5C451]">Netu</p>
                 <h1 className="text-2xl font-bold tracking-tight text-white">OrderOS</h1>
               </div>
             </div>

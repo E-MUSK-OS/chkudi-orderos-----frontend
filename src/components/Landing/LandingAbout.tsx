@@ -25,12 +25,12 @@ export default function LandingAbout() {
 
   return (
     <div className="py-8 sm:py-16 max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12 transition-colors">
-      
+
       {/* 1. Header / Intro Story Section */}
       <section className="mb-14 sm:mb-20 text-center max-w-4xl mx-auto px-2">
         <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-[#C89B3C]/40 bg-[#FFF9EC] dark:bg-[#C89B3C]/10 px-3 py-1 sm:px-4 sm:py-1.5 mb-4 sm:mb-6 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[2px] text-[#B88728] dark:text-[#E8C170] shadow-xs">
           <Sparkles className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C170]" />
-          <span>About Chakudee OrderOS</span>
+          <span>About NetuOrderOS</span>
         </div>
 
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.15]">
@@ -39,7 +39,7 @@ export default function LandingAbout() {
 
         <p className="mt-4 sm:mt-6 text-xs sm:text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto font-normal leading-relaxed">
           OrderOS is the centralized commerce terminal and warehouse execution operating system engineered by{" "}
-          <strong className="text-slate-900 dark:text-white font-semibold">Chakudee Fashion Pvt Ltd</strong> in Surat, Gujarat — the epicenter of India’s textile and fashion manufacturing. We unify marketplace channels, inventory racks, thermal label printing, and statutory accounting into one single platform.
+          <strong className="text-slate-900 dark:text-white font-semibold">NetuFashion Pvt Ltd</strong> in Surat, Gujarat — the epicenter of India’s textile and fashion manufacturing. We unify marketplace channels, inventory racks, thermal label printing, and statutory accounting into one single platform.
         </p>
 
         {/* Live Operational Metrics */}
@@ -352,8 +352,8 @@ export default function LandingAbout() {
                   <Building2 className="w-4 h-4 text-[#B88728] dark:text-[#E8C170]" />
                 </div>
                 <h4 className="text-xs font-mono uppercase text-slate-500 font-bold">Registered Legal Entity</h4>
-                <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">Chakudee Fashion Pvt Ltd</p>
-                <p className="text-xs text-slate-500 mt-1">Platform: Chakudee OrderOS</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">NetuFashion Pvt Ltd</p>
+                <p className="text-xs text-slate-500 mt-1">Platform: NetuOrderOS</p>
               </div>
               <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/[0.05] text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                 ✓ Active Enterprise SaaS

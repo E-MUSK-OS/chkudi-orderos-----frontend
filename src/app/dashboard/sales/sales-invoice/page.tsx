@@ -4,7 +4,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Sales Invoice | OrderOS",
-  description: "Offline Sales Tax Invoice generation, statutory GST calculations, and export",
+  description: "Sales Tax Invoice generation, statutory GST calculations, and export",
 };
 
 export default function Page() {

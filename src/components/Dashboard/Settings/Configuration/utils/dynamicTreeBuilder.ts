@@ -153,7 +153,7 @@ export function buildDynamicClientConfigTree(
   // Canonical distribution of existing sections across 3 columns:
   // Column 1: Dashboard, VMS, Products, Account
   // Column 2: Order Process, Products Analytics, Transaction
-  // Column 3: Offline Sales, Purchase, Settings
+  // Column 3: Sales, Purchase, Settings
   const sectionMap: Record<string, ClientConfigTreeNode> = {};
   const unassigned: ClientConfigTreeNode[] = [];
 
@@ -178,7 +178,7 @@ export function buildDynamicClientConfigTree(
   ].filter(Boolean);
 
   const column3: ClientConfigTreeNode[] = [
-    sectionMap["offline-sales"],
+    sectionMap["sales"],
     sectionMap["purchase"],
     sectionMap["settings"],
   ].filter(Boolean);
@@ -192,7 +192,7 @@ export function buildDynamicClientConfigTree(
     "order-process",
     "products-analytics",
     "transaction",
-    "offline-sales",
+    "sales",
     "purchase",
     "settings",
   ]);

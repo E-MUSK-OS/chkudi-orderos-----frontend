@@ -39,30 +39,30 @@ export default function InvoiceHeader({
   const downloadOptions: DownloadOption[] = [
     ...(onDownloadDetail
       ? [
-          {
-            id: "detail",
-            label: "Download Detail",
-            onClick: onDownloadDetail,
-          },
-        ]
+        {
+          id: "detail",
+          label: "Download Detail",
+          onClick: onDownloadDetail,
+        },
+      ]
       : []),
     ...(onDownloadSkuWise
       ? [
-          {
-            id: "sku-wise",
-            label: "Download SKU Wise",
-            onClick: onDownloadSkuWise,
-          },
-        ]
+        {
+          id: "sku-wise",
+          label: "Download SKU Wise",
+          onClick: onDownloadSkuWise,
+        },
+      ]
       : []),
     ...(onDownloadTally
       ? [
-          {
-            id: "tally",
-            label: "Download [Tally]",
-            onClick: onDownloadTally,
-          },
-        ]
+        {
+          id: "tally",
+          label: "Download [Tally]",
+          onClick: onDownloadTally,
+        },
+      ]
       : []),
   ];
 
@@ -88,7 +88,7 @@ export default function InvoiceHeader({
             </div>
 
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
-              Offline Sales • <span className="text-slate-700 dark:text-slate-300 font-medium">Sales Invoice</span>
+              Sales • <span className="text-slate-700 dark:text-slate-300 font-medium">Sales Invoice</span>
             </p>
           </div>
         </div>

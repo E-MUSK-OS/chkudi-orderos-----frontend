@@ -69,11 +69,11 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/sales-challan",
-        destination: "/dashboard/offline-sales/sales-challan",
+        destination: "/dashboard/sales/sales-challan",
       },
       {
         source: "/sales-invoice",
-        destination: "/dashboard/offline-sales/sales-invoice",
+        destination: "/dashboard/sales/sales-invoice",
       },
       {
         source:

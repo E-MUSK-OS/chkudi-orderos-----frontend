@@ -5,7 +5,7 @@ import { Mail, MapPin, Clock, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LandingContact() {
-  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@chakudee.com";
+  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@netu.com";
 
   const [contactForm, setContactForm] = useState({
     name: "",
@@ -54,7 +54,7 @@ export default function LandingContact() {
   return (
     <section id="contact" className="scroll-mt-24 py-12 sm:py-20 border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white/40 dark:bg-[#0A0E1A]/40 transition-colors">
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12">
-        
+
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16 px-2">
           <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-[2px] text-[#B88728] dark:text-[#E8C170]">
             Get In Touch
@@ -68,7 +68,7 @@ export default function LandingContact() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-          
+
           {/* Contact Details Cards (All 3 identical in height) */}
           <div className="flex flex-col gap-3.5 h-full">
             {/* Card 1: Email */}
@@ -98,7 +98,7 @@ export default function LandingContact() {
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Headquarters</h4>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500">Chakudee Fashion Pvt Ltd</p>
+                  <p className="text-[10px] sm:text-[11px] text-slate-500">NetuFashion Pvt Ltd</p>
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium truncate pt-2">

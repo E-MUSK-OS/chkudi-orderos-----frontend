@@ -58,7 +58,7 @@ export default function LandingFeatures() {
     {
       icon: FileText,
       badge: "B2B & Institutional Sales",
-      title: "Offline Sales & GST Invoicing",
+      title: "Sales & GST Invoicing",
       description:
         "Handle direct wholesale, showroom sales, and institutional purchase orders (PO). Instantly generate Goods Transit Delivery Challans, statutory GST tax invoices (CGST, SGST, IGST), and maintain compliance with commercial tax laws.",
       capabilities: [
@@ -149,7 +149,7 @@ export default function LandingFeatures() {
           </span>
         </h2>
         <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          Engineered to replace fragmented seller portals and manual spreadsheets. Explore the full suite of operational modules built directly into the Chakudee OrderOS terminal.
+          Engineered to replace fragmented seller portals and manual spreadsheets. Explore the full suite of operational modules built directly into the NetuOrderOS terminal.
         </p>
       </div>
 

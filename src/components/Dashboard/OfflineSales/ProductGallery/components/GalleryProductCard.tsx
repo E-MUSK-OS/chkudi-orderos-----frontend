@@ -346,31 +346,31 @@ export default function GalleryProductCard({
         <div
           ref={popoverRef}
           onClick={(e) => e.stopPropagation()}
-          className="fixed sm:absolute z-40 inset-x-4 bottom-4 sm:inset-x-auto sm:bottom-11 sm:left-1 sm:right-1 sm:min-w-[260px] rounded-2xl border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#12161E] p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          className="absolute z-40 bottom-11 left-1 right-1 sm:min-w-[240px] rounded-2xl border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#12161E] p-2 sm:p-2.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-100 dark:border-white/[0.08]">
+          <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-slate-100 dark:border-white/[0.08]">
             <div className="min-w-0">
               <button
                 type="button"
                 onClick={() => onOpenVariantEdit(card.primaryVariantId)}
-                className="text-xs font-extrabold text-[#0A0E1A] dark:text-white hover:text-[#B88728] dark:hover:text-[#F5C451] truncate block cursor-pointer"
+                className="text-[11px] sm:text-xs font-extrabold text-[#0A0E1A] dark:text-white hover:text-[#B88728] dark:hover:text-[#F5C451] truncate block cursor-pointer"
               >
                 {card.cardSku}
               </button>
-              <p className="text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-[10px] sm:text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400">
                 ₹{activeUnitRate.toLocaleString("en-IN")} / unit ({priceMode})
               </p>
             </div>
             <button
               type="button"
               onClick={() => setSizePopoverOpen(false)}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer"
+              className="p-0.5 sm:p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer"
             >
-              <X size={13} />
+              <X size={12} />
             </button>
           </div>
 
-          <div className="pt-2.5 grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-52 overflow-y-auto custom-scrollbar">
+          <div className="pt-2 grid grid-cols-3 sm:grid-cols-4 gap-1 sm:gap-1.5">
             {card.sizes.map((sv) => {
               const inCartQty = cartQtyMap.get(sv.variantId) || 0;
               const noStock = sv.availableStock <= 0;
@@ -379,7 +379,7 @@ export default function GalleryProductCard({
               return (
                 <div
                   key={sv.variantId}
-                  className={`flex flex-col items-center justify-between rounded-xl border p-1.5 transition-colors ${
+                  className={`flex flex-col items-center justify-between rounded-lg sm:rounded-xl border p-1 transition-colors ${
                     inCartQty > 0
                       ? "border-[#E8C16D] bg-[#FFF9EC]/70 dark:border-[#F5C451]/60 dark:bg-[#F5C451]/10"
                       : noStock
@@ -388,13 +388,13 @@ export default function GalleryProductCard({
                   }`}
                 >
                   <div className="flex items-center gap-1 w-full justify-center">
-                    <span className="text-[11px] font-bold text-[#0A0E1A] dark:text-white truncate">
+                    <span className="text-[10px] sm:text-[11px] font-bold text-[#0A0E1A] dark:text-white truncate">
                       {sv.size || "Free"}
                     </span>
                   </div>
 
                   <span
-                    className={`text-[10px] font-mono font-bold mt-0.5 ${
+                    className={`text-[9px] sm:text-[10px] font-mono font-bold leading-tight ${
                       noStock
                         ? "text-rose-500"
                         : "text-emerald-600 dark:text-emerald-400"
@@ -404,7 +404,7 @@ export default function GalleryProductCard({
                   </span>
 
                   <div
-                    className={`mt-1 w-full flex items-center justify-between gap-0.5 rounded-lg border px-1 py-0.5 ${
+                    className={`mt-0.5 w-full flex items-center justify-between gap-0.5 rounded-md border px-1 py-0.5 ${
                       noStock && inCartQty <= 0
                         ? "border-slate-200/60 dark:border-white/[0.06] bg-slate-100/50 dark:bg-[#0B0F17]/40 cursor-not-allowed"
                         : "border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#131926]"

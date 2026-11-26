@@ -56,9 +56,9 @@ export default function LandingTerms() {
       icon: FileCheck2,
       title: "Acceptance of Terms & Enterprise Platform Scope",
       summary:
-        "By accessing, registering with, or utilizing the Chakudee OrderOS terminal, you enter into a legally binding commercial SaaS agreement with Chakudee Fashion Pvt Ltd.",
+        "By accessing, registering with, or utilizing the NetuOrderOS terminal, you enter into a legally binding commercial SaaS agreement with NetuFashion Pvt Ltd.",
       bullets: [
-        "These Terms and Conditions (\"Terms\") govern your access to and use of Chakudee OrderOS, including all associated web applications, backend APIs, Video Monitoring Systems (VMS), and multi-channel synchronization services.",
+        "These Terms and Conditions (\"Terms\") govern your access to and use of NetuOrderOS, including all associated web applications, backend APIs, Video Monitoring Systems (VMS), and multi-channel synchronization services.",
         "Eligibility: To use OrderOS, you must represent a valid business entity (sole proprietorship, partnership, LLP, private limited company, or enterprise corporation) duly registered under the laws of your jurisdiction, possessing lawful authority to conduct commercial trading.",
         "You agree to comply with these Terms and all applicable laws and regulations while using our platform. If you do not agree with these Terms in their entirety, you must immediately discontinue all use and deactivate your workspace.",
       ],
@@ -72,7 +72,7 @@ export default function LandingTerms() {
       bullets: [
         "Account Integrity: You agree to provide accurate, up-to-date company information, registered business addresses, GSTIN certificates, and authorized representative contact details upon registration.",
         "Role Delegation: Tenant Super Admins hold sole authority to provision, modify, or revoke user accounts (Admins, Operators, Inventory Managers, Accountants). You are strictly responsible for all actions executed under delegated operator accounts.",
-        "Credential Security: You must preserve the strict confidentiality of your access passwords, session cookies, and two-factor OTP tokens. You must notify Chakudee OrderOS immediately upon discovering any unauthorized access, session compromise, or security anomaly.",
+        "Credential Security: You must preserve the strict confidentiality of your access passwords, session cookies, and two-factor OTP tokens. You must notify NetuOrderOS immediately upon discovering any unauthorized access, session compromise, or security anomaly.",
       ],
     },
     {
@@ -128,9 +128,9 @@ export default function LandingTerms() {
       icon: Copyright,
       title: "Intellectual Property Rights & Merchant Data Ownership",
       summary:
-        "Chakudee Fashion Pvt Ltd owns all rights to the OrderOS software; merchants retain 100% proprietary ownership of their business data.",
+        "NetuFashion Pvt Ltd owns all rights to the OrderOS software; merchants retain 100% proprietary ownership of their business data.",
       bullets: [
-        "OrderOS IP: All software code, user interface designs, algorithmic workflows, database schemas, trademarks, brand logos, and platform documentation are the exclusive intellectual property of Chakudee Fashion Pvt Ltd.",
+        "OrderOS IP: All software code, user interface designs, algorithmic workflows, database schemas, trademarks, brand logos, and platform documentation are the exclusive intellectual property of NetuFashion Pvt Ltd.",
         "Merchant Data Ownership: You retain complete, unrestricted ownership of your uploaded product imagery, catalog titles, pricing margins, vendor identities, customer records, and financial books. OrderOS claims no intellectual property rights over your proprietary merchant assets.",
         "Feedback & Suggestions: Any voluntary feature recommendations, workflow ideas, or bug reports submitted by merchants may be integrated into OrderOS platform upgrades without obligation of royalty or compensation.",
       ],
@@ -193,7 +193,7 @@ export default function LandingTerms() {
       summary:
         "OrderOS provides enterprise-grade commerce tooling on an 'As-Is' basis without implied warranties of merchantability or uninterrupted perfection.",
       bullets: [
-        "Except as explicitly set forth herein, OrderOS is provided on an 'As-Is' and 'As-Available' operational basis. Chakudee Fashion Pvt Ltd disclaims all express or implied warranties, including merchantability, title, and fitness for a particular business purpose.",
+        "Except as explicitly set forth herein, OrderOS is provided on an 'As-Is' and 'As-Available' operational basis. NetuFashion Pvt Ltd disclaims all express or implied warranties, including merchantability, title, and fitness for a particular business purpose.",
         "We do not guarantee that your use of OrderOS will ensure specific marketplace sales volumes, eliminate all human warehouse errors, or guarantee third-party courier delivery timeliness.",
       ],
     },
@@ -204,8 +204,8 @@ export default function LandingTerms() {
       summary:
         "Aggregate liability is strictly capped at subscription fees paid in the preceding 12 months; no liability for indirect or consequential losses.",
       bullets: [
-        "To the maximum extent permitted by applicable Indian law, in no event shall Chakudee Fashion Pvt Ltd, its directors, officers, employees, or affiliates be liable for indirect, incidental, punitive, or consequential damages (including lost profits, goodwill, or business interruption).",
-        "Aggregate Cap: The total cumulative liability of Chakudee Fashion Pvt Ltd for all claims arising out of or related to these Terms or platform usage shall be strictly capped at the total SaaS subscription fees actually paid by the merchant to OrderOS in the twelve (12) months preceding the incident.",
+        "To the maximum extent permitted by applicable Indian law, in no event shall NetuFashion Pvt Ltd, its directors, officers, employees, or affiliates be liable for indirect, incidental, punitive, or consequential damages (including lost profits, goodwill, or business interruption).",
+        "Aggregate Cap: The total cumulative liability of NetuFashion Pvt Ltd for all claims arising out of or related to these Terms or platform usage shall be strictly capped at the total SaaS subscription fees actually paid by the merchant to OrderOS in the twelve (12) months preceding the incident.",
       ],
     },
     {
@@ -215,7 +215,7 @@ export default function LandingTerms() {
       summary:
         "Merchants agree to indemnify OrderOS against third-party claims arising from merchant goods, tax disputes, or marketplace policy breaches.",
       bullets: [
-        "You agree to defend, indemnify, and hold harmless Chakudee Fashion Pvt Ltd, its directors, and staff against any third-party claims, liabilities, damages, and legal expenses arising out of:",
+        "You agree to defend, indemnify, and hold harmless NetuFashion Pvt Ltd, its directors, and staff against any third-party claims, liabilities, damages, and legal expenses arising out of:",
         "(a) Your breach of these Terms or platform operational policies.",
         "(b) Intellectual property or trademark infringement related to products you sell.",
         "(c) Inaccurate GST invoicing, faulty tax calculations, or tax evasion claims.",
@@ -229,10 +229,10 @@ export default function LandingTerms() {
       summary:
         "Governed exclusively by the laws of India, with exclusive legal jurisdiction vested in the competent courts of Surat, Gujarat.",
       bullets: [
-        "Governing Law: These Terms and any dispute arising from your relationship with Chakudee OrderOS shall be interpreted and governed in accordance with the substantive laws of the Republic of India.",
+        "Governing Law: These Terms and any dispute arising from your relationship with NetuOrderOS shall be interpreted and governed in accordance with the substantive laws of the Republic of India.",
         "Amicable Resolution: Prior to formal litigation, the parties agree to seek resolution through commercial good-faith consultation for a period of not less than thirty (30) days from written notice.",
         "Exclusive Jurisdiction: In the event of litigation or formal arbitration, the parties unconditionally submit to the exclusive territorial jurisdiction of the competent civil courts situated in Surat, Gujarat, India.",
-        "Official Legal Entity: Chakudee Fashion Pvt Ltd, Surat, Gujarat, India (395002).",
+        "Official Legal Entity: NetuFashion Pvt Ltd, Surat, Gujarat, India (395002).",
       ],
     },
   ];
@@ -295,7 +295,7 @@ export default function LandingTerms() {
 
   return (
     <section id="terms" className="scroll-mt-24 py-8 sm:py-12 lg:py-16 max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12">
-      
+
       {/* 1. Header Hero Title (Matches Mockup) */}
       <div className="text-center max-w-4xl mx-auto mb-8 sm:mb-10 px-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#C89B3C]/40 bg-[#FFF9EC] dark:bg-[#C89B3C]/10 text-[#B88728] dark:text-[#E8C170] text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[1.5px] mb-3 shadow-xs">
@@ -306,14 +306,14 @@ export default function LandingTerms() {
           Terms & Conditions of Service
         </h1>
         <p className="mt-3 text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
-          The legal and operational terms governing your commercial deployment of Chakudee OrderOS, multi-marketplace sync, warehouse inventory, VMS video proof, and GST accounting.
+          The legal and operational terms governing your commercial deployment of NetuOrderOS, multi-marketplace sync, warehouse inventory, VMS video proof, and GST accounting.
         </p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs font-mono text-slate-500 dark:text-slate-400">
           <span>Effective: November 2026</span>
           <span>•</span>
           <span>Version 3.4 Enterprise</span>
           <span>•</span>
-          <span>Chakudee Fashion Pvt Ltd</span>
+          <span>NetuFashion Pvt Ltd</span>
         </div>
       </div>
 
@@ -339,7 +339,7 @@ export default function LandingTerms() {
 
       {/* 3. Main Split Section: Left Terms List (8 cols) + Right Sticky Sidebar (4 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start mb-8 sm:mb-10">
-        
+
         {/* Left Side: Detailed Terms Cards */}
         <div className="lg:col-span-8 space-y-4 sm:space-y-5">
           {terms.map((item) => {
@@ -396,10 +396,10 @@ export default function LandingTerms() {
 
         {/* Right Side: Sticky Table of Contents & Legal Assistance Cards (Matches Mockup) */}
         <aside className="lg:col-span-4 space-y-4 lg:sticky lg:top-24 self-start">
-          
+
           {/* Card 1: Table of Contents (Navy Header + Numbered List) */}
           <div className="rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-hidden shadow-xs transition-colors">
-            
+
             {/* Dark Blue Header Banner */}
             <div className="bg-[#151D30] dark:bg-[#0A0E1A] text-white px-4 py-3 flex items-center gap-2.5">
               <List className="w-4 h-4 text-[#E8C170]" />
@@ -417,18 +417,16 @@ export default function LandingTerms() {
                     key={item.id}
                     type="button"
                     onClick={() => scrollToSection(item.id)}
-                    className={`w-full text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer ${
-                      isActive
+                    className={`w-full text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer ${isActive
                         ? "bg-[#EEF2F6] dark:bg-white/10 text-[#B88728] dark:text-[#E8C170] font-bold shadow-xs"
                         : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.03] hover:text-[#B88728] dark:hover:text-[#E8C170] font-medium"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`w-5 h-5 rounded-full border text-[10px] font-bold flex items-center justify-center shrink-0 transition-colors ${
-                        isActive
+                      className={`w-5 h-5 rounded-full border text-[10px] font-bold flex items-center justify-center shrink-0 transition-colors ${isActive
                           ? "border-[#B88728] dark:border-[#E8C170] text-[#B88728] dark:text-[#E8C170] bg-[#FFF9EC] dark:bg-[#E8C170]/15"
                           : "border-[#C89B3C]/40 text-[#B88728] dark:text-[#E8C170] bg-transparent"
-                      }`}
+                        }`}
                     >
                       {idx + 1}
                     </span>

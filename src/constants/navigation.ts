@@ -247,27 +247,27 @@ export const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Offline Sales",
+    label: "Sales",
     icon: FileSpreadsheet,
     children: [
       {
         label: "Sales Challan",
-        href: "/dashboard/offline-sales/sales-challan",
+        href: "/dashboard/sales/sales-challan",
         defaultTimeAgo: "4h ago",
         isCore: true,
       },
       {
         label: "Sales Invoice",
-        href: "/dashboard/offline-sales/sales-invoice",
+        href: "/dashboard/sales/sales-invoice",
         defaultTimeAgo: "2h ago",
         isCore: true,
       },
       {
         label: "Product Gallery",
-        href: "/dashboard/offline-sales/product-gallery",
+        href: "/dashboard/sales/product-gallery",
         defaultTimeAgo: "1h ago",
         isCore: true,
-        keywords: ["product gallery", "gallery", "offline sales", "cart", "cards"],
+        keywords: ["product gallery", "gallery", "sales", "cart", "cards"],
       },
     ],
   },
@@ -626,8 +626,8 @@ export function getDynamicSearchablePages(user?: UserPermissions | null): Search
     "/dashboard/settings/manage-product/product-profile",
     "/dashboard/products/inventory",
     "/dashboard/settings/manage-users/user-profile",
-    "/dashboard/offline-sales/sales-invoice",
-    "/dashboard/offline-sales/sales-challan",
+    "/dashboard/sales/sales-invoice",
+    "/dashboard/sales/sales-challan",
     "/dashboard/order-process/myntra/myntra-order",
     "/dashboard/purchase/finish-goods/invoice",
   ];

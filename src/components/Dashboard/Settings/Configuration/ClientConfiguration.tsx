@@ -173,7 +173,7 @@ export default function ClientConfiguration() {
               ))}
             </div>
 
-            {/* Column 3: Inventory Department Switch + Offline Sales, Purchase, Settings */}
+            {/* Column 3: Inventory Department Switch + Sales, Purchase, Settings */}
             <div className="flex flex-col">
               <InventoryDepartmentSwitch
                 checked={hasSeparateInventoryDept}

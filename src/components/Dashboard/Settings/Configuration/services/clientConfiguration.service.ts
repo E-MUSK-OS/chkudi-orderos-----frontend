@@ -22,7 +22,7 @@ export const DEFAULT_CLIENT_CONFIG: ClientConfigurationData = {
     "order-process",
     "products-analytics",
     "transaction",
-    "offline-sales",
+    "sales",
     "purchase",
     "settings",
     "account",

@@ -22,7 +22,7 @@ export const productService = {
   },
 
   /**
-   * Get All Products for Product Gallery (Offline Sales)
+   * Get All Products for Product Gallery (Sales)
    */
   getGallery(token?: string) {
     return api.get<ProductsResponse>(`${BASE_URL}/gallery`, token);

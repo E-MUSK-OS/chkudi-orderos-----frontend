@@ -64,8 +64,8 @@ export default function ViewChallanModal({
       ? `${purchase.supplier.city || ""}${purchase.supplier.state ? `, ${purchase.supplier.state}` : ""}`.trim()
       : ""
     : sales?.party
-    ? `${sales.party.city || ""}${sales.party.state ? `, ${sales.party.state}` : ""}`.trim()
-    : "";
+      ? `${sales.party.city || ""}${sales.party.state ? `, ${sales.party.state}` : ""}`.trim()
+      : "";
   const partyGstin = isPurchase ? purchase?.supplier?.gstin : sales?.party?.gstin;
 
   // Unified Reference & Warehouse
@@ -119,7 +119,7 @@ export default function ViewChallanModal({
               <p className="text-xs text-slate-400 font-normal mt-1">
                 {isPurchase
                   ? "Inward Purchase Delivery Note • Goods Receipt Document"
-                  : "Offline Sales Delivery Note • Outward Goods Dispatch"}
+                  : "Sales Delivery Note • Outward Goods Dispatch"}
               </p>
             </div>
           </div>
@@ -351,11 +351,10 @@ export default function ViewChallanModal({
                         return (
                           <tr
                             key={item.id || idx}
-                            className={`transition-colors hover:bg-[#FFF9EC]/70 dark:hover:bg-white/[0.04] ${
-                              isEven
+                            className={`transition-colors hover:bg-[#FFF9EC]/70 dark:hover:bg-white/[0.04] ${isEven
                                 ? "bg-[#FFF9EC]/35 dark:bg-white/[0.015]"
                                 : "bg-white dark:bg-[#0F1626]"
-                            }`}
+                              }`}
                           >
                             <td className="px-4 py-3 text-center text-slate-400 font-mono">
                               {item.itemNo || idx + 1}

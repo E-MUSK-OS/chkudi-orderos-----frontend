@@ -93,9 +93,8 @@ export default function CompanyTableView({
                       >
                         <span>{col.label}</span>
                         <ArrowUpDown
-                          className={`h-3 w-3 ${
-                            isSorted ? "opacity-100 text-[#6A4D1D] dark:text-[#E8C16D]" : "opacity-40"
-                          }`}
+                          className={`h-3 w-3 ${isSorted ? "opacity-100 text-[#6A4D1D] dark:text-[#E8C16D]" : "opacity-40"
+                            }`}
                         />
                       </button>
                     ) : (
@@ -159,7 +158,7 @@ export default function CompanyTableView({
                     {/* Owner Name */}
                     <td className="py-3 px-4">
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {company.ownerName || "Chakudee Fashion"}
+                        {company.ownerName || "NetuFashion"}
                       </span>
                     </td>
 
@@ -183,9 +182,8 @@ export default function CompanyTableView({
                     {/* Status Toggle */}
                     <td className="py-3 px-4 text-center">
                       <label
-                        className={`relative inline-flex items-center select-none ${
-                          togglingId === company.id ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-                        }`}
+                        className={`relative inline-flex items-center select-none ${togglingId === company.id ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                          }`}
                         title={
                           isActive
                             ? "Status: Active (Click to set as Draft)"

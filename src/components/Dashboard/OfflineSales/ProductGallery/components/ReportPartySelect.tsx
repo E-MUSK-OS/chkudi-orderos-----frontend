@@ -95,7 +95,7 @@ export default function ReportPartySelect({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 w-60 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-1.5 shadow-2xl">
+        <div className="absolute left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 top-full mt-1.5 z-50 w-52 sm:w-60 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-1.5 shadow-2xl">
           <div className="relative mb-1.5">
             <Search
               size={13}

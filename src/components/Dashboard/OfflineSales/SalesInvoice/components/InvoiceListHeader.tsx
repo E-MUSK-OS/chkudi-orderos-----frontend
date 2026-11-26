@@ -26,48 +26,48 @@ export default function InvoiceListHeader({
   const downloadOptions: DownloadOption[] = [
     ...(onDownloadDetail
       ? [
-          {
-            id: "detail",
-            label: "Download Detail",
-            onClick: onDownloadDetail,
-          },
-        ]
+        {
+          id: "detail",
+          label: "Download Detail",
+          onClick: onDownloadDetail,
+        },
+      ]
       : []),
     ...(onDownloadAll
       ? [
-          {
-            id: "all",
-            label: "Download",
-            onClick: onDownloadAll,
-          },
-        ]
+        {
+          id: "all",
+          label: "Download",
+          onClick: onDownloadAll,
+        },
+      ]
       : []),
     ...(onDownloadSummary
       ? [
-          {
-            id: "summary",
-            label: "Download Summary",
-            onClick: onDownloadSummary,
-          },
-        ]
+        {
+          id: "summary",
+          label: "Download Summary",
+          onClick: onDownloadSummary,
+        },
+      ]
       : []),
     ...(onDownloadSkuWise
       ? [
-          {
-            id: "sku-wise",
-            label: "Download SKU Wise",
-            onClick: onDownloadSkuWise,
-          },
-        ]
+        {
+          id: "sku-wise",
+          label: "Download SKU Wise",
+          onClick: onDownloadSkuWise,
+        },
+      ]
       : []),
     ...(onDownloadTally
       ? [
-          {
-            id: "tally",
-            label: "Download [Tally]",
-            onClick: onDownloadTally,
-          },
-        ]
+        {
+          id: "tally",
+          label: "Download [Tally]",
+          onClick: onDownloadTally,
+        },
+      ]
       : []),
   ];
 
@@ -86,7 +86,7 @@ export default function InvoiceListHeader({
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
-              Offline Sales / <span className="text-slate-700 dark:text-slate-300 font-semibold">Sales Invoice</span>
+              Sales / <span className="text-slate-700 dark:text-slate-300 font-semibold">Sales Invoice</span>
             </p>
           </div>
         </div>

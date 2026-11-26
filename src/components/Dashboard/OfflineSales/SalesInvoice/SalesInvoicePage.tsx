@@ -852,7 +852,7 @@ export default function SalesInvoicePage() {
                 onDownloadSummary={handleDownloadAll}
                 onDownloadSkuWise={handleDownloadSkuWise}
                 onDownloadTally={handleDownloadTally}
-                onCloseInvoice={() => router.push("/dashboard/offline-sales/sales-challan")}
+                onCloseInvoice={() => router.push("/dashboard/sales/sales-challan")}
               />
             </div>
 

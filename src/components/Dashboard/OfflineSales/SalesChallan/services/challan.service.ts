@@ -110,10 +110,11 @@ export const challanService = {
   // Party / Ledger API
   // ======================================================
 
-  async getParties(search = "", accountHead = ""): Promise<Party[]> {
+  async getParties(search = "", accountHead = "", limit = 1000): Promise<Party[]> {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (accountHead && accountHead !== "All") params.append("accountHead", accountHead);
+    if (limit) params.append("limit", String(limit));
 
     const res = await fetchWithAuth(`${API_BASE_URL}/parties?${params.toString()}`);
     if (!res.ok) return [];

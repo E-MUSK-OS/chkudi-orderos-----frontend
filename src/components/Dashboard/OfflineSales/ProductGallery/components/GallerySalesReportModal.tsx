@@ -135,16 +135,16 @@ export default function GallerySalesReportModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-3 sm:p-5 font-sans"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-2 sm:p-5 font-sans"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-6xl h-[84vh] max-h-[760px] rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white shadow-2xl flex flex-col overflow-hidden"
+        className="w-full max-w-6xl h-[82dvh] max-h-[620px] sm:h-[84vh] sm:max-h-[760px] rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
-        <div className="px-5 py-4 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] space-y-3 bg-white dark:bg-[#0F1626]">
-          <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E7E0D2]/80 dark:border-white/[0.08]">
+        <div className="px-3 sm:px-5 py-2.5 sm:py-4 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] space-y-2 sm:space-y-3 bg-white dark:bg-[#0F1626] shrink-0">
+          <div className="flex items-center justify-between gap-2 pb-2 sm:pb-3 border-b border-[#E7E0D2]/80 dark:border-white/[0.08]">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-xl bg-[#FFF9EC] dark:bg-[#F5C451]/15 border border-[#E8C16D]/40 dark:border-[#F5C451]/30 flex items-center justify-center text-[#B88728] dark:text-[#F5C451]">
                 <ReceiptText size={16} />
@@ -164,86 +164,88 @@ export default function GallerySalesReportModal({
             </button>
           </div>
 
-          <div className="flex flex-wrap lg:flex-nowrap items-end justify-between gap-2">
-            <div className="shrink-0">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-1.5 sm:gap-2">
+            <div className="w-full lg:w-auto shrink-0">
               <DateRangePicker
                 from={dateRange.from}
                 to={dateRange.to}
                 onChange={(range) => setDateRange(range)}
                 onClear={() => setDateRange({ from: undefined, to: undefined })}
-                triggerClassName="h-9 px-3 rounded-xl text-xs font-bold whitespace-nowrap"
+                triggerClassName="w-full lg:w-auto h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap justify-between lg:justify-start"
               />
             </div>
 
-            <div className="flex flex-wrap lg:flex-nowrap items-end gap-2">
-              <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+            <div className="grid grid-cols-3 sm:flex sm:flex-wrap lg:flex-nowrap items-end gap-1.5 sm:gap-2 w-full lg:w-auto">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">
                   Invoice Type
                 </label>
                 <ThemeSelectDropdown
                   value={invoiceType}
                   onChange={setInvoiceType}
                   options={invoiceTypeOptions}
-                  className="w-28"
-                  buttonClassName="w-full h-9 px-2.5 rounded-xl text-xs font-bold"
+                  className="w-full sm:w-28"
+                  buttonClassName="w-full h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">
                   Party
                 </label>
                 <ReportPartySelect
                   value={partyFilter}
                   onChange={setPartyFilter}
                   extraPartyNames={partyOptions.map((p) => p.value).filter((v) => v !== "All")}
-                  className="w-36"
+                  className="w-full sm:w-36 [&_button]:h-8 sm:[&_button]:h-9 [&_button]:px-2 sm:[&_button]:px-2.5 [&_button]:text-[11px] sm:[&_button]:text-xs"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">
                   Status
                 </label>
                 <ThemeSelectDropdown
                   value={statusFilter}
                   onChange={setStatusFilter}
                   options={statusOptions}
-                  className="w-24"
-                  buttonClassName="w-full h-9 px-2.5 rounded-xl text-xs font-bold"
+                  className="w-full sm:w-24"
+                  buttonClassName="w-full h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold"
                 />
               </div>
 
-              <div className="space-y-1 shrink-0">
-                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                  View
-                </label>
-                <div className="h-9 p-0.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50 dark:bg-[#080B11] inline-flex items-center">
-                  {(["Summary", "Detail"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setViewMode(mode)}
-                      className={`h-full px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        viewMode === mode
-                          ? "bg-[#E8C16D] text-[#0A0E1A] shadow-2xs"
-                          : "text-slate-500 dark:text-slate-400 hover:text-[#0A0E1A] dark:hover:text-white"
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
+              <div className="col-span-3 flex items-end justify-between gap-1.5 sm:contents">
+                <div className="space-y-0.5 sm:space-y-1 shrink-0">
+                  <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                    View
+                  </label>
+                  <div className="h-8 sm:h-9 p-0.5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-slate-50 dark:bg-[#080B11] inline-flex items-center">
+                    {(["Summary", "Detail"] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setViewMode(mode)}
+                        className={`h-full px-2 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+                          viewMode === mode
+                            ? "bg-[#E8C16D] text-[#0A0E1A] shadow-2xs"
+                            : "text-slate-500 dark:text-slate-400 hover:text-[#0A0E1A] dark:hover:text-white"
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={handleDownloadCsv}
-                className="h-9 px-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] dark:hover:border-[#F5C451] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
-              >
-                <Download size={13} className="text-[#B88728] dark:text-[#F5C451]" />
-                <span>Download</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadCsv}
+                  className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:border-[#E8C16D] dark:hover:border-[#F5C451] text-[11px] sm:text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                >
+                  <Download size={12} className="text-[#B88728] dark:text-[#F5C451]" />
+                  <span>Download</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -322,21 +324,21 @@ export default function GallerySalesReportModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#E7E0D2]/80 dark:border-white/[0.08] flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-[#0F1626]">
-          <div className="flex items-center gap-6">
+        <div className="px-3 sm:px-6 py-2 sm:py-4 border-t border-[#E7E0D2]/80 dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 bg-white dark:bg-[#0F1626] shrink-0">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 sm:gap-6 w-full sm:w-auto">
             <div>
-              <span className="block text-xs text-slate-500 dark:text-slate-400 font-semibold">Invoices</span>
-              <span className="font-mono font-black text-base sm:text-lg">{totals.count}</span>
+              <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Invoices</span>
+              <span className="font-mono font-black text-xs sm:text-lg">{totals.count}</span>
             </div>
-            <div className="h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
+            <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
             <div>
-              <span className="block text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Qty</span>
-              <span className="font-mono font-black text-base sm:text-lg">{totals.qty}</span>
+              <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Qty</span>
+              <span className="font-mono font-black text-xs sm:text-lg">{totals.qty}</span>
             </div>
-            <div className="h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
+            <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
             <div>
-              <span className="block text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Amount</span>
-              <span className="font-mono font-black text-base sm:text-lg text-[#B88728] dark:text-[#F5C451]">
+              <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Amount</span>
+              <span className="font-mono font-black text-xs sm:text-lg text-[#B88728] dark:text-[#F5C451]">
                 ₹ {totals.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
@@ -345,7 +347,7 @@ export default function GallerySalesReportModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="w-full sm:w-auto h-8 sm:h-10 px-4 sm:px-5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
           >
             <X size={14} />
             <span>Close</span>

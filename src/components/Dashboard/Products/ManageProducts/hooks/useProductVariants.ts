@@ -75,6 +75,8 @@ export function useCreateProductVariant() {
         queryKey: [...QUERY_KEY, variables.productId],
       });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
@@ -137,6 +139,8 @@ export function useUpdateProductVariant() {
       queryClient.removeQueries({ queryKey: QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
@@ -181,7 +185,10 @@ export function useDeleteProductVariant() {
           variables.productId,
         ],
       });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
       toast.success(
@@ -229,6 +236,7 @@ export function useUpdateProductVariantStatus() {
           variables.productId,
         ],
       });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
 
       toast.success(
         response?.message ??

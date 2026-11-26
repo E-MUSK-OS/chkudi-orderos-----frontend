@@ -277,11 +277,11 @@ export default function GalleryCollectionReportModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-3 sm:p-5 font-sans"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-2 sm:p-5 font-sans"
       onClick={onClose}
     >
       <div
-        className={`w-full h-[84vh] max-h-[760px] flex flex-col lg:flex-row gap-3 transition-all ${
+        className={`w-full h-[82dvh] max-h-[620px] sm:h-[84vh] sm:max-h-[760px] flex flex-col lg:flex-row gap-3 overflow-y-auto lg:overflow-hidden transition-all ${
           cashVerifyOpen
             ? cashVerifyView === "new"
               ? "max-w-[1380px]"
@@ -291,10 +291,14 @@ export default function GalleryCollectionReportModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Main Modal: Collection Report */}
-        <div className="flex-1 min-w-0 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white shadow-2xl flex flex-col overflow-hidden">
+        <div
+          className={`flex-1 min-w-0 min-h-[280px] lg:min-h-0 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white shadow-2xl flex-col overflow-hidden ${
+            cashVerifyOpen ? "hidden lg:flex" : "flex"
+          }`}
+        >
           {/* Header */}
-          <div className="px-5 py-4 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] space-y-3 bg-white dark:bg-[#0F1626]">
-            <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E7E0D2]/80 dark:border-white/[0.08]">
+          <div className="px-3 sm:px-5 py-2.5 sm:py-4 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] space-y-2 sm:space-y-3 bg-white dark:bg-[#0F1626] shrink-0">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-3 border-b border-[#E7E0D2]/80 dark:border-white/[0.08]">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-xl bg-[#FFF9EC] dark:bg-[#F5C451]/15 border border-[#E8C16D]/40 dark:border-[#F5C451]/30 flex items-center justify-center text-[#B88728] dark:text-[#F5C451]">
                   <Wallet size={16} />
@@ -314,40 +318,40 @@ export default function GalleryCollectionReportModal({
               </button>
             </div>
 
-            <div className="flex flex-wrap xl:flex-nowrap items-end justify-between gap-2">
-              <div className="shrink-0">
+            <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-1.5 sm:gap-2">
+              <div className="w-full xl:w-auto shrink-0">
                 <DateRangePicker
                   from={dateRange.from}
                   to={dateRange.to}
                   onChange={(range) => setDateRange(range)}
                   onClear={() => setDateRange({ from: undefined, to: undefined })}
-                  triggerClassName="h-9 px-3 rounded-xl text-xs font-bold whitespace-nowrap"
+                  triggerClassName="w-full xl:w-auto h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap justify-between xl:justify-start"
                 />
               </div>
 
-              <div className="flex flex-wrap xl:flex-nowrap items-end gap-2">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+              <div className="grid grid-cols-3 sm:flex sm:flex-wrap xl:flex-nowrap items-end gap-1.5 sm:gap-2 w-full xl:w-auto">
+                <div className="space-y-0.5 sm:space-y-1">
+                  <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">
                     Voucher Type
                   </label>
                   <ThemeSelectDropdown
                     value={voucherTypeFilter}
                     onChange={setVoucherTypeFilter}
                     options={voucherTypeOptions}
-                    className="w-28"
-                    buttonClassName="w-full h-9 px-2.5 rounded-xl text-xs font-bold"
+                    className="w-full sm:w-28"
+                    buttonClassName="w-full h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                <div className="space-y-0.5 sm:space-y-1">
+                  <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">
                     Party
                   </label>
                   <ReportPartySelect
                     value={partyFilter}
                     onChange={setPartyFilter}
                     extraPartyNames={partyOptions.map((p) => p.value).filter((v) => v !== "All")}
-                    className="w-36"
+                    className="w-full sm:w-36 [&_button]:h-8 sm:[&_button]:h-9 [&_button]:px-2 sm:[&_button]:px-2.5 [&_button]:text-[11px] sm:[&_button]:text-xs"
                   />
                 </div>
 
@@ -357,7 +361,7 @@ export default function GalleryCollectionReportModal({
                     setCashVerifyOpen((prev) => !prev);
                     setCashVerifyView("list");
                   }}
-                  className={`h-9 px-3.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                  className={`w-full sm:w-auto h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl border text-[11px] sm:text-xs font-bold transition-all cursor-pointer shrink-0 truncate ${
                     cashVerifyOpen
                       ? "border-[#E8C16D] bg-[#E8C16D] text-[#0A0E1A] shadow-xs"
                       : "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D] dark:hover:border-[#F5C451]"
@@ -430,30 +434,30 @@ export default function GalleryCollectionReportModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-[#E7E0D2]/80 dark:border-white/[0.08] flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-[#0F1626]">
-            <div className="flex flex-wrap items-center gap-6">
+          <div className="px-3 sm:px-6 py-2 sm:py-4 border-t border-[#E7E0D2]/80 dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 bg-white dark:bg-[#0F1626] shrink-0">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-6 w-full sm:w-auto">
               <div>
-                <span className="block text-xs text-slate-500 dark:text-slate-400 font-semibold">Vouchers</span>
-                <span className="font-mono font-black text-base sm:text-lg">{totals.count}</span>
+                <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Vouchers</span>
+                <span className="font-mono font-black text-xs sm:text-lg">{totals.count}</span>
               </div>
-              <div className="h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
+              <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
               <div>
-                <span className="block text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Debit</span>
-                <span className="font-mono font-black text-base sm:text-lg">
+                <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Debit</span>
+                <span className="font-mono font-black text-xs sm:text-lg">
                   ₹ {totals.debit.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Dr.
                 </span>
               </div>
-              <div className="h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
+              <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
               <div>
-                <span className="block text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Credit</span>
-                <span className="font-mono font-black text-base sm:text-lg">
+                <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Credit</span>
+                <span className="font-mono font-black text-xs sm:text-lg">
                   ₹ {totals.credit.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr.
                 </span>
               </div>
-              <div className="h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
+              <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
               <div>
-                <span className="block text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Amount</span>
-                <span className="font-mono font-black text-base sm:text-lg text-[#B88728] dark:text-[#F5C451]">
+                <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Amount</span>
+                <span className="font-mono font-black text-xs sm:text-lg text-[#B88728] dark:text-[#F5C451]">
                   ₹ {netTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
@@ -462,7 +466,7 @@ export default function GalleryCollectionReportModal({
             <button
               type="button"
               onClick={onClose}
-              className="h-10 px-5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="w-full sm:w-auto h-8 sm:h-10 px-4 sm:px-5 rounded-xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
             >
               <X size={14} />
               <span>Close</span>
@@ -473,15 +477,25 @@ export default function GalleryCollectionReportModal({
         {/* Right Side Panel: Cash Verify (img-1) & New Count (img-2) */}
         {cashVerifyOpen && (
           <div
-            className={`shrink-0 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white shadow-2xl flex flex-col overflow-hidden transition-all ${
+            className={`flex-1 lg:flex-initial shrink-0 rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white shadow-2xl flex flex-col overflow-hidden transition-all ${
               cashVerifyView === "new" ? "w-full lg:w-[560px]" : "w-full lg:w-[320px]"
             }`}
           >
             {cashVerifyView === "list" ? (
               <>
                 {/* Cash Verify Header (img-1) */}
-                <div className="px-4 py-3.5 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-black tracking-tight">Cash Verify</h3>
+                <div className="px-4 py-3 border-b border-[#E7E0D2]/80 dark:border-white/[0.08] flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCashVerifyOpen(false)}
+                      className="lg:hidden h-7 px-2 rounded-lg border border-[#E7E0D2] dark:border-white/[0.1] bg-slate-50 dark:bg-[#080B11] text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronLeft size={12} />
+                      <span>Back</span>
+                    </button>
+                    <h3 className="text-sm font-black tracking-tight">Cash Verify</h3>
+                  </div>
                   <button
                     type="button"
                     onClick={handleOpenNewCount}

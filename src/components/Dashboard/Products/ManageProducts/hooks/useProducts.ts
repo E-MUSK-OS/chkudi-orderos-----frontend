@@ -54,6 +54,8 @@ export function useCreateProduct() {
 
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: ["product-variants"] });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
@@ -122,6 +124,8 @@ export function useUpdateProduct() {
       });
       // 3. Invalidate and refetch queries
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: [...QUERY_KEY, variables.id] });
       queryClient.invalidateQueries({ queryKey: ["product-variants", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["product-variants"] });
@@ -151,6 +155,8 @@ export function useDeleteProduct() {
 
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 
@@ -182,6 +188,8 @@ export function useUpdateProductStatus() {
 
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
 
       toast.success(
@@ -220,6 +228,8 @@ export function useImportProductsExcel() {
 
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["product-gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["asin-imports"] });
 

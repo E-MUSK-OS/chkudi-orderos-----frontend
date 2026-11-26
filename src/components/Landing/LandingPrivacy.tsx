@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 export default function LandingPrivacy() {
-  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@chakudee.com";
+  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@netu.com";
 
   const sections = [
     {
@@ -222,8 +222,8 @@ export default function LandingPrivacy() {
       summary:
         "If you have any questions, compliance requests, or grievance inquiries regarding this Privacy Policy, please reach out to our dedicated team.",
       bullets: [
-        "Company Name: Chakudee Fashion Pvt Ltd",
-        "Operating Platform: Chakudee OrderOS (Enterprise Commerce Operating System)",
+        "Company Name: NetuFashion Pvt Ltd",
+        "Operating Platform: NetuOrderOS (Enterprise Commerce Operating System)",
         "Registered Office: Surat, Gujarat, India (395002)",
         `Compliance & Privacy Contact: ${contactEmail}`,
         "All privacy inquiries and compliance disclosures receive formal response within 7 business days.",
@@ -233,7 +233,7 @@ export default function LandingPrivacy() {
 
   return (
     <section id="privacy" className="scroll-mt-24 py-8 sm:py-12 lg:py-16 max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12">
-      
+
       {/* 1. TOP HERO BANNER */}
       <div className="relative rounded-2xl sm:rounded-3xl border border-[#C89B3C]/35 bg-gradient-to-r from-[#FFF9EC] via-white to-[#F7F2E7] dark:from-[#0F1626] dark:via-[#0D1424] dark:to-[#080B11] p-6 sm:p-8 md:p-10 mb-8 sm:mb-10 shadow-sm overflow-hidden transition-colors">
         {/* Ambient Top Light Halos */}
@@ -241,13 +241,13 @@ export default function LandingPrivacy() {
         <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-[#2D6A8C]/10 dark:bg-[#2D6A8C]/15 blur-3xl" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 sm:gap-8 lg:gap-10">
-          
+
           {/* Left Side: 3D Shield Icon with Orbital Rings */}
           <div className="relative shrink-0 flex items-center justify-center">
             {/* Outer Orbital Ring */}
             <div className="absolute w-28 h-28 sm:w-36 sm:h-36 rounded-full border border-dashed border-[#B88728]/30 dark:border-[#E8C170]/25 animate-spin [animation-duration:25s]" />
             <div className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border border-[#B88728]/20 dark:border-[#E8C170]/15" />
-            
+
             {/* Main Shield Bubble */}
             <div className="relative w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#B88728] via-[#C89B3C] to-[#996C1B] dark:from-[#E8C170] dark:via-[#D4A747] dark:to-[#B88728] shadow-lg flex items-center justify-center text-white dark:text-[#080B11] transform transition-transform hover:scale-105">
               <Shield className="w-10 h-10 sm:w-14 sm:h-14 fill-current opacity-25 absolute" />
@@ -261,7 +261,7 @@ export default function LandingPrivacy() {
               Privacy Policy
             </h1>
             <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-300 max-w-4xl leading-relaxed">
-              Your privacy is important to us. This Privacy Policy explains how Chakudee OrderOS collects, uses, and protects your information when you use our multi-marketplace operating system.
+              Your privacy is important to us. This Privacy Policy explains how NetuOrderOS collects, uses, and protects your information when you use our multi-marketplace operating system.
             </p>
           </div>
 
@@ -270,7 +270,7 @@ export default function LandingPrivacy() {
 
       {/* 2. MAIN CLEAN POLICY CONTENT AREA */}
       <div className="space-y-4 sm:space-y-6">
-        
+
         {/* Header Row: Last Updated timestamp */}
         <div className="flex items-center justify-between text-xs font-mono text-slate-500 dark:text-slate-400 pb-1 px-1">
           <div className="inline-flex items-center gap-2">
@@ -293,9 +293,8 @@ export default function LandingPrivacy() {
               <article
                 key={item.id}
                 id={item.id}
-                className={`rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 lg:p-7 shadow-xs hover:border-[#B88728]/40 dark:hover:border-[#E8C170]/30 transition-all flex flex-col justify-between ${
-                  isContactSection ? "md:col-span-2" : ""
-                }`}
+                className={`rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-5 sm:p-6 lg:p-7 shadow-xs hover:border-[#B88728]/40 dark:hover:border-[#E8C170]/30 transition-all flex flex-col justify-between ${isContactSection ? "md:col-span-2" : ""
+                  }`}
               >
                 <div>
                   {/* Item Header: Icon Badge + Numbered Heading */}
@@ -317,20 +316,18 @@ export default function LandingPrivacy() {
 
                   {/* Bullets List */}
                   <ul
-                    className={`text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed pl-1 sm:pl-2 ${
-                      isContactSection
+                    className={`text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed pl-1 sm:pl-2 ${isContactSection
                         ? "grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5"
                         : "space-y-2"
-                    }`}
+                      }`}
                   >
                     {item.bullets.map((bullet, idx) => (
                       <li
                         key={idx}
-                        className={`flex items-start gap-2 ${
-                          isContactSection && idx === item.bullets.length - 1
+                        className={`flex items-start gap-2 ${isContactSection && idx === item.bullets.length - 1
                             ? "md:col-span-2"
                             : ""
-                        }`}
+                          }`}
                       >
                         <span className="h-1.5 w-1.5 rounded-full bg-[#B88728] dark:bg-[#E8C170] mt-2 shrink-0" />
                         <span>{bullet}</span>

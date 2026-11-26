@@ -55,15 +55,15 @@ export default function GalleryCheckoutModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2.5 sm:p-4 font-sans"
       onClick={() => !submitting && onClose()}
     >
       <div
-        className="w-full max-w-xl rounded-3xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-xl h-[82dvh] max-h-[620px] sm:h-auto sm:max-h-[88vh] flex flex-col rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/[0.08]">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-white/[0.08] shrink-0">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
               <PackageCheck className="h-5 w-5" />
@@ -88,7 +88,7 @@ export default function GalleryCheckoutModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+        <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-5 flex-1 overflow-y-auto custom-scrollbar">
           {/* Party Summary */}
           <div className="rounded-2xl border border-[#E8C16D]/40 bg-[#FFF9EC]/60 dark:bg-[#1A160E]/60 dark:border-[#E8C16D]/20 px-4 py-3 flex items-center justify-between gap-4">
             <div>
@@ -227,12 +227,12 @@ export default function GalleryCheckoutModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-white/[0.08] flex flex-wrap items-center justify-end gap-2.5 bg-slate-50/50 dark:bg-[#0B0F17]/50">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 dark:border-white/[0.08] flex flex-wrap items-center justify-end gap-2 bg-slate-50/50 dark:bg-[#0B0F17]/50 shrink-0">
           <button
             type="button"
             disabled={submitting}
             onClick={onClose}
-            className="h-10 px-4 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-slate-700 dark:text-slate-300 hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+            className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-slate-700 dark:text-slate-300 hover:bg-slate-50 cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
@@ -250,7 +250,7 @@ export default function GalleryCheckoutModal({
                 openInvoice: false,
               })
             }
-            className="h-10 px-4 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FDF2D1] dark:hover:bg-[#262014] cursor-pointer disabled:opacity-50"
+            className="h-9 sm:h-10 px-3.5 sm:px-4 flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FDF2D1] dark:hover:bg-[#262014] cursor-pointer disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -273,7 +273,7 @@ export default function GalleryCheckoutModal({
                 openInvoice: true,
               })
             }
-            className="h-10 px-5 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold bg-[#E8C16D] hover:bg-[#dfb458] text-[#0A0E1A] cursor-pointer shadow-xs disabled:opacity-50"
+            className="h-9 sm:h-10 px-4 sm:px-5 w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold bg-[#E8C16D] hover:bg-[#dfb458] text-[#0A0E1A] cursor-pointer shadow-xs disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

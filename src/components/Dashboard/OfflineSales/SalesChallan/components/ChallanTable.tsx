@@ -238,11 +238,10 @@ export default function ChallanTable({
                 return (
                   <tr
                     key={ch.id}
-                    className={`transition-colors ${
-                      isSelected
+                    className={`transition-colors ${isSelected
                         ? "bg-[#FFF9EC]/70 dark:bg-[#1A160E]/70 hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E]"
                         : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
-                    }`}
+                      }`}
                   >
                     {/* Checkbox */}
                     <td className="px-3 sm:px-4 py-3.5 text-center">
@@ -359,7 +358,7 @@ export default function ChallanTable({
                             if (onGenerateInvoice) {
                               onGenerateInvoice(ch);
                             } else {
-                              router.push(`/dashboard/offline-sales/sales-invoice?challanId=${ch.id}`);
+                              router.push(`/dashboard/sales/sales-invoice?challanId=${ch.id}`);
                             }
                           }}
                           title="Generate / View Sales Invoice"

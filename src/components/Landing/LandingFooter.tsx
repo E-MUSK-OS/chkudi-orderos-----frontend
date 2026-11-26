@@ -12,7 +12,7 @@ export default function LandingFooter({ isLoggedIn = false }: LandingFooterProps
     <footer className="border-t border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#06080D] py-8 transition-colors">
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400 text-center md:text-left">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2">
-          <span className="font-extrabold text-[#B88728] dark:text-[#E8C170]">Chakudee OrderOS</span>
+          <span className="font-extrabold text-[#B88728] dark:text-[#E8C170]">NetuOrderOS</span>
           <span>— Enterprise Commerce Terminal.</span>
         </div>
         <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 sm:gap-5 lg:gap-6">

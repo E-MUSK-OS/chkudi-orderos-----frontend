@@ -68,7 +68,7 @@ export default function WebstoreCard({
           <span className="font-semibold text-slate-700 dark:text-slate-300">
             Company:
           </span>{" "}
-          {store.billTo || "Chakudee Fashion"}
+          {store.billTo || "NetuFashion"}
         </p>
 
         {/* D.O.R. */}

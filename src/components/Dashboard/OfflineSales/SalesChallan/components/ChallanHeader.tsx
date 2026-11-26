@@ -28,21 +28,21 @@ export default function ChallanHeader({
   const downloadOptions: DownloadOption[] = [
     ...(onDownloadAll
       ? [
-          {
-            id: "all",
-            label: "Download",
-            onClick: onDownloadAll,
-          },
-        ]
+        {
+          id: "all",
+          label: "Download",
+          onClick: onDownloadAll,
+        },
+      ]
       : []),
     ...(onDownloadSkuWise
       ? [
-          {
-            id: "sku-wise",
-            label: "Download SKU Wise",
-            onClick: onDownloadSkuWise,
-          },
-        ]
+        {
+          id: "sku-wise",
+          label: "Download SKU Wise",
+          onClick: onDownloadSkuWise,
+        },
+      ]
       : []),
   ];
 
@@ -60,13 +60,13 @@ export default function ChallanHeader({
               {viewMode === "create"
                 ? "Create Sales Challan"
                 : viewMode === "edit"
-                ? "Edit Sales Challan"
-                : "Sales Challan"}
+                  ? "Edit Sales Challan"
+                  : "Sales Challan"}
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               {viewMode === "list"
-                ? "Offline Sales • Manage offline sales delivery notes, parties, and dispatches."
+                ? "Sales • Manage sales delivery notes, parties, and dispatches."
                 : "Enter consignment details, recipient party, item quantities, and delivery terms."}
             </p>
           </div>

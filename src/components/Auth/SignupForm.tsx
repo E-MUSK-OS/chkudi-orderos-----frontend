@@ -83,7 +83,7 @@ export default function SignupForm() {
             <Package size={18} className="text-[#E8C170] dark:text-[#F5C451]" />
           </div>
           <span className="font-display text-lg sm:text-xl tracking-[2px] uppercase text-[#C89B3C] dark:text-[#F5C451] font-bold">
-            Chakudee <span className="text-[#0A0E1A] dark:text-white">OrderOS</span>
+            Netu<span className="text-[#0A0E1A] dark:text-white">OrderOS</span>
           </span>
         </Link>
 

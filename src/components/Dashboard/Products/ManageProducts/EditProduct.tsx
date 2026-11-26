@@ -84,7 +84,7 @@ export default function EditProduct({
 
   return (
     <DashboardLayout title="Edit Product Profile">
-      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 pb-28 sm:pb-36 max-w-[1600px] mx-auto">
+      <div className="space-y-4 font-sans text-slate-900 dark:text-slate-100 py-0 max-w-[1600px] mx-auto">
         {/* Top Header Card */}
         <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 sm:px-7 py-3.5 sm:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3 sm:gap-3.5">

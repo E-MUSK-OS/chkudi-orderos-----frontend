@@ -24,7 +24,7 @@ export default function LandingHeader() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-[#F7F5F0]/95 dark:bg-[#080B11]/90 border-b border-[#E7E0D2] dark:border-white/[0.08] transition-colors shadow-xs">
       <div className="max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 xl:px-12 h-16 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4 xl:gap-6">
-        
+
         {/* Brand Logo (Left) */}
         <Link href="/" className="flex items-center gap-1.5 sm:gap-3 group shrink-0 min-w-0">
           <div className="h-7 w-7 sm:h-10 sm:w-10 xl:h-11 xl:w-11 rounded-lg sm:rounded-xl border border-[#C89B3C]/40 bg-[#FFF9EC] dark:bg-[#C89B3C]/10 flex items-center justify-center transition-transform group-hover:scale-105 shadow-xs shrink-0">
@@ -32,7 +32,7 @@ export default function LandingHeader() {
           </div>
           <div className="flex flex-col whitespace-nowrap min-w-0">
             <span className="text-xs sm:text-lg xl:text-xl font-black tracking-normal sm:tracking-[1.5px] xl:tracking-[2px] uppercase text-[#B88728] dark:text-[#E8C170] leading-tight">
-              Chakudee <span className="text-slate-900 dark:text-white">OrderOS</span>
+              Netu<span className="text-slate-900 dark:text-white">OrderOS</span>
             </span>
             <span className="text-[9px] sm:text-[10px] font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase -mt-0.5 hidden xs:block sm:block">
               Enterprise Commerce
@@ -44,41 +44,37 @@ export default function LandingHeader() {
         <nav className="hidden lg:flex items-center gap-4 xl:gap-6 2xl:gap-8 text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap shrink-0">
           <Link
             href="/features"
-            className={`whitespace-nowrap transition-colors ${
-              pathname === "/features"
+            className={`whitespace-nowrap transition-colors ${pathname === "/features"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "hover:text-[#B88728] dark:hover:text-[#E8C170]"
-            }`}
+              }`}
           >
             Features
           </Link>
           <Link
             href="/marketplaces"
-            className={`whitespace-nowrap transition-colors ${
-              pathname === "/marketplaces"
+            className={`whitespace-nowrap transition-colors ${pathname === "/marketplaces"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "hover:text-[#B88728] dark:hover:text-[#E8C170]"
-            }`}
+              }`}
           >
             Marketplaces
           </Link>
           <Link
             href="/about"
-            className={`whitespace-nowrap transition-colors ${
-              pathname === "/about" || pathname === "/about-us"
+            className={`whitespace-nowrap transition-colors ${pathname === "/about" || pathname === "/about-us"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "hover:text-[#B88728] dark:hover:text-[#E8C170]"
-            }`}
+              }`}
           >
             About Us
           </Link>
           <Link
             href="/contact"
-            className={`whitespace-nowrap transition-colors ${
-              pathname === "/contact" || pathname === "/contact-us"
+            className={`whitespace-nowrap transition-colors ${pathname === "/contact" || pathname === "/contact-us"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "hover:text-[#B88728] dark:hover:text-[#E8C170]"
-            }`}
+              }`}
           >
             Contact Us
           </Link>
@@ -86,7 +82,7 @@ export default function LandingHeader() {
 
         {/* Right Side Corner Actions: Theme Switcher, Login & Register */}
         <div className="flex items-center gap-1 sm:gap-2.5 shrink-0 whitespace-nowrap">
-          
+
           {/* Theme Toggle Button */}
           {mounted && (
             <button
@@ -150,48 +146,44 @@ export default function LandingHeader() {
           <Link
             href="/features"
             onClick={() => setMobileMenuOpen(false)}
-            className={`block text-sm font-semibold py-1 transition-colors ${
-              pathname === "/features"
+            className={`block text-sm font-semibold py-1 transition-colors ${pathname === "/features"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "text-slate-700 dark:text-slate-200"
-            }`}
+              }`}
           >
             Features
           </Link>
           <Link
             href="/marketplaces"
             onClick={() => setMobileMenuOpen(false)}
-            className={`block text-sm font-semibold py-1 transition-colors ${
-              pathname === "/marketplaces"
+            className={`block text-sm font-semibold py-1 transition-colors ${pathname === "/marketplaces"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "text-slate-700 dark:text-slate-200"
-            }`}
+              }`}
           >
             Marketplaces
           </Link>
           <Link
             href="/about"
             onClick={() => setMobileMenuOpen(false)}
-            className={`block text-sm font-semibold py-1 transition-colors ${
-              pathname === "/about" || pathname === "/about-us"
+            className={`block text-sm font-semibold py-1 transition-colors ${pathname === "/about" || pathname === "/about-us"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "text-slate-700 dark:text-slate-200"
-            }`}
+              }`}
           >
             About Us
           </Link>
           <Link
             href="/contact"
             onClick={() => setMobileMenuOpen(false)}
-            className={`block text-sm font-semibold py-1 transition-colors ${
-              pathname === "/contact" || pathname === "/contact-us"
+            className={`block text-sm font-semibold py-1 transition-colors ${pathname === "/contact" || pathname === "/contact-us"
                 ? "text-[#B88728] dark:text-[#E8C170] font-bold"
                 : "text-slate-700 dark:text-slate-200"
-            }`}
+              }`}
           >
             Contact Us
           </Link>
-          
+
           {/* Mobile Auth Buttons inside menu */}
           <div className="pt-3 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2">
             <Link

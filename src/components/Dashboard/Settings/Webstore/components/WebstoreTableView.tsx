@@ -88,9 +88,8 @@ export default function WebstoreTableView({
                       >
                         <span>{col.label}</span>
                         <ArrowUpDown
-                          className={`h-3 w-3 ${
-                            isSorted ? "opacity-100 text-[#B88728] dark:text-[#F5C451]" : "opacity-40"
-                          }`}
+                          className={`h-3 w-3 ${isSorted ? "opacity-100 text-[#B88728] dark:text-[#F5C451]" : "opacity-40"
+                            }`}
                         />
                       </button>
                     ) : (
@@ -158,7 +157,7 @@ export default function WebstoreTableView({
 
                   {/* Company Name (Bill To) */}
                   <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 truncate max-w-xs">
-                    {store.billTo || "Chakudee Fashion"}
+                    {store.billTo || "NetuFashion"}
                   </td>
 
                   {/* Sub SKUs */}

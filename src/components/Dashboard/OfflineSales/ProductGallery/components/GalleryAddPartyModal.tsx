@@ -92,7 +92,7 @@ export default function GalleryAddPartyModal({
       onClick={resetAndClose}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 font-sans"
+        className="relative w-full max-w-md max-h-[82dvh] sm:max-h-[88vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 font-sans"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

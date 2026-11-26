@@ -50,7 +50,7 @@ export default function ClientConfigSectionCard({
     if (l.includes("order process")) return <ShoppingCart className="w-4 h-4 text-blue-500" />;
     if (l.includes("analytics")) return <BarChart3 className="w-4 h-4 text-[#B88728] dark:text-[#E8C16D]" />;
     if (l.includes("transaction")) return <ArrowLeftRight className="w-4 h-4 text-cyan-500" />;
-    if (l.includes("offline sales")) return <FileSpreadsheet className="w-4 h-4 text-purple-500" />;
+    if (l.includes("sales") || l.includes("offline sales")) return <FileSpreadsheet className="w-4 h-4 text-purple-500" />;
     if (l.includes("purchase")) return <ShoppingBag className="w-4 h-4 text-rose-500" />;
     if (l.includes("settings")) return <Settings className="w-4 h-4 text-slate-500" />;
     if (l.includes("account")) return <User className="w-4 h-4 text-teal-500" />;

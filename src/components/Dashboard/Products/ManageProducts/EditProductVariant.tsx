@@ -164,10 +164,10 @@ interface EditVariantFormProps {
   product?: Product;
   allVariants: ProductVariant[];
   dropdownData?: ReturnType<typeof useDropdownOptions>["data"] extends infer D
-    ? D extends { data?: infer Inner }
-      ? Inner
-      : undefined
-    : undefined;
+  ? D extends { data?: infer Inner }
+  ? Inner
+  : undefined
+  : undefined;
   isNewVariant: boolean;
   colorParam: string;
   isColorGroupMode: boolean;
@@ -201,7 +201,7 @@ export default function EditProductVariant({
     (fromParam === "product-gallery" && Boolean(colorParam));
   const effectiveReturnPath =
     fromParam === "product-gallery"
-      ? "/dashboard/offline-sales/product-gallery"
+      ? "/dashboard/sales/product-gallery"
       : returnPath;
   const backLabel =
     fromParam === "product-gallery"
@@ -256,7 +256,7 @@ export default function EditProductVariant({
   if (isDataLoading) {
     return (
       <DashboardLayout title="Edit Product Variant">
-        <div className="space-y-3 font-sans text-slate-900 dark:text-slate-100 pb-0 max-w-[1600px] mx-auto">
+        <div className="space-y-3 font-sans text-slate-900 dark:text-slate-100 py-0 max-w-[1600px] mx-auto">
           <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 animate-pulse space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="h-56 bg-slate-100 dark:bg-white/[0.04] rounded-2xl" />
@@ -502,7 +502,7 @@ function EditVariantForm({
           (attr.id && a.productAttributeId === attr.id) ||
           (a.productAttribute?.attributeName &&
             a.productAttribute.attributeName.toLowerCase() ===
-              attr.attributeName.toLowerCase())
+            attr.attributeName.toLowerCase())
       );
       const isGender =
         (attr.attributeName || "").toLowerCase().trim() === "gender";
@@ -796,7 +796,7 @@ function EditVariantForm({
 
   const hasUnsavedChanges = Boolean(
     initialFormSnapshotRef.current !== null &&
-      initialFormSnapshotRef.current !== currentFormSnapshot
+    initialFormSnapshotRef.current !== currentFormSnapshot
   );
 
   useEffect(() => {
@@ -1159,7 +1159,7 @@ function EditVariantForm({
         editSizes.length === 1
           ? editSku.trim() || generateVariantSku(editColor, sz, effectiveMasterSku)
           : buildSizeSkuFromBase(basePrefix, sz) ||
-            generateVariantSku(editColor, sz, effectiveMasterSku);
+          generateVariantSku(editColor, sz, effectiveMasterSku);
       const finalSku = (perSizeSkuOverrides[sz] ?? autoSku).trim();
       return {
         size: sz,
@@ -1264,8 +1264,8 @@ function EditVariantForm({
     const effectiveGender =
       (genderAttr
         ? editOtherAttrs[genderAttr.id || ""] ??
-          editOtherAttrs[genderAttr.attributeName] ??
-          ""
+        editOtherAttrs[genderAttr.attributeName] ??
+        ""
         : ""
       ).trim() || existingGender;
 
@@ -1518,8 +1518,7 @@ function EditVariantForm({
 
       initialFormSnapshotRef.current = currentFormSnapshot;
       toast.success(
-        `Saved variants for ${effectiveColorVal || "Standard"}${
-          summaryParts.length > 0 ? ` (${summaryParts.join(", ")})` : ""
+        `Saved variants for ${effectiveColorVal || "Standard"}${summaryParts.length > 0 ? ` (${summaryParts.join(", ")})` : ""
         }.`
       );
       navigateBack(true);
@@ -1554,10 +1553,10 @@ function EditVariantForm({
     formattedDbUrl ||
     (effectiveMasterSku
       ? toFullImageUrl(
-          `/products/image?masterSku=${encodeURIComponent(
-            effectiveMasterSku
-          )}&color=${encodeURIComponent(activeColorName)}`
-        )
+        `/products/image?masterSku=${encodeURIComponent(
+          effectiveMasterSku
+        )}&color=${encodeURIComponent(activeColorName)}`
+      )
       : undefined);
   const colorAngles = useMemo(() => {
     // 1. Prefer optimistic gallery if user shuffled or modified locally
@@ -1601,8 +1600,8 @@ function EditVariantForm({
 
   const hasImage = Boolean(
     colorAngles.length > 0 ||
-      (matchedColorKey && localImages[matchedColorKey]) ||
-      formattedDbUrl
+    (matchedColorKey && localImages[matchedColorKey]) ||
+    formattedDbUrl
   );
   const isUploadingThis = uploadingColor === activeColorName;
 
@@ -1631,7 +1630,7 @@ function EditVariantForm({
 
   return (
     <DashboardLayout title="Edit Product Variant">
-      <div className="space-y-3 font-sans text-slate-900 dark:text-slate-100 pb-0 max-w-[1600px] mx-auto">
+      <div className="space-y-3 font-sans text-slate-900 dark:text-slate-100 py-0 max-w-[1600px] mx-auto">
         {/* Top Header Card */}
         <div className="w-full rounded-2xl sm:rounded-3xl border border-[#EAE4D8] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-4 sm:px-6 py-3 sm:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-sm">
           <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
@@ -1704,147 +1703,43 @@ function EditVariantForm({
 
         {/* Form Body */}
         <div className="rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-xs">
-            <form
-              id="edit-variant-form"
-              onSubmit={handleSubmit}
-              className="space-y-3.5 text-slate-900 dark:text-white"
-            >
-              {/* 1. IMAGE UPLOAD & PREVIEW (Side by side) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-stretch">
-                {/* Left: Image Upload & Adjust */}
-                <div className="flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className={LABEL_CLASS}>Variant Image</label>
-                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                      Color: <strong className="text-slate-700 dark:text-slate-200">{activeColorName}</strong>
-                    </span>
-                  </div>
+          <form
+            id="edit-variant-form"
+            onSubmit={handleSubmit}
+            className="space-y-3.5 text-slate-900 dark:text-white"
+          >
+            {/* 1. IMAGE UPLOAD & PREVIEW (Side by side) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-stretch">
+              {/* Left: Image Upload & Adjust */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <label className={LABEL_CLASS}>Variant Image</label>
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Color: <strong className="text-slate-700 dark:text-slate-200">{activeColorName}</strong>
+                  </span>
+                </div>
 
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOver(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      setDragOver(false);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragOver(false);
-                      if (!canCreate || isUploadingThis) return;
-                      const droppedFiles = e.dataTransfer.files;
-                      if (droppedFiles && droppedFiles.length > 0) {
-                        if (droppedFiles.length === 1) {
-                          const file = droppedFiles[0];
-                          if (file.type.startsWith("image/")) {
-                            const objectUrl = URL.createObjectURL(file);
-                            setAdjustingImage({
-                              url: objectUrl,
-                              color: activeColorName,
-                              replaceFileName:
-                                activeAngleItem?.fileName !== "Main"
-                                  ? activeAngleItem?.fileName
-                                  : undefined,
-                            });
-                          }
-                        } else {
-                          handleUploadMultipleImages(
-                            droppedFiles,
-                            activeColorName,
-                            true
-                          );
-                        }
-                      }
-                    }}
-                    onClick={() => {
-                      if (!isUploadingThis && canCreate) {
-                        fileInputRef.current?.click();
-                      }
-                    }}
-                    className={`flex-1 min-h-[190px] sm:min-h-[220px] rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center p-5 text-center transition-all ${
-                      canCreate ? "cursor-pointer" : "cursor-not-allowed opacity-60"
-                    } ${
-                      dragOver
-                        ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#F5C451]/10 ring-2 ring-[#E8C16D]/30"
-                        : "border-slate-200 dark:border-white/[0.12] bg-slate-50/50 dark:bg-[#0B0F17]/70 hover:border-[#E8C16D] dark:hover:border-[#F5C451]/60 hover:bg-[#FEFAEE]/50 dark:hover:bg-white/[0.02]"
-                    }`}
-                  >
-                    {isUploadingThis ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="h-8 w-8 animate-spin text-[#B88728] dark:text-[#F5C451]" />
-                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                          Uploading images...
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/[0.06] text-[#B88728] dark:text-[#F5C451] border border-slate-200/80 dark:border-white/[0.08] shadow-2xs">
-                          <UploadCloud size={20} />
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white">
-                            {hasImage
-                              ? "Drop images to add or replace"
-                              : "Drop images (or select multiple) to browse"}
-                          </p>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                            Upload multiple images to showcase different views
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      ref={fileInputRef}
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          if (e.target.files.length === 1) {
-                            const file = e.target.files[0];
-                            const objectUrl = URL.createObjectURL(file);
-                            setAdjustingImage({
-                              url: objectUrl,
-                              color: activeColorName,
-                              replaceFileName:
-                                activeAngleItem?.fileName !== "Main"
-                                    ? activeAngleItem?.fileName
-                                    : undefined,
-                            });
-                          } else {
-                            handleUploadMultipleImages(
-                              e.target.files,
-                              activeColorName,
-                              true
-                            );
-                          }
-                          e.target.value = "";
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Adjust Button Below Upload */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingThis || !canCreate}
-                      className="flex-1 h-10 sm:h-11 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] text-slate-700 dark:text-slate-300 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.03] transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Camera size={15} className="text-[#B88728] dark:text-[#F5C451]" />
-                      <span>Upload Images</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (displayedImgUrl) {
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    if (!canCreate || isUploadingThis) return;
+                    const droppedFiles = e.dataTransfer.files;
+                    if (droppedFiles && droppedFiles.length > 0) {
+                      if (droppedFiles.length === 1) {
+                        const file = droppedFiles[0];
+                        if (file.type.startsWith("image/")) {
+                          const objectUrl = URL.createObjectURL(file);
                           setAdjustingImage({
-                            url: displayedImgUrl,
+                            url: objectUrl,
                             color: activeColorName,
                             replaceFileName:
                               activeAngleItem?.fileName !== "Main"
@@ -1852,882 +1747,982 @@ function EditVariantForm({
                                 : undefined,
                           });
                         }
-                      }}
-                      disabled={!hasImage || !displayedImgUrl || isUploadingThis}
-                      className="flex-1 h-10 sm:h-11 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#7A581F] dark:text-[#E8C16D] hover:bg-[#FBECC8] dark:hover:bg-[#262014] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                      title={
-                        hasImage
-                          ? "Adjust crop, move or zoom current image"
-                          : "Upload an image first to adjust"
+                      } else {
+                        handleUploadMultipleImages(
+                          droppedFiles,
+                          activeColorName,
+                          true
+                        );
                       }
-                    >
-                      <Crop size={15} className="text-[#B88728] dark:text-[#E8C16D]" />
-                      <span>Adjust Image</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right: Current Image Preview with Navigation */}
-                <div className="flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <label className={LABEL_CLASS}>Current Preview</label>
-                      {colorAngles.length > 1 && (
-                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                          (Image {selectedAngleIndex + 1} of {colorAngles.length})
-                        </span>
-                      )}
+                    }
+                  }}
+                  onClick={() => {
+                    if (!isUploadingThis && canCreate) {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className={`flex-1 min-h-[190px] sm:min-h-[220px] rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center p-5 text-center transition-all ${canCreate ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                    } ${dragOver
+                      ? "border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#F5C451]/10 ring-2 ring-[#E8C16D]/30"
+                      : "border-slate-200 dark:border-white/[0.12] bg-slate-50/50 dark:bg-[#0B0F17]/70 hover:border-[#E8C16D] dark:hover:border-[#F5C451]/60 hover:bg-[#FEFAEE]/50 dark:hover:bg-white/[0.02]"
+                    }`}
+                >
+                  {isUploadingThis ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#B88728] dark:text-[#F5C451]" />
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        Uploading images...
+                      </p>
                     </div>
-                    {hasImage && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                        {activeColorName}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="relative flex-1 min-h-[235px] sm:min-h-[265px] rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-white/[0.08] bg-slate-50/40 dark:bg-[#0B0F17]/60 flex items-center justify-center p-4 overflow-hidden">
-                    {isUploadingThis ? (
-                      <div className="flex flex-col items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                        <Loader2 className="h-7 w-7 animate-spin text-[#E8C16D]" />
-                        <span className="text-xs">Updating preview...</span>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/[0.06] text-[#B88728] dark:text-[#F5C451] border border-slate-200/80 dark:border-white/[0.08] shadow-2xs">
+                        <UploadCloud size={20} />
                       </div>
-                    ) : hasImage && displayedImgUrl ? (
-                      <>
-                        <img
-                          src={displayedImgUrl}
-                          alt={`${activeColorName} Image ${selectedAngleIndex + 1}`}
-                          onClick={() =>
-                            setPreviewImage({
-                              url: displayedImgUrl,
-                              color: activeColorName,
-                              angleIndex: selectedAngleIndex,
-                            })
-                          }
-                          className="max-h-[220px] sm:max-h-[250px] w-auto rounded-2xl object-contain shadow-xs cursor-pointer hover:scale-[1.02] transition-transform"
-                          title="Click to view full image"
-                        />
-
-                        {/* Left / Right Quick Image Buttons */}
-                        {colorAngles.length > 1 && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedAngleIndex((prev) =>
-                                  prev > 0 ? prev - 1 : colorAngles.length - 1
-                                );
-                              }}
-                              className="absolute left-2.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all cursor-pointer shadow-md backdrop-blur-xs"
-                              title="Previous image"
-                            >
-                              <ChevronLeft size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedAngleIndex((prev) =>
-                                  prev < colorAngles.length - 1 ? prev + 1 : 0
-                                );
-                              }}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all cursor-pointer shadow-md backdrop-blur-xs"
-                              title="Next image"
-                            >
-                              <ChevronRight size={16} />
-                            </button>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center gap-1.5 text-center text-slate-400 dark:text-slate-500">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/60 dark:bg-white/[0.02]">
-                          {effectiveMasterSku ? (
-                            <ImageIcon size={22} />
-                          ) : (
-                            <ImagePlus size={22} />
-                          )}
-                        </div>
-                        <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                          No image uploaded
+                      <div className="space-y-0.5">
+                        <p className="text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-white">
+                          {hasImage
+                            ? "Drop images to add or replace"
+                            : "Drop images (or select multiple) to browse"}
                         </p>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                          Upload images on the left to preview
+                          Upload multiple images to showcase different views
                         </p>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Product Images Strip & Drag-and-Drop Reordering */}
-              <div className="pt-3.5 border-t border-slate-100 dark:border-white/[0.06] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Product Images ({colorAngles.length})
-                    </span>
-                    <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                      • Drag to shuffle (1st is Main)
-                    </span>
-                  </div>
-                  {isReordering && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#B88728] dark:text-[#F5C451]">
-                      <Loader2 size={12} className="animate-spin" />
-                      Saving order...
-                    </span>
+                    </div>
                   )}
-                </div>
 
-                <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-thin">
-                  {colorAngles.map((imgItem, idx) => {
-                    const isActive = idx === selectedAngleIndex;
-                    const isDragging = idx === draggedImgIdx;
-                    const isDragOver = idx === dragOverIdx;
-                    const isMain = idx === 0;
-
-                    return (
-                      <div
-                        key={imgItem.fileName || idx}
-                        draggable={canCreate && !isReordering}
-                        onDragStart={(e) => {
-                          setDraggedImgIdx(idx);
-                          e.dataTransfer.effectAllowed = "move";
-                          e.dataTransfer.setData("text/plain", String(idx));
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = "move";
-                          if (dragOverIdx !== idx) setDragOverIdx(idx);
-                        }}
-                        onDragLeave={() => {
-                          if (dragOverIdx === idx) setDragOverIdx(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const data = e.dataTransfer.getData("text/plain");
-                          const source =
-                            data !== "" ? parseInt(data, 10) : (draggedImgIdx ?? undefined);
-                          handleDropReorder(idx, source);
-                        }}
-                        onDragEnd={() => {
-                          setDraggedImgIdx(null);
-                          setDragOverIdx(null);
-                        }}
-                        onClick={() => setSelectedAngleIndex(idx)}
-                        tabIndex={0}
-                        role="button"
-                        aria-label={isMain ? `Main image ${idx + 1}` : `Image ${idx + 1}`}
-                        onKeyDown={(e) => {
-                          if (!canCreate || isReordering) return;
-                          if (e.key === "ArrowLeft" && idx > 0) {
-                            e.preventDefault();
-                            handleDropReorder(idx - 1, idx);
-                          } else if (e.key === "ArrowRight" && idx < colorAngles.length - 1) {
-                            e.preventDefault();
-                            handleDropReorder(idx + 1, idx);
-                          }
-                        }}
-                        className={cn(
-                          "group relative h-16 w-16 sm:h-18 sm:w-18 shrink-0 rounded-xl sm:rounded-2xl border-2 p-1 bg-white dark:bg-[#0B0F17] cursor-grab active:cursor-grabbing transition-all overflow-hidden flex items-center justify-center shadow-2xs select-none focus:outline-none focus:ring-2 focus:ring-[#E8C16D]",
-                          isActive
-                            ? "border-[#E8C16D] dark:border-[#F5C451] ring-2 ring-[#E8C16D]/30"
-                            : "border-slate-200 dark:border-white/[0.08] hover:border-slate-400 dark:hover:border-white/20",
-                          isDragging && "opacity-40 scale-95 border-dashed border-amber-400",
-                          isDragOver && !isDragging && "ring-2 ring-emerald-500 scale-105 border-emerald-500"
-                        )}
-                        title={
-                          isMain
-                            ? "Main Image (Drag or press Left/Right arrow keys to shuffle)"
-                            : `Image #${idx + 1} (Drag or press Left/Right arrow keys to shuffle)`
-                        }
-                      >
-                        <img
-                          src={imgItem.url}
-                          alt={imageAltTexts[`${activeColorName}::${imgItem.fileName}`] || `${activeColorName} Image ${idx + 1}`}
-                          className="h-full w-full object-contain rounded-lg pointer-events-none"
-                        />
-
-                        {/* Keyboard / Arrow-button Left/Right reorder controls */}
-                        {canCreate && colorAngles.length > 1 && (
-                          <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                            {idx > 0 && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDropReorder(idx - 1, idx);
-                                }}
-                                className="h-4 w-4 rounded bg-black/70 hover:bg-black text-white flex items-center justify-center cursor-pointer"
-                                title="Move left"
-                                aria-label={`Move image ${idx + 1} left`}
-                              >
-                                <ChevronLeft size={10} />
-                              </button>
-                            )}
-                            {idx < colorAngles.length - 1 && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDropReorder(idx + 1, idx);
-                                }}
-                                className="h-4 w-4 rounded bg-black/70 hover:bg-black text-white flex items-center justify-center cursor-pointer"
-                                title="Move right"
-                                aria-label={`Move image ${idx + 1} right`}
-                              >
-                                <ChevronRight size={10} />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                        {/* Position badge: Main or number */}
-                        <span
-                          className={cn(
-                            "absolute bottom-0.5 right-1 text-[9px] font-black px-1.5 py-0.2 rounded backdrop-blur-xs",
-                            isMain
-                              ? "bg-[#E8C16D] text-slate-900 shadow-xs"
-                              : "bg-black/75 text-white"
-                          )}
-                        >
-                          {isMain ? "Main" : `#${idx + 1}`}
-                        </span>
-
-                        {/* Quick button to make Main if not index 0 */}
-                        {!isMain && canCreate && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDropReorder(0, idx);
-                            }}
-                            className="absolute bottom-0.5 left-1 text-[9px] font-bold px-1 rounded bg-[#E8C16D]/90 text-slate-900 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#dfb458] shadow-xs"
-                            title="Make this Main image"
-                          >
-                            Set Main
-                          </button>
-                        )}
-
-                        {/* Delete this image (with confirmation) */}
-                        {colorAngles.length > 1 && canCreate && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteImageTarget({
-                                fileName: imgItem.fileName,
-                                url: imgItem.url,
-                              });
-                            }}
-                            className="absolute top-0.5 right-0.5 h-4.5 w-4.5 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity hover:bg-red-700 shadow-xs"
-                            title="Delete this image"
-                            aria-label={`Delete image ${idx + 1}`}
-                          >
-                            <X size={10} />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* + Add Image Button */}
-                  <button
-                    type="button"
-                    onClick={() => addImageInputRef.current?.click()}
-                    disabled={isUploadingThis || !canCreate}
-                    className="h-16 w-16 sm:h-18 sm:w-18 shrink-0 rounded-xl sm:rounded-2xl border-2 border-dashed border-[#E8C16D]/60 dark:border-[#F5C451]/40 bg-[#FFF9EC]/40 dark:bg-[#1A160E]/40 hover:bg-[#FBECC8]/60 dark:hover:bg-[#262014] text-[#7A581F] dark:text-[#E8C16D] flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                    title="Upload additional images"
-                  >
-                    <Plus size={16} />
-                    <span className="text-[10px] font-bold">+ Image</span>
-                  </button>
                   <input
                     type="file"
                     accept="image/*"
                     multiple
-                    ref={addImageInputRef}
+                    ref={fileInputRef}
                     className="hidden"
                     onChange={(e) => {
                       if (e.target.files && e.target.files.length > 0) {
-                        handleUploadMultipleImages(
-                          e.target.files,
-                          activeColorName,
-                          true
-                        );
+                        if (e.target.files.length === 1) {
+                          const file = e.target.files[0];
+                          const objectUrl = URL.createObjectURL(file);
+                          setAdjustingImage({
+                            url: objectUrl,
+                            color: activeColorName,
+                            replaceFileName:
+                              activeAngleItem?.fileName !== "Main"
+                                ? activeAngleItem?.fileName
+                                : undefined,
+                          });
+                        } else {
+                          handleUploadMultipleImages(
+                            e.target.files,
+                            activeColorName,
+                            true
+                          );
+                        }
                         e.target.value = "";
                       }
                     }}
                   />
                 </div>
 
-                {/* Alt Text / Caption for Active Image (F6) */}
-                {activeAngleItem?.fileName && (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
-                    <label
-                      htmlFor="active-image-alt"
-                      className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0"
-                    >
-                      Image #{selectedAngleIndex + 1} Alt Text:
-                    </label>
-                    <input
-                      id="active-image-alt"
-                      type="text"
-                      maxLength={250}
-                      value={imageAltTexts[`${activeColorName}::${activeAngleItem.fileName}`] || ""}
-                      onChange={(e) => {
-                        const key = `${activeColorName}::${activeAngleItem.fileName}`;
-                        const nextVal = e.target.value;
-                        setImageAltTexts((prev) => {
-                          const updated = { ...prev, [key]: nextVal };
-                          if (typeof window !== "undefined" && effectiveMasterSku) {
-                            try {
-                              localStorage.setItem(
-                                `orderos_img_alts_${effectiveMasterSku}`,
-                                JSON.stringify(updated)
-                              );
-                            } catch {
-                              // ignore storage errors
-                            }
-                          }
-                          return updated;
+                {/* Adjust Button Below Upload */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingThis || !canCreate}
+                    className="flex-1 h-10 sm:h-11 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] text-slate-700 dark:text-slate-300 hover:border-[#E8C16D] hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.03] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Camera size={15} className="text-[#B88728] dark:text-[#F5C451]" />
+                    <span>Upload Images</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (displayedImgUrl) {
+                        setAdjustingImage({
+                          url: displayedImgUrl,
+                          color: activeColorName,
+                          replaceFileName:
+                            activeAngleItem?.fileName !== "Main"
+                              ? activeAngleItem?.fileName
+                              : undefined,
                         });
-                      }}
-                      placeholder={`Describe ${activeColorName} image #${selectedAngleIndex + 1} (for accessibility & SEO)...`}
-                      className="flex-1 h-8 px-3 rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D]"
-                    />
+                      }
+                    }}
+                    disabled={!hasImage || !displayedImgUrl || isUploadingThis}
+                    className="flex-1 h-10 sm:h-11 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#7A581F] dark:text-[#E8C16D] hover:bg-[#FBECC8] dark:hover:bg-[#262014] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={
+                      hasImage
+                        ? "Adjust crop, move or zoom current image"
+                        : "Upload an image first to adjust"
+                    }
+                  >
+                    <Crop size={15} className="text-[#B88728] dark:text-[#E8C16D]" />
+                    <span>Adjust Image</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: Current Image Preview with Navigation */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <label className={LABEL_CLASS}>Current Preview</label>
+                    {colorAngles.length > 1 && (
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        (Image {selectedAngleIndex + 1} of {colorAngles.length})
+                      </span>
+                    )}
                   </div>
+                  {hasImage && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                      {activeColorName}
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative flex-1 min-h-[235px] sm:min-h-[265px] rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-white/[0.08] bg-slate-50/40 dark:bg-[#0B0F17]/60 flex items-center justify-center p-4 overflow-hidden">
+                  {isUploadingThis ? (
+                    <div className="flex flex-col items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                      <Loader2 className="h-7 w-7 animate-spin text-[#E8C16D]" />
+                      <span className="text-xs">Updating preview...</span>
+                    </div>
+                  ) : hasImage && displayedImgUrl ? (
+                    <>
+                      <img
+                        src={displayedImgUrl}
+                        alt={`${activeColorName} Image ${selectedAngleIndex + 1}`}
+                        onClick={() =>
+                          setPreviewImage({
+                            url: displayedImgUrl,
+                            color: activeColorName,
+                            angleIndex: selectedAngleIndex,
+                          })
+                        }
+                        className="max-h-[220px] sm:max-h-[250px] w-auto rounded-2xl object-contain shadow-xs cursor-pointer hover:scale-[1.02] transition-transform"
+                        title="Click to view full image"
+                      />
+
+                      {/* Left / Right Quick Image Buttons */}
+                      {colorAngles.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAngleIndex((prev) =>
+                                prev > 0 ? prev - 1 : colorAngles.length - 1
+                              );
+                            }}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all cursor-pointer shadow-md backdrop-blur-xs"
+                            title="Previous image"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAngleIndex((prev) =>
+                                prev < colorAngles.length - 1 ? prev + 1 : 0
+                              );
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all cursor-pointer shadow-md backdrop-blur-xs"
+                            title="Next image"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1.5 text-center text-slate-400 dark:text-slate-500">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/60 dark:bg-white/[0.02]">
+                        {effectiveMasterSku ? (
+                          <ImageIcon size={22} />
+                        ) : (
+                          <ImagePlus size={22} />
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        No image uploaded
+                      </p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        Upload images on the left to preview
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Product Images Strip & Drag-and-Drop Reordering */}
+            <div className="pt-3.5 border-t border-slate-100 dark:border-white/[0.06] space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Product Images ({colorAngles.length})
+                  </span>
+                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                    • Drag to shuffle (1st is Main)
+                  </span>
+                </div>
+                {isReordering && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#B88728] dark:text-[#F5C451]">
+                    <Loader2 size={12} className="animate-spin" />
+                    Saving order...
+                  </span>
                 )}
               </div>
 
-              {/* 2. VARIANT SKU & VARIANT STATUS */}
-              <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06] space-y-2.5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {/* Variant SKU */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className={LABEL_CLASS}>
-                        {editSizes.length > 1 ? "Color Base SKU" : "Variant SKU"}{" "}
-                        <span className="text-rose-500">*</span>
-                      </label>
-                      {isSkuDiverged && (
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-thin">
+                {colorAngles.map((imgItem, idx) => {
+                  const isActive = idx === selectedAngleIndex;
+                  const isDragging = idx === draggedImgIdx;
+                  const isDragOver = idx === dragOverIdx;
+                  const isMain = idx === 0;
+
+                  return (
+                    <div
+                      key={imgItem.fileName || idx}
+                      draggable={canCreate && !isReordering}
+                      onDragStart={(e) => {
+                        setDraggedImgIdx(idx);
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", String(idx));
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        if (dragOverIdx !== idx) setDragOverIdx(idx);
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverIdx === idx) setDragOverIdx(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const data = e.dataTransfer.getData("text/plain");
+                        const source =
+                          data !== "" ? parseInt(data, 10) : (draggedImgIdx ?? undefined);
+                        handleDropReorder(idx, source);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedImgIdx(null);
+                        setDragOverIdx(null);
+                      }}
+                      onClick={() => setSelectedAngleIndex(idx)}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={isMain ? `Main image ${idx + 1}` : `Image ${idx + 1}`}
+                      onKeyDown={(e) => {
+                        if (!canCreate || isReordering) return;
+                        if (e.key === "ArrowLeft" && idx > 0) {
+                          e.preventDefault();
+                          handleDropReorder(idx - 1, idx);
+                        } else if (e.key === "ArrowRight" && idx < colorAngles.length - 1) {
+                          e.preventDefault();
+                          handleDropReorder(idx + 1, idx);
+                        }
+                      }}
+                      className={cn(
+                        "group relative h-16 w-16 sm:h-18 sm:w-18 shrink-0 rounded-xl sm:rounded-2xl border-2 p-1 bg-white dark:bg-[#0B0F17] cursor-grab active:cursor-grabbing transition-all overflow-hidden flex items-center justify-center shadow-2xs select-none focus:outline-none focus:ring-2 focus:ring-[#E8C16D]",
+                        isActive
+                          ? "border-[#E8C16D] dark:border-[#F5C451] ring-2 ring-[#E8C16D]/30"
+                          : "border-slate-200 dark:border-white/[0.08] hover:border-slate-400 dark:hover:border-white/20",
+                        isDragging && "opacity-40 scale-95 border-dashed border-amber-400",
+                        isDragOver && !isDragging && "ring-2 ring-emerald-500 scale-105 border-emerald-500"
+                      )}
+                      title={
+                        isMain
+                          ? "Main Image (Drag or press Left/Right arrow keys to shuffle)"
+                          : `Image #${idx + 1} (Drag or press Left/Right arrow keys to shuffle)`
+                      }
+                    >
+                      <img
+                        src={imgItem.url}
+                        alt={imageAltTexts[`${activeColorName}::${imgItem.fileName}`] || `${activeColorName} Image ${idx + 1}`}
+                        className="h-full w-full object-contain rounded-lg pointer-events-none"
+                      />
+
+                      {/* Keyboard / Arrow-button Left/Right reorder controls */}
+                      {canCreate && colorAngles.length > 1 && (
+                        <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                          {idx > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDropReorder(idx - 1, idx);
+                              }}
+                              className="h-4 w-4 rounded bg-black/70 hover:bg-black text-white flex items-center justify-center cursor-pointer"
+                              title="Move left"
+                              aria-label={`Move image ${idx + 1} left`}
+                            >
+                              <ChevronLeft size={10} />
+                            </button>
+                          )}
+                          {idx < colorAngles.length - 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDropReorder(idx + 1, idx);
+                              }}
+                              className="h-4 w-4 rounded bg-black/70 hover:bg-black text-white flex items-center justify-center cursor-pointer"
+                              title="Move right"
+                              aria-label={`Move image ${idx + 1} right`}
+                            >
+                              <ChevronRight size={10} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {/* Position badge: Main or number */}
+                      <span
+                        className={cn(
+                          "absolute bottom-0.5 right-1 text-[9px] font-black px-1.5 py-0.2 rounded backdrop-blur-xs",
+                          isMain
+                            ? "bg-[#E8C16D] text-slate-900 shadow-xs"
+                            : "bg-black/75 text-white"
+                        )}
+                      >
+                        {isMain ? "Main" : `#${idx + 1}`}
+                      </span>
+
+                      {/* Quick button to make Main if not index 0 */}
+                      {!isMain && canCreate && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditSku(autoPreviewSku);
-                            setPerSizeSkuOverrides({});
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDropReorder(0, idx);
                           }}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer"
-                          title={`Reset to ${autoPreviewSku}`}
+                          className="absolute bottom-0.5 left-1 text-[9px] font-bold px-1 rounded bg-[#E8C16D]/90 text-slate-900 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#dfb458] shadow-xs"
+                          title="Make this Main image"
                         >
-                          <RotateCcw size={11} />
-                          <span>Auto: {autoPreviewSku}</span>
+                          Set Main
+                        </button>
+                      )}
+
+                      {/* Delete this image (with confirmation) */}
+                      {colorAngles.length > 1 && canCreate && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteImageTarget({
+                              fileName: imgItem.fileName,
+                              url: imgItem.url,
+                            });
+                          }}
+                          className="absolute top-0.5 right-0.5 h-4.5 w-4.5 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity hover:bg-red-700 shadow-xs"
+                          title="Delete this image"
+                          aria-label={`Delete image ${idx + 1}`}
+                        >
+                          <X size={10} />
                         </button>
                       )}
                     </div>
-                    <input
-                      type="text"
-                      value={editSku}
-                      onChange={(e) => setEditSku(e.target.value)}
-                      placeholder="Enter Variant SKU..."
-                      className={`${INPUT_CLASS} font-mono`}
-                    />
-                  </div>
+                  );
+                })}
 
-                  {/* Variant Status */}
-                  <div className="space-y-1.5">
-                    <label className={LABEL_CLASS}>Variant Status</label>
-                    <div className="flex h-11 sm:h-12 items-center justify-between px-3.5 rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-50/50 dark:border-white/[0.08] dark:bg-[#0B0F17] transition-all">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                          Status:
-                        </span>
-                        <span
-                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ${
-                            editStatus
-                              ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400"
-                              : "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-400"
-                          }`}
-                        >
-                          {editStatus ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <Switch
-                        checked={editStatus}
-                        onCheckedChange={setEditStatus}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Auto-Adjusted Per-Size Variant SKUs Preview when Multiple Sizes Selected */}
-                {resolvedSizeEntries.length > 1 && (
-                  <div className="rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/60 dark:bg-[#0B0F17]/70 p-3 sm:p-3.5 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Variant SKUs for {activeColorName} ({resolvedSizeEntries.length} sizes)
-                      </span>
-                      <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                        Click a chip to customize its individual SKU
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {resolvedSizeEntries.map((entry) => {
-                        const isEditingThis = editingSizeSku === entry.size;
-                        const isOverridden = Boolean(perSizeSkuOverrides[entry.size]);
-                        return isEditingThis ? (
-                          <div
-                            key={entry.size}
-                            className="inline-flex items-center gap-1 rounded-xl border border-[#E8C16D] bg-white dark:bg-[#0F1626] px-2 py-1 shadow-xs"
-                          >
-                            <span className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] px-1">
-                              {entry.size}
-                            </span>
-                            <input
-                              type="text"
-                              autoFocus
-                              value={perSizeSkuOverrides[entry.size] ?? entry.sku}
-                              onChange={(e) =>
-                                setPerSizeSkuOverrides((prev) => ({
-                                  ...prev,
-                                  [entry.size]: e.target.value,
-                                }))
-                              }
-                              onBlur={() => setEditingSizeSku(null)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === "Escape") {
-                                  e.preventDefault();
-                                  setEditingSizeSku(null);
-                                }
-                              }}
-                              className="w-44 text-[11px] font-mono font-bold text-[#0A0E1A] dark:text-white bg-transparent outline-none"
-                            />
-                            {isOverridden && (
-                              <button
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setPerSizeSkuOverrides((prev) => {
-                                    const next = { ...prev };
-                                    delete next[entry.size];
-                                    return next;
-                                  });
-                                }}
-                                title="Reset to auto SKU"
-                                className="text-slate-400 hover:text-rose-500 cursor-pointer"
-                              >
-                                <RotateCcw size={11} />
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          <button
-                            key={entry.size}
-                            type="button"
-                            onClick={() => setEditingSizeSku(entry.size)}
-                            title="Click to edit SKU for this size"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 text-[11px] transition-all cursor-pointer shadow-2xs"
-                          >
-                            <span className="font-extrabold text-[#0A0E1A] dark:text-white">
-                              {entry.size}
-                            </span>
-                            <span className="text-slate-300 dark:text-slate-600">•</span>
-                            <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">
-                              {entry.sku}
-                            </span>
-                            <span
-                              className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase ${
-                                entry.existingVariant
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-                                  : "bg-[#FFF9EC] text-[#B88728] dark:bg-[#F5C451]/15 dark:text-[#F5C451]"
-                              }`}
-                            >
-                              {entry.existingVariant ? "Saved" : "+ New"}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                {/* + Add Image Button */}
+                <button
+                  type="button"
+                  onClick={() => addImageInputRef.current?.click()}
+                  disabled={isUploadingThis || !canCreate}
+                  className="h-16 w-16 sm:h-18 sm:w-18 shrink-0 rounded-xl sm:rounded-2xl border-2 border-dashed border-[#E8C16D]/60 dark:border-[#F5C451]/40 bg-[#FFF9EC]/40 dark:bg-[#1A160E]/40 hover:bg-[#FBECC8]/60 dark:hover:bg-[#262014] text-[#7A581F] dark:text-[#E8C16D] flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                  title="Upload additional images"
+                >
+                  <Plus size={16} />
+                  <span className="text-[10px] font-bold">+ Image</span>
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  ref={addImageInputRef}
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleUploadMultipleImages(
+                        e.target.files,
+                        activeColorName,
+                        true
+                      );
+                      e.target.value = "";
+                    }
+                  }}
+                />
               </div>
 
-              {/* 3. COLOR & SIZE */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
-                {/* Color Selector (Edit Product style) */}
-                <div className="space-y-1.5">
-                  {resolvedColorAttrId ? (
-                    <ColorMultiSelect
-                      label="Color"
-                      singleSelect
-                      value={editColor ? [editColor] : []}
-                      onChange={(cols) => handleColorChange(cols[0] || "")}
-                      additionalColors={dynamicColors}
-                      disabledColors={disabledColors}
-                      colorHexMap={serverColorHexMap}
-                    />
-                  ) : (
-                    <div>
-                      <label className={LABEL_CLASS}>Color</label>
-                      <div className="mt-1.5 flex h-11 sm:h-12 items-center gap-2 px-3.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 dark:border-white/[0.08] dark:bg-[#0B0F17]/70 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        <span
-                          className="h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-white/20"
-                          style={{
-                            backgroundColor: getColorHex(editColor || "Standard"),
-                          }}
-                        />
-                        <span>{editColor || "Standard"}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Size Selector (Multi-Size for Single Color) */}
-                <div className="space-y-1.5">
-                  {hasSizeAttribute || editSizes.length > 0 ? (
-                    <>
-                      <SizeMultiSelect
-                        label={editColor ? `Sizes (${editColor})` : "Size"}
-                        value={editSizes.join(", ")}
-                        onChange={handleSizesChange}
-                        additionalSizes={[
-                          ...(product?.category?.toLowerCase().includes("shoe") ||
-                          product?.category?.toLowerCase().includes("footwear")
-                            ? defaultShoeSizes
-                            : defaultNumericSizes),
-                          ...dynamicSizes,
-                        ]}
-                        disabledSizes={disabledSizes}
-                      />
-                      {removedExistingVariants.length > 0 && (
-                        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-amber-50/90 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300">
-                          <span>
-                            Removing{" "}
-                            <strong>
-                              {removedExistingVariants
-                                .map((v) => getSizeValue(v, product))
-                                .filter(Boolean)
-                                .join(", ")}
-                            </strong>{" "}
-                            on save
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const restored = [
-                                ...editSizes,
-                                ...removedExistingVariants
-                                  .map((v) => getSizeValue(v, product).trim())
-                                  .filter(Boolean),
-                              ];
-                              handleSizesChange(restored.join(", "));
-                            }}
-                            className="font-bold underline hover:opacity-80 cursor-pointer"
-                          >
-                            Undo
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div>
-                      <label className={LABEL_CLASS}>Size</label>
-                      <div className="mt-1.5 flex h-11 sm:h-12 items-center px-3.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 dark:border-white/[0.08] dark:bg-[#0B0F17]/70 text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-500">
-                        Not applicable for this product
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 4. GENDER & REMAINING CATEGORY ATTRIBUTES (Side by side with Gender) */}
-              <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06] space-y-3">
-                <div className={`grid grid-cols-1 ${remainingAttributes.length > 0 ? "md:grid-cols-2" : "md:grid-cols-1"} gap-3.5`}>
-                  {/* Gender Selector (Edit Product style) */}
-                  <div className="space-y-1.5">
-                    {genderAttr ? (
-                      <GenderMultiSelect
-                        label="Gender"
-                        value={
-                          Array.isArray(genderValue)
-                            ? genderValue
-                            : typeof genderValue === "string" && genderValue.trim()
-                              ? genderValue.split(",").map((s) => s.trim()).filter(Boolean)
-                              : []
+              {/* Alt Text / Caption for Active Image (F6) */}
+              {activeAngleItem?.fileName && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
+                  <label
+                    htmlFor="active-image-alt"
+                    className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0"
+                  >
+                    Image #{selectedAngleIndex + 1} Alt Text:
+                  </label>
+                  <input
+                    id="active-image-alt"
+                    type="text"
+                    maxLength={250}
+                    value={imageAltTexts[`${activeColorName}::${activeAngleItem.fileName}`] || ""}
+                    onChange={(e) => {
+                      const key = `${activeColorName}::${activeAngleItem.fileName}`;
+                      const nextVal = e.target.value;
+                      setImageAltTexts((prev) => {
+                        const updated = { ...prev, [key]: nextVal };
+                        if (typeof window !== "undefined" && effectiveMasterSku) {
+                          try {
+                            localStorage.setItem(
+                              `orderos_img_alts_${effectiveMasterSku}`,
+                              JSON.stringify(updated)
+                            );
+                          } catch {
+                            // ignore storage errors
+                          }
                         }
-                        options={genderDropdownOptions}
-                        onChange={(vals) =>
-                          handleGenderChange(
-                            genderAttr.id || "",
-                            genderAttr.attributeName,
-                            vals.join(", ")
-                          )
-                        }
-                        placeholder="Select Gender..."
-                      />
-                    ) : (
-                      <div>
-                        <label className={LABEL_CLASS}>Gender</label>
-                        <div className="mt-1.5 flex h-11 sm:h-12 items-center px-3.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 dark:border-white/[0.08] dark:bg-[#0B0F17]/70 text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-500">
-                          {existingGender || "Not specified"}
-                        </div>
-                      </div>
+                        return updated;
+                      });
+                    }}
+                    placeholder={`Describe ${activeColorName} image #${selectedAngleIndex + 1} (for accessibility & SEO)...`}
+                    className="flex-1 h-8 px-3 rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-[#E8C16D]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 2. VARIANT SKU & VARIANT STATUS */}
+            <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06] space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {/* Variant SKU */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className={LABEL_CLASS}>
+                      {editSizes.length > 1 ? "Color Base SKU" : "Variant SKU"}{" "}
+                      <span className="text-rose-500">*</span>
+                    </label>
+                    {isSkuDiverged && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditSku(autoPreviewSku);
+                          setPerSizeSkuOverrides({});
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#B88728] dark:text-[#F5C451] hover:underline cursor-pointer"
+                        title={`Reset to ${autoPreviewSku}`}
+                      >
+                        <RotateCcw size={11} />
+                        <span>Auto: {autoPreviewSku}</span>
+                      </button>
                     )}
                   </div>
-
-                  {/* Remaining side with Gender: first remaining attribute if any, or extra attributes */}
-                  {remainingAttributes.length > 0 && (
-                    <div className="space-y-1.5">
-                      <DropdownWithOther
-                        label={remainingAttributes[0].attributeName}
-                        value={
-                          editOtherAttrs[remainingAttributes[0].id || ""] !== undefined
-                            ? editOtherAttrs[remainingAttributes[0].id || ""]
-                            : editOtherAttrs[remainingAttributes[0].attributeName] !== undefined
-                              ? editOtherAttrs[remainingAttributes[0].attributeName]
-                              : ""
-                        }
-                        options={buildMergedOptions(
-                          remainingAttributes[0].attributeName,
-                          [],
-                          dropdownData?.savedOptions
-                        )}
-                        onChange={(val) => {
-                          setEditOtherAttrs((prev) => ({
-                            ...prev,
-                            [remainingAttributes[0].id || ""]: val,
-                            [remainingAttributes[0].attributeName]: val,
-                          }));
-                        }}
-                        placeholder={`Select or enter ${remainingAttributes[0].attributeName}...`}
-                        fieldKey={remainingAttributes[0].attributeName}
-                        allowOther={true}
-                      />
-                    </div>
-                  )}
+                  <input
+                    type="text"
+                    value={editSku}
+                    onChange={(e) => setEditSku(e.target.value)}
+                    placeholder="Enter Variant SKU..."
+                    className={`${INPUT_CLASS} font-mono`}
+                  />
                 </div>
 
-                {/* If more than 1 remaining attribute, display them cleanly */}
-                {remainingAttributes.length > 1 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4.5 pt-1">
-                    {remainingAttributes.slice(1).map((attr) => {
-                      const attrKey = attr.id || attr.attributeName;
-                      const currentVal =
-                        editOtherAttrs[attr.id || ""] !== undefined
-                          ? editOtherAttrs[attr.id || ""]
-                          : editOtherAttrs[attr.attributeName] !== undefined
-                            ? editOtherAttrs[attr.attributeName]
-                            : "";
+                {/* Variant Status */}
+                <div className="space-y-1.5">
+                  <label className={LABEL_CLASS}>Variant Status</label>
+                  <div className="flex h-11 sm:h-12 items-center justify-between px-3.5 rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-50/50 dark:border-white/[0.08] dark:bg-[#0B0F17] transition-all">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                        Status:
+                      </span>
+                      <span
+                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ${editStatus
+                            ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400"
+                            : "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-400"
+                          }`}
+                      >
+                        {editStatus ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <Switch
+                      checked={editStatus}
+                      onCheckedChange={setEditStatus}
+                    />
+                  </div>
+                </div>
+              </div>
 
-                      return (
-                        <div key={attrKey} className="space-y-1.5">
-                          <DropdownWithOther
-                            label={attr.attributeName}
-                            value={currentVal}
-                            options={buildMergedOptions(
-                              attr.attributeName,
-                              [],
-                              dropdownData?.savedOptions
-                            )}
-                            onChange={(val) => {
-                              setEditOtherAttrs((prev) => ({
+              {/* Auto-Adjusted Per-Size Variant SKUs Preview when Multiple Sizes Selected */}
+              {resolvedSizeEntries.length > 1 && (
+                <div className="rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/60 dark:bg-[#0B0F17]/70 p-3 sm:p-3.5 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Variant SKUs for {activeColorName} ({resolvedSizeEntries.length} sizes)
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                      Click a chip to customize its individual SKU
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resolvedSizeEntries.map((entry) => {
+                      const isEditingThis = editingSizeSku === entry.size;
+                      const isOverridden = Boolean(perSizeSkuOverrides[entry.size]);
+                      return isEditingThis ? (
+                        <div
+                          key={entry.size}
+                          className="inline-flex items-center gap-1 rounded-xl border border-[#E8C16D] bg-white dark:bg-[#0F1626] px-2 py-1 shadow-xs"
+                        >
+                          <span className="text-[11px] font-bold text-[#B88728] dark:text-[#F5C451] px-1">
+                            {entry.size}
+                          </span>
+                          <input
+                            type="text"
+                            autoFocus
+                            value={perSizeSkuOverrides[entry.size] ?? entry.sku}
+                            onChange={(e) =>
+                              setPerSizeSkuOverrides((prev) => ({
                                 ...prev,
-                                [attr.id || ""]: val,
-                                [attr.attributeName]: val,
-                              }));
+                                [entry.size]: e.target.value,
+                              }))
+                            }
+                            onBlur={() => setEditingSizeSku(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === "Escape") {
+                                e.preventDefault();
+                                setEditingSizeSku(null);
+                              }
                             }}
-                            placeholder={`Select or enter ${attr.attributeName}...`}
-                            fieldKey={attr.attributeName}
-                            allowOther={true}
+                            className="w-44 text-[11px] font-mono font-bold text-[#0A0E1A] dark:text-white bg-transparent outline-none"
                           />
+                          {isOverridden && (
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setPerSizeSkuOverrides((prev) => {
+                                  const next = { ...prev };
+                                  delete next[entry.size];
+                                  return next;
+                                });
+                              }}
+                              title="Reset to auto SKU"
+                              className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                            >
+                              <RotateCcw size={11} />
+                            </button>
+                          )}
                         </div>
+                      ) : (
+                        <button
+                          key={entry.size}
+                          type="button"
+                          onClick={() => setEditingSizeSku(entry.size)}
+                          title="Click to edit SKU for this size"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 text-[11px] transition-all cursor-pointer shadow-2xs"
+                        >
+                          <span className="font-extrabold text-[#0A0E1A] dark:text-white">
+                            {entry.size}
+                          </span>
+                          <span className="text-slate-300 dark:text-slate-600">•</span>
+                          <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">
+                            {entry.sku}
+                          </span>
+                          <span
+                            className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase ${entry.existingVariant
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                                : "bg-[#FFF9EC] text-[#B88728] dark:bg-[#F5C451]/15 dark:text-[#F5C451]"
+                              }`}
+                          >
+                            {entry.existingVariant ? "Saved" : "+ New"}
+                          </span>
+                        </button>
                       );
                     })}
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. COLOR & SIZE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
+              {/* Color Selector (Edit Product style) */}
+              <div className="space-y-1.5">
+                {resolvedColorAttrId ? (
+                  <ColorMultiSelect
+                    label="Color"
+                    singleSelect
+                    value={editColor ? [editColor] : []}
+                    onChange={(cols) => handleColorChange(cols[0] || "")}
+                    additionalColors={dynamicColors}
+                    disabledColors={disabledColors}
+                    colorHexMap={serverColorHexMap}
+                  />
+                ) : (
+                  <div>
+                    <label className={LABEL_CLASS}>Color</label>
+                    <div className="mt-1.5 flex h-11 sm:h-12 items-center gap-2 px-3.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 dark:border-white/[0.08] dark:bg-[#0B0F17]/70 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <span
+                        className="h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-white/20"
+                        style={{
+                          backgroundColor: getColorHex(editColor || "Standard"),
+                        }}
+                      />
+                      <span>{editColor || "Standard"}</span>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* 5. COST & MRP */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
-                {/* Cost */}
-                <div className="space-y-1.5">
-                  <label className={LABEL_CLASS}>Cost (₹)</label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 text-xs font-semibold text-slate-400">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editCost}
-                      onFocus={(e) => {
-                        if (
-                          e.target.value === "0" ||
-                          e.target.value === "0.00" ||
-                          Number(e.target.value) === 0
-                        ) {
-                          setEditCost("");
-                        }
-                      }}
-                      onClick={(e) => {
-                        if (
-                          e.currentTarget.value === "0" ||
-                          e.currentTarget.value === "0.00" ||
-                          Number(e.currentTarget.value) === 0
-                        ) {
-                          setEditCost("");
-                        }
-                      }}
-                      onChange={(e) => setEditCost(e.target.value)}
-                      placeholder="0.00"
-                      className={`${INPUT_CLASS} pl-8 font-mono`}
+              {/* Size Selector (Multi-Size for Single Color) */}
+              <div className="space-y-1.5">
+                {hasSizeAttribute || editSizes.length > 0 ? (
+                  <>
+                    <SizeMultiSelect
+                      label={editColor ? `Sizes (${editColor})` : "Size"}
+                      value={editSizes.join(", ")}
+                      onChange={handleSizesChange}
+                      additionalSizes={[
+                        ...(product?.category?.toLowerCase().includes("shoe") ||
+                          product?.category?.toLowerCase().includes("footwear")
+                          ? defaultShoeSizes
+                          : defaultNumericSizes),
+                        ...dynamicSizes,
+                      ]}
+                      disabledSizes={disabledSizes}
                     />
-                  </div>
-                </div>
-
-                {/* MRP */}
-                <div className="space-y-1.5">
-                  <label className={LABEL_CLASS}>MRP (₹)</label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 text-xs font-semibold text-slate-400">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editMrp}
-                      onFocus={(e) => {
-                        if (
-                          e.target.value === "0" ||
-                          e.target.value === "0.00" ||
-                          Number(e.target.value) === 0
-                        ) {
-                          setEditMrp("");
-                        }
-                      }}
-                      onClick={(e) => {
-                        if (
-                          e.currentTarget.value === "0" ||
-                          e.currentTarget.value === "0.00" ||
-                          Number(e.currentTarget.value) === 0
-                        ) {
-                          setEditMrp("");
-                        }
-                      }}
-                      onChange={(e) => setEditMrp(e.target.value)}
-                      placeholder="0.00"
-                      className={`${INPUT_CLASS} pl-8 font-mono`}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 6. ASIN, FSN, MYNTRA, RACK */}
-              <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                  {showAsin && (
-                    <div className="space-y-1.5">
-                      <label className={LABEL_CLASS}>ASIN</label>
-                      <input
-                        type="text"
-                        value={editAsin}
-                        onChange={(e) => setEditAsin(e.target.value)}
-                        placeholder="e.g. B0XXXXXX"
-                        className={`${INPUT_CLASS} font-mono`}
-                      />
+                    {removedExistingVariants.length > 0 && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-amber-50/90 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300">
+                        <span>
+                          Removing{" "}
+                          <strong>
+                            {removedExistingVariants
+                              .map((v) => getSizeValue(v, product))
+                              .filter(Boolean)
+                              .join(", ")}
+                          </strong>{" "}
+                          on save
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const restored = [
+                              ...editSizes,
+                              ...removedExistingVariants
+                                .map((v) => getSizeValue(v, product).trim())
+                                .filter(Boolean),
+                            ];
+                            handleSizesChange(restored.join(", "));
+                          }}
+                          className="font-bold underline hover:opacity-80 cursor-pointer"
+                        >
+                          Undo
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div>
+                    <label className={LABEL_CLASS}>Size</label>
+                    <div className="mt-1.5 flex h-11 sm:h-12 items-center px-3.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 dark:border-white/[0.08] dark:bg-[#0B0F17]/70 text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-500">
+                      Not applicable for this product
                     </div>
-                  )}
-
-                  {showFsnCode && (
-                    <div className="space-y-1.5">
-                      <label className={LABEL_CLASS}>FSN Code</label>
-                      <input
-                        type="text"
-                        value={editFsnCode}
-                        onChange={(e) => setEditFsnCode(e.target.value)}
-                        placeholder="Enter FSN Code..."
-                        className={`${INPUT_CLASS} font-mono`}
-                      />
-                    </div>
-                  )}
-
-                  {showMyntraSku && (
-                    <div className="space-y-1.5">
-                      <label className={LABEL_CLASS}>Myntra SKU</label>
-                      <input
-                        type="text"
-                        value={editMyntraSku}
-                        onChange={(e) => setEditMyntraSku(e.target.value)}
-                        placeholder="Enter Myntra SKU..."
-                        className={`${INPUT_CLASS} font-mono`}
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <label className={LABEL_CLASS}>Rack Address</label>
-                    <input
-                      type="text"
-                      value={editRackAddress}
-                      onChange={(e) => setEditRackAddress(e.target.value)}
-                      placeholder="e.g. RACK-A1"
-                      className={INPUT_CLASS}
-                    />
                   </div>
-                </div>
-              </div>
-            </form>
-
-            {/* Bottom Actions */}
-            <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/[0.06] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-              {canDelete && variant ? (
-                <button
-                  type="button"
-                  onClick={() => setDeleteModalOpen(true)}
-                  disabled={isSubmitting || deleteVariant.isPending}
-                  className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200/80 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/20 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <Trash2 size={15} />
-                  <span>Delete Variant</span>
-                </button>
-              ) : (
-                <span />
-              )}
-
-              <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => navigateBack()}
-                  disabled={isSubmitting || deleteVariant.isPending}
-                  className="flex-1 sm:flex-none h-10 px-5 rounded-xl text-xs font-semibold border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 dark:hover:bg-white/[0.03] disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98] text-center"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  form="edit-variant-form"
-                  disabled={isSubmitting || deleteVariant.isPending}
-                  className="flex-1 sm:flex-none h-10 px-6 rounded-xl text-xs font-semibold bg-[#E8C16D] hover:bg-[#dfb458] active:scale-[0.98] text-[#0A0E1A] transition-all cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin text-current" />
-                      <span>Updating...</span>
-                    </>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5">
-                      <CheckCircle2 size={15} />
-                      <span>
-                        {editSizes.length > 1 ? "Update Variants" : "Update Variant"}
-                      </span>
-                    </span>
-                  )}
-                </button>
+                )}
               </div>
             </div>
+
+            {/* 4. GENDER & REMAINING CATEGORY ATTRIBUTES (Side by side with Gender) */}
+            <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06] space-y-3">
+              <div className={`grid grid-cols-1 ${remainingAttributes.length > 0 ? "md:grid-cols-2" : "md:grid-cols-1"} gap-3.5`}>
+                {/* Gender Selector (Edit Product style) */}
+                <div className="space-y-1.5">
+                  {genderAttr ? (
+                    <GenderMultiSelect
+                      label="Gender"
+                      value={
+                        Array.isArray(genderValue)
+                          ? genderValue
+                          : typeof genderValue === "string" && genderValue.trim()
+                            ? genderValue.split(",").map((s) => s.trim()).filter(Boolean)
+                            : []
+                      }
+                      options={genderDropdownOptions}
+                      onChange={(vals) =>
+                        handleGenderChange(
+                          genderAttr.id || "",
+                          genderAttr.attributeName,
+                          vals.join(", ")
+                        )
+                      }
+                      placeholder="Select Gender..."
+                    />
+                  ) : (
+                    <div>
+                      <label className={LABEL_CLASS}>Gender</label>
+                      <div className="mt-1.5 flex h-11 sm:h-12 items-center px-3.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 dark:border-white/[0.08] dark:bg-[#0B0F17]/70 text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-500">
+                        {existingGender || "Not specified"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Remaining side with Gender: first remaining attribute if any, or extra attributes */}
+                {remainingAttributes.length > 0 && (
+                  <div className="space-y-1.5">
+                    <DropdownWithOther
+                      label={remainingAttributes[0].attributeName}
+                      value={
+                        editOtherAttrs[remainingAttributes[0].id || ""] !== undefined
+                          ? editOtherAttrs[remainingAttributes[0].id || ""]
+                          : editOtherAttrs[remainingAttributes[0].attributeName] !== undefined
+                            ? editOtherAttrs[remainingAttributes[0].attributeName]
+                            : ""
+                      }
+                      options={buildMergedOptions(
+                        remainingAttributes[0].attributeName,
+                        [],
+                        dropdownData?.savedOptions
+                      )}
+                      onChange={(val) => {
+                        setEditOtherAttrs((prev) => ({
+                          ...prev,
+                          [remainingAttributes[0].id || ""]: val,
+                          [remainingAttributes[0].attributeName]: val,
+                        }));
+                      }}
+                      placeholder={`Select or enter ${remainingAttributes[0].attributeName}...`}
+                      fieldKey={remainingAttributes[0].attributeName}
+                      allowOther={true}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* If more than 1 remaining attribute, display them cleanly */}
+              {remainingAttributes.length > 1 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4.5 pt-1">
+                  {remainingAttributes.slice(1).map((attr) => {
+                    const attrKey = attr.id || attr.attributeName;
+                    const currentVal =
+                      editOtherAttrs[attr.id || ""] !== undefined
+                        ? editOtherAttrs[attr.id || ""]
+                        : editOtherAttrs[attr.attributeName] !== undefined
+                          ? editOtherAttrs[attr.attributeName]
+                          : "";
+
+                    return (
+                      <div key={attrKey} className="space-y-1.5">
+                        <DropdownWithOther
+                          label={attr.attributeName}
+                          value={currentVal}
+                          options={buildMergedOptions(
+                            attr.attributeName,
+                            [],
+                            dropdownData?.savedOptions
+                          )}
+                          onChange={(val) => {
+                            setEditOtherAttrs((prev) => ({
+                              ...prev,
+                              [attr.id || ""]: val,
+                              [attr.attributeName]: val,
+                            }));
+                          }}
+                          placeholder={`Select or enter ${attr.attributeName}...`}
+                          fieldKey={attr.attributeName}
+                          allowOther={true}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 5. COST & MRP */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
+              {/* Cost */}
+              <div className="space-y-1.5">
+                <label className={LABEL_CLASS}>Cost (₹)</label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-xs font-semibold text-slate-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editCost}
+                    onFocus={(e) => {
+                      if (
+                        e.target.value === "0" ||
+                        e.target.value === "0.00" ||
+                        Number(e.target.value) === 0
+                      ) {
+                        setEditCost("");
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (
+                        e.currentTarget.value === "0" ||
+                        e.currentTarget.value === "0.00" ||
+                        Number(e.currentTarget.value) === 0
+                      ) {
+                        setEditCost("");
+                      }
+                    }}
+                    onChange={(e) => setEditCost(e.target.value)}
+                    placeholder="0.00"
+                    className={`${INPUT_CLASS} pl-8 font-mono`}
+                  />
+                </div>
+              </div>
+
+              {/* MRP */}
+              <div className="space-y-1.5">
+                <label className={LABEL_CLASS}>MRP (₹)</label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-xs font-semibold text-slate-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editMrp}
+                    onFocus={(e) => {
+                      if (
+                        e.target.value === "0" ||
+                        e.target.value === "0.00" ||
+                        Number(e.target.value) === 0
+                      ) {
+                        setEditMrp("");
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (
+                        e.currentTarget.value === "0" ||
+                        e.currentTarget.value === "0.00" ||
+                        Number(e.currentTarget.value) === 0
+                      ) {
+                        setEditMrp("");
+                      }
+                    }}
+                    onChange={(e) => setEditMrp(e.target.value)}
+                    placeholder="0.00"
+                    className={`${INPUT_CLASS} pl-8 font-mono`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 6. ASIN, FSN, MYNTRA, RACK */}
+            <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {showAsin && (
+                  <div className="space-y-1.5">
+                    <label className={LABEL_CLASS}>ASIN</label>
+                    <input
+                      type="text"
+                      value={editAsin}
+                      onChange={(e) => setEditAsin(e.target.value)}
+                      placeholder="e.g. B0XXXXXX"
+                      className={`${INPUT_CLASS} font-mono`}
+                    />
+                  </div>
+                )}
+
+                {showFsnCode && (
+                  <div className="space-y-1.5">
+                    <label className={LABEL_CLASS}>FSN Code</label>
+                    <input
+                      type="text"
+                      value={editFsnCode}
+                      onChange={(e) => setEditFsnCode(e.target.value)}
+                      placeholder="Enter FSN Code..."
+                      className={`${INPUT_CLASS} font-mono`}
+                    />
+                  </div>
+                )}
+
+                {showMyntraSku && (
+                  <div className="space-y-1.5">
+                    <label className={LABEL_CLASS}>Myntra SKU</label>
+                    <input
+                      type="text"
+                      value={editMyntraSku}
+                      onChange={(e) => setEditMyntraSku(e.target.value)}
+                      placeholder="Enter Myntra SKU..."
+                      className={`${INPUT_CLASS} font-mono`}
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className={LABEL_CLASS}>Rack Address</label>
+                  <input
+                    type="text"
+                    value={editRackAddress}
+                    onChange={(e) => setEditRackAddress(e.target.value)}
+                    placeholder="e.g. RACK-A1"
+                    className={INPUT_CLASS}
+                  />
+                </div>
+              </div>
+            </div>
+          </form>
+
+          {/* Bottom Actions */}
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/[0.06] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {canDelete && variant ? (
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(true)}
+                disabled={isSubmitting || deleteVariant.isPending}
+                className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200/80 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/20 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <Trash2 size={15} />
+                <span>Delete Variant</span>
+              </button>
+            ) : (
+              <span />
+            )}
+
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => navigateBack()}
+                disabled={isSubmitting || deleteVariant.isPending}
+                className="flex-1 sm:flex-none h-10 px-5 rounded-xl text-xs font-semibold border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-slate-300 dark:hover:bg-white/[0.03] disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98] text-center"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                form="edit-variant-form"
+                disabled={isSubmitting || deleteVariant.isPending}
+                className="flex-1 sm:flex-none h-10 px-6 rounded-xl text-xs font-semibold bg-[#E8C16D] hover:bg-[#dfb458] active:scale-[0.98] text-[#0A0E1A] transition-all cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-current" />
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 size={15} />
+                    <span>
+                      {editSizes.length > 1 ? "Update Variants" : "Update Variant"}
+                    </span>
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
+        </div>
       </div>
 
       {/* Image Preview Modal */}

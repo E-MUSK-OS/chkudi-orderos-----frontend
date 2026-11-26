@@ -26,7 +26,7 @@ export default function LeftPanel() {
           <Package size={20} className="text-[#E8C170]" />
         </div>
         <h2 className="font-display text-xl sm:text-2xl xl:text-3xl tracking-[2px] sm:tracking-[3px] uppercase text-[#E8C170] font-heading">
-          Chakudee <span className="text-white/90">OrderOS</span>
+          Netu<span className="text-white/90">OrderOS</span>
         </h2>
       </Link>
 
