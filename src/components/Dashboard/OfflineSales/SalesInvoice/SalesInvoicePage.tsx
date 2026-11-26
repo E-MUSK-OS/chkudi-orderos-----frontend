@@ -1006,7 +1006,7 @@ export default function SalesInvoicePage() {
                   setSortAsc(asc);
                 }}
                 showAggregations={showAggregations}
-                onView={(inv) => populateFromInvoice(inv)}
+                onView={(inv) => router.push(`/dashboard/sales/sales-invoice/view/${inv.id}`)}
                 onEdit={(inv) => populateFromInvoice(inv)}
                 onDelete={(inv) => {
                   setDeletingInvoice(inv);

@@ -971,6 +971,7 @@ export default function PurchaseInvoicePage() {
                   setSortAsc(asc);
                 }}
                 showAggregations={showAggregations}
+                onView={(inv) => router.push(`/dashboard/purchase/finish-goods/invoice/view/${inv.id}`)}
                 onEdit={(inv) => populateFromInvoice(inv)}
                 onDelete={handleDeleteClick}
                 onCreditNote={(inv) => {
