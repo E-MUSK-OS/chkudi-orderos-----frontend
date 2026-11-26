@@ -2,14 +2,41 @@ export interface SalesChallanItem {
   id?: string;
   itemNo: number;
   sku: string;
-  name: string;
-  quantity: number;
-  rate: number;
+  name?: string;
+  size?: string;
+  soNo?: string;
+  realStock?: number | string;
+  pendingQty?: number | string;
+  orderQty?: number | string;
+  deliveredQty?: number | string;
+  quantity: number | string;
+  rate: number | string;
   amount?: number;
   dispatchDate?: string;
   subCn?: string;
   remarks?: string;
   printBarcode?: boolean;
+}
+
+export interface PartyPendingOrder {
+  id: string;
+  no: number;
+  orderNo: string;
+  date: string;
+  totalQty: number;
+  salesFor: string;
+  items?: {
+    sku: string;
+    name?: string;
+    size?: string;
+    soNo?: string;
+    realStock?: number;
+  pendingQty?: number;
+    orderQty: number;
+    deliveredQty: number;
+    rate: number;
+    amount: number;
+  }[];
 }
 
 export interface Party {
@@ -72,13 +99,24 @@ export interface SalesChallan {
   contactNo?: string | null;
   challanNo: string;
   challanRefNo?: string | null;
+  refParty?: string | null;
   challanDate: string;
   challanFor: string;
+  salesFor?: string;
   stockOutFrom: string;
   consigneeName: string;
   deliveryBy: string;
   preparedBy?: string | null;
   deliveryTerms?: string | null;
+  additionalExpense?: number;
+  additionalExpenses?: Array<{
+    itemNo?: number;
+    particulars: string;
+    serviceProviderName: string;
+    serviceProviderId?: string | null;
+    lrNo: string;
+    amount: number | string;
+  }> | null;
   totalQuantity: number;
   totalAmount: number;
   invoiceStatus: string;
@@ -93,12 +131,15 @@ export interface ChallanFiltersState {
   search?: string;
   challanNo: string;
   challanRefNo: string;
+  refParty?: string;
   partyName: string;
   productSku: string;
   startDate: string;
   endDate: string;
+  date?: string;
   invoiceStatus: string;
   challanFor: string;
+  salesFor?: string;
 }
 
 export interface ProductSkuSuggestion {

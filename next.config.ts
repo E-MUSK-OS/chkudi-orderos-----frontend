@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/offline-sales/invoices/:path*",
+        destination: "/dashboard/offline-sales/sales-invoice",
+        permanent: false,
+      },
+      {
         source: "/dashboard/:path+",
         destination: "/:path+",
         permanent: false,

@@ -86,7 +86,7 @@ export default function PurchaseInvoiceListHeader({
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
-              Purchase / Finish Goods / <span className="text-slate-700 dark:text-slate-300 font-semibold">Purchase Invoice</span>
+              Purchase / Finish Goods / Purchase Invoice
             </p>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function PurchaseInvoiceListHeader({
             </button>
           )}
 
-          {/* New Invoice Button matching theme */}
+          {/* New Invoice Button matching Image 3 */}
           <button
             type="button"
             onClick={onAddNew}

@@ -5,6 +5,7 @@ import {
   Party,
   ProductSkuSuggestion,
   ChallanFiltersState,
+  PartyPendingOrder,
 } from "../types/challan.types";
 
 function extractErrorMessage(err: any, fallback: string): string {
@@ -100,6 +101,16 @@ export const challanService = {
   async searchSkus(query: string): Promise<ProductSkuSuggestion[]> {
     const res = await fetchWithAuth(
       `${API_BASE_URL}/sales-challans/search-skus?q=${encodeURIComponent(query)}`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.data || [];
+  },
+
+  async getPartyPendingOrders(partyId: string): Promise<PartyPendingOrder[]> {
+    if (!partyId) return [];
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/sales-challans/parties/${partyId}/pending-orders`
     );
     if (!res.ok) return [];
     const data = await res.json();

@@ -3,6 +3,8 @@ export interface PurchaseInvoiceItem {
   itemNo: number;
   sku: string;
   particular: string;
+  size?: string | null;
+  lotNo?: string | null;
   hsn?: string | null;
   quantity: number | string;
   rate: number | string;
@@ -155,7 +157,11 @@ export interface PurchaseInvoiceFilterState {
   invoiceNo?: string;
   challanNo?: string;
   partyName?: string;
+  party?: string;
+  partyBillNo?: string;
+  lotNo?: string;
   productSku?: string;
+  selectedSku?: string;
   startDate?: string;
   endDate?: string;
   invoiceType?: string;

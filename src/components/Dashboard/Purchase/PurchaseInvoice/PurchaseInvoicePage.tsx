@@ -8,6 +8,7 @@ import PurchaseInvoiceHeader from "./components/PurchaseInvoiceHeader";
 import PurchaseInvoiceListHeader from "./components/PurchaseInvoiceListHeader";
 import PurchaseInvoiceFilters from "./components/PurchaseInvoiceFilters";
 import PurchaseInvoiceTable from "./components/PurchaseInvoiceTable";
+import PurchaseInvoiceCreateForm from "./components/PurchaseInvoiceCreateForm";
 import PurchaseInvoiceMetaForm from "./components/PurchaseInvoiceMetaForm";
 import PurchaseInvoiceItemsTable from "./components/PurchaseInvoiceItemsTable";
 import PurchaseInvoicePartyDetails from "./components/PurchaseInvoicePartyDetails";
@@ -60,7 +61,11 @@ export default function PurchaseInvoicePage() {
     invoiceNo: "",
     challanNo: "",
     partyName: "",
+    party: "",
+    partyBillNo: "",
+    lotNo: "",
     productSku: "",
+    selectedSku: "All",
     startDate: "",
     endDate: "",
     invoiceType: "All",
@@ -68,6 +73,57 @@ export default function PurchaseInvoicePage() {
   });
   const filtersRef = useRef(filters);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Column Visibility State matching Image 2
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    no: true,
+    invoiceNo: true,
+    lotSku: true,
+    date: true,
+    party: true,
+    partyBillNo: true,
+    invoiceType: true,
+    qty: true,
+    netAmount: true,
+    debitNote: true,
+    paid: true,
+    balance: true,
+    paymentStatus: true,
+    dnStatus: true,
+    actions: true,
+  });
+
+  const handleToggleColumn = (columnKey: string) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: prev[columnKey] === false ? true : false,
+    }));
+  };
+
+  // Table Sorting, Aggregations, and Pinning State
+  const [sortField, setSortField] = useState<keyof PurchaseInvoice>("createdAt");
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [showAggregations, setShowAggregations] = useState<boolean>(true);
+  const [, setPinnedColumns] = useState<string[]>([]);
+
+  const handleClearSorting = () => {
+    setSortField("createdAt");
+    setSortAsc(false);
+    toast.success("Sorting cleared.");
+  };
+
+  const handleClearAggregations = () => {
+    setShowAggregations((prev) => {
+      const next = !prev;
+      toast.success(next ? "Aggregations enabled." : "Aggregations cleared.");
+      return next;
+    });
+  };
+
+  const handleResetPinning = () => {
+    setPinnedColumns([]);
+    toast.success("Column pinning reset.");
+  };
 
   // Scroll & Height coordinator for List View
   const containerRef = useRef<HTMLDivElement>(null);
@@ -337,7 +393,11 @@ export default function PurchaseInvoicePage() {
       invoiceNo: "",
       challanNo: "",
       partyName: "",
+      party: "",
+      partyBillNo: "",
+      lotNo: "",
       productSku: "",
+      selectedSku: "All",
       startDate: "",
       endDate: "",
       invoiceType: "All",
@@ -566,8 +626,8 @@ export default function PurchaseInvoicePage() {
       const stateCode = extractStateCode(partyGstn, partyState);
 
       const mappedItems: PurchaseInvoiceItem[] = (ch.items || []).map((it, idx) => {
-        const qty = it.receivedQty || it.orderedQty || 1;
-        const rate = it.rate || 0;
+        const qty = Number(it.receivedQty) || Number(it.orderedQty) || 1;
+        const rate = Number(it.rate) || 0;
         const rawItem: Partial<PurchaseInvoiceItem> = {
           itemNo: idx + 1,
           sku: it.sku,
@@ -836,7 +896,7 @@ export default function PurchaseInvoicePage() {
         className={
           viewMode === "list"
             ? "flex flex-col gap-4 sm:gap-5 max-w-[1700px] mx-auto min-h-0"
-            : "space-y-4 sm:space-y-5 pb-12 max-w-[1700px] mx-auto"
+            : "space-y-4 sm:space-y-5 max-w-[1700px] mx-auto"
         }
       >
         {viewMode === "list" ? (
@@ -872,6 +932,11 @@ export default function PurchaseInvoicePage() {
                 onDateRangeChange={handleDateRangeChange}
                 onSearch={handleFilterSearch}
                 onReset={handleFilterReset}
+                visibleColumns={visibleColumns}
+                onToggleColumn={handleToggleColumn}
+                onClearSorting={handleClearSorting}
+                onClearAggregations={handleClearAggregations}
+                onResetPinning={handleResetPinning}
               />
               {/* Hidden Printable Purchase Invoice Container */}
         {printQueue && (
@@ -898,7 +963,14 @@ export default function PurchaseInvoicePage() {
                 tableContainerRef={tableContainerRef}
                 selectedIds={selectedInvoiceIds}
                 onSelectionChange={setSelectedInvoiceIds}
-                onView={(inv) => router.push(`/purchase/finish-goods/invoice/view/${inv.id}`)}
+                visibleColumns={visibleColumns}
+                sortField={sortField}
+                sortAsc={sortAsc}
+                onSortChange={(field, asc) => {
+                  setSortField(field);
+                  setSortAsc(asc);
+                }}
+                showAggregations={showAggregations}
                 onEdit={(inv) => populateFromInvoice(inv)}
                 onDelete={handleDeleteClick}
                 onCreditNote={(inv) => {
@@ -930,90 +1002,26 @@ export default function PurchaseInvoicePage() {
       </div>
           </>
         ) : (
-          <>
-            {/* Form Header */}
-            <PurchaseInvoiceHeader
-              invoiceNo={formData.invoiceNo}
-              isExisting={Boolean(activeInvoice && activeInvoice.id)}
-              saving={saving}
-              deleting={deleting}
-              onSave={handleSaveInvoice}
-              onDelete={() => {
-                setDeletingInvoice(activeInvoice);
-                setDeleteModalOpen(true);
-              }}
-              onBack={() => setViewMode("list")}
-              onDownloadDetail={handleDownloadDetail}
-              onDownloadSkuWise={handleDownloadSkuWise}
-              onDownloadTally={handleDownloadTally}
-            />
-
-            {/* Top Metadata Fields Bar */}
-            <PurchaseInvoiceMetaForm
-              formData={formData}
-              onChange={handleFormChange}
-              disabled={saving || !formData.editOn}
-            />
-
-            {/* Main Center Area: Left Items + Right Party Details */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 items-start">
-              {/* Left Column: Items Table + Summary Footer */}
-              <div className="xl:col-span-8 2xl:col-span-9 space-y-4 sm:space-y-5">
-                <PurchaseInvoiceItemsTable
-                  items={items}
-                  onChange={handleItemsChange}
-                  partyStateCode={formData.stateCode || "24"}
-                  disabled={saving || !formData.editOn}
-                />
-
-                <PurchaseInvoiceSummaryFooter
-                  formData={formData}
-                  onChange={handleFormChange}
-                  computedTotals={computedTotals}
-                  disabled={saving || !formData.editOn}
-                />
-                {/* Hidden Printable Purchase Invoice Container */}
-        {printQueue && (
-          <div ref={bulkPrintRef} className="hidden">
-            {printQueue.invoices.map((inv) => (
-              <div key={inv.id} className="invoice-page-break">
-                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-              {/* Right Column: Party Details Cards */}
-              <div className="xl:col-span-4 2xl:col-span-3 sticky top-4">
-                <PurchaseInvoicePartyDetails
-                  formData={formData}
-                  onChange={handleFormChange}
-                  disabled={saving || !formData.editOn}
-                />
-                {/* Hidden Printable Purchase Invoice Container */}
-        {printQueue && (
-          <div ref={bulkPrintRef} className="hidden">
-            {printQueue.invoices.map((inv) => (
-              <div key={inv.id} className="invoice-page-break">
-                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-              {/* Hidden Printable Purchase Invoice Container */}
-        {printQueue && (
-          <div ref={bulkPrintRef} className="hidden">
-            {printQueue.invoices.map((inv) => (
-              <div key={inv.id} className="invoice-page-break">
-                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-          </>
+          <PurchaseInvoiceCreateForm
+            invoice={activeInvoice}
+            initialChallanId={challanIdParam}
+            onSuccess={() => {
+              setViewMode("list");
+              setActiveInvoice(null);
+              fetchInvoices();
+            }}
+            onCancel={() => {
+              setViewMode("list");
+              setActiveInvoice(null);
+            }}
+            onDelete={() => {
+              setDeletingInvoice(activeInvoice);
+              setDeleteModalOpen(true);
+            }}
+            onDownloadDetail={handleDownloadDetail}
+            onDownloadSkuWise={handleDownloadSkuWise}
+            onDownloadTally={handleDownloadTally}
+          />
         )}
 
         {/* Delete Confirmation Modal */}

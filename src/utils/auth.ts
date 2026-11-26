@@ -230,3 +230,23 @@ export const handleAuthFailure = () => {
     isRedirecting = false;
   }, 2000);
 };
+
+export const getCurrentUserName = (fallback = "TOPLOT CK"): string => {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    const name =
+      parsed?.fullName?.trim() ||
+      parsed?.username?.trim() ||
+      parsed?.name?.trim() ||
+      "";
+    return name || fallback;
+  } catch {
+    return fallback;
+  }
+};

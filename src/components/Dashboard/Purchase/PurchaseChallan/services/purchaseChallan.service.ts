@@ -4,6 +4,7 @@ import {
   PurchaseChallan,
   Party,
   ProductSkuSuggestion,
+  SupplierPendingOrder,
   PurchaseChallanFiltersState,
 } from "../types/purchaseChallan.types";
 
@@ -28,7 +29,7 @@ export const purchaseChallanService = {
 
   async getChallans(filters?: Partial<PurchaseChallanFiltersState>): Promise<{
     data: PurchaseChallan[];
-    meta: { total: number; page: number; limit: number };
+    meta: { total: number; totalSumQty?: number; page: number; limit: number };
   }> {
     const params = new URLSearchParams();
     if (filters) {
@@ -100,6 +101,16 @@ export const purchaseChallanService = {
   async searchSkus(query: string): Promise<ProductSkuSuggestion[]> {
     const res = await fetchWithAuth(
       `${API_BASE_URL}/purchase-challans/search-skus?q=${encodeURIComponent(query)}`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.data || [];
+  },
+
+  async getSupplierPendingOrders(supplierId: string): Promise<SupplierPendingOrder[]> {
+    if (!supplierId) return [];
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/purchase-challans/suppliers/${supplierId}/pending-orders`
     );
     if (!res.ok) return [];
     const data = await res.json();

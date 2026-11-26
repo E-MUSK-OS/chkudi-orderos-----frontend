@@ -314,6 +314,9 @@ export default function ViewChallanModal({
                       {isPurchase && (
                         <>
                           <th className="px-4 py-3 font-bold uppercase tracking-wider">
+                            Lot No
+                          </th>
+                          <th className="px-4 py-3 font-bold uppercase tracking-wider">
                             Party Challan No
                           </th>
                           <th className="px-4 py-3 text-center font-bold uppercase tracking-wider">
@@ -364,10 +367,23 @@ export default function ViewChallanModal({
                             </td>
                             <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
                               {item.name || "-"}
+                              {(item.size || item.soNo) && (
+                                <div className="text-[10px] text-slate-400 font-mono">
+                                  {[
+                                    item.size && `Size: ${item.size}`,
+                                    item.soNo && `SO: ${item.soNo}`,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" • ")}
+                                </div>
+                              )}
                             </td>
 
                             {isPurchase && (
                               <>
+                                <td className="px-4 py-3 font-mono font-semibold text-slate-800 dark:text-slate-200">
+                                  {item.lotNo || (challan as any)?.lotNo || "-"}
+                                </td>
                                 <td className="px-4 py-3 font-mono text-slate-600 dark:text-slate-400">
                                   {item.partyChallanNo || "-"}
                                 </td>

@@ -4,14 +4,10 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation";
 import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "../../layout/DashboardLayout";
-import InvoiceHeader from "./components/InvoiceHeader";
 import InvoiceListHeader from "./components/InvoiceListHeader";
 import InvoiceFilters from "./components/InvoiceFilters";
 import InvoiceTable from "./components/InvoiceTable";
-import InvoiceMetaForm from "./components/InvoiceMetaForm";
-import InvoiceItemsTable from "./components/InvoiceItemsTable";
-import InvoicePartyDetails from "./components/InvoicePartyDetails";
-import InvoiceSummaryFooter from "./components/InvoiceSummaryFooter";
+import SalesInvoiceCreateForm from "./components/SalesInvoiceCreateForm";
 import DeleteInvoiceModal from "./components/DeleteInvoiceModal";
 import {
   TaxInvoiceSheet,
@@ -63,6 +59,11 @@ export default function SalesInvoicePage() {
     challanNo: "",
     challanRefNo: "",
     partyName: "",
+    party: "",
+    salesFor: "All",
+    lotNo: "",
+    selectedSku: "All",
+    partyBillNo: "",
     productSku: "",
     startDate: "",
     endDate: "",
@@ -71,6 +72,58 @@ export default function SalesInvoicePage() {
   });
   const filtersRef = useRef(filters);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Column Visibility State matching Image 2
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    no: true,
+    checkbox: true,
+    invoiceNo: true,
+    date: true,
+    party: true,
+    invoiceType: true,
+    challanNo: true,
+    salesFor: true,
+    qty: true,
+    netAmount: true,
+    creditNote: true,
+    received: true,
+    pending: true,
+    paymentStatus: true,
+    cnStatus: true,
+    actions: true,
+  });
+
+  const handleToggleColumn = (columnKey: string) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: prev[columnKey] === false ? true : false,
+    }));
+  };
+
+  // Table Sorting, Aggregations, and Pinning State
+  const [sortField, setSortField] = useState<keyof SalesInvoice>("createdAt");
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [showAggregations, setShowAggregations] = useState<boolean>(true);
+  const [, setPinnedColumns] = useState<string[]>([]);
+
+  const handleClearSorting = () => {
+    setSortField("createdAt");
+    setSortAsc(false);
+    toast.success("Sorting cleared.");
+  };
+
+  const handleClearAggregations = () => {
+    setShowAggregations((prev) => {
+      const next = !prev;
+      toast.success(next ? "Aggregations enabled." : "Aggregations cleared.");
+      return next;
+    });
+  };
+
+  const handleResetPinning = () => {
+    setPinnedColumns([]);
+    toast.success("Column pinning reset.");
+  };
 
   // Scroll & Height coordinator for List View
   const containerRef = useRef<HTMLDivElement>(null);
@@ -303,7 +356,8 @@ export default function SalesInvoicePage() {
     if (
       value.trim() === "" ||
       field === "invoiceType" ||
-      field === "status"
+      field === "status" ||
+      field === "salesFor"
     ) {
       fetchInvoices(nextFilters);
     } else {
@@ -340,6 +394,11 @@ export default function SalesInvoicePage() {
       challanNo: "",
       challanRefNo: "",
       partyName: "",
+      party: "",
+      salesFor: "All",
+      lotNo: "",
+      selectedSku: "All",
+      partyBillNo: "",
       productSku: "",
       startDate: "",
       endDate: "",
@@ -892,7 +951,7 @@ export default function SalesInvoicePage() {
         className={
           viewMode === "list"
             ? "flex flex-col gap-4 sm:gap-5 max-w-[1700px] mx-auto min-h-0"
-            : "space-y-4 sm:space-y-5 pb-12 max-w-[1700px] mx-auto"
+            : "space-y-4 sm:space-y-5 max-w-[1700px] mx-auto"
         }
       >
         {/* ========================================================= */}
@@ -919,6 +978,11 @@ export default function SalesInvoicePage() {
                 onDateRangeChange={handleDateRangeChange}
                 onSearch={handleFilterSearch}
                 onReset={handleFilterReset}
+                visibleColumns={visibleColumns}
+                onToggleColumn={handleToggleColumn}
+                onClearSorting={handleClearSorting}
+                onClearAggregations={handleClearAggregations}
+                onResetPinning={handleResetPinning}
               />
             </div>
 
@@ -934,7 +998,15 @@ export default function SalesInvoicePage() {
                 tableContainerRef={tableContainerRef}
                 selectedIds={selectedInvoiceIds}
                 onSelectionChange={setSelectedInvoiceIds}
-                onView={(inv) => router.push(`/sales/sales-invoice/view/${inv.id}`)}
+                visibleColumns={visibleColumns}
+                sortField={sortField}
+                sortAsc={sortAsc}
+                onSortChange={(field, asc) => {
+                  setSortField(field);
+                  setSortAsc(asc);
+                }}
+                showAggregations={showAggregations}
+                onView={(inv) => populateFromInvoice(inv)}
                 onEdit={(inv) => populateFromInvoice(inv)}
                 onDelete={(inv) => {
                   setDeletingInvoice(inv);
@@ -962,69 +1034,23 @@ export default function SalesInvoicePage() {
           /* ========================================================= */
           /* VIEW MODE: CREATE / EDIT INVOICE FORM */
           /* ========================================================= */
-          <>
-            <InvoiceHeader
-              invoiceNo={formData.invoiceNo}
-              isExisting={Boolean(activeInvoice && activeInvoice.id)}
-              saving={saving}
-              deleting={deleting}
-              onSave={handleSave}
-              onDelete={() => {
-                setDeletingInvoice(activeInvoice);
-                setDeleteModalOpen(true);
-              }}
-              onBack={handleBackToList}
-              onDownloadDetail={handleDownloadDetail}
-              onDownloadSkuWise={handleDownloadSkuWise}
-              onDownloadTally={handleDownloadTally}
-            />
-
-            {loading ? (
-              <div className="rounded-3xl border border-[#E7E0D2] bg-white p-12 text-center shadow-sm dark:border-white/[0.08] dark:bg-[#0F1626]">
-                <p className="text-sm font-semibold text-slate-500 animate-pulse">
-                  Loading sales invoice and challan details...
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Top Metadata Fields Bar */}
-                <InvoiceMetaForm
-                  formData={formData}
-                  onChange={handleFormChange}
-                  disabled={!formData.editOn}
-                />
-
-                {/* Main Center Area: Left Items + Right Party Details */}
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 items-start">
-                  {/* Left Column: Items Table + Summary Footer */}
-                  <div className="xl:col-span-8 2xl:col-span-9 space-y-4 sm:space-y-5">
-                    <InvoiceItemsTable
-                      items={items}
-                      onChange={handleItemsChange}
-                      partyStateCode={formData.stateCode || "24"}
-                      disabled={!formData.editOn}
-                    />
-
-                    <InvoiceSummaryFooter
-                      formData={formData}
-                      onChange={handleFormChange}
-                      computedTotals={computedTotals}
-                      disabled={!formData.editOn}
-                    />
-                  </div>
-
-                  {/* Right Column: Party Details Cards */}
-                  <div className="xl:col-span-4 2xl:col-span-3 sticky top-4">
-                    <InvoicePartyDetails
-                      formData={formData}
-                      onChange={handleFormChange}
-                      disabled={!formData.editOn}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </>
+          <SalesInvoiceCreateForm
+            invoice={activeInvoice}
+            initialChallanId={challanIdParam}
+            onSuccess={() => {
+              setViewMode("list");
+              setActiveInvoice(null);
+              fetchInvoices();
+            }}
+            onCancel={handleBackToList}
+            onDelete={() => {
+              setDeletingInvoice(activeInvoice);
+              setDeleteModalOpen(true);
+            }}
+            onDownloadDetail={handleDownloadDetail}
+            onDownloadSkuWise={handleDownloadSkuWise}
+            onDownloadTally={handleDownloadTally}
+          />
         )}
 
         {/* Delete Confirmation Modal */}

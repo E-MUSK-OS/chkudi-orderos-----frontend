@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Plus, Trash2, Upload, Download, ScanBarcode } from "lucide-react";
+import { Plus, Trash2, Upload, Download, Save, CheckCircle2, FileText } from "lucide-react";
 import { PurchaseChallanItem, ProductSkuSuggestion } from "../types/purchaseChallan.types";
 import { purchaseChallanService } from "../services/purchaseChallan.service";
 import {
@@ -11,7 +11,7 @@ import {
   parsePurchaseItemsFromExcel,
 } from "../utils/purchaseExcelHelper";
 import { toast } from "sonner";
-import PurchaseBarcodeScanModal from "./PurchaseBarcodeScanModal";
+import ThemeSelectDropdown from "@/components/ui/ThemeSelectDropdown";
 import DatePicker from "@/components/ui/DatePicker";
 
 interface PurchaseChallanItemsTableProps {
@@ -19,29 +19,45 @@ interface PurchaseChallanItemsTableProps {
   onChangeItems: (items: PurchaseChallanItem[]) => void;
   courierPartner: string;
   onChangeCourierPartner: (val: string) => void;
-  lrNo: string;
-  onChangeLrNo: (val: string) => void;
+  lrNo?: string;
+  onChangeLrNo?: (val: string) => void;
   receivedBy: string;
   onChangeReceivedBy: (val: string) => void;
   checkedBy: string;
   onChangeCheckedBy: (val: string) => void;
   preparedBy: string;
   onChangePreparedBy: (val: string) => void;
+  additionalExpense: number;
+  onChangeAdditionalExpense: (val: number) => void;
+  onOpenAdditionalExpenseModal?: () => void;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
+
+const employeeOptions = [
+  { value: "Ramesh", label: "Ramesh" },
+  { value: "Suresh", label: "Suresh" },
+  { value: "TOPLOT CK", label: "TOPLOT CK" },
+  { value: "Devang", label: "Devang" },
+  { value: "Warehouse Staff", label: "Warehouse Staff" },
+];
 
 export default function PurchaseChallanItemsTable({
   items,
   onChangeItems,
   courierPartner,
   onChangeCourierPartner,
-  lrNo,
-  onChangeLrNo,
   receivedBy,
   onChangeReceivedBy,
   checkedBy,
   onChangeCheckedBy,
   preparedBy,
   onChangePreparedBy,
+  additionalExpense,
+  onChangeAdditionalExpense,
+  onOpenAdditionalExpenseModal,
+  onSave,
+  isSaving = false,
 }: PurchaseChallanItemsTableProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +66,6 @@ export default function PurchaseChallanItemsTable({
   const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
   const [skuSuggestions, setSkuSuggestions] = useState<ProductSkuSuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
   const [dropdownCoords, setDropdownCoords] = useState<{
     top: number;
     left: number;
@@ -160,14 +175,14 @@ export default function PurchaseChallanItemsTable({
     const updated = [...items];
     const prev = updated[idx];
     const newRate = sugg.rate > 0 ? sugg.rate : prev.rate;
-    const qty = prev.receivedQty || prev.orderedQty || 0;
+    const qty = Number(prev.receivedQty) || 0;
 
     updated[idx] = {
       ...prev,
       sku: sugg.sku,
       name: sugg.name || prev.name,
       rate: newRate,
-      amount: qty * newRate,
+      amount: qty * Number(newRate || 0),
     };
 
     onChangeItems(updated);
@@ -179,21 +194,35 @@ export default function PurchaseChallanItemsTable({
   const handleRowChange = (
     idx: number,
     field: keyof PurchaseChallanItem,
-    val: any
+    val: any,
+    extraUpdates?: Partial<PurchaseChallanItem>
   ) => {
     const updated = [...items];
     updated[idx] = {
       ...updated[idx],
       [field]: val,
+      ...(extraUpdates || {}),
     };
 
     // Auto-calculate amount when receivedQty or rate changes
-    if (field === "receivedQty" || field === "rate") {
+    if (
+      field === "receivedQty" ||
+      field === "rate" ||
+      extraUpdates?.receivedQty !== undefined ||
+      extraUpdates?.rate !== undefined
+    ) {
       const q =
-        field === "receivedQty" ? Number(val) || 0 : updated[idx].receivedQty;
-      const r = field === "rate" ? Number(val) || 0 : updated[idx].rate;
+        val === "" && field === "receivedQty"
+          ? 0
+          : Number(updated[idx].receivedQty) || 0;
+      const r =
+        val === "" && field === "rate"
+          ? 0
+          : Number(updated[idx].rate) || 0;
       updated[idx].amount = q * r;
     }
+
+    // Do NOT auto-calculate or overwrite pendingQty or receivedQty when orderedQty changes!
 
     onChangeItems(updated);
   };
@@ -205,12 +234,15 @@ export default function PurchaseChallanItemsTable({
       {
         itemNo: nextNo,
         sku: "",
-        name: "",
+        poNo: "",
+        size: "",
         orderedQty: 0,
+        pendingQty: 0,
+        name: "",
         receivedQty: 0,
         rate: 0.0,
         amount: 0.0,
-        poNo: "",
+        lotNo: "",
         partyChallanNo: "",
         receivedDate: "",
         remarks: "",
@@ -258,408 +290,463 @@ export default function PurchaseChallanItemsTable({
     (sum, item) => sum + (Number(item.receivedQty) || 0),
     0
   );
+  const totalAmount = items.reduce(
+    (sum, item) =>
+      sum + (Number(item.receivedQty) || 0) * (Number(item.rate) || 0),
+    0
+  );
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm flex flex-col justify-between">
-      <div>
-        {/* Header & Excel action buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 mb-3">
-          <h2 className="text-xs sm:text-sm font-bold text-[#0A0E1A] dark:text-white">Challan Details</h2>
+    <div className="rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm space-y-3.5">
+      {/* Top action toolbar (Challan Details title + Download template + Import) */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+          Challan Details
+        </h2>
 
-          <div className="flex items-center gap-2">
-            {/* Download Template Button */}
-            <button
-              type="button"
-              onClick={downloadPurchaseBlankFormatExcel}
-              className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl border border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[11px] sm:text-xs font-bold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-            >
-              <Download className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
-              <span>Download Template</span>
-            </button>
-
-            {/* Import from Excelsheet Button */}
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard/settings/upload-excel?tab=purchaseChallan")}
-              className="inline-flex items-center gap-1.5 h-8.5 sm:h-9 px-3 sm:px-3.5 rounded-xl sm:rounded-2xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Import from Excelsheet</span>
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImportExcel}
-              accept=".xlsx,.xls,.csv"
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        {/* Inward Items Table */}
-        <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08] mb-3">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              {/* Header styled with SaaS Dark Obsidian & Gold palette */}
-              <tr className="bg-[#FEFAEE] dark:bg-none text-[#6A4D1D] dark:bg-[#080B11] dark:text-[#E8C16D] font-bold select-none whitespace-nowrap border-b border-[#F5E6BE] dark:border-white/[0.08]">
-                <th className="py-2.5 px-3 font-semibold text-center w-10 border-r border-[#F5E6BE] dark:border-white/[0.06]">
-                  No.
-                </th>
-                <th className="py-2.5 px-3 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[160px]">
-                  Particulars [SKU]
-                </th>
-                <th className="py-2.5 px-3 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[200px]">
-                  Particulars [Name]
-                </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center w-20">
-                  Ord.Qty
-                </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center w-24">
-                  Rec.Qty
-                </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center w-20">
-                  Rate
-                </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] text-center min-w-[90px]">
-                  PO No
-                </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[110px]">
-                  Challan No
-                </th>
-                <th className="py-2.5 px-2 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[145px]">
-                  Rec.Date
-                </th>
-                <th className="py-2.5 px-3 font-semibold border-r border-[#F5E6BE] dark:border-white/[0.06] min-w-[130px]">
-                  Remarks
-                </th>
-                <th className="py-2.5 px-2 font-semibold text-center w-10">
-                  Del.
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {items.length === 0 ? (
-                <tr className="border-b border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                  <td
-                    colSpan={11}
-                    className="py-6 px-4 text-slate-400 dark:text-slate-500 font-normal italic text-center"
-                  >
-                    No detail records found.
-                  </td>
-                </tr>
-              ) : (
-                items.map((item, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-[#E7E0D2]/60 dark:border-white/[0.06] hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.03] transition-colors"
-                  >
-                    {/* No. */}
-                    <td className="py-2 px-2.5 text-center text-slate-700 dark:text-slate-300 font-semibold border-r border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                      {idx + 1}
-                    </td>
-
-                    {/* Particulars [SKU] */}
-                    <td className="py-1.5 px-2 border-r border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                      <input
-                        type="text"
-                        value={item.sku}
-                        onChange={(e) => {
-                          activeInputRef.current = e.currentTarget;
-                          updateDropdownCoords(e.currentTarget);
-                          handleSkuChange(idx, e.target.value);
-                        }}
-                        onFocus={(e) => {
-                          activeInputRef.current = e.currentTarget;
-                          updateDropdownCoords(e.currentTarget);
-                          if (item.sku) handleSkuChange(idx, item.sku);
-                        }}
-                        placeholder="Find Product SKU"
-                        className="w-full h-8.5 px-2.5 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
-                      />
-                    </td>
-
-                    {/* Particulars [Name] */}
-                    <td className="py-1.5 px-2 border-r border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                      <input
-                        type="text"
-                        value={item.name}
-                        onChange={(e) =>
-                          handleRowChange(idx, "name", e.target.value)
-                        }
-                        placeholder="Product Name"
-                        className="w-full h-8.5 px-2.5 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/40 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
-                      />
-                    </td>
-
-                    {/* Ord.Qty */}
-                    <td className="py-1.5 px-1.5 border-r border-[#E7E0D2]/60 dark:border-white/[0.06] text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        value={item.orderedQty}
-                        onChange={(e) =>
-                          handleRowChange(idx, "orderedQty", e.target.value)
-                        }
-                        className="w-full h-8.5 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-semibold focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all shadow-2xs"
-                      />
-                    </td>
-
-                    {/* Rec.Qty with Pcs. */}
-                    <td className="py-1.5 px-1.5 border-r border-[#E7E0D2]/60 dark:border-white/[0.06] text-center">
-                      <div className="relative flex items-center">
-                        <input
-                          type="number"
-                          min="0"
-                          value={item.receivedQty}
-                          onChange={(e) =>
-                            handleRowChange(idx, "receivedQty", e.target.value)
-                          }
-                          className="w-full h-8.5 pl-1.5 pr-8 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-bold focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all shadow-2xs"
-                        />
-                        <span className="absolute right-1 text-[10px] text-slate-400 pointer-events-none font-medium">
-                          Pcs.
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Rate */}
-                    <td className="py-1.5 px-1.5 border-r border-[#E7E0D2]/60 dark:border-white/[0.06] text-center">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={item.rate}
-                        onChange={(e) =>
-                          handleRowChange(idx, "rate", e.target.value)
-                        }
-                        className="w-full h-8.5 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all shadow-2xs"
-                      />
-                    </td>
-
-                    {/* PO No */}
-                    <td className="py-1.5 px-1.5 border-r border-[#E7E0D2]/60 dark:border-white/[0.06] text-center">
-                      <input
-                        type="text"
-                        value={item.poNo || ""}
-                        onChange={(e) =>
-                          handleRowChange(idx, "poNo", e.target.value)
-                        }
-                        placeholder="PO-"
-                        className="w-full h-8.5 px-1 text-xs text-center bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
-                      />
-                    </td>
-
-                    {/* Challan No */}
-                    <td className="py-1.5 px-2 border-r border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                      <input
-                        type="text"
-                        value={item.partyChallanNo || ""}
-                        onChange={(e) =>
-                          handleRowChange(idx, "partyChallanNo", e.target.value)
-                        }
-                        placeholder="Challan No"
-                        className="w-full h-8.5 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
-                      />
-                    </td>
-
-                    {/* Rec.Date */}
-                    <td className="py-1.5 px-2 border-r border-[#E7E0D2]/60 dark:border-white/[0.06] min-w-[145px]">
-                      <DatePicker
-                        allowInput
-                        value={item.receivedDate || ""}
-                        onChange={(_, dateStr) =>
-                          handleRowChange(idx, "receivedDate", dateStr || "")
-                        }
-                        placeholder="YYYY-MM-DD"
-                        dateFormat="yyyy-MM-dd"
-                        className="w-full"
-                        buttonClassName="h-8.5 pl-2.5 pr-8 text-xs rounded-xl bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] shadow-2xs"
-                      />
-                    </td>
-
-                    {/* Remarks */}
-                    <td className="py-1.5 px-2 border-r border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                      <input
-                        type="text"
-                        value={item.remarks || ""}
-                        onChange={(e) =>
-                          handleRowChange(idx, "remarks", e.target.value)
-                        }
-                        placeholder="Remarks"
-                        className="w-full h-8.5 px-2 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] focus:outline-none transition-all shadow-2xs"
-                      />
-                    </td>
-
-                    {/* Delete Button */}
-                    <td className="py-1.5 px-1 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteRow(idx)}
-                        title="Delete row"
-                        className="bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 p-1.5 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-
-              {/* Total Row */}
-              {items.length > 0 && (
-                <tr className="bg-slate-50/80 dark:bg-white/[0.03] border-t-2 border-[#E7E0D2] dark:border-white/[0.08] font-bold text-xs">
-                  <td colSpan={3} className="py-2.5 px-3 text-right text-slate-800 dark:text-slate-200">
-                    Total:
-                  </td>
-                  <td className="py-2.5 px-1 text-center text-slate-900 dark:text-white font-bold border-r border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                    {totalOrderedQty}
-                  </td>
-                  <td className="py-2.5 px-1 text-center text-slate-900 dark:text-white font-bold border-r border-[#E7E0D2]/60 dark:border-white/[0.06]">
-                    {totalReceivedQty}
-                  </td>
-                  <td colSpan={6}></td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Action icons below table (+ button) */}
-        <div className="flex items-center gap-2 mb-4">
-          {/* Gold + Button */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleAddRow}
-            title="Add New Row"
-            className="h-8 w-8 sm:h-9 sm:w-9 border border-[#E8C16D]/60 bg-[#FEFAEE] text-[#6A4D1D] hover:border-[#E8C16D] hover:bg-[#FDF2D1] hover:text-[#4A3514] ring-1 ring-[#E8C16D]/20 dark:ring-0 dark:bg-[#080B11] dark:border dark:border-white/[0.15] dark:text-[#E8C16D] dark:hover:bg-[#E8C16D] dark:hover:text-[#0A0E1A] rounded-xl sm:rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+            onClick={downloadPurchaseBlankFormatExcel}
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-[#E8C16D] dark:border-[#E8C16D]/60 bg-transparent text-[#B88728] dark:text-[#E8C16D] hover:bg-[#E8C16D]/10 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
           >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+            <Download className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
+            <span>Download Template</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-[#141B2D] text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-[#1E293B] text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+          >
+            <Upload className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
+            <span>Import from Excelsheet</span>
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportExcel}
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+          />
         </div>
       </div>
 
-      {/* Bottom Form Fields: Delivery & Inward Verification */}
-      <div className="pt-4 border-t border-[#E7E0D2] dark:border-white/[0.08] space-y-2.5">
-        <h4 className="text-xs font-bold text-[#0A0E1A] dark:text-white uppercase tracking-wider">
-          Delivery &amp; Inward Verification
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 text-xs">
-          {/* Courier Partner */}
-          <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
-              Courier Partner
+      {/* Main Inward Items Table matching user uploaded image */}
+      <div className="overflow-x-auto rounded-2xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white dark:bg-[#080B11] shadow-xs">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            {/* Header styled with gold text in light and dark mode with vertical dividers */}
+            <tr className="border-b border-[#F5E6BE] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] font-bold text-xs select-none whitespace-nowrap">
+              <th className="py-2.5 px-2 font-bold text-center w-12 border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                No.
+              </th>
+              <th className="py-2.5 px-3 font-bold min-w-[170px] border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Product SKU.
+              </th>
+              <th className="py-2.5 px-2 font-bold w-24 text-center border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                PO No.
+              </th>
+              <th className="py-2.5 px-2 font-bold w-20 text-center border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Size.
+              </th>
+              <th className="py-2.5 px-2 font-bold w-24 text-center border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Order Qty.
+              </th>
+              <th className="py-2.5 px-2 font-bold w-24 text-center border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Pending Qty.
+              </th>
+              <th className="py-2.5 px-3 font-bold min-w-[180px] border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Detail.
+              </th>
+              <th className="py-2.5 px-2 font-bold w-24 text-center border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Received Qty.
+              </th>
+              <th className="py-2.5 px-2 font-bold w-20 text-center border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Rate.
+              </th>
+              <th className="py-2.5 px-3 font-bold min-w-[100px] text-right border-r border-[#F5E6BE] dark:border-white/[0.08]">
+                Amount.
+              </th>
+              <th className="py-2.5 px-2 font-bold text-center w-12">
+                Del.
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {items.length === 0 ? (
+              /* Empty state matching Image clipboard icon */
+              <tr>
+                <td colSpan={11} className="py-16 px-4 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="w-12 h-14 rounded-lg border-2 border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/[0.04] flex flex-col items-center justify-center p-2 shadow-2xs">
+                      <div className="w-5 h-1.5 bg-amber-500 rounded-xs mb-1.5" />
+                      <div className="w-full space-y-1">
+                        <div className="h-1 bg-slate-300 dark:bg-white/20 rounded-full w-full" />
+                        <div className="h-1 bg-slate-300 dark:bg-white/20 rounded-full w-3/4" />
+                        <div className="h-1 bg-slate-300 dark:bg-white/20 rounded-full w-1/2" />
+                      </div>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      No data available
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleAddRow}
+                      className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-[#B88728] dark:text-[#E8C16D] hover:underline cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add First Item</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              items.map((item, idx) => (
+                <tr
+                  key={idx}
+                  className="border-b border-[#F5E6BE]/60 dark:border-white/[0.06] hover:bg-[#FFF9EC]/40 dark:hover:bg-white/[0.02] transition-colors"
+                >
+                  {/* 1. No. */}
+                  <td className="py-2 px-2 text-center text-slate-700 dark:text-slate-200 font-bold text-xs border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    {idx + 1}
+                  </td>
+
+                  {/* 2. Product SKU. */}
+                  <td className="py-1.5 px-2 border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="text"
+                      value={item.sku}
+                      onChange={(e) => {
+                        activeInputRef.current = e.currentTarget;
+                        updateDropdownCoords(e.currentTarget);
+                        handleSkuChange(idx, e.target.value);
+                      }}
+                      onFocus={(e) => {
+                        activeInputRef.current = e.currentTarget;
+                        updateDropdownCoords(e.currentTarget);
+                        if (item.sku) handleSkuChange(idx, item.sku);
+                      }}
+                      placeholder="Product SKU"
+                      className="w-full h-8 px-2.5 text-xs bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none font-mono"
+                    />
+                  </td>
+
+                  {/* 3. PO No. */}
+                  <td className="py-1.5 px-2 text-center border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="text"
+                      value={item.poNo || ""}
+                      onChange={(e) =>
+                        handleRowChange(idx, "poNo", e.target.value)
+                      }
+                      placeholder="PO No."
+                      className="w-full h-8 px-2 text-xs text-center bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none"
+                    />
+                  </td>
+
+                  {/* 4. Size. */}
+                  <td className="py-1.5 px-2 text-center border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="text"
+                      value={item.size || ""}
+                      onChange={(e) =>
+                        handleRowChange(idx, "size", e.target.value)
+                      }
+                      placeholder="Size"
+                      className="w-full h-8 px-1 text-xs text-center bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none"
+                    />
+                  </td>
+
+                  {/* 5. Order Qty. */}
+                  <td className="py-1.5 px-2 text-center border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="number"
+                      min="0"
+                      value={item.orderedQty === undefined || item.orderedQty === null ? "" : item.orderedQty}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const val = raw === "" ? "" : Number(raw);
+                        handleRowChange(idx, "orderedQty", val);
+                      }}
+                      className="w-full h-8 px-1 text-xs text-center bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-bold font-mono focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </td>
+
+                  {/* 6. Pending Qty. */}
+                  <td className="py-1.5 px-2 text-center border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="number"
+                      min="0"
+                      value={item.pendingQty === undefined || item.pendingQty === null ? "" : item.pendingQty}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const val = raw === "" ? "" : Number(raw);
+                        handleRowChange(idx, "pendingQty", val);
+                      }}
+                      className="w-full h-8 px-1 text-xs text-center bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-bold font-mono focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </td>
+
+                  {/* 7. Detail. */}
+                  <td className="py-1.5 px-2 border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(e) =>
+                        handleRowChange(idx, "name", e.target.value)
+                      }
+                      placeholder="Detail / Particulars"
+                      className="w-full h-8 px-2.5 text-xs bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none"
+                    />
+                  </td>
+
+                  {/* 8. Received Qty. */}
+                  <td className="py-1.5 px-2 text-center border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="number"
+                      min="0"
+                      value={item.receivedQty === undefined || item.receivedQty === null ? "" : item.receivedQty}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const val = raw === "" ? "" : Number(raw);
+                        handleRowChange(idx, "receivedQty", val);
+                      }}
+                      className="w-full h-8 px-1 text-xs text-center bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-bold font-mono focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </td>
+
+                  {/* 9. Rate. */}
+                  <td className="py-1.5 px-2 text-center border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={item.rate === undefined || item.rate === null ? "" : item.rate}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const val = raw === "" ? "" : Number(raw);
+                        handleRowChange(idx, "rate", val);
+                      }}
+                      className="w-full h-8 px-1 text-xs text-center bg-slate-50 dark:bg-[#0A0E1A] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white font-mono focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </td>
+
+                  {/* 10. Amount. */}
+                  <td className="py-1.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-[#E8C16D] border-r border-[#F5E6BE]/60 dark:border-white/[0.06]">
+                    ₹ {(item.amount ?? (Number(item.receivedQty) || 0) * (Number(item.rate) || 0)).toFixed(2)}
+                  </td>
+
+                  {/* 11. Delete */}
+                  <td className="py-1.5 px-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRow(idx)}
+                      title="Delete row"
+                      className="p-1.5 rounded-lg text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer inline-flex items-center justify-center"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+
+          {/* Summary Row matching user image */}
+          <tfoot className="border-t border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] select-none text-xs font-bold">
+            <tr>
+              <td className="py-2.5 px-2 border-r border-[#E8C16D]/30 dark:border-white/[0.08]"></td>
+              <td className="py-2.5 px-3 border-r border-[#E8C16D]/30 dark:border-white/[0.08]"></td>
+              <td className="py-2.5 px-2 border-r border-[#E8C16D]/30 dark:border-white/[0.08]"></td>
+              <td className="py-2.5 px-2 border-r border-[#E8C16D]/30 dark:border-white/[0.08]"></td>
+              <td className="py-2.5 px-2 border-r border-[#E8C16D]/30 dark:border-white/[0.08]"></td>
+              <td className="py-2.5 px-2 border-r border-[#E8C16D]/30 dark:border-white/[0.08]"></td>
+              <td className="py-2.5 px-3 text-right font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider border-r border-[#E8C16D]/30 dark:border-white/[0.08]">
+                Total:
+              </td>
+              <td className="py-2.5 px-2 text-center font-bold font-mono text-[#0A0E1A] dark:text-white border-r border-[#E8C16D]/30 dark:border-white/[0.08]">
+                {totalReceivedQty}
+              </td>
+              <td className="py-2.5 px-2 text-right font-bold text-[#6A4D1D] dark:text-[#E8C16D] uppercase tracking-wider border-r border-[#E8C16D]/30 dark:border-white/[0.08]">
+                Total:
+              </td>
+              <td className="py-2.5 px-3 text-right font-bold font-mono text-[#B88728] dark:text-[#E8C16D] border-r border-[#E8C16D]/30 dark:border-white/[0.08]">
+                ₹ {totalAmount.toFixed(2)}
+              </td>
+              <td className="py-2.5 px-2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Circular + Add Row Button matching user image */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleAddRow}
+          title="Add Row"
+          className="grid h-7 w-7 sm:h-7.5 sm:w-7.5 place-items-center rounded-full border border-[#E8C16D] dark:border-[#E8C16D]/50 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-1 ring-[#E8C16D]/30 transition-all shadow-2xs active:scale-95 cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
+        </button>
+      </div>
+
+      {/* Bottom Footer Verification & Expense bar matching Image 2 */}
+      <div className="pt-3 border-t border-slate-200 dark:border-white/[0.08] flex flex-wrap items-center justify-between gap-4 text-xs">
+        {/* Left Side: Prepared By, Received By, Checked By */}
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          {/* Prepared By */}
+          <div className="flex items-center gap-2">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              Prepared By
+            </label>
+            <input
+              type="text"
+              value={preparedBy}
+              readOnly
+              placeholder="Prepared By"
+              className="h-9 w-28 sm:w-36 px-3 bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-900 dark:text-white font-medium outline-none cursor-not-allowed"
+            />
+          </div>
+
+          {/* Received By */}
+          <div className="flex items-center gap-2">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              Received By
+            </label>
+            <div className="w-28 sm:w-32">
+              <ThemeSelectDropdown
+                value={receivedBy}
+                onChange={onChangeReceivedBy}
+                options={employeeOptions}
+                buttonClassName="h-9 px-2.5 text-xs font-semibold rounded-xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-900 dark:text-white"
+                menuClassName="min-w-[140px]"
+              />
+            </div>
+          </div>
+
+          {/* Checked By */}
+          <div className="flex items-center gap-2">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              Checked By
+            </label>
+            <div className="w-28 sm:w-32">
+              <ThemeSelectDropdown
+                value={checkedBy}
+                onChange={onChangeCheckedBy}
+                options={employeeOptions}
+                buttonClassName="h-9 px-2.5 text-xs font-semibold rounded-xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-900 dark:text-white"
+                menuClassName="min-w-[140px]"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Additional Expense, Courier Partner, Save button */}
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          {/* Additional Expense. */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenAdditionalExpenseModal}
+              className="font-semibold text-slate-700 dark:text-slate-300 underline decoration-dotted underline-offset-4 hover:text-[#B88728] dark:hover:text-[#E8C16D] whitespace-nowrap cursor-pointer transition-colors"
+              title="Click to manage additional expenses"
+            >
+              Additional Expense.
+            </button>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={additionalExpense}
+              onChange={(e) =>
+                onChangeAdditionalExpense(Number(e.target.value) || 0)
+              }
+              placeholder="0"
+              className="h-9 w-20 sm:w-24 px-2.5 text-center font-mono font-semibold bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-900 dark:text-white focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
+
+          {/* Courier Partner. */}
+          <div className="flex items-center gap-2">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              Courier Partner.
             </label>
             <input
               type="text"
               value={courierPartner}
               onChange={(e) => onChangeCourierPartner(e.target.value)}
-              placeholder="e.g. BlueDart"
-              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
+              placeholder="Courier Partner"
+              className="h-9 w-32 sm:w-40 px-3 bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-900 dark:text-white font-medium focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none"
             />
           </div>
 
-          {/* LR No. */}
-          <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
-              LR No.
-            </label>
-            <input
-              type="text"
-              value={lrNo}
-              onChange={(e) => onChangeLrNo(e.target.value)}
-              placeholder="e.g. 10293847"
-              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
-            />
-          </div>
-
-          {/* Received by */}
-          <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
-              Received by
-            </label>
-            <input
-              type="text"
-              value={receivedBy}
-              onChange={(e) => onChangeReceivedBy(e.target.value)}
-              placeholder="Ramesh"
-              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
-            />
-          </div>
-
-          {/* Checked by */}
-          <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
-              Checked by
-            </label>
-            <input
-              type="text"
-              value={checkedBy}
-              onChange={(e) => onChangeCheckedBy(e.target.value)}
-              placeholder="Ramesh"
-              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
-            />
-          </div>
-
-          {/* Prepared by */}
-          <div className="space-y-1">
-            <label className="font-semibold text-slate-700 dark:text-slate-300">
-              Prepared by
-            </label>
-            <input
-              type="text"
-              value={preparedBy}
-              onChange={(e) => onChangePreparedBy(e.target.value)}
-              placeholder="Ramesh"
-              className="h-9 sm:h-10 w-full px-3 text-xs sm:text-sm bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl sm:rounded-2xl text-[#0A0E1A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/30 focus:outline-none transition-all shadow-xs"
-            />
-          </div>
+          {/* Save Button */}
+          {onSave && (
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-5 sm:px-6 rounded-xl sm:rounded-2xl bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A] font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{isSaving ? "Saving..." : "Save"}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Floating SKU Autocomplete Suggestions Dropdown Portal */}
-      {typeof window !== "undefined" &&
+      {/* Autocomplete SKU Portal */}
+      {typeof document !== "undefined" &&
         activeRowIdx !== null &&
         dropdownCoords &&
         createPortal(
           <div
             ref={dropdownRef}
-            onMouseDown={(e) => e.preventDefault()}
             style={{
               position: "fixed",
               top: `${dropdownCoords.top}px`,
               left: `${dropdownCoords.left}px`,
-              minWidth: `${dropdownCoords.width}px`,
+              width: `${dropdownCoords.width}px`,
               zIndex: 99999,
             }}
-            className="bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] rounded-2xl shadow-2xl max-h-60 overflow-y-auto text-xs py-1.5 animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-100 dark:divide-white/[0.04]"
+            className="bg-white dark:bg-[#0F1626] border border-[#E8C16D]/40 dark:border-[#E8C16D]/30 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100"
           >
             {loadingSuggestions ? (
-              <div className="p-3 text-center text-slate-400">Searching products...</div>
+              <div className="py-3 px-4 text-xs text-slate-400 text-center font-medium">
+                Searching SKUs...
+              </div>
             ) : skuSuggestions.length === 0 ? (
-              <div className="p-3 text-center text-slate-400">No matching SKU found.</div>
+              <div className="py-3 px-4 text-xs text-slate-400 text-center">
+                No matching SKU found.
+              </div>
             ) : (
-              skuSuggestions.map((s) => (
+              skuSuggestions.map((sugg, i) => (
                 <button
-                  key={s.sku}
+                  key={`${sugg.sku}-${i}`}
                   type="button"
-                  onClick={() => handleSelectSku(activeRowIdx, s)}
-                  className="w-full text-left px-3.5 py-2.5 hover:bg-[#FFF9EC]/60 dark:hover:bg-white/[0.04] transition-colors flex flex-col gap-0.5 cursor-pointer"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelectSku(activeRowIdx, sugg);
+                  }}
+                  className="w-full text-left px-3.5 py-2 hover:bg-[#FFF9EC] dark:hover:bg-[#1A160E] transition-colors border-b border-slate-100 dark:border-white/[0.04] last:border-b-0 cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-900 dark:text-white text-xs">
-                      {s.sku}
+                    <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">
+                      {sugg.sku}
                     </span>
-                    {s.rate > 0 && (
-                      <span className="text-[11px] font-bold text-[#B88728] dark:text-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] px-2 py-0.5 rounded-lg border border-[#E8C16D]/30">
-                        ₹{s.rate.toFixed(2)}
+                    {sugg.rate > 0 && (
+                      <span className="text-[11px] font-semibold text-[#B88728] dark:text-[#E8C16D] font-mono">
+                        ₹ {sugg.rate}
                       </span>
                     )}
                   </div>
-                  {s.name && s.name.trim().toLowerCase() !== s.sku.trim().toLowerCase() && (
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[260px]">
-                      {s.name}
-                    </span>
+                  {sugg.name && (
+                    <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                      {sugg.name}
+                    </p>
                   )}
                 </button>
               ))
@@ -667,14 +754,6 @@ export default function PurchaseChallanItemsTable({
           </div>,
           document.body
         )}
-
-      {/* Inward Barcode Scanner Modal */}
-      <PurchaseBarcodeScanModal
-        isOpen={isBarcodeModalOpen}
-        onClose={() => setIsBarcodeModalOpen(false)}
-        items={items}
-        onUpdateItems={onChangeItems}
-      />
     </div>
   );
 }

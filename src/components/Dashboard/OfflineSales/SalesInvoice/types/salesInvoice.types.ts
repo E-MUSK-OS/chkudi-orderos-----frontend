@@ -3,6 +3,7 @@ export interface SalesInvoiceItem {
   itemNo: number;
   sku: string;
   particular: string;
+  size?: string;
   hsn?: string | null;
   quantity: number | string;
   rate: number | string;
@@ -154,7 +155,12 @@ export interface SalesInvoiceFilterState {
   challanNo?: string;
   challanRefNo?: string;
   partyName?: string;
+  party?: string;
+  lotNo?: string;
   productSku?: string;
+  selectedSku?: string;
+  partyBillNo?: string;
+  salesFor?: string;
   startDate?: string;
   endDate?: string;
   invoiceType?: string;

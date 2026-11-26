@@ -153,12 +153,18 @@ export default function InvoiceItemsTable({
       items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0) * 1000
     ) / 1000;
 
+  // Total net amount
+  const totalNet =
+    Math.round(
+      items.reduce((sum, item) => sum + (Number(item.total) || 0), 0) * 100
+    ) / 100;
+
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white overflow-hidden shadow-xs dark:bg-[#0F1626]">
+    <div className="rounded-2xl sm:rounded-3xl border border-[#E8C16D]/50 dark:border-[#E8C16D]/40 bg-white dark:bg-[#080B11] overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-[#FEFAEE] dark:bg-none text-[#6A4D1D] dark:bg-[#080B11] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] font-bold">
+            <tr className="border-b border-[#F5E6BE] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#080B11] text-[#6A4D1D] dark:text-[#E8C16D] font-bold text-xs select-none whitespace-nowrap">
               <th className="py-3 px-2 text-center w-10 font-bold uppercase tracking-wider">No.</th>
               <th className="py-3 px-2.5 min-w-[190px] font-bold uppercase tracking-wider">Particular</th>
               <th className="py-3 px-1.5 text-center w-24 font-bold uppercase tracking-wider">HSN</th>
@@ -177,7 +183,7 @@ export default function InvoiceItemsTable({
               <th className="py-3 px-2 text-right w-28 font-bold uppercase tracking-wider">Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+          <tbody className="divide-y divide-[#F5E6BE]/60 dark:divide-white/[0.06]">
             {items.map((item, index) => (
               <tr
                 key={index}
@@ -427,17 +433,20 @@ export default function InvoiceItemsTable({
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-[#FFF9EC] dark:bg-[#1A160E] border-t border-[#E8C16D]/40 font-bold">
+            <tr className="bg-[#FFF9EC] dark:bg-[#1A160E] border-t border-[#E8C16D]/40 font-bold select-none text-xs">
               <td
                 colSpan={3}
-                className="py-3 px-3 text-right text-xs uppercase tracking-wider text-[#B88728] dark:text-[#E8C16D]"
+                className="py-3 px-3 text-right text-xs uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]"
               >
-                Total Qty
+                TOTAL QTY
               </td>
               <td className="py-3 px-1.5 text-right font-mono text-xs font-bold text-[#0A0E1A] dark:text-white">
                 {totalQty}
               </td>
-              <td colSpan={12} className="py-3 px-2"></td>
+              <td colSpan={11} className="py-3 px-2"></td>
+              <td className="py-3 px-2 text-right font-mono text-xs font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
+                ₹ {totalNet.toFixed(2)}
+              </td>
             </tr>
           </tfoot>
         </table>

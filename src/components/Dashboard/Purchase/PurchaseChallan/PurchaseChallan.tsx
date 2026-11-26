@@ -50,13 +50,66 @@ export default function PurchaseChallan() {
     challanNo: "",
     partyChallanNo: "",
     supplierName: "",
+    party: "",
+    lotNo: "",
     productSku: "",
+    selectedSku: "All",
     startDate: "",
     endDate: "",
     invoiceStatus: "All",
     challanFor: "All",
     stockIn: "All",
   });
+  const [totalSumQty, setTotalSumQty] = useState<number | undefined>(undefined);
+
+  // Column Visibility State
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    no: true,
+    checkbox: true,
+    challanNo: true,
+    lotSku: true,
+    date: true,
+    party: true,
+    contact: true,
+    partyChallanNo: true,
+    totalQty: true,
+    challanFor: true,
+    preparedBy: true,
+    status: true,
+    actions: true,
+  });
+
+  const handleToggleColumn = (columnKey: string) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: prev[columnKey] === false ? true : false,
+    }));
+  };
+
+  // Table Sorting, Aggregations, and Pinning State
+  const [sortField, setSortField] = useState<keyof IPurchaseChallan>("createdAt");
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [showAggregations, setShowAggregations] = useState<boolean>(true);
+  const [, setPinnedColumns] = useState<string[]>([]);
+
+  const handleClearSorting = () => {
+    setSortField("createdAt");
+    setSortAsc(false);
+    toast.success("Sorting cleared.");
+  };
+
+  const handleClearAggregations = () => {
+    setShowAggregations((prev) => {
+      const next = !prev;
+      toast.success(next ? "Aggregations enabled." : "Aggregations cleared.");
+      return next;
+    });
+  };
+
+  const handleResetPinning = () => {
+    setPinnedColumns([]);
+    toast.success("Column pinning reset to default.");
+  };
 
   // Form Ref for Save Trigger
   const formRef = useRef<PurchaseChallanFormHandle>(null);
@@ -158,6 +211,9 @@ export default function PurchaseChallan() {
         const activeFilters = customFilters || filtersRef.current;
         const res = await purchaseChallanService.getChallans(activeFilters);
         setChallans(res.data || []);
+        if (res.meta?.totalSumQty !== undefined) {
+          setTotalSumQty(res.meta.totalSumQty);
+        }
       } catch (err: any) {
         console.error(err);
         toast.error(err.message || "Failed to load purchase challans.");
@@ -183,26 +239,50 @@ export default function PurchaseChallan() {
     field: keyof PurchaseChallanFiltersState,
     value: string
   ) => {
-    const nextFilters = { ...filters, [field]: value };
-    setFilters(nextFilters);
-    filtersRef.current = nextFilters;
+    setFilters((prev) => {
+      const nextFilters: PurchaseChallanFiltersState = {
+        ...prev,
+        [field]: value,
+        ...(field === "selectedSku"
+          ? {
+              selectedSku: value,
+              productSku: value === "All" ? "" : value,
+            }
+          : field === "productSku"
+          ? {
+              productSku: value,
+              selectedSku: value === "" ? "All" : prev.selectedSku,
+            }
+          : field === "party"
+          ? {
+              party: value,
+              supplierName: value,
+            }
+          : {}),
+      };
+      filtersRef.current = nextFilters;
 
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
 
-    if (
-      value.trim() === "" ||
-      field === "invoiceStatus" ||
-      field === "challanFor" ||
-      field === "stockIn"
-    ) {
-      fetchChallans(nextFilters);
-    } else {
-      debounceTimerRef.current = setTimeout(() => {
+      const isImmediate =
+        value.trim() === "" ||
+        field === "invoiceStatus" ||
+        field === "challanFor" ||
+        field === "stockIn" ||
+        field === "selectedSku";
+
+      if (isImmediate) {
         fetchChallans(nextFilters);
-      }, 350);
-    }
+      } else {
+        debounceTimerRef.current = setTimeout(() => {
+          fetchChallans(nextFilters);
+        }, 350);
+      }
+
+      return nextFilters;
+    });
   };
 
   const handleSearchClick = () => {
@@ -221,7 +301,10 @@ export default function PurchaseChallan() {
       challanNo: "",
       partyChallanNo: "",
       supplierName: "",
+      party: "",
+      lotNo: "",
       productSku: "",
+      selectedSku: "All",
       startDate: "",
       endDate: "",
       invoiceStatus: "All",
@@ -333,43 +416,45 @@ export default function PurchaseChallan() {
   };
 
   const handleDownloadAll = () => {
-    if (challans.length === 0) {
-      toast.info("No purchase challans available to download.");
-      return;
+    try {
+      const challansToExport =
+        selectedChallanIds.length > 0
+          ? challans.filter((c) => selectedChallanIds.includes(c.id))
+          : challans;
+      downloadPurchaseChallansExcel(challansToExport);
+      toast.success(
+        selectedChallanIds.length > 0
+          ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) Excel`
+          : "Purchase Challans excel downloaded."
+      );
+    } catch (err: any) {
+      console.error("Export error:", err);
+      toast.error(err.message || "Failed to download excel.");
     }
-    const challansToExport =
-      selectedChallanIds.length > 0
-        ? challans.filter((c) => selectedChallanIds.includes(c.id))
-        : challans;
-    downloadPurchaseChallansExcel(challansToExport);
-    toast.success(
-      selectedChallanIds.length > 0
-        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) Excel`
-        : "Purchase Challans excel downloaded."
-    );
   };
 
   const handleDownloadSkuWise = () => {
-    if (challans.length === 0) {
-      toast.info("No purchase challans available to download.");
-      return;
+    try {
+      const challansToExport =
+        selectedChallanIds.length > 0
+          ? challans.filter((c) => selectedChallanIds.includes(c.id))
+          : challans;
+      downloadPurchaseSkuWiseExcel(challansToExport);
+      toast.success(
+        selectedChallanIds.length > 0
+          ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) SKU Wise Excel`
+          : "SKU Wise Purchase Challans excel downloaded."
+      );
+    } catch (err: any) {
+      console.error("Export SKU Wise error:", err);
+      toast.error(err.message || "Failed to download SKU wise excel.");
     }
-    const challansToExport =
-      selectedChallanIds.length > 0
-        ? challans.filter((c) => selectedChallanIds.includes(c.id))
-        : challans;
-    downloadPurchaseSkuWiseExcel(challansToExport);
-    toast.success(
-      selectedChallanIds.length > 0
-        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) SKU Wise Excel`
-        : "SKU Wise Purchase Challans excel downloaded."
-    );
   };
 
   return (
     <DashboardLayout title="Purchase Challan">
       <div ref={containerRef} className="flex flex-col gap-4 sm:gap-5 max-w-[1700px] mx-auto font-sans">
-        {/* Top Header matching Sales Challan */}
+        {/* Top Header Card matching Image */}
         <div className="shrink-0">
           <PurchaseChallanHeader
             viewMode={viewMode}
@@ -405,6 +490,11 @@ export default function PurchaseChallan() {
                   onDateRangeChange={handleDateRangeChange}
                   onSearch={handleSearchClick}
                   onReset={handleResetFilters}
+                  visibleColumns={visibleColumns}
+                  onToggleColumn={handleToggleColumn}
+                  onClearSorting={handleClearSorting}
+                  onClearAggregations={handleClearAggregations}
+                  onResetPinning={handleResetPinning}
                 />
               </div>
 
@@ -425,6 +515,15 @@ export default function PurchaseChallan() {
                   onDelete={handleDeleteClick}
                   onView={handleView}
                   onPrint={handlePrint}
+                  totalSumQty={totalSumQty}
+                  visibleColumns={visibleColumns}
+                  sortField={sortField}
+                  sortAsc={sortAsc}
+                  onSortChange={(field, asc) => {
+                    setSortField(field);
+                    setSortAsc(asc);
+                  }}
+                  showAggregations={showAggregations}
                 />
               </div>
             </div>

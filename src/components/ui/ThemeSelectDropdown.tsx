@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export interface ThemeSelectDropdownProps {
   disabled?: boolean;
   dropDirection?: "auto" | "up" | "down";
   onOpenChange?: (isOpen: boolean) => void;
+  usePortal?: boolean;
 }
 
 export default function ThemeSelectDropdown({
@@ -39,12 +41,15 @@ export default function ThemeSelectDropdown({
   disabled = false,
   dropDirection = "auto",
   onOpenChange,
+  usePortal = false,
 }: ThemeSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const [effectiveAlign, setEffectiveAlign] = useState<"left" | "right">(align);
   const [maxMenuHeight, setMaxMenuHeight] = useState<number | undefined>(undefined);
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Determine whether to open upward or downward and alignment
   const determineDirection = useCallback(() => {
@@ -77,16 +82,30 @@ export default function ThemeSelectDropdown({
     setMaxMenuHeight(maxH);
 
     // Auto-adjust alignment if right edge would overflow
+    let nextAlign: "left" | "right" = align;
     if (align === "right") {
-      setEffectiveAlign("right");
+      nextAlign = "right";
+    } else if (rect.left + 260 > viewportWidth && rect.right >= 200) {
+      nextAlign = "right";
     } else {
-      if (rect.left + 260 > viewportWidth && rect.right >= 200) {
-        setEffectiveAlign("right");
-      } else {
-        setEffectiveAlign("left");
-      }
+      nextAlign = "left";
     }
-  }, [dropDirection, options.length, align]);
+    setEffectiveAlign(nextAlign);
+
+    if (usePortal) {
+      setPortalStyle({
+        position: "fixed",
+        zIndex: 9999,
+        minWidth: rect.width,
+        ...(up
+          ? { bottom: window.innerHeight - rect.top + 6 }
+          : { top: rect.bottom + 6 }),
+        ...(nextAlign === "right"
+          ? { right: window.innerWidth - rect.right }
+          : { left: rect.left }),
+      });
+    }
+  }, [dropDirection, options.length, align, usePortal]);
 
   // Recalculate on scroll or resize while open
   useEffect(() => {
@@ -105,7 +124,12 @@ export default function ThemeSelectDropdown({
   // Close on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!menuRef.current || !menuRef.current.contains(target))
+      ) {
         setIsOpen(false);
         onOpenChange?.(false);
       }
@@ -174,8 +198,10 @@ export default function ThemeSelectDropdown({
             {icon}
           </div>
         )}
-        <span className="truncate flex-1 text-left">
-          {selectedOption ? selectedOption.label : placeholder}
+        <span className="truncate flex-1 min-w-0 text-left whitespace-nowrap">
+          {selectedOption && (selectedOption.value !== "All" || selectedOption.label !== "All")
+            ? selectedOption.label
+            : placeholder}
         </span>
         <ChevronDown
           className={`h-3.5 w-3.5 shrink-0 text-[#B88728] dark:text-[#F5C451] transition-transform duration-200 ${
@@ -185,72 +211,80 @@ export default function ThemeSelectDropdown({
       </button>
 
       {/* Dropdown Options Popup */}
-      {isOpen && (
-        <div
-          className={cn(
-            "absolute z-50 rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl duration-100",
-            openUpward
-              ? "bottom-full mb-2 origin-bottom animate-in fade-in zoom-in-95"
-              : "top-full mt-2 origin-top animate-in fade-in zoom-in-95",
-            "dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
-            menuClassName?.includes("w-full")
-              ? "left-0 right-0 w-full"
-              : effectiveAlign === "right"
-              ? "right-0"
-              : "left-0",
-            menuClassName || "min-w-full w-max max-w-[280px]"
-          )}
-        >
+      {isOpen && (() => {
+        const menuNode = (
           <div
-            className="overflow-y-auto flex flex-col gap-0.5 pr-1 custom-scrollbar"
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              maxHeight: `${maxMenuHeight || 240}px`,
-            }}
+            ref={menuRef}
+            style={usePortal && portalStyle ? portalStyle : undefined}
+            className={cn(
+              usePortal ? "rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl duration-100" : "absolute z-50 rounded-2xl border border-[#E7E0D2] bg-white p-1.5 shadow-xl duration-100",
+              openUpward
+                ? (usePortal ? "origin-bottom animate-in fade-in zoom-in-95" : "bottom-full mb-2 origin-bottom animate-in fade-in zoom-in-95")
+                : (usePortal ? "origin-top animate-in fade-in zoom-in-95" : "top-full mt-2 origin-top animate-in fade-in zoom-in-95"),
+              "dark:border-white/[0.08] dark:bg-[#0F1626] dark:shadow-black/50",
+              !usePortal && (menuClassName?.includes("w-full")
+                ? "left-0 right-0 w-full"
+                : effectiveAlign === "right"
+                ? "right-0"
+                : "left-0"),
+              menuClassName || (usePortal ? "w-max max-w-[280px]" : "min-w-full w-max max-w-[280px]")
+            )}
           >
-            {options.map((opt) => {
-              const isSelected = opt.value.toLowerCase() === (value || "").toLowerCase();
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                    onOpenChange?.(false);
-                  }}
-                  className={`
-                    flex
-                    items-center
-                    justify-between
-                    gap-2.5
-                    rounded-xl
-                    px-3
-                    py-2
-                    text-xs
-                    sm:text-sm
-                    font-bold
-                    transition-all
-                    cursor-pointer
-                    text-left
-                    ${
-                      isSelected
-                        ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
-                        : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-                    }
-                  `}
-                >
-                  <span className="truncate">{opt.label}</span>
-                  {isSelected && (
-                    <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 stroke-[2.5]" />
-                  )}
-                </button>
-              );
-            })}
+            <div
+              className="overflow-y-auto flex flex-col gap-0.5 pr-1 custom-scrollbar"
+              style={{
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                maxHeight: `${maxMenuHeight || 240}px`,
+              }}
+            >
+              {options.map((opt) => {
+                const isSelected = opt.value.toLowerCase() === (value || "").toLowerCase();
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                      onOpenChange?.(false);
+                    }}
+                    className={`
+                      flex
+                      items-center
+                      justify-between
+                      gap-2.5
+                      rounded-xl
+                      px-3
+                      py-2
+                      text-xs
+                      sm:text-sm
+                      font-bold
+                      transition-all
+                      cursor-pointer
+                      text-left
+                      ${
+                        isSelected
+                          ? "bg-[#F5C451] text-slate-900 shadow-xs font-bold"
+                          : "text-slate-700 hover:bg-[#FFF9EC] hover:text-[#B88728] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                      }
+                    `}
+                  >
+                    <span className="whitespace-nowrap">{opt.label}</span>
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-slate-900 shrink-0 stroke-[2.5]" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+
+        return usePortal && typeof document !== "undefined"
+          ? createPortal(menuNode, document.body)
+          : menuNode;
+      })()}
     </div>
   );
 }

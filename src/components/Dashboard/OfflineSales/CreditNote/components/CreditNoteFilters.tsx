@@ -1,0 +1,329 @@
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Search,
+  Filter,
+  RotateCw,
+  Columns3,
+  Check,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Calculator,
+  PinOff,
+  X,
+  Building2,
+  FileText,
+} from "lucide-react";
+import { format } from "date-fns";
+import { CreditNoteFilterState } from "../types/salesCreditNote.types";
+import ThemeSelectDropdown, { ThemeSelectOption } from "@/components/ui/ThemeSelectDropdown";
+import DateRangePicker from "@/components/ui/DateRangePicker";
+
+interface CreditNoteFiltersProps {
+  filters: CreditNoteFilterState;
+  onChange: (key: keyof CreditNoteFilterState, value: string) => void;
+  onDateRangeChange?: (startDate: string, endDate: string) => void;
+  onSearch: () => void;
+  onReset: () => void;
+  visibleColumns?: Record<string, boolean>;
+  onToggleColumn?: (columnKey: string) => void;
+  onClearSorting?: () => void;
+  onClearAggregations?: () => void;
+  onResetPinning?: () => void;
+}
+
+const salesForOptions: ThemeSelectOption[] = [
+  { value: "All", label: "Sales For" },
+  { value: "Product", label: "Product" },
+  { value: "Material", label: "Material" },
+  { value: "Service", label: "Service" },
+];
+
+const columnDefinitions = [
+  { key: "creditNoteNo", label: "Credit Note No." },
+  { key: "date", label: "Date." },
+  { key: "partyName", label: "Party Name." },
+  { key: "quantity", label: "Quantity." },
+  { key: "netAmount", label: "Net Amount." },
+  { key: "salesFor", label: "Sales For." },
+  { key: "invoiceType", label: "Invoice Type." },
+  { key: "preparedBy", label: "Prepared By." },
+  { key: "actions", label: "Actions" },
+];
+
+function parseFilterDate(str?: string): Date | undefined {
+  if (!str || !str.trim()) return undefined;
+  const parts = str.trim().split("-");
+  if (parts.length !== 3) return undefined;
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  const d = parseInt(parts[2], 10);
+  const dt = new Date(y, m, d);
+  return isNaN(dt.getTime()) ? undefined : dt;
+}
+
+export default function CreditNoteFilters({
+  filters,
+  onChange,
+  onDateRangeChange,
+  onSearch,
+  onReset,
+  visibleColumns,
+  onToggleColumn,
+  onClearSorting,
+  onClearAggregations,
+  onResetPinning,
+}: CreditNoteFiltersProps) {
+  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
+  const [tableSettingsOpen, setTableSettingsOpen] = useState(false);
+  const columnsDropdownRef = useRef<HTMLDivElement>(null);
+  const tableSettingsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        columnsDropdownRef.current &&
+        !columnsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setColumnsMenuOpen(false);
+      }
+      if (
+        tableSettingsRef.current &&
+        !tableSettingsRef.current.contains(event.target as Node)
+      ) {
+        setTableSettingsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const hasActiveFilters = Boolean(
+    filters.creditNoteNo ||
+      filters.party ||
+      filters.startDate ||
+      filters.endDate ||
+      (filters.salesFor && filters.salesFor !== "All") ||
+      filters.search
+  );
+
+  return (
+    <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5">
+        {/* Row 1: Filter Inputs & Dropdowns */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 xl:flex-1 min-w-0">
+          {/* 1. Funnel Icon + Credit Note No */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 shrink-0 dark:bg-[#1A160E] dark:text-[#E8C16D]">
+              <Filter className="w-4 h-4" />
+            </div>
+
+            <div className="relative flex-1 min-w-0">
+              <FileText className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={filters.creditNoteNo}
+                onChange={(e) => onChange("creditNoteNo", e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && onSearch()}
+                placeholder="Credit Note No"
+                className="w-full min-w-0 h-9 pl-8 pr-3 text-xs rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white placeholder:text-slate-400 outline-none focus:border-[#E8C16D]"
+              />
+            </div>
+          </div>
+
+          {/* 2. Party */}
+          <div className="relative min-w-0">
+            <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={filters.party}
+              onChange={(e) => onChange("party", e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && onSearch()}
+              placeholder="Party"
+              className="w-full min-w-0 h-9 pl-8 pr-3 text-xs rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white placeholder:text-slate-400 outline-none focus:border-[#E8C16D]"
+            />
+          </div>
+
+          {/* 3. Select Date */}
+          <div className="min-w-0">
+            <DateRangePicker
+              from={parseFilterDate(filters.startDate)}
+              to={parseFilterDate(filters.endDate)}
+              onChange={(range) => {
+                const s = range?.from ? format(range.from, "yyyy-MM-dd") : "";
+                const e = range?.to ? format(range.to, "yyyy-MM-dd") : s;
+                if (onDateRangeChange) {
+                  onDateRangeChange(s, e);
+                } else {
+                  onChange("startDate", s);
+                  onChange("endDate", e);
+                }
+              }}
+              onClear={() => {
+                if (onDateRangeChange) {
+                  onDateRangeChange("", "");
+                } else {
+                  onChange("startDate", "");
+                  onChange("endDate", "");
+                }
+              }}
+              placeholder="Select Date"
+              className="w-full"
+              triggerClassName="w-full sm:w-full min-w-0 sm:min-w-0 h-9 sm:h-9 py-0 px-3 text-xs sm:text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11]"
+            />
+          </div>
+
+          {/* 4. Sales For */}
+          <div className="min-w-0">
+            <ThemeSelectDropdown
+              value={filters.salesFor || "All"}
+              onChange={(val) => onChange("salesFor", val)}
+              options={salesForOptions}
+              placeholder="Sales For"
+              className="w-full"
+              buttonClassName="w-full h-9 px-3 text-xs font-semibold rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
+            />
+          </div>
+        </div>
+
+        {/* Row 2: Global search, Columns, Settings, Reset */}
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full xl:w-auto xl:shrink-0 xl:flex-nowrap">
+          <div className="relative w-full sm:flex-1 xl:flex-none xl:w-48">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => onChange("search", e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && onSearch()}
+              placeholder="Global search.."
+              className="w-full h-9 pl-8 pr-3 text-xs rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white placeholder:text-slate-400 outline-none focus:border-[#E8C16D]"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
+
+          {/* Columns */}
+          <div className="relative" ref={columnsDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setColumnsMenuOpen((o) => !o)}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-[#E8C16D] cursor-pointer"
+            >
+              <Columns3 className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
+              <span>Columns</span>
+            </button>
+
+            {columnsMenuOpen && visibleColumns && onToggleColumn && (
+              <div className="absolute right-0 top-full mt-1.5 w-52 p-2 rounded-2xl bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/[0.1] shadow-2xl z-50">
+                <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Toggle Columns
+                </div>
+                <div className="space-y-0.5 max-h-60 overflow-y-auto custom-scrollbar">
+                  {columnDefinitions.map((col) => {
+                    const isVisible = visibleColumns[col.key] !== false;
+                    return (
+                      <button
+                        key={col.key}
+                        type="button"
+                        onClick={() => onToggleColumn(col.key)}
+                        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer text-left"
+                      >
+                        <span>{col.label}</span>
+                        <div
+                          className={`grid h-4 w-4 place-items-center rounded border ${
+                            isVisible
+                              ? "bg-[#E8C16D] border-[#E8C16D] text-black"
+                              : "border-slate-300 dark:border-white/20"
+                          }`}
+                        >
+                          {isVisible && <Check className="h-3 w-3 stroke-[3]" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Table Settings */}
+          <div className="relative" ref={tableSettingsRef}>
+            <button
+              type="button"
+              onClick={() => setTableSettingsOpen((o) => !o)}
+              className="grid h-9 w-9 place-items-center rounded-full border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-slate-600 dark:text-slate-300 hover:border-[#E8C16D] cursor-pointer"
+              title="Table Settings"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
+            {tableSettingsOpen && (
+              <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-1.5 shadow-xl z-40">
+                {onClearSorting && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClearSorting();
+                      setTableSettingsOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-700 dark:text-slate-200 hover:bg-[#FFF9EC] dark:hover:bg-white/[0.05] cursor-pointer"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    <span>Clear Sorting</span>
+                  </button>
+                )}
+                {onClearAggregations && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClearAggregations();
+                      setTableSettingsOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-700 dark:text-slate-200 hover:bg-[#FFF9EC] dark:hover:bg-white/[0.05] cursor-pointer"
+                  >
+                    <Calculator className="w-3.5 h-3.5" />
+                    <span>Toggle Sum Row</span>
+                  </button>
+                )}
+                {onResetPinning && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onResetPinning();
+                      setTableSettingsOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-700 dark:text-slate-200 hover:bg-[#FFF9EC] dark:hover:bg-white/[0.05] cursor-pointer"
+                  >
+                    <PinOff className="w-3.5 h-3.5" />
+                    <span>Reset Pinning</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="grid h-9 w-9 place-items-center rounded-full border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 cursor-pointer"
+              title="Clear Filters"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onSearch}
+            className="grid h-9 w-9 place-items-center rounded-full border border-red-200 dark:border-red-500/30 bg-white dark:bg-[#080B11] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
+            title="Refresh"
+          >
+            <RotateCw className="w-3.5 h-3.5" />
+          </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

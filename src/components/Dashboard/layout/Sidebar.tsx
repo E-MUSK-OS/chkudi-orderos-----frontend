@@ -155,6 +155,12 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
 
     // Purchase & Sales aliases
     if (
+      (itemNorm === "/purchase/finish-goods/order" || itemNorm === "/purchase-order") &&
+      (currentNorm === "/purchase/finish-goods/order" || currentNorm === "/purchase-order" || currentNorm.startsWith("/purchase-order/") || currentNorm.startsWith("/purchase/finish-goods/order"))
+    ) {
+      return true;
+    }
+    if (
       (itemNorm === "/purchase/finish-goods/invoice" || itemNorm === "/purchase-invoice") &&
       (currentNorm === "/purchase/finish-goods/invoice" || currentNorm === "/purchase-invoice" || currentNorm.startsWith("/purchase-invoice/"))
     ) {
@@ -181,6 +187,48 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
     if (
       (itemNorm === "/sales/sales-challan" || itemNorm === "/sales-challan") &&
       (currentNorm === "/sales/sales-challan" || currentNorm === "/sales-challan" || currentNorm.startsWith("/sales-challan/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/offline-sales/credit-note" || itemNorm === "/credit-note") &&
+      (currentNorm === "/offline-sales/credit-note" ||
+        currentNorm.startsWith("/offline-sales/credit-note/") ||
+        currentNorm === "/credit-note" ||
+        currentNorm.startsWith("/credit-note/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/purchase/finish-goods/debit-note" || itemNorm === "/debit-note") &&
+      (currentNorm === "/purchase/finish-goods/debit-note" ||
+        currentNorm.startsWith("/purchase/finish-goods/debit-note/") ||
+        currentNorm === "/debit-note" ||
+        currentNorm.startsWith("/debit-note/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/offline-sales/sales-order" || itemNorm === "/sales-order") &&
+      (currentNorm === "/offline-sales/sales-order" ||
+        currentNorm.startsWith("/offline-sales/sales-order/") ||
+        currentNorm === "/sales-order" ||
+        currentNorm.startsWith("/sales-order/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/offline-sales/fulfillment-planning" || itemNorm === "/fulfillment-planning") &&
+      (currentNorm === "/offline-sales/fulfillment-planning" ||
+        currentNorm.startsWith("/offline-sales/fulfillment-planning/") ||
+        currentNorm === "/fulfillment-planning" ||
+        currentNorm.startsWith("/fulfillment-planning/"))
+    ) {
+      return true;
+    }
+    if (
+      (itemNorm === "/offline-sales/sales-challan" || itemNorm === "/sales-challan") &&
+      (currentNorm === "/offline-sales/sales-challan" || currentNorm === "/sales-challan" || currentNorm.startsWith("/sales-challan/"))
     ) {
       return true;
     }

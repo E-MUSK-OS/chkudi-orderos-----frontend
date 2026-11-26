@@ -215,7 +215,7 @@ export default function LedgerBookModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-5 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-3 sm:p-5 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
       <div className="w-full max-w-5xl rounded-[28px] sm:rounded-[32px] overflow-hidden border border-[#E7E0D2] dark:border-[#E8C16D]/40 bg-white dark:bg-[#0A0E1A] shadow-2xl relative my-auto flex flex-col max-h-[92vh] transition-all">
         {/* Top Header - OrderOS Theme in Light Mode, Dark theme in Dark Mode */}
         <div className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#E7E0D2] dark:border-white/[0.08] px-5 sm:px-7 py-4 flex items-center justify-between shrink-0">

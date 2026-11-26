@@ -43,8 +43,9 @@ export const salesInvoiceService = {
       if (filters.invoiceNo) params.append("invoiceNo", filters.invoiceNo);
       if (filters.challanNo) params.append("challanNo", filters.challanNo);
       if (filters.challanRefNo) params.append("challanRefNo", filters.challanRefNo);
-      if (filters.partyName) params.append("partyName", filters.partyName);
+      if (filters.party || filters.partyName) params.append("partyName", (filters.party || filters.partyName)!);
       if (filters.productSku) params.append("productSku", filters.productSku);
+      if (filters.salesFor && filters.salesFor !== "All") params.append("salesFor", filters.salesFor);
       if (filters.invoiceType && filters.invoiceType !== "All") params.append("invoiceType", filters.invoiceType);
       if (filters.startDate) params.append("startDate", filters.startDate);
       if (filters.endDate) params.append("endDate", filters.endDate);

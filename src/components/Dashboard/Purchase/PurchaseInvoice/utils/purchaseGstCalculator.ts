@@ -96,13 +96,39 @@ export function calculateItemGst(
   let igstAmount = 0;
 
   if (isIntraState) {
-    sgstRate = Math.round((totalGstRate / 2) * 100) / 100;
-    cgstRate = Math.round((totalGstRate / 2) * 100) / 100;
+    if (item.sgstRate !== undefined && item.sgstRate !== null && item.sgstRate !== "") {
+      sgstRate = Math.max(Number(item.sgstRate) || 0, 0);
+    } else if (item.sgstRate === "" || item.sgstRate === 0) {
+      sgstRate = 0;
+    } else {
+      sgstRate = Math.round((totalGstRate / 2) * 100) / 100;
+    }
+
+    if (item.cgstRate !== undefined && item.cgstRate !== null && item.cgstRate !== "") {
+      cgstRate = Math.max(Number(item.cgstRate) || 0, 0);
+    } else if (item.cgstRate === "" || item.cgstRate === 0) {
+      cgstRate = 0;
+    } else {
+      cgstRate = Math.round((totalGstRate / 2) * 100) / 100;
+    }
+
     sgstAmount = Math.round(taxableAmount * (sgstRate / 100) * 100) / 100;
     cgstAmount = Math.round(taxableAmount * (cgstRate / 100) * 100) / 100;
+    igstRate = 0;
+    igstAmount = 0;
   } else {
-    igstRate = totalGstRate;
+    if (item.igstRate !== undefined && item.igstRate !== null && item.igstRate !== "") {
+      igstRate = Math.max(Number(item.igstRate) || 0, 0);
+    } else if (item.igstRate === "" || item.igstRate === 0) {
+      igstRate = 0;
+    } else {
+      igstRate = totalGstRate;
+    }
     igstAmount = Math.round(taxableAmount * (igstRate / 100) * 100) / 100;
+    sgstRate = 0;
+    sgstAmount = 0;
+    cgstRate = 0;
+    cgstAmount = 0;
   }
 
   const total = Math.round((taxableAmount + sgstAmount + cgstAmount + igstAmount) * 100) / 100;
@@ -111,18 +137,19 @@ export function calculateItemGst(
     itemNo: item.itemNo || 1,
     sku: item.sku || "",
     particular: item.particular || item.sku || "",
-    hsn: item.hsn || null,
+    size: item.size || "",
+    hsn: item.hsn !== undefined ? item.hsn : null,
     quantity,
     rate,
     amount,
     discountPercent,
     discountAmount,
     taxableAmount,
-    sgstRate,
+    sgstRate: item.sgstRate !== undefined && item.sgstRate !== null ? item.sgstRate : sgstRate,
     sgstAmount,
-    cgstRate,
+    cgstRate: item.cgstRate !== undefined && item.cgstRate !== null ? item.cgstRate : cgstRate,
     cgstAmount,
-    igstRate,
+    igstRate: item.igstRate !== undefined && item.igstRate !== null ? item.igstRate : igstRate,
     igstAmount,
     total,
   };
@@ -159,17 +186,19 @@ export function calculateInvoiceTotals(
   ) / 100;
 
   const totalGst = Math.round((sgstAmount + cgstAmount + igstAmount) * 100) / 100;
-  const amountAfterTax = Math.round((amountBeforeTax + totalGst + expenseOnPurchase) * 100) / 100;
+  const amountAfterTax = Math.round((amountBeforeTax + totalGst) * 100) / 100;
+
+  const netBeforeRoundOff = Math.round((amountAfterTax + (Number(expenseOnPurchase) || 0)) * 100) / 100;
 
   let roundOff = 0;
   if (applyRoundOff) {
     roundOff =
       customRoundOff !== undefined
         ? customRoundOff
-        : Math.round((Math.round(amountAfterTax) - amountAfterTax) * 100) / 100;
+        : Math.round((Math.round(netBeforeRoundOff) - netBeforeRoundOff) * 100) / 100;
   }
 
-  const netAmount = Math.round((amountAfterTax + roundOff) * 100) / 100;
+  const netAmount = Math.round((netBeforeRoundOff + roundOff) * 100) / 100;
 
   return {
     totalQuantity,

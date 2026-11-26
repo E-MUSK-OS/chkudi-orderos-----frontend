@@ -44,17 +44,67 @@ export default function SalesChallan() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedChallanIds, setSelectedChallanIds] = useState<string[]>([]);
 
+  // Column Visibility State
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    no: true,
+    checkbox: true,
+    date: true,
+    challanNo: true,
+    party: true,
+    contact: true,
+    quantity: true,
+    challanFor: true,
+    salesFor: true,
+    preparedBy: true,
+    status: true,
+    actions: true,
+  });
+
+  const handleToggleColumn = (columnKey: string) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: prev[columnKey] === false ? true : false,
+    }));
+  };
+
+  // Table Sorting, Aggregations, and Pinning State
+  const [sortField, setSortField] = useState<keyof ISalesChallan>("createdAt");
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [, setShowAggregations] = useState<boolean>(true);
+  const [, setPinnedColumns] = useState<string[]>([]);
+
+  const handleClearSorting = () => {
+    setSortField("createdAt");
+    setSortAsc(false);
+    toast.success("Sorting cleared.");
+  };
+
+  const handleClearAggregations = () => {
+    setShowAggregations((prev) => {
+      const next = !prev;
+      toast.success(next ? "Aggregations enabled." : "Aggregations cleared.");
+      return next;
+    });
+  };
+
+  const handleResetPinning = () => {
+    setPinnedColumns([]);
+    toast.success("Column pinning reset to default.");
+  };
+
   // Filters State
   const [filters, setFilters] = useState<ChallanFiltersState>({
     search: "",
     challanNo: "",
     challanRefNo: "",
+    refParty: "",
     partyName: "",
     productSku: "",
     startDate: "",
     endDate: "",
     invoiceStatus: "All",
     challanFor: "All",
+    salesFor: "All",
   });
 
   // Form Ref for Save Trigger
@@ -183,11 +233,13 @@ export default function SalesChallan() {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // If input is cleared or dropdown is changed: fetch immediately!
+    // If input is cleared or dropdown/date is changed: fetch immediately!
     if (
       value.trim() === "" ||
       field === "invoiceStatus" ||
-      field === "challanFor"
+      field === "challanFor" ||
+      field === "salesFor" ||
+      field === "date"
     ) {
       fetchChallans(nextFilters);
     } else {
@@ -223,12 +275,15 @@ export default function SalesChallan() {
       search: "",
       challanNo: "",
       challanRefNo: "",
+      refParty: "",
       partyName: "",
       productSku: "",
       startDate: "",
       endDate: "",
+      date: "",
       invoiceStatus: "All",
       challanFor: "All",
+      salesFor: "All",
     };
     setFilters(defaultFilters);
     filtersRef.current = defaultFilters;
@@ -335,37 +390,39 @@ export default function SalesChallan() {
   };
 
   const handleDownloadAll = () => {
-    if (challans.length === 0) {
-      toast.info("No challans available to download.");
-      return;
+    try {
+      const challansToExport =
+        selectedChallanIds.length > 0
+          ? challans.filter((c) => selectedChallanIds.includes(c.id))
+          : challans;
+      downloadChallansExcel(challansToExport);
+      toast.success(
+        selectedChallanIds.length > 0
+          ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) Excel`
+          : "Sales Challans excel downloaded."
+      );
+    } catch (err: any) {
+      console.error("Export error:", err);
+      toast.error(err.message || "Failed to download excel.");
     }
-    const challansToExport =
-      selectedChallanIds.length > 0
-        ? challans.filter((c) => selectedChallanIds.includes(c.id))
-        : challans;
-    downloadChallansExcel(challansToExport);
-    toast.success(
-      selectedChallanIds.length > 0
-        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) Excel`
-        : "Sales Challans excel downloaded."
-    );
   };
 
   const handleDownloadSkuWise = () => {
-    if (challans.length === 0) {
-      toast.info("No challans available to download.");
-      return;
+    try {
+      const challansToExport =
+        selectedChallanIds.length > 0
+          ? challans.filter((c) => selectedChallanIds.includes(c.id))
+          : challans;
+      downloadSkuWiseExcel(challansToExport);
+      toast.success(
+        selectedChallanIds.length > 0
+          ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) SKU Wise Excel`
+          : "SKU Wise Challans excel downloaded."
+      );
+    } catch (err: any) {
+      console.error("Export SKU Wise error:", err);
+      toast.error(err.message || "Failed to download SKU wise excel.");
     }
-    const challansToExport =
-      selectedChallanIds.length > 0
-        ? challans.filter((c) => selectedChallanIds.includes(c.id))
-        : challans;
-    downloadSkuWiseExcel(challansToExport);
-    toast.success(
-      selectedChallanIds.length > 0
-        ? `Downloaded ${selectedChallanIds.length} Selected Challan(s) SKU Wise Excel`
-        : "SKU Wise Challans excel downloaded."
-    );
   };
 
   return (
@@ -407,6 +464,11 @@ export default function SalesChallan() {
                   onDateRangeChange={handleDateRangeChange}
                   onSearch={handleSearchClick}
                   onReset={handleResetFilters}
+                  visibleColumns={visibleColumns}
+                  onToggleColumn={handleToggleColumn}
+                  onClearSorting={handleClearSorting}
+                  onClearAggregations={handleClearAggregations}
+                  onResetPinning={handleResetPinning}
                 />
               </div>
 
@@ -427,6 +489,16 @@ export default function SalesChallan() {
                   onDelete={handleDeleteClick}
                   onView={handleView}
                   onPrint={handlePrint}
+                  onGenerateInvoice={(ch) =>
+                    router.push(`/dashboard/sales/sales-invoice?challanId=${ch.id}`)
+                  }
+                  visibleColumns={visibleColumns}
+                  sortField={sortField}
+                  sortAsc={sortAsc}
+                  onSortChange={(field, asc) => {
+                    setSortField(field);
+                    setSortAsc(asc);
+                  }}
                 />
               </div>
             </div>

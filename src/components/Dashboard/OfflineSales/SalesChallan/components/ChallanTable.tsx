@@ -2,7 +2,15 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Edit2, Trash2, Eye, ArrowUpDown, FileSpreadsheet, CheckCircle2, Clock, ReceiptText, Printer } from "lucide-react";
+import {
+  Edit2,
+  Trash2,
+  Eye,
+  ArrowUpDown,
+  FileSpreadsheet,
+  ReceiptText,
+  Printer,
+} from "lucide-react";
 import { SalesChallan } from "../types/challan.types";
 import Pagination from "@/components/ui/Pagination";
 
@@ -17,6 +25,10 @@ interface ChallanTableProps {
   onPrint?: (challan: SalesChallan) => void;
   onGenerateInvoice?: (challan: SalesChallan) => void;
   tableContainerRef?: React.RefObject<HTMLDivElement | null>;
+  visibleColumns?: Record<string, boolean>;
+  sortField?: keyof SalesChallan;
+  sortAsc?: boolean;
+  onSortChange?: (field: keyof SalesChallan, asc: boolean) => void;
 }
 
 export default function ChallanTable({
@@ -30,6 +42,10 @@ export default function ChallanTable({
   onPrint,
   onGenerateInvoice,
   tableContainerRef,
+  visibleColumns,
+  sortField: controlledSortField,
+  sortAsc: controlledSortAsc,
+  onSortChange,
 }: ChallanTableProps) {
   const router = useRouter();
   const internalRef = useRef<HTMLDivElement>(null);
@@ -44,10 +60,41 @@ export default function ChallanTable({
       setInternalSelectedIds(newIds);
     }
   };
-  const [sortField, setSortField] = useState<keyof SalesChallan>("createdAt");
-  const [sortAsc, setSortAsc] = useState<boolean>(false);
+
+  const isColVisible = (key: string) => {
+    if (!visibleColumns) return true;
+    return visibleColumns[key] !== false;
+  };
+
+  const visibleColCount = useMemo(() => {
+    const allKeys = [
+      "no",
+      "checkbox",
+      "date",
+      "challanNo",
+      "party",
+      "contact",
+      "quantity",
+      "challanFor",
+      "salesFor",
+      "preparedBy",
+      "status",
+      "actions",
+    ];
+    return allKeys.filter(isColVisible).length;
+  }, [visibleColumns]);
+
+  const [internalSortField, setInternalSortField] =
+    useState<keyof SalesChallan>("createdAt");
+  const [internalSortAsc, setInternalSortAsc] = useState<boolean>(false);
+
+  const activeSortField =
+    controlledSortField !== undefined ? controlledSortField : internalSortField;
+  const activeSortAsc =
+    controlledSortAsc !== undefined ? controlledSortAsc : internalSortAsc;
+
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
 
   useEffect(() => {
     if (resolvedRef.current) {
@@ -56,27 +103,35 @@ export default function ChallanTable({
   }, [page, limit, resolvedRef]);
 
   const handleSort = (field: keyof SalesChallan) => {
-    if (sortField === field) {
-      setSortAsc(!sortAsc);
+    if (onSortChange) {
+      if (activeSortField === field) {
+        onSortChange(field, !activeSortAsc);
+      } else {
+        onSortChange(field, true);
+      }
     } else {
-      setSortField(field);
-      setSortAsc(true);
+      if (internalSortField === field) {
+        setInternalSortAsc(!internalSortAsc);
+      } else {
+        setInternalSortField(field);
+        setInternalSortAsc(true);
+      }
     }
   };
 
   const sortedChallans = useMemo(() => {
     return [...challans].sort((a, b) => {
-      let aVal = a[sortField] ?? "";
-      let bVal = b[sortField] ?? "";
+      let aVal = a[activeSortField] ?? "";
+      let bVal = b[activeSortField] ?? "";
 
       if (typeof aVal === "string") {
-        return sortAsc
+        return activeSortAsc
           ? (aVal as string).localeCompare(bVal as string)
           : (bVal as string).localeCompare(aVal as string);
       }
-      return sortAsc ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1;
+      return activeSortAsc ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1;
     });
-  }, [challans, sortField, sortAsc]);
+  }, [challans, activeSortField, activeSortAsc]);
 
   const total = sortedChallans.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -112,97 +167,155 @@ export default function ChallanTable({
 
   return (
     <div className="flex flex-col min-h-0 max-h-full overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm">
-      <div ref={resolvedRef} className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar" style={{ WebkitOverflowScrolling: "touch" }}>
-        <table className="w-full min-w-[1000px] border-collapse text-left font-sans">
-          {/* Header styled with SaaS Dark Obsidian & Gold palette */}
+      <div
+        ref={resolvedRef}
+        className="w-full overflow-x-auto min-h-0 overflow-y-auto custom-scrollbar"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        <table className="w-full min-w-[1100px] border-collapse text-left font-sans">
+          {/* Header styled with exact order matching Image 2 */}
           <thead className="lg:sticky lg:top-0 z-10 bg-[#FEFAEE] dark:bg-[#080B11] text-xs sm:text-sm font-bold tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] border-b border-[#F5E6BE] dark:border-white/[0.08] select-none shadow-xs">
             <tr>
-              <th className="px-3 sm:px-4 py-3.5 text-center w-12">
-                <input
-                  type="checkbox"
-                  checked={
-                    paginatedChallans.length > 0 &&
-                    paginatedChallans.every((c) => selectedIds.includes(c.id))
-                  }
-                  onChange={toggleSelectAll}
-                  className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
-                  style={{ accentColor: "#0A0E1A" }}
-                />
-              </th>
+              {/* 1. NO. */}
+              {isColVisible("no") && (
+                <th className="px-3 sm:px-4 py-3.5 text-center w-12 text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+                  No.
+                </th>
+              )}
 
-              <th
-                onClick={() => handleSort("challanNo")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Challan No</span>
-                  <ArrowUpDown className={`h-3 w-3 ${sortField === "challanNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
-                </div>
-              </th>
+              {/* 2. Checkbox */}
+              {isColVisible("checkbox") && (
+                <th className="px-3 sm:px-4 py-3.5 text-center w-12">
+                  <input
+                    type="checkbox"
+                    checked={
+                      paginatedChallans.length > 0 &&
+                      paginatedChallans.every((c) => selectedIds.includes(c.id))
+                    }
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
+                    style={{ accentColor: "#0A0E1A" }}
+                  />
+                </th>
+              )}
 
-              <th
-                onClick={() => handleSort("partyName")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Party Name</span>
-                  <ArrowUpDown className={`h-3 w-3 ${sortField === "partyName" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
-                </div>
-              </th>
+              {/* 3. DATE */}
+              {isColVisible("date") && (
+                <th
+                  onClick={() => handleSort("challanDate")}
+                  className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Date</span>
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        activeSortField === "challanDate"
+                          ? "opacity-100 text-[#F5C451]"
+                          : "opacity-40"
+                      }`}
+                    />
+                  </div>
+                </th>
+              )}
 
-              <th
-                onClick={() => handleSort("challanRefNo")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Ref No</span>
-                  <ArrowUpDown className={`h-3 w-3 ${sortField === "challanRefNo" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
-                </div>
-              </th>
+              {/* 4. CHALLAN NO */}
+              {isColVisible("challanNo") && (
+                <th
+                  onClick={() => handleSort("challanNo")}
+                  className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Challan No</span>
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        activeSortField === "challanNo"
+                          ? "opacity-100 text-[#F5C451]"
+                          : "opacity-40"
+                      }`}
+                    />
+                  </div>
+                </th>
+              )}
 
-              <th
-                onClick={() => handleSort("challanDate")}
-                className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Date</span>
-                  <ArrowUpDown className={`h-3 w-3 ${sortField === "challanDate" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
-                </div>
-              </th>
+              {/* 5. PARTY / REF */}
+              {isColVisible("party") && (
+                <th
+                  onClick={() => handleSort("partyName")}
+                  className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Party / Ref</span>
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        activeSortField === "partyName"
+                          ? "opacity-100 text-[#F5C451]"
+                          : "opacity-40"
+                      }`}
+                    />
+                  </div>
+                </th>
+              )}
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
-                Contact
-              </th>
+              {/* 6. CONTACT */}
+              {isColVisible("contact") && (
+                <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+                  Contact
+                </th>
+              )}
 
-              <th
-                onClick={() => handleSort("totalQuantity")}
-                className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1.5">
-                  <span>Quantity</span>
-                  <ArrowUpDown className={`h-3 w-3 ${sortField === "totalQuantity" ? "opacity-100 text-[#F5C451]" : "opacity-40"}`} />
-                </div>
-              </th>
+              {/* 7. QUANTITY */}
+              {isColVisible("quantity") && (
+                <th
+                  onClick={() => handleSort("totalQuantity")}
+                  className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D] cursor-pointer hover:text-black dark:hover:text-white transition-colors"
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span>Quantity</span>
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        activeSortField === "totalQuantity"
+                          ? "opacity-100 text-[#F5C451]"
+                          : "opacity-40"
+                      }`}
+                    />
+                  </div>
+                </th>
+              )}
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
-                Prepared By
-              </th>
+              {/* 8. CHALLAN FOR (CATEGORY) */}
+              {isColVisible("challanFor") && (
+                <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+                  Challan For
+                </th>
+              )}
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
-                Category
-              </th>
+              {/* 9. SALES FOR */}
+              {isColVisible("salesFor") && (
+                <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+                  Sales For
+                </th>
+              )}
 
-              <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
-                Stock Out
-              </th>
+              {/* 10. PREPARED BY */}
+              {isColVisible("preparedBy") && (
+                <th className="px-3 sm:px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+                  Prepared By
+                </th>
+              )}
 
-              <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
-                Status
-              </th>
+              {/* 12. STATUS */}
+              {isColVisible("status") && (
+                <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+                  Status
+                </th>
+              )}
 
-              <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
-                Actions
-              </th>
+              {/* 13. ACTIONS */}
+              {isColVisible("actions") && (
+                <th className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -210,14 +323,18 @@ export default function ChallanTable({
           <tbody className="divide-y divide-[#E7E0D2] dark:divide-white/[0.06] bg-white dark:bg-[#0F1626] text-xs sm:text-sm font-sans">
             {loading ? (
               <tr>
-                <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500">
-                  <div className="inline-block h-7 w-7 animate-spin rounded-full border-2 border-solid border-[#E8C16D] border-r-transparent" />
-                  <p className="mt-2 text-xs font-bold text-[#0A0E1A] dark:text-white">Loading sales challans...</p>
+                <td colSpan={visibleColCount} className="py-14 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E8C16D] border-t-transparent" />
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      Loading Sales Challans...
+                    </span>
+                  </div>
                 </td>
               </tr>
             ) : paginatedChallans.length === 0 ? (
               <tr>
-                <td colSpan={12} className="py-14 text-center">
+                <td colSpan={visibleColCount} className="py-14 text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D]">
                     <FileSpreadsheet className="h-7 w-7" />
                   </div>
@@ -230,12 +347,14 @@ export default function ChallanTable({
                 </td>
               </tr>
             ) : (
-              paginatedChallans.map((ch) => {
+              paginatedChallans.map((ch, idx) => {
                 const isSelected = selectedIds.includes(ch.id);
                 const isPending =
                   ch.invoiceStatus === "Pending" ||
                   ch.invoiceStatus === "Not Invoiced" ||
                   !ch.invoiceStatus;
+                const rowNo = (page - 1) * limit + idx + 1;
+                const refDisplay = ch.refParty || ch.challanRefNo;
 
                 return (
                   <tr
@@ -245,151 +364,183 @@ export default function ChallanTable({
                         : "hover:bg-slate-50/80 dark:hover:bg-white/[0.06]"
                       }`}
                   >
-                    {/* Checkbox */}
-                    <td className="px-3 sm:px-4 py-3.5 text-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelectOne(ch.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
-                        style={{ accentColor: "#0A0E1A" }}
-                      />
-                    </td>
+                    {/* 1. NO. */}
+                    {isColVisible("no") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 w-12">
+                        {rowNo}
+                      </td>
+                    )}
 
-                    {/* Challan No Badge */}
-                    <td className="px-3 sm:px-4 py-3.5 font-bold font-mono text-slate-900 dark:text-white">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-xl bg-[#FFF9EC] text-[#0A0E1A] font-bold border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] dark:border-[#E8C16D]/30 text-xs">
-                        {ch.challanNo}
-                      </span>
-                    </td>
+                    {/* 2. Checkbox */}
+                    {isColVisible("checkbox") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-center w-12">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectOne(ch.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-[#0A0E1A] accent-[#0A0E1A] dark:accent-[#F5C451] focus:ring-[#E8C16D] dark:border-white/[0.2] dark:bg-[#080B11] cursor-pointer"
+                          style={{ accentColor: "#0A0E1A" }}
+                        />
+                      </td>
+                    )}
 
-                    {/* Party Name */}
-                    <td className="px-3 sm:px-4 py-3.5">
-                      <div className="font-semibold text-slate-900 dark:text-white">
-                        {ch.partyName}
-                      </div>
-                      {ch.party?.city && (
-                        <div className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {ch.party.city}, {ch.party.state}
+                    {/* 3. DATE */}
+                    {isColVisible("date") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        {new Date(ch.challanDate).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
+                      </td>
+                    )}
+
+                    {/* 4. CHALLAN NO */}
+                    {isColVisible("challanNo") && (
+                      <td className="px-3 sm:px-4 py-3.5 font-bold font-mono text-slate-900 dark:text-white whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-xl bg-[#FFF9EC] text-[#0A0E1A] font-bold border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D] dark:border-[#E8C16D]/30 text-xs">
+                          {ch.challanNo}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* 5. PARTY / REF */}
+                    {isColVisible("party") && (
+                      <td className="px-3 sm:px-4 py-3.5">
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          {ch.partyName}
                         </div>
-                      )}
-                    </td>
+                        <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                          REF. - {refDisplay ? String(refDisplay).toUpperCase() : "-"}
+                        </div>
+                        {ch.party?.city && (
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                            {ch.party.city}, {ch.party.state}
+                          </div>
+                        )}
+                      </td>
+                    )}
 
-                    {/* Ref No */}
-                    <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300">
-                      {ch.challanRefNo || <span className="text-slate-300 dark:text-slate-600">-</span>}
-                    </td>
+                    {/* 6. CONTACT */}
+                    {isColVisible("contact") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        {ch.contactNo || (
+                          <span className="text-slate-300 dark:text-slate-600">-</span>
+                        )}
+                      </td>
+                    )}
 
-                    {/* Date */}
-                    <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                      {new Date(ch.challanDate).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
-                    </td>
-
-                    {/* Contact */}
-                    <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300">
-                      {ch.contactNo || <span className="text-slate-300 dark:text-slate-600">-</span>}
-                    </td>
-
-                    {/* Quantity Badge */}
-                    <td className="px-3 sm:px-4 py-3.5 text-center">
-                      <span className="inline-flex items-center justify-center min-w-[28px] px-2.5 py-1 rounded-xl text-xs font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D]">
-                        {ch.totalQuantity}
-                      </span>
-                    </td>
-
-                    {/* Prepared By */}
-                    <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300">
-                      {ch.preparedBy || <span className="text-slate-300 dark:text-slate-600">-</span>}
-                    </td>
-
-                    {/* Challan For */}
-                    <td className="px-3 sm:px-4 py-3.5">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.05] dark:text-slate-300 dark:border-white/[0.08]">
-                        {ch.challanFor}
-                      </span>
-                    </td>
-
-                    {/* Stock Out */}
-                    <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300">
-                      {ch.stockOutFrom}
-                    </td>
-
-                    {/* Invoice Status Pill */}
-                    <td className="px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
-                      {isPending ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/40 dark:bg-[#1A160E] dark:text-[#E8C16D]">
-                          <Clock className="h-3 w-3" />
-                          Pending
+                    {/* 7. QUANTITY */}
+                    {isColVisible("quantity") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center justify-center min-w-[28px] px-2.5 py-1 rounded-xl text-xs font-bold bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 dark:bg-[#1A160E] dark:text-[#E8C16D]">
+                          {ch.totalQuantity}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Invoiced
-                        </span>
-                      )}
-                    </td>
+                      </td>
+                    )}
 
-                    {/* Actions */}
-                    <td className="px-3 sm:px-4 py-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        {onView && (
-                          <button
-                            type="button"
-                            onClick={() => onView(ch)}
-                            title="View Challan Details"
-                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#E8C16D] dark:hover:bg-white/[0.06] cursor-pointer"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
+                    {/* 8. CHALLAN FOR (CATEGORY) */}
+                    {isColVisible("challanFor") && (
+                      <td className="px-3 sm:px-4 py-3.5 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.05] dark:text-slate-300 dark:border-white/[0.08]">
+                          {ch.challanFor || "Sales"}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* 9. SALES FOR */}
+                    {isColVisible("salesFor") && (
+                      <td className="px-3 sm:px-4 py-3.5 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/[0.05] dark:text-slate-300 dark:border-white/[0.08]">
+                          {ch.salesFor || "Product"}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* 10. PREPARED BY */}
+                    {isColVisible("preparedBy") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        {ch.preparedBy || (
+                          <span className="text-slate-300 dark:text-slate-600">-</span>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => onEdit(ch)}
-                          title="Edit Challan"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#E8C16D] dark:hover:bg-white/[0.06] cursor-pointer"
+                      </td>
+                    )}
+
+                    {/* 12. STATUS */}
+                    {isColVisible("status") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            isPending
+                              ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                              : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                          }`}
                         >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (onGenerateInvoice) {
-                              onGenerateInvoice(ch);
-                            } else {
-                              router.push(`/dashboard/sales/sales-invoice?challanId=${ch.id}`);
-                            }
-                          }}
-                          title="Generate / View Sales Invoice"
-                          className="inline-flex items-center justify-center p-2 rounded-xl text-[#B88728] hover:text-[#9A701E] hover:bg-[#FFF9EC] transition-all dark:text-[#E8C16D] dark:hover:text-[#E8C16D] dark:hover:bg-white/[0.06] cursor-pointer"
-                        >
-                          <ReceiptText className="h-4 w-4" />
-                        </button>
-                        {onPrint && (
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              isPending ? "bg-amber-500" : "bg-emerald-500"
+                            }`}
+                          />
+                          {isPending ? "Pending" : "Invoiced"}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* 13. ACTIONS */}
+                    {isColVisible("actions") && (
+                      <td className="px-3 sm:px-4 py-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {onView && (
+                            <button
+                              type="button"
+                              onClick={() => onView(ch)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 transition-colors cursor-pointer"
+                              title="View Challan"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => onPrint(ch)}
-                            title="Print Challan"
-                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#E8C16D] dark:hover:bg-white/[0.06] cursor-pointer"
+                            onClick={() => onEdit(ch)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#E8C16D] hover:bg-[#E8C16D]/10 transition-colors cursor-pointer"
+                            title="Edit Challan"
                           >
-                            <Printer className="h-4 w-4" />
+                            <Edit2 className="h-4 w-4" />
                           </button>
-                        )}
-                        {onDelete && (
-                          <button
-                            type="button"
-                            onClick={() => onDelete(ch)}
-                            title="Delete Challan"
-                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/30 cursor-pointer"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                          {onGenerateInvoice && (
+                            <button
+                              type="button"
+                              onClick={() => onGenerateInvoice(ch)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                              title="Generate Invoice"
+                            >
+                              <ReceiptText className="h-4 w-4" />
+                            </button>
+                          )}
+                          {onPrint && (
+                            <button
+                              type="button"
+                              onClick={() => onPrint(ch)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#E8C16D] hover:bg-[#E8C16D]/10 transition-colors cursor-pointer"
+                              title="Print Challan"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button
+                              type="button"
+                              onClick={() => onDelete(ch)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                              title="Delete Challan"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })
@@ -406,7 +557,7 @@ export default function ChallanTable({
           total={total}
           limit={limit}
           options={[10, 20, 50, 100]}
-          itemName="challans"
+          itemName="entries"
           variant="dark"
           className="shrink-0 border-t border-[#F1E8D0] bg-[#FEFAEE] dark:bg-none px-4 sm:px-6 py-3 sm:py-3.5 dark:border-white/[0.08] dark:bg-[#080B11]"
           onPageChange={setPage}

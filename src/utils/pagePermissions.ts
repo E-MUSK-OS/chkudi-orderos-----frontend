@@ -214,9 +214,22 @@ export function isRouteAllowed(
     if (allowed.includes("sales")) return true;
   }
 
+  if (subPath.startsWith("offline-sales") || subPath.startsWith("sales-")) {
+    if (subPath.includes("gallery") && (allowed.includes("product-gallery") || allowed.includes("offline-sales/product-gallery") || allowed.includes("offline-sales"))) return true;
+    if (subPath.includes("order") && (allowed.includes("sales-order") || allowed.includes("offline-sales/sales-order") || allowed.includes("challan") || allowed.includes("offline-sales/sales-challan"))) return true;
+    if (subPath.includes("fulfillment-planning") && (allowed.includes("fulfillment-planning") || allowed.includes("offline-sales/fulfillment-planning") || allowed.includes("sales-order") || allowed.includes("offline-sales/sales-order"))) return true;
+    if (subPath.includes("challan") && (allowed.includes("challan") || allowed.includes("offline-sales/sales-challan") || allowed.includes("sales-challan"))) return true;
+    if (subPath.includes("invoice") && (allowed.includes("invoice") || allowed.includes("offline-sales/sales-invoice") || allowed.includes("sales-invoice"))) return true;
+    if (subPath.includes("credit-note") && (allowed.includes("sales-credit-note") || allowed.includes("offline-sales/credit-note") || allowed.includes("invoice") || allowed.includes("offline-sales/sales-invoice"))) return true;
+    if (allowed.includes("offline-sales")) return true;
+  }
+
   if (subPath.startsWith("purchase")) {
-    if (subPath.includes("challan") && (allowed.includes("purchase-challan") || allowed.includes("purchase/finish-goods/challan"))) return true;
-    if (subPath.includes("invoice") && (allowed.includes("purchase-invoice") || allowed.includes("purchase/finish-goods/invoice"))) return true;
+    if (subPath.includes("order-desk") && (allowed.includes("order_desk_purchase_mat") || allowed.includes("purchase/material/order-desk") || allowed.includes("purchase-challan") || allowed.includes("purchase/finish-goods/challan"))) return true;
+    if (subPath.includes("order") && (allowed.includes("purchase-order") || allowed.includes("purchase/finish-goods/order") || allowed.includes("purchase/material/order") || allowed.includes("order_purchase_mat") || allowed.includes("purchase-challan") || allowed.includes("purchase/finish-goods/challan"))) return true;
+    if (subPath.includes("challan") && (allowed.includes("purchase-challan") || allowed.includes("purchase/finish-goods/challan") || allowed.includes("purchase/material/challan") || allowed.includes("challan_purchase_mat"))) return true;
+    if (subPath.includes("invoice") && (allowed.includes("purchase-invoice") || allowed.includes("purchase/finish-goods/invoice") || allowed.includes("purchase/material/invoice") || allowed.includes("invoice_purchase_mat"))) return true;
+    if (subPath.includes("debit-note") && (allowed.includes("purchase-debit-note") || allowed.includes("purchase/finish-goods/debit-note") || allowed.includes("purchase/material/debit-note") || allowed.includes("purchase/material/debit-note/return") || allowed.includes("purchase/material/debit-note/discount") || allowed.includes("debit_note_mat") || allowed.includes("purchase-invoice") || allowed.includes("purchase/finish-goods/invoice"))) return true;
     if (allowed.includes("purchase")) return true;
   }
 
@@ -454,7 +467,8 @@ export function getFirstAllowedRoute(user?: UserPermissions | null): string {
     "/dashboard/order-process",
     "/dashboard/products-analytics/amazon",
     "/dashboard/transaction/sales/po-based/upload-requested-po",
-    "/dashboard/sales/sales-challan",
+    "/dashboard/offline-sales/sales-challan",
+    "/dashboard/purchase/finish-goods/order",
     "/dashboard/purchase/finish-goods/challan",
     "/dashboard/settings/configuration/client",
     "/dashboard/settings/manage-users/user-profile",
@@ -515,8 +529,22 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "sales/product-gallery": "sales/product-gallery",
   "sales/sales-challan": "sales/sales-challan",
   "sales/sales-invoice": "sales/sales-invoice",
+  "offline-sales/product-gallery": "offline-sales/product-gallery",
+  "offline-sales/sales-order": "offline-sales/sales-order",
+  "offline-sales/fulfillment-planning": "offline-sales/fulfillment-planning",
+  "offline-sales/sales-challan": "offline-sales/sales-challan",
+  "offline-sales/sales-invoice": "offline-sales/sales-invoice",
+  "offline-sales/credit-note": "offline-sales/credit-note",
+  "purchase/finish-goods/order": "purchase/finish-goods/order",
   "purchase/finish-goods/challan": "purchase/finish-goods/challan",
   "purchase/finish-goods/invoice": "purchase/finish-goods/invoice",
+  "purchase/finish-goods/debit-note": "purchase/finish-goods/debit-note",
+  "purchase/material/order": "purchase/material/order",
+  "purchase/material/challan": "purchase/material/challan",
+  "purchase/material/invoice": "purchase/material/invoice",
+  "purchase/material/debit-note/return": "purchase/material/debit-note/return",
+  "purchase/material/debit-note/discount": "purchase/material/debit-note/discount",
+  "purchase/material/order-desk": "purchase/material/order-desk",
   "settings/webstore": "settings/webstore",
   "settings/labels/label-config": "settings/labels/label-config",
   "settings/labels/label-print": "settings/labels/label-print",
@@ -543,7 +571,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   sku_mapping: "settings/labels/label-print",
   barcode_labels: "settings/labels/label-config",
   settings_manage_users: "settings/manage-users",
-  order_purchase_mat: "purchase/finish-goods/challan",
+  order_purchase_mat: "purchase/finish-goods/order",
   challan_purchase_mat: "purchase/finish-goods/challan",
   invoice_purchase_mat: "purchase/finish-goods/invoice",
   debit_note_mat: "sales/sales-invoice",

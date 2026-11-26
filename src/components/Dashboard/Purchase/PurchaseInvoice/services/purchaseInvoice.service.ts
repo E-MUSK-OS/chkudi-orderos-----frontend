@@ -6,8 +6,27 @@ import {
   PurchaseInvoiceFilterState,
   PurchaseInvoiceItem,
 } from "../types/purchaseInvoice.types";
+import { purchaseChallanService } from "@/components/Dashboard/Purchase/PurchaseChallan/services/purchaseChallan.service";
+import { Party } from "@/components/Dashboard/Purchase/PurchaseChallan/types/purchaseChallan.types";
 
 export const purchaseInvoiceService = {
+  async getSuppliers(searchQuery?: string): Promise<Party[]> {
+    return await purchaseChallanService.getSuppliers(searchQuery);
+  },
+
+  async getSupplierPendingChallans(supplierId: string): Promise<any[]> {
+    if (!supplierId) return [];
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/purchase-invoices/suppliers/${supplierId}/pending-challans`
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return [];
+    }
+  },
   async getNextInvoiceNo(): Promise<string> {
     const res = await fetchWithAuth(`${API_BASE_URL}/purchase-invoices/next-no`);
     if (!res.ok) {

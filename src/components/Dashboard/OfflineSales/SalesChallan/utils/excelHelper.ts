@@ -2,21 +2,53 @@ import * as XLSX from "xlsx";
 import { SalesChallan, SalesChallanItem } from "../types/challan.types";
 
 export const downloadChallansExcel = (challans: SalesChallan[]) => {
-  const data = challans.map((ch, idx) => ({
+  const data = (challans || []).map((ch, idx) => ({
     "No.": idx + 1,
     "Party Name": ch.partyName,
     "Challan No": ch.challanNo,
     "Challan Ref.No": ch.challanRefNo || "-",
-    Date: new Date(ch.challanDate).toLocaleDateString("en-IN"),
+    Date: ch.challanDate ? new Date(ch.challanDate).toLocaleDateString("en-IN") : "-",
     "Contact No": ch.contactNo || "-",
-    Quantity: ch.totalQuantity,
+    Quantity: Number(ch.totalQuantity) || 0,
     "Prepared By": ch.preparedBy || "-",
     "Challan For": ch.challanFor,
     "Stock Out": ch.stockOutFrom,
     "Invoice Status": ch.invoiceStatus,
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
+  const headers = [
+    "No.",
+    "Party Name",
+    "Challan No",
+    "Challan Ref.No",
+    "Date",
+    "Contact No",
+    "Quantity",
+    "Prepared By",
+    "Challan For",
+    "Stock Out",
+    "Invoice Status",
+  ];
+
+  const worksheet =
+    data.length > 0
+      ? XLSX.utils.json_to_sheet(data)
+      : XLSX.utils.aoa_to_sheet([headers]);
+
+  worksheet["!cols"] = [
+    { wch: 8 },
+    { wch: 28 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+  ];
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Challans");
   XLSX.writeFile(workbook, `sales_challans_${Date.now()}.xlsx`);
@@ -24,18 +56,18 @@ export const downloadChallansExcel = (challans: SalesChallan[]) => {
 
 export const downloadSkuWiseExcel = (challans: SalesChallan[]) => {
   const rows: any[] = [];
-  challans.forEach((ch) => {
+  (challans || []).forEach((ch) => {
     (ch.items || []).forEach((item) => {
       rows.push({
         "Challan No": ch.challanNo,
-        Date: new Date(ch.challanDate).toLocaleDateString("en-IN"),
+        Date: ch.challanDate ? new Date(ch.challanDate).toLocaleDateString("en-IN") : "-",
         "Party Name": ch.partyName,
         "Item No": item.itemNo,
         "Product SKU": item.sku,
         "Product Name": item.name,
-        Quantity: item.quantity,
-        Rate: item.rate,
-        Amount: (item.quantity || 1) * (item.rate || 0),
+        Quantity: Number(item.quantity) || 1,
+        Rate: Number(item.rate) || 0,
+        Amount: (Number(item.quantity) || 1) * (Number(item.rate) || 0),
         "Dis.Date": item.dispatchDate || "-",
         "Sub C.N": item.subCn || "-",
         Remarks: item.remarks || "-",
@@ -43,7 +75,41 @@ export const downloadSkuWiseExcel = (challans: SalesChallan[]) => {
     });
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const headers = [
+    "Challan No",
+    "Date",
+    "Party Name",
+    "Item No",
+    "Product SKU",
+    "Product Name",
+    "Quantity",
+    "Rate",
+    "Amount",
+    "Dis.Date",
+    "Sub C.N",
+    "Remarks",
+  ];
+
+  const worksheet =
+    rows.length > 0
+      ? XLSX.utils.json_to_sheet(rows)
+      : XLSX.utils.aoa_to_sheet([headers]);
+
+  worksheet["!cols"] = [
+    { wch: 16 },
+    { wch: 14 },
+    { wch: 26 },
+    { wch: 10 },
+    { wch: 22 },
+    { wch: 28 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 24 },
+  ];
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "SKU Wise Challans");
   XLSX.writeFile(workbook, `sales_challans_sku_wise_${Date.now()}.xlsx`);

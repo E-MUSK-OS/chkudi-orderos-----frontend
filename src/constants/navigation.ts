@@ -251,6 +251,17 @@ export const navItems: NavItem[] = [
     icon: FileSpreadsheet,
     children: [
       {
+        label: "Sales Order",
+        href: "/dashboard/offline-sales/sales-order",
+        defaultTimeAgo: "1h ago",
+        isCore: true,
+      },
+      {
+        label: "Fulfillment Planning",
+        href: "/dashboard/offline-sales/fulfillment-planning",
+        defaultTimeAgo: "1h ago",
+      },
+      {
         label: "Sales Challan",
         href: "/dashboard/sales/sales-challan",
         defaultTimeAgo: "4h ago",
@@ -261,6 +272,11 @@ export const navItems: NavItem[] = [
         href: "/dashboard/sales/sales-invoice",
         defaultTimeAgo: "2h ago",
         isCore: true,
+      },
+      {
+        label: "Credit Note",
+        href: "/dashboard/offline-sales/credit-note",
+        defaultTimeAgo: "1h ago",
       },
       {
         label: "Product Gallery",
@@ -276,8 +292,59 @@ export const navItems: NavItem[] = [
     icon: ShoppingBag,
     children: [
       {
+        label: "Material",
+        children: [
+          {
+            label: "Order",
+            href: "/dashboard/purchase/material/order",
+            defaultTimeAgo: "1h ago",
+            keywords: ["material order", "purchase material", "material", "order"],
+          },
+          {
+            label: "Challan",
+            href: "/dashboard/purchase/material/challan",
+            defaultTimeAgo: "1h ago",
+            keywords: ["material challan", "purchase material challan", "challan"],
+          },
+          {
+            label: "Invoice",
+            href: "/dashboard/purchase/material/invoice",
+            defaultTimeAgo: "1h ago",
+            keywords: ["material invoice", "purchase material invoice", "invoice"],
+          },
+          {
+            label: "Debit Note",
+            children: [
+              {
+                label: "Return DN",
+                href: "/dashboard/purchase/material/debit-note/return",
+                defaultTimeAgo: "1h ago",
+                keywords: ["material debit note", "return dn", "debit note"],
+              },
+              {
+                label: "Discount DN",
+                href: "/dashboard/purchase/material/debit-note/discount",
+                defaultTimeAgo: "1h ago",
+                keywords: ["material debit note", "discount dn", "debit note"],
+              },
+            ],
+          },
+          {
+            label: "Order Desk",
+            href: "/dashboard/purchase/material/order-desk",
+            defaultTimeAgo: "1h ago",
+            keywords: ["material order desk", "order desk", "purchase material"],
+          },
+        ],
+      },
+      {
         label: "Finish Goods",
         children: [
+          {
+            label: "Order",
+            href: "/dashboard/purchase/finish-goods/order",
+            defaultTimeAgo: "1h ago",
+          },
           {
             label: "Purchase Challan",
             href: "/dashboard/purchase/finish-goods/challan",
@@ -288,6 +355,11 @@ export const navItems: NavItem[] = [
             href: "/dashboard/purchase/finish-goods/invoice",
             defaultTimeAgo: "8h ago",
             isCore: true,
+          },
+          {
+            label: "Debit Note",
+            href: "/dashboard/purchase/finish-goods/debit-note",
+            defaultTimeAgo: "1h ago",
           },
         ],
       },
