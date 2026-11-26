@@ -30,17 +30,21 @@ export interface ResolvedPrinterInfo {
  * Resolves the connected thermal printer using PrintBridge.
  */
 export async function resolveVmsPrinter(): Promise<string | null> {
-  const qzCheck = await chromeExtensionPrintService.checkExtension();
-  if (!qzCheck.ok) {
-    toast.error("QZ Tray is not running or not detected. Please launch QZ Tray.", {
+  const extCheck = await chromeExtensionPrintService.checkExtension();
+  if (!extCheck.ok) {
+    toast.error("PrintBridge is not running or not detected. Please setup PrintBridge.", {
       id: "flipkart-vms-print",
       duration: 8000,
+      action: {
+        label: "Setup PrintBridge",
+        onClick: () => window.open("/printbridge", "_blank"),
+      },
     });
     return null;
   }
 
   const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
-  const qzPrinters = detailedPrinters.map((p) => p.name).filter(Boolean);
+  const extPrinters = detailedPrinters.map((p) => p.name).filter(Boolean);
 
   let targetPrinter: string | null =
     (typeof window !== "undefined"
@@ -49,7 +53,7 @@ export async function resolveVmsPrinter(): Promise<string | null> {
       : null);
 
   if (targetPrinter) {
-    const matched = qzPrinters.find(
+    const matched = extPrinters.find(
       (p) => p.toLowerCase().trim() === targetPrinter?.toLowerCase().trim()
     );
     if (matched) {
@@ -59,13 +63,13 @@ export async function resolveVmsPrinter(): Promise<string | null> {
 
   if (!targetPrinter || !isPrinterConnectedAndOnline(targetPrinter, detailedPrinters)) {
     const { printer: onlineConnected } = resolveCurrentlyConnectedPrinter(
-      qzPrinters,
+      extPrinters,
       detailedPrinters
     );
     if (onlineConnected && isPrinterConnectedAndOnline(onlineConnected, detailedPrinters)) {
       targetPrinter = onlineConnected;
-    } else if (qzPrinters.length > 0) {
-      targetPrinter = qzPrinters[0];
+    } else if (extPrinters.length > 0) {
+      targetPrinter = extPrinters[0];
     }
   }
 
@@ -73,6 +77,10 @@ export async function resolveVmsPrinter(): Promise<string | null> {
     toast.error("No printer connected. Print cancelled to avoid queuing.", {
       id: "flipkart-vms-print",
       duration: 8000,
+      action: {
+        label: "Setup PrintBridge",
+        onClick: () => window.open("/printbridge", "_blank"),
+      },
     });
     return null;
   }

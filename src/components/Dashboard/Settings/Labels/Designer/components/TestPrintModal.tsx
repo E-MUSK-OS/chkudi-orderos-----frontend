@@ -118,7 +118,7 @@ export function TestPrintModal({
       }
     : {};
 
-  // Fetch printers and check QZ Tray status
+  // Fetch printers and check extension status
   const loadPrinters = useCallback(async () => {
     setHelperStatus("checking");
     try {
@@ -156,7 +156,7 @@ export function TestPrintModal({
         }
       }
     } catch (err) {
-      console.warn("Error loading printers via QZ Tray:", err);
+      console.warn("Error loading printers for test print:", err);
       setHelperStatus("error");
     }
   }, []);
@@ -199,7 +199,7 @@ export function TestPrintModal({
     };
   }, [open, template, previewData]);
 
-  // Handle Silent Print via QZ Tray
+  // Handle Silent Print via PrintBridge Chrome Extension
   const handleSilentPrint = async () => {
     if (!selectedPrinter) {
       toast.error("Please select a printer first.");
@@ -230,7 +230,7 @@ export function TestPrintModal({
       );
 
       if (extRes && (extRes.success === false || extRes.error)) {
-        throw new Error(extRes.error || "QZ Tray reported print failure");
+        throw new Error(extRes.error || "Print extension reported print failure");
       }
 
       // Log print session
@@ -383,7 +383,7 @@ export function TestPrintModal({
           </p>
         </div>
 
-        {/* QZ Tray Status */}
+        {/* PrintBridge Extension Status */}
         <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-[#080B11] rounded-lg border border-slate-200 dark:border-white/[0.08] text-xs sm:text-sm">
           <div className="flex items-center space-x-2.5">
             <div
@@ -396,7 +396,7 @@ export function TestPrintModal({
               }`}
             />
             <span className="font-medium text-slate-800 dark:text-slate-200">
-              QZ Tray:{" "}
+              PrintBridge Extension:{" "}
               {helperStatus === "online"
                 ? "Active (Ready for Silent Print)"
                 : helperStatus === "checking"
@@ -420,12 +420,12 @@ export function TestPrintModal({
           </Button>
         </div>
 
-        {/* QZ Tray Warning Banner */}
+        {/* Extension Warning Banner */}
         {helperStatus === "extension-missing" && (
           <div className="p-3.5 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-xl text-xs text-amber-900 dark:text-amber-300 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>QZ Tray Not Detected (Using Browser Print)</span>
+              <span>PrintBridge Extension Not Detected (Using Browser Print)</span>
             </div>
             <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-400">
               Browser Print વાપરતી વખતે ક્રોમ (Chrome) પ્રિન્ટ વિન્ડોમાં આ સેટિંગ્સ ખાસ ચેક કરો:
@@ -527,7 +527,7 @@ export function TestPrintModal({
             leftIcon={isPrinting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
             className="w-full sm:w-auto text-xs sm:text-sm h-10 bg-[#E8C16D] text-[#0A0E1A] hover:bg-[#d4ae5c] font-semibold"
           >
-            Silent Print (QZ Tray)
+            Silent Print (Extension)
           </Button>
         </div>
       </div>

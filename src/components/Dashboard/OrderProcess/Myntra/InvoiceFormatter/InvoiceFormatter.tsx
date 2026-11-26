@@ -350,14 +350,14 @@ export default function InvoiceFormatter() {
     const activeBatchSize = customBatch || batchSize || 20;
 
     try {
-      // Auto resolve printer first via QZ Tray
-      toast.loading("Connecting to QZ Tray printer...", { id: "print-toast" });
+      // Auto resolve printer first
+      toast.loading("Connecting to printer...", { id: "print-toast" });
       const availablePrinters = await chromeExtensionPrintService.getPrinters();
       const detailedPrinters = await chromeExtensionPrintService.getPrintersDetailed();
       const { printer, error } = resolveCurrentlyConnectedPrinter(availablePrinters, detailedPrinters);
 
       if (!printer || error) {
-        toast.error(error || "No connected printer found. Ensure QZ Tray is running.", { id: "print-toast" });
+        toast.error(error || "No connected printer found.", { id: "print-toast" });
         return;
       }
       toast.dismiss("print-toast");

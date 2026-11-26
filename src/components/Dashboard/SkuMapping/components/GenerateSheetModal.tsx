@@ -152,11 +152,11 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
     const toastId = toast.loading("Connecting to printer extension...", { id: "sku-direct-print" });
 
     try {
-      // 1. Check QZ Tray Connection
-      const qzCheck = await chromeExtensionPrintService.checkExtension();
-      if (!qzCheck.ok) {
+      // 1. Check Chrome Extension
+      const extCheck = await chromeExtensionPrintService.checkExtension();
+      if (!extCheck.ok) {
         toast.error(
-          "QZ Tray is not running or not detected. Please launch QZ Tray.",
+          "Chrome Print Extension (PrintBridge) not detected. Please ensure it is installed and enabled.",
           { id: toastId, duration: 6000 }
         );
         setIsPrintingDirectly(false);
@@ -173,6 +173,10 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
         toast.error("No printer connected. Please connect printer.", {
           id: toastId,
           duration: 8000,
+          action: {
+            label: "Setup PrintBridge",
+            onClick: () => window.open("/printbridge", "_blank"),
+          },
         });
         setIsPrintingDirectly(false);
         return;
@@ -234,7 +238,7 @@ export default function GenerateSheetModal({ open, onClose }: Props) {
             effectiveHeightMm
           );
           if (extRes && (extRes.success === false || extRes.error)) {
-            throw new Error(extRes.error || "QZ Tray reported print failure");
+            throw new Error(extRes.error || "Print extension reported print failure");
           }
 
           succeededIds.add(row.id);

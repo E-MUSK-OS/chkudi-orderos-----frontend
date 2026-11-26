@@ -101,7 +101,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
       setPrinters([]);
       setHelperOnline(false);
       setHelperStatus("error");
-      console.warn("QZ Tray check failed:", err);
+      console.warn("Chrome print extension check failed:", err);
     }
   }, []);
   const runMatching = useCallback(async () => {
@@ -211,7 +211,7 @@ export function useLabelPrintJob(template: LabelTemplate | null, rows: GenerateR
           effectiveHeightMm
         );
         if (extRes && (extRes.success === false || extRes.error)) {
-          throw new Error(extRes.error || "QZ Tray reported print failure");
+          throw new Error(extRes.error || "Print extension reported print failure");
         }
 
         succeeded.push(item);

@@ -238,7 +238,7 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
           });
         }
       } catch (e) {
-        console.warn("Could not load local printers via QZ Tray:", e);
+        console.warn("Could not load local printers:", e);
       }
     }
     loadPrinters();
