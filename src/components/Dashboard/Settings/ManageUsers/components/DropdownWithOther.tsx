@@ -200,6 +200,21 @@ export default function DropdownWithOther({
       setIsOtherActive(false);
       return;
     }
+
+    const existingMatch = mergedOptions.find(
+      (o) =>
+        o.value.trim().toLowerCase() === trimmed.toLowerCase() ||
+        o.label.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existingMatch) {
+      onChange(existingMatch.value);
+      toast.info(`"${existingMatch.label}" is already available and selected`);
+      setIsOtherActive(false);
+      setCustomValue("");
+      setSearchTerm("");
+      return;
+    }
+
     const newOpt: DropdownOption = { label: trimmed, value: trimmed };
     const updated = [...localCustomOptions, newOpt];
     setLocalCustomOptions(updated);

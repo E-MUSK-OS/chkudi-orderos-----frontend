@@ -118,10 +118,27 @@ export default function UserGeneralTab({ values, onChange, errors, mode }: Props
     if (!trimmed) return;
 
     const current = values.companies || [];
-    if (!current.includes(trimmed)) {
+    const existing = allCompanies.find(
+      (c) => c.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) {
+      if (!current.some((c) => c.trim().toLowerCase() === existing.trim().toLowerCase())) {
+        onChange("companies", [...current, existing]);
+      }
+      toast.info(`"${existing}" is already in Companies and selected`);
+      setCustomCompany("");
+      setIsOtherCompanyActive(false);
+      return;
+    }
+
+    if (!current.some((c) => c.trim().toLowerCase() === trimmed.toLowerCase())) {
       onChange("companies", [...current, trimmed]);
     }
-    setLocalCustomCompanies((prev) => [...prev, trimmed]);
+    setLocalCustomCompanies((prev) =>
+      prev.some((c) => c.trim().toLowerCase() === trimmed.toLowerCase())
+        ? prev
+        : [...prev, trimmed]
+    );
     toast.success(`Added "${trimmed}" to Companies`);
 
     // Persist to database

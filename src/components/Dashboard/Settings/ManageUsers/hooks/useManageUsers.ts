@@ -3,6 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { userManagementService } from "../services/userManagement.service";
 import type { UserFormValues } from "../types/userManagement.types";
 import { toast } from "sonner";
+import {
+  invalidateAndSyncAllDropdowns,
+  optimisticallyAddDropdownOptionToCache,
+} from "@/utils/dropdownOptions.utils";
 
 const getToken = () =>
   typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
@@ -160,18 +164,20 @@ export const useSaveUserDropdownOption = () => {
   return useMutation({
     mutationFn: (data: { field: string; value: string; label?: string }) =>
       userManagementService.saveDropdownOption(data, getToken()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: DROPDOWN_QUERY_KEY, refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["product-dropdown-options"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["material-dropdown-options"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["setting-masters-groups"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["setting-masters-options"], refetchType: "all" });
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("dropdown_options_updated"));
-        try {
-          localStorage.setItem("orderos_dropdown_sync", String(Date.now()));
-        } catch {}
-      }
+    onMutate: (variables) => {
+      optimisticallyAddDropdownOptionToCache(queryClient, variables);
+    },
+    onSuccess: (_data, variables) => {
+      invalidateAndSyncAllDropdowns(
+        queryClient,
+        {
+          action: "create",
+          field: variables.field,
+          newValue: variables.value,
+          newLabel: variables.label || variables.value,
+        },
+        { emitBroadcast: true, clearLocalCache: false }
+      );
     },
   });
 };

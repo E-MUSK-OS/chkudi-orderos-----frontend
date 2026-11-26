@@ -8,6 +8,10 @@ import {
   UpdateOptionPayload,
 } from "../types/settingMasters.types";
 import { toast } from "sonner";
+import {
+  invalidateAndSyncAllDropdowns,
+  type DropdownSyncDetail,
+} from "@/utils/dropdownOptions.utils";
 
 export const SETTING_MASTERS_GROUPS_KEY = ["setting-masters-groups"];
 export const SETTING_MASTERS_OPTIONS_KEY = (field: string) => [
@@ -26,7 +30,8 @@ export const notifyDropdownSync = () => {
 
 export const invalidateAllDropdownQueries = (
   queryClient: any,
-  field?: string
+  field?: string,
+  detail?: DropdownSyncDetail
 ) => {
   if (field) {
     queryClient.invalidateQueries({
@@ -34,12 +39,14 @@ export const invalidateAllDropdownQueries = (
       refetchType: "all",
     });
   }
-  queryClient.invalidateQueries({ queryKey: SETTING_MASTERS_GROUPS_KEY, refetchType: "all" });
-  queryClient.invalidateQueries({ queryKey: ["product-dropdown-options"], refetchType: "all" });
-  queryClient.invalidateQueries({ queryKey: ["material-dropdown-options"], refetchType: "all" });
-  queryClient.invalidateQueries({ queryKey: ["userManagementDropdownOptions"], refetchType: "all" });
-  queryClient.invalidateQueries({ queryKey: ["user-dropdown-options"], refetchType: "all" });
-  notifyDropdownSync();
+  invalidateAndSyncAllDropdowns(
+    queryClient,
+    {
+      field,
+      ...detail,
+    },
+    { emitBroadcast: true, clearLocalCache: true }
+  );
 };
 
 export function useSettingMastersSync() {
@@ -93,7 +100,12 @@ export function useCreateOption() {
     mutationFn: (payload: CreateOptionPayload) =>
       settingMastersService.createOption(payload),
     onSuccess: (_, variables) => {
-      invalidateAllDropdownQueries(queryClient, variables.field);
+      invalidateAllDropdownQueries(queryClient, variables.field, {
+        action: "create",
+        field: variables.field,
+        newValue: variables.value,
+        newLabel: variables.label || variables.value,
+      });
       toast.success(`Option "${variables.value}" added successfully`);
     },
     onError: (err: any) => {
@@ -114,7 +126,15 @@ export function useUpdateOption() {
       payload: UpdateOptionPayload;
     }) => settingMastersService.updateOption(id, payload),
     onSuccess: (_, variables) => {
-      invalidateAllDropdownQueries(queryClient, variables.payload.field);
+      invalidateAllDropdownQueries(queryClient, variables.payload.field, {
+        action: "update",
+        field: variables.payload.field,
+        oldValue: variables.payload.oldValue,
+        newValue: variables.payload.value,
+        oldLabel: variables.payload.oldLabel || variables.payload.oldValue,
+        newLabel: variables.payload.label || variables.payload.value,
+        isActive: variables.payload.isActive,
+      });
       toast.success("Option updated successfully");
     },
     onError: (err: any) => {
@@ -140,7 +160,12 @@ export function useToggleOptionActive() {
     }) =>
       settingMastersService.toggleOptionActive(id, { field, value, isActive }),
     onSuccess: (_, variables) => {
-      invalidateAllDropdownQueries(queryClient, variables.field);
+      invalidateAllDropdownQueries(queryClient, variables.field, {
+        action: "toggle",
+        field: variables.field,
+        newValue: variables.value,
+        isActive: variables.isActive,
+      });
       toast.success(
         `"${variables.value}" set to ${variables.isActive ? "Active" : "Inactive"}`
       );
@@ -167,7 +192,12 @@ export function useDeleteOption() {
       label?: string;
     }) => settingMastersService.deleteOption(id, { field, value, label }),
     onSuccess: (_, variables) => {
-      invalidateAllDropdownQueries(queryClient, variables.field);
+      invalidateAllDropdownQueries(queryClient, variables.field, {
+        action: "delete",
+        field: variables.field,
+        oldValue: variables.value,
+        oldLabel: variables.label || variables.value,
+      });
       toast.success(`"${variables.label || variables.value}" deleted successfully`);
     },
     onError: (err: any) => {

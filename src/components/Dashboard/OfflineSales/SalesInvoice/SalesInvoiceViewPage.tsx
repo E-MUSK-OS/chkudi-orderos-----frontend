@@ -1,0 +1,176 @@
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { X, Printer, Download, Share2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { salesInvoiceService } from "./services/salesInvoice.service";
+import type { SalesInvoice } from "./types/salesInvoice.types";
+import { TaxInvoiceSheet, printHtmlInIframe } from "./components/InvoiceViewModal";
+import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
+import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
+
+type CopyType = "Original for Recipient" | "Duplicate for Transporter" | "Triplicate for Supplier";
+
+export default function SalesInvoiceViewPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const id = params?.id;
+
+  const [invoice, setInvoice] = useState<SalesInvoice | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [selectedCopy, setSelectedCopy] = useState<CopyType>("Original for Recipient");
+  const [loading, setLoading] = useState(true);
+  const printAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [invRes, compRes] = await Promise.allSettled([
+          salesInvoiceService.getInvoiceById(id),
+          companyService.getCompanies({ pageSize: 20 }),
+        ]);
+
+        if (!active) return;
+
+        if (invRes.status === "fulfilled" && invRes.value) {
+          setInvoice(invRes.value);
+        } else {
+          toast.error("Failed to load sales invoice details.");
+        }
+
+        if (compRes.status === "fulfilled" && compRes.value?.data?.length) {
+          const companies = compRes.value.data;
+          const preferred =
+            companies.find((c) => c.isDefault && c.status === "ACTIVE") ||
+            companies.find((c) => c.isDefault) ||
+            companies.find((c) => c.status === "ACTIVE") ||
+            companies[0];
+          setCompany(preferred || null);
+        }
+      } catch (err: any) {
+        if (active) toast.error(err?.message || "Failed to load sales invoice.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  const handleClose = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/sales/sales-invoice");
+    }
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const handlePrint = () => {
+    if (!printAreaRef.current || !invoice) return;
+    printHtmlInIframe(
+      printAreaRef.current.outerHTML,
+      `Tax Invoice - ${invoice.invoiceNo || ""}`
+    );
+  };
+
+  const handleShare = async () => {
+    if (!invoice) return;
+    const url = window.location.href;
+    const text = `Tax Invoice #${invoice.invoiceNo} - ${invoice.billingPartyName}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `Tax Invoice #${invoice.invoiceNo}`, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Invoice link copied to clipboard!");
+      }
+    } catch (_) {}
+  };
+
+  return (
+    <div className="min-h-screen bg-[#232529] text-slate-900 overflow-y-auto">
+      <div className="fixed top-4 right-5 z-50 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handlePrint}
+          disabled={!invoice}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 hover:bg-slate-100 shadow-md transition-all cursor-pointer disabled:opacity-50"
+        >
+          <Printer className="w-3.5 h-3.5" />
+          <span>Print</span>
+        </button>
+        <button
+          type="button"
+          onClick={handlePrint}
+          disabled={!invoice}
+          title="Download PDF"
+          className="h-8 w-8 rounded-lg bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-50"
+        >
+          <Download className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={handleShare}
+          disabled={!invoice}
+          title="Share"
+          className="h-8 w-8 rounded-lg bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-50"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={handleClose}
+          title="Close"
+          className="h-8 w-8 rounded-full bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer ml-1"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="min-h-screen py-4 sm:py-6 px-3 sm:px-6 flex justify-center items-start">
+        {loading ? (
+          <div className="w-full max-w-[794px] min-h-[1080px] bg-white rounded-md shadow-2xl flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Loading Tax Invoice...</span>
+          </div>
+        ) : !invoice ? (
+          <div className="w-full max-w-[794px] min-h-[400px] bg-white rounded-md shadow-2xl flex flex-col items-center justify-center gap-3 p-8 text-center">
+            <p className="text-sm font-semibold text-slate-700">Sales Invoice not found.</p>
+            <button
+              type="button"
+              onClick={() => router.push("/sales/sales-invoice")}
+              className="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
+            >
+              Back to Sales Invoices
+            </button>
+          </div>
+        ) : (
+          <div ref={printAreaRef} className="w-full max-w-[794px] shadow-2xl">
+            <TaxInvoiceSheet
+              inv={invoice}
+              company={company}
+              selectedCopy={selectedCopy}
+              onSelectCopy={setSelectedCopy}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -27,6 +27,13 @@ import DropdownWithOther, {
   type DropdownOption,
 } from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
 import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
+import {
+  buildMergedOptions,
+  normalizeKey,
+  OPTION_RENAMED_EVENT,
+  remapRenamedValue,
+  type DropdownSyncDetail,
+} from "@/utils/dropdownOptions.utils";
 import { cn, getMediaUrl } from "@/lib/utils";
 import DatePicker from "@/components/ui/DatePicker";
 
@@ -241,47 +248,44 @@ export default function CompanyProfileForm({
     []
   );
 
-  // Dynamic businessTypeOptions loaded from database + standard Indian PAN entity types
+  // Dynamic businessTypeOptions synced with DB Setting Masters
   const businessTypeOptions: DropdownOption[] = useMemo(() => {
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "businesstype")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    // First, user saved options from DB
-    dbSaved.forEach((opt) => {
-      const v = opt.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
-      }
-    });
-
-    // Merge standard Indian PAN entity types if not already present
-    STANDARD_BUSINESS_TYPES.forEach((opt) => {
-      const v = opt.value.trim();
-      if (!map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), opt);
-      }
-    });
-
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "businesstype",
+      STANDARD_BUSINESS_TYPES,
+      dropdownData?.savedOptions
+    );
   }, [dropdownData]);
 
-  // Dynamic tradeCategoryOptions purely loaded from database
+  // Dynamic tradeCategoryOptions synced with DB Setting Masters
   const tradeCategoryOptions: DropdownOption[] = useMemo(() => {
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "tradecategory")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    dbSaved.forEach((opt) => {
-      const v = opt.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "tradecategory",
+      ["Manufacturing", "Wholesale", "Retail", "Service", "E-Commerce"],
+      dropdownData?.savedOptions
+    );
   }, [dropdownData]);
+
+  useEffect(() => {
+    const handleOptionRenamed = (e: Event) => {
+      const detail = (e as CustomEvent<DropdownSyncDetail>)?.detail;
+      if (!detail?.field) return;
+      const normField = normalizeKey(detail.field);
+      if (normField === "businesstype") {
+        setFormData((prev) => {
+          const next = remapRenamedValue(prev.businessType, detail);
+          return next ? { ...prev, businessType: next } : prev;
+        });
+      } else if (normField === "tradecategory") {
+        setFormData((prev) => {
+          const next = remapRenamedValue(prev.tradeCategory, detail);
+          return next ? { ...prev, tradeCategory: next } : prev;
+        });
+      }
+    };
+    window.addEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+    return () => window.removeEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+  }, []);
 
   const accountTypeOptions: ThemeSelectOption[] = useMemo(
     () => [

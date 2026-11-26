@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "../../layout/DashboardLayout";
 import PurchaseChallanHeader from "./components/PurchaseChallanHeader";
@@ -9,7 +10,10 @@ import PurchaseChallanFilters from "./components/PurchaseChallanFilters";
 import PurchaseChallanTable from "./components/PurchaseChallanTable";
 import PurchaseChallanForm, { PurchaseChallanFormHandle } from "./components/PurchaseChallanForm";
 import DeletePurchaseChallanModal from "./components/DeletePurchaseChallanModal";
-import ViewPurchaseChallanModal from "./components/ViewPurchaseChallanModal";
+import { PurchaseChallanSheet } from "./components/ViewPurchaseChallanModal";
+import { printHtmlInIframe } from "@/components/Dashboard/OfflineSales/SalesInvoice/components/InvoiceViewModal";
+import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
+import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
 import {
   PurchaseChallan as IPurchaseChallan,
   PurchaseChallanFiltersState,
@@ -22,6 +26,7 @@ import {
 import { toast } from "sonner";
 
 export default function PurchaseChallan() {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<"list" | "create" | "edit">("list");
   const [challans, setChallans] = useState<IPurchaseChallan[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,9 +36,11 @@ export default function PurchaseChallan() {
   const [deletingChallan, setDeletingChallan] = useState<IPurchaseChallan | null>(
     null
   );
-  const [viewingChallan, setViewingChallan] = useState<IPurchaseChallan | null>(
-    null
-  );
+  const [printData, setPrintData] = useState<{
+    challan: IPurchaseChallan;
+    company: Company | null;
+  } | null>(null);
+  const challanPrintRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedChallanIds, setSelectedChallanIds] = useState<string[]>([]);
 
@@ -244,15 +251,47 @@ export default function PurchaseChallan() {
     }
   };
 
-  const handleView = async (challan: IPurchaseChallan) => {
-    setViewingChallan(challan);
-    try {
-      const res = await purchaseChallanService.getChallanById(challan.id);
-      if (res?.data) {
-        setViewingChallan(res.data);
+  useEffect(() => {
+    if (!printData || !challanPrintRef.current) return;
+    const timer = setTimeout(() => {
+      if (challanPrintRef.current) {
+        printHtmlInIframe(
+          challanPrintRef.current.innerHTML,
+          `Purchase Challan - ${printData.challan.challanNo}`
+        );
       }
-    } catch (err) {
-      console.error("Failed to fetch complete purchase challan details:", err);
+      setPrintData(null);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [printData]);
+
+  const handleView = (challan: IPurchaseChallan) => {
+    router.push(`/purchase/finish-goods/challan/view/${challan.id}`);
+  };
+
+  const handlePrint = async (challan: IPurchaseChallan) => {
+    try {
+      const [chRes, compRes] = await Promise.allSettled([
+        purchaseChallanService.getChallanById(challan.id),
+        companyService.getCompanies({ pageSize: 20 }),
+      ]);
+
+      let preferredCompany: Company | null = null;
+      if (compRes.status === "fulfilled" && compRes.value?.data?.length) {
+        const companies = compRes.value.data;
+        preferredCompany =
+          companies.find((c) => c.isDefault && c.status === "ACTIVE") ||
+          companies.find((c) => c.isDefault) ||
+          companies.find((c) => c.status === "ACTIVE") ||
+          companies[0] ||
+          null;
+      }
+
+      const fullChallan =
+        chRes.status === "fulfilled" && chRes.value?.data ? chRes.value.data : challan;
+      setPrintData({ challan: fullChallan, company: preferredCompany });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to prepare purchase challan for printing.");
     }
   };
 
@@ -385,6 +424,7 @@ export default function PurchaseChallan() {
                   onEdit={handleEdit}
                   onDelete={handleDeleteClick}
                   onView={handleView}
+                  onPrint={handlePrint}
                 />
               </div>
             </div>
@@ -403,13 +443,12 @@ export default function PurchaseChallan() {
           />
         )}
 
-        {/* View Details Modal */}
-        <ViewPurchaseChallanModal
-          open={!!viewingChallan}
-          challan={viewingChallan}
-          onClose={() => setViewingChallan(null)}
-          onEdit={handleEdit}
-        />
+        {/* Hidden Printable Purchase Challan Container */}
+        {printData && (
+          <div ref={challanPrintRef} className="hidden">
+            <PurchaseChallanSheet challan={printData.challan} company={printData.company} />
+          </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         <DeletePurchaseChallanModal

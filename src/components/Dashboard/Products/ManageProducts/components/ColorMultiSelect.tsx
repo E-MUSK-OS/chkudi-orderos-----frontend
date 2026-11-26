@@ -58,6 +58,7 @@ interface ColorMultiSelectProps {
   additionalColors?: string[];
   disabledColors?: string[];
   colorHexMap?: Record<string, string>;
+  useExternalColorsOnly?: boolean;
   error?: string;
   className?: string;
   singleSelect?: boolean;
@@ -70,6 +71,7 @@ export default function ColorMultiSelect({
   additionalColors = [],
   disabledColors = [],
   colorHexMap = {},
+  useExternalColorsOnly = false,
   error,
   className,
   singleSelect = false,
@@ -170,7 +172,7 @@ export default function ColorMultiSelect({
       });
     };
 
-    if (additionalColors && additionalColors.length > 0) {
+    if (useExternalColorsOnly || (additionalColors && additionalColors.length > 0)) {
       additionalColors.forEach((c) => addUnique(c));
     } else {
       defaultColorPresets.forEach((c) => addUnique(c.name, c.hex));
@@ -180,7 +182,7 @@ export default function ColorMultiSelect({
     (value || []).forEach((v) => addUnique(v));
 
     return list;
-  }, [additionalColors, localCustomColors, value, customColorHexMap, disabledColors, colorHexMap]);
+  }, [additionalColors, localCustomColors, value, customColorHexMap, disabledColors, colorHexMap, useExternalColorsOnly]);
 
   // Sync with external Setting Masters updates
   useEffect(() => {
@@ -228,6 +230,26 @@ export default function ColorMultiSelect({
     const trimmed = newColorName.trim();
     if (!trimmed) return;
 
+    const existingColor = allColors.find(
+      (c) => c.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (existingColor) {
+      if (singleSelect) {
+        onChange([existingColor.name]);
+        setIsOpen(false);
+      } else if (
+        !value.some((v) => v.toLowerCase() === existingColor.name.toLowerCase())
+      ) {
+        onChange([...value, existingColor.name]);
+      }
+      setNewColorName("");
+      setHexInput("E11D48");
+      setCustomHex("#E11D48");
+      setIsAddingCustom(false);
+      return;
+    }
+
     if (singleSelect) {
       onChange([trimmed]);
       setIsOpen(false);
@@ -255,7 +277,10 @@ export default function ColorMultiSelect({
     }
 
     setLocalCustomColors((prev) => {
-      const updated = Array.from(new Set([...prev, trimmed]));
+      if (prev.some((c) => c.trim().toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      const updated = [...prev, trimmed];
       try {
         localStorage.setItem("orderos_custom_colors", JSON.stringify(updated));
       } catch {}

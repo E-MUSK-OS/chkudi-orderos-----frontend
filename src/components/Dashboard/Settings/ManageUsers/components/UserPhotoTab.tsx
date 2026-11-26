@@ -16,6 +16,7 @@ import {
   Crop,
   Eye,
   Sliders,
+  Search,
 } from "lucide-react";
 import ProfileImageCropModal from "./ProfileImageCropModal";
 import { userManagementService } from "../services/userManagement.service";
@@ -122,6 +123,7 @@ export default function UserPhotoTab({
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string>("");
   const [currentUser, setCurrentUser] = useState<UserPermissions | null>(null);
+  const [permSearch, setPermSearch] = useState("");
 
   // Full name & Initials for profile preview
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(" ").trim() || "User Name";
@@ -600,10 +602,10 @@ export default function UserPhotoTab({
       {/* 2. Page Access Control Feature - Exact Table Form Matching View Mode */}
       <div className="pt-6 border-t border-[#E7E0D2] dark:border-white/[0.08] space-y-5">
         {/* Permission Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-3">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3.5">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             <div className="flex items-center gap-2">
-              <div className="grid h-7 w-7 place-items-center rounded-xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shadow-2xs">
+              <div className="grid h-7 w-7 place-items-center rounded-xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shadow-2xs shrink-0">
                 <Shield className="h-4 w-4" />
               </div>
               <div>
@@ -616,43 +618,77 @@ export default function UserPhotoTab({
               </div>
             </div>
 
-            {/* Category: Dashboard Pages */}
-            <div className="flex items-center gap-2 pt-1">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] shadow-xs">
-                <LayoutDashboard size={14} />
-                <span>Dashboard Pages ({permissions.length})</span>
-              </div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] shadow-xs shrink-0 whitespace-nowrap">
+              <LayoutDashboard size={14} />
+              <span>
+                Dashboard Pages (
+                {permSearch.trim()
+                  ? `${permissions.filter((p) => {
+                      const q = permSearch.toLowerCase().trim();
+                      return (
+                        p.name?.toLowerCase().includes(q) ||
+                        p.description?.toLowerCase().includes(q) ||
+                        p.id?.toLowerCase().includes(q) ||
+                        p.path?.toLowerCase().includes(q)
+                      );
+                    }).length} / ${permissions.length}`
+                  : permissions.length}
+                )
+              </span>
             </div>
           </div>
 
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-2 self-start md:self-center flex-wrap">
-            <button
-              type="button"
-              onClick={handleGrantAll}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-emerald-300 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/20 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-            >
-              <CheckCheck size={13} />
-              <span>Grant All</span>
-            </button>
+          {/* Right Side: Searchbar -> Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5 xl:justify-end">
+            <div className="relative w-full sm:w-64 shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
+              <input
+                type="text"
+                value={permSearch}
+                onChange={(e) => setPermSearch(e.target.value)}
+                placeholder="Search pages..."
+                className="w-full h-9 sm:h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 transition-all shadow-xs"
+              />
+              {permSearch && (
+                <button
+                  type="button"
+                  onClick={() => setPermSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
 
-            <button
-              type="button"
-              onClick={handleDenyAll}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-            >
-              <Ban size={13} />
-              <span>Deny All</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <button
+                type="button"
+                onClick={handleGrantAll}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-emerald-300 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/20 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
+              >
+                <CheckCheck size={13} />
+                <span>Grant All</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={handleResetToDefault}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-            >
-              <RotateCcw size={13} className="text-[#B88728] dark:text-[#E8C16D]" />
-              <span>Reset</span>
-            </button>
+              <button
+                type="button"
+                onClick={handleDenyAll}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition-all cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
+              >
+                <Ban size={13} />
+                <span>Deny All</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetToDefault}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] transition-all shadow-xs cursor-pointer active:scale-[0.98] whitespace-nowrap"
+              >
+                <RotateCcw size={13} className="text-[#B88728] dark:text-[#E8C16D]" />
+                <span>Reset</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -692,7 +728,32 @@ export default function UserPhotoTab({
             </thead>
 
             <tbody className="divide-y divide-[#E7E0D2]/60 dark:divide-white/[0.06] bg-white dark:bg-[#0F1626]">
-              {permissions.map((row, index) => {
+              {(() => {
+                const query = permSearch.toLowerCase().trim();
+                const visiblePermissions = query
+                  ? permissions.filter(
+                      (p) =>
+                        p.name?.toLowerCase().includes(query) ||
+                        p.description?.toLowerCase().includes(query) ||
+                        p.id?.toLowerCase().includes(query) ||
+                        p.path?.toLowerCase().includes(query)
+                    )
+                  : permissions;
+
+                if (visiblePermissions.length === 0) {
+                  return (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-8 text-center text-xs font-medium text-slate-400 dark:text-slate-500"
+                      >
+                        No pages found matching &ldquo;{permSearch}&rdquo;
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return visiblePermissions.map((row, index) => {
                 const isRowAllGranted = row.create && row.read && row.update && row.delete;
                 const slug = PERMISSION_ID_TO_PAGE_SLUG[row.id];
 
@@ -848,7 +909,8 @@ export default function UserPhotoTab({
                     </td>
                   </tr>
                 );
-              })}
+              });
+              })()}
             </tbody>
           </table>
         </div>

@@ -51,11 +51,22 @@ export const brandOptions: OptionItem[] = [];
 
 export const unitOptions: OptionItem[] = [];
 
-export const genderOptions: OptionItem[] = [];
+export const genderOptions: OptionItem[] = [
+  { label: "Man", value: "Man" },
+  { label: "Women", value: "Women" },
+  { label: "Boy", value: "Boy" },
+  { label: "Girl", value: "Girl" },
+  { label: "Unisex", value: "Unisex" },
+];
 
 export const gstOptions: OptionItem[] = [];
 
-export const availabilityOptions: OptionItem[] = [];
+export const availabilityOptions: OptionItem[] = [
+  { label: "Public", value: "Public" },
+  { label: "Private", value: "Private" },
+  { label: "Semi-Private", value: "Semi-Private" },
+  { label: "Wholesale", value: "Wholesale" },
+];
 
 export const rackAddressOptions: OptionItem[] = [];
 
@@ -96,7 +107,7 @@ export const defaultAlphaSizes: string[] = [
   "M",
   "L",
   "XL",
-  "2XL",
+  "XXL",
   "4XL",
 ];
 

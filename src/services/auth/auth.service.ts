@@ -1,4 +1,5 @@
 import { api } from "../api";
+import { ensureCsrfToken } from "@/utils/auth";
 
 import {
   ApiResponse,
@@ -8,7 +9,6 @@ import {
   LoginResponse,
   SendOtpRequest,
   VerifyOtpRequest,
-  VerifyOtpResponse,
   ForgotPasswordRequest,
   ResetPasswordRequest,
   RefreshTokenRequest,
@@ -16,6 +16,8 @@ import {
   LogoutRequest,
   User,
   VerifyOtpApiResponse,
+  StepUpResponse,
+  ActiveDeviceSession,
 } from "./auth.types";
 
 export const authService = {
@@ -25,6 +27,49 @@ export const authService = {
 
   login(data: LoginRequest) {
     return api.post<ApiResponseWithData<LoginResponse>>("/auth/login", data);
+  },
+
+  async rememberLogin() {
+    const csrfToken = await ensureCsrfToken();
+    return api.post<ApiResponseWithData<LoginResponse>>(
+      "/auth/remember-login",
+      {},
+      undefined,
+      csrfToken ? { "X-CSRF-Token": csrfToken } : undefined
+    );
+  },
+
+  async stepUp(password: string) {
+    const csrfToken = await ensureCsrfToken();
+    return api.post<ApiResponseWithData<StepUpResponse>>(
+      "/auth/step-up",
+      { password },
+      undefined,
+      csrfToken ? { "X-CSRF-Token": csrfToken } : undefined
+    );
+  },
+
+  getSessions() {
+    return api.get<ApiResponseWithData<ActiveDeviceSession[]>>("/auth/sessions");
+  },
+
+  async revokeSession(id: string) {
+    const csrfToken = await ensureCsrfToken();
+    return api.delete<ApiResponse>(
+      `/auth/sessions/${encodeURIComponent(id)}`,
+      undefined,
+      csrfToken ? { "X-CSRF-Token": csrfToken } : undefined
+    );
+  },
+
+  async revokeAllSessions() {
+    const csrfToken = await ensureCsrfToken();
+    return api.post<ApiResponse>(
+      "/auth/sessions/revoke-all",
+      {},
+      undefined,
+      csrfToken ? { "X-CSRF-Token": csrfToken } : undefined
+    );
   },
 
   sendOtp(data: SendOtpRequest) {
@@ -50,12 +95,18 @@ export const authService = {
   refreshToken(data: RefreshTokenRequest) {
     return api.post<ApiResponseWithData<RefreshTokenResponse>>(
       "/auth/refresh-token",
-      data,
+      data
     );
   },
 
-  logout(data: LogoutRequest) {
-    return api.post<ApiResponse>("/auth/logout", data);
+  async logout(data: LogoutRequest) {
+    const csrfToken = await ensureCsrfToken();
+    return api.post<ApiResponse>(
+      "/auth/logout",
+      data,
+      undefined,
+      csrfToken ? { "X-CSRF-Token": csrfToken } : undefined
+    );
   },
 
   getMe(token: string) {

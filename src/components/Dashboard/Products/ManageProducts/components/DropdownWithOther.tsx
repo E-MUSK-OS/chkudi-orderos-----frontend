@@ -178,6 +178,20 @@ export default function DropdownWithOther({
       return;
     }
 
+    const activePool = [...(options || []), ...localCustomOptions];
+    const existingMatch = activePool.find(
+      (o) =>
+        o.value.trim().toLowerCase() === trimmed.toLowerCase() ||
+        o.label.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (existingMatch) {
+      onChange(existingMatch.value);
+      setCustomValue("");
+      setIsOtherActive(false);
+      return;
+    }
+
     const newOpt: DropdownOption = { label: trimmed, value: trimmed };
     const updated = [...localCustomOptions, newOpt];
     setLocalCustomOptions(updated);

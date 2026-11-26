@@ -64,6 +64,7 @@ interface ColorMultiSelectProps {
   additionalColors?: string[];
   disabledColors?: string[];
   colorHexMap?: Record<string, string>;
+  useExternalColorsOnly?: boolean;
   error?: string;
   className?: string;
 }
@@ -75,6 +76,7 @@ export default function ColorMultiSelect({
   additionalColors = [],
   disabledColors = [],
   colorHexMap = {},
+  useExternalColorsOnly = false,
   error,
   className,
 }: ColorMultiSelectProps) {
@@ -164,7 +166,7 @@ export default function ColorMultiSelect({
       });
     };
 
-    if (additionalColors && additionalColors.length > 0) {
+    if (useExternalColorsOnly || (additionalColors && additionalColors.length > 0)) {
       additionalColors.forEach((c) => addUnique(c));
     } else {
       defaultColorPresets.forEach((c) => addUnique(c.name, c.hex));
@@ -174,7 +176,7 @@ export default function ColorMultiSelect({
     value.forEach((c) => addUnique(c));
 
     return list;
-  }, [additionalColors, localCustomColors, value, customColorHexMap, disabledColors, colorHexMap]);
+  }, [additionalColors, localCustomColors, value, customColorHexMap, disabledColors, colorHexMap, useExternalColorsOnly]);
 
   // Determine whether to open upward or downward
   const determineDirection = () => {
@@ -259,6 +261,22 @@ export default function ColorMultiSelect({
   const handleAddCustomColor = () => {
     const trimmed = newColorName.trim();
     if (!trimmed) return;
+
+    const existingColor = allColors.find(
+      (c) => c.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (existingColor) {
+      if (!value.some((v) => v.toLowerCase() === existingColor.name.toLowerCase())) {
+        onChange([...value, existingColor.name]);
+      }
+      toast.info(`Color "${existingColor.name}" is already available and selected`);
+      setNewColorName("");
+      setHexInput("E11D48");
+      setCustomHex("#E11D48");
+      setIsAddingCustom(false);
+      return;
+    }
 
     if (!value.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
       onChange([...value, trimmed]);

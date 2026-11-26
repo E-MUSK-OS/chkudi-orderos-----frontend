@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff, Mail, Lock, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -13,13 +13,42 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
 import { authService } from "@/services/auth/auth.service";
-import { setToken } from "@/utils/auth";
+import { SKIP_AUTO_LOGIN_KEY, setToken, tryRememberMeRestore } from "@/utils/auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const attemptAutoLogin = async () => {
+      try {
+        if (sessionStorage.getItem(SKIP_AUTO_LOGIN_KEY) === "1") {
+          sessionStorage.removeItem(SKIP_AUTO_LOGIN_KEY);
+          return;
+        }
+      } catch {}
+
+      const token = await tryRememberMeRestore();
+      if (!active || !token) return;
+      const params =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search)
+          : null;
+      const target = params?.get("redirect");
+      const safeTarget =
+        target && target.startsWith("/") && !target.startsWith("//")
+          ? target
+          : "/dashboard";
+      router.replace(safeTarget);
+    };
+    attemptAutoLogin();
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const {
     register,
@@ -35,6 +64,7 @@ export default function LoginForm() {
       const response = await authService.login({
         email: data.email,
         password: data.password,
+        remember: Boolean(data.remember),
       });
 
       if (!response.success || !response.data) {

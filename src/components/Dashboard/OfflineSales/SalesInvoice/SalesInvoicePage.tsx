@@ -13,6 +13,12 @@ import InvoiceItemsTable from "./components/InvoiceItemsTable";
 import InvoicePartyDetails from "./components/InvoicePartyDetails";
 import InvoiceSummaryFooter from "./components/InvoiceSummaryFooter";
 import DeleteInvoiceModal from "./components/DeleteInvoiceModal";
+import {
+  TaxInvoiceSheet,
+  printHtmlInIframe,
+} from "./components/InvoiceViewModal";
+import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
+import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
 
 import {
   SalesInvoice,
@@ -156,11 +162,61 @@ export default function SalesInvoicePage() {
 
   // Form View State
   const [activeInvoice, setActiveInvoice] = useState<SalesInvoice | null>(null);
+  const [printQueue, setPrintQueue] = useState<{
+    invoices: SalesInvoice[];
+    company: Company | null;
+  } | null>(null);
+  const bulkPrintRef = useRef<HTMLDivElement>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<SalesInvoice | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!printQueue || !bulkPrintRef.current) return;
+    const title =
+      printQueue.invoices.length === 1
+        ? `Tax Invoice - ${printQueue.invoices[0].invoiceNo}`
+        : `Tax Invoices (${printQueue.invoices.length})`;
+    const timer = setTimeout(() => {
+      if (bulkPrintRef.current) {
+        printHtmlInIframe(bulkPrintRef.current.innerHTML, title);
+      }
+      setPrintQueue(null);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [printQueue]);
+
+  const handlePrintInvoices = async (targetInvoices: SalesInvoice[]) => {
+    if (targetInvoices.length === 0) return;
+    try {
+      const [compRes, ...invResults] = await Promise.allSettled([
+        companyService.getCompanies({ pageSize: 20 }),
+        ...targetInvoices.map((inv) => salesInvoiceService.getInvoiceById(inv.id)),
+      ]);
+
+      let preferredCompany: Company | null = null;
+      if (compRes.status === "fulfilled" && compRes.value?.data?.length) {
+        const companies = compRes.value.data;
+        preferredCompany =
+          companies.find((c) => c.isDefault && c.status === "ACTIVE") ||
+          companies.find((c) => c.isDefault) ||
+          companies.find((c) => c.status === "ACTIVE") ||
+          companies[0] ||
+          null;
+      }
+
+      const hydratedInvoices = targetInvoices.map((orig, idx) => {
+        const res = invResults[idx];
+        return res && res.status === "fulfilled" && res.value ? res.value : orig;
+      });
+
+      setPrintQueue({ invoices: hydratedInvoices, company: preferredCompany });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to prepare invoice for printing.");
+    }
+  };
 
   // Form Data State
   const [formData, setFormData] = useState<SalesInvoiceFormData>({
@@ -878,7 +934,7 @@ export default function SalesInvoicePage() {
                 tableContainerRef={tableContainerRef}
                 selectedIds={selectedInvoiceIds}
                 onSelectionChange={setSelectedInvoiceIds}
-                onView={(inv) => populateFromInvoice(inv)}
+                onView={(inv) => router.push(`/sales/sales-invoice/view/${inv.id}`)}
                 onEdit={(inv) => populateFromInvoice(inv)}
                 onDelete={(inv) => {
                   setDeletingInvoice(inv);
@@ -888,15 +944,16 @@ export default function SalesInvoicePage() {
                   populateFromInvoice(inv);
                   toast.info(`Editing invoice #${inv.invoiceNo}`);
                 }}
-                onPrint={() => {
-                  window.print();
+                onPrint={(inv) => {
+                  void handlePrintInvoices([inv]);
                 }}
                 onPrintMultiple={(ids) => {
                   if (ids.length === 0) {
                     toast.info("Please select at least one invoice to print.");
                     return;
                   }
-                  window.print();
+                  const selected = invoices.filter((inv) => ids.includes(inv.id));
+                  void handlePrintInvoices(selected);
                 }}
               />
             </div>
@@ -983,6 +1040,17 @@ export default function SalesInvoicePage() {
           }}
           onConfirm={handleDelete}
         />
+
+        {/* Hidden Printable Tax Invoice Container for Row & Bulk Print */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <TaxInvoiceSheet inv={inv} company={printQueue.company} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

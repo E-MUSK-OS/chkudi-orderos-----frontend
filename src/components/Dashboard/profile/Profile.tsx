@@ -2,6 +2,7 @@ import DashboardLayout from "../layout/DashboardLayout";
 import ProfileForm from "./ProfileForm";
 import AccountStatus from "./AccountStatus";
 import MarketplaceAccounts from "./MarketplaceAccounts";
+import ActiveSessions from "./ActiveSessions";
 
 export default function Profile() {
   return (
@@ -31,6 +32,9 @@ export default function Profile() {
       </div>
       <div className="mt-8">
         <MarketplaceAccounts />
+      </div>
+      <div className="mt-8">
+        <ActiveSessions />
       </div>
     </DashboardLayout>
   );

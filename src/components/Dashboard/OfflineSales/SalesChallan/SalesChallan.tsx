@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { coordinateTableWheelScroll } from "@/utils/tableScrollCoordinator";
 import DashboardLayout from "../../layout/DashboardLayout";
 import ChallanHeader from "./components/ChallanHeader";
@@ -9,7 +10,10 @@ import ChallanFilters from "./components/ChallanFilters";
 import ChallanTable from "./components/ChallanTable";
 import ChallanForm, { ChallanFormHandle } from "./components/ChallanForm";
 import DeleteChallanModal from "./components/DeleteChallanModal";
-import ViewSalesChallanModal from "./components/ViewSalesChallanModal";
+import { DeliveryChallanSheet } from "./components/ViewSalesChallanModal";
+import { printHtmlInIframe } from "../SalesInvoice/components/InvoiceViewModal";
+import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
+import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
 import {
   SalesChallan as ISalesChallan,
   ChallanFiltersState,
@@ -22,6 +26,7 @@ import {
 import { toast } from "sonner";
 
 export default function SalesChallan() {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<"list" | "create" | "edit">("list");
   const [challans, setChallans] = useState<ISalesChallan[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,9 +36,11 @@ export default function SalesChallan() {
   const [deletingChallan, setDeletingChallan] = useState<ISalesChallan | null>(
     null
   );
-  const [viewingChallan, setViewingChallan] = useState<ISalesChallan | null>(
-    null
-  );
+  const [printData, setPrintData] = useState<{
+    challan: ISalesChallan;
+    company: Company | null;
+  } | null>(null);
+  const challanPrintRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedChallanIds, setSelectedChallanIds] = useState<string[]>([]);
 
@@ -246,15 +253,47 @@ export default function SalesChallan() {
     }
   };
 
-  const handleView = async (challan: ISalesChallan) => {
-    setViewingChallan(challan);
-    try {
-      const res = await challanService.getChallanById(challan.id);
-      if (res?.data) {
-        setViewingChallan(res.data);
+  useEffect(() => {
+    if (!printData || !challanPrintRef.current) return;
+    const timer = setTimeout(() => {
+      if (challanPrintRef.current) {
+        printHtmlInIframe(
+          challanPrintRef.current.innerHTML,
+          `Delivery Challan - ${printData.challan.challanNo}`
+        );
       }
-    } catch (err) {
-      console.error("Failed to fetch fresh challan details:", err);
+      setPrintData(null);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [printData]);
+
+  const handleView = (challan: ISalesChallan) => {
+    router.push(`/sales/sales-challan/view/${challan.id}`);
+  };
+
+  const handlePrint = async (challan: ISalesChallan) => {
+    try {
+      const [chRes, compRes] = await Promise.allSettled([
+        challanService.getChallanById(challan.id),
+        companyService.getCompanies({ pageSize: 20 }),
+      ]);
+
+      let preferredCompany: Company | null = null;
+      if (compRes.status === "fulfilled" && compRes.value?.data?.length) {
+        const companies = compRes.value.data;
+        preferredCompany =
+          companies.find((c) => c.isDefault && c.status === "ACTIVE") ||
+          companies.find((c) => c.isDefault) ||
+          companies.find((c) => c.status === "ACTIVE") ||
+          companies[0] ||
+          null;
+      }
+
+      const fullChallan =
+        chRes.status === "fulfilled" && chRes.value?.data ? chRes.value.data : challan;
+      setPrintData({ challan: fullChallan, company: preferredCompany });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to prepare challan for printing.");
     }
   };
 
@@ -387,6 +426,7 @@ export default function SalesChallan() {
                   onEdit={handleEdit}
                   onDelete={handleDeleteClick}
                   onView={handleView}
+                  onPrint={handlePrint}
                 />
               </div>
             </div>
@@ -405,13 +445,12 @@ export default function SalesChallan() {
           />
         )}
 
-        {/* View Details Modal */}
-        <ViewSalesChallanModal
-          open={!!viewingChallan}
-          challan={viewingChallan}
-          onClose={() => setViewingChallan(null)}
-          onEdit={handleEdit}
-        />
+        {/* Hidden Printable Delivery Challan Container */}
+        {printData && (
+          <div ref={challanPrintRef} className="hidden">
+            <DeliveryChallanSheet challan={printData.challan} company={printData.company} />
+          </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         <DeleteChallanModal

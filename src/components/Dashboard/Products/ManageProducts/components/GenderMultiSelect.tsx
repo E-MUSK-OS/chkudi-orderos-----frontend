@@ -157,15 +157,29 @@ export default function GenderMultiSelect({
       return;
     }
 
-    const exists = mergedOptions.some(
-      (o) => o.value.toLowerCase() === trimmed.toLowerCase()
+    const existingMatch = mergedOptions.find(
+      (o) =>
+        o.value.trim().toLowerCase() === trimmed.toLowerCase() ||
+        o.label.trim().toLowerCase() === trimmed.toLowerCase()
     );
-    if (!exists) {
-      setLocalCustomOptions((prev) => [
-        ...prev,
-        { label: trimmed, value: trimmed },
-      ]);
+    if (existingMatch) {
+      const targetVal = existingMatch.value;
+      if (singleSelect) {
+        onChange([targetVal]);
+      } else if (!selectedValues.some((v) => v.toLowerCase() === targetVal.toLowerCase())) {
+        onChange([...selectedValues, targetVal]);
+      }
+      toast.info(`"${existingMatch.label}" is already available and selected`);
+      setCustomValue("");
+      setIsAddingCustom(false);
+      return;
     }
+
+    setLocalCustomOptions((prev) =>
+      prev.some((o) => o.value.trim().toLowerCase() === trimmed.toLowerCase())
+        ? prev
+        : [...prev, { label: trimmed, value: trimmed }]
+    );
 
     if (singleSelect) {
       onChange([trimmed]);

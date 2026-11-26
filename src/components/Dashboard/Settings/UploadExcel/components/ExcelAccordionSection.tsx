@@ -285,11 +285,19 @@ export default function ExcelAccordionSection({
                       const label =
                         filterKey === "masterSku"
                           ? "Master SKU"
+                          : filterKey === "subCategory"
+                          ? "Sub Category"
+                          : filterKey === "warehouse"
+                          ? "Warehouse"
                           : filterKey.charAt(0).toUpperCase() + filterKey.slice(1);
                       const options = getOptionsForFilterKey(filterKey);
                       const currentVal = filters[filterKey] || "All";
 
-                      const isMulti = filterKey === "category" || filterKey === "masterSku";
+                      const isMulti =
+                        filterKey === "category" ||
+                        filterKey === "subCategory" ||
+                        filterKey === "masterSku" ||
+                        filterKey === "warehouse";
 
                       if (isMulti) {
                         const selectedArray = Array.isArray(currentVal)
@@ -307,7 +315,17 @@ export default function ExcelAccordionSection({
                               value={selectedArray}
                               onChange={(val) => handleFilterChange(filterKey, val)}
                               options={options}
-                              placeholder={`All ${label === "Category" ? "categories" : label === "Master SKU" ? "Master SKUs" : label}`}
+                              placeholder={`All ${
+                                label === "Category"
+                                  ? "categories"
+                                  : label === "Sub Category"
+                                  ? "sub categories"
+                                  : label === "Master SKU"
+                                  ? "Master SKUs"
+                                  : label === "Warehouse"
+                                  ? "warehouses"
+                                  : label
+                              }`}
                               buttonClassName="h-8.5 sm:h-9 px-3.5 text-xs rounded-xl bg-white dark:bg-[#131622] border border-[#E7E0D2] dark:border-white/[0.08] text-slate-800 dark:text-white font-medium hover:border-[#E8C16D] dark:hover:border-[#F5C451]/50 shadow-xs"
                               onOpenChange={(open) => setActiveDropdownKey((prev) => (open ? filterKey : prev === filterKey ? null : prev))}
                             />

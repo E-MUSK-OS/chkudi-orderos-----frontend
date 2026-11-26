@@ -54,19 +54,26 @@ export function useSaveDropdownOption() {
   return useMutation({
     mutationFn: (data: { field: string; value: string; label?: string }) =>
       productService.saveDropdownOption(data, getToken()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY, refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["material-dropdown-options"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["userManagementDropdownOptions"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["user-dropdown-options"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["setting-masters-groups"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["setting-masters-options"], refetchType: "all" });
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("dropdown_options_updated"));
-        try {
-          localStorage.setItem("orderos_dropdown_sync", String(Date.now()));
-        } catch {}
-      }
+    onMutate: async (variables) => {
+      const { optimisticallyAddDropdownOptionToCache } = await import(
+        "@/utils/dropdownOptions.utils"
+      );
+      optimisticallyAddDropdownOptionToCache(queryClient, variables);
+    },
+    onSuccess: async (_data, variables) => {
+      const { invalidateAndSyncAllDropdowns } = await import(
+        "@/utils/dropdownOptions.utils"
+      );
+      invalidateAndSyncAllDropdowns(
+        queryClient,
+        {
+          action: "create",
+          field: variables.field,
+          newValue: variables.value,
+          newLabel: variables.label || variables.value,
+        },
+        { emitBroadcast: true, clearLocalCache: false }
+      );
     },
   });
 }

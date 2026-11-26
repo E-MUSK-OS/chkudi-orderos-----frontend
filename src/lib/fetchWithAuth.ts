@@ -1,6 +1,11 @@
 import { authService } from "@/services/auth/auth.service";
 import { verifyClientActionPermission } from "@/services/api";
-import { handleAuthFailure, setToken } from "@/utils/auth";
+import {
+  handleAuthFailure,
+  requestStepUpAuth,
+  setToken,
+  tryRememberMeRestore,
+} from "@/utils/auth";
 
 export const fetchWithAuth = async (
   url: string,
@@ -30,6 +35,10 @@ export const fetchWithAuth = async (
     const refreshToken = localStorage.getItem("refreshToken");
 
     if (!refreshToken) {
+      const restored = await tryRememberMeRestore();
+      if (restored) {
+        return makeRequest(restored);
+      }
       handleAuthFailure();
       throw new Error("Refresh token not found");
     }
@@ -55,8 +64,23 @@ export const fetchWithAuth = async (
         handleAuthFailure();
       }
     } catch (error) {
+      const restored = await tryRememberMeRestore();
+      if (restored) {
+        return makeRequest(restored);
+      }
       handleAuthFailure();
       throw error;
+    }
+  }
+
+  if (response.status === 403) {
+    const cloned = response.clone();
+    const errJson = await cloned.json().catch(() => null);
+    if (errJson?.code === "STEP_UP_REQUIRED") {
+      const freshToken = await requestStepUpAuth();
+      if (freshToken) {
+        return makeRequest(freshToken);
+      }
     }
   }
 

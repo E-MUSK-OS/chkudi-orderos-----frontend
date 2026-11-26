@@ -49,6 +49,11 @@ import {
   printSingleFlipkartOrder,
   syncOrderPrinted,
 } from "../utils/flipkartVmsPrint";
+import {
+  getOrLoadFlipkartShippingDoc,
+  getOrGenerateSingleFlipkartOrderPdf,
+  getCachedFlipkartOrderPdf,
+} from "@/components/Dashboard/OrderProcess/Flipkart/OrderProcess/utils/flipkartPdfCache";
 import { CameraPreview, UploadQueue, RecentScans } from "./";
 import FlipkartStageTransitionModal from "./FlipkartStageTransitionModal";
 import { isQrCode } from "../utils/validateTracking";
@@ -249,6 +254,14 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
     };
   }, []);
 
+  // Keep scan searchbar value selected whenever updated
+  useEffect(() => {
+    if (barcodeInput && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [barcodeInput]);
+
   // 4. Focus barcode input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -438,6 +451,37 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
   }, [summary?.orders, skuDetailsMap]);
 
   const orders = mappedOrders;
+
+  // Pre-warm Flipkart shipping PDF & per-order single PDFs in background for 0ms scan printing
+  useEffect(() => {
+    if (!showBackToOrderProcess || !files?.shippingLabelsPdfBase64 || orders.length === 0) return;
+    let cancelled = false;
+    const prewarm = async () => {
+      try {
+        const doc = await getOrLoadFlipkartShippingDoc(files, activeBatchKey);
+        if (!doc || cancelled) return;
+        const CHUNK = 10;
+        for (let i = 0; i < orders.length; i += CHUNK) {
+          if (cancelled) break;
+          const slice = orders.slice(i, i + CHUNK);
+          await Promise.all(
+            slice.map((o) =>
+              getCachedFlipkartOrderPdf(o.pageIndex, activeBatchKey)
+                ? Promise.resolve()
+                : getOrGenerateSingleFlipkartOrderPdf(o.pageIndex, doc, activeBatchKey).catch(() => null)
+            )
+          );
+          await new Promise((r) => setTimeout(r, 10));
+        }
+      } catch {
+        // Ignore background prewarm failures
+      }
+    };
+    void prewarm();
+    return () => {
+      cancelled = true;
+    };
+  }, [showBackToOrderProcess, files, orders, activeBatchKey]);
 
   // Stage classification counts
   const stageStats = useMemo(() => {
@@ -1002,36 +1046,43 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
       // STAGE 1: SINGLE QUANTITY ORDERS
       // =========================================================================
       if (activeStage === "single_quantity") {
+        // Stop current VMS and start next VMS instantly on scan/Enter
+        triggerVmsRecordingForOrder(targetOrder);
+
         const printer = selectedPrinter || connectedPrinter || (await resolveVmsPrinter());
         if (!printer) {
           toast.error("Cannot print label: No thermal printer connected.");
           return;
         }
 
+        // Reserve immediately so rapid scans move to the next unprinted order
+        printedOrdersRef.current.add(targetOrder.pageIndex);
+        setPrintedOrders(new Set(printedOrdersRef.current));
+        playSound("success");
+
         toast.loading(`Printing shipping label for ${targetOrder.orderId}...`, { id: "vms-print" });
 
-        try {
-          await printSingleFlipkartOrder(targetOrder, files, activeBatchKey, printer);
-          toast.success(`Printed label for ${targetOrder.orderId} (4" x 6")!`, { id: "vms-print" });
+        void (async () => {
+          try {
+            await printSingleFlipkartOrder(targetOrder, files, activeBatchKey, printer);
+            toast.success(`Printed label for ${targetOrder.orderId} (4" x 6")!`, { id: "vms-print" });
 
-          // Start automated continuous VMS recording
-          triggerVmsRecordingForOrder(targetOrder);
+            await markOrderCompleted(targetOrder);
+            const trackVal = targetOrder.awb || targetOrder.orderId;
+            if (trackVal) {
+              void scanner.processScan(trackVal);
+            }
 
-          // Mark completed
-          await markOrderCompleted(targetOrder);
-          const trackVal = targetOrder.awb || targetOrder.orderId;
-          if (trackVal) {
-            void scanner.processScan(trackVal);
+            // Evaluate stage transition
+            evaluateStageTransition("single_quantity");
+          } catch (err: any) {
+            printedOrdersRef.current.delete(targetOrder.pageIndex);
+            setPrintedOrders(new Set(printedOrdersRef.current));
+            console.error("Print failed:", err);
+            playSound("error");
+            toast.error(`Print failed: ${err.message || "Printer error"}`, { id: "vms-print" });
           }
-          playSound("success");
-
-          // Evaluate stage transition
-          evaluateStageTransition("single_quantity");
-        } catch (err: any) {
-          console.error("Print failed:", err);
-          playSound("error");
-          toast.error(`Print failed: ${err.message || "Printer error"}`, { id: "vms-print" });
-        }
+        })();
         return;
       }
 
@@ -1048,22 +1099,37 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
       if (isOrderLevelMatch(targetOrder, code)) {
         const allScanned = reqs.every((r) => r.scannedQty >= r.requiredQty);
         if (allScanned) {
+          // Stop current VMS and start next VMS instantly
+          triggerVmsRecordingForOrder(targetOrder);
+
           const printer = connectedPrinter || (await resolveVmsPrinter());
           if (!printer) {
             toast.error("Cannot print label: No thermal printer connected.");
             return;
           }
 
-          toast.loading(`Printing shipping label for ${targetOrder.orderId}...`, { id: "vms-print" });
-          await printSingleFlipkartOrder(targetOrder, files, activeBatchKey, printer);
-          toast.success(`Printed label for ${targetOrder.orderId}!`, { id: "vms-print" });
-
-          triggerVmsRecordingForOrder(targetOrder);
-          await markOrderCompleted(targetOrder);
+          printedOrdersRef.current.add(targetOrder.pageIndex);
+          setPrintedOrders(new Set(printedOrdersRef.current));
           multiScanProgressRef.current.delete(targetOrder.pageIndex);
           playSound("success");
 
-          evaluateStageTransition(activeStage);
+          toast.loading(`Printing shipping label for ${targetOrder.orderId}...`, { id: "vms-print" });
+
+          void (async () => {
+            try {
+              await printSingleFlipkartOrder(targetOrder, files, activeBatchKey, printer);
+              toast.success(`Printed label for ${targetOrder.orderId}!`, { id: "vms-print" });
+
+              await markOrderCompleted(targetOrder);
+              evaluateStageTransition(activeStage);
+            } catch (err: any) {
+              printedOrdersRef.current.delete(targetOrder.pageIndex);
+              setPrintedOrders(new Set(printedOrdersRef.current));
+              console.error("Print failed:", err);
+              playSound("error");
+              toast.error(`Print failed: ${err.message || "Printer error"}`, { id: "vms-print" });
+            }
+          })();
         } else {
           playSound("warning");
           const remainingReqs = reqs.filter((r) => r.scannedQty < r.requiredQty);
@@ -1113,28 +1179,35 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
         return;
       }
 
+      printedOrdersRef.current.add(targetOrder.pageIndex);
+      setPrintedOrders(new Set(printedOrdersRef.current));
+      multiScanProgressRef.current.delete(targetOrder.pageIndex);
+      playSound("success");
+
       toast.loading(`All items scanned (${totalScan}/${totalReq})! Printing label for ${targetOrder.orderId}...`, {
         id: "vms-print",
       });
 
-      try {
-        await printSingleFlipkartOrder(targetOrder, files, activeBatchKey, printer);
-        toast.success(`Printed label for ${targetOrder.orderId}!`, { id: "vms-print" });
+      void (async () => {
+        try {
+          await printSingleFlipkartOrder(targetOrder, files, activeBatchKey, printer);
+          toast.success(`Printed label for ${targetOrder.orderId}!`, { id: "vms-print" });
 
-        await markOrderCompleted(targetOrder);
-        const trackVal = targetOrder.awb || targetOrder.orderId;
-        if (trackVal) {
-          void scanner.processScan(trackVal);
+          await markOrderCompleted(targetOrder);
+          const trackVal = targetOrder.awb || targetOrder.orderId;
+          if (trackVal) {
+            void scanner.processScan(trackVal);
+          }
+
+          evaluateStageTransition(activeStage);
+        } catch (err: any) {
+          printedOrdersRef.current.delete(targetOrder.pageIndex);
+          setPrintedOrders(new Set(printedOrdersRef.current));
+          console.error("Print error:", err);
+          playSound("error");
+          toast.error(`Print failed: ${err.message || "Printer error"}`, { id: "vms-print" });
         }
-        multiScanProgressRef.current.delete(targetOrder.pageIndex);
-        playSound("success");
-
-        evaluateStageTransition(activeStage);
-      } catch (err: any) {
-        console.error("Print error:", err);
-        playSound("error");
-        toast.error(`Print failed: ${err.message || "Printer error"}`, { id: "vms-print" });
-      }
+      })();
     } finally {
       setIsProcessingPrint(false);
       setTimeout(() => {
@@ -1262,6 +1335,8 @@ export const FlipkartVMSOperator: React.FC<FlipkartVMSOperatorProps> = ({
                   type="text"
                   readOnly={true}
                   value={barcodeInput}
+                  onFocus={(e) => e.currentTarget.select()}
+                  onClick={(e) => e.currentTarget.select()}
                   rightIcon={
                     barcodeInput ? (
                       <button

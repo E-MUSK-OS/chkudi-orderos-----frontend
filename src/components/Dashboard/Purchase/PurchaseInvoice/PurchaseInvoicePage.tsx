@@ -28,6 +28,10 @@ import {
   extractStateCode,
 } from "./utils/purchaseGstCalculator";
 import { toast } from "sonner";
+import { PurchaseInvoiceSheet } from "./components/PurchaseInvoiceViewSheet";
+import { printHtmlInIframe } from "@/components/Dashboard/OfflineSales/SalesInvoice/components/InvoiceViewModal";
+import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
+import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
 
 function getTodayFormatted(): string {
   const today = new Date();
@@ -155,11 +159,61 @@ export default function PurchaseInvoicePage() {
 
   // Form View State
   const [activeInvoice, setActiveInvoice] = useState<PurchaseInvoice | null>(null);
+  const [printQueue, setPrintQueue] = useState<{
+    invoices: PurchaseInvoice[];
+    company: Company | null;
+  } | null>(null);
+  const bulkPrintRef = useRef<HTMLDivElement>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<PurchaseInvoice | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!printQueue || !bulkPrintRef.current) return;
+    const title =
+      printQueue.invoices.length === 1
+        ? `Purchase Invoice - ${printQueue.invoices[0].invoiceNo}`
+        : `Purchase Invoices (${printQueue.invoices.length})`;
+    const timer = setTimeout(() => {
+      if (bulkPrintRef.current) {
+        printHtmlInIframe(bulkPrintRef.current.innerHTML, title);
+      }
+      setPrintQueue(null);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [printQueue]);
+
+  const handlePrintInvoices = async (targetInvoices: PurchaseInvoice[]) => {
+    if (targetInvoices.length === 0) return;
+    try {
+      const [compRes, ...invResults] = await Promise.allSettled([
+        companyService.getCompanies({ pageSize: 20 }),
+        ...targetInvoices.map((inv) => purchaseInvoiceService.getInvoiceById(inv.id)),
+      ]);
+
+      let preferredCompany: Company | null = null;
+      if (compRes.status === "fulfilled" && compRes.value?.data?.length) {
+        const companies = compRes.value.data;
+        preferredCompany =
+          companies.find((c) => c.isDefault && c.status === "ACTIVE") ||
+          companies.find((c) => c.isDefault) ||
+          companies.find((c) => c.status === "ACTIVE") ||
+          companies[0] ||
+          null;
+      }
+
+      const hydratedInvoices = targetInvoices.map((orig, idx) => {
+        const res = invResults[idx];
+        return res && res.status === "fulfilled" && res.value ? res.value : orig;
+      });
+
+      setPrintQueue({ invoices: hydratedInvoices, company: preferredCompany });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to prepare purchase invoice for printing.");
+    }
+  };
 
   // Form Data State
   const [formData, setFormData] = useState<PurchaseInvoiceFormData>({
@@ -798,7 +852,17 @@ export default function PurchaseInvoicePage() {
                 onDownloadTally={handleDownloadTally}
                 onCloseInvoice={() => router.push("/dashboard/purchase/finish-goods/challan")}
               />
-            </div>
+              {/* Hidden Printable Purchase Invoice Container */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
             {/* Filters */}
             <div ref={filtersContainerRef} className="shrink-0">
@@ -809,7 +873,17 @@ export default function PurchaseInvoicePage() {
                 onSearch={handleFilterSearch}
                 onReset={handleFilterReset}
               />
-            </div>
+              {/* Hidden Printable Purchase Invoice Container */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
             {/* Table */}
             <div
@@ -824,24 +898,36 @@ export default function PurchaseInvoicePage() {
                 tableContainerRef={tableContainerRef}
                 selectedIds={selectedInvoiceIds}
                 onSelectionChange={setSelectedInvoiceIds}
+                onView={(inv) => router.push(`/purchase/finish-goods/invoice/view/${inv.id}`)}
                 onEdit={(inv) => populateFromInvoice(inv)}
                 onDelete={handleDeleteClick}
                 onCreditNote={(inv) => {
                   populateFromInvoice(inv);
                   toast.info(`Editing invoice #${inv.invoiceNo}`);
                 }}
-                onPrint={() => {
-                  window.print();
+                onPrint={(inv) => {
+                  void handlePrintInvoices([inv]);
                 }}
                 onPrintMultiple={(ids) => {
                   if (ids.length === 0) {
                     toast.info("Please select at least one invoice to print.");
                     return;
                   }
-                  window.print();
+                  const selected = invoices.filter((inv) => ids.includes(inv.id));
+                  void handlePrintInvoices(selected);
                 }}
               />
-            </div>
+              {/* Hidden Printable Purchase Invoice Container */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
           </>
         ) : (
           <>
@@ -886,7 +972,17 @@ export default function PurchaseInvoicePage() {
                   computedTotals={computedTotals}
                   disabled={saving || !formData.editOn}
                 />
+                {/* Hidden Printable Purchase Invoice Container */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
               {/* Right Column: Party Details Cards */}
               <div className="xl:col-span-4 2xl:col-span-3 sticky top-4">
@@ -895,8 +991,28 @@ export default function PurchaseInvoicePage() {
                   onChange={handleFormChange}
                   disabled={saving || !formData.editOn}
                 />
+                {/* Hidden Printable Purchase Invoice Container */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
               </div>
-            </div>
+            ))}
+          </div>
+        )}
+      </div>
+              {/* Hidden Printable Purchase Invoice Container */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
           </>
         )}
 
@@ -911,6 +1027,16 @@ export default function PurchaseInvoicePage() {
           }}
           onConfirm={handleConfirmDelete}
         />
+        {/* Hidden Printable Purchase Invoice Container */}
+        {printQueue && (
+          <div ref={bulkPrintRef} className="hidden">
+            {printQueue.invoices.map((inv) => (
+              <div key={inv.id} className="invoice-page-break">
+                <PurchaseInvoiceSheet inv={inv} company={printQueue.company} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

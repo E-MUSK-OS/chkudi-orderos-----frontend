@@ -30,7 +30,14 @@ import {
 } from "../constants/material.constants";
 import { useCreateMaterial, useUpdateMaterial } from "../hooks/useMaterials";
 import { useDropdownOptions } from "../hooks/useDropdownOptions";
-import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
+import {
+  buildMergedOptions,
+  normalizeKey,
+  OPTION_RENAMED_EVENT,
+  remapRenamedArray,
+  remapRenamedValue,
+  type DropdownSyncDetail,
+} from "@/utils/dropdownOptions.utils";
 
 import ProductTabsNav, { type ProductActiveTab } from "./ProductTabsNav";
 import SectionCard from "./SectionCard";
@@ -160,14 +167,55 @@ export default function MaterialForm({
     defaultValues: materialDefaultValues,
   });
 
-  const {
+    const {
     control,
     handleSubmit,
     reset,
     watch,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = form;
+
+  // Live-update open MaterialForm values if an option is renamed in Setting Masters
+  useEffect(() => {
+    const handleOptionRenamed = (e: Event) => {
+      const detail = (e as CustomEvent<DropdownSyncDetail>)?.detail;
+      if (!detail?.field) return;
+      const normField = normalizeKey(detail.field);
+
+      const fieldMap: Record<string, keyof MaterialFormValues> = {
+        materialcategory: "category",
+        category: "category",
+        materialsubcategory: "subCategory",
+        subcategory: "subCategory",
+        manufacturinggroup: "manufacturingGroup",
+        unit: "unit",
+        brand: "brand",
+        foruse: "forUse",
+        costapplyingmode: "costApplyingMode",
+        purchasetype: "purchaseType",
+        issuemode: "issueMode",
+        consumptionmode: "consumptionMode",
+      };
+
+      const targetName = fieldMap[normField];
+      if (targetName) {
+        const cur = getValues(targetName);
+        if (typeof cur === "string") {
+          const next = remapRenamedValue(cur, detail);
+          if (next) setValue(targetName, next as never, { shouldDirty: true });
+        }
+      } else if (normField === "color") {
+        const curColors = getValues("colors");
+        const nextColors = remapRenamedArray(curColors, detail);
+        if (nextColors) setValue("colors", nextColors, { shouldDirty: true });
+      }
+    };
+
+    window.addEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+    return () => window.removeEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+  }, [getValues, setValue]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -632,6 +680,7 @@ export default function MaterialForm({
                   additionalColors={buildOptions.colors}
                   disabledColors={disabledColors}
                   colorHexMap={serverColorHexMap}
+                  useExternalColorsOnly={Boolean(dropdownData)}
                   error={errors.colors?.message}
                 />
               )}

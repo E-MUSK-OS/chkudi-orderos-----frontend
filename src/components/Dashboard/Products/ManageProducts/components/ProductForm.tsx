@@ -51,7 +51,15 @@ import { useProductVariants } from "../hooks/useProductVariants";
 import { productVariantService } from "../services/productVariant.service";
 import type { ProductVariant } from "../types/productVariant.types";
 import { useDropdownOptions, useSaveDropdownOption } from "../hooks/useDropdownOptions";
-import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
+import {
+  buildMergedOptions,
+  extractDbSizeGroups,
+  normalizeKey,
+  OPTION_RENAMED_EVENT,
+  remapRenamedArray,
+  remapRenamedValue,
+  type DropdownSyncDetail,
+} from "@/utils/dropdownOptions.utils";
 
 import DropdownWithOther, { type DropdownOption } from "./DropdownWithOther";
 import MarketplaceMultiSelect from "./MarketplaceMultiSelect";
@@ -180,6 +188,65 @@ export default function ProductForm({
   // Fetch dynamic dropdown options from backend DB
   const { data: dropdownResponse } = useDropdownOptions();
   const dropdownData = dropdownResponse?.data;
+
+  const dbSizeGroups = useMemo(
+    () => extractDbSizeGroups(dropdownData?.savedOptions),
+    [dropdownData?.savedOptions]
+  );
+
+  // Live-update active open form values if an option is renamed in Setting Masters
+  useEffect(() => {
+    const handleOptionRenamed = (e: Event) => {
+      const detail = (e as CustomEvent<DropdownSyncDetail>)?.detail;
+      if (!detail?.field) return;
+      const normField = normalizeKey(detail.field);
+
+      const singleFieldMap: Record<string, keyof ProductFormValues> = {
+        category: "category",
+        subcategory: "subCategory",
+        unit: "unit",
+        brand: "brand",
+        referenceparty: "referenceParty",
+        rackaddress: "rackAddress",
+        availability: "availability",
+      };
+
+      const mappedKey = singleFieldMap[normField];
+      if (mappedKey) {
+        const cur = getValues(mappedKey);
+        if (typeof cur === "string") {
+          const next = remapRenamedValue(cur, detail);
+          if (next) setValue(mappedKey, next as never, { shouldDirty: true });
+        }
+      } else if (normField === "gender") {
+        const cur = getValues("gender") as string | string[] | undefined;
+        if (Array.isArray(cur)) {
+          const next = remapRenamedArray(cur, detail);
+          if (next) setValue("gender", next as never, { shouldDirty: true });
+        } else if (typeof cur === "string" && cur.trim()) {
+          const parts = cur.split(",").map((s) => s.trim()).filter(Boolean);
+          const next = remapRenamedArray(parts, detail);
+          if (next) setValue("gender", next.join(", ") as never, { shouldDirty: true });
+        }
+      } else if (normField === "color") {
+        const nextColors = remapRenamedArray(getValues("colors"), detail);
+        if (nextColors) setValue("colors", nextColors, { shouldDirty: true });
+      } else if (normField === "marketplace") {
+        const nextMp = remapRenamedArray(getValues("marketplace"), detail);
+        if (nextMp) setValue("marketplace", nextMp, { shouldDirty: true });
+      } else if (normField === "size") {
+        const curSizes = String(getValues("sizeList") || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const nextSizes = remapRenamedArray(curSizes, detail);
+        if (nextSizes) setValue("sizeList", nextSizes.join(", "), { shouldDirty: true });
+      }
+    };
+
+    window.addEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+    return () => window.removeEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+  }, [getValues, setValue]);
 
   const { data: variantsResponse } = useProductVariants(
     mode === "edit" && product?.id ? product.id : ""
@@ -715,7 +782,7 @@ export default function ProductForm({
   const genderOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "gender",
-      [],
+      ["Man", "Women", "Boy", "Girl", "Unisex"],
       dropdownData?.savedOptions,
       dropdownData?.distinctFromProducts?.genders
     );
@@ -742,7 +809,7 @@ export default function ProductForm({
   const availabilityOptions: DropdownOption[] = useMemo(() => {
     return buildMergedOptions(
       "availability",
-      [],
+      ["Public", "Private", "Semi-Private", "Wholesale"],
       dropdownData?.savedOptions,
       dropdownData?.distinctFromProducts?.availabilities
     );
@@ -1882,6 +1949,7 @@ export default function ProductForm({
                             additionalColors={dynamicColors}
                             disabledColors={disabledColors}
                             colorHexMap={serverColorHexMap}
+                            useExternalColorsOnly={Boolean(dropdownData)}
                             error={errors.colors?.message}
                           />
                         )}
@@ -1920,10 +1988,13 @@ export default function ProductForm({
                             additionalSizes={[
                               ...(categoryConfig.sizeLabel.toLowerCase().includes("shoe")
                                 ? defaultShoeSizes
-                                : defaultNumericSizes),
+                                : []),
                               ...dynamicSizes,
                             ]}
                             disabledSizes={disabledSizes}
+                            externalAlphaSizes={dbSizeGroups.alphaSizes}
+                            externalNumericSizes={dbSizeGroups.numericSizes}
+                            useExternalSizesOnly={Boolean(dropdownData)}
                             error={errors.sizeList?.message}
                           />
                         )}

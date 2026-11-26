@@ -68,8 +68,16 @@ const nextConfig: NextConfig = {
         destination: `${backendBase}/uploads/:path*`,
       },
       {
+        source: "/sales-challan/view/:id",
+        destination: "/dashboard/sales/sales-challan/view/:id",
+      },
+      {
         source: "/sales-challan",
         destination: "/dashboard/sales/sales-challan",
+      },
+      {
+        source: "/sales-invoice/view/:id",
+        destination: "/dashboard/sales/sales-invoice/view/:id",
       },
       {
         source: "/sales-invoice",

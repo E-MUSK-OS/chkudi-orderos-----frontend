@@ -50,7 +50,7 @@ import ColorMultiSelect from "./components/ColorMultiSelect";
 import SizeMultiSelect from "./components/SizeMultiSelect";
 import GenderMultiSelect from "./components/GenderMultiSelect";
 import { useDropdownOptions } from "./hooks/useDropdownOptions";
-import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
+import { buildMergedOptions, extractDbSizeGroups } from "@/utils/dropdownOptions.utils";
 import {
   buildExtraAttributes,
   buildGenderPricingMap,
@@ -632,6 +632,11 @@ function EditVariantForm({
       });
     return disabled;
   }, [dropdownData]);
+
+  const dbSizeGroups = useMemo(
+    () => extractDbSizeGroups(dropdownData?.savedOptions),
+    [dropdownData?.savedOptions]
+  );
 
   const dynamicSizes = useMemo(() => {
     let localSaved: string[] = [];
@@ -2359,6 +2364,7 @@ function EditVariantForm({
                     additionalColors={dynamicColors}
                     disabledColors={disabledColors}
                     colorHexMap={serverColorHexMap}
+                    useExternalColorsOnly={Boolean(dropdownData)}
                   />
                 ) : (
                   <div>
@@ -2388,10 +2394,13 @@ function EditVariantForm({
                         ...(product?.category?.toLowerCase().includes("shoe") ||
                           product?.category?.toLowerCase().includes("footwear")
                           ? defaultShoeSizes
-                          : defaultNumericSizes),
+                          : []),
                         ...dynamicSizes,
                       ]}
                       disabledSizes={disabledSizes}
+                      externalAlphaSizes={dbSizeGroups.alphaSizes}
+                      externalNumericSizes={dbSizeGroups.numericSizes}
+                      useExternalSizesOnly={Boolean(dropdownData)}
                     />
                     {removedExistingVariants.length > 0 && (
                       <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-amber-50/90 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300">

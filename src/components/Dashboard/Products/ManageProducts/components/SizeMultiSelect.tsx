@@ -5,6 +5,7 @@ import { ChevronDown, Plus, X, Check } from "lucide-react";
 import { cn, getAvailableVerticalSpace } from "@/lib/utils";
 import { defaultAlphaSizes, defaultNumericSizes } from "../constants/product.constants";
 import { useSaveDropdownOption } from "../hooks/useDropdownOptions";
+import { DROPDOWN_SYNC_EVENT } from "@/utils/dropdownOptions.utils";
 
 interface SizeMultiSelectProps {
   label?: string;
@@ -15,6 +16,9 @@ interface SizeMultiSelectProps {
   className?: string;
   additionalSizes?: string[];
   disabledSizes?: string[];
+  externalAlphaSizes?: string[];
+  externalNumericSizes?: string[];
+  useExternalSizesOnly?: boolean;
   singleSelect?: boolean;
 }
 
@@ -27,6 +31,9 @@ export default function SizeMultiSelect({
   className,
   additionalSizes = [],
   disabledSizes = [],
+  externalAlphaSizes,
+  externalNumericSizes,
+  useExternalSizesOnly = false,
   singleSelect = false,
 }: SizeMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -83,8 +90,8 @@ export default function SizeMultiSelect({
     const handleSync = () => {
       setLocalCustomSizes([]);
     };
-    window.addEventListener("dropdown_options_updated", handleSync);
-    return () => window.removeEventListener("dropdown_options_updated", handleSync);
+    window.addEventListener(DROPDOWN_SYNC_EVENT, handleSync);
+    return () => window.removeEventListener(DROPDOWN_SYNC_EVENT, handleSync);
   }, []);
 
   // Click outside listener
@@ -126,12 +133,18 @@ export default function SizeMultiSelect({
   }, [disabledSizes]);
 
   const activeAlphaSizes = React.useMemo(() => {
-    return defaultAlphaSizes.filter((s) => !disabledSet.has(s.toLowerCase().trim()));
-  }, [disabledSet]);
+    const source = useExternalSizesOnly
+      ? externalAlphaSizes || []
+      : defaultAlphaSizes;
+    return source.filter((s) => !disabledSet.has(s.toLowerCase().trim()));
+  }, [useExternalSizesOnly, externalAlphaSizes, disabledSet]);
 
   const activeNumericSizes = React.useMemo(() => {
-    return defaultNumericSizes.filter((s) => !disabledSet.has(s.toLowerCase().trim()));
-  }, [disabledSet]);
+    const source = useExternalSizesOnly
+      ? externalNumericSizes || []
+      : defaultNumericSizes;
+    return source.filter((s) => !disabledSet.has(s.toLowerCase().trim()));
+  }, [useExternalSizesOnly, externalNumericSizes, disabledSet]);
 
   const selectAllAlpha = () => {
     const combined = Array.from(new Set([...selectedSizes, ...activeAlphaSizes]));
@@ -147,9 +160,48 @@ export default function SizeMultiSelect({
     onChange("");
   };
 
+  // Distinct custom sizes not in standard lists
+  const customSizes = React.useMemo(() => {
+    const standardSet = new Set([
+      ...activeAlphaSizes.map((s) => s.toLowerCase()),
+      ...activeNumericSizes.map((s) => s.toLowerCase()),
+    ]);
+
+    const extras = [...additionalSizes, ...localCustomSizes, ...selectedSizes];
+    const uniqueMap = new Map<string, string>();
+
+    extras.forEach((s) => {
+      const trimmed = s?.trim();
+      if (!trimmed) return;
+      const lower = trimmed.toLowerCase();
+      if (!standardSet.has(lower) && !disabledSet.has(lower) && !uniqueMap.has(lower)) {
+        uniqueMap.set(lower, trimmed);
+      }
+    });
+
+    return Array.from(uniqueMap.values());
+  }, [activeAlphaSizes, activeNumericSizes, additionalSizes, localCustomSizes, selectedSizes, disabledSet]);
+
   const handleAddCustomSize = () => {
     const trimmed = newSizeName.trim().toUpperCase();
     if (!trimmed) return;
+
+    const existingPool = [...activeAlphaSizes, ...activeNumericSizes, ...customSizes];
+    const existingMatch = existingPool.find(
+      (s) => s.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (existingMatch) {
+      if (singleSelect) {
+        onChange(existingMatch);
+        setIsOpen(false);
+      } else if (!selectedSizes.some((s) => s.toLowerCase() === existingMatch.toLowerCase())) {
+        onChange([...selectedSizes, existingMatch].join(", "));
+      }
+      setNewSizeName("");
+      setIsAddingCustom(false);
+      return;
+    }
 
     if (singleSelect) {
       onChange(trimmed);
@@ -159,7 +211,10 @@ export default function SizeMultiSelect({
     }
 
     setLocalCustomSizes((prev) => {
-      const updated = Array.from(new Set([...prev, trimmed]));
+      if (prev.some((s) => s.trim().toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      const updated = [...prev, trimmed];
       try {
         localStorage.setItem("orderos_custom_sizes", JSON.stringify(updated));
       } catch {}
@@ -179,26 +234,6 @@ export default function SizeMultiSelect({
     setNewSizeName("");
     setIsAddingCustom(false);
   };
-
-  // Distinct custom sizes not in standard lists
-  const customSizes = React.useMemo(() => {
-    const standardSet = new Set([
-      ...defaultAlphaSizes.map((s) => s.toLowerCase()),
-      ...defaultNumericSizes.map((s) => s.toLowerCase()),
-    ]);
-
-    const extras = [...additionalSizes, ...localCustomSizes, ...selectedSizes];
-    const unique = new Set<string>();
-
-    extras.forEach((s) => {
-      const trimmed = s?.trim();
-      if (trimmed && !standardSet.has(trimmed.toLowerCase()) && !disabledSet.has(trimmed.toLowerCase())) {
-        unique.add(trimmed);
-      }
-    });
-
-    return Array.from(unique);
-  }, [additionalSizes, localCustomSizes, selectedSizes, disabledSet]);
 
   return (
     <div ref={containerRef} className={cn("space-y-1.5 w-full", className)}>
@@ -269,23 +304,29 @@ export default function SizeMultiSelect({
                   {singleSelect ? "Size Options:" : "Quick Select:"}
                 </span>
                 <div className="flex items-center gap-1.5">
-                  {!singleSelect && (
+                  {!singleSelect && (activeAlphaSizes.length > 0 || activeNumericSizes.length > 0) && (
                     <>
-                      <button
-                        type="button"
-                        onClick={selectAllAlpha}
-                        className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
-                      >
-                        XS–4XL
-                      </button>
-                      <span className="text-slate-300 dark:text-slate-600">|</span>
-                      <button
-                        type="button"
-                        onClick={selectAllNumeric}
-                        className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
-                      >
-                        28–48
-                      </button>
+                      {activeAlphaSizes.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={selectAllAlpha}
+                          className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
+                        >
+                          XS–4XL
+                        </button>
+                      )}
+                      {activeAlphaSizes.length > 0 && activeNumericSizes.length > 0 && (
+                        <span className="text-slate-300 dark:text-slate-600">|</span>
+                      )}
+                      {activeNumericSizes.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={selectAllNumeric}
+                          className="px-2 py-0.5 rounded-md text-[#B88728] hover:bg-[#FFF9EC] dark:text-[#F5C451] dark:hover:bg-[#F5C451]/10 cursor-pointer"
+                        >
+                          28–48
+                        </button>
+                      )}
                     </>
                   )}
                   {selectedSizes.length > 0 && (
@@ -306,64 +347,76 @@ export default function SizeMultiSelect({
 
             <div className="max-h-64 overflow-y-auto custom-scrollbar p-3 space-y-3">
               {/* Section 1: Standard Alpha Sizes (XS to 4XL) */}
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                  Standard Sizes (XS to 4XL)
-                </p>
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
-                  {activeAlphaSizes.map((size) => {
-                    const isSelected = selectedSizes.some(
-                      (s) => s.toLowerCase() === size.toLowerCase()
-                    );
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => toggleSize(size)}
-                        className={cn(
-                          "h-9 px-2 flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer",
-                          isSelected
-                            ? "bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black shadow-xs ring-1 ring-[#E8C16D]/30"
-                            : "bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] dark:text-slate-200"
-                        )}
-                      >
-                        <span>{size}</span>
-                        {isSelected && <Check size={12} className="ml-1 shrink-0" />}
-                      </button>
-                    );
-                  })}
+              {activeAlphaSizes.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                    Standard Sizes (XS to 4XL)
+                  </p>
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                    {activeAlphaSizes.map((size) => {
+                      const isSelected = selectedSizes.some(
+                        (s) => s.toLowerCase() === size.toLowerCase()
+                      );
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => toggleSize(size)}
+                          className={cn(
+                            "h-9 px-2 flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer",
+                            isSelected
+                              ? "bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black shadow-xs ring-1 ring-[#E8C16D]/30"
+                              : "bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] dark:text-slate-200"
+                          )}
+                        >
+                          <span>{size}</span>
+                          {isSelected && <Check size={12} className="ml-1 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Section 2: Numeric Sizes (28 to 48) */}
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                  Numeric Sizes (28 to 48)
-                </p>
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-                  {activeNumericSizes.map((size) => {
-                    const isSelected = selectedSizes.some(
-                      (s) => s.toLowerCase() === size.toLowerCase()
-                    );
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => toggleSize(size)}
-                        className={cn(
-                          "h-9 px-2 flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer",
-                          isSelected
-                            ? "bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black shadow-xs ring-1 ring-[#E8C16D]/30"
-                            : "bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] dark:text-slate-200"
-                        )}
-                      >
-                        <span>{size}</span>
-                        {isSelected && <Check size={12} className="ml-1 shrink-0" />}
-                      </button>
-                    );
-                  })}
+              {activeNumericSizes.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                    Numeric Sizes (28 to 48)
+                  </p>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+                    {activeNumericSizes.map((size) => {
+                      const isSelected = selectedSizes.some(
+                        (s) => s.toLowerCase() === size.toLowerCase()
+                      );
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => toggleSize(size)}
+                          className={cn(
+                            "h-9 px-2 flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer",
+                            isSelected
+                              ? "bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#F5C451] dark:text-black shadow-xs ring-1 ring-[#E8C16D]/30"
+                              : "bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] dark:text-slate-200"
+                          )}
+                        >
+                          <span>{size}</span>
+                          {isSelected && <Check size={12} className="ml-1 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {activeAlphaSizes.length === 0 &&
+                activeNumericSizes.length === 0 &&
+                customSizes.length === 0 && (
+                  <p className="py-3 text-center text-xs text-slate-400 dark:text-slate-500">
+                    No active sizes configured
+                  </p>
+                )}
 
               {/* Section 3: Custom Sizes (if any) */}
               {customSizes.length > 0 && (

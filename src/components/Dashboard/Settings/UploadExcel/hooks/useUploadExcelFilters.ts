@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
+import {
+  productCategoryOptions as formCategoryOptions,
+  SUBCATEGORY_BY_CATEGORY,
+} from "@/components/Dashboard/Products/ManageProducts/constants/product.constants";
 import { materialService } from "@/components/Dashboard/Materials/ManageMaterials/services/material.service";
+import { warehouseService } from "@/components/Dashboard/Warehouse/services/warehouse.service";
 import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
 import { employeeService } from "@/components/Dashboard/Settings/ManageCompany/EmployeeProfile/services/employee.service";
 import { salariedEmployeeService } from "@/components/Dashboard/Settings/ManageCompany/SalariedEmployee/services/salariedEmployee.service";
@@ -89,8 +94,10 @@ export function useUploadExcelFilters(profile: ProfileKey) {
   const [productOptions, setProductOptions] = useState<ThemeSelectOption[]>([]);
   const [materialOptions, setMaterialOptions] = useState<ThemeSelectOption[]>([]);
   const [productCategoryOptions, setProductCategoryOptions] = useState<ThemeSelectOption[]>([]);
+  const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<ThemeSelectOption[]>([]);
   const [materialCategoryOptions, setMaterialCategoryOptions] = useState<ThemeSelectOption[]>([]);
   const [productMasterSkuOptions, setProductMasterSkuOptions] = useState<ThemeSelectOption[]>([]);
+  const [warehouseOptions, setWarehouseOptions] = useState<ThemeSelectOption[]>([]);
   const [materialMasterSkuOptions, setMaterialMasterSkuOptions] = useState<ThemeSelectOption[]>([]);
   const [companyOptions, setCompanyOptions] = useState<ThemeSelectOption[]>([]);
   const [employeeOptions, setEmployeeOptions] = useState<ThemeSelectOption[]>([]);
@@ -104,22 +111,59 @@ export function useUploadExcelFilters(profile: ProfileKey) {
     async function fetchOriginalOptions() {
       try {
         if (profile === "product") {
-          // Fetch Product Dropdown Options from Setting Masters & Products
-          const [dropdownRes, productsRes] = await Promise.allSettled([
+          // Fetch Product Dropdown Options from Setting Masters, Products & Warehouses
+          const [dropdownRes, productsRes, warehousesRes] = await Promise.allSettled([
             productService.getDropdownOptions(),
             productService.getAll(),
+            warehouseService.getAll(),
           ]);
 
           if (isMounted) {
+            const defaultFormCats = formCategoryOptions
+              .filter((opt) => opt.value !== "other")
+              .map((opt) => ({ label: opt.label, value: opt.value }));
+
+            const defaultFormSubCatsMap = new Map<string, { label: string; value: string }>();
+            Object.values(SUBCATEGORY_BY_CATEGORY)
+              .flat()
+              .forEach((opt) => {
+                if (opt.value && opt.value !== "other" && !defaultFormSubCatsMap.has(opt.value.toLowerCase())) {
+                  defaultFormSubCatsMap.set(opt.value.toLowerCase(), { label: opt.label, value: opt.value });
+                }
+              });
+            const defaultFormSubCats = Array.from(defaultFormSubCatsMap.values());
+
             if (dropdownRes.status === "fulfilled" && dropdownRes.value?.data) {
               const dd = dropdownRes.value.data;
               const cats = buildMergedOptions(
                 "category",
-                ["Apparel", "Footwear", "Accessories", "Home Textile"],
+                defaultFormCats,
                 dd.savedOptions,
                 dd.distinctFromProducts?.categories
               );
               setProductCategoryOptions(cats.map((c) => ({ label: c.label, value: c.value })));
+
+              const subCats = buildMergedOptions(
+                ["subcategory", "productsubcategory"],
+                defaultFormSubCats,
+                dd.savedOptions,
+                dd.distinctFromProducts?.subCategories
+              );
+              setProductSubCategoryOptions(subCats.map((sc) => ({ label: sc.label, value: sc.value })));
+            } else {
+              setProductCategoryOptions(defaultFormCats);
+              setProductSubCategoryOptions(defaultFormSubCats);
+            }
+
+            if (warehousesRes.status === "fulfilled" && warehousesRes.value?.data) {
+              const whItems = Array.isArray(warehousesRes.value.data) ? warehousesRes.value.data : [];
+              const activeWarehouses = whItems.filter((w) => w.isActive !== false);
+              setWarehouseOptions(
+                activeWarehouses.map((w) => ({
+                  label: w.warehouseName,
+                  value: w.warehouseName,
+                }))
+              );
             }
 
             if (productsRes.status === "fulfilled" && productsRes.value?.data) {
@@ -282,10 +326,18 @@ export function useUploadExcelFilters(profile: ProfileKey) {
           const list = profile === "material" ? materialCategoryOptions : productCategoryOptions;
           const defaultList =
             profile === "material"
-              ? ["Fabric", "Yarn", "Thread", "Button", "Zipper", "Elastic"]
-              : ["Apparel", "Footwear", "Accessories", "Home Textile"];
-          const finalItems = list.length > 0 ? list : defaultList.map((d) => ({ label: d, value: d }));
+              ? ["Fabric", "Yarn", "Thread", "Button", "Zipper", "Elastic"].map((d) => ({ label: d, value: d }))
+              : formCategoryOptions.filter((opt) => opt.value !== "other");
+          const finalItems = list.length > 0 ? list : defaultList;
           return [{ label: "All categories", value: "All" }, ...finalItems];
+        }
+
+        case "subCategory": {
+          return [{ label: "All Sub Categories", value: "All" }, ...productSubCategoryOptions];
+        }
+
+        case "warehouse": {
+          return [{ label: "All Warehouses", value: "All" }, ...warehouseOptions];
         }
 
         case "masterSku": {
@@ -390,9 +442,11 @@ export function useUploadExcelFilters(profile: ProfileKey) {
     productOptions,
     materialOptions,
     productCategoryOptions,
+    productSubCategoryOptions,
     materialCategoryOptions,
     productMasterSkuOptions,
     materialMasterSkuOptions,
+    warehouseOptions,
     companyOptions,
     employeeOptions,
     operatorOptions,

@@ -2,7 +2,15 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import { productService } from "@/components/Dashboard/Products/ManageProducts/services/product.service";
+import {
+  productCategoryOptions as formProductCategoryOptions,
+  getSubCategoryOptionsForCategory,
+  SUBCATEGORY_BY_CATEGORY,
+} from "@/components/Dashboard/Products/ManageProducts/constants/product.constants";
+import { buildMergedOptions } from "@/utils/dropdownOptions.utils";
 import { materialService } from "@/components/Dashboard/Materials/ManageMaterials/services/material.service";
+import { warehouseService } from "@/components/Dashboard/Warehouse/services/warehouse.service";
+import { getInventories } from "@/components/Dashboard/Products/Inventory/services/inventory.service";
 import { ledgerService } from "@/components/Dashboard/Settings/ManageCompany/LedgerBook/services/ledger.service";
 import { downloadBlankLedgerTemplate } from "@/components/Dashboard/Settings/ManageCompany/LedgerBook/utils/excelTemplate";
 import { salariedEmployeeService } from "@/components/Dashboard/Settings/ManageCompany/SalariedEmployee/services/salariedEmployee.service";
@@ -205,24 +213,96 @@ export async function handleDownloadBlankTemplate(profile: ProfileKey) {
       case "product": {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet("Products");
+
+        let dd: any = null;
+        let whItems: any[] = [];
+        try {
+          const [dropdownRes, warehousesRes] = await Promise.allSettled([
+            productService.getDropdownOptions(),
+            warehouseService.getAll(),
+          ]);
+          if (dropdownRes.status === "fulfilled") dd = dropdownRes.value?.data || null;
+          if (warehousesRes.status === "fulfilled") {
+            whItems = (Array.isArray(warehousesRes.value?.data) ? warehousesRes.value.data : []).filter(
+              (w: any) => w.isActive !== false
+            );
+          }
+        } catch (_) {}
+
+        const defaultFormCats = formProductCategoryOptions
+          .filter((opt) => opt.value !== "other")
+          .map((opt) => ({ label: opt.label, value: opt.value }));
+        const categoryOpts = buildMergedOptions(
+          "category",
+          defaultFormCats,
+          dd?.savedOptions,
+          dd?.distinctFromProducts?.categories
+        );
+
+        const defaultFormSubCatsMap = new Map<string, { label: string; value: string }>();
+        Object.values(SUBCATEGORY_BY_CATEGORY)
+          .flat()
+          .forEach((opt) => {
+            if (opt.value && opt.value !== "other" && !defaultFormSubCatsMap.has(opt.value.toLowerCase())) {
+              defaultFormSubCatsMap.set(opt.value.toLowerCase(), { label: opt.label, value: opt.value });
+            }
+          });
+        const subCategoryOpts = buildMergedOptions(
+          ["subcategory", "productsubcategory"],
+          Array.from(defaultFormSubCatsMap.values()),
+          dd?.savedOptions,
+          dd?.distinctFromProducts?.subCategories
+        );
+
+        const sampleCategory =
+          dd?.distinctFromProducts?.categories?.[0] ||
+          categoryOpts[0]?.value ||
+          "Clothing & Apparel";
+        const catSubOpts = getSubCategoryOptionsForCategory(sampleCategory).filter(
+          (opt) => opt.value !== "other"
+        );
+        const sampleSubCategory =
+          dd?.distinctFromProducts?.subCategories?.[0] ||
+          catSubOpts[0]?.value ||
+          subCategoryOpts[0]?.value ||
+          "Shirt";
+        const sampleWarehouse =
+          whItems.find((w: any) => w.isDefault)?.warehouseName ||
+          whItems[0]?.warehouseName ||
+          "Main Warehouse";
+
         sheet.columns = [
           { header: "Variant SKU*", key: "sku", width: 25 },
           { header: "Master SKU*", key: "masterSku", width: 25 },
           { header: "Product Name*", key: "productName", width: 30 },
-          { header: "Category*", key: "category", width: 20 },
-          { header: "Brand", key: "brand", width: 20 },
+          { header: "Marketplace", key: "marketplace", width: 18 },
+          { header: "Category*", key: "category", width: 22 },
+          { header: "Sub Category", key: "subCategory", width: 22 },
+          { header: "Brand Name", key: "brand", width: 20 },
+          { header: "Reference Party", key: "referenceParty", width: 20 },
           { header: "Unit", key: "unit", width: 12 },
           { header: "Color", key: "color", width: 15 },
           { header: "Size", key: "size", width: 12 },
           { header: "Gender", key: "gender", width: 15 },
           { header: "HSN Code", key: "hsnCode", width: 18 },
           { header: "GST %", key: "gstRate", width: 12 },
+          { header: "Description", key: "description", width: 28 },
           { header: "Cost", key: "cost", width: 15 },
-          { header: "Sales Rate", key: "salesRate", width: 15 },
-          { header: "MRP", key: "mrp", width: 15 },
+          { header: "Dealer Rate", key: "dealerRate", width: 15 },
+          { header: "Retail Rate", key: "retailRate", width: 15 },
+          { header: "MRP*", key: "mrp", width: 15 },
+          { header: "Warehouse", key: "warehouse", width: 22 },
           { header: "Opening Stock", key: "openingStock", width: 16 },
-          { header: "Opening Rate", key: "openingRate", width: 16 },
+          { header: "Minimum Stock", key: "minimumStock", width: 16 },
+          { header: "Re-Order Level Stock", key: "reorderLevelStock", width: 20 },
+          { header: "Product Points", key: "productPoints", width: 16 },
+          { header: "Is Paired", key: "isPaired", width: 12 },
+          { header: "Availability", key: "availability", width: 15 },
           { header: "Rack Address", key: "rackAddress", width: 20 },
+          { header: "ASIN", key: "asin", width: 18 },
+          { header: "FSN Code", key: "fsnCode", width: 18 },
+          { header: "Myntra SKU", key: "myntraSku", width: 18 },
+          { header: "Active", key: "active", width: 12 },
         ];
         styleHeaderRow(sheet.getRow(1));
 
@@ -230,22 +310,76 @@ export async function handleDownloadBlankTemplate(profile: ProfileKey) {
           sku: "SHIRT-SLM-BLU-M",
           masterSku: "SHIRT-SLM-BLU",
           productName: "Men Slim Fit Cotton Shirt",
-          category: "Apparel",
+          marketplace: "All",
+          category: sampleCategory,
+          subCategory: sampleSubCategory,
           brand: "OrderOS Brand",
+          referenceParty: "",
           unit: "Pcs",
           color: "Blue",
           size: "M",
           gender: "Men",
           hsnCode: "620520",
           gstRate: 5,
+          description: "100% Pure Cotton Slim Fit Shirt",
           cost: 350,
-          salesRate: 799,
+          dealerRate: 550,
+          retailRate: 799,
           mrp: 1299,
+          warehouse: sampleWarehouse,
           openingStock: 100,
-          openingRate: 350,
+          minimumStock: 10,
+          reorderLevelStock: 25,
+          productPoints: 1,
+          isPaired: "No",
+          availability: "Public",
           rackAddress: "RACK-A1-01",
+          asin: "",
+          fsnCode: "",
+          myntraSku: "",
+          active: "Yes",
         });
         r1.height = 22;
+
+        // Add hidden DropdownOptions sheet for Category, Sub Category & Warehouse Excel dropdowns
+        const catValues = categoryOpts.map((c) => c.value).filter(Boolean);
+        const subCatValues = subCategoryOpts.map((sc) => sc.value).filter(Boolean);
+        const whValues = whItems.map((w: any) => w.warehouseName).filter(Boolean);
+
+        if (catValues.length > 0 || subCatValues.length > 0 || whValues.length > 0) {
+          const refSheet = workbook.addWorksheet("DropdownOptions", { state: "hidden" });
+          const maxLen = Math.max(catValues.length, subCatValues.length, whValues.length);
+          for (let i = 0; i < maxLen; i++) {
+            refSheet.getRow(i + 1).values = [
+              catValues[i] ?? null,
+              subCatValues[i] ?? null,
+              whValues[i] ?? null,
+            ];
+          }
+          for (let rowIdx = 2; rowIdx <= 200; rowIdx++) {
+            if (catValues.length > 0) {
+              sheet.getCell(rowIdx, 5).dataValidation = {
+                type: "list",
+                allowBlank: true,
+                formulae: [`DropdownOptions!$A$1:$A$${catValues.length}`],
+              };
+            }
+            if (subCatValues.length > 0) {
+              sheet.getCell(rowIdx, 6).dataValidation = {
+                type: "list",
+                allowBlank: true,
+                formulae: [`DropdownOptions!$B$1:$B$${subCatValues.length}`],
+              };
+            }
+            if (whValues.length > 0) {
+              sheet.getCell(rowIdx, 20).dataValidation = {
+                type: "list",
+                allowBlank: true,
+                formulae: [`DropdownOptions!$C$1:$C$${whValues.length}`],
+              };
+            }
+          }
+        }
 
         const buffer = await workbook.xlsx.writeBuffer();
         saveAs(
@@ -613,6 +747,17 @@ export async function handleDownloadFilteredData({
           items = items.filter((p: any) => catSet.has(String(p.category || "").toLowerCase()));
         }
 
+        // Sub Category multi-select or single
+        const selectedSubCategories = Array.isArray(filters.subCategory)
+          ? filters.subCategory
+          : typeof filters.subCategory === "string" && filters.subCategory !== "All"
+          ? filters.subCategory.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+        if (selectedSubCategories.length > 0 && !selectedSubCategories.includes("All")) {
+          const subCatSet = new Set(selectedSubCategories.map((sc) => sc.toLowerCase()));
+          items = items.filter((p: any) => subCatSet.has(String(p.subCategory || "").toLowerCase()));
+        }
+
         // Master SKU multi-select or single
         const selectedMasterSkus = Array.isArray(filters.masterSku)
           ? filters.masterSku
@@ -622,6 +767,47 @@ export async function handleDownloadFilteredData({
         if (selectedMasterSkus.length > 0 && !selectedMasterSkus.includes("All")) {
           const masterSet = new Set(selectedMasterSkus.map((m) => m.toLowerCase()));
           items = items.filter((p: any) => masterSet.has(String(p.masterSku || "").toLowerCase()));
+        }
+
+        // Warehouse multi-select or single + inventory mapping
+        const selectedWarehouses = Array.isArray(filters.warehouse)
+          ? filters.warehouse
+          : typeof filters.warehouse === "string" && filters.warehouse !== "All"
+          ? filters.warehouse.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+        const hasWarehouseFilter =
+          selectedWarehouses.length > 0 && !selectedWarehouses.includes("All");
+        const needsWarehouseData =
+          hasWarehouseFilter || columns.some((c) => c.key === "warehouse");
+
+        // Map: productId -> Map<warehouseName, availableStock>
+        const productWarehouseMap = new Map<string, Map<string, number>>();
+        if (needsWarehouseData) {
+          try {
+            const token =
+              typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
+            const invRes = await getInventories({}, token);
+            const invItems = Array.isArray(invRes?.data) ? invRes.data : [];
+            invItems.forEach((inv: any) => {
+              const prodId = inv?.productVariant?.product?.id;
+              const whName = String(inv?.warehouse?.warehouseName || "").trim();
+              if (!prodId || !whName) return;
+              if (!productWarehouseMap.has(prodId)) {
+                productWarehouseMap.set(prodId, new Map());
+              }
+              const whMap = productWarehouseMap.get(prodId)!;
+              whMap.set(whName, (whMap.get(whName) || 0) + Number(inv?.availableStock || 0));
+            });
+          } catch (_) {}
+        }
+
+        if (hasWarehouseFilter) {
+          const whSet = new Set(selectedWarehouses.map((w) => w.toLowerCase()));
+          items = items.filter((p: any) => {
+            const whMap = productWarehouseMap.get(p.id);
+            if (!whMap) return false;
+            return Array.from(whMap.keys()).some((whName) => whSet.has(whName.toLowerCase()));
+          });
         }
 
         // Product filter (All, ACTIVE, INACTIVE, or specific product)
@@ -646,21 +832,53 @@ export async function handleDownloadFilteredData({
           else if (filters.status === "INACTIVE") items = items.filter((p: any) => p.isActive === false);
         }
         items.slice(0, 50).forEach((p: any) => {
+          const whMap = productWarehouseMap.get(p.id);
+          let warehouseDisplay = "";
+          let openingStockDisplay = p.openingStock || 0;
+
+          if (whMap && whMap.size > 0) {
+            if (hasWarehouseFilter) {
+              const whSet = new Set(selectedWarehouses.map((w) => w.toLowerCase()));
+              const matchedEntries = Array.from(whMap.entries()).filter(([whName]) =>
+                whSet.has(whName.toLowerCase())
+              );
+              warehouseDisplay = matchedEntries.map(([whName]) => whName).join(", ");
+              openingStockDisplay = matchedEntries.reduce((sum, [, qty]) => sum + qty, 0);
+            } else {
+              warehouseDisplay = Array.from(whMap.keys()).join(", ");
+            }
+          }
+
           const row = sheet.addRow({
             sku: p.sku || p.masterSku || "",
             master_sku: p.masterSku || "",
             name: p.productName || "",
+            marketplace: Array.isArray(p.marketplace) ? p.marketplace.join(", ") : p.marketplace || "All",
             category: p.category || "",
+            sub_category: p.subCategory || "",
             unit: p.unit || "",
-            gender: p.gender || "",
+            color: Array.isArray(p.colors) ? p.colors.join(", ") : "",
+            size_list: p.sizeList || "",
+            gender: Array.isArray(p.gender) ? p.gender.join(", ") : p.gender || "",
             hsn_code: p.hsnCode || "",
             gst__: p.gstRate || 0,
+            description: p.description || "",
             brand_name: p.brand || "",
+            reference_party: p.referenceParty || "",
             active: p.isActive !== false ? "Yes" : "No",
-            opening_stock: p.openingStock || 0,
-            opening_rate: p.productCost || 0,
+            product_points: p.productPoints ?? 1,
+            is_paired: p.isPaired ? "Yes" : "No",
+            availability: p.availability || "Public",
+            asin: p.asin || "",
+            fsn_code: p.fsnCode || "",
+            myntra_sku: p.myntraSku || "",
+            warehouse: warehouseDisplay,
+            opening_stock: openingStockDisplay,
+            minimum_stock: p.minimumStock ?? 0,
+            re_order_level_stock: p.reorderLevelStock ?? 0,
             cost: p.productCost || 0,
-            sales_rate: p.salesRate || 0,
+            dealer_rate: p.dealerRate || 0,
+            retail_rate: p.retailRate || 0,
             mrp: p.mrp || 0,
             rack_address: p.rackAddress || "",
             rackAddress: p.rackAddress || "",
@@ -992,10 +1210,52 @@ export async function handleCreateOrUpdateProductsFromRows(
   }
 
   let existingProducts: any[] = [];
+  let warehouses: any[] = [];
   try {
-    const res = await productService.getAll();
-    existingProducts = res?.data || [];
+    const [prodRes, whRes] = await Promise.allSettled([
+      productService.getAll(),
+      warehouseService.getAll(),
+    ]);
+    if (prodRes.status === "fulfilled") existingProducts = prodRes.value?.data || [];
+    if (whRes.status === "fulfilled") warehouses = whRes.value?.data || [];
   } catch (_) {}
+
+  const resolveWarehouseStocks = (
+    groupRows: Record<string, any>[],
+    fallbackStock?: number
+  ): Array<{ warehouseId: string; openingStock: number }> | undefined => {
+    if (warehouses.length === 0) return undefined;
+    const stockByWhId = new Map<string, number>();
+
+    for (const r of groupRows) {
+      const rawWh = String(r["warehouse"] ?? r["warehousename"] ?? r["godown"] ?? "").trim();
+      if (!rawWh || rawWh === "-") continue;
+      const rowHasStock = hasRowField(r, "openingstock", "stock", "qty");
+      const rowStock = rowHasStock
+        ? (parseIntegerValue(r["openingstock"] ?? r["stock"] ?? r["qty"], 0) ?? 0)
+        : (fallbackStock ?? 0);
+
+      const whTokens = rawWh.split(",").map((s) => s.trim()).filter(Boolean);
+      for (const token of whTokens) {
+        const tokenLower = token.toLowerCase();
+        const matched = warehouses.find(
+          (w) =>
+            String(w.warehouseName || "").trim().toLowerCase() === tokenLower ||
+            String(w.warehouseCode || "").trim().toLowerCase() === tokenLower ||
+            String(w.id || "").trim().toLowerCase() === tokenLower
+        );
+        if (matched) {
+          stockByWhId.set(matched.id, rowStock);
+        }
+      }
+    }
+
+    if (stockByWhId.size === 0) return undefined;
+    return Array.from(stockByWhId.entries()).map(([warehouseId, openingStock]) => ({
+      warehouseId,
+      openingStock,
+    }));
+  };
 
   // Group rows by masterSku or product identifier
   const groupedProducts = new Map<string, Record<string, any>[]>();
@@ -1054,29 +1314,54 @@ export async function handleCreateOrUpdateProductsFromRows(
 
       if (existing) {
         // UPDATE EXISTING: Preserve unmentioned fields
+        const warehouseStocks = resolveWarehouseStocks(groupRows, existing.openingStock);
+        const marketplaceVal = getRowVal(firstRow, "marketplace");
         const updatePayload: any = {
           productName: productName || existing.productName,
           masterSku: masterSku || existing.masterSku,
+          marketplace: marketplaceVal
+            ? marketplaceVal.split(",").map((s) => s.trim()).filter(Boolean)
+            : existing.marketplace,
           category: getRowVal(firstRow, "category") ?? existing.category,
+          subCategory: getRowVal(firstRow, "subcategory", "subcat") ?? existing.subCategory,
           brand: getRowVal(firstRow, "brand", "brandname") ?? existing.brand,
+          referenceParty: getRowVal(firstRow, "referenceparty") ?? existing.referenceParty,
           unit: getRowVal(firstRow, "unit", "uom") ?? existing.unit,
           colors: colors.length > 0 ? colors : existing.colors,
-          sizeList: sizes.length > 0 ? sizes.join(", ") : existing.sizeList,
+          sizeList: sizes.length > 0 ? sizes.join(", ") : getRowVal(firstRow, "sizelist") ?? existing.sizeList,
           gender: getRowVal(firstRow, "gender") ?? existing.gender,
           hsnCode: getRowVal(firstRow, "hsncode", "hsn") ?? existing.hsnCode,
           gstRate: hasRowField(firstRow, "gstrate", "gst")
             ? parseNumericValue(firstRow["gstrate"] ?? firstRow["gst"], existing.gstRate)
             : existing.gstRate,
-          productCost: hasRowField(firstRow, "cost", "productcost", "openingrate")
-            ? parseNumericValue(firstRow["cost"] ?? firstRow["productcost"] ?? firstRow["openingrate"], existing.productCost)
+          description: getRowVal(firstRow, "description") ?? existing.description,
+          productCost: hasRowField(firstRow, "cost", "productcost")
+            ? parseNumericValue(firstRow["cost"] ?? firstRow["productcost"], existing.productCost)
             : existing.productCost,
-          salesRate: hasRowField(firstRow, "salesrate", "rate")
-            ? parseNumericValue(firstRow["salesrate"] ?? firstRow["rate"], existing.salesRate)
-            : existing.salesRate,
+          dealerRate: hasRowField(firstRow, "dealerrate")
+            ? parseNumericValue(firstRow["dealerrate"], existing.dealerRate)
+            : existing.dealerRate,
+          retailRate: hasRowField(firstRow, "retailrate")
+            ? parseNumericValue(firstRow["retailrate"], existing.retailRate)
+            : existing.retailRate,
           mrp: getRowVal(firstRow, "mrp") ?? existing.mrp,
           openingStock: hasRowField(firstRow, "openingstock", "stock", "qty")
             ? parseIntegerValue(firstRow["openingstock"] ?? firstRow["stock"] ?? firstRow["qty"], existing.openingStock)
             : existing.openingStock,
+          minimumStock: hasRowField(firstRow, "minimumstock", "minstock")
+            ? parseIntegerValue(firstRow["minimumstock"] ?? firstRow["minstock"], existing.minimumStock)
+            : existing.minimumStock,
+          reorderLevelStock: hasRowField(firstRow, "reorderlevelstock", "reorderlevel")
+            ? parseIntegerValue(firstRow["reorderlevelstock"] ?? firstRow["reorderlevel"], existing.reorderLevelStock)
+            : existing.reorderLevelStock,
+          productPoints: hasRowField(firstRow, "productpoints")
+            ? parseNumericValue(firstRow["productpoints"], existing.productPoints)
+            : existing.productPoints,
+          isPaired: hasRowField(firstRow, "ispaired")
+            ? parseBooleanValue(firstRow["ispaired"], existing.isPaired)
+            : existing.isPaired,
+          availability: getRowVal(firstRow, "availability") ?? existing.availability,
+          warehouseStocks,
           rackAddress: getRowVal(firstRow, "rackaddress", "rack") ?? existing.rackAddress,
           asin: getRowVal(firstRow, "asin") ?? existing.asin,
           myntraSku: getRowVal(firstRow, "myntrasku", "myntra") ?? existing.myntraSku,
@@ -1101,22 +1386,42 @@ export async function handleCreateOrUpdateProductsFromRows(
           attributes.push({ attributeName: "Gender", attributeValue: genderVal });
         }
 
+        const parsedOpeningStock =
+          parseIntegerValue(firstRow["openingstock"] ?? firstRow["stock"] ?? firstRow["qty"], 0) ?? 0;
+        const warehouseStocks = resolveWarehouseStocks(groupRows, parsedOpeningStock);
+        const marketplaceVal = getRowVal(firstRow, "marketplace");
+
         const createPayload: any = {
           productName: productName || masterSku,
           masterSku,
           sku: variantSku || masterSku,
+          marketplace: marketplaceVal
+            ? marketplaceVal.split(",").map((s) => s.trim()).filter(Boolean)
+            : ["All"],
           category: getRowVal(firstRow, "category") || "General",
+          subCategory: getRowVal(firstRow, "subcategory", "subcat") || undefined,
           brand: getRowVal(firstRow, "brand", "brandname") || undefined,
+          referenceParty: getRowVal(firstRow, "referenceparty") || undefined,
           unit: getRowVal(firstRow, "unit", "uom") || "Pcs",
           colors: colors.length > 0 ? colors : undefined,
-          sizeList: sizes.length > 0 ? sizes.join(", ") : undefined,
+          sizeList: sizes.length > 0 ? sizes.join(", ") : getRowVal(firstRow, "sizelist") || undefined,
           gender: genderVal || undefined,
           hsnCode: getRowVal(firstRow, "hsncode", "hsn") || undefined,
           gstRate: parseNumericValue(firstRow["gstrate"] ?? firstRow["gst"]),
-          productCost: parseNumericValue(firstRow["cost"] ?? firstRow["productcost"] ?? firstRow["openingrate"]),
-          salesRate: parseNumericValue(firstRow["salesrate"] ?? firstRow["rate"]),
+          description: getRowVal(firstRow, "description") || undefined,
+          productCost: parseNumericValue(firstRow["cost"] ?? firstRow["productcost"]),
+          dealerRate: parseNumericValue(firstRow["dealerrate"]),
+          retailRate: parseNumericValue(firstRow["retailrate"]),
           mrp: getRowVal(firstRow, "mrp") || undefined,
-          openingStock: parseIntegerValue(firstRow["openingstock"] ?? firstRow["stock"] ?? firstRow["qty"], 0),
+          openingStock: parsedOpeningStock,
+          minimumStock: parseIntegerValue(firstRow["minimumstock"] ?? firstRow["minstock"], 0),
+          reorderLevelStock: parseIntegerValue(firstRow["reorderlevelstock"] ?? firstRow["reorderlevel"], 0),
+          productPoints: parseNumericValue(firstRow["productpoints"], 1),
+          isPaired: hasRowField(firstRow, "ispaired")
+            ? parseBooleanValue(firstRow["ispaired"], false)
+            : false,
+          availability: getRowVal(firstRow, "availability") || "Public",
+          warehouseStocks,
           rackAddress: getRowVal(firstRow, "rackaddress", "rack") || undefined,
           asin: getRowVal(firstRow, "asin") || undefined,
           myntraSku: getRowVal(firstRow, "myntrasku", "myntra") || undefined,

@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { LogOut, TriangleAlert, X } from "lucide-react";
+import { logout } from "@/utils/auth";
 
 interface Props {
   open: boolean;
@@ -12,16 +13,14 @@ export default function LogoutModal({
   open,
   onClose,
 }: Props) {
-  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   if (!open) return null;
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-
-    router.push("/login");
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    await logout();
   };
 
   return (
@@ -65,10 +64,11 @@ export default function LogoutModal({
 
             <button
               onClick={handleLogout}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 text-xs sm:text-sm font-semibold text-white transition hover:bg-red-700 dark:bg-gradient-to-r dark:from-rose-600 dark:to-rose-700 dark:shadow-[0_0_20px_rgba(244,63,94,0.3)] dark:hover:brightness-110 cursor-pointer"
+              disabled={isLoggingOut}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 text-xs sm:text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 dark:bg-gradient-to-r dark:from-rose-600 dark:to-rose-700 dark:shadow-[0_0_20px_rgba(244,63,94,0.3)] dark:hover:brightness-110 cursor-pointer"
             >
               <LogOut size={16} />
-              Logout
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
           </div>
         </div>

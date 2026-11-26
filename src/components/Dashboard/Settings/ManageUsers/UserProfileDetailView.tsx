@@ -25,6 +25,7 @@ import {
   X,
   Eye,
   Plus,
+  Search,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -130,13 +131,30 @@ export default function UserProfileDetailView({ userId }: Props) {
     user?.admin ||
     (user?.userMapping?.admin?.role !== "SUPERADMIN" ? user?.userMapping?.admin : null);
 
-  // Pagination state for Permission Management
+  // Pagination & search state for Permission Management
+  const [permSearch, setPermSearch] = useState("");
   const [permPage, setPermPage] = useState(1);
   const [permPageSize, setPermPageSize] = useState(10);
 
-  const totalPermRecords = permissions.length;
+  const filteredPermissions = React.useMemo(() => {
+    const q = permSearch.toLowerCase().trim();
+    if (!q) return permissions;
+    return permissions.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.id?.toLowerCase().includes(q) ||
+        p.path?.toLowerCase().includes(q)
+    );
+  }, [permissions, permSearch]);
+
+  useEffect(() => {
+    setPermPage(1);
+  }, [permSearch]);
+
+  const totalPermRecords = filteredPermissions.length;
   const totalPermPages = Math.ceil(totalPermRecords / permPageSize) || 1;
-  const paginatedPermissions = permissions.slice(
+  const paginatedPermissions = filteredPermissions.slice(
     (permPage - 1) * permPageSize,
     permPage * permPageSize
   );
@@ -751,50 +769,76 @@ export default function UserProfileDetailView({ userId }: Props) {
               <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] shadow-sm flex flex-col min-h-0 max-h-full overflow-hidden">
                 {/* Header with Title & Action Buttons */}
                 <div className="p-4 sm:p-6 pb-4 shrink-0 border-b border-[#E7E0D2]/60 dark:border-white/[0.08]">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-3">
+                  <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3.5">
+                    <div className="flex flex-wrap items-center gap-3 shrink-0">
                       <div className="flex items-center gap-2">
-                        <div className="grid h-7 w-7 place-items-center rounded-xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shadow-2xs">
+                        <div className="grid h-7 w-7 place-items-center rounded-xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shadow-2xs shrink-0">
                           <Shield className="h-4 w-4" />
                         </div>
-                        <h3 className="text-base sm:text-lg font-black text-[#0A0E1A] dark:text-white">
+                        <h3 className="text-base sm:text-lg font-black text-[#0A0E1A] dark:text-white whitespace-nowrap">
                           Permission Management
                         </h3>
                       </div>
 
-                      {/* Category: Dashboard Pages */}
-                      <div className="flex items-center gap-2">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] shadow-xs">
-                          <LayoutDashboard size={14} />
-                          <span>Dashboard Pages ({permissions.length})</span>
-                        </div>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-[#0A0E1A] text-[#E8C16D] dark:bg-[#E8C16D] dark:text-[#0A0E1A] shadow-xs shrink-0 whitespace-nowrap">
+                        <LayoutDashboard size={14} />
+                        <span>
+                          Dashboard Pages (
+                          {permSearch.trim()
+                            ? `${filteredPermissions.length} / ${permissions.length}`
+                            : permissions.length}
+                          )
+                        </span>
                       </div>
                     </div>
 
-                    {/* Right Action Buttons */}
-                    <div className="flex items-center gap-2.5 self-end md:self-center">
-                      {canEditUser && (
-                        <button
-                          type="button"
-                          onClick={handleResetToDefault}
-                          className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-                        >
-                          <RotateCcw size={14} className="text-[#B88728] dark:text-[#E8C16D]" />
-                          <span>Reset to Default</span>
-                        </button>
-                      )}
+                    {/* Right Side: Searchbar -> Reset to Default -> Save Rights */}
+                    <div className="flex flex-wrap items-center gap-2.5 xl:justify-end">
+                      <div className="relative w-full sm:w-64 shrink-0">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
+                        <input
+                          type="text"
+                          value={permSearch}
+                          onChange={(e) => setPermSearch(e.target.value)}
+                          placeholder="Search pages..."
+                          className="w-full h-9 sm:h-10 pl-10 pr-8 text-xs font-medium rounded-full border border-[#E7E0D2] bg-white text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C16D]/20 focus:border-[#E8C16D] dark:border-white/[0.1] dark:bg-[#080B11] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 transition-all shadow-xs"
+                        />
+                        {permSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setPermSearch("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                            title="Clear search"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
 
-                      {canEditUser && (
-                        <button
-                          type="button"
-                          onClick={handleSaveRights}
-                          disabled={updateUserMutation.isPending}
-                          className="inline-flex items-center gap-2 h-10 px-6 rounded-2xl bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A] text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-60"
-                        >
-                          <Save size={15} />
-                          <span>Save Rights</span>
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                        {canEditUser && (
+                          <button
+                            type="button"
+                            onClick={handleResetToDefault}
+                            className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-[#E8C16D] transition-all shadow-xs cursor-pointer active:scale-[0.98] whitespace-nowrap"
+                          >
+                            <RotateCcw size={14} className="text-[#B88728] dark:text-[#E8C16D]" />
+                            <span>Reset to Default</span>
+                          </button>
+                        )}
+
+                        {canEditUser && (
+                          <button
+                            type="button"
+                            onClick={handleSaveRights}
+                            disabled={updateUserMutation.isPending}
+                            className="inline-flex items-center gap-2 h-10 px-6 rounded-2xl bg-[#E8C16D] hover:bg-[#d4af5a] text-[#0A0E1A] text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-60 whitespace-nowrap"
+                          >
+                            <Save size={15} />
+                            <span>Save Rights</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

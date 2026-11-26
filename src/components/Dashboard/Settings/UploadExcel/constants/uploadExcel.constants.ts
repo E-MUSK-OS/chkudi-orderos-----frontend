@@ -69,7 +69,7 @@ export interface SectionConfig {
   isCreate?: boolean;
   fields?: string[];
   fixedFields?: string[];
-  filterKeys: ("product" | "category" | "masterSku" | "material" | "company" | "status" | "state" | "accountHead" | "department" | "employee" | "month" | "operator" | "day" | "party")[];
+  filterKeys: ("product" | "category" | "subCategory" | "masterSku" | "warehouse" | "material" | "company" | "status" | "state" | "accountHead" | "department" | "employee" | "month" | "operator" | "day" | "party")[];
 }
 
 export const PROFILE_SECTIONS: Record<ProfileKey, SectionConfig[]> = {
@@ -87,47 +87,53 @@ export const PROFILE_SECTIONS: Record<ProfileKey, SectionConfig[]> = {
         "SKU",
         "Master SKU",
         "Name",
+        "Marketplace",
         "Category",
+        "Sub Category",
         "Unit",
+        "Color",
         "Size List",
         "Gender",
         "HSN Code",
         "GST %",
+        "Description",
         "Brand Name",
+        "Reference Party",
         "Active",
-        "Minimum Stock",
         "Product Points",
         "Is Paired",
         "Availability",
-        "Cost Applying Mode",
+        "ASIN",
+        "FSN Code",
+        "Myntra SKU",
+        "Warehouse",
       ],
-      filterKeys: ["product", "category", "masterSku"],
+      filterKeys: ["product", "category", "subCategory", "masterSku", "warehouse"],
     },
     {
       id: "product-cost-pricing",
-      title: "Update Product Cost, Sales Rate, MRP, Re-Order Level Stock, etc...",
+      title: "Update Product Cost, MRP, Dealer Rate, Retail Rate, Stock Levels, etc...",
       fields: [
         "Cost",
-        "Sales Rate",
         "MRP",
-        "Re-Order Level Stock",
-        "Minimum Stock",
         "Dealer Rate",
         "Retail Rate",
+        "Re-Order Level Stock",
+        "Minimum Stock",
       ],
-      filterKeys: ["product", "category", "masterSku"],
+      filterKeys: ["product", "category", "subCategory", "masterSku", "warehouse"],
     },
     {
       id: "product-opening-stock",
-      title: "Update Product Opening Stock and Rate",
-      fields: ["Opening Stock", "Opening Rate"],
-      filterKeys: ["product", "category", "masterSku"],
+      title: "Update Product Opening Stock",
+      fields: ["Warehouse", "Opening Stock"],
+      filterKeys: ["product", "category", "subCategory", "masterSku", "warehouse"],
     },
     {
       id: "product-rack-address",
       title: "Update Product Rack Address",
       fields: [],
-      filterKeys: ["product", "category", "masterSku"],
+      filterKeys: ["product", "category", "subCategory", "masterSku", "warehouse"],
     },
   ],
 

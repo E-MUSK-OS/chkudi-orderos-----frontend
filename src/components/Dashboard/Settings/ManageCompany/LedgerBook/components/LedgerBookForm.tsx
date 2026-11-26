@@ -25,6 +25,13 @@ import DropdownWithOther, {
   type DropdownOption,
 } from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
 import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
+import {
+  buildMergedOptions,
+  normalizeKey,
+  OPTION_RENAMED_EVENT,
+  remapRenamedValue,
+  type DropdownSyncDetail,
+} from "@/utils/dropdownOptions.utils";
 import DatePicker from "@/components/ui/DatePicker";
 import { cn, getMediaUrl } from "@/lib/utils";
 
@@ -89,21 +96,23 @@ export default function LedgerBookForm({
     return `${year}-${month}-${day}`;
   }, []);
 
-  // Dynamic accountHeadOptions purely loaded from database
+  // Dynamic accountHeadOptions synced with DB Setting Masters
   const accountHeadOptions: DropdownOption[] = useMemo(() => {
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "accounthead")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    dbSaved.forEach((opt) => {
-      const v = opt.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions("accounthead", [], dropdownData?.savedOptions);
   }, [dropdownData]);
+
+  useEffect(() => {
+    const handleOptionRenamed = (e: Event) => {
+      const detail = (e as CustomEvent<DropdownSyncDetail>)?.detail;
+      if (!detail?.field || normalizeKey(detail.field) !== "accounthead") return;
+      setFormData((prev) => {
+        const next = remapRenamedValue(prev.accountHead, detail);
+        return next ? { ...prev, accountHead: next } : prev;
+      });
+    };
+    window.addEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+    return () => window.removeEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+  }, []);
 
   const balanceTypeOptions: ThemeSelectOption[] = useMemo(
     () => [

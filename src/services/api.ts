@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "@/lib/config";
 import { getCurrentUser, getPagePermission, getSlugFromPathname } from "@/utils/pagePermissions";
-import { handleAuthFailure, setToken } from "@/utils/auth";
+import { handleAuthFailure, requestStepUpAuth, setToken, tryRememberMeRestore } from "@/utils/auth";
 import { toast } from "sonner";
 
 export function verifyClientActionPermission(endpoint: string, method: string): boolean {
@@ -68,6 +68,8 @@ async function refreshAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   const refreshToken = localStorage.getItem("refreshToken");
   if (!refreshToken) {
+    const restored = await tryRememberMeRestore();
+    if (restored) return restored;
     handleAuthFailure();
     return null;
   }
@@ -103,6 +105,8 @@ async function refreshAccessToken(): Promise<string | null> {
       }
       throw new Error("No access token returned from refresh");
     } catch (err) {
+      const restored = await tryRememberMeRestore();
+      if (restored) return restored;
       console.warn("Session expired. Please log in again:", err);
       handleAuthFailure();
       return null;
@@ -130,10 +134,13 @@ async function request<T>(
     effectiveToken = localStorage.getItem("accessToken") || undefined;
   }
 
-  const { token, headers, body, ...rest } = options;
+  const { token, headers, body, credentials, ...rest } = options;
+  const shouldIncludeCredentials =
+    endpoint.startsWith("/auth/") || endpoint.startsWith("/profile");
 
   let response = await fetch(`${BASE_URL}${endpoint}`, {
     ...rest,
+    credentials: credentials ?? (shouldIncludeCredentials ? "include" : "same-origin"),
     body,
     headers: {
       ...(body instanceof FormData
@@ -153,19 +160,27 @@ async function request<T>(
 
   // Handle 401 Unauthorized
   if (response.status === 401) {
-    // 1. If login endpoint itself gave 401, user typed incorrect credentials: do NOT redirect, let form handle error
-    if (endpoint === "/auth/login" || endpoint.startsWith("/auth/login")) {
+    // 1. If login or remember-login endpoint itself gave 401, let form/caller handle error
+    if (
+      endpoint === "/auth/login" ||
+      endpoint.startsWith("/auth/login") ||
+      endpoint.startsWith("/auth/remember-login") ||
+      endpoint.startsWith("/auth/step-up")
+    ) {
       const errData = await response.json().catch(() => null);
       throw new Error(errData?.message || "Invalid credentials");
     }
 
-    // 2. If refresh-token endpoint itself gave 401, refresh token is expired/invalid: direct redirect to /login
+    // 2. If refresh-token endpoint itself gave 401, try remember-me restore before redirecting
     if (endpoint.includes("/auth/refresh-token")) {
-      handleAuthFailure();
+      const restored = await tryRememberMeRestore();
+      if (!restored) {
+        handleAuthFailure();
+      }
       throw new Error("Session expired. Please log in again.");
     }
 
-    // 3. For any other protected endpoint: try refresh if not already retrying
+    // 3. For any other protected endpoint: try refresh (or remember-me restore) if not already retrying
     if (!isRetry) {
       const freshToken = await refreshAccessToken();
       if (freshToken) {
@@ -191,6 +206,14 @@ async function request<T>(
     data = text;
   }
 
+  // Handle Step-Up Re-Authentication required on sensitive actions from Remember Me sessions
+  if (response.status === 403 && data?.code === "STEP_UP_REQUIRED" && !isRetry) {
+    const freshToken = await requestStepUpAuth();
+    if (freshToken) {
+      return request<T>(endpoint, { ...options, token: freshToken }, true);
+    }
+  }
+
   if (!response.ok) {
     throw new Error(data?.message || "Something went wrong");
   }
@@ -205,31 +228,35 @@ export const api = {
       token,
     }),
 
-  post: <T>(url: string, body?: unknown, token?: string) =>
+  post: <T>(url: string, body?: unknown, token?: string, extraHeaders?: HeadersInit) =>
     request<T>(url, {
       method: "POST",
       body: body instanceof FormData ? body : JSON.stringify(body),
       token,
+      headers: extraHeaders,
     }),
 
-  put: <T>(url: string, body?: unknown, token?: string) =>
+  put: <T>(url: string, body?: unknown, token?: string, extraHeaders?: HeadersInit) =>
     request<T>(url, {
       method: "PUT",
       body: body instanceof FormData ? body : JSON.stringify(body),
       token,
+      headers: extraHeaders,
     }),
 
-  patch: <T>(url: string, body?: unknown, token?: string) =>
+  patch: <T>(url: string, body?: unknown, token?: string, extraHeaders?: HeadersInit) =>
     request<T>(url, {
       method: "PATCH",
       body: body instanceof FormData ? body : JSON.stringify(body),
       token,
+      headers: extraHeaders,
     }),
 
-  delete: <T>(url: string, token?: string) =>
+  delete: <T>(url: string, token?: string, extraHeaders?: HeadersInit) =>
     request<T>(url, {
       method: "DELETE",
       token,
+      headers: extraHeaders,
     }),
 
   download: async (url: string, token?: string): Promise<Blob> => {

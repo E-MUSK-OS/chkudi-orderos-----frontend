@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Edit2, Trash2, Eye, ArrowUpDown, FileSpreadsheet, CheckCircle2, Clock, ReceiptText } from "lucide-react";
+import { Edit2, Trash2, Eye, ArrowUpDown, FileSpreadsheet, CheckCircle2, Clock, ReceiptText, Printer } from "lucide-react";
 import { SalesChallan } from "../types/challan.types";
 import Pagination from "@/components/ui/Pagination";
 
@@ -14,6 +14,7 @@ interface ChallanTableProps {
   onEdit: (challan: SalesChallan) => void;
   onDelete?: (challan: SalesChallan) => void;
   onView?: (challan: SalesChallan) => void;
+  onPrint?: (challan: SalesChallan) => void;
   onGenerateInvoice?: (challan: SalesChallan) => void;
   tableContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
@@ -26,6 +27,7 @@ export default function ChallanTable({
   onEdit,
   onDelete,
   onView,
+  onPrint,
   onGenerateInvoice,
   tableContainerRef,
 }: ChallanTableProps) {
@@ -366,6 +368,16 @@ export default function ChallanTable({
                         >
                           <ReceiptText className="h-4 w-4" />
                         </button>
+                        {onPrint && (
+                          <button
+                            type="button"
+                            onClick={() => onPrint(ch)}
+                            title="Print Challan"
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] transition-all dark:text-slate-400 dark:hover:text-[#E8C16D] dark:hover:bg-white/[0.06] cursor-pointer"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </button>
+                        )}
                         {onDelete && (
                           <button
                             type="button"

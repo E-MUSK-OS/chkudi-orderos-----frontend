@@ -108,7 +108,7 @@ async function renderPdfBytesToImages(pdfBytes: Uint8Array): Promise<string[]> {
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 3.0 });
+    const viewport = page.getViewport({ scale: 2.0 });
     const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;

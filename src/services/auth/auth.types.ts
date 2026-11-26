@@ -47,6 +47,7 @@ export interface SignupRequest {
 export interface LoginRequest {
   email: string;
   password: string;
+  remember?: boolean;
 }
 
 export interface SendOtpRequest {
@@ -58,9 +59,6 @@ export interface VerifyOtpRequest {
   email: string;
   otp: string;
   purpose: "EMAIL_VERIFICATION" | "FORGOT_PASSWORD";
-}
-export interface VerifyOtpResponse {
-  resetToken: string;
 }
 
 export interface ForgotPasswordRequest {
@@ -78,16 +76,33 @@ export interface RefreshTokenRequest {
 }
 
 export interface LogoutRequest {
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+  authMethod?: string;
+  requiresStepUp?: boolean;
 }
 
 export interface RefreshTokenResponse {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface StepUpResponse {
+  accessToken: string;
+}
+
+export interface ActiveDeviceSession {
+  id: string;
+  deviceLabel: string;
+  ipTruncated: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  idleExpiresAt: string;
+  isCurrentDevice: boolean;
 }

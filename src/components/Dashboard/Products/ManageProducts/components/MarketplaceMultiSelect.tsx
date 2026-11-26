@@ -144,15 +144,32 @@ export default function MarketplaceMultiSelect({
       return;
     }
 
-    const exists = mergedOptions.some(
-      (o) => o.value.toLowerCase() === trimmed.toLowerCase()
+    const existingMatch = mergedOptions.find(
+      (o) =>
+        o.value.trim().toLowerCase() === trimmed.toLowerCase() ||
+        o.label.trim().toLowerCase() === trimmed.toLowerCase()
     );
-    if (!exists) {
-      setLocalCustomOptions((prev) => [
-        ...prev,
-        { label: trimmed, value: trimmed },
-      ]);
+    if (existingMatch) {
+      const targetVal = existingMatch.value;
+      if (targetVal.toLowerCase() === "all") {
+        onChange(["All"]);
+      } else {
+        const withoutAll = selectedValues.filter((v) => v.toLowerCase() !== "all");
+        if (!withoutAll.some((v) => v.toLowerCase() === targetVal.toLowerCase())) {
+          onChange([...withoutAll, targetVal]);
+        }
+      }
+      toast.info(`"${existingMatch.label}" is already available and selected`);
+      setCustomValue("");
+      setIsAddingCustom(false);
+      return;
     }
+
+    setLocalCustomOptions((prev) =>
+      prev.some((o) => o.value.trim().toLowerCase() === trimmed.toLowerCase())
+        ? prev
+        : [...prev, { label: trimmed, value: trimmed }]
+    );
 
     const withoutAll = selectedValues.filter((v) => v.toLowerCase() !== "all");
     if (!withoutAll.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {

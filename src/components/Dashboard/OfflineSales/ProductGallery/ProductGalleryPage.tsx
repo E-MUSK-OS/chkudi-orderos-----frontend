@@ -286,11 +286,16 @@ export default function ProductGalleryPage() {
     [dropdownData]
   );
 
-  const availabilityOptions = [
-    { label: "Public", value: "Public" },
-    { label: "Private", value: "Private" },
-    { label: "Semi-Private", value: "Semi-Private" },
-  ];
+  const availabilityOptions = useMemo(
+    () =>
+      buildMergedOptions(
+        "availability",
+        ["Public", "Private", "Semi-Private", "Wholesale"],
+        dropdownData?.savedOptions,
+        dropdownData?.distinctFromProducts?.availabilities
+      ),
+    [dropdownData]
+  );
 
   const sortOptions = [
     { label: "Sort", value: "default" },

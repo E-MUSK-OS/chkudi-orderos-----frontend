@@ -90,10 +90,27 @@ export default function DepartmentSelect({ value = [], onChange, error }: Props)
       return;
     }
 
-    if (!value.includes(trimmed)) {
+    const existing = allDepartments.find(
+      (d) => d.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) {
+      if (!value.some((v) => v.trim().toLowerCase() === existing.trim().toLowerCase())) {
+        onChange([...value, existing]);
+      }
+      toast.info(`"${existing}" is already in Departments and selected`);
+      setCustomDept("");
+      setIsOtherActive(false);
+      return;
+    }
+
+    if (!value.some((v) => v.trim().toLowerCase() === trimmed.toLowerCase())) {
       onChange([...value, trimmed]);
     }
-    setLocalCustomDepts((prev) => [...prev, trimmed]);
+    setLocalCustomDepts((prev) =>
+      prev.some((d) => d.trim().toLowerCase() === trimmed.toLowerCase())
+        ? prev
+        : [...prev, trimmed]
+    );
     toast.success(`Added "${trimmed}" to Departments`);
 
     // Persist to database

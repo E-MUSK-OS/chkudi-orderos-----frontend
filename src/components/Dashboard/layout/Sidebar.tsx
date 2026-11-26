@@ -318,13 +318,15 @@ export default function Sidebar({
     items: NavItem[],
     path: string,
     trail: string[] = [],
+    parentKey = "",
   ): string[] | null => {
     for (const item of items) {
-      const nextTrail = [...trail, item.label];
+      const menuKey = parentKey ? `${parentKey} > ${item.label}` : item.label;
+      const nextTrail = [...trail, menuKey];
 
       // 1. Traverse children first to locate deepest match
       if (item.children && item.children.length > 0) {
-        const found = findActivePath(item.children, path, nextTrail);
+        const found = findActivePath(item.children, path, nextTrail, menuKey);
         if (found) return found;
       }
 
@@ -341,34 +343,35 @@ export default function Sidebar({
     if (activeTrail && activeTrail.length > 0) {
       setOpenMenus((prev) => {
         const next = { ...prev };
-        activeTrail.forEach((label) => {
-          next[label] = true;
+        activeTrail.forEach((menuKey) => {
+          next[menuKey] = true;
         });
         return next;
       });
     }
   }, [pathname, visibleNavItems]);
 
-  const isMenuOpen = (item: NavItem) => {
-    return openMenus[item.label] ?? isMenuActive(item);
+  const isMenuOpen = (item: NavItem, menuKey: string) => {
+    return openMenus[menuKey] ?? isMenuActive(item);
   };
 
-  const toggleMenu = (item: NavItem) => {
+  const toggleMenu = (item: NavItem, menuKey: string) => {
     setOpenMenus((prev) => ({
       ...prev,
-      [item.label]: !(prev[item.label] ?? isMenuActive(item)),
+      [menuKey]: !(prev[menuKey] ?? isMenuActive(item)),
     }));
   };
 
-  const renderMenu = (items: NavItem[], level = 0) => {
+  const renderMenu = (items: NavItem[], level = 0, parentKey = "") => {
     const isLevel0 = level === 0;
     const itemHeight = "h-10";
     const itemFontSize = "text-[14px]";
     const iconSize = isLevel0 ? 18 : 16;
 
     return items.map((item) => {
+      const menuKey = parentKey ? `${parentKey} > ${item.label}` : item.label;
       const active = isMenuActive(item);
-      const isOpen = isMenuOpen(item);
+      const isOpen = isMenuOpen(item, menuKey);
       const hasChildren = !!item.children?.length;
       if (hasChildren) {
         const isSelfActive = sidebarCollapsed
@@ -376,14 +379,14 @@ export default function Sidebar({
           : !!item.href && normalizeRoute(pathname) === normalizeRoute(item.href) && !isOpen;
 
         return (
-          <div key={item.label}>
+          <div key={menuKey}>
             <button
               type="button"
               onClick={() => {
                 if (sidebarCollapsed && item.href) {
                   void handleNavigation(item.href);
                 } else {
-                  toggleMenu(item);
+                  toggleMenu(item, menuKey);
                 }
               }}
               className={`group flex ${itemHeight} w-full items-center justify-between cursor-pointer transition-all duration-300 ease-out ${itemFontSize}
@@ -460,7 +463,7 @@ export default function Sidebar({
                   }}
                   className="overflow-hidden"
                 >
-                  {renderMenu(item.children!, level + 1)}
+                  {renderMenu(item.children!, level + 1, menuKey)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -470,7 +473,7 @@ export default function Sidebar({
 
       return (
         <button
-          key={item.label}
+          key={menuKey}
           type="button"
           onClick={() => handleNavigation(item.href!)}
           className={`group flex ${itemHeight} w-full items-center cursor-pointer transition-all duration-300 ease-out ${itemFontSize}

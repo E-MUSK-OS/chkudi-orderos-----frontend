@@ -34,6 +34,13 @@ import DropdownWithOther, {
   type DropdownOption,
 } from "@/components/Dashboard/Products/ManageProducts/components/DropdownWithOther";
 import { useDropdownOptions } from "@/components/Dashboard/Products/ManageProducts/hooks/useDropdownOptions";
+import {
+  buildMergedOptions,
+  normalizeKey,
+  OPTION_RENAMED_EVENT,
+  remapRenamedValue,
+  type DropdownSyncDetail,
+} from "@/utils/dropdownOptions.utils";
 import DatePicker from "@/components/ui/DatePicker";
 import { getMediaUrl, cn } from "@/lib/utils";
 
@@ -316,6 +323,30 @@ export default function EmployeeProfileForm({
     }));
   };
 
+  useEffect(() => {
+    const handleOptionRenamed = (e: Event) => {
+      const detail = (e as CustomEvent<DropdownSyncDetail>)?.detail;
+      if (!detail?.field) return;
+      const normField = normalizeKey(detail.field);
+      const keyMap: Record<string, keyof EmployeeFormData> = {
+        department: "department",
+        designation: "designation",
+        salarytype: "salaryType",
+        workerprocess: "workerProcess",
+      };
+      const formField = keyMap[normField];
+      if (!formField) return;
+      setFormData((prev) => {
+        const current = prev[formField];
+        if (typeof current !== "string") return prev;
+        const next = remapRenamedValue(current, detail);
+        return next ? { ...prev, [formField]: next } : prev;
+      });
+    };
+    window.addEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+    return () => window.removeEventListener(OPTION_RENAMED_EVENT, handleOptionRenamed);
+  }, []);
+
   // Dropdown options matching software ThemeSelectDropdown
   const bloodGroupOptions: ThemeSelectOption[] = useMemo(
     () => BLOOD_GROUPS.map((bg) => ({ value: bg, label: bg })),
@@ -393,74 +424,28 @@ export default function EmployeeProfileForm({
     }
   };
 
-  // Dynamic departmentOptions merging static DEPARTMENTS and DB saved options
+  // Dynamic departmentOptions synced with DB Setting Masters
   const departmentOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = DEPARTMENTS.map((dept) => ({ value: dept, label: dept }));
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "department")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved].forEach((opt) => {
-      const v = opt.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions("department", DEPARTMENTS, dropdownData?.savedOptions);
   }, [dropdownData]);
 
-  // Dynamic designationOptions merging static DESIGNATIONS and DB saved options
+  // Dynamic designationOptions synced with DB Setting Masters
   const designationOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = DESIGNATIONS.map((desig) => ({ value: desig, label: desig }));
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "designation")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved].forEach((opt) => {
-      const v = opt.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions("designation", DESIGNATIONS, dropdownData?.savedOptions);
   }, [dropdownData]);
 
-  // Dynamic salaryTypeOptions merging static SALARY_TYPES and DB saved options
+  // Dynamic salaryTypeOptions synced with DB Setting Masters
   const salaryTypeOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = SALARY_TYPES.map((st) => ({ value: st, label: st }));
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "salarytype")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved].forEach((opt) => {
-      const v = opt.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions("salarytype", SALARY_TYPES, dropdownData?.savedOptions);
   }, [dropdownData]);
 
-  // Dynamic workerProcessOptions merging static WORKER_PROCESSES and DB saved options
+  // Dynamic workerProcessOptions synced with DB Setting Masters
   const workerProcessOptions: DropdownOption[] = useMemo(() => {
-    const list: DropdownOption[] = WORKER_PROCESSES
-      .filter((wp) => wp !== "Select Process")
-      .map((wp) => ({ value: wp, label: wp }));
-    const dbSaved = (dropdownData?.savedOptions || [])
-      .filter((o) => o.field.toLowerCase() === "workerprocess")
-      .map((o) => ({ label: o.label || o.value, value: o.value }));
-
-    const map = new Map<string, DropdownOption>();
-    [...list, ...dbSaved].forEach((opt) => {
-      const v = opt.value?.trim();
-      if (v && !map.has(v.toLowerCase())) {
-        map.set(v.toLowerCase(), { label: opt.label || v, value: v });
-      }
-    });
-    return Array.from(map.values());
+    return buildMergedOptions(
+      "workerprocess",
+      WORKER_PROCESSES.filter((wp) => wp !== "Select Process"),
+      dropdownData?.savedOptions
+    );
   }, [dropdownData]);
 
   const accountTypeOptions: ThemeSelectOption[] = useMemo(
