@@ -8,6 +8,7 @@ import { isSkuBidirectionalMatch } from "./flipkartSkuMatch";
 export interface FlipkartPicklistItem {
   sku: string;
   rackAddress: string;
+  generateBarcode: string;
   quantity: number;
   orderType?: "single_quantity" | "multiple_pieces" | "multiple_sku";
   orderTypeLabel?: string;
@@ -85,7 +86,7 @@ export const compareRackAddresses = (
 export const generateFlipkartPicklist = (
   orders: FlipkartOrderItem[],
   selectedRows?: Set<number>,
-  skuDetailsMap?: Map<string, { fsn?: string; asin?: string; rackAddress?: string }>
+  skuDetailsMap?: Map<string, { fsn?: string; asin?: string; rackAddress?: string; generateBarcode?: string }>
 ): FlipkartPicklistResult => {
   const targetOrders =
     selectedRows && selectedRows.size > 0
@@ -177,6 +178,13 @@ export const generateFlipkartPicklist = (
         }
         const rackAddress =
           mapped?.rackAddress || item.rackAddress || order.rackAddress || "";
+        const rawBarcode = (mapped?.generateBarcode?.trim() || "").toUpperCase();
+        const isBarcodeYes =
+          rawBarcode === "YES" ||
+          rawBarcode === "Y" ||
+          rawBarcode === "TRUE" ||
+          rawBarcode === "1";
+        const generateBarcode = isBarcodeYes ? "Yes" : "No";
         const qty = item.quantity || 1;
 
         totalQuantity += qty;
@@ -187,10 +195,14 @@ export const generateFlipkartPicklist = (
           if (!existing.rackAddress && rackAddress) {
             existing.rackAddress = rackAddress;
           }
+          if (existing.generateBarcode !== "Yes" && generateBarcode === "Yes") {
+            existing.generateBarcode = "Yes";
+          }
         } else {
           groupMap.set(normKey, {
             sku: rawSku,
             rackAddress,
+            generateBarcode,
             quantity: qty,
             orderType: grp.type,
             orderTypeLabel: grp.label,
@@ -245,7 +257,7 @@ const populatePicklistWorksheet = (
 
   if (items.length === 0) {
     const emptyRow = worksheet.addRow([emptyMessage]);
-    worksheet.mergeCells(emptyRow.number, 1, emptyRow.number, 3);
+    worksheet.mergeCells(emptyRow.number, 1, emptyRow.number, 4);
     emptyRow.height = 24;
     const cell = emptyRow.getCell(1);
     cell.font = { italic: true, size: 10.5, color: { argb: "FF64748B" } };
@@ -253,6 +265,7 @@ const populatePicklistWorksheet = (
     worksheet.getColumn(1).width = 16;
     worksheet.getColumn(2).width = 32;
     worksheet.getColumn(3).width = 10;
+    worksheet.getColumn(4).width = 14;
     return;
   }
 
@@ -350,7 +363,7 @@ const populatePicklistWorksheet = (
   });
   const dateRow = worksheet.addRow([`Picklist Generated on: ${formattedDate}`]);
   dateRow.height = 20;
-  worksheet.mergeCells(dateRow.number, 1, dateRow.number, hasRightColumn ? 7 : 3);
+  worksheet.mergeCells(dateRow.number, 1, dateRow.number, hasRightColumn ? 9 : 4);
   const dateCell = dateRow.getCell(1);
   dateCell.font = { bold: true, size: 12, name: "Calibri", color: { argb: "FF0F172A" } };
   dateCell.alignment = { vertical: "middle", horizontal: "center" };
@@ -380,12 +393,14 @@ const populatePicklistWorksheet = (
     const rackCell = row.getCell(startCol);
     const skuCell = row.getCell(startCol + 1);
     const qtyCell = row.getCell(startCol + 2);
+    const barcodeCell = row.getCell(startCol + 3);
 
     rackCell.value = item.rackAddress || "--";
     skuCell.value = item.sku;
     qtyCell.value = item.quantity;
+    barcodeCell.value = item.generateBarcode || "No";
 
-    [rackCell, skuCell, qtyCell].forEach((c, idx) => {
+    [rackCell, skuCell, qtyCell, barcodeCell].forEach((c, idx) => {
       c.border = {
         top: { style: "thin", color: { argb: "FFE2E8F0" } },
         left: { style: "thin", color: { argb: "FFE2E8F0" } },
@@ -397,13 +412,19 @@ const populatePicklistWorksheet = (
     });
 
     skuCell.font = { bold: true, size: 10, name: "Calibri", color: { argb: "FF000000" } };
+
+    if (item.generateBarcode === "Yes") {
+      barcodeCell.font = { bold: true, size: 10, name: "Calibri", color: { argb: "FF16A34A" } };
+    } else {
+      barcodeCell.font = { size: 10, name: "Calibri", color: { argb: "FF64748B" } };
+    }
   };
 
   const styleDividerCells = (
     row: ExcelJS.Row,
     startCol: number,
     text: string,
-    spanCols = 2
+    spanCols = 3
   ) => {
     const endCol = startCol + spanCols;
     for (let c = startCol; c <= endCol; c++) {
@@ -444,25 +465,29 @@ const populatePicklistWorksheet = (
     const headerRow = worksheet.addRow([]);
     headerRow.height = 18;
 
-    // Left Column Headers (Cols 1 to 3: Rack, SKU, Qty)
+    // Left Column Headers (Cols 1 to 4: Rack, SKU, Qty, Barcode)
     headerRow.getCell(1).value = "Rack";
     headerRow.getCell(2).value = "SKU";
     headerRow.getCell(3).value = "Qty";
+    headerRow.getCell(4).value = "Barcode";
 
     styleHeaderCell(headerRow.getCell(1), false);
     styleHeaderCell(headerRow.getCell(2), true);
     styleHeaderCell(headerRow.getCell(3), false);
+    styleHeaderCell(headerRow.getCell(4), false);
 
-    // Right Column Headers (Cols 5 to 7: Rack, SKU, Qty)
+    // Right Column Headers (Cols 6 to 9: Rack, SKU, Qty, Barcode)
     if (hasRightColumn) {
-      headerRow.getCell(4).value = "";
-      headerRow.getCell(5).value = "Rack";
-      headerRow.getCell(6).value = "SKU";
-      headerRow.getCell(7).value = "Qty";
+      headerRow.getCell(5).value = "";
+      headerRow.getCell(6).value = "Rack";
+      headerRow.getCell(7).value = "SKU";
+      headerRow.getCell(8).value = "Qty";
+      headerRow.getCell(9).value = "Barcode";
 
-      styleHeaderCell(headerRow.getCell(5), false);
-      styleHeaderCell(headerRow.getCell(6), true);
-      styleHeaderCell(headerRow.getCell(7), false);
+      styleHeaderCell(headerRow.getCell(6), false);
+      styleHeaderCell(headerRow.getCell(7), true);
+      styleHeaderCell(headerRow.getCell(8), false);
+      styleHeaderCell(headerRow.getCell(9), false);
     }
 
     // Add data rows side-by-side
@@ -473,22 +498,22 @@ const populatePicklistWorksheet = (
       const left = leftEntries[r];
       const right = rightEntries[r];
 
-      // Left Column (Cols 1-3)
+      // Left Column (Cols 1-4)
       if (left && left.type !== "empty") {
         if (left.type === "divider") {
-          styleDividerCells(dataRow, 1, left.text, hasRightColumn ? 6 : 2);
+          styleDividerCells(dataRow, 1, left.text, hasRightColumn ? 8 : 3);
         } else {
           styleItemCells(dataRow, 1, left.item);
         }
       }
 
-      // Right Column (Cols 5-7)
+      // Right Column (Cols 6-9)
       if (hasRightColumn && right && right.type !== "empty") {
-        dataRow.getCell(4).value = "";
+        dataRow.getCell(5).value = "";
         if (right.type === "divider") {
-          styleDividerCells(dataRow, 5, right.text, 2);
+          styleDividerCells(dataRow, 6, right.text, 3);
         } else {
-          styleItemCells(dataRow, 5, right.item);
+          styleItemCells(dataRow, 6, right.item);
         }
       }
     }
@@ -502,8 +527,9 @@ const populatePicklistWorksheet = (
     totalRow.getCell(1).value = "";
     totalRow.getCell(2).value = "TOTAL QUANTITY";
     totalRow.getCell(3).value = totalQuantity;
+    totalRow.getCell(4).value = `${items.length} Unique SKUs`;
 
-    for (let c = 1; c <= 3; c++) {
+    for (let c = 1; c <= 4; c++) {
       const cell = totalRow.getCell(c);
       cell.border = {
         top: { style: "thin", color: { argb: "FF000000" } },
@@ -520,12 +546,12 @@ const populatePicklistWorksheet = (
     }
   } else {
     totalRow.getCell(1).value = `TOTAL QUANTITY: ${totalQuantity}`;
-    totalRow.getCell(5).value = `TOTAL SKUs: ${items.length} Unique SKUs`;
+    totalRow.getCell(6).value = `TOTAL SKUs: ${items.length} Unique SKUs`;
 
-    worksheet.mergeCells(totalRow.number, 1, totalRow.number, 3);
-    worksheet.mergeCells(totalRow.number, 5, totalRow.number, 7);
+    worksheet.mergeCells(totalRow.number, 1, totalRow.number, 4);
+    worksheet.mergeCells(totalRow.number, 6, totalRow.number, 9);
 
-    [1, 5].forEach((c) => {
+    [1, 6].forEach((c) => {
       const cell = totalRow.getCell(c);
       cell.border = {
         top: { style: "thin", color: { argb: "FF000000" } },
@@ -549,18 +575,19 @@ const populatePicklistWorksheet = (
     signRow.getCell(1).alignment = { vertical: "bottom", horizontal: "center" };
 
     signRow.getCell(3).value = "Signature: _______________________";
+    worksheet.mergeCells(signRow.number, 3, signRow.number, 4);
     signRow.getCell(3).font = { bold: true, size: 11, name: "Calibri" };
     signRow.getCell(3).alignment = { vertical: "bottom", horizontal: "center" };
   } else {
     signRow.getCell(1).value = "Time: _______________________";
-    worksheet.mergeCells(signRow.number, 1, signRow.number, 3);
+    worksheet.mergeCells(signRow.number, 1, signRow.number, 4);
     signRow.getCell(1).font = { bold: true, size: 11, name: "Calibri" };
     signRow.getCell(1).alignment = { vertical: "bottom", horizontal: "center" };
 
-    signRow.getCell(5).value = "Signature: _______________________";
-    worksheet.mergeCells(signRow.number, 5, signRow.number, 7);
-    signRow.getCell(5).font = { bold: true, size: 11, name: "Calibri" };
-    signRow.getCell(5).alignment = { vertical: "bottom", horizontal: "center" };
+    signRow.getCell(6).value = "Signature: _______________________";
+    worksheet.mergeCells(signRow.number, 6, signRow.number, 9);
+    signRow.getCell(6).font = { bold: true, size: 11, name: "Calibri" };
+    signRow.getCell(6).alignment = { vertical: "bottom", horizontal: "center" };
   }
 
   // Column widths fitted snugly for A4 Portrait paper
@@ -572,6 +599,8 @@ const populatePicklistWorksheet = (
     (max, i) => Math.max(max, (i.sku || "").length),
     "SKU".length
   );
+  const totalSkuSummaryText = `${items.length} Unique SKUs`;
+  const barcodeColWidth = Math.max(18, totalSkuSummaryText.length + 3);
 
   if (!hasRightColumn) {
     const singleRackWidth = Math.min(Math.max(maxRackLen + 3, 16), 26);
@@ -579,19 +608,23 @@ const populatePicklistWorksheet = (
 
     worksheet.getColumn(1).width = singleRackWidth;
     worksheet.getColumn(2).width = singleSkuWidth;
-    worksheet.getColumn(3).width = 12;
+    worksheet.getColumn(3).width = 10;
+    worksheet.getColumn(4).width = Math.max(barcodeColWidth, 20);
   } else {
-    const rackWidth = Math.min(Math.max(maxRackLen + 2, 10), 16);
-    const skuWidth = Math.min(Math.max(maxSkuLen + 2, 22), 34);
-    const qtyWidth = 8;
+    const rackWidth = Math.min(Math.max(maxRackLen + 1, 8), 12);
+    const skuWidth = Math.min(Math.max(maxSkuLen + 1, 20), 28);
+    const qtyWidth = 6;
+    const barcodeW = 10;
 
     worksheet.getColumn(1).width = rackWidth;
     worksheet.getColumn(2).width = skuWidth;
     worksheet.getColumn(3).width = qtyWidth;
-    worksheet.getColumn(4).width = 3; // Spacer
-    worksheet.getColumn(5).width = rackWidth;
-    worksheet.getColumn(6).width = skuWidth;
-    worksheet.getColumn(7).width = qtyWidth;
+    worksheet.getColumn(4).width = barcodeW;
+    worksheet.getColumn(5).width = 2; // Spacer
+    worksheet.getColumn(6).width = rackWidth;
+    worksheet.getColumn(7).width = skuWidth;
+    worksheet.getColumn(8).width = qtyWidth;
+    worksheet.getColumn(9).width = barcodeW;
   }
 };
 
@@ -625,6 +658,20 @@ export const downloadFlipkartPicklistExcel = async (
     picklist.items,
     picklist.totalQuantity,
     "No items found in this picklist"
+  );
+
+  // Sheet 2: Only items where Generate Barcode === "Yes"
+  const barcodeYesItems = picklist.items.filter((item) => item.generateBarcode === "Yes");
+  const barcodeYesTotalQty = barcodeYesItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const sheet2 = workbook.addWorksheet("Barcode Yes");
+  sheet2.views = [{ state: "normal", activeCell: "A1" }];
+  populatePicklistWorksheet(
+    sheet2,
+    barcodeYesItems,
+    barcodeYesTotalQty,
+    "No Barcode Yes items found in this batch",
+    true // forceSingleColumn for Barcode Yes sheet
   );
 
   const buffer = await workbook.xlsx.writeBuffer();
@@ -686,12 +733,13 @@ export const downloadFlipkartPicklistPDF = (
     item.rackAddress || "—",
     item.sku,
     item.quantity,
+    item.generateBarcode || "No",
     "[   ]",
   ]);
 
   autoTable(doc, {
     startY: 36,
-    head: [["#", "Rack", "SKU ID", "Qty", "Picked"]],
+    head: [["#", "Rack", "SKU ID", "Qty", "Gen Barcode", "Picked"]],
     body: tableBody,
     theme: "striped",
     headStyles: {
@@ -706,10 +754,21 @@ export const downloadFlipkartPicklistPDF = (
     },
     columnStyles: {
       0: { cellWidth: 10, halign: "center" },
-      1: { cellWidth: 35, halign: "center", fontStyle: "bold" },
-      2: { cellWidth: 95, fontStyle: "bold" },
-      3: { cellWidth: 20, halign: "center", fontStyle: "bold" },
-      4: { cellWidth: 30, halign: "center" },
+      1: { cellWidth: 30, halign: "center", fontStyle: "bold" },
+      2: { cellWidth: 85, fontStyle: "bold" },
+      3: { cellWidth: 18, halign: "center", fontStyle: "bold" },
+      4: { cellWidth: 25, halign: "center" },
+      5: { cellWidth: 22, halign: "center" },
+    },
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 4) {
+        if (data.cell.raw === "Yes") {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.textColor = [16, 185, 129];
+        } else {
+          data.cell.styles.textColor = [100, 116, 139];
+        }
+      }
     },
     margin: { left: 10, right: 10 },
   });
@@ -763,12 +822,13 @@ export const openFlipkartPicklistPDF = (
     item.rackAddress || "—",
     item.sku,
     item.quantity,
+    item.generateBarcode || "No",
     "[   ]",
   ]);
 
   autoTable(doc, {
     startY: 36,
-    head: [["#", "Rack", "SKU ID", "Qty", "Picked"]],
+    head: [["#", "Rack", "SKU ID", "Qty", "Gen Barcode", "Picked"]],
     body: tableBody,
     theme: "striped",
     headStyles: {
@@ -783,10 +843,21 @@ export const openFlipkartPicklistPDF = (
     },
     columnStyles: {
       0: { cellWidth: 10, halign: "center" },
-      1: { cellWidth: 35, halign: "center", fontStyle: "bold" },
-      2: { cellWidth: 95, fontStyle: "bold" },
-      3: { cellWidth: 20, halign: "center", fontStyle: "bold" },
-      4: { cellWidth: 30, halign: "center" },
+      1: { cellWidth: 30, halign: "center", fontStyle: "bold" },
+      2: { cellWidth: 85, fontStyle: "bold" },
+      3: { cellWidth: 18, halign: "center", fontStyle: "bold" },
+      4: { cellWidth: 25, halign: "center" },
+      5: { cellWidth: 22, halign: "center" },
+    },
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 4) {
+        if (data.cell.raw === "Yes") {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.textColor = [16, 185, 129];
+        } else {
+          data.cell.styles.textColor = [100, 116, 139];
+        }
+      }
     },
     margin: { left: 10, right: 10 },
   });
@@ -819,8 +890,9 @@ export const openFlipkartPicklistTab = (
         (item) => `
       <tr>
         <td style="text-align: center; font-weight: 700; color: #1e293b;">${item.rackAddress || "—"}</td>
-        <td style="text-align: left; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: ${hasRightColumn ? "140px" : "320px"};">${item.sku}</td>
+        <td style="text-align: left; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: ${hasRightColumn ? "125px" : "290px"};">${item.sku}</td>
         <td style="text-align: center; font-weight: bold;">${item.quantity}</td>
+        <td style="text-align: center; ${item.generateBarcode === "Yes" ? "font-weight: bold; color: #16a34a;" : "color: #64748b;"}">${item.generateBarcode || "No"}</td>
         <td style="text-align: center; color: #94a3b8;">[ &nbsp; ]</td>
       </tr>`
       )
@@ -851,10 +923,11 @@ export const openFlipkartPicklistTab = (
                 <table>
                   <thead>
                     <tr>
-                      <th style="width: 25%;">Rack</th>
-                      <th style="width: 50%; text-align: left;">SKU</th>
-                      <th style="width: 12%;">Qty</th>
-                      <th style="width: 13%;">Check</th>
+                      <th style="width: 20%;">Rack</th>
+                      <th style="width: 44%; text-align: left;">SKU</th>
+                      <th style="width: 10%;">Qty</th>
+                      <th style="width: 14%;">Barcode</th>
+                      <th style="width: 12%;">Check</th>
                     </tr>
                   </thead>
                   <tbody>${renderTableRows(leftItems)}</tbody>
@@ -864,10 +937,11 @@ export const openFlipkartPicklistTab = (
                 <table>
                   <thead>
                     <tr>
-                      <th style="width: 25%;">Rack</th>
-                      <th style="width: 50%; text-align: left;">SKU</th>
-                      <th style="width: 12%;">Qty</th>
-                      <th style="width: 13%;">Check</th>
+                      <th style="width: 20%;">Rack</th>
+                      <th style="width: 44%; text-align: left;">SKU</th>
+                      <th style="width: 10%;">Qty</th>
+                      <th style="width: 14%;">Barcode</th>
+                      <th style="width: 12%;">Check</th>
                     </tr>
                   </thead>
                   <tbody>${renderTableRows(rightItems)}</tbody>
@@ -877,10 +951,11 @@ export const openFlipkartPicklistTab = (
         : `<table>
               <thead>
                 <tr>
-                  <th style="width: 22%;">Rack</th>
-                  <th style="width: 55%; text-align: left;">SKU</th>
-                  <th style="width: 11%;">Qty</th>
-                  <th style="width: 12%;">Check</th>
+                  <th style="width: 18%;">Rack</th>
+                  <th style="width: 48%; text-align: left;">SKU</th>
+                  <th style="width: 10%;">Qty</th>
+                  <th style="width: 13%;">Barcode</th>
+                  <th style="width: 11%;">Check</th>
                 </tr>
               </thead>
               <tbody>${renderTableRows(leftItems)}</tbody>

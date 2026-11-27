@@ -191,8 +191,16 @@ export function isRouteAllowed(
     if (subPath.startsWith("vms/scans") && (allowed.includes("vms/scans") || allowed.includes("vms_tracking"))) return true;
   }
 
-  if (subPath.startsWith("products")) {
-    if (allowed.includes("products") || allowed.includes("inventory") || allowed.includes("products/inventory")) return true;
+  if (subPath.startsWith("products") || subPath.startsWith("inventory")) {
+    if (
+      allowed.includes("products") ||
+      allowed.includes("inventory") ||
+      allowed.includes("products/inventory") ||
+      allowed.includes("inventory/product") ||
+      allowed.includes("inventory/material")
+    ) {
+      return true;
+    }
   }
 
   if (subPath.startsWith("order-process")) {
@@ -314,7 +322,8 @@ export function isNavItemAllowed(
   if (label.includes("dashboard")) return allowed.includes("dashboard") || allowed.some((p) => p.startsWith("dashboard"));
   if (label.includes("vms")) return allowed.some((p) => p.startsWith("vms"));
   if (label.includes("products analytics")) return allowed.some((p) => p.startsWith("products-analytics"));
-  if (label.includes("product")) return allowed.some((p) => p.startsWith("products") || p.startsWith("settings/manage-product"));
+  if (label.includes("inventory")) return allowed.some((p) => p.startsWith("inventory") || p.startsWith("products"));
+  if (label.includes("product")) return allowed.some((p) => p.startsWith("products") || p.startsWith("settings/manage-product") || p.startsWith("inventory"));
   if (label.includes("order process")) return allowed.some((p) => p.startsWith("order-process") || p === "orderprocess");
   if (label.includes("transaction")) return allowed.some((p) => p.startsWith("transaction"));
   if (label === "sales" || label.includes("offline sales")) return allowed.some((p) => p.startsWith("sales") || p === "challan");
@@ -463,7 +472,7 @@ export function getFirstAllowedRoute(user?: UserPermissions | null): string {
   const candidateRoutes = [
     "/dashboard",
     "/dashboard/vms",
-    "/dashboard/products/inventory",
+    "/dashboard/inventory/product",
     "/dashboard/order-process",
     "/dashboard/products-analytics/amazon",
     "/dashboard/transaction/sales/po-based/upload-requested-po",
@@ -512,7 +521,9 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   "vms/admin": "vms/admin",
   "vms/admin/users": "vms/admin/users",
   "vms/admin/account": "vms/admin/account",
-  "products/inventory": "products/inventory",
+  "inventory/material": "inventory/material",
+  "inventory/product": "inventory/product",
+  "products/inventory": "inventory/product",
   "settings/manage-product": "settings/manage-product",
   "order-process": "order-process",
   "order-process/myntra/manage-tag-loop": "order-process/myntra/manage-tag-loop",
@@ -567,7 +578,7 @@ const PERMISSION_ID_TO_PAGE_SLUG: Record<string, string> = {
   order_process_amazon: "order-process/amazon/order-process",
   order_process_flipkart: "order-process/flipkart/order-process",
   order_process_myntra: "order-process/myntra/myntra-picklist",
-  warehouse_inventory: "products/inventory",
+  warehouse_inventory: "inventory/product",
   sku_mapping: "settings/labels/label-print",
   barcode_labels: "settings/labels/label-config",
   settings_manage_users: "settings/manage-users",
@@ -718,6 +729,9 @@ export function getSlugFromPathname(pathname: string): string {
   if (clean.startsWith("settings/manage-product")) {
     return "settings/manage-product";
   }
+  if (clean.startsWith("settings/manage-material")) {
+    return "settings/manage-material";
+  }
   if (clean.startsWith("order-process/amazon/order-process")) {
     return "order-process/amazon/order-process";
   }
@@ -730,8 +744,11 @@ export function getSlugFromPathname(pathname: string): string {
   if (clean.startsWith("order-process/flipkart/awb-scan")) {
     return "order-process/flipkart/awb-scan";
   }
-  if (clean.startsWith("products/inventory")) {
-    return "products/inventory";
+  if (clean.startsWith("inventory/product") || clean.startsWith("products/inventory")) {
+    return "inventory/product";
+  }
+  if (clean.startsWith("inventory/material")) {
+    return "inventory/material";
   }
   if (clean.startsWith("vms/scans")) {
     return clean.includes("trackingid") ? "vms/scans/trackingid-scan" : "vms/scans";

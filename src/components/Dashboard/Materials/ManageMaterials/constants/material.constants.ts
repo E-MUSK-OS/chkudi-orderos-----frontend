@@ -12,6 +12,18 @@ export const brandOptions: string[] = [];
 
 export const forUseOptions: string[] = [];
 
+export const ledgerGroupOptions: string[] = [
+  "Other Material",
+  "Other Material URD",
+  "Courier Exp",
+  "Milgin",
+  "Office Exp",
+  "Petrol-Diesel Exp.",
+  "Rent Exp",
+  "Repair And Maitenance Exp",
+  "Salary Exp",
+];
+
 export const costApplyingModeOptions: string[] = [];
 
 export const purchaseTypeOptions: string[] = [];
@@ -67,6 +79,7 @@ export const materialDefaultValues = {
   hsnCode: "",
   brand: "No Brand",
   forUse: "",
+  ledgerGroup: "",
   less: 0,
   description: "",
 
@@ -79,12 +92,14 @@ export const materialDefaultValues = {
   isStockDetailsCompulsory: false,
   issueMode: "Direct",
   consumptionMode: "Direct",
+  isIssuable: false,
   isSellable: false,
 
   isActive: true,
 };
 
 export const defaultMaterialAttributes = [
+  "Color",
   "Size",
   "Dimension",
   "Thickness",

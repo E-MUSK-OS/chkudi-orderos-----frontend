@@ -330,7 +330,18 @@ const ManageMaterials = () => {
   }, [page, pageSize, importType]);
 
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
-  const [expandedMaterialId, setExpandedMaterialId] = useState<string | null>(null);
+  const [expandedMaterialId, setExpandedMaterialId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("orderos_return_expanded_material");
+        if (saved) {
+          sessionStorage.removeItem("orderos_return_expanded_material");
+          return saved;
+        }
+      } catch {}
+    }
+    return null;
+  });
 
   const handleVariantToggle = (material: Material) => {
     if (expandedMaterialId === material.id) {

@@ -127,13 +127,18 @@ export const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Products",
-    href: "/dashboard/products/inventory",
+    label: "Inventory",
+    href: "/dashboard/inventory/product",
     icon: Package,
     children: [
       {
-        label: "Inventory",
-        href: "/dashboard/products/inventory",
+        label: "Material",
+        href: "/dashboard/inventory/material",
+        defaultTimeAgo: "25m ago",
+      },
+      {
+        label: "Product",
+        href: "/dashboard/inventory/product",
         defaultTimeAgo: "25m ago",
         isCore: true,
       },
@@ -401,6 +406,11 @@ export const navItems: NavItem[] = [
         href: "/dashboard/settings/manage-material/material-profile",
         children: [
           {
+            label: "Master Material Profile",
+            href: "/dashboard/settings/manage-material/master-material-profile",
+            defaultTimeAgo: "10m ago",
+          },
+          {
             label: "Material Profile",
             href: "/dashboard/settings/manage-material/material-profile",
             defaultTimeAgo: "1d ago",
@@ -424,6 +434,11 @@ export const navItems: NavItem[] = [
         icon: Package,
         href: "/dashboard/settings/manage-product/product-profile",
         children: [
+          {
+            label: "Master Product Profile",
+            href: "/dashboard/settings/manage-product/master-product-profile",
+            defaultTimeAgo: "10m ago",
+          },
           {
             label: "Product Profile",
             href: "/dashboard/settings/manage-product/product-profile",
@@ -459,6 +474,12 @@ export const navItems: NavItem[] = [
             isCore: true,
           },
         ],
+      },
+      {
+        label: "Update Inventory",
+        icon: Warehouse,
+        href: "/dashboard/settings/update-inventory",
+        defaultTimeAgo: "Just now",
       },
       {
         label: "Setting Masters",
@@ -696,7 +717,7 @@ export function getDynamicSearchablePages(user?: UserPermissions | null): Search
   // Core pages defined in default view:
   const CORE_ORDER = [
     "/dashboard/settings/manage-product/product-profile",
-    "/dashboard/products/inventory",
+    "/dashboard/inventory/product",
     "/dashboard/settings/manage-users/user-profile",
     "/dashboard/sales/sales-invoice",
     "/dashboard/sales/sales-challan",

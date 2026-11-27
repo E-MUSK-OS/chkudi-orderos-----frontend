@@ -27,7 +27,7 @@ export default function InventoryActionMenu({
   onAdjust,
   onDelete,
 }: Props) {
-  const { canUpdate, canDelete } = usePagePermissions("products/inventory");
+  const { canUpdate, canDelete } = usePagePermissions("inventory/product");
 
   const items: any[] = [];
 

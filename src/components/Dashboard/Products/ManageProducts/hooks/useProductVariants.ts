@@ -25,6 +25,16 @@ function getToken() {
 }
 
 /**
+ * Get All Product Variants Across All Products
+ */
+export function useAllProductVariants() {
+  return useQuery({
+    queryKey: [...QUERY_KEY, "all"],
+    queryFn: () => productVariantService.getAll(getToken()),
+  });
+}
+
+/**
  * Get All Product Variants
  */
 export function useProductVariants(productId: string) {

@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Circle,
   Crop,
   ImageIcon,
   ImagePlus,
@@ -44,6 +45,7 @@ import type { Product, ProductAttribute } from "./types/product.types";
 import type { ProductVariant } from "./types/productVariant.types";
 import { productVariantService } from "./services/productVariant.service";
 import DeleteVariantModal from "./components/DeleteVariantModal";
+import ProductForm from "./components/ProductForm";
 import ProductImageAdjustModal from "./components/ProductImageAdjustModal";
 import DropdownWithOther from "./components/DropdownWithOther";
 import ColorMultiSelect from "./components/ColorMultiSelect";
@@ -202,11 +204,15 @@ export default function EditProductVariant({
   const effectiveReturnPath =
     fromParam === "product-gallery"
       ? "/dashboard/sales/product-gallery"
-      : returnPath;
+      : fromParam === "master-product-profile"
+        ? "/dashboard/settings/manage-product/master-product-profile"
+        : returnPath;
   const backLabel =
     fromParam === "product-gallery"
       ? "Back to Product Gallery"
-      : "Back to Product Profile";
+      : fromParam === "master-product-profile"
+        ? "Back to Master Product Profile"
+        : "Back to Product Profile";
 
   const { canCreate, canUpdate, canDelete } = usePagePermissions("settings/manage-product");
 
@@ -544,6 +550,9 @@ function EditVariantForm({
     extraAttributes,
     existingGender,
   ]);
+
+  // Active tab state: default to Add Variants when editing a variant
+  const [activeTab, setActiveTab] = useState<"general" | "kardex" | "cost_mrp" | "variants">("variants");
 
   // Form State
   const [editColor, setEditColor] = useState(() => initialDefaults.col);
@@ -1706,8 +1715,69 @@ function EditVariantForm({
           </div>
         </div>
 
-        {/* Form Body */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-xs">
+        {/* Tabs Navigation: General, Kardex, Cost & MRP, Add Variants */}
+        <div className="w-full py-1">
+          <div className="w-full rounded-2xl sm:rounded-full bg-white dark:bg-[#080B11] border border-[#E7E0D2] dark:border-white/[0.08] p-1.5 flex items-center justify-between shadow-xs gap-1 sm:gap-2 select-none overflow-x-auto no-scrollbar">
+            {(
+              [
+                { id: "general", label: "General" },
+                { id: "kardex", label: "Kardex" },
+                { id: "cost_mrp", label: "Cost & MRP" },
+                { id: "variants", label: "Add Variants" },
+              ] as const
+            ).map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap",
+                    isActive
+                      ? "bg-[#0A0E1A] text-[#E8C16D] shadow-md border border-[#0A0E1A] dark:bg-[#E8C16D] dark:text-[#0A0E1A] dark:border-[#E8C16D] dark:shadow-[0_0_16px_rgba(232,193,109,0.4)]"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.05] border border-transparent font-medium"
+                  )}
+                >
+                  {isActive ? (
+                    <CheckCircle2
+                      size={16}
+                      className="text-[#E8C16D] dark:text-[#0A0E1A] shrink-0"
+                    />
+                  ) : (
+                    <Circle
+                      size={16}
+                      className="text-slate-400 dark:text-slate-500 shrink-0"
+                    />
+                  )}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Read-Only General / Kardex / Cost & MRP Tabs */}
+        {(activeTab === "general" || activeTab === "kardex" || activeTab === "cost_mrp") && product && (
+          <div className="rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-xs">
+            <ProductForm
+              mode="edit"
+              product={product}
+              onSuccess={() => {}}
+              readOnly
+              controlledTab={activeTab}
+              hideTabsNav
+            />
+          </div>
+        )}
+
+        {/* Form Body (Add Variants Tab) */}
+        <div
+          className={cn(
+            "rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-xs",
+            activeTab !== "variants" && "hidden"
+          )}
+        >
           <form
             id="edit-variant-form"
             onSubmit={handleSubmit}

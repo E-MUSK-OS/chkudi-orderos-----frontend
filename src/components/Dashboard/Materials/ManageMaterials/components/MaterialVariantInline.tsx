@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { materialService } from "../services/material.service";
 import { API_BASE_URL } from "@/lib/config";
@@ -69,6 +70,7 @@ export default function MaterialVariantInline({
   masterSku,
   material,
 }: Props) {
+  const router = useRouter();
   const { data, isLoading } = useMaterialVariants(materialId);
   const createVariant = useCreateMaterialVariant();
   const updateVariant = useUpdateMaterialVariant();
@@ -161,6 +163,8 @@ export default function MaterialVariantInline({
 
   // Single variant editing state
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const inlineFieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const [editSku, setEditSku] = useState("");
   const [editSize, setEditSize] = useState("");
   const [editAsin, setEditAsin] = useState("");
@@ -169,6 +173,23 @@ export default function MaterialVariantInline({
   const [editOtherAttrs, setEditOtherAttrs] = useState<Record<string, string>>(
     {}
   );
+
+  // Focus the double-clicked field once inline editing activates
+  useEffect(() => {
+    if (!editingId || !focusedField) return;
+    const fieldKey = focusedField;
+    requestAnimationFrame(() => {
+      const target = inlineFieldRefs.current[`${editingId}:${fieldKey}`];
+      if (target) {
+        if (fieldKey === "status") {
+          target.querySelector<HTMLElement>('[data-slot="switch"]')?.focus();
+        } else {
+          target.focus();
+        }
+      }
+      setFocusedField(null);
+    });
+  }, [editingId, focusedField]);
 
   // Adding new color row state
   const [isAdding, setIsAdding] = useState(false);
@@ -475,9 +496,23 @@ export default function MaterialVariantInline({
       .filter(Boolean);
   }, [quickAddSizesInput]);
 
-  // Start editing a single variant
-  const handleStartEdit = (variant: MaterialVariant) => {
+  const handleOpenVariantEditPage = (variant: MaterialVariant) => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("orderos_return_expanded_material", materialId);
+      } catch {}
+    }
+    router.push(
+      `/dashboard/settings/manage-material/material-profile/edit-material-varient/${variant.id}`
+    );
+  };
+
+  // Start inline editing a single variant (via double-click on any row field)
+  const handleStartEdit = (variant: MaterialVariant, fieldToFocus?: string) => {
     setEditingId(variant.id);
+    if (fieldToFocus) {
+      setFocusedField(fieldToFocus);
+    }
     setEditSku(variant.variantSku);
     setEditSize(getSizeValue(variant));
     setEditAsin(variant.asin || "");
@@ -1100,10 +1135,19 @@ export default function MaterialVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center"
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, "size");
+                                }
+                              }}
+                              title={!isEditing ? "Double click to edit" : undefined}
+                              className="min-h-[42px] py-1 flex items-center cursor-pointer"
                             >
                               {isEditing ? (
                                 <input
+                                  ref={(el) => {
+                                    inlineFieldRefs.current[`${variant.id}:size`] = el;
+                                  }}
                                   value={editSize}
                                   onChange={(e) => {
                                     const nextSz = e.target.value;
@@ -1137,10 +1181,19 @@ export default function MaterialVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm"
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, "sku");
+                                }
+                              }}
+                              title={!isEditing ? "Double click to edit" : undefined}
+                              className="min-h-[42px] py-1 flex items-center font-mono font-semibold text-slate-900 dark:text-white text-xs sm:text-sm cursor-pointer"
                             >
                               {isEditing ? (
                                 <input
+                                  ref={(el) => {
+                                    inlineFieldRefs.current[`${variant.id}:sku`] = el;
+                                  }}
                                   value={editSku}
                                   onChange={(e) => setEditSku(e.target.value)}
                                   className="h-8 w-full max-w-[260px] px-2.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-[#0B0F17] text-xs font-mono font-semibold text-slate-900 dark:text-white outline-none focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D]/30 shadow-2xs"
@@ -1182,13 +1235,24 @@ export default function MaterialVariantInline({
                               attr.attributeValue ||
                               "--";
 
+                            const attrFieldKey = `attr:${attr.id || attr.attributeName}`;
+
                             return (
                               <div
                                 key={variant.id}
-                                className="min-h-[42px] py-1 flex items-center text-slate-700 dark:text-slate-300 text-xs"
+                                onDoubleClick={() => {
+                                  if (!isEditing) {
+                                    handleStartEdit(variant, attrFieldKey);
+                                  }
+                                }}
+                                title={!isEditing ? "Double click to edit" : undefined}
+                                className="min-h-[42px] py-1 flex items-center text-slate-700 dark:text-slate-300 text-xs cursor-pointer"
                               >
                                 {isEditing ? (
                                   <input
+                                    ref={(el) => {
+                                      inlineFieldRefs.current[`${variant.id}:${attrFieldKey}`] = el;
+                                    }}
                                     value={
                                       editOtherAttrs[attr.id || ""] ||
                                       editOtherAttrs[attr.attributeName] ||
@@ -1232,10 +1296,19 @@ export default function MaterialVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center font-medium text-slate-700 dark:text-slate-300 text-xs"
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, "rackAddress");
+                                }
+                              }}
+                              title={!isEditing ? "Double click to edit" : undefined}
+                              className="min-h-[42px] py-1 flex items-center font-medium text-slate-700 dark:text-slate-300 text-xs cursor-pointer"
                             >
                               {isEditing ? (
                                 <input
+                                  ref={(el) => {
+                                    inlineFieldRefs.current[`${variant.id}:rackAddress`] = el;
+                                  }}
                                   value={editRackAddress}
                                   onChange={(e) =>
                                     setEditRackAddress(e.target.value)
@@ -1261,7 +1334,16 @@ export default function MaterialVariantInline({
                           return (
                             <div
                               key={variant.id}
-                              className="min-h-[42px] py-1 flex items-center justify-center"
+                              ref={(el) => {
+                                inlineFieldRefs.current[`${variant.id}:status`] = el;
+                              }}
+                              onDoubleClick={() => {
+                                if (!isEditing) {
+                                  handleStartEdit(variant, "status");
+                                }
+                              }}
+                              title={!isEditing ? "Double click to edit" : undefined}
+                              className="min-h-[42px] py-1 flex items-center justify-center cursor-pointer"
                             >
                               {isEditing ? (
                                 <Switch
@@ -1317,7 +1399,7 @@ export default function MaterialVariantInline({
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handleStartEdit(variant)}
+                                    onClick={() => handleOpenVariantEditPage(variant)}
                                     className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131926] text-slate-700 dark:text-slate-200 hover:border-[#E8C16D] hover:bg-[#FFF9EC] hover:text-[#B88728] dark:hover:bg-[#E8C16D]/10 dark:hover:text-[#F5C451] transition-all shadow-2xs active:scale-95 cursor-pointer"
                                     title="Edit variant"
                                   >

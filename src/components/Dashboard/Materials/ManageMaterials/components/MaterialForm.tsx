@@ -27,6 +27,7 @@ import {
 import {
   materialDefaultValues,
   defaultMaterialAttributes,
+  ledgerGroupOptions,
 } from "../constants/material.constants";
 import { useCreateMaterial, useUpdateMaterial } from "../hooks/useMaterials";
 import { useDropdownOptions } from "../hooks/useDropdownOptions";
@@ -42,7 +43,6 @@ import {
 import ProductTabsNav, { type ProductActiveTab } from "./ProductTabsNav";
 import SectionCard from "./SectionCard";
 import DropdownWithOther, { type DropdownOption } from "./DropdownWithOther";
-import ColorMultiSelect from "./ColorMultiSelect";
 
 interface Props {
   mode: "create" | "edit";
@@ -50,6 +50,9 @@ interface Props {
   onSuccess: () => void;
   onLoadingChange?: (loading: boolean) => void;
   onDeleteClick?: () => void;
+  readOnly?: boolean;
+  controlledTab?: ProductActiveTab;
+  hideTabsNav?: boolean;
 }
 
 export default function MaterialForm({
@@ -58,8 +61,12 @@ export default function MaterialForm({
   onSuccess,
   onLoadingChange,
   onDeleteClick,
+  readOnly = false,
+  controlledTab,
+  hideTabsNav = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ProductActiveTab>("general");
+  const currentTab = controlledTab ?? activeTab;
 
   const queryClient = useQueryClient();
   const createMaterialMutation = useCreateMaterial();
@@ -119,6 +126,12 @@ export default function MaterialForm({
       units: makeOptions("unit", distMat?.units),
       brands: makeOptions("brand", distMat?.brands),
       forUses: makeOptions("foruse", distMat?.forUses),
+      ledgerGroups: buildMergedOptions(
+        "ledgergroup",
+        ledgerGroupOptions,
+        dropdownData?.savedOptions,
+        distMat?.ledgerGroups
+      ),
       costApplyingModes: makeOptions("costapplyingmode", distMat?.costApplyingModes),
       purchaseTypes: makeOptions("purchasetype", distMat?.purchaseTypes),
       issueModes: makeOptions("issuemode", distMat?.issueModes),
@@ -193,6 +206,7 @@ export default function MaterialForm({
         unit: "unit",
         brand: "brand",
         foruse: "forUse",
+        ledgergroup: "ledgerGroup",
         costapplyingmode: "costApplyingMode",
         purchasetype: "purchaseType",
         issuemode: "issueMode",
@@ -249,10 +263,6 @@ export default function MaterialForm({
 
       const existingAttrs: Array<{ id?: string; attributeName: string; attributeValue: string }> =
         (material.attributes || [])
-          .filter((a: any) => {
-            const lower = (a.attributeName || "").toLowerCase().trim();
-            return !["colour", "color"].includes(lower);
-          })
           .map((a: any) => {
             const matchedValues = allVariantAttrs
               .filter((va: any) => {
@@ -280,7 +290,7 @@ export default function MaterialForm({
       allVariantAttrs.forEach((va: any) => {
         const name = (va.materialAttribute?.attributeName || "").trim();
         const lower = name.toLowerCase();
-        if (name && !["colour", "color"].includes(lower) && !seenAttrNames.has(lower)) {
+        if (name && !seenAttrNames.has(lower)) {
           seenAttrNames.add(lower);
           const val = (va.attributeValue || "").trim();
           existingAttrs.push({
@@ -290,6 +300,18 @@ export default function MaterialForm({
           });
         }
       });
+
+      if (
+        Array.isArray(material.colors) &&
+        material.colors.length > 0 &&
+        !seenAttrNames.has("color") &&
+        !seenAttrNames.has("colour")
+      ) {
+        existingAttrs.unshift({
+          attributeName: "Color",
+          attributeValue: material.colors.join(", "),
+        });
+      }
 
       if (
         material.sizeList &&
@@ -333,6 +355,7 @@ export default function MaterialForm({
         hsnCode: material.hsnCode || "",
         brand: material.brand || "No Brand",
         forUse: material.forUse || "No For Use",
+        ledgerGroup: material.ledgerGroup || "",
         less: typeof material.less === "number" ? material.less : 0,
         description: material.description || "",
 
@@ -391,6 +414,16 @@ export default function MaterialForm({
         }
       }
 
+      const colorAttr = attributesPayload.find((a) =>
+        ["color", "colour"].includes(a.attributeName.toLowerCase())
+      );
+      const computedColors = colorAttr?.attributeValue
+        ? colorAttr.attributeValue
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean)
+        : values.colors || [];
+
       const sizeAttr = attributesPayload.find((a) =>
         ["size", "dimension"].includes(a.attributeName.toLowerCase())
       );
@@ -405,7 +438,7 @@ export default function MaterialForm({
           subCategory: values.subCategory?.trim() || "No Sub Category",
           manufacturingGroup: values.manufacturingGroup.trim(),
           unit: values.unit.trim(),
-          colors: values.colors,
+          colors: computedColors,
           sizeList: computedSizeList,
           attributes: attributesPayload,
           width: Number(values.width) || 0,
@@ -418,6 +451,7 @@ export default function MaterialForm({
           hsnCode: values.hsnCode.trim(),
           brand: values.brand.trim() || "No Brand",
           forUse: values.forUse?.trim() || "No For Use",
+          ledgerGroup: values.ledgerGroup?.trim() || "",
           less: Number(values.less) || 0,
           description: values.description?.trim() || "",
 
@@ -446,7 +480,7 @@ export default function MaterialForm({
             subCategory: values.subCategory?.trim() || "No Sub Category",
             manufacturingGroup: values.manufacturingGroup.trim(),
             unit: values.unit.trim(),
-            colors: values.colors,
+            colors: computedColors,
             sizeList: computedSizeList,
             attributes: attributesPayload,
             width: Number(values.width) || 0,
@@ -459,6 +493,7 @@ export default function MaterialForm({
             hsnCode: values.hsnCode.trim(),
             brand: values.brand.trim() || "No Brand",
             forUse: values.forUse?.trim() || "No For Use",
+            ledgerGroup: values.ledgerGroup?.trim() || "",
             less: Number(values.less) || 0,
             description: values.description?.trim() || "",
 
@@ -497,17 +532,27 @@ export default function MaterialForm({
 
   return (
     <form
-      id="material-form"
-      onSubmit={handleSubmit(onSubmit)}
+      id={readOnly ? undefined : "material-form"}
+      onSubmit={readOnly ? (e) => e.preventDefault() : handleSubmit(onSubmit)}
       className="w-full space-y-6"
     >
       {/* Top Tab Switcher */}
-      <ProductTabsNav activeTab={activeTab} onTabChange={setActiveTab} />
+      {!hideTabsNav && (
+        <ProductTabsNav activeTab={currentTab} onTabChange={setActiveTab} />
+      )}
 
+      <fieldset
+        disabled={readOnly}
+        className={cn(
+          "min-w-0 border-0 p-0 m-0",
+          readOnly &&
+            "pointer-events-none select-text opacity-65 [&_input]:bg-slate-50/80 dark:[&_input]:bg-white/[0.03] [&_textarea]:bg-slate-50/80 dark:[&_textarea]:bg-white/[0.03]"
+        )}
+      >
       {/* ============================================================ */}
       {/* TAB 1: GENERAL DETAILS                                       */}
       {/* ============================================================ */}
-      {activeTab === "general" && (
+      {currentTab === "general" && (
         <SectionCard
           icon={<Package className="h-5 w-5" />}
           title="General Details"
@@ -596,8 +641,8 @@ export default function MaterialForm({
             />
           </div>
 
-          {/* Row 2: Category * | Sub Category | Manufacturing Group * | Unit * */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Row 2: Category * | Sub Category | Manufacturing Group * */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Controller
               name="category"
               control={control}
@@ -647,7 +692,11 @@ export default function MaterialForm({
                 />
               )}
             />
+          </div>
 
+          {/* Row 3: Unit * | Width & Width Range | GSM & GSM Range */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Unit */}
             <Controller
               name="unit"
               control={control}
@@ -661,27 +710,6 @@ export default function MaterialForm({
                   placeholder="Select Unit..."
                   required
                   error={errors.unit?.message}
-                />
-              )}
-            />
-          </div>
-
-          {/* Row 3: Colors | Width & Width Range | GSM & GSM Range */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Colors Multi-Select */}
-            <Controller
-              name="colors"
-              control={control}
-              render={({ field }) => (
-                <ColorMultiSelect
-                  label="Colors"
-                  value={field.value || []}
-                  onChange={field.onChange}
-                  additionalColors={buildOptions.colors}
-                  disabledColors={disabledColors}
-                  colorHexMap={serverColorHexMap}
-                  useExternalColorsOnly={Boolean(dropdownData)}
-                  error={errors.colors?.message}
                 />
               )}
             />
@@ -973,8 +1001,33 @@ export default function MaterialForm({
             </div>
           </div>
 
-          {/* Row 4: Less (%). | GST (%) | HSN Code * */}
+          {/* Row 4: HSN Code * | Less (%). | GST (%) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Controller
+              name="hsnCode"
+              control={control}
+              render={({ field }) => (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                    HSN Code <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    {...field}
+                    placeholder="e.g. 5208"
+                    className={cn(
+                      inputClass,
+                      errors.hsnCode && "border-rose-500"
+                    )}
+                  />
+                  {errors.hsnCode && (
+                    <p className="text-[11px] text-rose-500 font-medium">
+                      {errors.hsnCode.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
+
             <Controller
               name="less"
               control={control}
@@ -1017,34 +1070,9 @@ export default function MaterialForm({
                 />
               )}
             />
-
-            <Controller
-              name="hsnCode"
-              control={control}
-              render={({ field }) => (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                    HSN Code <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    {...field}
-                    placeholder="e.g. 5208"
-                    className={cn(
-                      inputClass,
-                      errors.hsnCode && "border-rose-500"
-                    )}
-                  />
-                  {errors.hsnCode && (
-                    <p className="text-[11px] text-rose-500 font-medium">
-                      {errors.hsnCode.message}
-                    </p>
-                  )}
-                </div>
-              )}
-            />
           </div>
 
-          {/* Row 5: Brand Name * | For Use */}
+          {/* Row 5: Brand Name * | Ledger Group | For Use */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Controller
               name="brand"
@@ -1059,6 +1087,22 @@ export default function MaterialForm({
                   placeholder="Select Brand..."
                   required
                   error={errors.brand?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="ledgerGroup"
+              control={control}
+              render={({ field }) => (
+                <DropdownWithOther
+                  label="Ledger Group"
+                  fieldKey="ledgerGroup"
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  options={buildOptions.ledgerGroups}
+                  placeholder="Select Ledger Group..."
+                  error={errors.ledgerGroup?.message}
                 />
               )}
             />
@@ -1104,7 +1148,7 @@ export default function MaterialForm({
       {/* ============================================================ */}
       {/* TAB 2: KARDEX DETAILS                                        */}
       {/* ============================================================ */}
-      {activeTab === "kardex" && (
+      {currentTab === "kardex" && (
         <SectionCard
           icon={<SlidersHorizontal className="h-5 w-5" />}
           title="Kardex Details"
@@ -1267,7 +1311,7 @@ export default function MaterialForm({
                   control={control}
                   render={({ field }) => (
                     <Switch
-                      checked={field.value}
+                      checked={Boolean(field.value)}
                       onCheckedChange={field.onChange}
                     />
                   )}
@@ -1321,7 +1365,7 @@ export default function MaterialForm({
                 control={control}
                 render={({ field }) => (
                   <Switch
-                    checked={field.value}
+                    checked={Boolean(field.value)}
                     onCheckedChange={field.onChange}
                   />
                 )}
@@ -1337,7 +1381,7 @@ export default function MaterialForm({
                 control={control}
                 render={({ field }) => (
                   <Switch
-                    checked={field.value}
+                    checked={Boolean(field.value)}
                     onCheckedChange={field.onChange}
                   />
                 )}
@@ -1346,6 +1390,7 @@ export default function MaterialForm({
           </div>
         </SectionCard>
       )}
+      </fieldset>
     </form>
   );
 }

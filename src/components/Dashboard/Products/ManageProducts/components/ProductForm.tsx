@@ -110,6 +110,9 @@ interface Props {
   onSuccess: () => void;
   onLoadingChange?: (loading: boolean) => void;
   onDeleteClick?: () => void;
+  readOnly?: boolean;
+  controlledTab?: ProductActiveTab;
+  hideTabsNav?: boolean;
 }
 
 const defaultValues: ProductFormValues = {
@@ -157,8 +160,12 @@ export default function ProductForm({
   onSuccess,
   onLoadingChange,
   onDeleteClick,
+  readOnly = false,
+  controlledTab,
+  hideTabsNav = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ProductActiveTab>("general");
+  const currentTab = controlledTab ?? activeTab;
   const [isSubmittingVariants, setIsSubmittingVariants] = useState(false);
   const queryClient = useQueryClient();
 
@@ -1692,8 +1699,11 @@ export default function ProductForm({
 
   return (
     <form
-      id="product-form"
-      onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+      id={readOnly ? undefined : "product-form"}
+      onSubmit={
+        readOnly
+          ? (e) => e.preventDefault()
+          : handleSubmit(onSubmit, (validationErrors) => {
         console.error("Form validation errors on submit:", validationErrors);
         const errorKeys = Object.keys(validationErrors);
         if (errorKeys.length > 0) {
@@ -1724,12 +1734,22 @@ export default function ProductForm({
       className="space-y-6 py-2 px-1 text-slate-900 dark:text-white"
     >
       {/* Centered Tab Switcher: General & Kardex */}
-      <ProductTabsNav activeTab={activeTab} onTabChange={setActiveTab} />
+      {!hideTabsNav && (
+        <ProductTabsNav activeTab={currentTab} onTabChange={setActiveTab} />
+      )}
 
+      <fieldset
+        disabled={readOnly}
+        className={cn(
+          "min-w-0 border-0 p-0 m-0",
+          readOnly &&
+            "pointer-events-none select-text opacity-65 [&_input]:bg-slate-50/80 dark:[&_input]:bg-white/[0.03] [&_textarea]:bg-slate-50/80 dark:[&_textarea]:bg-white/[0.03]"
+        )}
+      >
       {/* ============================================================ */}
       {/* GENERAL TAB CONTENT (Matching Image 2: Add Product)          */}
       {/* ============================================================ */}
-      {activeTab === "general" && (
+      {currentTab === "general" && (
         <div className="space-y-5 animate-in fade-in-50 duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-white/[0.08] pb-3.5">
             <div>
@@ -2286,7 +2306,7 @@ export default function ProductForm({
       {/* ============================================================ */}
       {/* KARDEX TAB CONTENT (Matching Image 1: Product Profile)       */}
       {/* ============================================================ */}
-      {activeTab === "kardex" && (
+      {currentTab === "kardex" && (
         <div className="space-y-5 animate-in fade-in-50 duration-200">
           <div className="border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
@@ -2916,7 +2936,7 @@ export default function ProductForm({
       {/* ============================================================ */}
       {/* COST & MRP TAB CONTENT                                       */}
       {/* ============================================================ */}
-      {activeTab === "cost_mrp" && (
+      {currentTab === "cost_mrp" && (
         <div className="space-y-5 animate-in fade-in-50 duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-white/[0.08] pb-3.5">
             <div>
@@ -3093,6 +3113,7 @@ export default function ProductForm({
           )}
         </div>
       )}
+      </fieldset>
 
       <DeleteAttributeModal
         open={deleteAttrIndex !== null}

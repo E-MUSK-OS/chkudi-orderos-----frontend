@@ -36,7 +36,7 @@ const InventoryToolbar = ({
 }: Props) => {
   const [importOpen, setImportOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
-  const { canCreate } = usePagePermissions("products/inventory");
+  const { canCreate } = usePagePermissions("inventory/product");
   const { data: warehouseResponse } = useWarehouses();
 
   const warehouseOptions = [

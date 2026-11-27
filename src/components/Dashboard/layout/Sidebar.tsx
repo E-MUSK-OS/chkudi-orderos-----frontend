@@ -235,14 +235,28 @@ export const isItemActive = (item: NavItem, path: string): boolean => {
 
     // Settings sub-modules
     if (
+      itemCanon === "/settings/manage-product/master-product-profile" &&
+      currCanon.startsWith("/settings/manage-product/master-product-profile")
+    ) {
+      return true;
+    }
+    if (
       (itemCanon === "/settings/manage-product" || itemCanon === "/settings/manage-product/product-profile") &&
-      currCanon.startsWith("/settings/manage-product")
+      currCanon.startsWith("/settings/manage-product") &&
+      !currCanon.startsWith("/settings/manage-product/master-product-profile")
+    ) {
+      return true;
+    }
+    if (
+      itemCanon === "/settings/manage-material/master-material-profile" &&
+      currCanon.startsWith("/settings/manage-material/master-material-profile")
     ) {
       return true;
     }
     if (
       (itemCanon === "/settings/manage-material" || itemCanon === "/settings/manage-material/material-profile") &&
-      currCanon.startsWith("/settings/manage-material")
+      currCanon.startsWith("/settings/manage-material") &&
+      !currCanon.startsWith("/settings/manage-material/master-material-profile")
     ) {
       return true;
     }

@@ -166,6 +166,7 @@ export interface DropdownOptionsData {
     categories?: string[];
     subCategories?: string[];
     forUses?: string[];
+    ledgerGroups?: string[];
     manufacturingGroups?: string[];
     brands?: string[];
     units?: string[];
@@ -184,6 +185,7 @@ export interface DropdownOptionsData {
     categories?: string[];
     subCategories?: string[];
     forUses?: string[];
+    ledgerGroups?: string[];
     manufacturingGroups?: string[];
     brands?: string[];
     units?: string[];

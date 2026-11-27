@@ -158,9 +158,9 @@ export default function FlipkartResultView() {
 
   // Database SKU Mappings
   const [skuDetailsMap, setSkuDetailsMap] = useState<
-    Map<string, { fsn?: string; asin?: string; rackAddress?: string }>
+    Map<string, { fsn?: string; asin?: string; rackAddress?: string; generateBarcode?: string }>
   >(new Map());
-  const skuDetailsMapRef = useRef<Map<string, { fsn?: string; asin?: string; rackAddress?: string }>>(new Map());
+  const skuDetailsMapRef = useRef<Map<string, { fsn?: string; asin?: string; rackAddress?: string; generateBarcode?: string }>>(new Map());
   const [isMappingsLoading, setIsMappingsLoading] = useState(true);
   const [isGeneratingPicklist, setIsGeneratingPicklist] = useState(false);
   const [isMissingSkuModalOpen, setIsMissingSkuModalOpen] = useState(false);
@@ -393,14 +393,20 @@ export default function FlipkartResultView() {
   const fetchFlipkartMappings = useCallback(async (): Promise<{
     success: boolean;
     remainingCount: number;
-    map: Map<string, { fsn?: string; asin?: string; rackAddress?: string }>;
+    map: Map<string, { fsn?: string; asin?: string; rackAddress?: string; generateBarcode?: string }>;
   }> => {
     try {
       setIsMappingsLoading(true);
       const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") ?? "" : "";
-      const map = new Map<string, { fsn?: string; asin?: string; rackAddress?: string }>();
+      const map = new Map<string, { fsn?: string; asin?: string; rackAddress?: string; generateBarcode?: string }>();
 
-      const mergeMapping = (key?: string | null, asin?: string | null, rack?: string | null, fsn?: string | null) => {
+      const mergeMapping = (
+        key?: string | null,
+        asin?: string | null,
+        rack?: string | null,
+        fsn?: string | null,
+        generateBarcode?: string | null
+      ) => {
         if (!key) return;
         const cleanKey = String(key).trim();
         const lowerKey = cleanKey.toLowerCase();
@@ -409,13 +415,15 @@ export default function FlipkartResultView() {
         const cleanAsin = asin && typeof asin === "string" ? asin.trim() : "";
         const cleanFsn = fsn && typeof fsn === "string" ? fsn.trim() : (cleanAsin || "");
         const cleanRack = rack && typeof rack === "string" ? rack.trim() : "";
+        const cleanBarcode = generateBarcode && typeof generateBarcode === "string" ? generateBarcode.trim() : "";
 
-        const existing = map.get(lowerKey) || { asin: "", fsn: "", rackAddress: "" };
+        const existing = map.get(lowerKey) || { asin: "", fsn: "", rackAddress: "", generateBarcode: "" };
         // Never overwrite an already matched valid ASIN or Rack
         const updated = {
           asin: existing.asin || cleanAsin || existing.fsn || cleanFsn || "",
           fsn: existing.fsn || cleanFsn || existing.asin || cleanAsin || "",
           rackAddress: existing.rackAddress || cleanRack || "",
+          generateBarcode: existing.generateBarcode || cleanBarcode || "",
         };
 
         map.set(lowerKey, updated);
@@ -438,9 +446,10 @@ export default function FlipkartResultView() {
               const rawAsin = item.asin || item.fsn || "";
               const rawFsn = item.fsn || item.asin || "";
               const rawRack = item.rackAddress || "";
-              if (rawSku) mergeMapping(rawSku, rawAsin, rawRack, rawFsn);
-              if (rawAsin) mergeMapping(rawAsin, rawAsin, rawRack, rawFsn);
-              if (rawFsn && rawFsn !== rawAsin) mergeMapping(rawFsn, rawAsin, rawRack, rawFsn);
+              const rawBarcode = item.generateBarcode || item.generate_barcode || item.generateBarCode || "";
+              if (rawSku) mergeMapping(rawSku, rawAsin, rawRack, rawFsn, rawBarcode);
+              if (rawAsin) mergeMapping(rawAsin, rawAsin, rawRack, rawFsn, rawBarcode);
+              if (rawFsn && rawFsn !== rawAsin) mergeMapping(rawFsn, rawAsin, rawRack, rawFsn, rawBarcode);
             });
           }
         } catch (resolveErr) {
@@ -457,8 +466,9 @@ export default function FlipkartResultView() {
                     const rawSku = item.sku || "";
                     const rawAsin = item.asin || "";
                     const rawRack = item.rackAddress || "";
-                    if (rawSku) mergeMapping(rawSku, rawAsin, rawRack, rawAsin);
-                    if (rawAsin) mergeMapping(rawAsin, rawAsin, rawRack, rawAsin);
+                    const rawBarcode = item.generateBarcode || item.generate_barcode || item.generateBarCode || "";
+                    if (rawSku) mergeMapping(rawSku, rawAsin, rawRack, rawAsin, rawBarcode);
+                    if (rawAsin) mergeMapping(rawAsin, rawAsin, rawRack, rawAsin, rawBarcode);
                   });
                 }
 

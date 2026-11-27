@@ -168,7 +168,7 @@ export const INITIAL_FIELD_GROUPS: FieldGroup[] = [
   { id: "gender", no: 32, field: "gender", label: "Gender", totalCount: 5, activeCount: 5 },
   { id: "gstrate", no: 33, field: "gstrate", label: "GST Rate (%)", totalCount: 6, activeCount: 6 },
   { id: "issuemode", no: 34, field: "issuemode", label: "Issue Mode", totalCount: 6, activeCount: 6 },
-  { id: "ledgergroup", no: 35, field: "ledgergroup", label: "Ledger Group", totalCount: 5, activeCount: 5 },
+  { id: "ledgergroup", no: 35, field: "ledgergroup", label: "Ledger Group", totalCount: 14, activeCount: 14 },
   { id: "manufacturinggroup", no: 36, field: "manufacturinggroup", label: "Manufacturing Group", totalCount: 12, activeCount: 12 },
   { id: "marketplace", no: 37, field: "marketplace", label: "Marketplace", totalCount: 4, activeCount: 4 },
   { id: "materialcategory", no: 38, field: "materialcategory", label: "Material Category", totalCount: 9, activeCount: 9 },

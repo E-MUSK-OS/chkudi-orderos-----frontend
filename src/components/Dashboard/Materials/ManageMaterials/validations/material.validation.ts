@@ -57,6 +57,7 @@ export const materialSchema = z.object({
   hsnCode: z.string().trim().min(1, "HSN Code is required"),
   brand: z.string().trim().min(1, "Brand Name is required").default("No Brand"),
   forUse: z.string().optional().default("No For Use"),
+  ledgerGroup: z.string().optional().default(""),
 
   less: z.preprocess(
     (v) => (v === "" || v === undefined || v === null ? 0 : Number(v)),
