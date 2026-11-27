@@ -31,6 +31,8 @@ import {
   extractStateCode,
 } from "../utils/gstCalculator";
 import { toast } from "sonner";
+import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
+import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
 
 interface SalesInvoiceCreateFormProps {
   invoice?: SalesInvoice | null;
@@ -81,6 +83,63 @@ export default function SalesInvoiceCreateForm({
       ? new Date(invoice.invoiceDate).toISOString().split("T")[0]
       : todayStr
   );
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companyId, setCompanyId] = useState(invoice?.companyId || "");
+  const [companyName, setCompanyName] = useState(invoice?.companyName || "");
+  const [branchId, setBranchId] = useState(invoice?.branchId || "");
+  const [branchName, setBranchName] = useState(invoice?.branchName || "");
+
+  useEffect(() => {
+    if (!invoice?.id) return;
+    if (invoice.companyId) setCompanyId(invoice.companyId);
+    if (invoice.companyName) setCompanyName(invoice.companyName);
+    if (invoice.branchId) setBranchId(invoice.branchId);
+    if (invoice.branchName) setBranchName(invoice.branchName);
+  }, [invoice?.id, invoice?.companyId, invoice?.companyName, invoice?.branchId, invoice?.branchName]);
+
+  useEffect(() => {
+    companyService
+      .getCompanies({ pageSize: 100 })
+      .then((res) => {
+        const list = Array.isArray(res?.data) ? res.data : [];
+        setCompanies(list);
+        if (!invoice?.companyId && list.length > 0) {
+          const preferred =
+            list.find((c) => c.isDefault && c.status === "ACTIVE") ||
+            list.find((c) => c.isDefault) ||
+            list.find((c) => c.status === "ACTIVE") ||
+            list[0];
+          if (preferred) {
+            setCompanyId(preferred.id);
+            setCompanyName(preferred.companyName || preferred.legalName || "");
+          }
+        }
+      })
+      .catch(() => {});
+  }, [invoice?.companyId]);
+
+  const companyOptions: ThemeSelectOption[] = companies
+    .filter((c) => !c.isBranch)
+    .map((c) => ({
+      value: c.id,
+      label: c.companyName || c.legalName || "",
+    }));
+
+  const selectedCompanyObj = companies.find((c) => c.id === companyId) as
+    | (Company & { branches?: Array<{ id?: string; branchName: string }> })
+    | undefined;
+  const branchOptions: ThemeSelectOption[] = [
+    ...(selectedCompanyObj?.branches || []).map((b) => ({
+      value: b.id || b.branchName,
+      label: b.branchName || "",
+    })),
+    ...companies
+      .filter((c) => c.isBranch && c.parentCompanyId === companyId)
+      .map((c) => ({
+        value: c.id,
+        label: c.companyBranchName || c.companyName || c.legalName || "",
+      })),
+  ];
 
   // Party Selection & Slide-over Drawer State
   const [selectedParty, setSelectedParty] = useState<Party | null>(() => {
@@ -552,6 +611,10 @@ export default function SalesInvoiceCreateForm({
         invoiceDate,
         challanId: invoice?.challanId || initialChallanId || null,
         challanNo: partyBillNo || undefined,
+        companyId: companyId || null,
+        companyName: companyName || null,
+        branchId: branchId || null,
+        branchName: branchName || null,
         partyId: selectedParty.id !== "temp" ? selectedParty.id : null,
         partyGstn: selectedParty.gstin || undefined,
         stateCode: partyStateCode,
@@ -743,10 +806,9 @@ export default function SalesInvoiceCreateForm({
       </section>
 
       {/* 2. Top Filter / Meta Card matching user screenshot: Invoice Type, Party Bill No, Date */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-          {/* Left side: Invoice Type, Party Bill No, Date */}
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+      <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm space-y-3">
+        {/* Row 1: Invoice Type, Invoice No, Party Bill No, Date */}
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs">
             {/* Invoice Type */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
@@ -809,15 +871,72 @@ export default function SalesInvoiceCreateForm({
                 />
               </div>
             </div>
+        </div>
+
+        {/* Row 2: Company, Branch + Select Party & GSTIN */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="w-full sm:w-auto flex flex-wrap items-center gap-3 sm:gap-4 min-w-0">
+            {/* Company */}
+            <div className="w-full sm:w-auto flex items-center gap-2 min-w-0">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
+                Company
+              </label>
+              <div className="flex-1 min-w-0 sm:flex-none sm:w-52">
+                <ThemeSelectDropdown
+                  value={companyId}
+                  onChange={(val) => {
+                    const comp = companies.find((c) => c.id === val);
+                    setCompanyId(val);
+                    setCompanyName(comp?.companyName || comp?.legalName || "");
+                    setBranchId("");
+                    setBranchName("");
+                  }}
+                  options={companyOptions}
+                  placeholder="Select Company"
+                  className="w-full"
+                  buttonClassName="w-full h-9 sm:h-10 px-3 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white"
+                  menuClassName="min-w-[200px]"
+                />
+              </div>
+            </div>
+
+            {/* Branch */}
+            <div className="w-full sm:w-auto flex items-center gap-2 min-w-0">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
+                Branch
+              </label>
+              <div className="flex-1 min-w-0 sm:flex-none sm:w-48">
+                <ThemeSelectDropdown
+                  value={branchId}
+                  onChange={(val) => {
+                    const opt = branchOptions.find((b) => b.value === val);
+                    setBranchId(val);
+                    setBranchName(opt?.label || "");
+                  }}
+                  options={branchOptions}
+                  disabled={!companyId || branchOptions.length === 0}
+                  placeholder={
+                    !companyId
+                      ? "Select Company first"
+                      : branchOptions.length === 0
+                      ? "Company has no branch"
+                      : "Select Branch"
+                  }
+                  className="w-full"
+                  buttonClassName="w-full h-9 sm:h-10 px-3 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  menuClassName="min-w-[180px]"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Right side: [ 👁 SELECT PARTY ] [ — ] - [ — ] */}
-          <div className="flex items-center gap-2.5 ml-auto shrink-0 flex-wrap">
+          <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5 sm:ml-auto shrink-0 min-w-0">
             {/* SELECT PARTY Button with Eye Icon */}
             <button
               type="button"
               onClick={() => setIsDrawerOpen(true)}
-              className={`inline-flex items-center gap-2 h-9 sm:h-10 px-4 sm:px-5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-tight transition-all shadow-xs cursor-pointer border active:scale-[0.98] ${selectedParty
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 h-9 sm:h-10 px-4 sm:px-5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-tight transition-all shadow-xs cursor-pointer border active:scale-[0.98] min-w-0 ${selectedParty
                 ? "border-[#E8C16D] dark:border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] ring-2 ring-[#E8C16D]/20 hover:bg-[#FFF3D6] dark:hover:bg-[#262014]"
                 : "border-[#E8C16D] dark:border-[#E8C16D]/40 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014]"
                 }`}
@@ -829,29 +948,31 @@ export default function SalesInvoiceCreateForm({
               </span>
             </button>
 
-            {/* State Code Pill Box */}
-            <div
-              onClick={() => setIsDrawerOpen(true)}
-              className="h-8 sm:h-9 min-w-[36px] px-3 rounded-full border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-[#0B0E14] text-xs sm:text-sm font-bold font-mono text-slate-700 dark:text-white flex items-center justify-center shadow-2xs cursor-pointer hover:border-[#E8C16D]/50 transition-colors"
-              title="Party State Code (Click to open party drawer)"
-            >
-              {selectedParty && partyStateCode ? partyStateCode : "—"}
-            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
+              {/* State Code Pill Box */}
+              <div
+                onClick={() => setIsDrawerOpen(true)}
+                className="h-8 sm:h-9 min-w-[36px] px-3 rounded-full border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-[#0B0E14] text-xs sm:text-sm font-bold font-mono text-slate-700 dark:text-white flex items-center justify-center shadow-2xs cursor-pointer hover:border-[#E8C16D]/50 transition-colors shrink-0"
+                title="Party State Code (Click to open party drawer)"
+              >
+                {selectedParty && partyStateCode ? partyStateCode : "—"}
+              </div>
 
-            {/* Dash separator */}
-            <span className="text-slate-400 font-bold px-0.5 select-none">-</span>
+              {/* Dash separator */}
+              <span className="text-slate-400 font-bold px-0.5 select-none shrink-0">-</span>
 
-            {/* GSTIN Pill Box */}
-            <div
-              onClick={() => setIsDrawerOpen(true)}
-              className="h-8 sm:h-9 min-w-[140px] px-4 sm:px-5 rounded-full border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-[#0B0E14] text-xs sm:text-sm font-bold font-mono text-slate-700 dark:text-white flex items-center justify-center truncate shadow-2xs cursor-pointer hover:border-[#E8C16D]/50 transition-colors"
-              title={
-                selectedParty?.gstin
-                  ? `GSTIN: ${selectedParty.gstin}`
-                  : "Party GSTIN (Click to open party drawer)"
-              }
-            >
-              {selectedParty?.gstin ? selectedParty.gstin : "—"}
+              {/* GSTIN Pill Box */}
+              <div
+                onClick={() => setIsDrawerOpen(true)}
+                className="h-8 sm:h-9 flex-1 min-w-0 sm:flex-none sm:min-w-[140px] px-3 sm:px-5 rounded-full border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-[#0B0E14] text-xs sm:text-sm font-bold font-mono text-slate-700 dark:text-white flex items-center justify-center truncate shadow-2xs cursor-pointer hover:border-[#E8C16D]/50 transition-colors"
+                title={
+                  selectedParty?.gstin
+                    ? `GSTIN: ${selectedParty.gstin}`
+                    : "Party GSTIN (Click to open party drawer)"
+                }
+              >
+                {selectedParty?.gstin ? selectedParty.gstin : "—"}
+              </div>
             </div>
           </div>
         </div>

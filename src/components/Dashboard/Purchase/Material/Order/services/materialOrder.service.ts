@@ -159,9 +159,24 @@ export const materialOrderService = {
           sku: baseSku,
           category: m.category || "",
           unit: m.unit || "",
+          hsnCode: m.hsnCode || "",
+          gstRate:
+            m.gstRate !== undefined && m.gstRate !== null ? Number(m.gstRate) : 0,
           materialCost:
             m.materialCost !== undefined && m.materialCost !== null
               ? Number(m.materialCost)
+              : 0,
+          dealerRate:
+            m.dealerRate !== undefined && m.dealerRate !== null
+              ? Number(m.dealerRate)
+              : 0,
+          retailRate:
+            m.retailRate !== undefined && m.retailRate !== null
+              ? Number(m.retailRate)
+              : 0,
+          salesRate:
+            m.salesRate !== undefined && m.salesRate !== null
+              ? Number(m.salesRate)
               : 0,
         };
       })

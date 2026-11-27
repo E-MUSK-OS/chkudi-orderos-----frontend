@@ -155,7 +155,7 @@ export default function OtherExpensesModal({
         onClick={onClose}
       >
         <div
-          className="relative w-full max-w-2xl rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-2xl space-y-4"
+          className="relative w-full max-w-4xl rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.1] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-2xl space-y-4"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

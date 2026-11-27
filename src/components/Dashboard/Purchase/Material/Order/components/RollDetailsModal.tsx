@@ -123,7 +123,7 @@ export default function RollDetailsModal({
         <div className="overflow-x-auto rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08]">
           <table className="w-full text-left border-collapse min-w-[540px]">
             <thead>
-              <tr className="bg-[#FFF9EC] dark:bg-[#141A29] border-b border-[#E7E0D2] dark:border-white/[0.08] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
+              <tr className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
                 <th className="py-2.5 px-3 w-12">No.</th>
                 <th className="py-2.5 px-3">Number of Roll</th>
                 <th className="py-2.5 px-3">Qty.</th>

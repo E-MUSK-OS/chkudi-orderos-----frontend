@@ -43,7 +43,10 @@ export default function SalesChallanViewPage() {
 
         if (compRes.status === "fulfilled" && compRes.value?.data?.length) {
           const companies = compRes.value.data;
+          const challanCompId =
+            chRes.status === "fulfilled" ? chRes.value?.data?.companyId : null;
           const preferred =
+            (challanCompId ? companies.find((c) => c.id === challanCompId) : null) ||
             companies.find((c) => c.isDefault && c.status === "ACTIVE") ||
             companies.find((c) => c.isDefault) ||
             companies.find((c) => c.status === "ACTIVE") ||

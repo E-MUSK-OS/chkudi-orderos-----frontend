@@ -19,6 +19,11 @@ export interface MaterialCatalogOption {
   category?: string;
   unit?: string;
   materialCost?: number;
+  dealerRate?: number;
+  retailRate?: number;
+  salesRate?: number;
+  hsnCode?: string;
+  gstRate?: number;
 }
 
 export interface MaterialRollDetail {

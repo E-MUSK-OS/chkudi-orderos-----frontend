@@ -67,7 +67,7 @@ export default function MaterialOrderTable({
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left border-collapse min-w-[980px]">
           <thead>
-            <tr className="bg-[#FFF9EC] dark:bg-[#141A29] border-b border-[#E7E0D2] dark:border-white/[0.08] text-[11px] font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+            <tr className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] text-[11px] font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
               {isVisible("no") && <th className="py-3 px-4 w-14">No.</th>}
               {isVisible("date") && <th className="py-3 px-4">Date.</th>}
               {isVisible("orderNo") && <th className="py-3 px-4">Order No.</th>}

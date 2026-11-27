@@ -1,16 +1,11 @@
-import MaterialModulePlaceholder from "@/components/Dashboard/Purchase/Material/MaterialModulePlaceholder";
+import MaterialReturnDebitNotePage from "@/components/Dashboard/Purchase/Material/DebitNote/MaterialReturnDebitNotePage";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Return DN [ Purchase Material ] | OrderOS",
-  description: "Manage purchase material return debit notes",
+  title: "Debit Note [ Material & Service ] | OrderOS",
+  description: "Manage Purchase Material & Service debit note",
 };
 
-export default function MaterialReturnDebitNotePage() {
-  return (
-    <MaterialModulePlaceholder
-      title="Return DN [ Purchase Material ]"
-      subtitle="Manage purchase material return debit notes"
-    />
-  );
+export default function MaterialReturnDebitNoteListPage() {
+  return <MaterialReturnDebitNotePage />;
 }

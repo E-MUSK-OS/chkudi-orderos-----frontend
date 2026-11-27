@@ -7,8 +7,8 @@ import {
   UserPlus,
   Search,
   Check,
+  CheckCircle2,
   ChevronsUpDown,
-  PlusCircle,
   ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -269,11 +269,11 @@ export default function MaterialChallanPartyDrawer({
             </div>
 
             <div className="flex items-stretch gap-3">
-              <div className="w-20 sm:w-24 rounded-xl bg-white dark:bg-[#1D253B] border border-slate-200 dark:border-white/[0.06] flex items-center justify-center shrink-0 text-slate-700 dark:text-white">
+              <div className="hidden sm:flex w-20 sm:w-24 rounded-xl bg-white dark:bg-[#1D253B] border border-slate-200 dark:border-white/[0.06] items-center justify-center shrink-0 text-slate-700 dark:text-white">
                 <User className="w-8 h-8 sm:w-10 sm:h-10 stroke-[1.5]" />
               </div>
 
-              <div className="flex-1 grid grid-cols-2 gap-2 text-xs">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-white dark:bg-[#1D253B] border border-slate-200 dark:border-white/[0.06]">
                   <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                     Name
@@ -318,8 +318,8 @@ export default function MaterialChallanPartyDrawer({
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#0F1626]">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#FFF9EC] dark:bg-[#181D2B] border-b border-slate-200 dark:border-white/[0.06] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
-                    <th className="py-2.5 px-3 w-10">No.</th>
+                  <tr className="bg-[#FFF9EC] dark:bg-[#1D253B] text-[#6A4D1D] dark:text-slate-300 border-b border-slate-200 dark:border-white/[0.06] text-[11px] font-bold">
+                    <th className="py-2.5 px-3 w-12">No.</th>
                     <th className="py-2.5 px-2 w-8 text-center">
                       <input
                         type="checkbox"
@@ -329,7 +329,7 @@ export default function MaterialChallanPartyDrawer({
                         }
                         disabled={pendingOrders.length === 0}
                         onChange={toggleAll}
-                        className="rounded border-slate-300 cursor-pointer"
+                        className="rounded accent-[#B88728] cursor-pointer"
                       />
                     </th>
                     <th className="py-2.5 px-3">Order No.</th>
@@ -337,7 +337,7 @@ export default function MaterialChallanPartyDrawer({
                     <th className="py-2.5 px-3 text-right">Pending Qty.</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05]">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
                   {loadingOrders ? (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-slate-400">
@@ -346,38 +346,56 @@ export default function MaterialChallanPartyDrawer({
                     </tr>
                   ) : pendingOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400">
-                        <ClipboardList className="w-6 h-6 mx-auto mb-1 opacity-60" />
-                        No pending orders
+                      <td colSpan={5} className="py-10 text-center">
+                        <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                          <ClipboardList className="w-6 h-6 text-[#B88728]/60 dark:text-[#E8C16D]/60" />
+                          <span className="text-xs font-medium">No pending orders</span>
+                        </div>
                       </td>
                     </tr>
                   ) : (
-                    pendingOrders.map((ord, idx) => (
-                      <tr
-                        key={ord.id}
-                        onClick={() => toggleOrder(ord.id)}
-                        className="hover:bg-[#FFFDF7] dark:hover:bg-white/[0.03] cursor-pointer"
-                      >
-                        <td className="py-2.5 px-3 font-mono text-slate-500">{idx + 1}</td>
-                        <td className="py-2.5 px-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedOrderIds.includes(ord.id)}
-                            onChange={() => {}}
-                            className="rounded border-slate-300 cursor-pointer"
-                          />
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-[#B88728] dark:text-[#E8C16D]">
-                          {ord.orderNo}
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300">
-                          {formatDate(ord.orderDate)}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
-                          {Number(ord.totalPendingQty || 0).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))
+                    pendingOrders.map((ord, idx) => {
+                      const isChecked = selectedOrderIds.includes(ord.id);
+                      return (
+                        <tr
+                          key={ord.id}
+                          onClick={() => toggleOrder(ord.id)}
+                          className={`cursor-pointer transition-colors ${
+                            isChecked
+                              ? "bg-[#FFF9EC]/70 dark:bg-emerald-500/[0.08]"
+                              : "hover:bg-[#FFF9EC]/50 dark:hover:bg-white/[0.02]"
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 font-mono text-slate-500">{idx + 1}</td>
+                          <td className="py-2.5 px-2 text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleOrder(ord.id);
+                              }}
+                              className={`inline-flex items-center justify-center rounded-full transition-colors cursor-pointer ${
+                                isChecked
+                                  ? "text-emerald-500"
+                                  : "text-slate-400 hover:text-[#B88728] dark:hover:text-[#E8C16D]"
+                              }`}
+                              title={isChecked ? "Selected" : "Select Order"}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-[#B88728] dark:text-[#E8C16D]">
+                            {ord.orderNo}
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300">
+                            {formatDate(ord.orderDate)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-[#B88728] dark:text-[#E8C16D]">
+                            {Number(ord.totalPendingQty || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -387,9 +405,9 @@ export default function MaterialChallanPartyDrawer({
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#0A0E1A] hover:bg-[#161D2E] text-[#E8C16D] dark:bg-[#1D253B] dark:hover:bg-white/[0.1] dark:text-white border border-transparent dark:border-white/[0.1] font-bold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#E8C16D] hover:bg-[#d9b25d] text-xs font-bold text-[#0A0E1A] shadow-xs cursor-pointer"
               >
-                <PlusCircle className="w-3.5 h-3.5 text-[#B88728] dark:text-[#E8C16D]" />
+                <CheckCircle2 className="w-4 h-4" />
                 <span>OK</span>
               </button>
             </div>

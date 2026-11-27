@@ -45,7 +45,10 @@ export default function SalesInvoiceViewPage() {
 
         if (compRes.status === "fulfilled" && compRes.value?.data?.length) {
           const companies = compRes.value.data;
+          const invCompId =
+            invRes.status === "fulfilled" ? invRes.value?.companyId : null;
           const preferred =
+            (invCompId ? companies.find((c) => c.id === invCompId) : null) ||
             companies.find((c) => c.isDefault && c.status === "ACTIVE") ||
             companies.find((c) => c.isDefault) ||
             companies.find((c) => c.status === "ACTIVE") ||

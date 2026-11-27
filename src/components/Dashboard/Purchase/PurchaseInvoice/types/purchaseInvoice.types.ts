@@ -32,6 +32,10 @@ export interface PurchaseInvoice {
   invoiceDate: string;
   challanNo?: string | null;
   challanDate?: string | null;
+  companyId?: string | null;
+  companyName?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   partyGstn?: string | null;
   stateCode?: string | null;
   brokerName?: string | null;
@@ -98,6 +102,10 @@ export interface PurchaseInvoiceFormData {
   challanDate?: string | null;
   supplierId?: string | null;
   partyId?: string | null;
+  companyId?: string | null;
+  companyName?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   partyGstn?: string | null;
   stateCode?: string | null;
   brokerName?: string | null;

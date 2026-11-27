@@ -49,7 +49,8 @@ export function PurchaseInvoiceSheet({
   selectedCopy = "Original for Recipient",
   onSelectCopy,
 }: PurchaseInvoiceSheetProps) {
-  const companyName = company?.legalName || company?.companyName || "Company Name";
+  const companyName =
+    inv.companyName || company?.legalName || company?.companyName || "Company Name";
   const companyAddressLines = useMemo(() => {
     if (!company) return [];
     return [
@@ -130,6 +131,11 @@ export function PurchaseInvoiceSheet({
             <div className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
               {companyName}
             </div>
+            {inv.branchName && (
+              <div className="font-semibold text-slate-800">
+                Branch. {inv.branchName}
+              </div>
+            )}
             {companyAddressLines.map((line, idx) => (
               <div key={idx}>{line}</div>
             ))}

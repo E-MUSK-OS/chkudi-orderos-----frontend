@@ -32,6 +32,10 @@ export interface PurchaseChallan {
   partyChallanDate?: string | null;
   challanFor: string;
   stockIn: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   additionalExpense?: number;
   additionalExpenses?: Array<{
     itemNo?: number;

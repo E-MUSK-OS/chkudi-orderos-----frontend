@@ -59,7 +59,8 @@ interface PurchaseChallanSheetProps {
 }
 
 export function PurchaseChallanSheet({ challan, company }: PurchaseChallanSheetProps) {
-  const companyName = company?.legalName || company?.companyName || "Company Name";
+  const companyName =
+    challan.companyName || company?.legalName || company?.companyName || "Company Name";
   const companyAddressLines = useMemo(() => {
     if (!company) return [];
     return [
@@ -146,6 +147,11 @@ export function PurchaseChallanSheet({ challan, company }: PurchaseChallanSheetP
             <div className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
               {companyName}
             </div>
+            {challan.branchName && (
+              <div className="font-semibold text-slate-800">
+                Branch. {challan.branchName}
+              </div>
+            )}
             {companyAddressLines.map((line, idx) => (
               <div key={idx}>{line}</div>
             ))}

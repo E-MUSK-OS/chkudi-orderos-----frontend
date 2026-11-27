@@ -127,7 +127,7 @@ export default function MaterialOrderForm({
         rollDetails: Array.isArray(it.rollDetails) ? it.rollDetails : [],
       }));
     }
-    return [createEmptyItem(1)];
+    return [];
   });
 
   const [rollModalIndex, setRollModalIndex] = useState<number | null>(null);
@@ -269,12 +269,11 @@ export default function MaterialOrderForm({
   };
 
   const removeItemRow = (idx: number) => {
-    setItems((prev) => {
-      if (prev.length <= 1) return [createEmptyItem(1)];
-      return prev
+    setItems((prev) =>
+      prev
         .filter((_, i) => i !== idx)
-        .map((row, i) => ({ ...row, itemNo: i + 1 }));
-    });
+        .map((row, i) => ({ ...row, itemNo: i + 1 }))
+    );
   };
 
   const handleSave = async () => {
@@ -395,7 +394,7 @@ export default function MaterialOrderForm({
         <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08]">
           <table className="w-full text-left border-collapse min-w-[1050px]">
             <thead>
-              <tr className="bg-[#FFF9EC] dark:bg-[#141A29] border-b border-[#E7E0D2] dark:border-white/[0.08] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
+              <tr className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
                 <th className="py-2.5 px-3 w-12">No.</th>
                 <th className="py-2.5 px-3 w-36">Category</th>
                 <th className="py-2.5 px-3 w-56 min-w-[210px]">Material / Service SKU.</th>
@@ -412,9 +411,18 @@ export default function MaterialOrderForm({
             <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05] text-xs">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-slate-400">
-                    <ClipboardList className="w-6 h-6 mx-auto mb-1 opacity-60" />
-                    No data available
+                  <td colSpan={11} className="py-16 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
+                        <ClipboardList className="h-6 w-6" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        No data available
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Click &ldquo;+ Add&rdquo; to add material items to this order.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -550,8 +558,8 @@ export default function MaterialOrderForm({
 
       {/* Bottom Remarks, Dates & Save Card */}
       <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center text-xs">
-          <div className="sm:col-span-2 lg:col-span-5 flex items-center gap-2 min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 items-center text-xs">
+          <div className="sm:col-span-2 xl:col-span-5 flex items-center gap-2 min-w-0">
             <label className="font-semibold text-slate-700 dark:text-slate-300 shrink-0">
               Remarks.
             </label>
@@ -564,7 +572,7 @@ export default function MaterialOrderForm({
             />
           </div>
 
-          <div className="lg:col-span-3 flex items-center gap-2 min-w-0">
+          <div className="xl:col-span-3 flex items-center gap-2 min-w-0">
             <label className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
               Exp. Required Days
             </label>
@@ -577,11 +585,11 @@ export default function MaterialOrderForm({
             />
           </div>
 
-          <div className="lg:col-span-4 flex items-center gap-2 min-w-0">
+          <div className="xl:col-span-4 flex items-center gap-2 min-w-0">
             <label className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
               Exp. Required Date
             </label>
-            <div className="flex-1 min-w-[140px]">
+            <div className="flex-1 min-w-0">
               <DatePicker
                 allowInput
                 value={expRequiredDate}

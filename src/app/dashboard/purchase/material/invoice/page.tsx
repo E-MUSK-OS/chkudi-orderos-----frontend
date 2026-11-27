@@ -1,16 +1,11 @@
-import MaterialModulePlaceholder from "@/components/Dashboard/Purchase/Material/MaterialModulePlaceholder";
+import MaterialInvoicePage from "@/components/Dashboard/Purchase/Material/Invoice/MaterialInvoicePage";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Invoice [ Purchase Material ] | OrderOS",
-  description: "Manage purchase material invoices",
+  title: "Invoice [ Purchase Material & Service ] | OrderOS",
+  description: "Manage purchase materials bills",
 };
 
-export default function MaterialInvoicePage() {
-  return (
-    <MaterialModulePlaceholder
-      title="Invoice [ Purchase Material ]"
-      subtitle="Manage purchase material invoices"
-    />
-  );
+export default function MaterialInvoiceListPage() {
+  return <MaterialInvoicePage />;
 }

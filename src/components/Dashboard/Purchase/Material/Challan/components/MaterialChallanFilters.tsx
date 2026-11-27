@@ -120,7 +120,7 @@ export default function MaterialChallanFilters({
     <div className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-4 shadow-sm">
       <div className="flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-between gap-2.5">
         {/* Row 1: 6 Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 2xl:flex-1 min-w-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 2xl:flex-1 min-w-0">
           {/* 1. Funnel Icon + Party */}
           <div className="flex items-center gap-2 min-w-0">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 shrink-0 dark:bg-[#1A160E] dark:text-[#E8C16D]">

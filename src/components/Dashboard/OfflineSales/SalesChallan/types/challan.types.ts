@@ -104,6 +104,10 @@ export interface SalesChallan {
   challanFor: string;
   salesFor?: string;
   stockOutFrom: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   consigneeName: string;
   deliveryBy: string;
   preparedBy?: string | null;

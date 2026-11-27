@@ -122,14 +122,17 @@ export default function MaterialOrderPage() {
       <div className="w-full space-y-4">
       {/* Header Card */}
       <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3.5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30 shrink-0">
               <ShoppingBag className="h-5 w-5" />
             </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-[#0A0E1A] dark:text-white">
-                Order [ Purchase Material &amp; Service ]
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base xl:text-xl font-bold text-[#0A0E1A] dark:text-white leading-snug">
+                Order{" "}
+                <span className="inline-block whitespace-nowrap">
+                  [ Purchase Material &amp; Service ]
+                </span>
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                 Manage purchase materials orders
@@ -137,7 +140,7 @@ export default function MaterialOrderPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 ml-auto">
+          <div className="flex items-center gap-2 shrink-0 whitespace-nowrap md:ml-auto">
             <button
               type="button"
               onClick={handleDownload}

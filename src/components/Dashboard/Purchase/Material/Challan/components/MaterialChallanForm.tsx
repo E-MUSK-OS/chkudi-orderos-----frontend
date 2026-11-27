@@ -135,7 +135,7 @@ export default function MaterialChallanForm({
         })
       );
     }
-    return [createEmptyChallanItem(1)];
+    return [];
   });
 
   const [rollModalIndex, setRollModalIndex] = useState<number | null>(null);
@@ -330,12 +330,11 @@ export default function MaterialChallanForm({
   };
 
   const removeItemRow = (idx: number) => {
-    setItems((prev) => {
-      if (prev.length <= 1) return [createEmptyChallanItem(1)];
-      return prev
+    setItems((prev) =>
+      prev
         .filter((_, i) => i !== idx)
-        .map((row, i) => ({ ...row, itemNo: i + 1 }));
-    });
+        .map((row, i) => ({ ...row, itemNo: i + 1 }))
+    );
   };
 
   const handleSave = async () => {
@@ -493,7 +492,7 @@ export default function MaterialChallanForm({
           <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08]">
             <table className="w-full text-left border-collapse min-w-[1180px]">
               <thead>
-                <tr className="bg-[#FFF9EC] dark:bg-[#141A29] border-b border-[#E7E0D2] dark:border-white/[0.08] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
+                <tr className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
                   <th className="py-2.5 px-3 w-12">No.</th>
                   <th className="py-2.5 px-3 w-52 min-w-[190px]">Party SKU.</th>
                   <th className="py-2.5 px-3 w-52 min-w-[190px]">Material SKU.</th>
@@ -510,7 +509,24 @@ export default function MaterialChallanForm({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05] text-xs">
-                {items.map((row, idx) => (
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={13} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+                        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
+                          <ClipboardList className="h-6 w-6" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          No data available
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Select a Party and import Pending Orders to add items, or click &ldquo;+ Add&rdquo;.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((row, idx) => (
                   <tr key={idx} className="hover:bg-[#FFFDF7] dark:hover:bg-white/[0.02]">
                     <td className="py-2 px-3 font-mono text-slate-500">{row.itemNo}</td>
                     <td className="py-2 px-3">
@@ -616,7 +632,8 @@ export default function MaterialChallanForm({
                       </button>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Edit2, Trash2, ClipboardList, Phone, FileCheck2 } from "lucide-react";
+import { Edit2, Eye, Trash2, ClipboardList, Phone, FileCheck2 } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
 import { MaterialPurchaseChallan } from "../types/materialChallan.types";
 import { MaterialChallanColumnOption } from "./MaterialChallanFilters";
@@ -19,6 +19,7 @@ interface MaterialChallanTableProps {
   onSelectionChange?: (ids: string[]) => void;
   onPageChange: (p: number) => void;
   onLimitChange: (l: number) => void;
+  onView?: (ch: MaterialPurchaseChallan) => void;
   onEdit: (ch: MaterialPurchaseChallan) => void;
   onDelete: (ch: MaterialPurchaseChallan) => void;
 }
@@ -46,6 +47,7 @@ export default function MaterialChallanTable({
   onSelectionChange,
   onPageChange,
   onLimitChange,
+  onView,
   onEdit,
   onDelete,
 }: MaterialChallanTableProps) {
@@ -87,7 +89,7 @@ export default function MaterialChallanTable({
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left border-collapse min-w-[980px]">
           <thead>
-            <tr className="bg-[#FFF9EC] dark:bg-[#141A29] border-b border-[#E7E0D2] dark:border-white/[0.08] text-[11px] font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
+            <tr className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] text-[11px] font-bold uppercase tracking-wider text-[#6A4D1D] dark:text-[#E8C16D]">
               {isVisible("no") && <th className="py-3 px-4 w-14">No.</th>}
               {isVisible("checkbox") && (
                 <th className="py-3 px-3 text-center w-10">
@@ -230,6 +232,16 @@ export default function MaterialChallanTable({
                   )}
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-center gap-1.5">
+                      {onView && (
+                        <button
+                          type="button"
+                          onClick={() => onView(ch)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-[#B88728] hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer"
+                          title="View Challan"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => onEdit(ch)}
