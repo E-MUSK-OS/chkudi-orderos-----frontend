@@ -555,11 +555,10 @@ export default function MasterMaterialProfile() {
                 type="button"
                 onClick={() => handleToggleSort(key)}
                 title="Sort column"
-                className={`p-1 rounded-md transition-colors cursor-pointer ${
-                  isSorted
-                    ? "text-[#B88728] dark:text-[#F5C451] bg-[#FFF9EC] dark:bg-white/[0.08]"
-                    : "text-slate-400 hover:text-[#6A4D1D] dark:hover:text-[#E8C16D] hover:bg-black/5 dark:hover:bg-white/[0.06]"
-                }`}
+                className={`p-1 rounded-md transition-colors cursor-pointer ${isSorted
+                  ? "text-[#B88728] dark:text-[#F5C451] bg-[#FFF9EC] dark:bg-white/[0.08]"
+                  : "text-slate-400 hover:text-[#6A4D1D] dark:hover:text-[#E8C16D] hover:bg-black/5 dark:hover:bg-white/[0.06]"
+                  }`}
               >
                 {isSorted && sortConfig.direction === "asc" ? (
                   <ArrowUp className="h-3.5 w-3.5" />
@@ -612,9 +611,8 @@ export default function MasterMaterialProfile() {
                 setPinnedCols((prev) => ({ ...prev, [key]: "left" }));
                 setOpenHeaderMenu(null);
               }}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${
-                pinSide === "left" ? "text-[#B88728] dark:text-[#F5C451]" : ""
-              }`}
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${pinSide === "left" ? "text-[#B88728] dark:text-[#F5C451]" : ""
+                }`}
             >
               <Pin className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451]" />
               <span>Pin to Left</span>
@@ -625,9 +623,8 @@ export default function MasterMaterialProfile() {
                 setPinnedCols((prev) => ({ ...prev, [key]: "right" }));
                 setOpenHeaderMenu(null);
               }}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${
-                pinSide === "right" ? "text-[#B88728] dark:text-[#F5C451]" : ""
-              }`}
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${pinSide === "right" ? "text-[#B88728] dark:text-[#F5C451]" : ""
+                }`}
             >
               <Pin className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451] rotate-90" />
               <span>Pin to Right</span>
@@ -990,11 +987,11 @@ export default function MasterMaterialProfile() {
                                         onClick={() =>
                                           row.variant
                                             ? router.push(
-                                                `/dashboard/settings/manage-material/material-profile/edit-material-varient/${row.variant.id}?from=master-material-profile`
-                                              )
+                                              `/dashboard/settings/manage-material/material-profile/edit-material-varient/${row.variant.id}?from=master-material-profile`
+                                            )
                                             : router.push(
-                                                `/dashboard/settings/manage-material/material-profile/edit/${row.material.id}`
-                                              )
+                                              `/dashboard/settings/manage-material/material-profile/edit/${row.material.id}`
+                                            )
                                         }
                                         className="font-bold text-[#0A0E1A] dark:text-white truncate hover:underline hover:text-[#B88728] dark:hover:text-[#F5C451] cursor-pointer text-left transition-colors"
                                         title={row.variant ? "Edit variant" : "Edit material"}
@@ -1071,16 +1068,16 @@ export default function MasterMaterialProfile() {
                                 onClick: () =>
                                   row.variant
                                     ? router.push(
-                                        `/dashboard/settings/manage-material/material-profile/edit-material-varient/${row.variant.id}?from=master-material-profile`
-                                      )
+                                      `/dashboard/settings/manage-material/material-profile/edit-material-varient/${row.variant.id}?from=master-material-profile`
+                                    )
                                     : router.push(
-                                        `/dashboard/settings/manage-material/material-profile/edit/${row.material.id}`
-                                      ),
+                                      `/dashboard/settings/manage-material/material-profile/edit/${row.material.id}`
+                                    ),
                               },
                               {
                                 label: "Set Sales Rate",
                                 icon: DollarSign,
-                                onClick: () => {},
+                                onClick: () => { },
                               },
                             ]}
                           />

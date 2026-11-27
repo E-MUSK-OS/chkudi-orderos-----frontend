@@ -512,11 +512,10 @@ export default function MasterProductProfile() {
                 type="button"
                 onClick={() => handleToggleSort(key)}
                 title="Sort column"
-                className={`p-1 rounded-md transition-colors cursor-pointer ${
-                  isSorted
-                    ? "text-[#B88728] dark:text-[#F5C451] bg-[#FFF9EC] dark:bg-white/[0.08]"
-                    : "text-slate-400 hover:text-[#6A4D1D] dark:hover:text-[#E8C16D] hover:bg-black/5 dark:hover:bg-white/[0.06]"
-                }`}
+                className={`p-1 rounded-md transition-colors cursor-pointer ${isSorted
+                  ? "text-[#B88728] dark:text-[#F5C451] bg-[#FFF9EC] dark:bg-white/[0.08]"
+                  : "text-slate-400 hover:text-[#6A4D1D] dark:hover:text-[#E8C16D] hover:bg-black/5 dark:hover:bg-white/[0.06]"
+                  }`}
               >
                 {isSorted && sortConfig.direction === "asc" ? (
                   <ArrowUp className="h-3.5 w-3.5" />
@@ -569,9 +568,8 @@ export default function MasterProductProfile() {
                 setPinnedCols((prev) => ({ ...prev, [key]: "left" }));
                 setOpenHeaderMenu(null);
               }}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${
-                pinSide === "left" ? "text-[#B88728] dark:text-[#F5C451]" : ""
-              }`}
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${pinSide === "left" ? "text-[#B88728] dark:text-[#F5C451]" : ""
+                }`}
             >
               <Pin className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451]" />
               <span>Pin to Left</span>
@@ -582,9 +580,8 @@ export default function MasterProductProfile() {
                 setPinnedCols((prev) => ({ ...prev, [key]: "right" }));
                 setOpenHeaderMenu(null);
               }}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${
-                pinSide === "right" ? "text-[#B88728] dark:text-[#F5C451]" : ""
-              }`}
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer text-left ${pinSide === "right" ? "text-[#B88728] dark:text-[#F5C451]" : ""
+                }`}
             >
               <Pin className="h-3.5 w-3.5 text-[#B88728] dark:text-[#F5C451] rotate-90" />
               <span>Pin to Right</span>
@@ -906,9 +903,9 @@ export default function MasterProductProfile() {
                     const product = variant.product;
                     const imgUrl = toFullImageUrl(
                       variant.imageUrl ||
-                        variant.imgfileurl ||
-                        product?.imageUrl ||
-                        product?.imgfileurl
+                      variant.imgfileurl ||
+                      product?.imageUrl ||
+                      product?.imgfileurl
                     );
                     const sizeVal = getSizeValue(variant) || "--";
                     const colorVal = getColorValue(variant) || "--";
@@ -1130,7 +1127,7 @@ export default function MasterProductProfile() {
                               {
                                 label: "Set Sales Rate",
                                 icon: DollarSign,
-                                onClick: () => {},
+                                onClick: () => { },
                               },
                             ]}
                           />

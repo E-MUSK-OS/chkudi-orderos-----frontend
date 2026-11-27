@@ -25,6 +25,7 @@ interface MobileCameraScannerProps {
   onClose: () => void;
   onScan: (code: string) => void;
   message?: string;
+  compactScanArea?: boolean;
 }
 
 type PermissionStatus = "checking" | "prompt" | "granted" | "denied" | "unsupported";
@@ -265,6 +266,7 @@ export default function MobileCameraScanner({
   onClose,
   onScan,
   message,
+  compactScanArea = false,
 }: MobileCameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
@@ -500,9 +502,23 @@ export default function MobileCameraScanner({
     }
   }, []);
 
-  // Multi-tier progressive camera acquisition to guarantee preview works on ANY low-end phone
+  // Multi-tier progressive camera acquisition to guarantee crisp 1x barcode resolution & universal fallback
   const acquireCameraStream = async (): Promise<MediaStream> => {
-    // Tier 1: Ideal 720p environment camera (modern and mid-range devices)
+    // Tier 1: Ideal 1080p environment camera for sharp 1x barcode scanning
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      });
+    } catch (err1) {
+      console.warn("Tier 1 (1080p) constraint failed, falling back to 720p:", err1);
+    }
+
+    // Tier 2: Ideal 720p environment camera (mid-range/older devices)
     try {
       return await navigator.mediaDevices.getUserMedia({
         video: {
@@ -512,21 +528,21 @@ export default function MobileCameraScanner({
         },
         audio: false,
       });
-    } catch (err1) {
-      console.warn("Tier 1 constraint failed, falling back to basic environment:", err1);
+    } catch (err2) {
+      console.warn("Tier 2 (720p) constraint failed, falling back to basic environment:", err2);
     }
 
-    // Tier 2: Flexible environment camera without fixed resolutions (low-end phones)
+    // Tier 3: Flexible environment camera without fixed resolutions (low-end phones)
     try {
       return await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
         audio: false,
       });
-    } catch (err2) {
-      console.warn("Tier 2 constraint failed, falling back to default camera:", err2);
+    } catch (err3) {
+      console.warn("Tier 3 constraint failed, falling back to default camera:", err3);
     }
 
-    // Tier 3: Universal fallback - ANY available camera (100% device compatibility)
+    // Tier 4: Universal fallback - ANY available camera (100% device compatibility)
     return await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: false,
@@ -664,6 +680,7 @@ export default function MobileCameraScanner({
         try {
           const hints = new Map<DecodeHintType, any>();
           hints.set(DecodeHintType.POSSIBLE_FORMATS, ALL_BARCODE_FORMATS);
+          hints.set(DecodeHintType.TRY_HARDER, true);
 
           const codeReader = new BrowserMultiFormatReader(hints, {
             delayBetweenScanAttempts: 50,
@@ -691,10 +708,18 @@ export default function MobileCameraScanner({
                   const targetH = Math.round(zone.y2 - zone.y1);
 
                   if (targetW > 10 && targetH > 10) {
-                    if (cropCanvas.width !== targetW || cropCanvas.height !== targetH) {
-                      cropCanvas.width = targetW;
-                      cropCanvas.height = targetH;
+                    // Upscale small reticle crops on low-end/low-res cameras so thin 1D bars decode reliably
+                    const upscale = targetW < 640 ? 640 / targetW : 1;
+                    const canvasW = Math.round(targetW * upscale);
+                    const canvasH = Math.round(targetH * upscale);
+
+                    if (cropCanvas.width !== canvasW || cropCanvas.height !== canvasH) {
+                      cropCanvas.width = canvasW;
+                      cropCanvas.height = canvasH;
                     }
+
+                    cropCtx.imageSmoothingEnabled = true;
+                    cropCtx.imageSmoothingQuality = "high";
 
                     // Crop video frame strictly to the reticle coordinates
                     cropCtx.drawImage(
@@ -705,8 +730,8 @@ export default function MobileCameraScanner({
                       targetH,
                       0,
                       0,
-                      targetW,
-                      targetH
+                      canvasW,
+                      canvasH
                     );
 
                     const result = codeReader.decodeFromCanvas(cropCanvas);
@@ -1212,7 +1237,11 @@ export default function MobileCameraScanner({
             {/* Viewfinder Targeting Box - Wider reticle for wide 1D barcodes from distance */}
             <div
               ref={scanZoneRef}
-              className={`relative w-[88%] max-w-[360px] h-52 sm:h-56 rounded-2xl overflow-hidden transition-all duration-200 ${
+              className={`relative ${
+                compactScanArea
+                  ? "w-[72%] max-w-[260px] h-28 sm:h-32"
+                  : "w-[88%] max-w-[360px] h-52 sm:h-56"
+              } rounded-2xl overflow-hidden transition-all duration-200 ${
                 isReading
                   ? "border-2 border-emerald-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.65),0_0_35px_#10b981,inset_0_0_25px_rgba(16,185,129,0.35)]"
                   : targetingProgress > 0

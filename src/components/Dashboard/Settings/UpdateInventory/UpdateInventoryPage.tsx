@@ -330,10 +330,10 @@ export default function UpdateInventoryPage() {
   }, [focusAndSelectInput]);
 
   const processAsinScan = useCallback(
-    (rawCode: string) => {
+    (rawCode: string): boolean => {
       const trimmed = rawCode.trim();
       const cleanUpper = trimmed.toUpperCase();
-      if (!cleanUpper) return;
+      if (!cleanUpper) return false;
 
       setScanInput(trimmed);
       lastAutoMatchedRef.current = cleanUpper;
@@ -348,42 +348,43 @@ export default function UpdateInventoryPage() {
           text: `No product found in Product table for ASIN "${cleanUpper}".`,
         });
         toast.warning(`ASIN "${cleanUpper}" not found`);
-      } else {
-        playSound(successSound);
+        return false;
+      }
 
-        const directIds = matches.map((m) => m.variantId);
-        setHighlightedVariantIds(directIds);
+      playSound(successSound);
 
-        // Expand to all variant SKUs under the matched Master SKU(s)
-        const groupIds: string[] = [...directIds];
-        const seen = new Set<string>(directIds);
+      const directIds = matches.map((m) => m.variantId);
+      setHighlightedVariantIds(directIds);
 
-        for (const m of matches) {
-          const masterKey = (m.productId || m.masterSku || "").trim();
-          const siblings = masterKey ? variantsByMasterKey.get(masterKey) : undefined;
-          if (siblings) {
-            for (const sib of siblings) {
-              if (!seen.has(sib.variantId)) {
-                seen.add(sib.variantId);
-                groupIds.push(sib.variantId);
-              }
+      // Expand to all variant SKUs under the matched Master SKU(s)
+      const groupIds: string[] = [...directIds];
+      const seen = new Set<string>(directIds);
+
+      for (const m of matches) {
+        const masterKey = (m.productId || m.masterSku || "").trim();
+        const siblings = masterKey ? variantsByMasterKey.get(masterKey) : undefined;
+        if (siblings) {
+          for (const sib of siblings) {
+            if (!seen.has(sib.variantId)) {
+              seen.add(sib.variantId);
+              groupIds.push(sib.variantId);
             }
           }
         }
-
-        setScannedVariantIds(groupIds);
-
-        const first = matches[0];
-        const firstGroupKey = `${(first.productId || first.masterSku || "").trim()}::${(first.color || "--").trim().toLowerCase()}`;
-        setSelectedColorKey(firstGroupKey);
-
-        setFeedback({
-          type: "success",
-          text: `Master SKU: ${first.masterSku} • Loaded ${groupIds.length} variant${
-            groupIds.length === 1 ? "" : "s"
-          } (Scanned ASIN: ${cleanUpper})`,
-        });
       }
+
+      setScannedVariantIds(groupIds);
+
+      const first = matches[0];
+      const firstGroupKey = `${(first.productId || first.masterSku || "").trim()}::${(first.color || "--").trim().toLowerCase()}`;
+      setSelectedColorKey(firstGroupKey);
+
+      setFeedback({
+        type: "success",
+        text: `Verified Master SKU: ${first.masterSku} • Loaded ${groupIds.length} variant${
+          groupIds.length === 1 ? "" : "s"
+        } (Scanned ASIN: ${cleanUpper})`,
+      });
 
       if (!isMobileDevice() && !isCameraOpen) {
         requestAnimationFrame(() => {
@@ -393,6 +394,8 @@ export default function UpdateInventoryPage() {
           focusAndSelectInput();
         }, 30);
       }
+
+      return true;
     },
     [asinMap, variantsByMasterKey, focusAndSelectInput, isCameraOpen]
   );
@@ -433,7 +436,10 @@ export default function UpdateInventoryPage() {
 
   const handleCameraScan = useCallback(
     (code: string) => {
-      processAsinScan(code);
+      const found = processAsinScan(code);
+      if (found) {
+        setIsCameraOpen(false);
+      }
     },
     [processAsinScan]
   );
@@ -1574,6 +1580,7 @@ export default function UpdateInventoryPage() {
         onClose={handleCameraClose}
         onScan={handleCameraScan}
         message={feedback?.text}
+        compactScanArea
       />
     </DashboardLayout>
   );
