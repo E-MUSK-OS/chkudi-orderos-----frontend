@@ -278,6 +278,7 @@ export default function ProductForm({
   const watchedMrp = watch("mrp");
   const watchedProductCost = watch("productCost");
   const watchedGender = watch("gender");
+  const watchedAttributes = watch("attributes") || [];
 
   // Warehouses Multi-Select & Per-Warehouse Stock State
   const { data: warehousesResponse } = useWarehouses();
@@ -394,7 +395,7 @@ export default function ProductForm({
     return [];
   }, [watchedGender]);
 
-  // Auto-generate variants from colors and sizes (matching Cartesian SKU logic: MasterSKU-Color-Size)
+  // Auto-generate variants from colors, sizes, and custom attributes (Cartesian SKU logic: MasterSKU-Color-Size-Custom...)
   const computedVariants = useMemo(() => {
     const sizeParts = watchedSizeList
       ? watchedSizeList
@@ -405,33 +406,63 @@ export default function ProductForm({
     const colorParts = Array.isArray(watchedColors) ? watchedColors : [];
     const masterSku = (watchedMasterSku || "").trim();
 
-    if (colorParts.length === 0 && sizeParts.length === 0) {
+    const extraAttrGroups: string[][] = (Array.isArray(watchedAttributes) ? watchedAttributes : [])
+      .filter((a) => {
+        const name = (a?.attributeName || "").toLowerCase().trim();
+        return name && !["color", "colour", "size", "gender", "marketplace"].includes(name);
+      })
+      .map((a) =>
+        String(a?.attributeValue || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+      .filter((parts) => parts.length > 0);
+
+    if (colorParts.length === 0 && sizeParts.length === 0 && extraAttrGroups.length === 0) {
       if (!masterSku) return [];
       return [{ sku: masterSku, color: "", size: "" }];
     }
 
-    const effectiveColors = colorParts.length > 0 ? colorParts : [undefined];
-    const effectiveSizes = sizeParts.length > 0 ? sizeParts : [undefined];
+    const effectiveColors: (string | undefined)[] = colorParts.length > 0 ? colorParts : [undefined];
+    const effectiveSizes: (string | undefined)[] = sizeParts.length > 0 ? sizeParts : [undefined];
+
+    // Build Cartesian combinations of extra custom attributes
+    let extraCombos: string[][] = [[]];
+    for (const group of extraAttrGroups) {
+      const next: string[][] = [];
+      for (const prevCombo of extraCombos) {
+        for (const val of group) {
+          next.push([...prevCombo, val]);
+        }
+      }
+      extraCombos = next;
+    }
 
     const list: { sku: string; color: string; size: string; id?: string }[] = [];
     for (const col of effectiveColors) {
       for (const sz of effectiveSizes) {
-        const skuParts: string[] = [];
-        if (col) skuParts.push(col);
-        if (sz) skuParts.push(sz);
+        for (const extraParts of extraCombos) {
+          const skuParts: string[] = [];
+          if (col) skuParts.push(col);
+          if (sz) skuParts.push(sz);
+          for (const ep of extraParts) {
+            if (ep) skuParts.push(ep);
+          }
 
-        const targetSku =
-          skuParts.length > 0 && masterSku
-            ? `${masterSku}-${skuParts.join("-")}`
-            : skuParts.length > 0
-            ? skuParts.join("-")
-            : masterSku;
+          const targetSku =
+            skuParts.length > 0 && masterSku
+              ? `${masterSku}-${skuParts.join("-")}`
+              : skuParts.length > 0
+              ? skuParts.join("-")
+              : masterSku;
 
-        list.push({
-          sku: targetSku,
-          color: col || "",
-          size: sz || "",
-        });
+          list.push({
+            sku: targetSku,
+            color: col || "",
+            size: sz || "",
+          });
+        }
       }
     }
 
@@ -499,7 +530,7 @@ export default function ProductForm({
     }
 
     return list;
-  }, [watchedColors, watchedSizeList, watchedMasterSku, mode, singleProductResponse, product, variantsResponse]);
+  }, [watchedColors, watchedSizeList, watchedMasterSku, watchedAttributes, mode, singleProductResponse, product, variantsResponse]);
 
   // Load existing variant pricing into variantPricing state in edit mode
   useEffect(() => {
@@ -640,12 +671,117 @@ export default function ProductForm({
   // State to confirm attribute deletion with themed modal
   const [deleteAttrIndex, setDeleteAttrIndex] = useState<number | null>(null);
   const [deleteAttrName, setDeleteAttrName] = useState<string>("");
+  const deletedAttrIdsRef = useRef<Set<string>>(new Set());
+  const deletedAttrNamesRef = useRef<Set<string>>(new Set());
 
-  const confirmDeleteAttribute = () => {
-    if (deleteAttrIndex !== null) {
-      remove(deleteAttrIndex);
-      setDeleteAttrIndex(null);
-      setDeleteAttrName("");
+  const buildCombinedAttributes = (values: ProductFormValues, activeProduct?: Product | null) => {
+    const existingAttrs = (activeProduct?.attributes || product?.attributes || []) as any[];
+
+    const existingColorAttr = existingAttrs.find((a: any) =>
+      ["colour", "color"].includes((a.attributeName || "").toLowerCase().trim())
+    );
+    const existingSizeAttr = existingAttrs.find((a: any) =>
+      ["size"].includes((a.attributeName || "").toLowerCase().trim())
+    );
+    const existingGenderAttr = existingAttrs.find((a: any) =>
+      ["gender"].includes((a.attributeName || "").toLowerCase().trim())
+    );
+
+    const combinedAttributes: { id?: string; attributeName: string; attributeValue?: string }[] = [];
+    const seenNames = new Set<string>();
+
+    const colorVal = (values.colors || []).join(", ").trim();
+    const colorName = existingColorAttr?.attributeName || "Colour";
+    if (colorVal || existingColorAttr?.id) {
+      combinedAttributes.push({
+        ...(existingColorAttr?.id ? { id: existingColorAttr.id } : {}),
+        attributeName: colorName,
+        attributeValue: colorVal,
+      });
+      seenNames.add("colour");
+      seenNames.add("color");
+    }
+
+    const sizeVal = (values.sizeList || "").trim();
+    const sizeName = existingSizeAttr?.attributeName || "Size";
+    if (sizeVal || existingSizeAttr?.id) {
+      combinedAttributes.push({
+        ...(existingSizeAttr?.id ? { id: existingSizeAttr.id } : {}),
+        attributeName: sizeName,
+        attributeValue: sizeVal,
+      });
+      seenNames.add("size");
+    }
+
+    const genderVal = Array.isArray(values.gender)
+      ? values.gender.join(", ").trim()
+      : values.gender
+      ? String(values.gender).trim()
+      : "";
+    const genderName = existingGenderAttr?.attributeName || "Gender";
+    if (genderVal || existingGenderAttr?.id) {
+      combinedAttributes.push({
+        ...(existingGenderAttr?.id ? { id: existingGenderAttr.id } : {}),
+        attributeName: genderName,
+        attributeValue: genderVal,
+      });
+      seenNames.add("gender");
+    }
+
+    for (const ca of values.attributes || []) {
+      const name = (ca.attributeName || "").trim();
+      const lower = name.toLowerCase();
+      if (!name || seenNames.has(lower)) continue;
+      seenNames.add(lower);
+      combinedAttributes.push({
+        ...(ca.id ? { id: ca.id } : {}),
+        attributeName: name,
+        attributeValue: (ca.attributeValue || "").trim(),
+      });
+    }
+
+    for (const ea of existingAttrs) {
+      const lower = (ea.attributeName || "").toLowerCase().trim();
+      if (!lower || seenNames.has(lower)) continue;
+      if (ea.id && deletedAttrIdsRef.current.has(ea.id)) continue;
+      if (deletedAttrNamesRef.current.has(lower)) continue;
+      seenNames.add(lower);
+      combinedAttributes.push({
+        id: ea.id,
+        attributeName: ea.attributeName.trim(),
+        attributeValue: ea.attributeValue || "",
+      });
+    }
+
+    return combinedAttributes;
+  };
+
+  const confirmDeleteAttribute = async () => {
+    if (deleteAttrIndex === null) return;
+    const idx = deleteAttrIndex;
+    const currentAttr = getValues(`attributes.${idx}`);
+    if (currentAttr?.id) deletedAttrIdsRef.current.add(currentAttr.id);
+    if (currentAttr?.attributeName?.trim()) {
+      deletedAttrNamesRef.current.add(currentAttr.attributeName.trim().toLowerCase());
+    }
+
+    remove(idx);
+    setDeleteAttrIndex(null);
+    setDeleteAttrName("");
+
+    if (mode === "edit" && product?.id) {
+      const activeProduct = singleProductResponse?.data ?? product;
+      const nextValues = getValues();
+      const nextCombined = buildCombinedAttributes(nextValues, activeProduct);
+      try {
+        await updateProductMutation.mutateAsync({
+          id: product.id,
+          data: { attributes: nextCombined as any },
+        });
+      } catch {
+        // mutation handles error toast
+      }
+    } else {
       toast.success("Attribute removed");
     }
   };
@@ -1358,87 +1494,7 @@ export default function ProductForm({
   const onSubmit = async (values: ProductFormValues) => {
     try {
       const activeProduct = singleProductResponse?.data ?? product;
-      const existingAttrs = (activeProduct?.attributes || product?.attributes || []) as any[];
-
-      // Match existing attribute IDs to avoid "Invalid attribute payload. Existing attribute ids are missing"
-      const existingColorAttr = existingAttrs.find((a: any) =>
-        ["colour", "color"].includes((a.attributeName || "").toLowerCase().trim())
-      );
-      const existingSizeAttr = existingAttrs.find((a: any) =>
-        ["size"].includes((a.attributeName || "").toLowerCase().trim())
-      );
-      const existingGenderAttr = existingAttrs.find((a: any) =>
-        ["gender"].includes((a.attributeName || "").toLowerCase().trim())
-      );
-
-      const combinedAttributes: { id?: string; attributeName: string; attributeValue?: string }[] = [];
-      const seenNames = new Set<string>();
-
-      // 1. Colour (Preset attribute)
-      const colorVal = (values.colors || []).join(", ").trim();
-      const colorName = existingColorAttr?.attributeName || "Colour";
-      if (colorVal || existingColorAttr?.id) {
-        combinedAttributes.push({
-          ...(existingColorAttr?.id ? { id: existingColorAttr.id } : {}),
-          attributeName: colorName,
-          attributeValue: colorVal,
-        });
-        seenNames.add("colour");
-        seenNames.add("color");
-      }
-
-      // 2. Size (Preset attribute)
-      const sizeVal = (values.sizeList || "").trim();
-      const sizeName = existingSizeAttr?.attributeName || "Size";
-      if (sizeVal || existingSizeAttr?.id) {
-        combinedAttributes.push({
-          ...(existingSizeAttr?.id ? { id: existingSizeAttr.id } : {}),
-          attributeName: sizeName,
-          attributeValue: sizeVal,
-        });
-        seenNames.add("size");
-      }
-
-      // 3. Gender (Preset attribute)
-      const genderVal = Array.isArray(values.gender)
-        ? values.gender.join(", ").trim()
-        : values.gender
-        ? String(values.gender).trim()
-        : "";
-      const genderName = existingGenderAttr?.attributeName || "Gender";
-      if (genderVal || existingGenderAttr?.id) {
-        combinedAttributes.push({
-          ...(existingGenderAttr?.id ? { id: existingGenderAttr.id } : {}),
-          attributeName: genderName,
-          attributeValue: genderVal,
-        });
-        seenNames.add("gender");
-      }
-
-      // 4. Custom dynamic attributes from values.attributes
-      for (const ca of values.attributes || []) {
-        const name = (ca.attributeName || "").trim();
-        const lower = name.toLowerCase();
-        if (!name || seenNames.has(lower)) continue;
-        seenNames.add(lower);
-        combinedAttributes.push({
-          ...(ca.id ? { id: ca.id } : {}),
-          attributeName: name,
-          attributeValue: (ca.attributeValue || "").trim(),
-        });
-      }
-
-      // 5. Retain any other existing attributes so backend doesn't delete them and fail foreign keys
-      for (const ea of existingAttrs) {
-        const lower = (ea.attributeName || "").toLowerCase().trim();
-        if (!lower || seenNames.has(lower)) continue;
-        seenNames.add(lower);
-        combinedAttributes.push({
-          id: ea.id,
-          attributeName: ea.attributeName.trim(),
-          attributeValue: ea.attributeValue || "",
-        });
-      }
+      const combinedAttributes = buildCombinedAttributes(values, activeProduct);
 
       const sanitizedPayload = {
         ...values,

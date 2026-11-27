@@ -31,18 +31,25 @@ import {
 } from "../constants/material.constants";
 import { useCreateMaterial, useUpdateMaterial } from "../hooks/useMaterials";
 import { useDropdownOptions } from "../hooks/useDropdownOptions";
+import { useFieldGroups } from "@/components/Dashboard/Settings/SettingMasters/hooks/useSettingMasters";
 import {
   buildMergedOptions,
+  extractDbSizeGroups,
   normalizeKey,
   OPTION_RENAMED_EVENT,
   remapRenamedArray,
   remapRenamedValue,
+  type DropdownOptionItem,
   type DropdownSyncDetail,
 } from "@/utils/dropdownOptions.utils";
 
 import ProductTabsNav, { type ProductActiveTab } from "./ProductTabsNav";
 import SectionCard from "./SectionCard";
 import DropdownWithOther, { type DropdownOption } from "./DropdownWithOther";
+import AttributeValueMultiSelect from "./AttributeValueMultiSelect";
+import ColorMultiSelect from "@/components/Dashboard/Products/ManageProducts/components/ColorMultiSelect";
+import SizeMultiSelect from "@/components/Dashboard/Products/ManageProducts/components/SizeMultiSelect";
+import DeleteAttributeModal from "@/components/Dashboard/Products/ManageProducts/components/DeleteAttributeModal";
 
 interface Props {
   mode: "create" | "edit";
@@ -67,6 +74,10 @@ export default function MaterialForm({
 }: Props) {
   const [activeTab, setActiveTab] = useState<ProductActiveTab>("general");
   const currentTab = controlledTab ?? activeTab;
+  const [pendingDeleteAttr, setPendingDeleteAttr] = useState<{
+    index: number;
+    name: string;
+  } | null>(null);
 
   const queryClient = useQueryClient();
   const createMaterialMutation = useCreateMaterial();
@@ -174,6 +185,75 @@ export default function MaterialForm({
       });
     return map;
   }, [dropdownData]);
+
+  const { data: settingMasterGroups } = useFieldGroups();
+
+  const dbSizeGroups = useMemo(
+    () => extractDbSizeGroups(dropdownData?.savedOptions),
+    [dropdownData]
+  );
+
+  const dynamicSizes = useMemo(() => {
+    const merged = buildMergedOptions(
+      ["size", "sizes", "sizelist"],
+      [],
+      dropdownData?.savedOptions,
+      (dropdownData?.distinctFromMaterials as any)?.sizes
+    );
+    return merged.map((m) => m.label || m.value).filter(Boolean);
+  }, [dropdownData]);
+
+  const disabledSizes = useMemo(() => {
+    const disabled: string[] = [];
+    (dropdownData?.savedOptions || [])
+      .filter(
+        (o) =>
+          ["size", "sizes", "sizelist", "alphasize", "numericsize"].includes(
+            (o.field || "").toLowerCase()
+          ) &&
+          (o.isActive === false || o.label === "__DELETED__")
+      )
+      .forEach((o) => {
+        if (o.value) disabled.push(o.value);
+        if (o.label && o.label !== "__DELETED__") disabled.push(o.label);
+      });
+    return disabled;
+  }, [dropdownData]);
+
+  // Map normalized Setting Master field/label -> active dropdown options
+  const settingMasterOptionsByKey = useMemo(() => {
+    const map = new Map<string, DropdownOptionItem[]>();
+    const saved = dropdownData?.savedOptions || [];
+    const fieldAliases = new Map<string, Set<string>>();
+
+    for (const g of settingMasterGroups || []) {
+      const fNorm = normalizeKey(g.field);
+      const lNorm = normalizeKey(g.label);
+      if (fNorm) {
+        if (!fieldAliases.has(fNorm)) fieldAliases.set(fNorm, new Set([g.field]));
+        if (lNorm) {
+          if (!fieldAliases.has(lNorm)) fieldAliases.set(lNorm, new Set());
+          fieldAliases.get(lNorm)!.add(g.field);
+        }
+      }
+    }
+
+    for (const o of saved) {
+      if (o.isActive === false || o.label === "__DELETED__") continue;
+      const fNorm = normalizeKey(o.field);
+      if (!fNorm) continue;
+      if (!fieldAliases.has(fNorm)) fieldAliases.set(fNorm, new Set([o.field]));
+      else fieldAliases.get(fNorm)!.add(o.field);
+    }
+
+    for (const [normKey, rawFields] of fieldAliases.entries()) {
+      const merged = buildMergedOptions(Array.from(rawFields), [], saved);
+      if (merged.length > 0) {
+        map.set(normKey, merged);
+      }
+    }
+    return map;
+  }, [dropdownData, settingMasterGroups]);
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema) as never,
@@ -531,6 +611,7 @@ export default function MaterialForm({
     "w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl border border-slate-200 bg-white text-[#0A0E1A] placeholder:text-slate-400 outline-none hover:border-[#E8C16D] focus:border-[#E8C16D] focus:ring-2 focus:ring-[#E8C16D]/20 dark:border-white/[0.08] dark:bg-[#0B0F17] dark:text-white dark:hover:border-[#F5C451]/50 dark:focus:border-[#F5C451] dark:focus:ring-[#F5C451]/20 transition-all shadow-xs";
 
   return (
+    <>
     <form
       id={readOnly ? undefined : "material-form"}
       onSubmit={readOnly ? (e) => e.preventDefault() : handleSubmit(onSubmit)}
@@ -883,6 +964,13 @@ export default function MaterialForm({
 
             {/* Added Custom Attributes (Field & Value option with delete button) */}
             {fields.map((fieldItem, index) => {
+              const currentAttrName =
+                watchedAttributes?.[index]?.attributeName ?? fieldItem.attributeName ?? "";
+              const normAttrName = normalizeKey(currentAttrName);
+              const settingOptions = normAttrName
+                ? settingMasterOptionsByKey.get(normAttrName)
+                : undefined;
+
               return (
                 <div
                   key={fieldItem.id}
@@ -912,7 +1000,7 @@ export default function MaterialForm({
                     )}
                   </div>
 
-                  {/* Attribute Value (Value) */}
+                  {/* Attribute Value (Multi-Select Dropdown if in Setting Masters, else text input) */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
                       Attribute Value
@@ -920,14 +1008,60 @@ export default function MaterialForm({
                     <Controller
                       control={control}
                       name={`attributes.${index}.attributeValue`}
-                      render={({ field }) => (
-                        <input
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="Enter value(s), e.g. Cotton, Silk, 128GB..."
-                          className={inputClass}
-                        />
-                      )}
+                      render={({ field }) => {
+                        if (normAttrName === "color") {
+                          const colorArr = String(field.value || "")
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean);
+                          return (
+                            <ColorMultiSelect
+                              label=""
+                              value={colorArr}
+                              onChange={(next) => field.onChange(next.join(", "))}
+                              additionalColors={dynamicColors}
+                              disabledColors={disabledColors}
+                              colorHexMap={serverColorHexMap}
+                              useExternalColorsOnly={Boolean(dropdownData)}
+                            />
+                          );
+                        }
+
+                        if (normAttrName === "size") {
+                          return (
+                            <SizeMultiSelect
+                              label=""
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                              additionalSizes={dynamicSizes}
+                              disabledSizes={disabledSizes}
+                              externalAlphaSizes={dbSizeGroups.alphaSizes}
+                              externalNumericSizes={dbSizeGroups.numericSizes}
+                              useExternalSizesOnly={Boolean(dropdownData)}
+                            />
+                          );
+                        }
+
+                        if (settingOptions && settingOptions.length > 0) {
+                          return (
+                            <AttributeValueMultiSelect
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                              options={settingOptions}
+                              placeholder={`Select ${currentAttrName.trim()}...`}
+                            />
+                          );
+                        }
+
+                        return (
+                          <input
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Enter value(s), e.g. Cotton, Silk, 128GB..."
+                            className={inputClass}
+                          />
+                        );
+                      }}
                     />
                     {errors.attributes?.[index]?.attributeValue && (
                       <p className="text-[11px] text-rose-500 font-medium">
@@ -940,7 +1074,12 @@ export default function MaterialForm({
                   <div className="flex items-center justify-end sm:justify-center">
                     <button
                       type="button"
-                      onClick={() => remove(index)}
+                      onClick={() =>
+                        setPendingDeleteAttr({
+                          index,
+                          name: currentAttrName || "Unnamed Attribute",
+                        })
+                      }
                       title="Remove attribute"
                       className="h-11 sm:h-12 w-full sm:w-11 flex items-center justify-center rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0F1626] text-slate-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50/60 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/10 active:scale-95 transition-all cursor-pointer shadow-xs"
                     >
@@ -1392,5 +1531,38 @@ export default function MaterialForm({
       )}
       </fieldset>
     </form>
+
+    <DeleteAttributeModal
+      open={pendingDeleteAttr !== null}
+      attributeName={pendingDeleteAttr?.name || ""}
+      onClose={() => setPendingDeleteAttr(null)}
+      onConfirm={async () => {
+        if (pendingDeleteAttr === null) return;
+        const idx = pendingDeleteAttr.index;
+        remove(idx);
+        setPendingDeleteAttr(null);
+
+        if (mode === "edit" && material?.id) {
+          const nextAttrs = (getValues("attributes") || [])
+            .filter((attr) => Boolean(attr.attributeName?.trim()))
+            .map((attr) => ({
+              id: attr.id,
+              attributeName: (attr.attributeName || "").trim(),
+              attributeValue: (attr.attributeValue || "").trim(),
+            }));
+          try {
+            await updateMaterialMutation.mutateAsync({
+              id: material.id,
+              data: { attributes: nextAttrs },
+            });
+          } catch {
+            // mutation handles error toast
+          }
+        } else {
+          toast.success("Attribute removed");
+        }
+      }}
+    />
+    </>
   );
 }

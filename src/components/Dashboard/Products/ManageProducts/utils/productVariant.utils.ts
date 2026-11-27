@@ -383,8 +383,20 @@ export const getCleanVariantSku = (
       : "") || getColorValue(variant, product);
   const base = (baseSku || product?.masterSku || "").trim();
 
-  if (base && (col || sz)) {
-    return generateVariantSku(col, sz, base);
+  const extraParts = (variant.attributes || [])
+    .filter((a) => {
+      const name = (a.productAttribute?.attributeName || "").toLowerCase().trim();
+      return (
+        name &&
+        !["color", "colour", "size", "gender", "marketplace"].includes(name) &&
+        Boolean(a.attributeValue?.trim())
+      );
+    })
+    .map((a) => a.attributeValue.trim());
+
+  if (base && (col || sz || extraParts.length > 0)) {
+    const core = generateVariantSku(col, sz, base);
+    return extraParts.length > 0 ? `${core}-${extraParts.join("-")}` : core;
   }
 
   const rawSku = (variant.variantSku || "").trim();
