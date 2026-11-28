@@ -50,7 +50,7 @@ function parseFilterDate(dateStr?: string): Date | undefined {
 }
 
 const statusOptions: ThemeSelectOption[] = [
-  { value: "All", label: "Status" },
+  { value: "All", label: "All" },
   { value: "Pending", label: "Pending" },
   { value: "Partial", label: "Partial" },
   { value: "Complete", label: "Complete" },
@@ -123,13 +123,18 @@ export default function MaterialOrderFilters({
           {/* 2. Status */}
           <div className="min-w-0">
             <ThemeSelectDropdown
-              value={status || "All"}
+              value={status}
               onChange={onStatusChange}
               options={statusOptions}
               placeholder="Status"
+              showAllLabel
               icon={<Search className="w-3.5 h-3.5 text-slate-400" />}
               className="w-full"
-              buttonClassName="w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] font-semibold text-[#0A0E1A] dark:text-white"
+              buttonClassName={`w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] ${
+                !status
+                  ? "font-normal text-slate-400 dark:text-slate-400"
+                  : "font-semibold text-[#0A0E1A] dark:text-white"
+              }`}
             />
           </div>
 

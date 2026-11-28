@@ -14,7 +14,7 @@ export default function DebitNoteListHeader({
 }: DebitNoteListHeaderProps) {
   return (
     <section className="rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-6 shadow-sm">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
           <div className="grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-[#FFF9EC] text-[#B88728] border border-[#E8C16D]/30 shrink-0 dark:bg-[#1A160E] dark:text-[#E8C16D]">
             <FileMinus2 className="h-6 w-6 sm:h-7 sm:w-7" />

@@ -666,9 +666,13 @@ export default function SalesOrderCreateForm({
             <button
               type="button"
               onClick={() => setPartyDrawerOpen(true)}
-              className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs font-bold hover:bg-[#FFF3D6] cursor-pointer transition-colors"
+              className={`inline-flex items-center gap-2 h-9 px-4 rounded-full text-xs font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer ${
+                selectedParty
+                  ? "bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/30"
+                  : "border border-[#E8C16D]/60 bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] hover:bg-[#FFF3D6] dark:hover:bg-[#262014] ring-2 ring-[#E8C16D]/20"
+              }`}
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate max-w-[180px]">
                 {selectedParty ? selectedParty.partyName : "Select Party"}
               </span>
@@ -680,31 +684,36 @@ export default function SalesOrderCreateForm({
       {/* 3. Main Content Area (Scoped for Party Details Drawer) */}
       <div className="relative min-h-[540px] sm:min-h-[600px] overflow-x-clip space-y-4">
         {/* Items Table */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] overflow-hidden shadow-sm">
-          <div className="overflow-x-auto custom-scrollbar">
+        <section className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-3.5 sm:p-5 shadow-sm space-y-4">
+          <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-[#E7E0D2] dark:border-white/[0.08]">
             <table className="w-full text-left border-collapse min-w-[780px]">
               <thead>
-                <tr className="border-b border-[#F1E8D0] dark:border-white/[0.08] bg-[#FEFAEE] dark:bg-[#080B11] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
-                  <th className="py-3 px-3 text-center w-12">No.</th>
-                  <th className="py-3 px-3 min-w-[240px]">
+                <tr className="bg-[#FEFAEE] dark:bg-[#080B11] border-b border-[#F5E6BE] dark:border-white/[0.08] text-[11px] font-bold text-[#6A4D1D] dark:text-[#E8C16D]">
+                  <th className="py-2.5 px-3 text-center w-12">No.</th>
+                  <th className="py-2.5 px-3 min-w-[240px]">
                     Product / Material / Service SKU.
                   </th>
-                  <th className="py-3 px-3 w-28">Size</th>
-                  <th className="py-3 px-3 w-28 text-right">Qty.</th>
-                  <th className="py-3 px-3 w-32 text-right">Rate.</th>
-                  <th className="py-3 px-3 w-32 text-right">Amount.</th>
-                  <th className="py-3 px-3 w-12 text-center">Del.</th>
+                  <th className="py-2.5 px-3 w-28">Size</th>
+                  <th className="py-2.5 px-3 w-28 text-right">Qty.</th>
+                  <th className="py-2.5 px-3 w-32 text-right">Rate.</th>
+                  <th className="py-2.5 px-3 w-32 text-right">Amount.</th>
+                  <th className="py-2.5 px-3 w-12 text-center">Del.</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F1E8D0]/60 dark:divide-white/[0.06] text-xs">
+              <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05] text-xs">
                 {items.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-slate-400">
-                        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-white/[0.04] text-[#B88728] dark:text-[#E8C16D]">
-                          <ClipboardList className="w-5 h-5" />
+                      <div className="flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+                        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] border border-[#E8C16D]/30">
+                          <ClipboardList className="h-6 w-6" />
                         </div>
-                        <span className="text-xs font-medium">No data available</span>
+                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          No data available
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Click &ldquo;+ Add&rdquo; to add items to this order.
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -712,12 +721,12 @@ export default function SalesOrderCreateForm({
                   items.map((row, idx) => (
                     <tr
                       key={idx}
-                      className="hover:bg-[#FEFAEE]/50 dark:hover:bg-white/[0.02]"
+                      className="hover:bg-[#FFFDF7] dark:hover:bg-white/[0.02]"
                     >
-                      <td className="py-2.5 px-3 text-center font-semibold text-slate-500">
+                      <td className="py-2 px-3 text-center font-mono text-slate-500">
                         {idx + 1}
                       </td>
-                      <td className="py-2.5 px-3">
+                      <td className="py-2 px-3">
                         <div className="w-full min-w-[220px]">
                           <ProductSkuDropdown
                             value={row.sku}
@@ -727,7 +736,7 @@ export default function SalesOrderCreateForm({
                           />
                         </div>
                       </td>
-                      <td className="py-2.5 px-3">
+                      <td className="py-2 px-3">
                         <input
                           type="text"
                           value={row.size || ""}
@@ -736,7 +745,7 @@ export default function SalesOrderCreateForm({
                           className="w-24 h-8 px-2 text-xs text-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
                         />
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="py-2 px-3 text-right">
                         <input
                           type="number"
                           min={0}
@@ -747,7 +756,7 @@ export default function SalesOrderCreateForm({
                           className="w-24 h-8 px-2 text-xs text-right font-mono font-bold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
                         />
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="py-2 px-3 text-right">
                         <input
                           type="number"
                           min={0}
@@ -757,14 +766,14 @@ export default function SalesOrderCreateForm({
                           className="w-28 h-8 px-2 text-xs text-right font-mono font-bold rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080B11] text-[#0A0E1A] dark:text-white outline-none focus:border-[#E8C16D]"
                         />
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-[#B88728] dark:text-[#E8C16D]">
+                      <td className="py-2 px-3 text-right font-mono font-bold text-[#0A0E1A] dark:text-white">
                         ₹ {Number(row.amount || 0).toFixed(2)}
                       </td>
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2 px-3 text-center">
                         <button
                           type="button"
                           onClick={() => handleRemoveRow(idx)}
-                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -773,50 +782,53 @@ export default function SalesOrderCreateForm({
                   ))
                 )}
               </tbody>
-              <tfoot>
-                <tr className="border-t border-[#E8C16D]/40 bg-[#FEFAEE] dark:bg-[#080B11] text-xs font-bold">
-                  <td colSpan={3} className="py-2.5 px-3 text-right text-slate-500">
-                    Total:
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-[#0A0E1A] dark:text-white">
-                    {totals.totalQty}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-slate-500">Total:</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-[#B88728] dark:text-[#E8C16D]">
-                    ₹ {totals.totalAmt.toFixed(2)}
-                  </td>
-                  <td className="py-2.5 px-3" />
-                </tr>
-              </tfoot>
             </table>
           </div>
 
-          <div className="p-3 border-t border-[#E7E0D2] dark:border-white/[0.08] flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleAddRow}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs font-bold hover:bg-[#FFF3D6] cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add</span>
-            </button>
+          {/* + Add, Upload & Totals Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAddRow}
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs font-bold hover:bg-[#FFF3D6] dark:hover:bg-[#262014] cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
 
-            <input
-              ref={uploadInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleUploadExcel}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => uploadInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-200 text-xs font-bold hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] cursor-pointer transition-colors"
-              title="Upload Excel / CSV (.xlsx, .xls, .csv)"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Upload</span>
-            </button>
+              <input
+                ref={uploadInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleUploadExcel}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => uploadInputRef.current?.click()}
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl border border-[#E7E0D2] dark:border-white/[0.12] bg-white dark:bg-[#080B11] text-slate-700 dark:text-slate-200 text-xs font-bold hover:border-[#E8C16D] hover:text-[#B88728] dark:hover:text-[#E8C16D] cursor-pointer transition-colors"
+                title="Upload Excel / CSV (.xlsx, .xls, .csv)"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload</span>
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-5 text-xs whitespace-nowrap">
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Total Qty:</span>
+                <span className="font-mono font-bold text-sm text-[#0A0E1A] dark:text-white">
+                  {totals.totalQty}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Total:</span>
+                <span className="font-mono font-bold text-sm text-[#B88728] dark:text-[#E8C16D]">
+                  ₹ {totals.totalAmt.toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
         </section>
 

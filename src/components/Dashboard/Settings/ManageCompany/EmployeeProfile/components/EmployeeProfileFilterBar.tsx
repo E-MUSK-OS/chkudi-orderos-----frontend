@@ -103,9 +103,9 @@ export default function EmployeeProfileFilterBar({
   return (
     <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.08] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm">
       {/* Left side filters matching Ledger Book pill style */}
-      <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto xl:flex-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:flex xl:flex-wrap items-center gap-2.5 w-full xl:w-auto xl:flex-1">
         {/* Employee Name Pill Search */}
-        <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[190px] sm:max-w-xs">
+        <div className="relative w-full min-w-0 xl:w-auto xl:flex-1 xl:min-w-[190px] xl:max-w-xs">
           <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
@@ -128,7 +128,7 @@ export default function EmployeeProfileFilterBar({
         </div>
 
         {/* Machine Code Filter */}
-        <div className="relative flex-1 sm:flex-initial sm:min-w-[150px] sm:max-w-[180px]">
+        <div className="relative w-full min-w-0 xl:w-auto xl:flex-initial xl:min-w-[150px] xl:max-w-[180px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
@@ -156,8 +156,9 @@ export default function EmployeeProfileFilterBar({
           value={filters.status || "all"}
           onChange={(val) => onFilterChange({ status: val, page: 1 })}
           options={STATUS_OPTIONS}
-          buttonClassName="rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
-          menuClassName="w-44 rounded-2xl"
+          className="w-full xl:w-auto min-w-0"
+          buttonClassName="w-full xl:w-auto justify-between xl:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+          menuClassName="w-full xl:w-44 rounded-2xl"
         />
 
         {/* Department Dropdown Pill */}
@@ -166,29 +167,17 @@ export default function EmployeeProfileFilterBar({
           value={filters.department || "all"}
           onChange={(val) => onFilterChange({ department: val, page: 1 })}
           options={DEPARTMENT_OPTIONS}
-          className="w-full sm:w-auto"
-          buttonClassName="w-full sm:w-auto justify-between sm:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
-          menuClassName="w-full sm:w-56 rounded-2xl"
+          className="w-full xl:w-auto min-w-0"
+          buttonClassName="w-full xl:w-auto justify-between xl:justify-start rounded-full h-9 sm:h-10 px-3.5 sm:px-4 text-xs font-semibold bg-white dark:bg-[#0F1626] border border-[#E7E0D2] dark:border-white/[0.1] hover:border-[#E8C16D]"
+          menuClassName="w-full xl:w-56 rounded-2xl"
         />
 
-        {/* Reset Filters Pill matching Ledger Book */}
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={onResetFilters}
-            className="hidden sm:inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs"
-            title="Reset filters"
-          >
-            <RotateCcw className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-            <span>Reset</span>
-          </button>
-        )}
       </div>
 
-      {/* Right side search & column controls matching Ledger Book */}
+      {/* Right side search, column & reset controls matching Ledger Book */}
       <div className="flex items-center gap-2 sm:gap-2.5 w-full xl:w-auto">
         {/* Global Search Pill Input */}
-        <div className="relative flex-1 min-w-0 sm:min-w-[240px]">
+        <div className="relative flex-1 min-w-0 sm:min-w-[160px] xl:min-w-[200px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#B88728] dark:text-[#E8C16D]" />
           <input
             type="text"
@@ -288,6 +277,19 @@ export default function EmployeeProfileFilterBar({
             </div>
           )}
         </div>
+
+        {/* Reset Filters Pill */}
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={onResetFilters}
+            className="hidden sm:inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-full border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shadow-xs shrink-0"
+            title="Reset filters"
+          >
+            <RotateCcw className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+            <span>Reset</span>
+          </button>
+        )}
       </div>
 
       {/* Mobile Reset Filters Pill (renders at the very end on mobile screens) */}

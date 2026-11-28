@@ -452,8 +452,7 @@ export default function MaterialInvoiceTable({
                               type="button"
                               onClick={() => {
                                 setOpenMenuId(null);
-                                if (onView) onView(inv);
-                                else onEdit(inv);
+                                onEdit(inv);
                               }}
                               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-[#FFF9EC] dark:hover:bg-white/[0.06] cursor-pointer"
                             >

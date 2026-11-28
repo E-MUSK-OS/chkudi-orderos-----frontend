@@ -346,13 +346,13 @@ export default function MaterialOrderForm({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-auto">
+          <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3 sm:ml-auto">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-4 rounded-full border border-[#E7E0D2] dark:border-[#E8C16D]/30 bg-white dark:bg-[#1A160E] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#262014] transition-all cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-full border border-[#E7E0D2] dark:border-[#E8C16D]/30 bg-white dark:bg-[#1A160E] text-xs sm:text-sm font-semibold text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#262014] transition-all cursor-pointer whitespace-nowrap"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
               <span>Back to List</span>
             </button>
             <input
@@ -360,9 +360,9 @@ export default function MaterialOrderForm({
               value={orderNo}
               onChange={(e) => setOrderNo(e.target.value)}
               placeholder="PO/2026-2027/1"
-              className="h-9 sm:h-10 w-36 sm:w-44 px-3 text-xs sm:text-sm font-bold bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D] rounded-xl text-[#B88728] dark:text-[#E8C16D] outline-none font-mono text-center"
+              className="h-9 sm:h-10 w-full sm:w-44 px-3 text-xs sm:text-sm font-bold bg-[#FFF9EC] dark:bg-[#1A160E] border border-[#E8C16D] rounded-xl text-[#B88728] dark:text-[#E8C16D] outline-none font-mono text-center min-w-0"
             />
-            <div className="w-36 sm:w-40">
+            <div className="w-full sm:w-40 min-w-0">
               <DatePicker
                 allowInput
                 value={orderDate}
@@ -376,7 +376,7 @@ export default function MaterialOrderForm({
             <button
               type="button"
               onClick={() => setIsPartyDrawerOpen(true)}
-              className="inline-flex items-center gap-2 h-9 sm:h-10 px-4 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs sm:text-sm font-bold hover:bg-[#FFF3D6] dark:hover:bg-[#262014] cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-[#E8C16D] bg-[#FFF9EC] dark:bg-[#1A160E] text-[#B88728] dark:text-[#E8C16D] text-xs sm:text-sm font-bold hover:bg-[#FFF3D6] dark:hover:bg-[#262014] cursor-pointer min-w-0"
             >
               <Eye className="w-4 h-4 shrink-0" />
               <span className="truncate max-w-[180px]">

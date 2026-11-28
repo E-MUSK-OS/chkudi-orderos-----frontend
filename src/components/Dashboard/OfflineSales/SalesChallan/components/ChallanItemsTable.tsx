@@ -339,7 +339,7 @@ export default function ChallanItemsTable({
   return (
     <div className="rounded-2xl sm:rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] p-4 sm:p-5 shadow-sm space-y-4">
       {/* Challan Details Title + Download Blank Format & Import from Excelsheet */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h2 className="text-sm sm:text-base font-bold text-[#0A0E1A] dark:text-white">
           Challan Details
         </h2>
@@ -633,7 +633,7 @@ export default function ChallanItemsTable({
         </div>
 
         {/* Right: Additional Expense. & Delivery Terms. */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="w-full sm:w-auto min-w-0 flex flex-wrap items-center gap-3">
           {/* Additional Expense. */}
           <div className="flex items-center gap-2">
             <button
@@ -658,8 +658,8 @@ export default function ChallanItemsTable({
           </div>
 
           {/* Delivery Terms. */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+          <div className="w-full sm:w-auto min-w-0 flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
               Delivery Terms.
             </label>
             <input
@@ -667,7 +667,7 @@ export default function ChallanItemsTable({
               value={deliveryTerms}
               onChange={(e) => onChangeDeliveryTerms(e.target.value)}
               placeholder="Delivery Terms."
-              className="h-8.5 sm:h-9 w-48 sm:w-56 px-3 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none"
+              className="h-8.5 sm:h-9 flex-1 min-w-0 sm:flex-none sm:w-56 px-3 text-xs bg-white dark:bg-[#080B11] border border-slate-200 dark:border-white/[0.08] rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#E8C16D] focus:ring-1 focus:ring-[#E8C16D] outline-none"
             />
           </div>
         </div>

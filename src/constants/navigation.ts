@@ -412,6 +412,54 @@ export const navItems: NavItem[] = [
     ],
   },
   {
+    label: "Report",
+    icon: BarChart3,
+    children: [
+      {
+        label: "Amazon",
+        href: "/dashboard/report/amazon",
+        defaultTimeAgo: "1h ago",
+        keywords: ["report", "amazon", "dispatch", "sku", "sales", "vms"],
+      },
+      {
+        label: "Account",
+        icon: Wallet,
+        children: [
+          {
+            label: "Remuneration & Salary",
+            href: "/dashboard/report/account/remuneration-salary",
+            defaultTimeAgo: "1h ago",
+            keywords: ["remuneration", "salary", "payroll", "employee", "account"],
+          },
+          {
+            label: "Tally Export",
+            href: "/dashboard/report/account/tally-export",
+            defaultTimeAgo: "1h ago",
+            keywords: ["tally", "export", "voucher", "gst", "account"],
+          },
+          {
+            label: "Profit & Loss Analysis",
+            href: "/dashboard/report/account/profit-loss",
+            defaultTimeAgo: "1h ago",
+            keywords: ["profit", "loss", "p&l", "margin", "account"],
+          },
+          {
+            label: "Purchase Report",
+            href: "/dashboard/report/account/purchase-report",
+            defaultTimeAgo: "1h ago",
+            keywords: ["purchase", "report", "bills", "gst", "account"],
+          },
+          {
+            label: "Sales Reports",
+            href: "/dashboard/report/account/sales-report",
+            defaultTimeAgo: "1h ago",
+            keywords: ["sales", "report", "invoice", "gst", "account"],
+          },
+        ],
+      },
+    ],
+  },
+  {
     label: "Settings",
     icon: Settings,
     children: [

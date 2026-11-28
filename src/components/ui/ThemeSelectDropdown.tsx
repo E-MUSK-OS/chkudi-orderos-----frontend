@@ -25,6 +25,7 @@ export interface ThemeSelectDropdownProps {
   dropDirection?: "auto" | "up" | "down";
   onOpenChange?: (isOpen: boolean) => void;
   usePortal?: boolean;
+  showAllLabel?: boolean;
 }
 
 export default function ThemeSelectDropdown({
@@ -42,6 +43,7 @@ export default function ThemeSelectDropdown({
   dropDirection = "auto",
   onOpenChange,
   usePortal = false,
+  showAllLabel = false,
 }: ThemeSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
@@ -199,7 +201,8 @@ export default function ThemeSelectDropdown({
           </div>
         )}
         <span className="truncate flex-1 min-w-0 text-left whitespace-nowrap">
-          {selectedOption && (selectedOption.value !== "All" || selectedOption.label !== "All")
+          {selectedOption &&
+          (showAllLabel || selectedOption.value !== "All" || selectedOption.label !== "All")
             ? selectedOption.label
             : placeholder}
         </span>

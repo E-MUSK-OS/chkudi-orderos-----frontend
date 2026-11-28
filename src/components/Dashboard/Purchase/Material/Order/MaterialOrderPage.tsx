@@ -27,7 +27,7 @@ export default function MaterialOrderPage() {
 
   // Filters
   const [party, setParty] = useState("");
-  const [status, setStatus] = useState("All");
+  const [status, setStatus] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [search, setSearch] = useState("");
@@ -52,7 +52,7 @@ export default function MaterialOrderPage() {
       const res = await materialOrderService.getOrders({
         search,
         party,
-        status,
+        status: status || "All",
         startDate,
         endDate,
         page,
@@ -85,7 +85,7 @@ export default function MaterialOrderPage() {
 
   const handleClearFilters = () => {
     setParty("");
-    setStatus("All");
+    setStatus("");
     setStartDate("");
     setEndDate("");
     setSearch("");
@@ -108,7 +108,7 @@ export default function MaterialOrderPage() {
       await materialOrderService.exportExcel({
         search,
         party,
-        status,
+        status: status || "All",
         startDate,
         endDate,
       });

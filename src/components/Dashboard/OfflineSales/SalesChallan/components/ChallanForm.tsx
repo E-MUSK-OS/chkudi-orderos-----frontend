@@ -686,7 +686,11 @@ const ChallanForm = forwardRef<ChallanFormHandle, ChallanFormProps>(
         </div>
 
         {/* Content & Drawer Container - Scoped below Header and Filter Bar */}
-        <div className="space-y-4 relative min-h-[580px] sm:min-h-[640px] overflow-x-clip">
+        <div
+          className={`space-y-4 relative overflow-x-clip ${
+            isDrawerOpen ? "min-h-[580px] sm:min-h-[640px]" : ""
+          }`}
+        >
           {/* Full-width Items Table with bottom verification and save button */}
           <ChallanItemsTable
           items={items}

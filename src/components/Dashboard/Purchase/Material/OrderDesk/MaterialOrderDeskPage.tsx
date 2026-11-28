@@ -107,7 +107,7 @@ export default function MaterialOrderDeskPage() {
     <DashboardLayout title="Order Desk [ Purchase Material ]">
       <div className="space-y-4">
         {/* Top Header Card */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 py-3.5 shadow-sm">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 rounded-3xl border border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#0F1626] px-5 py-3.5 shadow-sm">
           <h1 className="text-lg sm:text-xl font-bold text-[#0A0E1A] dark:text-white tracking-tight">
             Order Desk [ Purchase Material ]
           </h1>
@@ -156,7 +156,7 @@ export default function MaterialOrderDeskPage() {
 
             <button
               type="button"
-              onClick={() => setLotDrawerOpen(true)}
+              onClick={() => setLotDrawerOpen((p) => !p)}
               className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full text-xs font-semibold border border-[#E7E0D2] dark:border-[#E8C16D]/40 bg-white dark:bg-[#1A160E] text-[#0A0E1A] dark:text-[#E8C16D] hover:bg-[#FFF9EC] dark:hover:bg-[#262014] transition cursor-pointer"
             >
               <Layers className="w-3.5 h-3.5" />

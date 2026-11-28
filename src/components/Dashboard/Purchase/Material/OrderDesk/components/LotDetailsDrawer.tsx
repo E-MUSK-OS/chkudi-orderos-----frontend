@@ -158,34 +158,10 @@ export default function LotDetailsDrawer({
 
       {/* Slide-over Drawer */}
       <div
-        className={`absolute top-0 right-0 bottom-0 z-40 w-full max-w-4xl bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-white/[0.08] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out overflow-hidden ${
+        className={`absolute top-0 right-0 bottom-0 z-40 w-full bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-white/[0.08] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out overflow-hidden ${
           isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-full pointer-events-none"
         }`}
       >
-        {/* Drawer Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-3 border-b border-slate-200 dark:border-white/[0.08]">
-          <h2 className="text-base sm:text-lg font-bold text-[#0A0E1A] dark:text-white">
-            Lot Details
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowAddForm((p) => !p)}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-bold bg-[#E8C16D] hover:bg-[#d9b25d] text-[#0A0E1A] transition cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{showAddForm ? "Close Form" : "Add Lot"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08] transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
         {/* Drawer Filter Row */}
         <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-white/[0.08]">
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
@@ -463,9 +439,6 @@ export default function LotDetailsDrawer({
                         </div>
                         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                           No lots available
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          Click &ldquo;+ Add Lot&rdquo; above to add a production lot.
                         </p>
                       </div>
                     </td>

@@ -59,6 +59,7 @@ function parseFilterDate(dateStr?: string): Date | undefined {
 }
 
 const challanForOptions: ThemeSelectOption[] = [
+  { value: "All", label: "All" },
   { value: "Purchase", label: "Purchase" },
   { value: "Job Work", label: "Job Work" },
   { value: "Return", label: "Return" },
@@ -66,6 +67,7 @@ const challanForOptions: ThemeSelectOption[] = [
 ];
 
 const invoiceStatusOptions: ThemeSelectOption[] = [
+  { value: "All", label: "All" },
   { value: "Pending", label: "Pending" },
   { value: "Invoiced", label: "Invoiced" },
 ];
@@ -154,39 +156,54 @@ export default function MaterialChallanFilters({
           {/* 3. Challan For */}
           <div className="min-w-0">
             <ThemeSelectDropdown
-              value={challanFor === "All" ? "" : challanFor}
+              value={challanFor}
               onChange={onChallanForChange}
               options={challanForOptions}
               placeholder="Challan For"
+              showAllLabel
               icon={<Layers className="w-3.5 h-3.5 text-slate-400" />}
               className="w-full"
-              buttonClassName="w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] font-semibold text-[#0A0E1A] dark:text-white"
+              buttonClassName={`w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] ${
+                !challanFor
+                  ? "font-normal text-slate-400 dark:text-slate-400"
+                  : "font-semibold text-[#0A0E1A] dark:text-white"
+              }`}
             />
           </div>
 
           {/* 4. Material */}
           <div className="min-w-0">
             <ThemeSelectDropdown
-              value={material === "All" ? "" : material}
+              value={material}
               onChange={onMaterialChange}
-              options={materialOptions}
+              options={[{ value: "All", label: "All" }, ...materialOptions]}
               placeholder="Material"
+              showAllLabel
               icon={<Search className="w-3.5 h-3.5 text-slate-400" />}
               className="w-full"
-              buttonClassName="w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] font-semibold text-[#0A0E1A] dark:text-white"
+              buttonClassName={`w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] ${
+                !material
+                  ? "font-normal text-slate-400 dark:text-slate-400"
+                  : "font-semibold text-[#0A0E1A] dark:text-white"
+              }`}
             />
           </div>
 
           {/* 5. Invoice Status */}
           <div className="min-w-0">
             <ThemeSelectDropdown
-              value={invoiceStatus === "All" ? "" : invoiceStatus}
+              value={invoiceStatus}
               onChange={onInvoiceStatusChange}
               options={invoiceStatusOptions}
               placeholder="Invoice Status"
+              showAllLabel
               icon={<Clock className="w-3.5 h-3.5 text-slate-400" />}
               className="w-full"
-              buttonClassName="w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] font-semibold text-[#0A0E1A] dark:text-white"
+              buttonClassName={`w-full justify-between h-9 px-3 text-xs rounded-full border-[#E7E0D2] dark:border-white/[0.08] bg-white dark:bg-[#080B11] ${
+                !invoiceStatus
+                  ? "font-normal text-slate-400 dark:text-slate-400"
+                  : "font-semibold text-[#0A0E1A] dark:text-white"
+              }`}
             />
           </div>
 
