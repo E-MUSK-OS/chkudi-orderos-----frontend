@@ -76,6 +76,7 @@ import { useRouter, usePathname } from "next/navigation";
 import AccountLockChecker from "./AccountLockChecker";
 import GlobalConnectionOverlay from "./GlobalConnectionOverlay";
 import DropdownRealtimeSync from "./DropdownRealtimeSync";
+import GlobalNumberInputZeroBehavior from "./GlobalNumberInputZeroBehavior";
 import StepUpAuthModal from "./Auth/StepUpAuthModal";
 import { pruneExpiredIndexedDB } from "@/utils/indexedDbPruner";
 
@@ -105,6 +106,7 @@ export default function ClientLayout({
       <ReactQueryProvider>
         <GlobalConnectionOverlay />
         <DropdownRealtimeSync />
+        <GlobalNumberInputZeroBehavior />
         <StepUpAuthModal />
         <AccountLockChecker />
 

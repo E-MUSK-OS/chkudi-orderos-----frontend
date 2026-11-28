@@ -5,6 +5,7 @@ import { Download, Printer, Share2, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/config";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import { downloadDocumentPdf } from "@/lib/downloadDocumentPdf";
 import { MaterialPurchaseChallan } from "../types/materialChallan.types";
 
 interface MaterialChallanViewModalProps {
@@ -134,7 +135,35 @@ export default function MaterialChallanViewModal({
         </button>
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={() => {
+            downloadDocumentPdf({
+              fileName: `material-challan-${challan.challanNo || challan.id}.pdf`,
+              documentTitle: "Material Purchase Challan",
+              isChallan: true,
+              docNo: challan.challanNo || "-",
+              docDate: challan.challanDate || challan.createdAt,
+              company: company as any,
+              partySectionTitle: "Supplier.",
+              partyName: challan.supplier?.partyName || challan.supplierName || "-",
+              partyAddress: challan.supplier?.addressLine1 || "",
+              partyGstin: (challan.supplier as any)?.gstin || "",
+              partyPhone: challan.supplier?.phone || "",
+              items: (challan.items || []).map((it: any, idx: number) => ({
+                srNo: idx + 1,
+                name: it.materialName || it.particular || it.sku || "-",
+                subText: it.sku || undefined,
+                hsn: it.hsn || "-",
+                qty: Number(it.receivedQty || it.quantity || 0),
+                rate: Number(it.rate || 0),
+                total: Number(it.amount || it.total || 0),
+              })),
+              totals: [
+                { label: "Total Received Qty", value: Number(challan.totalReceivedQty || 0) },
+                { label: "Total Amount", value: Number(challan.totalAmount || 0), bold: true },
+              ],
+            });
+            toast.success("Material Challan PDF downloaded.");
+          }}
           className="grid h-9 w-9 place-items-center rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 cursor-pointer"
           title="Download PDF"
         >

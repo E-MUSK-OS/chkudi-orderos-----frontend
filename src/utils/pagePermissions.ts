@@ -197,7 +197,9 @@ export function isRouteAllowed(
       allowed.includes("inventory") ||
       allowed.includes("products/inventory") ||
       allowed.includes("inventory/product") ||
-      allowed.includes("inventory/material")
+      allowed.includes("inventory/product/product-inventory") ||
+      allowed.includes("inventory/material") ||
+      allowed.includes("inventory/material/material-inventory")
     ) {
       return true;
     }
@@ -209,6 +211,10 @@ export function isRouteAllowed(
 
   if (subPath.startsWith("products-analytics")) {
     if (allowed.includes("products-analytics") || allowed.includes("products")) return true;
+  }
+
+  if (subPath.startsWith("quick-search")) {
+    if (allowed.includes("quick-search")) return true;
   }
 
   if (subPath.startsWith("transaction")) {
@@ -239,6 +245,13 @@ export function isRouteAllowed(
     if (subPath.includes("invoice") && (allowed.includes("purchase-invoice") || allowed.includes("purchase/finish-goods/invoice") || allowed.includes("purchase/material/invoice") || allowed.includes("invoice_purchase_mat"))) return true;
     if (subPath.includes("debit-note") && (allowed.includes("purchase-debit-note") || allowed.includes("purchase/finish-goods/debit-note") || allowed.includes("purchase/material/debit-note") || allowed.includes("purchase/material/debit-note/return") || allowed.includes("purchase/material/debit-note/discount") || allowed.includes("debit_note_mat") || allowed.includes("purchase-invoice") || allowed.includes("purchase/finish-goods/invoice"))) return true;
     if (allowed.includes("purchase")) return true;
+  }
+
+  if (subPath.startsWith("account")) {
+    if (subPath.startsWith("account/vouchers/bank-vouchers") && (allowed.includes("account/vouchers/bank-vouchers") || allowed.includes("account/vouchers") || allowed.includes("account"))) return true;
+    if (subPath.startsWith("account/vouchers/cash-vouchers") && (allowed.includes("account/vouchers/cash-vouchers") || allowed.includes("account/vouchers") || allowed.includes("account"))) return true;
+    if (subPath.startsWith("account/vouchers/journal-vouchers") && (allowed.includes("account/vouchers/journal-vouchers") || allowed.includes("account/vouchers") || allowed.includes("account"))) return true;
+    if (allowed.includes("account")) return true;
   }
 
   if (subPath.startsWith("settings")) {
@@ -745,10 +758,10 @@ export function getSlugFromPathname(pathname: string): string {
     return "order-process/flipkart/awb-scan";
   }
   if (clean.startsWith("inventory/product") || clean.startsWith("products/inventory")) {
-    return "inventory/product";
+    return "inventory/product/product-inventory";
   }
   if (clean.startsWith("inventory/material")) {
-    return "inventory/material";
+    return "inventory/material/material-inventory";
   }
   if (clean.startsWith("vms/scans")) {
     return clean.includes("trackingid") ? "vms/scans/trackingid-scan" : "vms/scans";

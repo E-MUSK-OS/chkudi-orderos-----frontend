@@ -8,6 +8,7 @@ import { SalesInvoice } from "../types/salesInvoice.types";
 import { salesInvoiceService } from "../services/salesInvoice.service";
 import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
 import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
+import { downloadDocumentPdf } from "@/lib/downloadDocumentPdf";
 
 interface InvoiceViewModalProps {
   isOpen: boolean;
@@ -639,7 +640,52 @@ export default function InvoiceViewModal({ isOpen, invoice, onClose }: InvoiceVi
         </button>
         <button
           type="button"
-          onClick={handlePrint}
+          onClick={() => {
+            if (!inv) return;
+            const invAny = inv as any;
+            downloadDocumentPdf({
+              fileName: `sales-invoice-${inv.invoiceNo || inv.id}.pdf`,
+              documentTitle: inv.invoiceType || "Tax Invoice",
+              copyLabel: selectedCopy,
+              docNo: inv.invoiceNo || "-",
+              docDate: inv.invoiceDate || inv.createdAt,
+              company,
+              partySectionTitle: "Billing To.",
+              partyName: inv.billingPartyName || "-",
+              partyAddress: inv.billingAddress || "",
+              partyGstin: inv.partyGstn || "",
+              partyPhone: invAny.contactNo || invAny.party?.phone || "",
+              metaRows: [
+                { label: "Challan No.", value: inv.challanNo || "-" },
+                { label: "Voucher Type.", value: invAny.voucherType || "-" },
+                { label: "Payment Status.", value: invAny.paymentStatus || "-" },
+              ],
+              items: (inv.items || []).map((it: any, idx: number) => ({
+                srNo: it.itemNo || idx + 1,
+                name: it.particular || it.sku || "-",
+                subText: it.sku || undefined,
+                hsn: it.hsn || "-",
+                qty: Number(it.quantity || 0),
+                rate: Number(it.rate || 0),
+                discount: Number(it.discountAmount || 0),
+                taxable: Number(it.taxableAmount || 0),
+                sgst: Number(it.sgstAmount || 0),
+                cgst: Number(it.cgstAmount || 0),
+                igst: Number(it.igstAmount || 0),
+                total: Number(it.total || 0),
+              })),
+              totals: [
+                { label: "Gross Amount", value: Number(inv.totalAmount || 0) },
+                { label: "Discount Amount", value: Number(inv.totalDiscount || 0) },
+                { label: "Before Tax Amount", value: Number(inv.amountBeforeTax || 0) },
+                { label: "SGST", value: Number(inv.sgstAmount || 0) },
+                { label: "CGST", value: Number(inv.cgstAmount || 0) },
+                { label: "IGST", value: Number(inv.igstAmount || 0) },
+                { label: "Net Amount", value: Number(inv.netAmount || 0), bold: true },
+              ],
+            });
+            toast.success("Invoice PDF downloaded.");
+          }}
           title="Download PDF"
           className="h-8 w-8 rounded-lg bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer"
         >

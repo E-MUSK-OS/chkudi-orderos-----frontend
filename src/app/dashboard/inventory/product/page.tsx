@@ -1,12 +1,5 @@
-import Inventory from "@/components/Dashboard/Products/Inventory/Inventory";
-import React from "react";
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div>
-      <Inventory />
-    </div>
-  );
-};
-
-export default page;
+export default function ProductInventoryRedirectPage() {
+  redirect("/dashboard/inventory/product/product-inventory");
+}

@@ -8,6 +8,7 @@ import { challanService } from "../services/challan.service";
 import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
 import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
 import { printHtmlInIframe } from "../../SalesInvoice/components/InvoiceViewModal";
+import { downloadDocumentPdf } from "@/lib/downloadDocumentPdf";
 
 interface ViewSalesChallanModalProps {
   open: boolean;
@@ -432,7 +433,41 @@ export default function ViewSalesChallanModal({
         </button>
         <button
           type="button"
-          onClick={handlePrint}
+          onClick={() => {
+            if (!activeChallan) return;
+            const chAny = activeChallan as any;
+            downloadDocumentPdf({
+              fileName: `sales-challan-${activeChallan.challanNo || activeChallan.id}.pdf`,
+              documentTitle: "Delivery Challan",
+              isChallan: true,
+              docNo: activeChallan.challanNo || "-",
+              docDate: activeChallan.challanDate || activeChallan.createdAt,
+              company,
+              partySectionTitle: "Delivery To.",
+              partyName: activeChallan.party?.partyName || activeChallan.partyName || "-",
+              partyAddress: activeChallan.party?.addressLine1 || "",
+              partyGstin: activeChallan.party?.gstin || "",
+              partyPhone: activeChallan.party?.phone || "",
+              metaRows: [
+                { label: "Sales Order No.", value: chAny.salesOrderNo || "-" },
+                { label: "Status.", value: chAny.status || "-" },
+              ],
+              items: (activeChallan.items || []).map((it: any, idx: number) => ({
+                srNo: it.itemNo || idx + 1,
+                name: it.particular || it.productName || it.sku || "-",
+                subText: it.sku || undefined,
+                hsn: it.hsn || "-",
+                qty: Number(it.quantity || it.qty || 0),
+                rate: Number(it.rate || 0),
+                total: Number(it.amount || it.total || 0),
+              })),
+              totals: [
+                { label: "Total Quantity", value: Number(activeChallan.totalQuantity || 0) },
+                { label: "Total Amount", value: Number(activeChallan.totalAmount || 0), bold: true },
+              ],
+            });
+            toast.success("Challan PDF downloaded.");
+          }}
           title="Download PDF"
           className="h-8 w-8 rounded-lg bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer"
         >

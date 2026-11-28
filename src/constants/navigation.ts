@@ -30,6 +30,8 @@ import {
   CheckCircle,
   Sliders,
   SlidersHorizontal,
+  Landmark,
+  Search,
 } from "lucide-react";
 import { isRouteAllowed, type UserPermissions } from "@/utils/pagePermissions";
 
@@ -128,19 +130,29 @@ export const navItems: NavItem[] = [
   },
   {
     label: "Inventory",
-    href: "/dashboard/inventory/product",
+    href: "/dashboard/inventory/product/product-inventory",
     icon: Package,
     children: [
       {
         label: "Material",
-        href: "/dashboard/inventory/material",
-        defaultTimeAgo: "25m ago",
+        children: [
+          {
+            label: "Material Inventory",
+            href: "/dashboard/inventory/material/material-inventory",
+            defaultTimeAgo: "25m ago",
+          },
+        ],
       },
       {
         label: "Product",
-        href: "/dashboard/inventory/product",
-        defaultTimeAgo: "25m ago",
-        isCore: true,
+        children: [
+          {
+            label: "Product Inventory",
+            href: "/dashboard/inventory/product/product-inventory",
+            defaultTimeAgo: "25m ago",
+            isCore: true,
+          },
+        ],
       },
     ],
   },
@@ -371,6 +383,35 @@ export const navItems: NavItem[] = [
     ],
   },
   {
+    label: "Account",
+    icon: Landmark,
+    children: [
+      {
+        label: "Vouchers",
+        children: [
+          {
+            label: "Bank Vouchers",
+            href: "/dashboard/account/vouchers/bank-vouchers",
+            defaultTimeAgo: "Just now",
+            keywords: ["bank voucher", "bank", "payment", "receipt", "cheque", "salary report", "vouchers"],
+          },
+          {
+            label: "Cash Vouchers",
+            href: "/dashboard/account/vouchers/cash-vouchers",
+            defaultTimeAgo: "Just now",
+            keywords: ["cash voucher", "cash", "payment", "receipt", "vouchers"],
+          },
+          {
+            label: "Journal Vouchers",
+            href: "/dashboard/account/vouchers/journal-vouchers",
+            defaultTimeAgo: "Just now",
+            keywords: ["journal voucher", "journal", "adjustment", "vouchers"],
+          },
+        ],
+      },
+    ],
+  },
+  {
     label: "Settings",
     icon: Settings,
     children: [
@@ -508,6 +549,13 @@ export const navItems: NavItem[] = [
       },
     ],
   },
+  {
+    label: "Quick Search",
+    href: "/dashboard/quick-search",
+    icon: Search,
+    defaultTimeAgo: "Just now",
+    keywords: ["quick search", "product", "material", "barcode", "sku", "lookup"],
+  },
 ];
 
 /**
@@ -518,6 +566,15 @@ export const navItems: NavItem[] = [
  * by search or URL but aren't parent items in the sidebar.
  */
 export const standalonePages: SearchPageItem[] = [
+  {
+    id: "create-bank-voucher",
+    title: "Create Bank Voucher",
+    path: "Account > Vouchers > Bank Vouchers > New",
+    href: "/dashboard/account/vouchers/bank-vouchers/new",
+    icon: PlusCircle,
+    defaultTimeAgo: "Just now",
+    keywords: ["create bank voucher", "new bank voucher", "bank voucher", "payment", "receipt"],
+  },
   {
     id: "amazon-integration",
     title: "Amazon SP-API Integration",

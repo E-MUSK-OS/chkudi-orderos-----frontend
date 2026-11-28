@@ -5,6 +5,7 @@ import { Check, Download, Printer, Share2, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/config";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import { downloadDocumentPdf } from "@/lib/downloadDocumentPdf";
 import { MaterialPurchaseInvoice } from "../types/materialInvoice.types";
 
 interface MaterialInvoiceViewProps {
@@ -107,7 +108,40 @@ export default function MaterialInvoiceView({
         </button>
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={() => {
+            const invAny = invoice as any;
+            downloadDocumentPdf({
+              fileName: `material-invoice-${invoice.invoiceNo || invoice.id}.pdf`,
+              documentTitle: "Material Purchase Invoice",
+              docNo: invoice.invoiceNo || "-",
+              docDate: invoice.invoiceDate || invoice.createdAt,
+              company: company as any,
+              partySectionTitle: "Supplier.",
+              partyName: invoice.supplier?.partyName || invoice.supplierName || "-",
+              partyAddress: invoice.supplier?.addressLine1 || "",
+              partyGstin: (invoice.supplier as any)?.gstin || "",
+              partyPhone: invoice.supplier?.phone || "",
+              items: (invoice.items || []).map((it: any, idx: number) => ({
+                srNo: idx + 1,
+                name: it.materialName || it.particular || it.sku || "-",
+                subText: it.sku || undefined,
+                hsn: it.hsn || "-",
+                qty: Number(it.quantity || it.receivedQty || 0),
+                rate: Number(it.rate || 0),
+                discount: Number(it.discountAmount || 0),
+                taxable: Number(it.taxableAmount || 0),
+                sgst: Number(it.sgstAmount || 0),
+                cgst: Number(it.cgstAmount || 0),
+                igst: Number(it.igstAmount || 0),
+                total: Number(it.total || 0),
+              })),
+              totals: [
+                { label: "Gross Amount", value: Number(invAny.totalAmount ?? invAny.grossAmount ?? 0) },
+                { label: "Net Amount", value: Number(invoice.netAmount || 0), bold: true },
+              ],
+            });
+            toast.success("Material Invoice PDF downloaded.");
+          }}
           className="grid h-9 w-9 place-items-center rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 cursor-pointer"
           title="Download PDF"
         >

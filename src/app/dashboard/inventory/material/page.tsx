@@ -1,12 +1,5 @@
-import MaterialInventory from "@/components/Dashboard/Materials/MaterialInventory/MaterialInventory";
-import React from "react";
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div>
-      <MaterialInventory />
-    </div>
-  );
-};
-
-export default page;
+export default function MaterialInventoryRedirectPage() {
+  redirect("/dashboard/inventory/material/material-inventory");
+}

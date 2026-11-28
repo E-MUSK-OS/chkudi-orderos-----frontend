@@ -10,6 +10,7 @@ import { DeliveryChallanSheet } from "./components/ViewSalesChallanModal";
 import { printHtmlInIframe } from "../SalesInvoice/components/InvoiceViewModal";
 import { companyService } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/services/company.service";
 import type { Company } from "@/components/Dashboard/Settings/ManageCompany/CompanyProfile/types/company.types";
+import { downloadDocumentPdf } from "@/lib/downloadDocumentPdf";
 
 export default function SalesChallanViewPage() {
   const params = useParams<{ id: string }>();
@@ -90,6 +91,42 @@ export default function SalesChallanViewPage() {
     );
   };
 
+  const handleDownloadPdf = () => {
+    if (!challan) return;
+    const chAny = challan as any;
+    downloadDocumentPdf({
+      fileName: `sales-challan-${challan.challanNo || challan.id}.pdf`,
+      documentTitle: "Delivery Challan",
+      isChallan: true,
+      docNo: challan.challanNo || "-",
+      docDate: challan.challanDate || challan.createdAt,
+      company,
+      partySectionTitle: "Delivery To.",
+      partyName: challan.party?.partyName || challan.partyName || "-",
+      partyAddress: challan.party?.addressLine1 || "",
+      partyGstin: challan.party?.gstin || "",
+      partyPhone: challan.party?.phone || "",
+      metaRows: [
+        { label: "Sales Order No.", value: chAny.salesOrderNo || "-" },
+        { label: "Status.", value: chAny.status || "-" },
+      ],
+      items: (challan.items || []).map((it: any, idx: number) => ({
+        srNo: it.itemNo || idx + 1,
+        name: it.particular || it.productName || it.sku || "-",
+        subText: it.sku || undefined,
+        hsn: it.hsn || "-",
+        qty: Number(it.quantity || it.qty || 0),
+        rate: Number(it.rate || 0),
+        total: Number(it.amount || it.total || 0),
+      })),
+      totals: [
+        { label: "Total Quantity", value: Number(challan.totalQuantity || 0) },
+        { label: "Total Amount", value: Number(challan.totalAmount || 0), bold: true },
+      ],
+    });
+    toast.success("Sales Challan PDF downloaded.");
+  };
+
   const handleShare = async () => {
     if (!challan) return;
     const url = window.location.href;
@@ -105,23 +142,23 @@ export default function SalesChallanViewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#232529] text-slate-900 overflow-y-auto">
-      <div className="fixed top-4 right-5 z-50 flex items-center gap-2">
+    <div className="min-h-screen bg-[#FAF7F0] dark:bg-[#080B11] text-slate-900 overflow-y-auto py-3 sm:py-5 px-3 sm:px-6 print:bg-white print:p-0">
+      <div className="sticky top-3 z-50 flex items-center justify-center gap-2 mb-3 md:mb-0 md:fixed md:top-4 md:right-5 print:hidden">
         <button
           type="button"
           onClick={handlePrint}
           disabled={!challan}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 hover:bg-slate-100 shadow-md transition-all cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#0F1626] text-[#0A0E1A] dark:text-white border border-[#E7E0D2] dark:border-white/[0.12] hover:bg-[#FEFAEE] dark:hover:bg-[#131B2E] shadow-md transition-all cursor-pointer disabled:opacity-50"
         >
           <Printer className="w-3.5 h-3.5" />
           <span>Print</span>
         </button>
         <button
           type="button"
-          onClick={handlePrint}
+          onClick={handleDownloadPdf}
           disabled={!challan}
           title="Download PDF"
-          className="h-8 w-8 rounded-lg bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-50"
+          className="h-8 w-8 rounded-lg bg-white dark:bg-[#0F1626] hover:bg-[#FEFAEE] dark:hover:bg-[#131B2E] text-[#0A0E1A] dark:text-white border border-[#E7E0D2] dark:border-white/[0.12] flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-50"
         >
           <Download className="w-3.5 h-3.5" />
         </button>
@@ -130,7 +167,7 @@ export default function SalesChallanViewPage() {
           onClick={handleShare}
           disabled={!challan}
           title="Share"
-          className="h-8 w-8 rounded-lg bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-50"
+          className="h-8 w-8 rounded-lg bg-white dark:bg-[#0F1626] hover:bg-[#FEFAEE] dark:hover:bg-[#131B2E] text-[#0A0E1A] dark:text-white border border-[#E7E0D2] dark:border-white/[0.12] flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-50"
         >
           <Share2 className="w-3.5 h-3.5" />
         </button>
@@ -138,15 +175,15 @@ export default function SalesChallanViewPage() {
           type="button"
           onClick={handleClose}
           title="Close"
-          className="h-8 w-8 rounded-full bg-[#3A3D42] hover:bg-[#4A4E54] text-white flex items-center justify-center shadow-md transition-all cursor-pointer ml-1"
+          className="h-8 w-8 rounded-full bg-white dark:bg-[#0F1626] hover:bg-[#FEFAEE] dark:hover:bg-[#131B2E] text-[#0A0E1A] dark:text-white border border-[#E7E0D2] dark:border-white/[0.12] flex items-center justify-center shadow-md transition-all cursor-pointer ml-1"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="min-h-screen py-4 sm:py-6 px-3 sm:px-6 flex justify-center items-start">
+      <div className="flex justify-center items-start">
         {loading ? (
-          <div className="w-full max-w-[794px] min-h-[1080px] bg-white rounded-md shadow-2xl flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
+          <div className="w-full max-w-[794px] min-h-[360px] bg-white rounded-md shadow-2xl flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Loading Delivery Challan...</span>
           </div>
